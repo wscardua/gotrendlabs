@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orynth | Mercado múltipla escolha</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <nav class="shell nav">
+      <a class="brand" href="index.html"><span class="brand-mark">O</span><span>Orynth</span></a>
+      <div class="nav-links">
+        <a class="nav-link active" href="index.html">Mercados</a>
+        <a class="nav-link" href="categories.html">Categorias</a>
+        <a class="nav-link" href="rankings.html">Ranking</a>
+        <a class="nav-link" href="wallet.html">Carteira</a>
+      </div>
+      <div class="nav-actions">
+        <span class="language">PT-BR</span>
+        <div class="user-chip">
+          <button class="user-button"><span class="avatar">WL</span><span class="chip-meta"><strong>Will Costa</strong><span>2.480 OC · Rep 82</span></span></button>
+          <div class="user-menu"><a href="profile.html">Perfil</a><a href="wallet.html">Carteira</a><a href="login.html">Sair</a></div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="shell layout-detail">
+    <section class="panel detail-hero">
+      <div class="tags"><span class="tag">Negócios</span><span class="tag">Múltipla escolha</span><span class="tag safe">Critério auditável</span><span class="tag">Fecha previsões em 31 dez 2026</span></div>
+      <h1 class="large-title">Qual empresa lidera vendas globais de carros elétricos no 4T26?</h1>
+      <p class="lead">Cada opção tem seu próprio consenso. Apenas uma opção vence ao final, conforme fonte pública definida no critério. As porcentagens representam o consenso atual da comunidade, não garantia de resultado.</p>
+
+      <div class="chart-box">
+        <div class="chart-legend"><span><i style="--dot:#2d5e88"></i>Tesla</span><span><i style="--dot:#136f4a"></i>BYD</span><span><i style="--dot:#d89422"></i>Volkswagen</span></div>
+        <svg viewBox="0 0 760 220" width="100%" height="220" role="img" aria-label="Gráfico de tendência das opções">
+          <path d="M30 170 C120 150,180 120,260 132 S410 86,520 102 S640 70,730 88" fill="none" stroke="#2d5e88" stroke-width="5" stroke-linecap="round"/>
+          <path d="M30 122 C150 98,240 112,320 84 S470 112,570 78 S660 120,730 96" fill="none" stroke="#136f4a" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+          <path d="M30 160 C130 178,250 158,330 170 S500 132,610 150 S700 128,730 138" fill="none" stroke="#d89422" stroke-width="4" stroke-linecap="round" opacity=".7"/>
+        </svg>
+      </div>
+
+      <div class="admin-grid">
+        <div class="metric"><strong>13.410 OC</strong><span>volume educativo</span></div>
+        <div class="metric"><strong>936</strong><span>usuários prevendo</span></div>
+        <div class="metric"><strong>251 dias</strong><span>até fechar previsões</span></div>
+      </div>
+
+      <section class="panel" style="margin-top:16px">
+        <h3>Critério de resolução</h3>
+        <p>Vence a empresa com maior número global de veículos elétricos vendidos no 4T26, conforme relatório trimestral consolidado e fonte editorial aprovada pela operação. Se duas fontes públicas divergirem, a operação publicará revisão antes da resolução.</p>
+        <div class="tags"><span class="tag">Fonte esperada: relatório trimestral</span><span class="tag">Status: aberto</span><span class="tag safe">Trilha pública após resolução</span></div>
+      </section>
+
+      <section class="panel" style="margin-top:16px">
+        <h3>Comentários</h3>
+        <div class="comments">
+          <div class="comment"><strong>Lia · Rep 94</strong><p>BYD tende a crescer por volume global, mas Tesla ainda tem força em mercados com ticket médio maior.</p><div class="comment-actions"><span>👍 31</span><span>👎 4</span><span>Responder</span></div></div>
+          <div class="comment"><strong>Rafa · Rep 89</strong><p>O critério precisa ficar bem preso ao 4T26 para não misturar acumulado anual com trimestre.</p><div class="comment-actions"><span>👍 22</span><span>👎 1</span><span>Responder</span></div></div>
+        </div>
+      </section>
+    </section>
+
+    <aside class="panel trade-box">
+      <span class="eyebrow">Ticket de previsão</span>
+      <div class="binary-ticket">
+        <div class="option-grid">
+          <button class="choice active" data-choice="Tesla"><span><strong>Tesla</strong><small>Consenso líder atual</small></span><span>37%</span></button>
+          <button class="choice" data-choice="BYD"><span><strong>BYD</strong><small>Disputa próxima</small></span><span>34%</span></button>
+          <button class="choice" data-choice="Volkswagen"><span><strong>Volkswagen</strong><small>Cenário alternativo</small></span><span>14%</span></button>
+          <button class="choice" data-choice="Outra"><span><strong>Outra empresa</strong><small>Campo residual</small></span><span>15%</span></button>
+        </div>
+        <div class="ticket-note">Escolha uma opção e defina quantas OC educativas deseja comprometer. Apenas uma alternativa será vencedora.</div>
+      </div>
+      <div class="field"><label>Valor da previsão</label><div class="range-row"><input data-amount="multi" type="range" min="10" max="500" value="120"><strong data-amount-output="multi">120 OC</strong></div></div>
+      <div class="calc"><div><span>Opção escolhida</span><strong data-selected-choice>Tesla</strong></div><div><span>Retorno estimado se acertar</span><strong data-return-output="multi">194 OC</strong></div><div><span>Saldo disponível</span><strong>2.480 OC</strong></div></div>
+      <a class="btn primary" href="prediction-confirmed.html">Confirmar previsão</a>
+      <a class="btn ghost" href="index.html">Voltar ao feed</a>
+      <p style="color:var(--muted)">OC é moeda interna educativa. Não há saque, investimento ou dinheiro real no MVP.</p>
+    </aside>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

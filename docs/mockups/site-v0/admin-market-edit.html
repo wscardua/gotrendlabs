@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Orynth Admin - Mercado</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">O</span><span>Orynth Admin</span></a><nav class="nav"><a href="admin-dashboard.html">Painel</a><a class="active" href="admin-market-edit.html">Mercados</a><a href="admin-taxonomy.html">Categorias</a><a href="admin-resolution.html">Resolução</a><a href="admin-moderation.html">Moderação</a><a href="index.html">Ver app</a></nav><div class="account"><span class="lang">PT-BR / EN</span><a class="session-pill" href="profile.html"><span class="avatar">A</span><span class="session-copy"><strong>@admin</strong><span><i class="login-dot"></i>Operador</span></span></a></div></header>
+    <section class="page-head"><span class="pill">Criação controlada</span><h1>Mercados: criar, editar e publicar</h1><p>Fluxo para criar mercado com categoria, subcategoria, data de resolução, opções por tipo, imagem, locale base e fonte prevista.</p><div class="admin-nav"><a class="tab" href="admin-dashboard.html">Dashboard</a><a class="tab active" href="admin-market-edit.html">Mercados</a><a class="tab" href="admin-taxonomy.html">Categorias</a><a class="tab" href="admin-resolution.html">Resolver</a><a class="tab" href="admin-moderation.html">Moderação</a></div></section>
+    <div class="app-grid">
+      <main class="main-stack">
+      <section class="section table-card">
+        <div class="section-head"><h2>Mercados ativos e rascunhos</h2><a class="button button-primary" href="#editor">Criar mercado</a></div>
+        <div class="filter-bar"><span class="tab active">Todos</span><span class="tab">Rascunhos</span><span class="tab">Abertos</span><span class="tab">Fechando</span><span class="tab">PT-BR</span><span class="tab">EN</span><span class="tab">IA</span><span class="tab">Games</span></div>
+        <table class="mock-table">
+          <thead><tr><th>Mercado</th><th>Tipo</th><th>Status</th><th>Categoria</th><th>Ações</th></tr></thead>
+          <tbody>
+            <tr><td>OpenAI lançará GPT-6 em 2026?</td><td>Binário</td><td><span class="status-dot">Aberto</span></td><td>IA / Modelos</td><td><div class="action-group"><a class="tab active" href="#editor">Editar</a><a class="tab" href="market-open.html">Visualizar</a><a class="tab danger" href="#delete-market">Excluir</a></div></td></tr>
+            <tr><td>Agente gamer em massa</td><td>Múltipla escolha</td><td><span class="status-dot">Aberto</span></td><td>Games / Plataformas</td><td><div class="action-group"><a class="tab" href="#editor">Editar</a><a class="tab" href="market-multiple.html">Visualizar</a><a class="tab danger" href="#delete-market">Excluir</a></div></td></tr>
+            <tr><td>Creator virtual 20M seguidores</td><td>Binário</td><td><span class="status-dot warn">Fechando</span></td><td>Creators</td><td><div class="action-group"><a class="tab" href="#editor">Editar</a><a class="tab" href="market-open.html">Visualizar</a><a class="tab danger" href="#delete-market">Excluir</a></div></td></tr>
+          </tbody>
+        </table>
+        <div class="critical-confirm" id="delete-market" style="margin-top:14px"><strong>Confirmação de exclusão</strong><p class="muted">Excluir mercado exige confirmação administrativa. Se já houver previsões, use cancelar com justificativa para preservar auditoria.</p><div class="toolbar" style="margin-top:8px"><span class="button button-secondary">Cancelar mercado com justificativa</span><span class="button button-secondary">Manter mercado</span></div></div>
+      </section>
+      <section class="section" id="editor">
+        <div class="section-head"><h2>Editor</h2><span class="mini">rascunho salvo há 12s</span></div>
+        <div class="form-grid">
+          <div class="field full"><strong>Pergunta</strong><br>OpenAI lançará GPT-6 em 2026?</div>
+          <div class="field"><strong>Categoria</strong><br>IA</div>
+          <div class="field"><strong>Subcategoria</strong><br>Modelos fundacionais</div>
+          <div class="field"><strong>Tipo</strong><br>Binário</div>
+          <div class="field"><strong>Locale base</strong><br>PT-BR</div>
+          <div class="field"><strong>Fecha previsões em</strong><br>31 dez 2026 · 23:59</div>
+          <div class="field"><strong>Resolve em</strong><br>12 jan 2027</div>
+          <div class="upload-drop full"><div><strong>Upload de imagem do mercado</strong><br>Arraste imagem, selecione arquivo ou cole URL. Usada no card, detalhe e compartilhamento.</div></div>
+          <textarea class="field full">Critério público: anúncio oficial do modelo principal, com disponibilidade pública ou rollout documentado.</textarea>
+          <div class="field full"><strong>Fonte prevista</strong><br>openai.com/news ou anúncio oficial equivalente</div>
+        </div>
+        <div class="section-head" style="margin-top:18px"><h2>Localização PT-BR / EN</h2><span class="mini">bloqueia publicação incompleta</span></div>
+        <div class="locale-grid">
+          <div class="option active"><strong>PT-BR · base aprovada</strong><span class="muted">Pergunta, descrição, critério e imagem revisados.</span></div>
+          <div class="option selected-warm"><strong>EN · revisão pendente</strong><span class="muted">Tradução assistida precisa de revisão editorial antes de publicar em inglês.</span></div>
+        </div>
+        <div class="notice">Publicação internacional bloqueada até PT-BR e EN terem pergunta, critério de resolução e imagem de compartilhamento consistentes.</div>
+        <div class="section-head" style="margin-top:18px"><h2>Opções do mercado</h2><span class="mini">muda conforme tipo</span></div>
+        <div class="option-builder">
+          <div class="option-builder-row option active"><strong>#1</strong><span><strong>SIM</strong><br><span class="muted">Criada automaticamente para mercado binário.</span></span><span class="pill">ativa</span></div>
+          <div class="option-builder-row option"><strong>#2</strong><span><strong>NÃO</strong><br><span class="muted">Criada automaticamente para mercado binário.</span></span><span class="pill">ativa</span></div>
+          <div class="notice green">Ao trocar para múltipla escolha, o admin adiciona alternativas manuais como Steam, Microsoft, Sony e Epic, sempre com uma única vencedora final.</div>
+        </div>
+        <div class="toolbar" style="margin-top:16px"><a class="button button-primary" href="admin-dashboard.html">Publicar mercado</a><a class="button button-secondary" href="admin-dashboard.html">Salvar rascunho</a><a class="button button-secondary" href="index.html">Pré-visualizar</a></div>
+      </section>
+      </main>
+      <aside class="side-stack">
+        <section class="panel"><h3>Checklist</h3><div class="history-list" style="margin-top:14px"><div class="history-item row-between"><span>Fonte de resolução</span><strong>ok</strong></div><div class="history-item row-between"><span>Tradução EN</span><strong>pendente</strong></div><div class="history-item row-between"><span>Imagem/ícone</span><strong>ok</strong></div><div class="history-item row-between"><span>Scheduler</span><strong>configurado</strong></div></div></section>
+        <section class="panel"><h3>Prévia do card</h3><a class="card market-card" href="market-open.html"><div><div class="card-top"><span class="pill">Sim/Não</span><span class="time-meter-wrap"><span class="time-meter urgent" style="--p:72"><span>72</span></span>prazo</span></div><div class="market-card-main"><div class="market-thumb ai"><span>IA</span></div><div><h3>OpenAI lançará GPT-6 em 2026?</h3><svg class="sparkline up" viewBox="0 0 180 46" aria-hidden="true"><polyline points="2,33 28,31 54,34 80,25 106,27 132,16 158,19 178,10"></polyline><circle cx="178" cy="10" r="3"></circle></svg></div></div><div class="bar"><div class="bar-head"><span>Consenso</span><strong>62% SIM</strong></div><div class="bar-track"><div class="bar-fill fill-yes" style="width:62%"></div></div></div><div class="market-meta-grid"><span>84k OC</span><span>2.843 prev.</span><span>IA</span></div></div><div class="card-foot"><span>card publicado</span><span>Prever</span></div></a></section>
+      </aside>
+    </div>
+  </div>
+<footer class="site-footer"><div class="footer-grid"><div><h3>Orynth</h3><p>Rede social de previsões com Orynth Coins, reputação pública e mercados resolvidos com fonte verificável.</p></div><div><h4>Produto</h4><div class="footer-links"><a href="index.html">Feed</a><a href="categories.html">Categorias</a><a href="rankings.html">Ranking</a><a href="suggestion.html">Sugerir mercado</a></div></div><div><h4>Aprender</h4><div class="footer-links"><a href="concepts.html">Conceitos e cálculos</a><a href="security.html">Segurança</a><a href="admin-dashboard.html">Dashboard admin</a><span>PT-BR / EN</span></div></div><div><h4>Admin</h4><div class="footer-links"><a href="admin-market-edit.html">Mercados</a><a href="admin-resolution.html">Resolução</a><a href="admin-moderation.html">Moderação</a><span>Auditoria operacional</span></div></div></div><div class="footer-bottom"><span>Mock navegável do MVP</span><span>HTML estático · interações simuladas</span></div></footer></body>
+</html>

@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Orynth - Conceitos e cálculos</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a class="brand" href="index.html"><span class="brand-mark">O</span><span>Orynth</span></a><nav class="nav"><a href="index.html">Feed</a><a href="categories.html">Categorias</a><a href="rankings.html">Ranking</a><a href="profile.html">Perfil</a><a href="wallet.html">Carteira</a><a href="feedback.html">Feedback</a></nav><div class="account"><span class="lang">PT-BR / EN</span><details class="account-menu"><summary class="session-pill"><span class="avatar">C</span><span class="session-copy"><strong>@carolvision</strong><span><i class="login-dot"></i>Logado</span></span></summary><div class="account-dropdown"><a href="profile.html">Perfil público</a><a href="wallet.html">Carteira e extrato</a><a href="feedback.html">Enviar feedback</a><a href="rankings.html">Meu ranking</a><a href="login.html">Sair</a></div></details></div></header>
+    <section class="page-head">
+      <span class="pill warm">Guia do usuário</span>
+      <h1>Como Orynth transforma previsões em probabilidade, carteira e reputação</h1>
+      <p>Esta página traduz a spec em linguagem de produto. Ela explica o suficiente para o usuário confiar e decidir melhor, sem revelar parâmetros sensíveis, antifraude ou regras internas de negócio.</p>
+      <div class="doc-nav"><a class="tab active" href="#mercados">Mercados</a><a class="tab" href="#coins">Orynth Coins</a><a class="tab" href="#probabilidade">Probabilidade</a><a class="tab" href="#recompensa">Recompensa</a><a class="tab" href="#reputacao">Reputação</a><a class="tab" href="#resolucao">Resolução</a></div>
+    </section>
+
+    <div class="app-grid">
+      <main class="main-stack">
+        <section class="section doc-card" id="mercados">
+          <div class="section-head"><h2>1. O que é um mercado?</h2><span class="pill">pergunta objetiva</span></div>
+          <p class="muted">Um mercado é uma pergunta sobre um evento futuro com opções finitas e critério claro de resolução. Ele pode estar em rascunho, aberto, fechado, resolvido ou cancelado.</p>
+          <div class="two-grid">
+            <div class="option active"><strong>Binário</strong><span class="muted">Duas opções internas: SIM e NÃO. Exemplo: “OpenAI lançará GPT-6 em 2026?”</span></div>
+            <div class="option active"><strong>Múltipla escolha</strong><span class="muted">Várias opções, mas apenas uma vencedora. Exemplo: “Qual empresa lançará primeiro um agente gamer?”</span></div>
+          </div>
+          <div class="notice green">O padrão visual é o mesmo para todos: tipo do contrato, tendência, probabilidade, volume, tempo restante e ação de prever.</div>
+        </section>
+
+        <section class="section doc-card" id="coins">
+          <div class="section-head"><h2>2. Orynth Coins e carteira</h2><a class="button button-secondary" href="wallet.html">Ver carteira</a></div>
+          <p class="muted">Orynth Coins, ou OC, são a moeda interna do MVP. Elas não são dinheiro real, não são sacáveis e servem para medir convicção, participação e crédito por acerto dentro da plataforma.</p>
+          <div class="stats-grid">
+            <div class="stat"><div class="value">1.240</div><div>OC disponíveis</div></div>
+            <div class="stat"><div class="value">300</div><div>OC bloqueadas</div></div>
+            <div class="stat"><div class="value">+25</div><div>OC por feedback aprovado</div></div>
+            <div class="stat"><div class="value">+200</div><div>OC por indicação validada</div></div>
+          </div>
+          <p class="muted">Quando você prevê, o valor comprometido sai do saldo disponível e entra em saldo bloqueado. Na resolução, a carteira registra consumo, devolução ou crédito por acerto, sempre com lançamento no extrato.</p>
+        </section>
+
+        <section class="section doc-card" id="probabilidade">
+          <div class="section-head"><h2>3. Como a probabilidade é lida?</h2><span class="mini">explicação simplificada</span></div>
+          <p class="muted">Cada mercado começa com uma proteção contra oscilações extremas em perguntas vazias. Depois, as previsões adicionam força conforme valor comprometido e reputação no momento da entrada.</p>
+          <div class="formula-box">
+            <strong>Ideia pública, não fórmula sensível</strong>
+            <p>Quanto mais Orynth Coins e reputação entram em uma opção, maior a força relativa dela no mercado. A interface transforma essa força em uma probabilidade agregada, sempre somando 100% entre as opções.</p>
+          </div>
+          <div class="market-dashboard">
+            <div class="market-chart-card"><div class="row-between"><strong>SIM</strong><span>62%</span></div><div class="bar-track"><div class="bar-fill fill-yes" style="width:62%"></div></div><p class="muted">Maior força relativa no momento.</p></div>
+            <div class="market-chart-card"><div class="row-between"><strong>NÃO</strong><span>38%</span></div><div class="bar-track"><div class="bar-fill fill-no" style="width:38%"></div></div><p class="muted">Menor consenso, potencial diferente.</p></div>
+          </div>
+        </section>
+
+        <section class="section doc-card" id="recompensa">
+          <div class="section-head"><h2>4. Valor da previsão e retorno estimado</h2><span class="pill warm">crédito de acerto</span></div>
+          <p class="muted">O valor da previsão é a quantidade de OC que você decide comprometer. Em termos simples, acertar uma opção menos provável tende a gerar mais OC; acertar uma opção muito provável tende a gerar menos. Errar consome o valor comprometido.</p>
+          <div class="impact-grid">
+            <div class="impact-item"><span class="muted">Stake escolhida</span><strong>100 OC</strong></div>
+            <div class="impact-item"><span class="muted">Probabilidade de entrada</span><strong>62%</strong></div>
+            <div class="impact-item"><span class="muted">Reward bruto estimado</span><strong>161 OC</strong></div>
+          </div>
+          <div class="notice">A estimativa ajuda na decisão, mas a liquidação final acontece apenas quando o mercado é resolvido com fonte verificável. OC não é dinheiro real e pode haver recarga controlada para evitar travamento educativo.</div>
+        </section>
+
+        <section class="section doc-card" id="reputacao">
+          <div class="section-head"><h2>5. Reputação, ranking e badges</h2><span class="pill">mérito</span></div>
+          <p class="muted">Reputação não é saldo. Ela muda apenas quando mercados são resolvidos e mede qualidade histórica. Ranking principal prioriza reputação; saldo em OC pode aparecer como métrica secundária.</p>
+          <div class="three-grid">
+            <div class="option active"><strong>Reputação</strong><span class="muted">Sinal de qualidade histórica e consistência.</span></div>
+            <div class="option active"><strong>Ranking</strong><span class="muted">Pode ser filtrado por categoria, período e critério.</span></div>
+            <div class="option active"><strong>Badges</strong><span class="muted">Conquistas por sequência, categoria, volume e acertos contra consenso.</span></div>
+          </div>
+        </section>
+
+        <section class="section doc-card" id="resolucao">
+          <div class="section-head"><h2>6. Fechamento, resolução e confiança</h2><a class="button button-secondary" href="security.html">Segurança</a></div>
+          <p class="muted">O scheduler fecha mercados automaticamente no prazo configurado. Depois, o admin resolve com base em fonte pública, registrando resultado, fonte, operador, horário e trilha de auditoria.</p>
+          <div class="two-grid">
+            <div class="notice green">Depois do deadline, novas previsões devem ser bloqueadas.</div>
+            <div class="notice">Se a pergunta ficar inválida ou irresolúvel, o mercado pode ser cancelado com justificativa.</div>
+          </div>
+        </section>
+      </main>
+      <aside class="side-stack">
+        <section class="panel"><h3>Resumo rápido</h3><div class="history-list" style="margin-top:14px"><div class="history-item row-between"><span>Moeda</span><strong>OC</strong></div><div class="history-item row-between"><span>Stake</span><strong>bloqueia saldo</strong></div><div class="history-item row-between"><span>Probabilidade</span><strong>peso agregado</strong></div><div class="history-item row-between"><span>Reputação</span><strong>só na resolução</strong></div></div></section>
+        <section class="panel"><h3>O que fica protegido</h3><p class="muted">Parâmetros antifraude, pesos sensíveis, limites internos e heurísticas de abuso ficam no backend e no painel administrativo.</p></section>
+        <section class="panel feedback-card"><h3>Ainda ficou confuso?</h3><p class="muted">Envie feedback sobre esta explicação. Se for útil para melhorar a plataforma, pode render OC.</p><a class="button button-primary" href="feedback.html">Enviar feedback</a></section>
+      </aside>
+    </div>
+  </div>
+<footer class="site-footer"><div class="footer-grid"><div><h3>Orynth</h3><p>Rede social de previsões com Orynth Coins, reputação pública e mercados resolvidos com fonte verificável.</p></div><div><h4>Produto</h4><div class="footer-links"><a href="index.html">Feed</a><a href="categories.html">Categorias</a><a href="rankings.html">Ranking</a><a href="suggestion.html">Sugerir mercado</a><a href="wallet.html">Carteira</a><a href="feedback.html">Feedback</a></div></div><div><h4>Aprender</h4><div class="footer-links"><a href="concepts.html">Conceitos e cálculos</a><a href="security.html">Segurança</a><span>PT-BR / EN</span></div></div><div><h4>Confiança</h4><div class="footer-links"><span>Sem dinheiro real</span><span>Resolução auditável</span><span>Controle de abuso</span><span>Badges por mérito</span></div></div></div><div class="footer-bottom"><span>Mock navegável do MVP</span><span>HTML estático · interações simuladas</span></div></footer></body>
+</html>

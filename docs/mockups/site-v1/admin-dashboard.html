@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orynth Admin | Dashboard</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <header class="topbar"><nav class="shell nav"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">A</span><span>Orynth Admin</span></a><div class="nav-links"><a class="nav-link active" href="admin-dashboard.html">Dashboard</a><a class="nav-link" href="admin-markets.html">Mercados</a><a class="nav-link" href="admin-moderation.html">Filas</a><a class="nav-link" href="admin-taxonomy.html">Categorias</a></div><div class="nav-actions"><a class="btn ghost" href="index.html">Ver site público</a></div></nav></header>
+  <main class="shell admin-layout">
+    <aside class="panel admin-menu"><a class="active" href="admin-dashboard.html">Visão geral</a><a href="admin-markets.html">Mercados ativos e rascunhos</a><a href="admin-market-edit.html">Criar mercado</a><a href="admin-resolution.html">Resolver mercados</a><a href="admin-moderation.html">Filas operacionais</a><a href="admin-taxonomy.html">Categorias</a></aside>
+    <section>
+      <div class="section-head"><h1 class="large-title">Operação</h1><a class="btn primary" href="admin-market-edit.html">Criar mercado</a></div>
+      <div class="admin-grid"><div class="admin-card"><h3>Mercados aguardando decisão</h3><strong style="font-size:36px">12</strong><p>4 vencem em menos de 24h.</p><a class="btn small primary" href="admin-markets.html">Abrir mercados</a></div><div class="admin-card"><h3>Feedback produto</h3><strong style="font-size:36px">31</strong><p>7 com impacto alto.</p><a class="btn small" href="admin-moderation.html">Ver tickets</a></div><div class="admin-card"><h3>Traduções pendentes</h3><strong style="font-size:36px">5</strong><p>Publicação bloqueada até revisão PT/EN.</p><a class="btn small" href="admin-market-edit.html">Revisar</a></div></div>
+      <section class="panel" style="margin-top:16px"><h3>Alertas acionáveis</h3><table class="table"><tr><th>Item</th><th>SLA</th><th>Impacto</th><th>Ação</th></tr><tr><td>Mercado TikTok pronto para resolução</td><td>8h</td><td>1.812 usuários</td><td><a class="btn small primary" href="admin-resolution-resolve.html">Resolver</a></td></tr><tr><td>Sugestão Apple IA com alta demanda</td><td>2d</td><td>421 votos</td><td><a class="btn small" href="admin-moderation.html">Revisar</a></td></tr></table></section>
+    </section>
+  </main>
+  <script src="app.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

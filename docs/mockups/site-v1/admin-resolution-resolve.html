@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orynth Admin | Publicar resolução</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <header class="topbar"><nav class="shell nav"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">A</span><span>Orynth Admin</span></a><div class="nav-links"></div><div class="nav-actions"><a class="btn ghost" href="index.html">Ver site público</a></div></nav></header>
+  <main class="shell admin-layout">
+    <aside class="panel admin-menu"><a href="admin-dashboard.html">Visão geral</a><a class="active" href="admin-markets.html">Mercados ativos e rascunhos</a><a href="admin-moderation.html">Filas operacionais</a><a href="admin-taxonomy.html">Categorias</a></aside>
+    <section class="panel">
+      <div class="section-head"><div><span class="eyebrow">Resolução</span><h1 class="large-title">Publicar resolução</h1><p>Confirme resultado, fonte e justificativa antes de distribuir créditos.</p></div><a class="btn ghost" href="admin-markets.html">Voltar para mercados</a></div>
+      <form class="form-grid">
+        <div class="field"><label>Resultado</label><select><option>NÃO</option><option>SIM</option></select></div>
+        <div class="field"><label>Fonte pública</label><input value="Documento regulatório oficial"></div>
+        <div class="field full"><label>Justificativa pública</label><textarea>Não houve remoção das lojas de app dentro da janela definida pelo mercado.</textarea></div>
+        <button class="btn primary" data-confirm="Publicar resolução final?" data-confirm-desc="Esta ação libera saldos, credita acertos e publica trilha visível.">Publicar resolução</button>
+        <a class="btn ghost" href="admin-markets.html">Cancelar</a>
+      </form>
+    </section>
+  </main>
+  <div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div>
+  <script src="app.js"></script>
+</body>
+</html>

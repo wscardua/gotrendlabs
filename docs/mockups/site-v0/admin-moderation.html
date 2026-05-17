@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Orynth Admin - Moderação</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">O</span><span>Orynth Admin</span></a><nav class="nav"><a href="admin-dashboard.html">Painel</a><a href="admin-market-edit.html">Mercados</a><a href="admin-resolution.html">Resolução</a><a class="active" href="admin-moderation.html">Moderação</a><a href="index.html">Ver app</a></nav><div class="account"><span class="lang">PT-BR / EN</span><a class="session-pill" href="profile.html"><span class="avatar">A</span><span class="session-copy"><strong>@admin</strong><span><i class="login-dot"></i>Operador</span></span></a></div></header>
+    <section class="page-head"><span class="pill">Operação comunitária</span><h1>Editorial, feedback, segurança e solicitações sensíveis</h1><p>Filas separadas por natureza reduzem erro humano: curadoria de mercado, feedback de produto, trust & safety e solicitações LGPD.</p><div class="admin-nav"><a class="tab" href="admin-dashboard.html">Dashboard</a><a class="tab" href="#suggestions">Editorial</a><a class="tab" href="#feedback">Feedback</a><a class="tab" href="#trust">Trust & Safety</a><a class="tab" href="#sensitive">Sensíveis</a></div></section>
+    <main class="main-stack">
+      <section class="section table-card" id="suggestions">
+        <div class="section-head"><h2>Sugestões de mercado</h2><span class="mini">26 pendentes</span></div>
+        <div class="filter-bar">
+          <span class="tab active">Todas</span>
+          <span class="tab">Alto potencial</span>
+          <span class="tab">IA</span>
+          <span class="tab">Games</span>
+          <span class="tab">Creators</span>
+          <span class="tab">Aprovar</span>
+          <span class="tab">Pedir ajustes</span>
+          <span class="tab">Rejeitar</span>
+        </div>
+        <table class="mock-table">
+          <thead><tr><th>Sugestão</th><th>Categoria</th><th>Usuário</th><th>SLA / potencial</th><th>Ação</th></tr></thead>
+          <tbody>
+            <tr><td>Primeiro unicórnio brasileiro de IA em 2026?</td><td>IA</td><td>@renatodata</td><td><span class="severity-medium">SLA 48h</span> · alto</td><td><span class="tab active">Transformar em rascunho</span></td></tr>
+            <tr><td>Final mundial de LoL terá recorde de audiência?</td><td>Games</td><td>@gameradar</td><td>SLA 72h · médio</td><td><span class="tab">Pedir ajustes</span></td></tr>
+            <tr><td>Creator virtual chegará a 20M seguidores?</td><td>Creators</td><td>@anafuture</td><td><span class="severity-medium">SLA 24h</span> · alto</td><td><span class="tab">Aprovar</span></td></tr>
+          </tbody>
+        </table>
+      </section>
+      <section class="section" id="feedback">
+        <div class="section-head"><h2>Feedbacks recompensáveis</h2><span class="mini">fila admin</span></div>
+        <div class="filter-bar">
+          <span class="tab active">Pendentes</span>
+          <span class="tab">Aprovados</span>
+          <span class="tab">Rejeitados</span>
+          <span class="tab">Bug</span>
+          <span class="tab">Clareza</span>
+          <span class="tab">Mercado</span>
+        </div>
+        <div class="two-grid">
+          <div class="feedback-card option active"><strong>@carolvision · regra do valor da previsão</strong><span class="muted">“Faltou explicar quando o valor bloqueado volta para a carteira.”</span><div class="row-between"><span class="mini">clareza · SLA 72h</span><strong>+25 OC</strong></div><div class="notice green">Critério: específico, reproduzível e melhora clareza para novos usuários.</div><div class="badge-actions"><span class="button button-primary">Confirmar recompensa</span><span class="button button-secondary">Rejeitar com motivo</span></div></div>
+          <div class="feedback-card option"><strong>@gameradar · gráfico mobile</strong><span class="muted">Relata quebra visual do mini gráfico em tela pequena.</span><div class="row-between"><span class="mini">bug</span><strong>em análise</strong></div><div class="badge-actions"><span class="button button-secondary">Pedir evidência</span><span class="button button-secondary">Marcar duplicado</span></div></div>
+        </div>
+      </section>
+      <section class="section" id="trust">
+        <div class="section-head"><h2>Comentários e usuários</h2><span class="mini">triagem rápida</span></div>
+        <div class="two-grid">
+          <div class="comment"><div><strong>@leoedge</strong><div class="muted">Comentário reportado por ataque pessoal em mercado de Games.</div></div><div class="comment-actions"><span class="icon-button active">!</span><strong>ocultar</strong></div></div>
+          <div class="comment"><div><strong>@marinaalpha</strong><div class="muted">Feedback útil sobre regra ambígua em mercado de IA.</div></div><div class="comment-actions"><span class="icon-button active">+</span><strong>+25 OC</strong></div></div>
+        </div>
+      </section>
+      <section class="section table-card" id="sensitive">
+        <div class="section-head"><h2>Solicitações sensíveis</h2><span class="mini">LGPD / conta</span></div>
+        <table class="mock-table">
+          <thead><tr><th>Usuário</th><th>Solicitação</th><th>Status</th><th>Próxima ação</th></tr></thead>
+          <tbody>
+            <tr><td>@oldplayer</td><td>Exclusão lógica de conta</td><td><span class="status-dot warn">em análise</span></td><td>Confirmar retenção mínima de auditoria.</td></tr>
+            <tr><td>@spamscout</td><td>Revisão de bloqueio</td><td><span class="status-dot danger">alto risco</span></td><td>Manter restrição e registrar evidências.</td></tr>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+<footer class="site-footer"><div class="footer-grid"><div><h3>Orynth</h3><p>Rede social de previsões com Orynth Coins, reputação pública e mercados resolvidos com fonte verificável.</p></div><div><h4>Produto</h4><div class="footer-links"><a href="index.html">Feed</a><a href="categories.html">Categorias</a><a href="rankings.html">Ranking</a><a href="suggestion.html">Sugerir mercado</a></div></div><div><h4>Aprender</h4><div class="footer-links"><a href="concepts.html">Conceitos e cálculos</a><a href="security.html">Segurança</a><a href="admin-dashboard.html">Dashboard admin</a><span>PT-BR / EN</span></div></div><div><h4>Admin</h4><div class="footer-links"><a href="admin-market-edit.html">Mercados</a><a href="admin-resolution.html">Resolução</a><a href="admin-moderation.html">Moderação</a><span>Auditoria operacional</span></div></div></div><div class="footer-bottom"><span>Mock navegável do MVP</span><span>HTML estático · interações simuladas</span></div></footer></body>
+</html>

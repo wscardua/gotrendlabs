@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Orynth Admin - Categorias</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <div class="shell">
+    <header class="topbar"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">O</span><span>Orynth Admin</span></a><nav class="nav"><a href="admin-dashboard.html">Painel</a><a href="admin-market-edit.html">Mercados</a><a class="active" href="admin-taxonomy.html">Categorias</a><a href="admin-resolution.html">Resolução</a><a href="admin-moderation.html">Moderação</a><a href="index.html">Ver app</a></nav><div class="account"><span class="lang">PT-BR / EN</span><a class="session-pill" href="profile.html"><span class="avatar">A</span><span class="session-copy"><strong>@admin</strong><span><i class="login-dot"></i>Operador</span></span></a></div></header>
+    <section class="page-head"><span class="pill">Taxonomia</span><h1>Categorias e subcategorias</h1><p>Administração dos temas usados no feed, ranking, criação de mercado e localização PT-BR / EN.</p><div class="admin-nav"><a class="tab" href="admin-dashboard.html">Dashboard</a><a class="tab" href="admin-market-edit.html">Mercados</a><a class="tab active" href="admin-taxonomy.html">Categorias</a><a class="tab" href="admin-resolution.html">Resolver</a></div></section>
+    <main class="main-stack" style="margin-top:18px">
+      <section class="section table-card">
+        <div class="section-head"><h2>Categorias ativas</h2><a class="button button-primary" href="#editor">Nova categoria</a></div>
+        <div class="filter-bar"><span class="tab active">Todas</span><span class="tab">Ativas</span><span class="tab">Ocultas</span><span class="tab">Com subcategorias</span><span class="tab">PT-BR</span><span class="tab">EN</span></div>
+        <table class="mock-table">
+          <thead><tr><th>Categoria</th><th>Subcategorias</th><th>Mercados</th><th>Status</th><th>Ações</th></tr></thead>
+          <tbody>
+            <tr><td>IA</td><td>Modelos, Agentes, Produtos</td><td>8 abertos</td><td><span class="status-dot">Ativa</span></td><td><div class="action-group"><a class="tab active" href="#editor">Editar</a><a class="tab" href="category-ia.html">Visualizar</a><a class="tab danger" href="#delete-category">Excluir</a></div></td></tr>
+            <tr><td>Games</td><td>Plataformas, Estúdios, eSports</td><td>4 abertos</td><td><span class="status-dot">Ativa</span></td><td><div class="action-group"><a class="tab" href="#editor">Editar</a><a class="tab" href="categories.html">Visualizar</a><a class="tab danger" href="#delete-category">Excluir</a></div></td></tr>
+            <tr><td>Futebol</td><td>Clubes, Competições, Transferências</td><td>2 abertos</td><td><span class="status-dot warn">Revisar EN</span></td><td><div class="action-group"><a class="tab" href="#editor">Editar</a><a class="tab" href="categories.html">Visualizar</a><a class="tab danger" href="#delete-category">Excluir</a></div></td></tr>
+          </tbody>
+        </table>
+        <div class="critical-confirm" id="delete-category" style="margin-top:14px"><strong>Confirmação de exclusão</strong><p class="muted">Excluir categoria exige confirmar impacto nos mercados vinculados. Categorias usadas por mercados publicados devem ser desativadas/ocultadas em vez de removidas.</p><div class="toolbar" style="margin-top:8px"><span class="button button-secondary">Ocultar categoria</span><span class="button button-secondary">Manter ativa</span></div></div>
+      </section>
+      <section class="section" id="editor">
+        <div class="section-head"><h2>Editor de categoria</h2><span class="mini">IA</span></div>
+        <div class="form-grid">
+          <div class="field"><strong>Nome PT-BR</strong><br>IA</div>
+          <div class="field"><strong>Nome EN</strong><br>AI</div>
+          <div class="field"><strong>Slug</strong><br>ia</div>
+          <div class="field"><strong>Status</strong><br>Ativa no feed</div>
+          <div class="field full"><strong>Descrição</strong><br>Modelos, agentes, plataformas e impacto de mercado.</div>
+        </div>
+        <div class="section-head" style="margin-top:18px"><h2>Subcategorias</h2><a class="button button-secondary" href="#editor">Adicionar subcategoria</a></div>
+        <div class="history-list">
+          <div class="history-item row-between"><span>Modelos fundacionais</span><strong>5 mercados</strong></div>
+          <div class="history-item row-between"><span>Agentes autônomos</span><strong>2 mercados</strong></div>
+          <div class="history-item row-between"><span>Produtos de consumo</span><strong>1 mercado</strong></div>
+        </div>
+        <div class="toolbar" style="margin-top:16px"><a class="button button-primary" href="admin-market-edit.html">Salvar taxonomia</a><a class="button button-secondary" href="categories.html">Pré-visualizar categorias</a></div>
+      </section>
+    </main>
+  </div>
+<footer class="site-footer"><div class="footer-grid"><div><h3>Orynth</h3><p>Painel customizado para taxonomia, mercados e operação do MVP.</p></div><div><h4>Admin</h4><div class="footer-links"><a href="admin-dashboard.html">Dashboard</a><a href="admin-market-edit.html">Mercados</a><a href="admin-taxonomy.html">Categorias</a><a href="admin-resolution.html">Resolução</a></div></div><div><h4>Produto</h4><div class="footer-links"><a href="index.html">Ver app</a><a href="categories.html">Categorias públicas</a><a href="concepts.html">Conceitos</a></div></div><div><h4>Controle</h4><div class="footer-links"><span>PT-BR / EN</span><span>Subcategorias</span><span>Feed e ranking</span></div></div></div><div class="footer-bottom"><span>Mock navegável do MVP</span><span>Admin customizado</span></div></footer></body>
+</html>

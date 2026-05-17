@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orynth Admin | Categorias</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <header class="topbar"><nav class="shell nav"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">A</span><span>Orynth Admin</span></a><div class="nav-links"></div><div class="nav-actions"><a class="btn ghost" href="index.html">Ver site público</a></div></nav></header>
+  <main class="shell admin-layout">
+    <aside class="panel admin-menu"><a href="admin-dashboard.html">Visão geral</a><a href="admin-markets.html">Mercados</a><a href="admin-moderation.html">Filas operacionais</a><a class="active" href="admin-taxonomy.html">Categorias</a></aside>
+    <section class="panel">
+      <div class="section-head">
+        <div><span class="eyebrow">Taxonomia</span><h1 class="large-title">Categorias e subcategorias</h1><p>Browse operacional para editar, revisar e excluir categorias do produto.</p></div>
+        <button class="btn primary">Criar categoria</button>
+      </div>
+      <div class="filters"><button class="filter active">Todas</button><button class="filter">Ativas</button><button class="filter">Com mercados</button><button class="filter">Sem tradução</button><button class="filter">Sensíveis</button></div>
+      <table class="table">
+        <tr><th>Categoria</th><th>Subcategorias</th><th>Mercados</th><th>Status</th><th>Ações</th></tr>
+        <tr><td>IA</td><td>Modelos, Agentes, Infra</td><td>38</td><td>Ativa</td><td><button class="btn small">Editar/visualizar</button> <button class="btn small ghost">Revisar tradução</button> <button class="btn small danger" data-confirm="Excluir categoria IA?">Excluir</button></td></tr>
+        <tr><td>Negócios</td><td>Empresas, Produtos, Mercado</td><td>24</td><td>Ativa</td><td><button class="btn small">Editar/visualizar</button> <button class="btn small ghost">Ver mercados</button> <button class="btn small danger" data-confirm="Excluir categoria Negócios?">Excluir</button></td></tr>
+        <tr><td>Ciência</td><td>Espaço, Saúde, Energia</td><td>11</td><td>Rascunho</td><td><button class="btn small">Editar/visualizar</button> <button class="btn small success">Publicar</button> <button class="btn small danger" data-confirm="Excluir categoria Ciência?">Excluir</button></td></tr>
+      </table>
+      <h3>Editor rápido</h3>
+      <form class="form-grid">
+        <div class="field"><label>Nome PT-BR</label><input value="Ciência"></div>
+        <div class="field"><label>Nome EN</label><input value="Science"></div>
+        <div class="field full"><label>Subcategorias</label><input value="Espaço, Saúde, Energia"></div>
+        <button class="btn primary" type="button">Salvar categoria</button>
+        <button class="btn ghost" type="button">Limpar edição</button>
+      </form>
+    </section>
+  </main>
+  <div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc>Excluir categoria pode afetar filtros e mercados vinculados.</p><button class="btn danger" data-close-modal>Confirmar exclusão</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div>
+  <script src="app.js"></script>
+</body>
+</html>

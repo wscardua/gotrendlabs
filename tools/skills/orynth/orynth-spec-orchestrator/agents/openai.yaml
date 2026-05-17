@@ -1,0 +1,7 @@
+interface:
+  display_name: "Orynth Spec Orchestrator"
+  short_description: "Implementa a partir das specs"
+  default_prompt: "Use $orynth-spec-orchestrator para conduzir a implementação de uma feature do Orynth usando specs, contratos, arquitetura e estado operacional."
+
+policy:
+  allow_implicit_invocation: true

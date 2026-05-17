@@ -1,0 +1,7 @@
+interface:
+  display_name: "Orynth Test Strategy"
+  short_description: "Define aceite, cobertura e regressão"
+  default_prompt: "Use $orynth-test-strategy para definir testes esperados, critérios de aceite e regressões a proteger em uma feature do Orynth."
+
+policy:
+  allow_implicit_invocation: true

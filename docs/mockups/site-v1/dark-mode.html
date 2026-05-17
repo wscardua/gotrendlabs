@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orynth | Dark mode</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark">
+  <header class="topbar">
+    <nav class="shell nav">
+      <a class="brand" href="index.html"><span class="brand-mark">O</span><span>Orynth</span></a>
+      <div class="nav-links">
+        <a class="nav-link" href="index.html">Mercados</a>
+        <a class="nav-link" href="categories.html">Categorias</a>
+        <a class="nav-link" href="rankings.html">Ranking</a>
+        <a class="nav-link" href="wallet.html">Carteira</a>
+      </div>
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">☀</button>
+        <span class="language">PT-BR</span>
+        <div class="user-chip">
+          <button class="user-button" type="button"><span class="avatar">WL</span><span class="chip-meta"><strong>Will Costa</strong><span>2.480 OC · Rep 82</span></span></button>
+          <div class="user-menu"><a href="profile.html">Perfil</a><a href="wallet.html">Carteira</a><a href="login.html">Sair</a></div>
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <main class="shell">
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-card">
+          <span class="eyebrow">Preview de tema</span>
+          <h1>Dark mode para leitura densa de mercados.</h1>
+          <p class="lead">Esta visualização testa contraste, cards, botões, gráficos, ticket de previsão e componentes administrativos em uma estética noturna mais próxima de plataformas de mercado.</p>
+          <div class="hero-actions">
+            <a class="btn primary" href="market-open.html">Abrir mercado</a>
+            <a class="btn" href="admin-dashboard.html">Ver admin</a>
+            <a class="btn ghost" href="index.html">Voltar ao modo normal</a>
+          </div>
+          <div class="metrics">
+            <div class="metric"><strong>62%</strong><span>consenso SIM</span></div>
+            <div class="metric"><strong>18.240</strong><span>OC previstos</span></div>
+            <div class="metric"><strong>228d</strong><span>tempo restante</span></div>
+            <div class="metric"><strong>94%</strong><span>SLA resolução</span></div>
+          </div>
+        </div>
+        <aside class="panel trade-box">
+          <span class="eyebrow">Ticket dark</span>
+          <div class="binary-ticket">
+            <div class="binary-grid option-grid">
+              <button class="choice active" data-choice="SIM"><span><strong>SIM</strong><small>Consenso favorece</small></span><span>62%</span></button>
+              <button class="choice" data-choice="NÃO"><span><strong>NÃO</strong><small>Contraponto</small></span><span>38%</span></button>
+            </div>
+            <div class="ticket-note">A cor escura deve melhorar foco sem esconder fonte, saldo e resolução.</div>
+          </div>
+          <div class="field"><label>Valor da previsão</label><div class="range-row"><input data-amount="dark" type="range" min="10" max="500" value="120"><strong data-amount-output="dark">120 OC</strong></div></div>
+          <div class="calc"><div><span>Retorno estimado</span><strong data-return-output="dark">194 OC</strong></div><div><span>Saldo bloqueado</span><strong>120 OC</strong></div></div>
+        </aside>
+      </div>
+    </section>
+
+    <section class="admin-layout">
+      <aside class="panel admin-menu">
+        <a class="active" href="admin-dashboard.html">Visão geral</a>
+        <a href="admin-markets.html">Mercados</a>
+        <a href="admin-resolution.html">Resolução</a>
+        <a href="admin-moderation.html">Filas</a>
+        <a href="admin-taxonomy.html">Categorias</a>
+      </aside>
+      <div class="admin-grid">
+        <div class="admin-card"><h3>Admin card</h3><strong style="font-size:36px">12</strong><p>Mercados aguardando decisão.</p><a class="btn small primary" href="admin-resolution.html">Abrir fila</a></div>
+        <div class="admin-card"><h3>Feedback</h3><strong style="font-size:36px">31</strong><p>Tickets com severidade e aging.</p><a class="btn small" href="admin-moderation.html">Revisar</a></div>
+        <div class="admin-card"><h3>Badges</h3><div class="badge-grid" style="grid-template-columns:1fr 1fr"><div class="badge-card"><span class="badge-icon">🏅</span><strong>Calibrado</strong><span>Conquista ativa</span></div><div class="badge-card locked"><span class="badge-icon">🧭</span><strong>Top 1%</strong><span>Bloqueado</span></div></div></div>
+      </div>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>

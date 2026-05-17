@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Orynth Admin | Pedir revisão</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+  <header class="topbar"><nav class="shell nav"><a class="brand" href="admin-dashboard.html"><span class="brand-mark">A</span><span>Orynth Admin</span></a><div class="nav-links"></div><div class="nav-actions"><a class="btn ghost" href="index.html">Ver site público</a></div></nav></header>
+  <main class="shell admin-layout">
+    <aside class="panel admin-menu"><a href="admin-dashboard.html">Visão geral</a><a class="active" href="admin-markets.html">Mercados ativos e rascunhos</a><a href="admin-moderation.html">Filas operacionais</a><a href="admin-taxonomy.html">Categorias</a></aside>
+    <section class="panel">
+      <div class="section-head"><div><span class="eyebrow">Escalação</span><h1 class="large-title">Pedir revisão</h1><p>Use quando a fonte divergir, o critério parecer ambíguo ou houver sensibilidade operacional.</p></div><a class="btn ghost" href="admin-markets.html">Voltar para mercados</a></div>
+      <form class="form-grid">
+        <div class="field"><label>Responsável</label><select><option>Trust & Safety</option><option>Editorial</option><option>Jurídico</option></select></div>
+        <div class="field"><label>Severidade</label><select><option>Média</option><option>Alta</option></select></div>
+        <div class="field full"><label>Motivo</label><textarea>Fonte divergente ou critério potencialmente ambíguo.</textarea></div>
+        <a class="btn primary" href="admin-markets.html">Enviar para revisão</a>
+        <a class="btn ghost" href="admin-markets.html">Cancelar</a>
+      </form>
+    </section>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
