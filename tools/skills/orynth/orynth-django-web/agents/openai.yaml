@@ -1,0 +1,7 @@
+interface:
+  display_name: "Orynth Django Web"
+  short_description: "Django, HTMX, Alpine e admin"
+  default_prompt: "Use $orynth-django-web para implementar a camada web do Orynth com Django, HTMX, Alpine.js e i18n, respeitando os contratos e a arquitetura."
+
+policy:
+  allow_implicit_invocation: true
