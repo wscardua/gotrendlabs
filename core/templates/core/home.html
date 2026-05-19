@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Feed{% endblock %}
+{% block content %}
+<main class="shell">
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-card">
+        <span class="eyebrow">Inteligência coletiva sem dinheiro real</span>
+        <h1>Veja o consenso antes de formar sua previsão.</h1>
+        <p class="lead">A Orynth transforma opinião em histórico público: escolha um mercado, comprometa Orynth Coins educativas e acompanhe reputação, consenso e resolução auditável.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="#mercados">Explorar mercados</a>
+          <a class="btn" href="{% url 'concepts' %}">Como funciona</a>
+          <a class="btn ghost" href="{% url 'security' %}">Segurança</a>
+        </div>
+        <div class="metrics">
+          <div class="metric"><strong>{{ stats.open_markets }}</strong><span>mercados abertos</span></div>
+          <div class="metric"><strong>{{ stats.monthly_predictions }}</strong><span>previsões no mês</span></div>
+          <div class="metric"><strong>{{ stats.resolution_sla }}</strong><span>resoluções no SLA</span></div>
+          <div class="metric"><strong>{{ stats.real_money }}</strong><span>sem dinheiro real</span></div>
+        </div>
+      </div>
+      <aside class="watch-card">
+        <span class="eyebrow">Ao vivo</span>
+        <h2>IA, política e cultura puxam o feed hoje.</h2>
+        <p>Probabilidades refletem o consenso atual da comunidade, não garantia de resultado.</p>
+        <div class="book">
+          {% for market in markets|slice:":2" %}
+            <div class="book-row"><span>{{ market.title }}</span><strong>{{ market.primary_probability }}% {{ market.primary_outcome }}</strong></div>
+            <div class="bar {% if market.primary_outcome == 'NAO' %}no{% endif %}"><span style="width:{{ market.primary_probability }}%"></span></div>
+          {% endfor %}
+        </div>
+        <a class="btn success" href="{% url 'market-detail' 'openai-gpt6-2026' %}">Fazer previsão agora</a>
+      </aside>
+    </div>
+  </section>
+
+  <div class="page-grid" id="mercados">
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Mercados em destaque</h2>
+          <p>Inspirado em navegação de mercado: filtros rápidos, volume, tendência, tempo e fonte de resolução.</p>
+        </div>
+      </div>
+      <div class="filters" data-filter-group>
+        <button class="filter active" data-filter>Trending</button>
+        <button class="filter" data-filter>Encerrando</button>
+        <button class="filter" data-filter>Mais volume</button>
+        <button class="filter" data-filter>Novos</button>
+        <button class="filter" data-filter>Favoritos</button>
+      </div>
+      <section class="progress-strip">
+        <div>
+          <span class="eyebrow">Sua progressão</span>
+          <h3>Faltam 3 acertos em IA para liberar o badge Especialista emergente.</h3>
+          <p>Você está no top 8% em IA · sequência atual {{ viewer.streak }} · reputação geral {{ viewer.reputation }}.</p>
+        </div>
+        <div class="progress-track"><span style="width:72%"></span></div>
+        <a class="btn small ghost" href="{% url 'profile' %}">Ver progresso</a>
+      </section>
+      <div class="market-list">
+        {% for market in markets %}
+          {% include "components/market_card.html" with market=market %}
+        {% endfor %}
+      </div>
+    </section>
+    <aside class="side-stack">
+      <div class="balance">
+        <span>Carteira educativa</span>
+        <strong>{{ viewer.balance_oc }} OC</strong>
+        <p>{{ viewer.locked_oc }} OC bloqueados em previsões abertas. OC não é dinheiro real.</p>
+        <a class="btn" href="{% url 'wallet' %}">Ver extrato</a>
+      </div>
+      <div class="side-card">
+        <h3>Seu resumo</h3>
+        <p>Reputação {{ viewer.reputation }} · acerto {{ viewer.accuracy }} · sequência {{ viewer.streak }}</p>
+        <div class="badge-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
+          <a class="badge-card" href="{% url 'profile' %}"><span class="badge-icon">🏅</span><strong>Calibrado</strong></a>
+          <a class="badge-card" href="{% url 'profile' %}"><span class="badge-icon">⚡</span><strong>Early</strong></a>
+          <a class="badge-card" href="{% url 'profile' %}"><span class="badge-icon">🔎</span><strong>Auditor</strong></a>
+        </div>
+      </div>
+      <div class="side-card onboarding">
+        <h3>Como prever em 40 segundos</h3>
+        <div class="step"><b>1</b><span>Escolha uma opção do mercado.</span></div>
+        <div class="step"><b>2</b><span>Defina quantas OC educativas comprometer.</span></div>
+        <div class="step"><b>3</b><span>Aguarde fechamento e resolução auditável.</span></div>
+        <div class="step"><b>4</b><span>Ganhe crédito de acerto e reputação se acertar.</span></div>
+      </div>
+    </aside>
+  </div>
+</main>
+{% endblock %}

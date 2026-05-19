@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Carteira{% endblock %}
+{% block content %}
+<main class="shell page-grid">
+  <section class="panel">
+    <span class="eyebrow">Carteira educativa</span>
+    <h1 class="large-title">Orynth Coins não são dinheiro real.</h1>
+    <div class="metrics">
+      <div class="metric"><strong>{{ viewer.balance_oc }} OC</strong><span>saldo disponível</span></div>
+      <div class="metric"><strong>{{ viewer.locked_oc }} OC</strong><span>saldo bloqueado</span></div>
+      <div class="metric"><strong>1.260 OC</strong><span>ganhos por acerto</span></div>
+      <div class="metric"><strong>{{ viewer.reputation }}</strong><span>reputação</span></div>
+    </div>
+    <h3>Extrato</h3>
+    <table class="table">
+      <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>OC</th></tr>
+      {% for row in ledger %}
+        <tr><td>{{ row.date }}</td><td>{{ row.label }}</td><td>Fixture</td><td>{{ row.amount }}</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+  <aside class="side-stack">
+    <div class="side-card"><h3>Recarga controlada</h3><p>O MVP pode liberar OC educativos para evitar travamento de uso, sem compra, saque ou valor financeiro.</p><button class="btn primary" data-confirm="Solicitar recarga educativa" data-confirm-desc="A recarga entra em análise automática para evitar abuso.">Solicitar recarga</button></div>
+    <div class="side-card"><h3>Separando conceitos</h3><p>Saldo é uso disponível. Bloqueado está em previsões abertas. Ganhos vêm de acertos. Reputação mede histórico.</p></div>
+  </aside>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Perfil{% endblock %}
+{% block content %}
+<main class="shell page-grid compact">
+  <section class="panel">
+    <span class="eyebrow">@{{ viewer.handle }}</span>
+    <h1>{{ viewer.name }}</h1>
+    <p class="lead">Reputação {{ viewer.reputation }} · acerto {{ viewer.accuracy }} · sequência {{ viewer.streak }}</p>
+    <div class="badge-grid">
+      <div class="badge-card"><strong>Calibrado</strong><span>Boa consistência recente</span></div>
+      <div class="badge-card"><strong>Early</strong><span>Previsões antes do consenso</span></div>
+      <div class="badge-card"><strong>Auditor</strong><span>Participa de resoluções</span></div>
+    </div>
+  </section>
+  <aside class="panel">
+    <h2>Ranking próximo</h2>
+    <table class="table">
+      <tr><th>#</th><th>Usuário</th><th>Rep</th></tr>
+      {% for row in ranking %}
+        <tr><td>{{ row.position }}</td><td>{{ row.name }}</td><td>{{ row.reputation }}</td></tr>
+      {% endfor %}
+    </table>
+  </aside>
+</main>
+{% endblock %}

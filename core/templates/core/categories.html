@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Categorias{% endblock %}
+{% block content %}
+<main class="shell page-grid">
+  <section class="panel">
+    <span class="eyebrow">Categorias</span>
+    <h1 class="large-title">Mercados por tema</h1>
+    <div class="filters" data-filter-group><button class="filter active" data-filter>IA</button><button class="filter" data-filter>Política</button><button class="filter" data-filter>Negócios</button></div>
+    <div class="market-list" style="margin-top:18px">
+      {% for market in markets %}
+        {% include "components/market_card.html" with market=market %}
+      {% endfor %}
+    </div>
+  </section>
+  <aside class="side-stack"><div class="side-card"><h3>Recorte</h3><p>Categorias ajudam a acompanhar reputação por tema e encontrar mercados relevantes.</p></div></aside>
+</main>
+{% endblock %}
