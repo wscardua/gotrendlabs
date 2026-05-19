@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Cadastro{% endblock %}
+{% block content %}
+<main class="shell auth-layout">
+  <section class="panel auth-card">
+    <span class="eyebrow">Nova conta</span>
+    <h1>Criar conta</h1>
+    <p class="lead">Cadastro visual com preferência de idioma, pronto para integração futura com o contrato de auth.</p>
+    <form class="form-stack">
+      <label>Nome público<input type="text" placeholder="Will Costa"></label>
+      <label>Email<input type="email" placeholder="voce@exemplo.com"></label>
+      <label>Idioma<select><option>PT-BR</option><option>EN</option></select></label>
+      <button class="btn primary" type="button">Criar conta</button>
+    </form>
+  </section>
+</main>
+{% endblock %}

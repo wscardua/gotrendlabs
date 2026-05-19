@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Admin Ops{% endblock %}
+{% block content %}
+<main class="shell">
+  <section class="panel">
+    <span class="eyebrow">Admin operacional</span>
+    <h1>Filas de operação</h1>
+    <p class="lead">Painel custom para operação de negócio. O Django Admin padrão fica apenas para suporte técnico.</p>
+    <div class="admin-grid">
+      {% for queue in admin_summary.queues %}
+        <div class="admin-card"><strong>{{ queue.count }}</strong><span>{{ queue.label }}</span></div>
+      {% endfor %}
+    </div>
+    <div class="toolbar"><a class="btn primary" href="/admin/">Abrir Django Admin</a><a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a></div>
+  </section>
+</main>
+{% endblock %}

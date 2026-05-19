@@ -1,0 +1,20 @@
+<article class="market-card">
+  <div class="thumb" style="--thumb:{{ market.thumb_color }}">{{ market.thumb }}</div>
+  <div>
+    <div class="market-title">
+      <h3>{{ market.title }}</h3>
+      <span class="tag hot">{{ market.category }}</span>
+      <span class="tag {% if market.status == 'open' %}safe{% endif %}">{{ market.status_label }}</span>
+    </div>
+    <div class="mini-stats"><span>{{ market.volume_oc }} previstos</span><span>{{ market.participants }}</span><span>Fonte: {{ market.source }}</span></div>
+  </div>
+  <div class="market-side">
+    <div class="prob-row"><strong>{% if market.status == "resolved" %}Crédito distribuído{% else %}{{ market.primary_outcome }} {{ market.primary_probability }}%{% endif %}</strong><span class="time-ring" style="--p:{{ market.primary_probability }}%">{{ market.closes_in }}</span></div>
+    <div class="bar {% if market.primary_outcome == 'NAO' %}no{% endif %}"><span style="width:{{ market.primary_probability }}%"></span></div>
+    <svg class="spark" viewBox="0 0 220 44"><path d="M2 31 C35 12, 51 36, 76 21 S122 6, 151 19 S185 35, 218 12" fill="none" stroke="{% if market.primary_outcome == 'NAO' %}#b7493d{% elif market.kind == 'multiple' %}#2d5e88{% else %}#136f4a{% endif %}" stroke-width="4" stroke-linecap="round"/></svg>
+    <div class="market-foot">
+      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% elif market.kind == "multiple" %}Ver opções{% else %}Prever{% endif %}</a>
+      <a class="btn small ghost" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Compartilhar{% else %}Compartilhar{% endif %}</a>
+    </div>
+  </div>
+</article>

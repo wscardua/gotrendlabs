@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Login{% endblock %}
+{% block content %}
+<main class="shell auth-layout auth-layout-wide">
+  <section class="auth-intro panel">
+    <span class="eyebrow">Acesso seguro</span>
+    <h1>Entre e continue seu histórico de previsões.</h1>
+    <p class="lead">Visitantes podem navegar pelos mercados públicos. A conta libera previsão, comentários, carteira e reputação pessoal.</p>
+    <div class="auth-note-grid" aria-label="Recursos da conta">
+      <div class="auth-note">
+        <strong>OC educativa</strong>
+        <span>Saldo usado apenas dentro da experiência Orynth.</span>
+      </div>
+      <div class="auth-note">
+        <strong>Reputação</strong>
+        <span>Histórico, badges e ranking conectados ao seu perfil.</span>
+      </div>
+      <div class="auth-note">
+        <strong>Modo guest</strong>
+        <span>O feed público continua disponível sem login.</span>
+      </div>
+    </div>
+  </section>
+  <section class="panel auth-card">
+    <span class="eyebrow">Login</span>
+    <h2>Acessar conta</h2>
+    <form class="form-stack auth-form">
+      <label>Email<input type="email" placeholder="voce@exemplo.com" autocomplete="email"></label>
+      <label>Senha<input type="password" placeholder="Sua senha" autocomplete="current-password"></label>
+      <button class="btn primary" type="button">Entrar</button>
+    </form>
+    <div class="auth-footer">
+      <span>Novo por aqui?</span>
+      <a href="{% url 'register' %}">Criar conta</a>
+    </div>
+    <div class="auth-divider"><span>ou entre com</span></div>
+    <div class="auth-social">
+      <button class="btn ghost" type="button">Google</button>
+      <button class="btn ghost" type="button">Facebook</button>
+    </div>
+    <p class="auth-disclaimer">Orynth Coins não representam dinheiro real, investimento ou saque financeiro.</p>
+  </section>
+</main>
+{% endblock %}

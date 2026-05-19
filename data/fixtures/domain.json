@@ -1,0 +1,140 @@
+{
+  "viewer": {
+    "name": "Will Costa",
+    "handle": "willcosta",
+    "initials": "WL",
+    "balance_oc": 2480,
+    "locked_oc": 410,
+    "reputation": 82,
+    "accuracy": "64%",
+    "streak": 5,
+    "language": "PT-BR"
+  },
+  "stats": {
+    "open_markets": 128,
+    "monthly_predictions": "41k",
+    "resolution_sla": "94%",
+    "real_money": "0 R$"
+  },
+  "markets": [
+    {
+      "slug": "openai-gpt6-2026",
+      "title": "OpenAI anuncia GPT-6 publicamente até 31 dez 2026?",
+      "category": "IA",
+      "kind": "binary",
+      "status": "open",
+      "status_label": "Aberto",
+      "primary_outcome": "SIM",
+      "primary_probability": 62,
+      "secondary_probability": 38,
+      "volume_oc": "18.240 OC",
+      "participants": "1.204 usuários",
+      "source": "blog oficial/OpenAI",
+      "closes_in": "228d",
+      "close_label": "Fecha previsões em 31 dez 2026",
+      "thumb": "AI",
+      "thumb_color": "#d8ece2",
+      "summary": "62% SIM representa o consenso atual da comunidade, não garantia de resultado.",
+      "resolution_criteria": "Será considerado SIM caso a OpenAI publique anúncio oficial de um modelo chamado GPT-6 até 31/12/2026. Rumores, vazamentos ou nomenclaturas não oficiais não resolvem o mercado.",
+      "options": [
+        {"label": "SIM", "probability": 62, "hint": "Comunidade favorece esta opção"},
+        {"label": "NAO", "probability": 38, "hint": "Contraponto ao consenso atual"}
+      ],
+      "comments": [
+        {"author": "Ana", "reputation": 91, "body": "O ponto decisivo para mim é se a OpenAI chamará isso oficialmente de GPT-6 ou outro nome comercial.", "up": 24, "down": 3},
+        {"author": "Caio", "reputation": 76, "body": "Consenso subiu depois das vagas de pesquisa em multimodalidade. Ainda assim, 62% parece agressivo.", "up": 18, "down": 2}
+      ]
+    },
+    {
+      "slug": "tiktok-ban-eua-2026",
+      "title": "TikTok será banido das lojas de app dos EUA em 2026?",
+      "category": "Política",
+      "kind": "binary",
+      "status": "open",
+      "status_label": "Sensível",
+      "primary_outcome": "NAO",
+      "primary_probability": 54,
+      "secondary_probability": 46,
+      "volume_oc": "9.880 OC",
+      "participants": "743 usuários",
+      "source": "documento regulatório",
+      "closes_in": "142d",
+      "thumb": "TT",
+      "thumb_color": "#efe0c4",
+      "summary": "Mercado sensível com resolução baseada em evidência regulatória pública.",
+      "resolution_criteria": "Resolve conforme documentação regulatória pública sobre disponibilidade nas lojas de apps dos EUA.",
+      "options": [
+        {"label": "SIM", "probability": 46, "hint": "Banimento confirmado"},
+        {"label": "NAO", "probability": 54, "hint": "Permanece disponível"}
+      ],
+      "comments": []
+    },
+    {
+      "slug": "lider-vendas-ev-4t26",
+      "title": "Qual empresa lidera vendas globais de carros elétricos no 4T26?",
+      "category": "Negócios",
+      "kind": "multiple",
+      "status": "open",
+      "status_label": "Múltipla escolha",
+      "primary_outcome": "Tesla",
+      "primary_probability": 37,
+      "secondary_probability": 63,
+      "volume_oc": "13.410 OC",
+      "participants": "936 usuários",
+      "source": "relatório trimestral",
+      "closes_in": "251d",
+      "thumb": "EV",
+      "thumb_color": "#dce6f0",
+      "summary": "Mercado de múltipla escolha com consenso distribuído entre fabricantes.",
+      "resolution_criteria": "Resolve pelo relatório consolidado de vendas globais do quarto trimestre de 2026.",
+      "options": [
+        {"label": "Tesla", "probability": 37, "hint": "Líder atual do consenso"},
+        {"label": "BYD", "probability": 34, "hint": "Forte concorrente"},
+        {"label": "Outra", "probability": 29, "hint": "Demais fabricantes"}
+      ],
+      "comments": []
+    },
+    {
+      "slug": "tiktok-resolvido-2026",
+      "title": "TikTok será banido das lojas de app dos EUA em 2026?",
+      "category": "Política",
+      "kind": "binary",
+      "status": "resolved",
+      "status_label": "Resolvido",
+      "primary_outcome": "NAO",
+      "primary_probability": 100,
+      "secondary_probability": 0,
+      "volume_oc": "Crédito distribuído",
+      "participants": "1.812 usuários recompensados",
+      "source": "fonte regulatória validada",
+      "closes_in": "fim",
+      "thumb": "OK",
+      "thumb_color": "#f0d6cf",
+      "summary": "Mercado resolvido com trilha pública e créditos distribuídos.",
+      "resolution_criteria": "Resultado final: NAO, conforme fonte regulatória validada.",
+      "options": [
+        {"label": "SIM", "probability": 0, "hint": "Opção perdedora"},
+        {"label": "NAO", "probability": 100, "hint": "Resultado final"}
+      ],
+      "comments": []
+    }
+  ],
+  "ranking": [
+    {"position": 1, "name": "Lia Forecast", "reputation": 94, "accuracy": "71%", "category": "IA"},
+    {"position": 2, "name": "Rafa Signals", "reputation": 89, "accuracy": "68%", "category": "Negócios"},
+    {"position": 3, "name": "Will Costa", "reputation": 82, "accuracy": "64%", "category": "IA"},
+    {"position": 4, "name": "Mika Data", "reputation": 80, "accuracy": "63%", "category": "Política"}
+  ],
+  "ledger": [
+    {"date": "2026-05-17", "label": "Saldo inicial do MVP", "amount": "+2.000 OC"},
+    {"date": "2026-05-17", "label": "Previsão aberta em GPT-6", "amount": "-80 OC bloqueado"},
+    {"date": "2026-05-17", "label": "Bonus de sequência", "amount": "+120 OC"}
+  ],
+  "admin": {
+    "queues": [
+      {"label": "Mercados para revisar", "count": 12},
+      {"label": "Resoluções pendentes", "count": 4},
+      {"label": "Comentários sinalizados", "count": 7}
+    ]
+  }
+}

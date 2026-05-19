@@ -1,0 +1,51 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Orynth{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}">
+  <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
+  <script src="{% static 'js/orynth.js' %}" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="shell nav">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark">O</span><span>Orynth</span></a>
+      <div class="nav-links">
+        <a class="nav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'market-detail' %}active{% endif %}" href="{% url 'home' %}">Mercados</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'categories' %}active{% endif %}" href="{% url 'categories' %}">Categorias</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'rankings' %}active{% endif %}" href="{% url 'rankings' %}">Ranking</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'wallet' %}active{% endif %}" href="{% url 'wallet' %}">Carteira</a>
+      </div>
+      <div class="nav-actions">
+        <span class="language">{{ viewer.language }}</span>
+        <div class="user-chip">
+          <button class="user-button" type="button">
+            <span class="avatar">{{ viewer.initials }}</span>
+            <span class="chip-meta"><strong>{{ viewer.name }}</strong><span>{{ viewer.balance_oc }} OC · Rep {{ viewer.reputation }}</span></span>
+          </button>
+          <div class="user-menu">
+            <a href="{% url 'profile' %}">Perfil e badges</a>
+            <a href="{% url 'wallet' %}">Carteira e extrato</a>
+            <a href="{% url 'suggestion' %}">Sugerir mercado</a>
+            <a href="{% url 'feedback' %}">Enviar feedback</a>
+            <a href="{% url 'login' %}">Sair desta sessão</a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  </header>
+  {% block content %}{% endblock %}
+  <footer class="footer">
+    <div class="shell footer-grid">
+      <div><strong>Orynth</strong><p>Rede social de previsões com moeda educativa, reputação e resolução auditável.</p></div>
+      <div><strong>Produto</strong><a href="{% url 'categories' %}">Categorias</a><a href="{% url 'rankings' %}">Ranking</a><a href="{% url 'suggestion' %}">Sugerir mercado</a></div>
+      <div><strong>Confiança</strong><a href="{% url 'concepts' %}">Conceitos</a><a href="{% url 'security' %}">Segurança</a><a href="{% url 'feedback' %}">Feedback</a></div>
+      <div><strong>Conta</strong><a href="{% url 'profile' %}">Perfil</a><a href="{% url 'wallet' %}">Carteira</a><a href="{% url 'login' %}">Login</a></div>
+      <div><strong>Operação</strong><a href="{% url 'admin-ops-dashboard' %}">Admin</a><a href="/admin/">Filas</a></div>
+    </div>
+  </footer>
+</body>
+</html>
