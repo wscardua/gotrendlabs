@@ -1,17 +1,45 @@
-{% extends "base.html" %}
-{% block title %}Orynth | Admin Ops{% endblock %}
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Dashboard{% endblock %}
 {% block content %}
-<main class="shell">
-  <section class="panel">
-    <span class="eyebrow">Admin operacional</span>
-    <h1>Filas de operação</h1>
-    <p class="lead">Painel custom para operação de negócio. O Django Admin padrão fica apenas para suporte técnico.</p>
-    <div class="admin-grid">
-      {% for queue in admin_summary.queues %}
-        <div class="admin-card"><strong>{{ queue.count }}</strong><span>{{ queue.label }}</span></div>
-      {% endfor %}
+<main class="shell admin-layout">
+  <section>
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Painel customizado</span>
+        <h1 class="large-title">Operação e saúde da plataforma</h1>
+        <p>Resumo diário para acompanhar publicação, filas e pontos que pedem atenção editorial.</p>
+      </div>
     </div>
-    <div class="toolbar"><a class="btn primary" href="/admin/">Abrir Django Admin</a><a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a></div>
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    <div class="admin-grid ops-grid">
+      <a class="admin-card ops-card" href="{% url 'admin-ops-markets' %}?status=open"><span class="eyebrow">Feed público</span><strong>{{ market_data.counts.open|default:0 }}</strong><p>Mercados abertos e disponíveis para previsão.</p></a>
+      <a class="admin-card ops-card" href="{% url 'admin-ops-markets' %}?status=draft"><span class="eyebrow">Curadoria</span><strong>{{ market_data.counts.draft|default:0 }}</strong><p>Rascunhos aguardando revisão antes de publicar.</p></a>
+      <a class="admin-card ops-card" href="{% url 'admin-ops-markets' %}?status=locked"><span class="eyebrow">Resolução</span><strong>{{ market_data.counts.locked|default:0 }}</strong><p>Mercados fechados que podem precisar de resolução.</p></a>
+      <a class="admin-card ops-card" href="{% url 'admin-ops-moderation' %}"><span class="eyebrow">Filas</span><strong>{{ ops_summary.queue_total|default:0 }}</strong><p>{{ ops_summary.pending_suggestions|default:0 }} sugestões, {{ ops_summary.pending_feedback|default:0 }} feedbacks e {{ ops_summary.hidden_comments|default:0 }} comentários ocultos.</p></a>
+    </div>
+    <section class="panel admin-dashboard-panel">
+      <div class="section-head compact">
+        <div>
+          <h3>Mercados recentes</h3>
+          <p>Atalho operacional para editar ou visualizar o contrato do mercado.</p>
+        </div>
+        <a class="btn small ghost" href="{% url 'admin-ops-markets' %}">Ver todos</a>
+      </div>
+      <table class="table">
+        <tr><th>Mercado</th><th>Status</th><th>Categoria</th><th>Destaque</th><th>Ação</th></tr>
+        {% for market in market_data.markets|slice:":5" %}
+          <tr>
+            <td>{{ market.title }}</td>
+            <td>{{ market.status_label }}</td>
+            <td>{{ market.category }} / {{ market.subcategory }}</td>
+            <td>{% if market.is_featured %}<span class="tag hot">Destaque</span>{% else %}<span class="tag">Padrão</span>{% endif %}</td>
+            <td><a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">Nenhum mercado cadastrado.</td></tr>
+        {% endfor %}
+      </table>
+    </section>
   </section>
 </main>
 {% endblock %}

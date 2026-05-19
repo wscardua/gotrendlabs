@@ -1537,6 +1537,7 @@ Esta é uma decisão em aberto e deve ser fechada antes da implementação do ba
 - Django deve reutilizar o contexto autenticado para páginas e ações protegidas;
 - não deve existir sistema duplo e concorrente de autenticação;
 - usuário pode criar conta;
+- criação de conta pode exigir reCAPTCHA v2 checkbox quando a proteção anti-abuso estiver configurada;
 - usuário pode fazer login;
 - usuário pode se registrar e autenticar com provedores sociais suportados;
 - usuário autenticado pode ver sua carteira, reputação e histórico.
@@ -1559,14 +1560,18 @@ Observação: a arquitetura deve permitir adicionar outros provedores no futuro 
 ### Feed
 
 - listar mercados abertos;
-- permitir ordenação por mais recentes, encerrando em breve e mais populares;
+- permitir ordenação por tendência, encerrando em breve, volume, mais recentes e favoritos editoriais;
 - exibir pergunta, categoria, subcategoria/evento quando houver, probabilidade atual e volume básico;
+- exibir contador simples de curtidas no card do mercado como sinal social;
+- permitir destaque editorial de até dois mercados no card principal do feed;
+- preencher destaque principal com mercados mais curtidos quando faltar curadoria manual, usando mercado mais novo como desempate;
 - exibir tipo de mercado quando isso ajudar a leitura;
 - ser renderizado no Django com possibilidade de atualização parcial via HTMX.
 
 ### Sugestão de mercados
 
-- usuários autenticados podem enviar sugestão de pergunta para análise editorial;
+- usuários autenticados ou visitantes identificados por nome/email podem enviar sugestão de pergunta para análise editorial;
+- visitantes precisam concluir reCAPTCHA v2 checkbox quando a proteção anti-abuso estiver configurada;
 - a sugestão não cria mercado automaticamente;
 - a sugestão deve entrar em fila de revisão administrativa;
 - o admin pode aprovar, editar, rejeitar ou transformar a sugestão em mercado publicado;
@@ -1589,6 +1594,8 @@ Observação: a arquitetura deve permitir adicionar outros provedores no futuro 
 
 - exibir carteira com saldo disponível, saldo bloqueado, ganhos, cargas de `Orynth Coins` e extrato;
 - exibir reputação;
+- permitir edição privada e opcional, na própria tela de perfil, de email, idioma, bio, data de nascimento (`birth_date`, formato `YYYY-MM-DD`) e sexo (`male`, `female`, `other`, `prefer_not_to_say`);
+- não expor email, data de nascimento, sexo nem metadados privados no perfil público;
 - exibir total de previsões;
 - exibir taxa de acerto;
 - listar mercados previstos e resultados;
@@ -1624,7 +1631,11 @@ Regras iniciais de curtida:
 - o usuário pode compartilhar o resultado de um mercado após a resolução;
 - o usuário pode compartilhar badges conquistadas;
 - a plataforma deve gerar links compartilháveis consistentes;
-- compartilhamento deve respeitar idioma e contexto mínimo da página.
+- compartilhamento deve respeitar idioma e contexto mínimo da página;
+- páginas de compartilhamento devem expor metadados Open Graph/Twitter com imagem social gerada em formato amplo para pergunta, resultado e badge;
+- cards sociais de mercado devem trazer contexto curto para aquisição de novos usuários e chamada competitiva, sem linguagem de aposta real;
+- cards sociais de resultado devem dar protagonismo à pergunta e exibir o resultado imediatamente abaixo;
+- links públicos de badge conquistada não devem expor identificadores diretos do usuário na URL; quando necessário, devem usar token opaco.
 
 ### Emails e comunicações
 
@@ -1652,7 +1663,8 @@ Regras iniciais de curtida:
 
 ### Feedback recompensável
 
-- usuários autenticados podem enviar feedback para a plataforma;
+- usuários autenticados ou visitantes identificados por nome/email podem enviar feedback para a plataforma;
+- visitantes precisam concluir reCAPTCHA v2 checkbox quando a proteção anti-abuso estiver configurada;
 - feedback deve entrar em fila de revisão administrativa;
 - o admin decide se o feedback é válido, se será recompensado e qual valor de `Orynth Coins` será concedido;
 - recompensa por feedback nunca concede reputação;
@@ -1853,6 +1865,7 @@ GET /auth/social/{provider}/callback
 Responsabilidades:
 
 - registrar usuário;
+- validar reCAPTCHA no cadastro quando configurado;
 - autenticar usuário;
 - emitir token para cookie seguro;
 - invalidar sessão quando necessário;
@@ -1968,7 +1981,8 @@ POST /admin/market-suggestions/{id}/publish
 
 Responsabilidades:
 
-- permitir envio de sugestão autenticada;
+- permitir envio de sugestão autenticada ou guest identificado;
+- validar reCAPTCHA para visitante quando configurado;
 - listar sugestões do próprio usuário;
 - permitir revisão administrativa;
 - vincular sugestão aprovada a mercado publicado;
@@ -1986,7 +2000,8 @@ POST /admin/feedback/{id}/reject
 
 Responsabilidades:
 
-- permitir envio autenticado de feedback;
+- permitir envio autenticado ou guest identificado de feedback;
+- validar reCAPTCHA para visitante quando configurado;
 - listar histórico do próprio usuário;
 - permitir análise administrativa;
 - permitir configuração manual de recompensa por feedback válido em `Orynth Coins`;
@@ -2038,7 +2053,9 @@ Responsabilidades:
 - gerar metadados e links compartilháveis para a pergunta;
 - gerar metadados e links compartilháveis para o resultado resolvido;
 - gerar metadados e links compartilháveis para badges;
-- adaptar conteúdo mínimo ao idioma da página ou do usuário.
+- adaptar conteúdo mínimo ao idioma da página ou do usuário;
+- gerar imagem social do card em URL acessível por crawler público quando houver `PUBLIC_SHARE_BASE_URL`/origem pública equivalente configurada;
+- usar fallback visual legível para cards de mercado sem imagem, com iniciais derivadas de categoria/subcategoria/título.
 
 ### Email / Communications
 
@@ -2145,6 +2162,7 @@ Mercado passa a exibir resultado final
 ### Autenticação
 
 - registro de conta;
+- registro de conta com reCAPTCHA válido quando configurado;
 - login com emissão de cookie seguro;
 - login social com provedores suportados;
 - persistência da sessão entre navegações;
@@ -2161,6 +2179,7 @@ Mercado passa a exibir resultado final
 - indicar usuário e receber bônus quando a ativação for válida;
 - sugerir pergunta e receber bônus se ela virar mercado publicado;
 - enviar feedback e receber recompensa quando aprovado;
+- enviar sugestão/feedback como visitante identificado, com reCAPTCHA quando configurado e sem recompensa até haver usuário associado;
 - compartilhar pergunta ou resultado de mercado;
 - receber e compartilhar badge conquistada;
 - criar comentário em mercado;
@@ -2209,6 +2228,7 @@ Mercado passa a exibir resultado final
 - mercado binário com estrutura inconsistente;
 - inconsistência de idioma ou conteúdo administrativo incompleto;
 - falha em autenticação social ou vínculo de conta externa;
+- reCAPTCHA ausente, inválido, expirado ou configurado com tipo incorreto;
 - falha no envio de email transacional;
 - compartilhamento social com metadados incompletos;
 - concessão incorreta ou duplicada de badge;
@@ -2252,7 +2272,7 @@ Mercado passa a exibir resultado final
 2. O ranking principal será por reputação, saldo em `Orynth Coins` ou combinação dos dois?
 3. Haverá fechamento automático antes da resolução ou o mercado aceita previsões até o limite?
 4. As `Orynth Coins` retornam como `reward bruto` ou `lucro líquido + devolução de stake`?
-5. O feed inicial será ordenado por popularidade, novidade ou proximidade da resolução?
+5. Resolvido para o MVP: o feed oferece ordenações rápidas por tendência, encerramento, volume, novidade e favoritos editoriais; o destaque principal prioriza curadoria e completa por curtidas/data.
 6. O perfil será público para todos os usuários desde o MVP?
 7. Qual será o limite inicial de opções por mercado de múltipla escolha no MVP?
 8. Quais serão os valores finais de recarga automática e bônus de indicação no MVP?

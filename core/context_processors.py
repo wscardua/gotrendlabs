@@ -1,6 +1,66 @@
+from accounts.api_client import AuthAPIError, get_me, get_wallet
+from accounts.session import auth_token, auth_user, is_authenticated
 from core.domain_client import get_domain_client
+
+
+def _display_handle(value):
+    value = (value or "").strip()
+    return value if value.startswith("@") else f"@{value}"
 
 
 def session_context(request):
     client = get_domain_client()
-    return {"viewer": client.viewer()}
+    viewer = client.viewer().copy()
+    user = auth_user(request)
+    if user:
+        viewer["name"] = user["display_name"]
+        viewer["handle"] = _display_handle(user["handle"])
+        viewer["initials"] = "".join(part[0] for part in viewer["name"].split()[:2]).upper() or "U"
+        viewer["language"] = user["preferred_language"].upper()
+        try:
+            wallet = get_wallet(auth_token(request))
+        except AuthAPIError:
+            wallet = _local_wallet(user.get("id"))
+        viewer["balance_oc"] = wallet.get("available_oc", viewer["balance_oc"])
+        viewer["locked_oc"] = wallet.get("locked_oc", viewer["locked_oc"])
+        try:
+            profile = get_me(auth_token(request))
+            reputation = profile.get("reputation", {})
+        except AuthAPIError:
+            reputation = _local_reputation(user.get("id"))
+        viewer["reputation"] = reputation.get("reputation_score", viewer["reputation"])
+        viewer["accuracy"] = reputation.get("accuracy_indicator", viewer.get("accuracy", "0%"))
+        viewer["streak"] = reputation.get("streak", viewer.get("streak", 0))
+    return {"viewer": viewer, "is_guest": not is_authenticated(request)}
+
+
+def _local_wallet(user_id):
+    if not user_id:
+        return {}
+    try:
+        from accounts.models import WalletBalance
+
+        balance = WalletBalance.objects.get(user_id=user_id)
+    except Exception:
+        return {}
+    return {
+        "available_oc": balance.available_oc,
+        "locked_oc": balance.locked_oc,
+        "total_earned_oc": balance.total_earned_oc,
+    }
+
+
+def _local_reputation(user_id):
+    if not user_id:
+        return {}
+    try:
+        from accounts.models import UserReputation
+
+        reputation = UserReputation.objects.get(user_id=user_id)
+    except Exception:
+        return {}
+    return {
+        "reputation_score": reputation.reputation_score,
+        "accuracy_indicator": reputation.accuracy_indicator,
+        "streak": reputation.streak,
+    }

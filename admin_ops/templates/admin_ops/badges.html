@@ -1,0 +1,36 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Badges{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel">
+    <div class="section-head">
+      <div>
+        <h1 class="large-title">Badges</h1>
+        <p class="muted">Gerencie o catálogo público e as regras automáticas de concessão.</p>
+      </div>
+      <a class="btn primary" href="{% url 'admin-ops-badge-new' %}">Criar badge</a>
+    </div>
+    {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    <table class="table">
+      <tr><th>Badge</th><th>Status</th><th>Tipo</th><th>Regra</th><th>Categoria</th><th>Conquistas</th><th>Ações</th></tr>
+      {% for badge in badge_data.badges %}
+        <tr>
+          <td>
+            <strong>{{ badge.name }}</strong>
+            <span class="muted">{{ badge.code }}</span>
+          </td>
+          <td>{% if badge.is_active %}<span class="tag safe">Ativa</span>{% else %}<span class="tag">Inativa</span>{% endif %}</td>
+          <td>{{ badge.badge_type }}</td>
+          <td>{{ badge.rule_type }} · {{ badge.threshold_value }}</td>
+          <td>{% if badge.category %}{{ badge.category }}{% else %}Todas{% endif %} / {% if badge.subcategory %}{{ badge.subcategory }}{% else %}Todas{% endif %}</td>
+          <td>{{ badge.awards_count }}</td>
+          <td><a class="btn small" href="{% url 'admin-ops-badge-edit' badge.code %}">Editar</a></td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">Nenhuma badge cadastrada.</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+</main>
+{% endblock %}

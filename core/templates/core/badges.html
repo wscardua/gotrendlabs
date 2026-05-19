@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Badges{% endblock %}
+{% block content %}
+<main class="shell page-content">
+  <section class="panel">
+    <div class="section-head compact">
+      <div>
+        <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Reconhecimento</span></div>
+        <h1 class="large-title">Badges</h1>
+        <p class="muted">Conquistas liberadas automaticamente por participação, desempenho e contribuição para a plataforma.</p>
+      </div>
+      {% if is_guest %}<a class="btn primary" href="{% url 'login' %}">Entrar para ver progresso</a>{% else %}<a class="btn primary" href="{% url 'profile' %}">Ver perfil</a>{% endif %}
+    </div>
+    <div class="badge-grid">
+      {% for badge in badges %}
+        <article class="badge-card{% if badge.status == 'earned' %} earned{% else %} locked{% endif %}">
+          {% if badge.image_url %}
+            <img class="badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="">
+            {% if badge.image_dark_url %}<img class="badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="">{% endif %}
+          {% else %}
+            <span class="badge-icon">{% if badge.status == 'earned' %}✓{% else %}–{% endif %}</span>
+          {% endif %}
+          <div class="badge-copy">
+            <strong>{{ badge.name }}</strong>
+            <span>{{ badge.description }}</span>
+            <small>{{ badge.rule_description }}</small>
+            {% if badge.status == 'earned' %}
+              <div class="badge-action-row">
+                <span class="badge-status earned">Conquistada</span>
+                {% if not is_guest %}<a class="badge-share-link" href="{% url 'share-badge' badge.code %}">Compartilhar</a>{% endif %}
+              </div>
+            {% else %}
+              <span class="badge-status">Bloqueada</span>
+            {% endif %}
+          </div>
+        </article>
+      {% empty %}
+        <article class="badge-card locked"><span class="badge-icon">–</span><div class="badge-copy"><strong>Sem badges cadastradas</strong><span>O catálogo público ainda será publicado pela operação.</span></div></article>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

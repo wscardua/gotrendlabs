@@ -3,19 +3,21 @@
 {% block content %}
 <main class="shell page-grid">
   <section class="panel">
-    <span class="eyebrow">Carteira educativa</span>
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Carteira educativa</span></div>
     <h1 class="large-title">Orynth Coins não são dinheiro real.</h1>
     <div class="metrics">
-      <div class="metric"><strong>{{ viewer.balance_oc }} OC</strong><span>saldo disponível</span></div>
-      <div class="metric"><strong>{{ viewer.locked_oc }} OC</strong><span>saldo bloqueado</span></div>
-      <div class="metric"><strong>1.260 OC</strong><span>ganhos por acerto</span></div>
-      <div class="metric"><strong>{{ viewer.reputation }}</strong><span>reputação</span></div>
+      <div class="metric"><strong>{{ wallet.available_oc }} OC</strong><span>saldo disponível</span></div>
+      <div class="metric"><strong>{{ wallet.locked_oc }} OC</strong><span>saldo bloqueado</span></div>
+      <div class="metric"><strong>{{ wallet.total_earned_oc }} OC</strong><span>ganhos por acerto</span></div>
+      <div class="metric"><strong>{{ reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação</span></div>
     </div>
     <h3>Extrato</h3>
     <table class="table">
       <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>OC</th></tr>
-      {% for row in ledger %}
-        <tr><td>{{ row.date }}</td><td>{{ row.label }}</td><td>Fixture</td><td>{{ row.amount }}</td></tr>
+      {% for row in entries %}
+        <tr><td>{{ row.created_at|slice:":10" }}</td><td>{{ row.description }}</td><td>{{ row.entry_type }}</td><td>{{ row.direction }} {{ row.amount }} OC</td></tr>
+      {% empty %}
+        <tr><td colspan="4">Nenhum lançamento encontrado.</td></tr>
       {% endfor %}
     </table>
   </section>

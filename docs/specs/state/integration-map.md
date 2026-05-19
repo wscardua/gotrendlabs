@@ -22,6 +22,14 @@
 - `i18n-content.md`
 - `domain-events.md`
 
+## Integrações já materializadas
+
+- `FEAT-COMMENT-001` usa `FEAT-AUTH-001` para autor/reação autenticada e staff em moderação.
+- `FEAT-COMMENT-001` usa `FEAT-MARKET-002` para vínculo com mercado e exposição em `MarketResponse.comments`.
+- Admin Ops consome comentários via FastAPI e pode degradar para Postgres local em desenvolvimento quando a API estiver desatualizada.
+- `FEAT-AUTH-001` e `FEAT-SUGGEST-001` compartilham validação reCAPTCHA server-side configurável por ambiente.
+- Django renderiza o widget v2 e encaminha `recaptcha_token`; FastAPI é a autoridade de validação para cadastro e envios guest.
+
 ## Skills técnicas por stack
 
 - `orynth-django-web`: páginas, templates, HTMX, Alpine.js, i18n de interface e admin Django

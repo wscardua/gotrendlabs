@@ -1,11 +1,126 @@
 {% extends "base.html" %}
 {% block title %}Orynth | Conceitos{% endblock %}
 {% block content %}
-<main class="shell">
-  <section class="panel prose">
-    <span class="eyebrow">Conceitos</span>
-    <h1>Previsões, consenso e resolução auditável</h1>
-    <p>Orynth Coins são educativas. Probabilidades representam consenso da comunidade e não promessa de resultado. Resoluções devem depender de fonte verificável vinda do domínio.</p>
+<main class="shell page-content doc-page">
+  <section class="hero-card doc-hero">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Conceitos e cálculos</span></div>
+    <div class="doc-hero-grid">
+      <div>
+        <h1>Como previsões viram consenso, carteira e reputação.</h1>
+        <p class="lead">Orynth é uma rede social de previsões com moeda educativa. Você registra convicção, acompanha o consenso da comunidade e constrói histórico público quando mercados são resolvidos com fonte verificável.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="{% url 'home' %}">Explorar mercados</a>
+          <a class="btn ghost" href="{% url 'security' %}">Ver segurança</a>
+        </div>
+      </div>
+      <div class="doc-slate" aria-label="Resumo do modelo Orynth">
+        <span class="doc-slate-label">Fluxo do mercado</span>
+        <div class="doc-flow">
+          <span>Aberto</span>
+          <span>Previsões</span>
+          <span>Fechado</span>
+          <span>Resolvido</span>
+        </div>
+        <div class="doc-mini-ledger">
+          <div><span>Stake</span><strong>bloqueia OC</strong></div>
+          <div><span>Acerto</span><strong>payout + reputação</strong></div>
+          <div><span>Erro</span><strong>baixa do stake</strong></div>
+          <div><span>Cancelamento</span><strong>refund total</strong></div>
+        </div>
+      </div>
+    </div>
   </section>
+
+  <div class="doc-layout">
+    <section class="doc-main">
+      <article class="doc-section" id="mercados">
+        <div class="section-kicker"><span class="eyebrow">01</span><span class="tag safe">Mercados</span></div>
+        <h2>Um mercado é uma pergunta objetiva com opções finitas.</h2>
+        <p>Mercados podem ser binários, com as opções canônicas SIM e NAO, ou de múltipla escolha, com uma única opção vencedora. A regra pública precisa deixar claro o evento, o prazo e o critério de resolução.</p>
+        <div class="doc-card-grid two">
+          <div class="doc-card"><strong>Binário</strong><span>Duas alternativas, começando em 50% para cada lado.</span></div>
+          <div class="doc-card"><strong>Múltipla escolha</strong><span>As opções começam distribuídas igualmente e sempre somam 100%.</span></div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="coins">
+        <div class="section-kicker"><span class="eyebrow">02</span><span class="tag hot">Orynth Coins</span></div>
+        <h2>OC mede participação, não valor financeiro.</h2>
+        <p>Orynth Coins são internas, educativas e não sacáveis. Ao prever, o stake sai do saldo disponível e fica bloqueado no ledger. A wallet exibida é uma projeção operacional; se houver divergência, o ledger auditável vence.</p>
+        <div class="doc-ledger">
+          <div><span>prediction_stake_lock</span><strong>disponível -> bloqueado</strong></div>
+          <div><span>prediction_refund</span><strong>devolve stake cancelado</strong></div>
+          <div><span>prediction_payout</span><strong>credita ganho líquido</strong></div>
+          <div><span>prediction_loss</span><strong>baixa stake perdido</strong></div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="probabilidade">
+        <div class="section-kicker"><span class="eyebrow">03</span><span class="tag">Consenso</span></div>
+        <h2>A probabilidade é consenso agregado, não promessa de resultado.</h2>
+        <p>A fonte de verdade é decimal; percentuais inteiros aparecem apenas para leitura. A evolução visual é derivada das previsões registradas, usando peso base sintético e a força combinada de reputação e stake no momento da entrada.</p>
+        <div class="consensus-demo" aria-label="Exemplo visual de consenso">
+          <div>
+            <div class="consensus-label"><strong>SIM</strong><span>62%</span></div>
+            <div class="bar"><span class="segment-1" style="width:62%"></span></div>
+          </div>
+          <div>
+            <div class="consensus-label"><strong>NAO</strong><span>38%</span></div>
+            <div class="bar no"><span style="width:38%"></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="retorno">
+        <div class="section-kicker"><span class="eyebrow">04</span><span class="tag safe">Retorno</span></div>
+        <h2>O retorno estimado usa a probabilidade no momento da entrada.</h2>
+        <p>O payout bruto de uma previsão vencedora segue a ideia <strong>stake * (1 / p)</strong>, onde <strong>p</strong> é a probabilidade decimal capturada antes da previsão. Errar consome o stake bloqueado; acertar libera o stake e credita o ganho líquido.</p>
+        <div class="doc-card-grid three">
+          <div class="metric"><strong>100 OC</strong><span>stake escolhido</span></div>
+          <div class="metric"><strong>0,62</strong><span>probabilidade de entrada</span></div>
+          <div class="metric"><strong>161 OC</strong><span>payout bruto estimado</span></div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="reputacao">
+        <div class="section-kicker"><span class="eyebrow">05</span><span class="tag">Reputação</span></div>
+        <h2>Reputação é histórico resolvido, separado de saldo.</h2>
+        <p>Reputação muda apenas na resolução. A fórmula MVP usa K=10: acertos contra baixa probabilidade tendem a subir mais, erros em alta probabilidade tendem a cair mais, e a reputação nunca fica negativa.</p>
+        <div class="doc-card-grid two">
+          <div class="doc-card"><strong>Ranking</strong><span>Ordena reputação pública e exclui usuários administrativos.</span></div>
+          <div class="doc-card"><strong>Badges</strong><span>Reconhecem volume, acertos, sequência, ranking, comentários, sugestões e feedbacks.</span></div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="resolucao">
+        <div class="section-kicker"><span class="eyebrow">06</span><span class="tag risk">Resolução</span></div>
+        <h2>Fechamento bloqueia novas previsões; resolução aplica os efeitos.</h2>
+        <p>Um mercado aberto pode ser travado automaticamente pelo scheduler ou manualmente por operador autorizado. A resolução exige opção vencedora, evidência ou justificativa, data efetiva, timezone controlado e evento administrativo.</p>
+        <div class="notice green">Mercado cancelado preserva histórico, devolve 100% dos stakes abertos e não altera reputação.</div>
+      </article>
+    </section>
+
+    <aside class="doc-rail">
+      <section class="panel doc-rail-card">
+        <h3>Resumo rápido</h3>
+        <a href="#mercados">Mercados objetivos</a>
+        <a href="#coins">OC e ledger</a>
+        <a href="#probabilidade">Consenso agregado</a>
+        <a href="#retorno">Retorno estimado</a>
+        <a href="#reputacao">Reputação</a>
+        <a href="#resolucao">Resolução</a>
+      </section>
+      <section class="panel">
+        <span class="eyebrow">Guardrail</span>
+        <h3>O frontend não calcula regra de domínio.</h3>
+        <p>Stake, payout, reputação, saldo e transições de estado vêm da API. A interface apresenta contratos e feedbacks de forma clara.</p>
+      </section>
+      <section class="panel">
+        <span class="eyebrow">MVP</span>
+        <h3>Limites atuais</h3>
+        <p>Ainda não há trading em tempo real, revenda de posição ou arbitragem pública complexa. O foco é previsão única por usuário, ledger e resolução auditável.</p>
+      </section>
+    </aside>
+  </div>
 </main>
 {% endblock %}

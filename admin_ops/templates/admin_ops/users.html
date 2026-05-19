@@ -1,0 +1,100 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Usuários{% endblock %}
+{% block content %}
+<main class="shell admin-layout user-directory-page">
+  <section class="panel user-directory">
+    <div class="user-directory-head">
+      <div>
+        <span class="eyebrow">Suporte operacional</span>
+        <h1 class="large-title">Usuários</h1>
+        <p class="muted">Busque contas cadastradas, veja status de operação e abra o dossiê de suporte.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-users' %}">Atualizar</a>
+    </div>
+
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+
+    <div class="user-summary-strip" aria-label="Resumo de usuários">
+      <div><span>Total</span><strong>{{ user_data.counts.total|default:0 }}</strong></div>
+      <div><span>Ativos</span><strong>{{ user_data.counts.active|default:0 }}</strong></div>
+      <div><span>Desativados</span><strong>{{ user_data.counts.deactivated|default:0 }}</strong></div>
+      <div><span>Staff</span><strong>{{ user_data.counts.staff|default:0 }}</strong></div>
+      <div><span>Superuser</span><strong>{{ user_data.counts.superuser|default:0 }}</strong></div>
+    </div>
+
+    <form class="user-filter-panel" method="get">
+      <label class="user-search-field">
+        <span>Busca</span>
+        <input type="search" name="q" value="{{ active_q }}" placeholder="Email, handle ou nome">
+      </label>
+      <label>
+        <span>Status</span>
+        <select name="status">
+          <option value="">Todos</option>
+          <option value="active" {% if active_status == "active" %}selected{% endif %}>Ativos</option>
+          <option value="deactivated" {% if active_status == "deactivated" %}selected{% endif %}>Desativados</option>
+        </select>
+      </label>
+      <label>
+        <span>Papel</span>
+        <select name="role">
+          <option value="">Todos</option>
+          <option value="user" {% if active_role == "user" %}selected{% endif %}>Usuários</option>
+          <option value="staff" {% if active_role == "staff" %}selected{% endif %}>Staff</option>
+          <option value="superuser" {% if active_role == "superuser" %}selected{% endif %}>Superuser</option>
+        </select>
+      </label>
+      <label>
+        <span>Ordenação</span>
+        <select name="order">
+          <option value="created_desc" {% if active_order == "created_desc" %}selected{% endif %}>Mais recentes</option>
+          <option value="created_asc" {% if active_order == "created_asc" %}selected{% endif %}>Mais antigos</option>
+          <option value="last_login_desc" {% if active_order == "last_login_desc" %}selected{% endif %}>Último login</option>
+          <option value="wallet_desc" {% if active_order == "wallet_desc" %}selected{% endif %}>Maior saldo</option>
+          <option value="reputation_desc" {% if active_order == "reputation_desc" %}selected{% endif %}>Maior reputação</option>
+        </select>
+      </label>
+      <div class="user-filter-actions">
+        <button class="btn small primary" type="submit">Aplicar</button>
+        <a class="btn small ghost" href="{% url 'admin-ops-users' %}">Limpar</a>
+      </div>
+    </form>
+
+    <div class="user-result-meta">
+      <strong>{{ user_data.users|length }}</strong>
+      <span>contas nesta visualização</span>
+    </div>
+
+    <div class="user-list" role="list">
+      {% for user in user_data.users %}
+        <article class="user-list-row" role="listitem">
+          <div class="user-row-main">
+            <span class="avatar">{{ user.display_name|default:user.handle|slice:":2"|upper }}</span>
+            <div class="user-row-identity">
+              <strong>{{ user.display_name }}</strong>
+              <span>{{ user.handle }} · {{ user.email }}</span>
+            </div>
+          </div>
+          <div class="user-row-state">
+            {% if user.account_status == "active" %}<span class="tag safe">Ativo</span>{% else %}<span class="tag risk">Desativado</span>{% endif %}
+            <span class="tag">{% if user.is_superuser %}Superuser{% elif user.is_staff %}Staff{% else %}Usuário{% endif %}</span>
+          </div>
+          <div class="user-row-metrics">
+            <div><span>Saldo</span><strong>{{ user.available_oc }} OC</strong><small>{{ user.locked_oc }} bloqueado</small></div>
+            <div><span>Rep</span><strong>{{ user.reputation_score }}</strong><small>score atual</small></div>
+            <div><span>Login</span><strong>{{ user.last_login|default:"-" }}</strong><small>último acesso</small></div>
+          </div>
+          <div class="user-row-action">
+            <a class="btn small primary" href="{% url 'admin-ops-user-detail' user.id %}">Abrir suporte</a>
+          </div>
+        </article>
+      {% empty %}
+        <div class="empty-state">
+          <strong>Nenhum usuário encontrado</strong>
+          <span>Ajuste a busca ou remova filtros para ampliar o resultado.</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</main>
+{% endblock %}

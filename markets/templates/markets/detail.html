@@ -3,20 +3,33 @@
 {% block content %}
 <main class="shell layout-detail">
   <section class="panel detail-hero">
-    <div class="tags">
+    <div class="tags page-kicker-row">
+      {% include "components/context_back.html" %}
       <span class="tag hot">{{ market.category }}</span>
+      <span class="tag">{{ market.subcategory }}</span>
       <span class="tag safe">Critério auditável</span>
       <span class="tag">{{ market.close_label|default:market.status_label }}</span>
     </div>
     <h1 class="large-title">{{ market.title }}</h1>
     <p class="lead">{{ market.summary }}</p>
     <div class="chart-box">
-      <div class="chart-legend"><span><i style="--dot:#136f4a"></i>{{ market.options.0.label }}</span><span><i style="--dot:#b7493d"></i>{{ market.options.1.label }}</span><span class="muted">Consenso histórico</span></div>
-      <svg viewBox="0 0 760 220" width="100%" height="220" role="img" aria-label="Gráfico de tendência do consenso">
-        <defs><linearGradient id="g" x1="0" x2="0" y1="0" y2="1"><stop stop-color="#136f4a" stop-opacity=".28"/><stop offset="1" stop-color="#136f4a" stop-opacity="0"/></linearGradient></defs>
-        <path d="M20 170 C120 110, 170 152, 250 116 S390 55, 480 82 S610 156, 740 70 L740 205 L20 205 Z" fill="url(#g)"/>
-        <path d="M20 170 C120 110, 170 152, 250 116 S390 55, 480 82 S610 156, 740 70" fill="none" stroke="#136f4a" stroke-width="5" stroke-linecap="round"/>
+      <div class="chart-legend"><span><i style="--dot:#136f4a"></i>Evolução das opções</span><span class="muted">Linhas recalculadas a partir das previsões reais</span></div>
+      <svg class="market-trend" viewBox="0 0 220 44" preserveAspectRatio="none" role="img" aria-label="Evolução temporal da probabilidade principal">
+        {% for series in market.sparkline_series %}
+          <path class="sparkline-line series-{{ forloop.counter }}" d="{{ series.path }}"></path>
+        {% empty %}
+          <path class="sparkline-area" d="{{ market.sparkline_area_path }}"></path>
+          <path class="sparkline-line series-1" d="{{ market.sparkline_path }}"></path>
+        {% endfor %}
       </svg>
+      <div class="consensus-chart" role="img" aria-label="Distribuição atual das probabilidades">
+        {% for option in market.options %}
+          <div class="consensus-row">
+            <div class="consensus-label"><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><span>{{ option.probability }}%</span></div>
+            <div class="bar"><span class="segment-{{ forloop.counter }}" style="width:{{ option.probability_exact }}%"></span></div>
+          </div>
+        {% endfor %}
+      </div>
     </div>
     <div class="admin-grid">
       <div class="metric"><strong>{{ market.volume_oc }}</strong><span>volume educativo</span></div>
@@ -24,48 +37,184 @@
       <div class="metric"><strong>{{ market.closes_in }}</strong><span>até fechar previsões</span></div>
     </div>
     <section class="panel" style="margin-top:16px">
-      <h3>Critério de resolução</h3>
-      <p>{{ market.resolution_criteria }}</p>
-      <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+      <h3>{% if market.status == "resolved" %}Resultado oficial{% elif market.status == "canceled" %}Mercado cancelado{% else %}Critério de resolução{% endif %}</h3>
+      {% if market.status == "resolved" %}
+        <p>Resultado final: <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>.</p>
+        {% if market.resolution_note %}<p>{{ market.resolution_note|linebreaksbr }}</p>{% endif %}
+        <div class="tags"><span class="tag">Resolvido em: {{ market.resolved_at_label|default:"data registrada" }}</span><span class="tag">Timezone: {{ market.resolution_timezone|default:"UTC" }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+      {% elif market.status == "canceled" %}
+        <p>Este mercado foi cancelado pela operação. Stakes bloqueados foram devolvidos integralmente e reputação não foi alterada.</p>
+        <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+      {% else %}
+        <p>{{ market.resolution_criteria }}</p>
+        <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+      {% endif %}
     </section>
-    <section class="panel" style="margin-top:16px">
+    <section class="panel" id="comments" style="margin-top:16px">
       <h3>Comentários</h3>
+      {% if comment_error %}
+        <div class="notice red">{{ comment_error }}</div>
+      {% endif %}
+      {% if is_guest %}
+        <div class="comment-login-callout">
+          <div class="comment-login-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3h11A2.5 2.5 0 0 1 20 5.5v7A2.5 2.5 0 0 1 17.5 15H11l-4.2 3.4A.5.5 0 0 1 6 18v-3h.5A2.5 2.5 0 0 1 4 12.5v-7Z"></path></svg>
+          </div>
+          <div>
+            <strong>Participe da conversa</strong>
+            <p>Entre para comentar e reagir à discussão deste mercado.</p>
+          </div>
+          <a class="btn small primary" href="{% url 'login' %}?next={{ request.path }}">Entrar</a>
+        </div>
+      {% else %}
+        <form method="post" action="{% url 'comment-submit' market.slug %}" class="comment-form">
+          {% csrf_token %}
+          <div class="field full">
+            <label for="id_comment_body">Adicionar comentário</label>
+            <textarea id="id_comment_body" name="body" maxlength="1000" rows="3" placeholder="Contribua com fonte, raciocínio ou contraponto." required></textarea>
+          </div>
+          <button class="btn primary" type="submit">Publicar comentário</button>
+        </form>
+      {% endif %}
       <div class="comments">
         {% for comment in market.comments %}
-          <div class="comment"><strong>{{ comment.author }} · Rep {{ comment.reputation }}</strong><p>{{ comment.body }}</p><div class="comment-actions"><span>👍 {{ comment.up }}</span><span>👎 {{ comment.down }}</span><span>Responder</span></div></div>
+          <div class="comment">
+            <strong class="comment-author">{{ comment.author_handle }}</strong>
+            <p>{{ comment.body }}</p>
+            <div class="comment-actions">
+              {% if is_guest %}
+                <span class="reaction-stat" aria-label="Likes">
+                  <svg viewBox="0 0 24 24" focusable="false"><path d="M7 10v10H4V10h3Zm3.2 10H9V9.2l4.9-5.6c.5-.6 1.5-.2 1.5.6v4.3H20l-1.4 8.1A4 4 0 0 1 14.7 20h-4.5Z"></path></svg>
+                  {{ comment.like_count }}
+                </span>
+                <span class="reaction-stat" aria-label="Dislikes">
+                  <svg viewBox="0 0 24 24" focusable="false"><path d="M17 14V4h3v10h-3Zm-3.2-10H15v10.8l-4.9 5.6c-.5.6-1.5.2-1.5-.6v-4.3H4l1.4-8.1A4 4 0 0 1 9.3 4h4.5Z"></path></svg>
+                  {{ comment.dislike_count }}
+                </span>
+              {% elif comment.id %}
+                <form method="post" action="{% url 'comment-reaction' market.slug comment.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="reaction" value="like">
+                  <input type="hidden" name="current_reaction" value="{{ comment.viewer_reaction|default:'' }}">
+                  <button class="reaction-button {% if comment.viewer_reaction == 'like' %}active{% endif %}" type="submit" aria-label="Curtir comentário">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M7 10v10H4V10h3Zm3.2 10H9V9.2l4.9-5.6c.5-.6 1.5-.2 1.5.6v4.3H20l-1.4 8.1A4 4 0 0 1 14.7 20h-4.5Z"></path></svg>
+                    <span>{{ comment.like_count }}</span>
+                  </button>
+                </form>
+                <form method="post" action="{% url 'comment-reaction' market.slug comment.id %}">
+                  {% csrf_token %}
+                  <input type="hidden" name="reaction" value="dislike">
+                  <input type="hidden" name="current_reaction" value="{{ comment.viewer_reaction|default:'' }}">
+                  <button class="reaction-button {% if comment.viewer_reaction == 'dislike' %}active{% endif %}" type="submit" aria-label="Discordar do comentário">
+                    <svg viewBox="0 0 24 24" focusable="false"><path d="M17 14V4h3v10h-3Zm-3.2-10H15v10.8l-4.9 5.6c-.5.6-1.5.2-1.5-.6v-4.3H4l1.4-8.1A4 4 0 0 1 9.3 4h4.5Z"></path></svg>
+                    <span>{{ comment.dislike_count }}</span>
+                  </button>
+                </form>
+              {% else %}
+                <span class="reaction-stat">{{ comment.like_count }}</span>
+                <span class="reaction-stat">{{ comment.dislike_count }}</span>
+              {% endif %}
+            </div>
+          </div>
         {% empty %}
-          <p class="muted">Nenhum comentário ainda neste fixture.</p>
+          <p class="muted">Nenhum comentário ainda neste mercado.</p>
         {% endfor %}
       </div>
     </section>
   </section>
   <aside class="panel trade-box">
     <span class="eyebrow">Ticket de previsão</span>
-    {% if market.status == "resolved" %}
-      <h2>Mercado resolvido</h2>
-      <p>Resultado final: <strong>{{ market.primary_outcome }}</strong>. Novas previsões não estão disponíveis.</p>
+    {% if market.status != "open" %}
+      <h2>{% if market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
+      {% if market.status == "resolved" %}
+        <p>Resultado final: <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>.</p>
+        <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span></div>
+        {% if existing_prediction and existing_prediction.status == "resolved" %}
+          {% if existing_prediction.won %}
+            <div class="notice green prediction-result-note">
+              <strong>Você acertou esta previsão.</strong>
+              <p>Sua leitura ficou registrada no histórico. O stake foi liberado e o ganho líquido entrou na carteira; acompanhe novos mercados para manter a sequência.</p>
+            </div>
+          {% else %}
+            <div class="notice red prediction-result-note">
+              <strong>Você não acertou desta vez.</strong>
+              <p>O resultado já entrou no seu histórico. Revise a probabilidade de entrada, compare com o consenso e volte para a próxima previsão com mais informação.</p>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="ticket-note">Resultado auditado publicado. Entre em novos mercados para construir histórico e reputação.</div>
+        {% endif %}
+      {% elif market.status == "canceled" %}
+        <p>Mercado cancelado com refund total dos stakes bloqueados.</p>
+      {% else %}
+        <p>Este mercado não aceita novas previsões neste momento.</p>
+      {% endif %}
+      {% if market.status == "resolved" %}<a class="btn primary" href="{% url 'share-result' market.slug %}">Compartilhar resultado</a>{% endif %}
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
-      <div class="binary-ticket">
-        <div class="binary-grid option-grid">
-          {% for option in market.options %}
-            <button class="choice {% if forloop.first %}active{% endif %}" data-choice="{{ option.label }}" type="button">
-              <span><strong>{{ option.label }}</strong><small>{{ option.hint }}</small></span>
-              <span>{{ option.probability }}%</span>
-            </button>
-          {% endfor %}
+      {% if prediction_result %}
+        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} OC bloqueados. Retorno estimado: {{ prediction_result.potential_payout }} OC.</div>
+      {% endif %}
+      {% if prediction_error %}
+        <div class="notice red">{{ prediction_error }}</div>
+      {% endif %}
+      {% if is_guest %}
+        <div class="binary-ticket">
+          <div class="binary-grid option-grid">
+            {% for option in market.options %}
+              <div class="choice readonly">
+                <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
+                <span>{{ option.probability }}%</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="ticket-note">Visitantes podem ver o consenso atual. Para escolher uma opção e comprometer OC, entre na conta.</div>
         </div>
-        <div class="ticket-note">Escolha uma opção e defina quantas OC educativas deseja comprometer. A porcentagem é consenso atual, não promessa de resultado.</div>
-      </div>
-      <div class="field"><label>Valor da previsão</label><div class="range-row"><input data-amount="open" type="range" min="10" max="500" value="80"><strong data-amount-output="open">80 OC</strong></div></div>
-      <div id="prediction-preview" class="calc">
-        <div><span>Opção escolhida</span><strong data-selected-choice>{{ market.options.0.label }}</strong></div>
-        <div><span>Retorno estimado se acertar</span><strong data-return-output="open">130 OC</strong></div>
-        <div><span>Saldo bloqueado</span><strong>80 OC</strong></div>
-      </div>
-      <a class="btn primary" href="#" data-confirm="Confirmar previsão" data-confirm-desc="Esta versão ainda usa fixture; a mutação real será feita pelo backend-api.">Confirmar previsão</a>
+        <a class="btn primary" href="{% url 'login' %}?next={{ request.path }}">Entrar para prever</a>
+      {% elif existing_prediction %}
+        <div class="prediction-locked">
+          <strong>Você já registrou uma previsão neste mercado.</strong>
+          <p>Sua escolha foi <b>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</b> com {{ existing_prediction.stake_amount }} OC bloqueados. Probabilidade de entrada: {{ existing_prediction.probability_at_entry }}%.</p>
+        </div>
+        <div class="binary-ticket">
+          <div class="binary-grid option-grid">
+            {% for option in market.options %}
+              <div class="choice readonly {% if option.label == existing_prediction.option_label %}active{% endif %}">
+                <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
+                <span>{{ option.probability }}%</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="ticket-note">A primeira previsão fica registrada para auditoria. Para esta etapa do MVP, não é possível alterar ou enviar outra previsão no mesmo mercado.</div>
+        </div>
+        <div class="field disabled-field"><label>Valor da previsão</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} OC</strong></div></div>
+        <button class="btn primary" type="button" disabled>Previsão já registrada</button>
+      {% else %}
+        <form method="post" action="{% url 'prediction-confirm' market.slug %}" data-prediction-preview-url="{% url 'prediction-preview' market.slug %}">
+          {% csrf_token %}
+          <input data-selected-option-id type="hidden" name="option_id" value="{{ market.options.0.id }}">
+          <div class="binary-ticket">
+            <div class="binary-grid option-grid">
+              {% for option in market.options %}
+                <button class="choice {% if forloop.first %}active{% endif %}" data-option-id="{{ option.id }}" data-probability="{{ option.probability_exact }}" data-choice="{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}" type="button">
+                  <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
+                  <span>{{ option.probability }}%</span>
+                </button>
+              {% endfor %}
+            </div>
+            <div class="ticket-note">Escolha uma opção e defina quantas OC educativas deseja comprometer. A porcentagem é consenso atual, não promessa de resultado.</div>
+          </div>
+          <div class="field"><label>Valor da previsão</label><div class="range-row"><input name="stake_amount" data-amount="open" type="range" min="1" max="500" value="80"><strong data-amount-output="open">80 OC</strong></div></div>
+          <div id="prediction-preview" class="calc">
+            <div><span>Opção escolhida</span><strong data-selected-choice>{{ market.options.0.label }}</strong></div>
+            <div><span>Retorno estimado se acertar</span><strong data-return-output="open">130 OC</strong></div>
+            <div><span>Saldo bloqueado</span><strong data-locked-output="open">80 OC</strong></div>
+          </div>
+          <button class="btn primary trade-action" type="submit" data-confirm="Confirmar previsão" data-confirm-desc="Esta ação bloqueará o stake informado na sua carteira e ficará registrada na trilha auditável.">Confirmar previsão</button>
+        </form>
+      {% endif %}
+      <a class="btn ghost" href="{% url 'share-market' market.slug %}">Compartilhar</a>
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
-      <p class="muted">Esta ação ainda usa fixture. A mutação real ficará no backend-api.</p>
     {% endif %}
   </aside>
 </main>

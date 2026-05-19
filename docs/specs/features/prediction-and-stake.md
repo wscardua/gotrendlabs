@@ -1,10 +1,10 @@
 ---
 id: FEAT-PRED-001
 titulo: "Previsão e stake"
-versao: 0.1
+versao: 0.4
 status_spec: draft
-status_impl: nao_iniciada
-ultima_atualizacao: 2026-05-17
+status_impl: parcial
+ultima_atualizacao: 2026-05-18
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -34,13 +34,17 @@ Permitir que o usuário escolha uma opção em um mercado aberto e aplique stake
 - seleção de opção
 - entrada de stake
 - validação de saldo
+- prévia de retorno sem efeito colateral
 - confirmação da previsão
 - atualização do snapshot de probabilidade
+- histórico visual de consenso derivado das previsões registradas
 
 ## Escopo excluído
 
 - trading em tempo real
 - revenda de posição
+- atualização live por websocket
+- tabela materializada de histórico de snapshots
 
 ## Fluxo do usuário
 
@@ -50,13 +54,23 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 
 - mercado fechado bloqueia a ação
 - saldo insuficiente retorna erro claro
+- segunda previsão do mesmo usuário no mesmo mercado retorna erro claro
 - confirmação registra a previsão e o impacto financeiro correspondente
+- prévia calcula retorno estimado no backend sem persistir previsão, ledger ou probabilidade
+- usuário visitante visualiza opções e consenso, mas não vê controle de stake nem confirma previsão
+- usuário com previsão já registrada vê aviso destacado e controles de previsão desabilitados
 
 ## Regras de domínio
 
 - stake só pode usar saldo disponível
 - cada previsão deve ficar vinculada a mercado, opção e usuário
+- nesta etapa do MVP, cada usuário pode registrar no máximo uma previsão por mercado
 - a mutação financeira deve ser refletida no ledger
+- a evolução do consenso é recalculada a partir de `orynth_predictions` ordenadas por criação, usando peso base sintético e `reputacao * stake`
+- múltipla escolha deve expor uma linha de evolução por opção
+- a fonte de verdade da probabilidade é decimal (`probability_exact`); percentuais inteiros são apenas apresentação truncada
+- `probability_at_entry` e `potential_payout` devem usar a probabilidade decimal vigente antes da entrada
+- Django não deve executar fallback local mutável para previsão/stake quando a FastAPI estiver indisponível
 
 ## Responsabilidades por camada
 
@@ -71,6 +85,7 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - stake aplicado
 - snapshot de resultado
 - entrada de ledger associada
+- histórico derivável das previsões para gráficos de consenso
 
 ## Contratos afetados
 
@@ -91,6 +106,7 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - unitários para validação de stake
 - integração de previsão com ledger
 - fluxo completo de confirmação
+- regressão de hidratação local quando a FastAPI não entrega campos visuais novos
 
 ## Critérios de aceite
 

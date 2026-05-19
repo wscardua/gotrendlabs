@@ -1,0 +1,29 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Orynth Admin{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260519-badges-ui">
+  <script src="{% static 'js/orynth.js' %}?v=20260519-badges-ui" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="shell nav">
+      <a class="brand" href="{% url 'admin-ops-dashboard' %}"><span class="brand-mark">A</span><span>Orynth Admin</span></a>
+      <div class="nav-links">
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
+        <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-users' %}">Usuários</a>
+        <a class="nav-link {% if 'taxonomy' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>
+        <a class="nav-link {% if 'badge' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-badges' %}">Badge</a>
+        <a class="nav-link {% if 'market' in request.resolver_match.url_name and 'resolution' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-markets' %}">Mercado</a>
+        <a class="nav-link {% if 'resolution' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-resolution' %}">Resolução</a>
+        <a class="nav-link {% if 'moderation' in request.resolver_match.url_name or 'queue' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Filas</a>
+      </div>
+      <div class="nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="{% url 'home' %}">Ver site público</a></div>
+    </nav>
+  </header>
+  {% block content %}{% endblock %}
+</body>
+</html>

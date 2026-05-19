@@ -1,0 +1,104 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="queue-review">
+    <div class="queue-review-head">
+      <div>
+        <span class="eyebrow">Fila operacional</span>
+        <h1 class="large-title">{{ title }}</h1>
+        {% if item %}<p class="muted">{{ item.queue_label }} · {{ item.status_label }}</p>{% endif %}
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-moderation' %}">Voltar para filas</a>
+    </div>
+
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
+
+    {% if item %}
+      <div class="queue-review-grid">
+        <section class="panel queue-context">
+          <div class="queue-meta">
+            <span class="tag">{{ item.queue_label }}</span>
+            <span class="tag">{{ item.status_label }}</span>
+            {% if item.reward_oc %}<span class="tag safe">{{ item.reward_oc }} OC aprovados</span>{% endif %}
+          </div>
+          <h2>{{ item.title }}</h2>
+          <dl class="queue-detail-list">
+            <div><dt>Autor</dt><dd>{% if item.author_handle %}{{ item.author_handle }}{% elif item.guest_name %}{{ item.guest_name }} · {{ item.guest_email }}{% else %}Visitante não identificado{% endif %}</dd></div>
+            <div><dt>Tipo</dt><dd>{{ item.item_type }}</dd></div>
+            <div><dt>Criado em</dt><dd>{{ item.created_at_label }}</dd></div>
+            <div><dt>Severidade</dt><dd>{{ item.severity_label }}</dd></div>
+            {% if item.source %}<div><dt>Fonte</dt><dd>{{ item.source }}</dd></div>{% endif %}
+            {% if item.converted_market_slug %}<div><dt>Mercado criado</dt><dd>{{ item.converted_market_slug }}</dd></div>{% endif %}
+          </dl>
+          {% if item.description %}
+            <div class="queue-description">
+              <h3>Conteúdo enviado</h3>
+              <p>{{ item.description }}</p>
+            </div>
+          {% endif %}
+        </section>
+
+        <aside class="queue-actions">
+          <form class="panel queue-action-card" method="post">
+            {% csrf_token %}
+            <input type="hidden" name="operation" value="review">
+            <h3>{% if item.kind == "comment" %}Moderar comentário{% else %}Registrar revisão{% endif %}</h3>
+            <div class="form-grid">
+              <div class="field full">{{ review_form.status.label_tag }}{{ review_form.status }}</div>
+              <div class="field full">{{ review_form.note.label_tag }}{{ review_form.note }}</div>
+            </div>
+            <button class="btn primary" type="submit" data-confirm="{% if item.kind == 'comment' %}Moderar comentário?{% else %}Registrar revisão?{% endif %}">{% if item.kind == "comment" %}Salvar moderação{% else %}Registrar revisão{% endif %}</button>
+          </form>
+
+          {% if item.kind == "suggestion" %}
+            <form class="panel queue-action-card" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="operation" value="convert-draft">
+              <h3>Converter em rascunho</h3>
+              <p class="muted">Disponível apenas para fila Mercado.</p>
+              {% if item.converted_market_slug %}
+                <div class="field full"><label>Mercado criado</label><input value="{{ item.converted_market_slug }}" disabled></div>
+                <button class="btn primary" type="button" disabled>Rascunho já criado</button>
+              {% else %}
+                <div class="field full"><label for="id_note_convert">Nota operacional</label><textarea id="id_note_convert" name="note">Converter sugestão em rascunho para curadoria editorial.</textarea></div>
+                <button class="btn primary" type="submit" data-confirm="Converter sugestão em rascunho?">Converter em rascunho</button>
+              {% endif %}
+            </form>
+          {% endif %}
+
+          {% if item.kind != "comment" %}
+            <form class="panel queue-action-card" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="operation" value="reward">
+              <h3>Aprovar créditos</h3>
+              {% if item.reward_oc %}
+                <p class="muted">Créditos já aprovados e lançados no extrato do usuário.</p>
+                <div class="form-grid">
+                  <div class="field full"><label>Valor aprovado</label><input value="{{ item.reward_oc }} OC" disabled></div>
+                  {% if item.admin_note %}<div class="field full"><label>Nota operacional</label><textarea disabled>{{ item.admin_note }}</textarea></div>{% endif %}
+                </div>
+                <button class="btn success" type="button" disabled>Créditos já aprovados</button>
+              {% elif item.author_id %}
+                <p class="muted">Ao aprovar, os créditos entram na carteira do usuário e aparecem no extrato.</p>
+                <div class="form-grid">
+                  <div class="field full">{{ reward_form.amount_oc.label_tag }}{{ reward_form.amount_oc }}</div>
+                  <div class="field full">{{ reward_form.note.label_tag }}{{ reward_form.note }}</div>
+                </div>
+                <button class="btn success" type="submit" data-confirm="Aprovar envio de créditos?">Aprovar créditos</button>
+              {% else %}
+                <p class="muted">Créditos só podem ser enviados para usuário logado e cadastrado no sistema.</p>
+                <button class="btn success" type="button" disabled>Créditos indisponíveis para visitante</button>
+              {% endif %}
+            </form>
+          {% endif %}
+        </aside>
+      </div>
+    {% else %}
+      <section class="panel"><p>Item da fila não encontrado.</p></section>
+    {% endif %}
+  </section>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc>A ação fica registrada para auditoria interna.</p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>
+{% endblock %}

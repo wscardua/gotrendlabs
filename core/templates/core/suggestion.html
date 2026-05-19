@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Sugerir mercado{% endblock %}
+{% block extra_head %}{% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}{% endblock %}
+{% block content %}
+<main class="shell hero">
+  <section class="panel" style="max-width:860px;margin:auto">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Sugerir mercado</span></div>
+    <h1 class="large-title">Transforme uma pergunta em mercado auditável.</h1>
+    <p class="lead">A sugestão entra em uma fila editorial. Critério de resolução e fonte verificável são obrigatórios antes de publicação.</p>
+    {% if form_error %}<div class="tag risk">{{ form_error }}</div>{% endif %}
+    {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+    <form class="form-grid" method="post">
+      {% csrf_token %}
+      {% if is_guest %}
+        <div class="field"><label>Nome <small>Obrigatório</small></label><input name="guest_name" required maxlength="150" placeholder="Seu nome" value="{{ form_data.guest_name|default:'' }}"></div>
+        <div class="field"><label>Email <small>Obrigatório</small></label><input name="guest_email" type="email" required maxlength="254" placeholder="voce@email.com" value="{{ form_data.guest_email|default:'' }}"></div>
+      {% else %}
+        <div class="field full"><span class="tag safe">Enviado como usuário cadastrado: {{ viewer.name }} · {{ viewer.handle }}</span></div>
+      {% endif %}
+      <div class="field full"><label>Pergunta <small>Obrigatório</small></label><input name="question" required minlength="12" maxlength="240" placeholder="Ex.: A Apple lançará um app de IA generativa próprio em 2026?" value="{{ form_data.question|default:'' }}"></div>
+      <div class="field full"><label>Categoria <small>Obrigatório</small></label><select name="category" required><option value="">Selecione</option><option {% if form_data.category == "IA" %}selected{% endif %}>IA</option><option {% if form_data.category == "Negócios" %}selected{% endif %}>Negócios</option><option {% if form_data.category == "Política" %}selected{% endif %}>Política</option></select></div>
+      <div class="field full"><label>Fonte sugerida <small>Obrigatório</small></label><input name="suggested_source" required minlength="6" maxlength="180" placeholder="Site oficial, relatório público, órgão regulador ou newsroom" value="{{ form_data.suggested_source|default:'' }}"></div>
+      <div class="field full"><label>Por que este mercado importa?</label><textarea name="rationale" minlength="10" placeholder="Explique relevância, público interessado e por que a fonte resolve a pergunta.">{{ form_data.rationale|default:'' }}</textarea></div>
+      {% if recaptcha_enabled and recaptcha_site_key %}<div class="field full recaptcha-field"><div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div></div>{% endif %}
+      <button class="btn primary" type="submit" data-confirm="Enviar sugestão?" data-confirm-desc="A sugestão será enviada para a fila editorial do admin.">Enviar sugestão</button>
+      <a class="btn ghost" href="{% url 'home' %}">Cancelar</a>
+    </form>
+  </section>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>
+{% endblock %}

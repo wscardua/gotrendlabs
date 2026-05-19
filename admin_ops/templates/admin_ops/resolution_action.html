@@ -1,0 +1,70 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel">
+    <span class="eyebrow">Fila de resolução</span>
+    <h1 class="large-title">{{ title }}</h1>
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    {% if market %}
+      <div class="section-head">
+        <div>
+          <h2>{{ market.title }}</h2>
+          <p>{{ market.resolution_criteria }}</p>
+        </div>
+        <a class="btn ghost" href="{% url 'admin-ops-resolution' %}">Voltar</a>
+      </div>
+      <div class="admin-grid">
+        <div class="metric"><strong>{{ market.status_label }}</strong><span>status atual</span></div>
+        <div class="metric"><strong>{{ market.participants|default:"0 participantes" }}</strong><span>impacto</span></div>
+        <div class="metric"><strong>{{ market.volume_oc|default:"0 OC" }}</strong><span>stake bloqueado</span></div>
+        <div class="metric"><strong>{{ market.resolved_at_label|default:"pendente" }}</strong><span>resolução</span></div>
+      </div>
+      {% if action == "resolve" and form %}
+        <form class="form-grid" method="post" style="margin-top:18px">
+          {% csrf_token %}
+          <div class="field">
+            <label for="{{ form.winning_option_id.id_for_label }}">Resultado <span class="required-marker">Obrigatório</span></label>
+            {{ form.winning_option_id }}
+          </div>
+          <div class="field">
+            <label for="{{ form.source_url.id_for_label }}">Fonte pública <span class="required-marker">Obrigatório</span></label>
+            {{ form.source_url }}
+          </div>
+          <div class="field">
+            <label for="{{ form.resolved_at.id_for_label }}">Data/hora da resolução <span class="required-marker">Obrigatório</span></label>
+            {{ form.resolved_at }}
+          </div>
+          <div class="field">
+            <label for="{{ form.resolution_timezone.id_for_label }}">Timezone <span class="required-marker">Obrigatório</span></label>
+            {{ form.resolution_timezone }}
+          </div>
+          <div class="field full">
+            <label for="{{ form.note.id_for_label }}">Justificativa operacional <span class="required-marker">Obrigatório</span></label>
+            {{ form.note }}
+          </div>
+          <button class="btn primary" type="submit" data-confirm="Publicar resolução final?" data-confirm-desc="Esta ação libera stakes, aplica payout/reputação e publica trilha auditável.">Publicar resolução</button>
+          <a class="btn ghost" href="{% url 'admin-ops-resolution' %}">Cancelar</a>
+        </form>
+      {% elif action == "cancel-refund" %}
+        <form class="form-grid" method="post" style="margin-top:18px">
+          {% csrf_token %}
+          <div class="field full">
+            <label for="id_note">Justificativa operacional</label>
+            <textarea id="id_note" name="note" required>Desfazer resolução e retornar mercado para fechado.</textarea>
+          </div>
+          <div class="notice red">Esta ação retorna o mercado para Fechado, estorna payouts líquidos, rebloqueia stakes e recalcula reputação.</div>
+          <button class="btn danger" type="submit" data-confirm="Desfazer resolução?" data-confirm-desc="A ação é auditada no ledger e na trilha operacional.">Desfazer resolução</button>
+          <a class="btn ghost" href="{% url 'admin-ops-resolution' %}">Voltar</a>
+        </form>
+      {% else %}
+        <p class="muted">Use a edição do mercado para revisar texto, fonte esperada ou cancelar com refund total.</p>
+      {% endif %}
+    {% else %}
+      <p class="muted">Selecione um mercado fechado na fila para resolver.</p>
+      <a class="btn ghost" href="{% url 'admin-ops-resolution' %}">Voltar</a>
+    {% endif %}
+  </section>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>
+{% endblock %}

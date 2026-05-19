@@ -20,3 +20,11 @@
 - resolução pública
 - emails
 - mensagens de interface
+- mensagens de reCAPTCHA ausente, inválido, expirado ou indisponível
+- mensagens de comentário, reação, convite de login e moderação
+
+## Estado atual
+
+- `pt-BR` permanece como idioma base.
+- A primeira UI de comentários usa textos fixos em `pt-BR`; extração completa para catálogos `pt-BR`/`en` fica para `FEAT-I18N-001`.
+- Mensagens de erro de reCAPTCHA permanecem fixas em `pt-BR` nesta fatia; extração para catálogos fica para `FEAT-I18N-001`.

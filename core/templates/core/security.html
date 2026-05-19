@@ -1,11 +1,119 @@
 {% extends "base.html" %}
 {% block title %}Orynth | Segurança{% endblock %}
 {% block content %}
-<main class="shell">
-  <section class="panel prose">
-    <span class="eyebrow">Confiança</span>
-    <h1 class="large-title">Sem dinheiro real, com resolução auditável.</h1>
-    <p>OC é moeda educativa. Mercados devem ter critérios verificáveis e trilha pública de resolução.</p>
+<main class="shell page-content doc-page trust-page">
+  <section class="hero-card doc-hero trust-hero">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Confiança e segurança</span></div>
+    <div class="doc-hero-grid">
+      <div>
+        <h1>Segurança como parte visível da experiência.</h1>
+        <p class="lead">Orynth precisa ser divertido sem parecer leviano: sem dinheiro real, com sessão protegida, moderação, fontes verificáveis e trilhas administrativas para decisões sensíveis.</p>
+        <div class="hero-actions">
+          <a class="btn primary" href="{% url 'concepts' %}">Entender conceitos</a>
+          <a class="btn ghost" href="{% url 'feedback' %}">Enviar feedback</a>
+        </div>
+      </div>
+      <div class="trust-stack" aria-label="Pilares de confiança">
+        <div><strong>01</strong><span>Moeda educativa, sem saque e sem dinheiro real.</span></div>
+        <div><strong>02</strong><span>Mercados com prazo, status e critério verificável.</span></div>
+        <div><strong>03</strong><span>Resoluções com fonte, operador, horário e auditoria.</span></div>
+      </div>
+    </div>
   </section>
+
+  <section class="trust-principles">
+    <div class="doc-card">
+      <span class="trust-icon">OC</span>
+      <strong>Risco financeiro reduzido</strong>
+      <p>Orynth Coins são uma unidade interna de engajamento. Elas não são moeda financeira, não são sacáveis e não prometem retorno fora da plataforma.</p>
+    </div>
+    <div class="doc-card">
+      <span class="trust-icon">ID</span>
+      <strong>Conta e sessão rastreáveis</strong>
+      <p>Cadastro exige aceite de política de uso; sessões inválidas são rejeitadas e contas podem passar por exclusão lógica sem apagar histórico físico.</p>
+    </div>
+    <div class="doc-card">
+      <span class="trust-icon">LOG</span>
+      <strong>Operação auditável</strong>
+      <p>Ações administrativas relevantes preservam contexto, operador e evento, especialmente em fechamento, resolução, cancelamento e moderação.</p>
+    </div>
+  </section>
+
+  <div class="doc-layout">
+    <section class="doc-main">
+      <article class="doc-section" id="contas">
+        <div class="section-kicker"><span class="eyebrow">Conta</span><span class="tag safe">Autenticação</span></div>
+        <h2>Acesso autenticado protege ações de valor.</h2>
+        <p>Visitantes podem ler mercados, comentários, conceitos e rankings públicos. Prever, comentar, reagir, acessar wallet, compartilhar conquistas pessoais e editar perfil exigem sessão válida.</p>
+        <div class="doc-card-grid two">
+          <div class="doc-card"><strong>Privacidade de perfil</strong><span>Email, data de nascimento, sexo e bio ficam no contexto privado/editável do usuário autenticado.</span></div>
+          <div class="doc-card"><strong>Anti-abuso configurável</strong><span>Cadastro e fluxos públicos de sugestão/feedback podem exigir reCAPTCHA validado no servidor.</span></div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="mercados">
+        <div class="section-kicker"><span class="eyebrow">Mercados</span><span class="tag">Integridade</span></div>
+        <h2>Estados explícitos reduzem ambiguidade.</h2>
+        <p>O ciclo canônico passa por draft, scheduled, open, locked, resolved ou canceled. Apenas mercados abertos aceitam novas previsões; mercados fechados aguardam resolução e mercados resolvidos ficam somente leitura.</p>
+        <div class="trust-timeline">
+          <span>draft</span>
+          <span>scheduled</span>
+          <span>open</span>
+          <span>locked</span>
+          <span>resolved</span>
+        </div>
+      </article>
+
+      <article class="doc-section" id="resolucao">
+        <div class="section-kicker"><span class="eyebrow">Resolução</span><span class="tag risk">Alta sensibilidade</span></div>
+        <h2>Resultado exige evidência e registro operacional.</h2>
+        <p>Resolução manual deve informar opção vencedora, fonte pública ou justificativa, data/hora efetiva e timezone controlado. O sistema aplica efeitos de wallet e reputação na mesma trilha de domínio.</p>
+        <div class="doc-ledger">
+          <div><span>market.lock</span><strong>fecha previsões</strong></div>
+          <div><span>resolution evidence</span><strong>fonte ou justificativa</strong></div>
+          <div><span>ledger effects</span><strong>payout, perda ou refund</strong></div>
+          <div><span>admin event</span><strong>operador e horário</strong></div>
+        </div>
+      </article>
+
+      <article class="doc-section" id="comunidade">
+        <div class="section-kicker"><span class="eyebrow">Comunidade</span><span class="tag hot">Moderação</span></div>
+        <h2>Discussão pública precisa de controles simples e rastreáveis.</h2>
+        <p>Comentários ficam vinculados a mercado e autor identificado por handle. Reações são idempotentes por usuário/comentário, e ocultação/restauração administrativa deve preservar o registro original.</p>
+        <div class="notice">Denúncias, respostas/thread, edição pelo autor e paginação avançada ainda estão fora desta fatia do MVP.</div>
+      </article>
+
+      <article class="doc-section" id="limites">
+        <div class="section-kicker"><span class="eyebrow">Transparência</span><span class="tag">Limites do MVP</span></div>
+        <h2>O que ainda não é promessa de segurança final.</h2>
+        <p>OAuth real para Google/Facebook, MFA, refresh/revogação avançada, política final de cookie seguro, gestão avançada de operadores e auditoria administrativa mais rica ainda estão no backlog documentado.</p>
+        <div class="notice green">Esses limites não mudam a regra central: mutações relevantes devem passar pela API, gerar efeitos auditáveis e retornar erros previsíveis para a UX.</div>
+      </article>
+    </section>
+
+    <aside class="doc-rail">
+      <section class="panel doc-rail-card">
+        <h3>Camadas</h3>
+        <a href="#contas">Conta e sessão</a>
+        <a href="#mercados">Estados de mercado</a>
+        <a href="#resolucao">Resolução auditável</a>
+        <a href="#comunidade">Comunidade</a>
+        <a href="#limites">Limites atuais</a>
+      </section>
+      <section class="panel trust-scorecard">
+        <span class="eyebrow">Público</span>
+        <h3>O que o usuário consegue verificar</h3>
+        <div><span>Status</span><strong>open / locked / resolved</strong></div>
+        <div><span>Prazo</span><strong>close_at + timezone</strong></div>
+        <div><span>Resultado</span><strong>opção vencedora + fonte</strong></div>
+        <div><span>Wallet</span><strong>extrato conciliável</strong></div>
+      </section>
+      <section class="panel">
+        <span class="eyebrow">Protegido</span>
+        <h3>O que não vira conteúdo público</h3>
+        <p>Pesos sensíveis, heurísticas antifraude, detalhes internos de abuso e dados privados de perfil ficam fora das páginas públicas.</p>
+      </section>
+    </aside>
+  </div>
 </main>
 {% endblock %}

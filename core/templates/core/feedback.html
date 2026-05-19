@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Feedback{% endblock %}
+{% block extra_head %}{% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}{% endblock %}
+{% block content %}
+<main class="shell hero">
+  <section class="panel" style="max-width:860px;margin:auto">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Feedback da plataforma</span></div>
+    <h1 class="large-title">Enviar feedback</h1>
+    <p class="lead">Feedbacks úteis ajudam a melhorar regras, clareza e segurança. No MVP, feedback recompensável entra na fila operacional do admin.</p>
+    {% if form_error %}<div class="tag risk">{{ form_error }}</div>{% endif %}
+    {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+    <form class="form-grid" method="post">
+      {% csrf_token %}
+      {% if is_guest %}
+        <div class="field"><label>Nome <small>Obrigatório</small></label><input name="guest_name" required maxlength="150" placeholder="Seu nome" value="{{ form_data.guest_name|default:'' }}"></div>
+        <div class="field"><label>Email <small>Obrigatório</small></label><input name="guest_email" type="email" required maxlength="254" placeholder="voce@email.com" value="{{ form_data.guest_email|default:'' }}"></div>
+      {% else %}
+        <div class="field full"><span class="tag safe">Enviado como usuário cadastrado: {{ viewer.name }} · {{ viewer.handle }}</span></div>
+      {% endif %}
+      <div class="field full"><label>Tipo <small>Obrigatório</small></label><select name="feedback_type" required><option value="">Selecione</option><option {% if form_data.feedback_type == "Bug de produto" %}selected{% endif %}>Bug de produto</option><option {% if form_data.feedback_type == "Mercado ambíguo" %}selected{% endif %}>Mercado ambíguo</option><option {% if form_data.feedback_type == "Risco de segurança" %}selected{% endif %}>Risco de segurança</option><option {% if form_data.feedback_type == "Ideia de melhoria" %}selected{% endif %}>Ideia de melhoria</option><option {% if form_data.feedback_type == "Dúvidas" %}selected{% endif %}>Dúvidas</option></select></div>
+      <div class="field full"><label>Descrição <small>Obrigatório</small></label><textarea name="description" required minlength="10" placeholder="Descreva o problema, sugestão ou risco operacional com contexto suficiente para revisão.">{{ form_data.description|default:'' }}</textarea></div>
+      {% if recaptcha_enabled and recaptcha_site_key %}<div class="field full recaptcha-field"><div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div></div>{% endif %}
+      <button class="btn primary" type="submit" data-confirm="Enviar feedback?" data-confirm-desc="O feedback será encaminhado para a fila admin de produto.">Enviar feedback</button>
+      <a class="btn ghost" href="{% url 'home' %}">Cancelar</a>
+    </form>
+  </section>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>
+{% endblock %}

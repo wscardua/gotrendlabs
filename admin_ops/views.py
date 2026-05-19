@@ -1,7 +1,1001 @@
-from django.shortcuts import render
+from pathlib import Path
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from core.domain_client import get_domain_client
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.contrib import messages
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
+from accounts.api_client import (
+    AuthAPIError,
+    admin_adjust_user_wallet,
+    admin_block_category,
+    admin_block_subcategory,
+    admin_cancel_market,
+    admin_create_badge,
+    admin_create_category,
+    admin_create_market,
+    admin_create_subcategory,
+    admin_convert_suggestion,
+    admin_deactivate_badge,
+    admin_get_badges,
+    admin_get_market,
+    admin_get_markets,
+    admin_get_comments,
+    admin_get_queues,
+    admin_get_taxonomy,
+    admin_get_user,
+    admin_get_users,
+    admin_lock_market,
+    admin_moderate_comment,
+    admin_publish_market,
+    admin_deactivate_user,
+    admin_reactivate_user,
+    admin_resolve_market,
+    admin_review_queue_item,
+    admin_revoke_user_sessions,
+    admin_reward_feedback,
+    admin_reward_suggestion,
+    admin_unblock_category,
+    admin_unblock_subcategory,
+    admin_update_badge,
+    admin_update_category,
+    admin_update_market,
+    admin_update_subcategory,
+)
+from accounts.session import admin_api_required, auth_token
+from admin_ops.forms import AdminBadgeForm, AdminCategoryForm, AdminMarketForm, AdminSubcategoryForm, AdminUserNoteForm, AdminUserWalletAdjustmentForm, FeedbackRewardForm, MarketResolutionForm, QueueReviewForm
 
 
+THUMB_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "market_thumbnails", base_url=settings.MEDIA_URL + "market_thumbnails/")
+BADGE_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "badge_images", base_url=settings.MEDIA_URL + "badge_images/")
+
+
+def _display_handle(value):
+    value = (value or "").strip()
+    return value if value.startswith("@") else f"@{value}"
+
+
+def _parse_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _datetime_label(value, timezone_name):
+    parsed = _parse_datetime(value)
+    if not parsed:
+        return ""
+    timezone_name = timezone_name or "UTC"
+    try:
+        target_timezone = ZoneInfo(timezone_name)
+    except ZoneInfoNotFoundError:
+        target_timezone = ZoneInfo("UTC")
+        timezone_name = "UTC"
+    if not parsed.tzinfo:
+        parsed = parsed.replace(tzinfo=ZoneInfo("UTC"))
+    localized = parsed.astimezone(target_timezone)
+    return f"{localized.strftime('%d/%m/%Y %H:%M')} {timezone_name}"
+
+
+def _market_resolution_meta(market):
+    enriched = {**market}
+    resolution_timezone = enriched.get("resolution_timezone") or enriched.get("close_timezone") or "UTC"
+    enriched["resolution_timezone"] = resolution_timezone
+    enriched["resolved_at_label"] = enriched.get("resolved_at_label") or _datetime_label(enriched.get("resolved_at"), resolution_timezone)
+    return enriched
+
+
+def _save_thumbnail(upload):
+    suffix = Path(upload.name).suffix.lower()[:12]
+    filename = THUMB_STORAGE.get_available_name(f"market-thumb{suffix}")
+    return THUMB_STORAGE.save(filename, upload)
+
+
+def _save_badge_image(upload):
+    suffix = Path(upload.name).suffix.lower()[:12]
+    filename = BADGE_STORAGE.get_available_name(f"badge{suffix}")
+    return BADGE_STORAGE.save(filename, upload)
+
+
+def _market_initial(market):
+    options = market.get("options", [])
+    initial = {
+        "title": market.get("title", ""),
+        "slug": market.get("slug", ""),
+        "summary": market.get("summary", ""),
+        "kind": market.get("kind", "binary"),
+        "status_label": market.get("status_label", ""),
+        "primary_outcome": market.get("primary_outcome", ""),
+        "primary_probability_exact": market.get("primary_probability_exact", 0),
+        "secondary_probability_exact": market.get("secondary_probability_exact", 0),
+        "volume_oc": market.get("volume_oc", ""),
+        "participants": market.get("participants", ""),
+        "category": market.get("category", ""),
+        "subcategory": market.get("subcategory", ""),
+        "source": market.get("source", ""),
+        "close_label": market.get("close_label", ""),
+        "thumb": market.get("thumb", ""),
+        "thumb_color": market.get("thumb_color", ""),
+        "image_url": market.get("image_url", ""),
+        "resolution_criteria": market.get("resolution_criteria", ""),
+        "admin_notes": market.get("admin_notes", ""),
+        "close_at": (market.get("close_at") or "")[:16],
+        "close_timezone": market.get("close_timezone") or "America/Sao_Paulo",
+        "auto_close_enabled": market.get("auto_close_enabled", True),
+        "is_featured": market.get("is_featured", False),
+        "view_count": market.get("view_count", 0),
+        "share_count": market.get("share_count", 0),
+        "resolution_type": market.get("resolution_type", ""),
+        "resolution_note": market.get("resolution_note", ""),
+        "options": [
+            {
+                "label": option.get("label", ""),
+                "hint": option.get("hint", ""),
+                "probability": option.get("probability", 0),
+                "probability_exact": option.get("probability_exact", option.get("probability", 0)),
+            }
+            for option in options
+        ],
+    }
+    for index, option in enumerate(options[:3], start=1):
+        initial[f"option_{index}_label"] = option.get("label", "")
+        initial[f"option_{index}_hint"] = option.get("hint", "")
+    return initial
+
+
+def _default_market_initial():
+    return {
+        "kind": "binary",
+        "category": "",
+        "subcategory": "",
+        "thumb": "AI",
+        "thumb_color": "#d8ece2",
+        "close_timezone": "America/Sao_Paulo",
+        "auto_close_enabled": True,
+        "is_featured": False,
+        "option_1_label": "SIM",
+        "option_1_hint": "Opção afirmativa",
+        "option_2_label": "NAO",
+        "option_2_hint": "Opção negativa",
+        "options": [
+            {"label": "SIM", "hint": "Opção afirmativa"},
+            {"label": "NAO", "hint": "Opção negativa"},
+        ],
+    }
+
+
+def _market_taxonomy_options(taxonomy_data):
+    categories = []
+    subcategories = []
+    for category in taxonomy_data.get("categories", []):
+        if category.get("is_blocked"):
+            continue
+        category_name = category.get("name", "")
+        categories.append({"name": category_name, "slug": category.get("slug", "")})
+        for subcategory in category.get("subcategories", []):
+            if subcategory.get("is_blocked"):
+                continue
+            subcategories.append(
+                {
+                    "name": subcategory.get("name", ""),
+                    "slug": subcategory.get("slug", ""),
+                    "category": category_name,
+                }
+            )
+    return {"categories": categories, "subcategories": subcategories}
+
+
+def _default_market_initial_for_taxonomy(taxonomy_data):
+    return _default_market_initial()
+
+
+def _age_label(created_at):
+    delta = timezone.now() - created_at
+    hours = int(delta.total_seconds() // 3600)
+    if hours < 1:
+        return "agora"
+    if hours < 24:
+        return f"{hours}h"
+    return f"{hours // 24}d"
+
+
+def _comment_status_label(value):
+    return {"visible": "Visível", "hidden": "Oculto"}.get(value, value)
+
+
+def _comment_queue_item(comment):
+    status_value = comment.get("status", "visible") if isinstance(comment, dict) else comment.status
+    created_at = comment.get("created_at") if isinstance(comment, dict) else comment.created_at
+    if isinstance(created_at, str):
+        created_at_label = created_at[:16].replace("T", " ")
+        age_label = ""
+    else:
+        created_at_label = created_at.strftime("%d/%m/%Y %H:%M")
+        age_label = _age_label(created_at)
+    author_handle = comment.get("author_handle", "") if isinstance(comment, dict) else comment.author.username
+    author_id = comment.get("author_id") if isinstance(comment, dict) else comment.author_id
+    market_slug = comment.get("market_slug", "") if isinstance(comment, dict) else comment.market.slug
+    body = comment.get("body", "") if isinstance(comment, dict) else comment.body
+    moderation_note = comment.get("moderation_note", "") if isinstance(comment, dict) else comment.moderation_note
+    comment_id = comment.get("id") if isinstance(comment, dict) else comment.id
+    return {
+        "id": comment_id,
+        "kind": "comment",
+        "title": body[:90],
+        "queue_label": "Comentários",
+        "item_type": f"Comentário em {market_slug}",
+        "status": status_value,
+        "status_label": _comment_status_label(status_value),
+        "severity_label": "Média",
+        "owner_label": "Moderação",
+        "age_label": age_label,
+        "author_handle": _display_handle(author_handle) if author_handle else "",
+        "author_id": author_id,
+        "guest_name": "",
+        "guest_email": "",
+        "source": market_slug,
+        "description": body,
+        "admin_note": moderation_note,
+        "created_at": comment.get("created_at", "") if isinstance(comment, dict) else comment.created_at.isoformat(),
+        "created_at_label": created_at_label,
+    }
+
+
+@admin_api_required
 def dashboard(request):
-    return render(request, "admin_ops/dashboard.html", {"admin_summary": get_domain_client().admin_summary()})
+    token = auth_token(request)
+    try:
+        market_data = admin_get_markets(token)
+    except AuthAPIError as exc:
+        market_data = {"markets": [], "counts": {}}
+        error = str(exc)
+    else:
+        error = ""
+    try:
+        queue_data = admin_get_queues(token)
+    except AuthAPIError as exc:
+        queue_data = {"items": [], "counts": {}}
+        error = error or str(exc)
+    pending_suggestions = int(queue_data.get("counts", {}).get("suggestion", {}).get("pending") or 0)
+    pending_feedback = int(queue_data.get("counts", {}).get("feedback", {}).get("pending") or 0)
+    try:
+        comment_counts = admin_get_comments(token).get("comments", [])
+        hidden_comments = sum(1 for comment in comment_counts if comment.get("status") == "hidden")
+        visible_comments = sum(1 for comment in comment_counts if comment.get("status") == "visible")
+    except AuthAPIError:
+        hidden_comments = 0
+        visible_comments = 0
+    ops_summary = {
+        "pending_suggestions": pending_suggestions,
+        "pending_feedback": pending_feedback,
+        "hidden_comments": hidden_comments,
+        "visible_comments": visible_comments,
+        "queue_total": pending_suggestions + pending_feedback + hidden_comments,
+    }
+    return render(
+        request,
+        "admin_ops/dashboard.html",
+        {"market_data": market_data, "ops_summary": ops_summary, "admin_error": error},
+    )
+
+
+@admin_api_required
+def markets(request):
+    status_filter = request.GET.get("status") or ""
+    active_order = request.GET.get("order") or "display"
+    try:
+        market_data = admin_get_markets(auth_token(request), status=status_filter, order=active_order)
+    except AuthAPIError as exc:
+        market_data = {"markets": [], "counts": {}}
+        error = str(exc)
+    else:
+        error = ""
+    return render(
+        request,
+        "admin_ops/markets.html",
+        {
+            "market_data": market_data,
+            "admin_error": error,
+            "active_status": status_filter,
+            "active_order": active_order,
+        },
+    )
+
+
+@admin_api_required
+def users(request):
+    filters = {
+        "q": request.GET.get("q") or "",
+        "status": request.GET.get("status") or "",
+        "role": request.GET.get("role") or "",
+        "order": request.GET.get("order") or "created_desc",
+    }
+    try:
+        user_data = admin_get_users(auth_token(request), **filters)
+    except AuthAPIError as exc:
+        user_data = {"users": [], "counts": {}}
+        error = str(exc)
+    else:
+        error = ""
+    return render(
+        request,
+        "admin_ops/users.html",
+        {
+            "user_data": user_data,
+            "admin_error": error,
+            "active_q": filters["q"],
+            "active_status": filters["status"],
+            "active_role": filters["role"],
+            "active_order": filters["order"],
+        },
+    )
+
+
+@admin_api_required
+def user_detail(request, user_id):
+    token = auth_token(request)
+    error = ""
+    detail = None
+    note_form = AdminUserNoteForm()
+    wallet_form = AdminUserWalletAdjustmentForm()
+    if request.method == "POST":
+        action = request.POST.get("action", "")
+        try:
+            if action == "deactivate":
+                note_form = AdminUserNoteForm(request.POST)
+                if note_form.is_valid():
+                    admin_deactivate_user(token, user_id, note_form.cleaned_data["note"])
+                    messages.success(request, "Usuário desativado e sessões revogadas.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Informe a nota operacional."
+            elif action == "reactivate":
+                note_form = AdminUserNoteForm(request.POST)
+                if note_form.is_valid():
+                    admin_reactivate_user(token, user_id, note_form.cleaned_data["note"])
+                    messages.success(request, "Usuário reativado.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Informe a nota operacional."
+            elif action == "revoke_sessions":
+                note_form = AdminUserNoteForm(request.POST)
+                if note_form.is_valid():
+                    admin_revoke_user_sessions(token, user_id, note_form.cleaned_data["note"])
+                    messages.success(request, "Sessões ativas revogadas.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Informe a nota operacional."
+            elif action == "wallet_adjust":
+                wallet_form = AdminUserWalletAdjustmentForm(request.POST)
+                if wallet_form.is_valid():
+                    admin_adjust_user_wallet(
+                        token,
+                        user_id,
+                        wallet_form.cleaned_data["direction"],
+                        wallet_form.cleaned_data["amount_oc"],
+                        wallet_form.cleaned_data["note"],
+                    )
+                    messages.success(request, "Ajuste manual de wallet registrado.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Revise o ajuste de wallet."
+        except AuthAPIError as exc:
+            error = str(exc)
+    try:
+        detail = admin_get_user(token, user_id)
+    except AuthAPIError as exc:
+        error = error or str(exc)
+    return render(
+        request,
+        "admin_ops/user_detail.html",
+        {
+            "detail": detail,
+            "note_form": note_form,
+            "wallet_form": wallet_form,
+            "admin_error": error,
+        },
+    )
+
+
+def _badge_initial(badge):
+    return {
+        "code": badge.get("code", ""),
+        "name": badge.get("name", ""),
+        "description": badge.get("description", ""),
+        "rule_description": badge.get("rule_description", ""),
+        "badge_type": badge.get("badge_type", "global"),
+        "image_url": badge.get("image_url", ""),
+        "image_dark_url": badge.get("image_dark_url", ""),
+        "is_active": badge.get("is_active", True),
+        "rule_type": badge.get("rule_type", "resolved_predictions_count"),
+        "threshold_value": badge.get("threshold_value", 1),
+        "category": badge.get("category", ""),
+        "subcategory": badge.get("subcategory", ""),
+    }
+
+
+@admin_api_required
+def badges(request):
+    error = ""
+    badge_data = {"badges": []}
+    try:
+        badge_data = admin_get_badges(auth_token(request))
+    except AuthAPIError as exc:
+        error = str(exc)
+    return render(request, "admin_ops/badges.html", {"badge_data": badge_data, "admin_error": error})
+
+
+@admin_api_required
+def badge_form(request, mode="new", code=None):
+    token = auth_token(request)
+    error = ""
+    badge = None
+    taxonomy_data = {"categories": []}
+    try:
+        taxonomy_data = admin_get_taxonomy(token)
+    except AuthAPIError as exc:
+        error = str(exc)
+    if code:
+        try:
+            badge = next((item for item in admin_get_badges(token).get("badges", []) if item.get("code") == code), None)
+        except AuthAPIError as exc:
+            error = error or str(exc)
+        if code and not badge and not error:
+            error = "Badge não encontrada."
+    post_data = None
+    if request.method == "POST":
+        if request.POST.get("action") == "deactivate" and code:
+            try:
+                admin_deactivate_badge(token, code, request.POST.get("note") or "Desativada pelo Admin Ops.")
+                messages.success(request, "Badge desativada.")
+                return redirect("admin-ops-badges")
+            except AuthAPIError as exc:
+                error = str(exc)
+        post_data = request.POST.copy()
+        if request.FILES.get("badge_image"):
+            saved_name = _save_badge_image(request.FILES["badge_image"])
+            post_data["image_url"] = BADGE_STORAGE.url(saved_name)
+        if request.FILES.get("badge_dark_image"):
+            saved_name = _save_badge_image(request.FILES["badge_dark_image"])
+            post_data["image_dark_url"] = BADGE_STORAGE.url(saved_name)
+    initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True}
+    form = AdminBadgeForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
+    if request.method == "POST" and request.POST.get("action") != "deactivate":
+        if form.is_valid():
+            try:
+                if mode == "new":
+                    badge = admin_create_badge(token, form.to_payload())
+                    messages.success(request, "Badge criada.")
+                    return redirect("admin-ops-badge-edit", code=badge["code"])
+                badge = admin_update_badge(token, code, form.to_payload())
+                messages.success(request, "Badge atualizada.")
+                return redirect("admin-ops-badge-edit", code=badge["code"])
+            except AuthAPIError as exc:
+                error = str(exc)
+        else:
+            error = "Revise os campos da badge."
+    return render(
+        request,
+        "admin_ops/badge_form.html",
+        {
+            "title": "Criar badge" if mode == "new" else "Editar badge",
+            "mode": mode,
+            "code": code,
+            "badge": badge,
+            "form": form,
+            "taxonomy_options": _market_taxonomy_options(taxonomy_data),
+            "admin_error": error,
+        },
+    )
+
+
+@admin_api_required
+def moderation(request):
+    token = auth_token(request)
+    filters = {
+        "kind": request.GET.get("kind") or "",
+        "status": request.GET.get("status") or "",
+        "severity": request.GET.get("severity") or "",
+        "order": request.GET.get("order") or "created_desc",
+    }
+    queue_data = {"items": [], "counts": {}}
+    error = ""
+    try:
+        if filters["kind"] != "comment":
+            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback"} else ""}
+            queue_data = admin_get_queues(token, **queue_filters)
+    except AuthAPIError as exc:
+        queue_data = {"items": [], "counts": {}}
+        error = str(exc)
+    if filters["kind"] in {"", "comment"}:
+        try:
+            comment_filters = {}
+            if filters["status"] in {"visible", "hidden"}:
+                comment_filters["status"] = filters["status"]
+            comments = admin_get_comments(token, **comment_filters).get("comments", [])
+            comment_items = [_comment_queue_item(comment) for comment in comments]
+            queue_data.setdefault("items", []).extend(comment_items)
+            queue_data.setdefault("counts", {}).setdefault("comment", {})
+            queue_data["counts"]["comment"]["visible"] = sum(1 for item in comment_items if item.get("status") == "visible")
+            queue_data["counts"]["comment"]["hidden"] = sum(1 for item in comment_items if item.get("status") == "hidden")
+        except AuthAPIError as exc:
+            error = error or str(exc)
+    reverse = filters.get("order") != "created_asc"
+    queue_data["items"] = sorted(queue_data.get("items", []), key=lambda item: (item.get("created_at", ""), item["id"]), reverse=reverse)
+    return render(
+        request,
+        "admin_ops/moderation.html",
+        {
+            "queue_data": queue_data,
+            "active_kind": filters["kind"],
+            "active_status": filters["status"],
+            "active_severity": filters["severity"],
+            "active_order": filters["order"],
+            "admin_error": error,
+        },
+    )
+
+
+@admin_api_required
+def resolution(request):
+    token = auth_token(request)
+    error = ""
+    active_order = request.GET.get("order") or "resolution_desc"
+    try:
+        locked_data = admin_get_markets(token, status="locked", order=active_order)
+        resolved_data = admin_get_markets(token, status="resolved", order=active_order)
+        market_data = {
+            "markets": [*locked_data.get("markets", []), *resolved_data.get("markets", [])],
+            "counts": {**locked_data.get("counts", {}), **resolved_data.get("counts", {})},
+        }
+    except AuthAPIError as exc:
+        market_data = {"markets": [], "counts": {}}
+        error = str(exc)
+    market_data["markets"] = [_market_resolution_meta(market) for market in market_data.get("markets", [])]
+    dated_markets = [market for market in market_data["markets"] if _parse_datetime(market.get("resolved_at"))]
+    pending_markets = [market for market in market_data["markets"] if not _parse_datetime(market.get("resolved_at"))]
+    dated_markets.sort(key=lambda market: _parse_datetime(market.get("resolved_at")), reverse=active_order != "resolution_asc")
+    market_data["markets"] = [*pending_markets, *dated_markets] if active_order == "pending_first" else [*dated_markets, *pending_markets]
+    return render(
+        request,
+        "admin_ops/resolution.html",
+        {"market_data": market_data, "admin_error": error, "active_order": active_order},
+    )
+
+
+@admin_api_required
+def taxonomy(request):
+    token = auth_token(request)
+    message = ""
+    error = ""
+    if request.method == "POST":
+        if request.POST.get("action") == "create_category":
+            form = AdminCategoryForm(request.POST)
+            if form.is_valid():
+                try:
+                    admin_create_category(token, form.cleaned_data)
+                    message = "Categoria criada."
+                except AuthAPIError as exc:
+                    error = str(exc)
+            else:
+                error = "Revise a categoria."
+        elif request.POST.get("action") == "update_category":
+            form = AdminCategoryForm(request.POST)
+            category_slug = request.POST.get("category_slug", "")
+            if form.is_valid() and category_slug:
+                try:
+                    admin_update_category(token, category_slug, form.cleaned_data)
+                    message = "Categoria atualizada."
+                except AuthAPIError as exc:
+                    error = str(exc)
+            else:
+                error = "Revise a categoria."
+        elif request.POST.get("action") == "create_subcategory":
+            form = AdminSubcategoryForm(request.POST)
+            if form.is_valid():
+                try:
+                    admin_create_subcategory(
+                        token,
+                        form.cleaned_data["category_slug"],
+                        {"name": form.cleaned_data["name"], "slug": form.cleaned_data.get("slug") or None},
+                    )
+                    message = "Subcategoria criada."
+                except AuthAPIError as exc:
+                    error = str(exc)
+            else:
+                error = "Revise a subcategoria."
+        elif request.POST.get("action") == "update_subcategory":
+            form = AdminSubcategoryForm(request.POST)
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            if form.is_valid() and category_slug and subcategory_slug:
+                try:
+                    admin_update_subcategory(
+                        token,
+                        category_slug,
+                        subcategory_slug,
+                        {"name": form.cleaned_data["name"], "slug": form.cleaned_data.get("slug") or None},
+                    )
+                    message = "Subcategoria atualizada."
+                except AuthAPIError as exc:
+                    error = str(exc)
+            else:
+                error = "Revise a subcategoria."
+        elif request.POST.get("action") == "block_category":
+            category_slug = request.POST.get("category_slug", "")
+            try:
+                admin_block_category(token, category_slug, request.POST.get("block_note") or "Bloqueada pelo Admin Ops.")
+                message = "Categoria bloqueada."
+            except AuthAPIError as exc:
+                error = str(exc)
+        elif request.POST.get("action") == "unblock_category":
+            category_slug = request.POST.get("category_slug", "")
+            try:
+                admin_unblock_category(token, category_slug, request.POST.get("block_note") or "Reativada pelo Admin Ops.")
+                message = "Categoria desbloqueada."
+            except AuthAPIError as exc:
+                error = str(exc)
+        elif request.POST.get("action") == "block_subcategory":
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            try:
+                admin_block_subcategory(token, category_slug, subcategory_slug, request.POST.get("block_note") or "Bloqueada pelo Admin Ops.")
+                message = "Subcategoria bloqueada."
+            except AuthAPIError as exc:
+                error = str(exc)
+        elif request.POST.get("action") == "unblock_subcategory":
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            try:
+                admin_unblock_subcategory(token, category_slug, subcategory_slug, request.POST.get("block_note") or "Reativada pelo Admin Ops.")
+                message = "Subcategoria desbloqueada."
+            except AuthAPIError as exc:
+                error = str(exc)
+    try:
+        taxonomy_data = admin_get_taxonomy(token)
+    except AuthAPIError as exc:
+        taxonomy_data = {"categories": []}
+        error = error or str(exc)
+    categories = taxonomy_data.get("categories", [])
+    for category in categories:
+        category["has_blocked_item"] = bool(category.get("is_blocked")) or any(
+            subcategory.get("is_blocked") for subcategory in category.get("subcategories", [])
+        )
+    taxonomy_summary = {
+        "categories_count": len(categories),
+        "subcategories_count": sum(len(category.get("subcategories", [])) for category in categories),
+        "markets_count": sum(int(category.get("markets_count") or 0) for category in categories),
+        "blocked_count": sum(
+            (1 if category.get("is_blocked") else 0)
+            + sum(1 for subcategory in category.get("subcategories", []) if subcategory.get("is_blocked"))
+            for category in categories
+        ),
+    }
+    return render(
+        request,
+        "admin_ops/taxonomy.html",
+        {
+            "taxonomy": taxonomy_data,
+            "taxonomy_summary": taxonomy_summary,
+            "category_form": AdminCategoryForm(),
+            "subcategory_form": AdminSubcategoryForm(),
+            "admin_message": message,
+            "admin_error": error,
+        },
+    )
+
+
+@admin_api_required
+def market_form(request, mode="new", slug=None):
+    token = auth_token(request)
+    market = None
+    taxonomy_data = {"categories": []}
+    error = ""
+    message = ""
+    if slug:
+        try:
+            market = _market_resolution_meta(admin_get_market(token, slug))
+        except AuthAPIError as exc:
+            error = str(exc)
+    try:
+        taxonomy_data = admin_get_taxonomy(token)
+    except AuthAPIError as exc:
+        error = error or str(exc)
+    post_data = None
+    if request.method == "POST":
+        if request.POST.get("action") == "lock" and mode != "new":
+            try:
+                market = admin_lock_market(token, slug, request.POST.get("admin_notes") or "Fechado manualmente pelo admin.")
+                messages.success(request, "Mercado fechado manualmente com sucesso.")
+                return redirect("admin-ops-market-edit", slug=market["slug"])
+            except AuthAPIError as exc:
+                error = str(exc)
+        post_data = request.POST.copy()
+        if request.FILES.get("thumbnail_file"):
+            saved_name = _save_thumbnail(request.FILES["thumbnail_file"])
+            post_data["image_url"] = THUMB_STORAGE.url(saved_name)
+    initial = _market_initial(market) if market else _default_market_initial_for_taxonomy(taxonomy_data)
+    form = AdminMarketForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
+    is_readonly = bool(market and market.get("status") == "resolved")
+    if is_readonly:
+        for field in form.fields.values():
+            field.disabled = True
+    if request.method == "POST" and request.POST.get("action") != "lock" and form.is_valid():
+        if is_readonly:
+            error = "Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar."
+            return render(
+                request,
+                "admin_ops/market_form.html",
+                {
+                    "title": "Editar/visualizar mercado",
+                    "mode": mode,
+                    "slug": slug,
+                    "form": form,
+                    "market": market,
+                    "preview": market or initial,
+                    "option_rows": form.option_rows(),
+                    "taxonomy_options": _market_taxonomy_options(taxonomy_data),
+                    "can_manual_close": False,
+                    "can_publish": False,
+                    "is_readonly": is_readonly,
+                    "admin_error": error,
+                    "admin_message": message,
+                },
+            )
+        action = request.POST.get("action", "save")
+        try:
+            if mode == "new":
+                market = admin_create_market(token, form.to_payload())
+                slug = market["slug"]
+            else:
+                market = admin_update_market(token, slug, form.to_payload())
+                slug = market["slug"]
+            if action == "publish":
+                market = admin_publish_market(token, slug, form.cleaned_data.get("admin_notes") or "")
+                message = "Mercado publicado."
+            elif action == "cancel":
+                market = admin_cancel_market(token, slug, form.cleaned_data.get("admin_notes") or "Cancelado pelo admin.")
+                message = "Mercado cancelado."
+            else:
+                message = "Mercado/contrato salvo com sucesso."
+            messages.success(request, message)
+            return redirect("admin-ops-market-edit", slug=market["slug"])
+        except AuthAPIError as exc:
+            error = str(exc)
+    elif request.method == "POST" and request.POST.get("action") != "lock":
+        error = "Revise os campos do mercado."
+    title = "Criar mercado" if mode == "new" else "Editar/visualizar mercado"
+    preview = market or (form.to_payload() if form.is_valid() else initial)
+    option_rows = form.calculated_option_rows() if form.is_bound else form.initial.get("options", [])
+    can_manual_close = bool(market and market.get("status") in {"open", "scheduled"} and market.get("auto_close_enabled") is False)
+    can_publish = bool(mode == "new" or not market or market.get("status") in {"draft", "scheduled"})
+    taxonomy_options = _market_taxonomy_options(taxonomy_data)
+    return render(
+        request,
+        "admin_ops/market_form.html",
+        {
+            "title": title,
+            "mode": mode,
+            "slug": slug,
+            "form": form,
+            "market": market,
+            "preview": preview,
+            "option_rows": option_rows,
+            "taxonomy_options": taxonomy_options,
+            "can_manual_close": can_manual_close,
+            "can_publish": can_publish,
+            "is_readonly": is_readonly,
+            "admin_error": error,
+            "admin_message": message,
+        },
+    )
+
+
+@admin_api_required
+def resolution_action(request, action, slug=None):
+    titles = {
+        "resolve": "Resolver mercado",
+        "cancel-refund": "Desfazer resolução",
+        "review": "Revisar mercado",
+        "request-review": "Pedir revisão",
+    }
+    token = auth_token(request)
+    error = ""
+    market = None
+    form = None
+    if slug:
+        try:
+            market = admin_get_market(token, slug)
+        except AuthAPIError as exc:
+            error = str(exc)
+    if action == "resolve" and market:
+        form = MarketResolutionForm(request.POST or None, market=market)
+        if request.method == "POST" and form.is_valid():
+            try:
+                resolved = admin_resolve_market(
+                    token,
+                    market["slug"],
+                    int(form.cleaned_data["winning_option_id"]),
+                    form.cleaned_data.get("source_url") or "",
+                    form.cleaned_data.get("note") or "",
+                    form.cleaned_data.get("resolved_at"),
+                    form.cleaned_data.get("resolution_timezone") or "",
+                )
+                messages.success(request, f"Mercado resolvido: {resolved['title']}")
+                return redirect("admin-ops-resolution")
+            except AuthAPIError as exc:
+                error = str(exc)
+        elif request.method == "POST":
+            error = "Informe resultado e evidência da resolução."
+    elif action == "cancel-refund" and market:
+        if request.method == "POST":
+            note = request.POST.get("note") or "Resolução cancelada pelo Admin Ops com refund operacional."
+            try:
+                canceled = admin_cancel_market(token, market["slug"], note)
+                messages.success(request, f"Resolução desfeita: {canceled['title']}")
+                return redirect("admin-ops-resolution")
+            except AuthAPIError as exc:
+                error = str(exc)
+    return render(
+        request,
+        "admin_ops/resolution_action.html",
+        {"title": titles[action], "action": action, "slug": slug, "market": market, "form": form, "admin_error": error},
+    )
+
+
+@admin_api_required
+def queue_action(request, action, kind=None, item_id=None):
+    titles = {
+        "convert-draft": "Converter sugestão em rascunho",
+        "reward-feedback": "Aprovar recompensa",
+        "view-item": "Visualizar item da fila",
+        "moderate": "Moderar item",
+        "review": "Revisar item",
+    }
+    token = auth_token(request)
+    error = ""
+    message = ""
+    item = None
+    review_form = QueueReviewForm()
+    reward_form = FeedbackRewardForm()
+    if kind and item_id:
+        try:
+            if kind == "comment":
+                comments = admin_get_comments(token).get("comments", [])
+                item = next((_comment_queue_item(row) for row in comments if int(row.get("id")) == int(item_id)), None)
+            else:
+                queue_data = admin_get_queues(token, kind=kind)
+                item = next((row for row in queue_data.get("items", []) if int(row.get("id")) == int(item_id)), None)
+            if not item:
+                error = "Item da fila não encontrado."
+        except AuthAPIError as exc:
+            error = str(exc)
+    if item:
+        review_form = QueueReviewForm(initial={"status": item.get("status", "pending"), "note": item.get("admin_note", "")})
+        if kind == "comment":
+            review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
+        reward_form = FeedbackRewardForm(initial={"amount_oc": item.get("reward_oc") or 50, "note": item.get("admin_note", "")})
+    if request.method == "POST" and item and not error:
+        operation = request.POST.get("operation", "review")
+        try:
+            if kind == "comment":
+                review_form = QueueReviewForm(request.POST)
+                review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
+                if review_form.is_valid():
+                    admin_moderate_comment(token, item_id, review_form.cleaned_data["status"], review_form.cleaned_data.get("note") or "")
+                    messages.success(request, "Comentário moderado.")
+                    return redirect("admin-ops-moderation")
+                error = "Revise o status."
+            elif operation == "convert-draft" and kind == "suggestion":
+                if item.get("converted_market_slug"):
+                    error = "Esta sugestão já foi convertida em rascunho."
+                    raise AuthAPIError(error, 422)
+                admin_convert_suggestion(token, item_id, request.POST.get("note") or "Convertida em rascunho pelo Admin Ops.")
+                messages.success(request, "Sugestão convertida em rascunho.")
+                return redirect("admin-ops-moderation")
+            if operation == "reward" and kind == "feedback":
+                reward_form = FeedbackRewardForm(request.POST)
+                if item.get("reward_oc"):
+                    error = "Créditos já aprovados para este item."
+                    raise AuthAPIError(error, 422)
+                if reward_form.is_valid():
+                    admin_reward_feedback(token, item_id, reward_form.cleaned_data["amount_oc"], reward_form.cleaned_data.get("note") or "")
+                    messages.success(request, "Feedback recompensado.")
+                    return redirect("admin-ops-moderation")
+                error = "Revise a recompensa."
+            elif operation == "reward" and kind == "suggestion":
+                reward_form = FeedbackRewardForm(request.POST)
+                if item.get("reward_oc"):
+                    error = "Créditos já aprovados para este item."
+                    raise AuthAPIError(error, 422)
+                if reward_form.is_valid():
+                    admin_reward_suggestion(token, item_id, reward_form.cleaned_data["amount_oc"], reward_form.cleaned_data.get("note") or "")
+                    messages.success(request, "Sugestão recompensada.")
+                    return redirect("admin-ops-moderation")
+                error = "Revise a recompensa."
+            else:
+                review_form = QueueReviewForm(request.POST)
+                if review_form.is_valid():
+                    admin_review_queue_item(token, kind, item_id, review_form.cleaned_data["status"], review_form.cleaned_data.get("note") or "")
+                    messages.success(request, "Item revisado.")
+                    return redirect("admin-ops-moderation")
+                error = "Revise o status."
+        except AuthAPIError as exc:
+            error = str(exc)
+    return render(
+        request,
+        "admin_ops/queue_action.html",
+        {
+            "title": titles[action],
+            "action": action,
+            "kind": kind,
+            "item_id": item_id,
+            "item": item,
+            "review_form": review_form,
+            "reward_form": reward_form,
+            "admin_message": message,
+            "admin_error": error,
+        },
+    )
+
+
+@admin_api_required
+def category_action(request, action):
+    token = auth_token(request)
+    title_map = {
+        "new": "Nova categoria",
+        "edit": "Alterar categoria",
+        "delete": "Excluir categoria",
+        "badge-rules": "Regras de badge",
+    }
+    message = ""
+    error = ""
+    if request.method == "POST":
+        category_slug = request.POST.get("category_slug", "")
+        subcategory_slug = request.POST.get("subcategory_slug", "")
+        if request.POST.get("kind") == "category":
+            form = AdminCategoryForm(request.POST)
+            if form.is_valid():
+                try:
+                    if action == "new":
+                        admin_create_category(token, form.cleaned_data)
+                    else:
+                        admin_update_category(token, category_slug, form.cleaned_data)
+                    message = "Taxonomia atualizada."
+                except AuthAPIError as exc:
+                    error = str(exc)
+        elif request.POST.get("kind") == "subcategory":
+            form = AdminSubcategoryForm(request.POST)
+            if form.is_valid():
+                try:
+                    admin_update_subcategory(
+                        token,
+                        category_slug,
+                        subcategory_slug,
+                        {"name": form.cleaned_data["name"], "slug": form.cleaned_data.get("slug") or None},
+                    )
+                    message = "Subcategoria atualizada."
+                except AuthAPIError as exc:
+                    error = str(exc)
+    try:
+        taxonomy_data = admin_get_taxonomy(token)
+    except AuthAPIError as exc:
+        taxonomy_data = {"categories": []}
+        error = error or str(exc)
+    return render(
+        request,
+        "admin_ops/category_action.html",
+        {
+            "title": title_map[action],
+            "action": action,
+            "taxonomy": taxonomy_data,
+            "category_form": AdminCategoryForm(),
+            "subcategory_form": AdminSubcategoryForm(),
+            "admin_message": message,
+            "admin_error": error,
+        },
+    )

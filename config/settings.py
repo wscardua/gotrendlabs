@@ -1,10 +1,18 @@
+import os
 from pathlib import Path
 
+from config.env import load_env_file
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+load_env_file(BASE_DIR / ".env")
 
 SECRET_KEY = "dev-only-orynth-django-fixtures"
 DEBUG = True
-ALLOWED_HOSTS = ["127.0.0.1", "localhost"]
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get("ORYNTH_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    if host.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -53,12 +61,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+if os.environ.get("ORYNTH_USE_SQLITE") == "1":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("POSTGRES_DB", "orynth"),
+            "USER": os.environ.get("POSTGRES_USER", "orynth"),
+            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "orynth_dev_password"),
+            "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+        }
+    }
 
 LANGUAGE_CODE = "pt-br"
 LANGUAGES = [("pt-br", "Portuguese"), ("en", "English")]
@@ -68,5 +88,19 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+AUTH_USER_MODEL = "accounts.User"
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "home"
+LOGOUT_REDIRECT_URL = "home"
+BACKEND_API_URL = os.environ.get("BACKEND_API_URL", "http://127.0.0.1:8001")
+PUBLIC_SHARE_BASE_URL = os.environ.get("ORYNTH_PUBLIC_BASE_URL", "").rstrip("/")
+RECAPTCHA_SITE_KEY = os.environ.get("RECAPTCHA_SITE_KEY", "")
+RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY", "")
+if "RECAPTCHA_ENABLED" in os.environ:
+    RECAPTCHA_ENABLED = os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
+else:
+    RECAPTCHA_ENABLED = bool(RECAPTCHA_SECRET_KEY)

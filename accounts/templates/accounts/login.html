@@ -1,44 +1,75 @@
-{% extends "base.html" %}
-{% block title %}Orynth | Login{% endblock %}
-{% block content %}
-<main class="shell auth-layout auth-layout-wide">
-  <section class="auth-intro panel">
-    <span class="eyebrow">Acesso seguro</span>
-    <h1>Entre e continue seu histórico de previsões.</h1>
-    <p class="lead">Visitantes podem navegar pelos mercados públicos. A conta libera previsão, comentários, carteira e reputação pessoal.</p>
-    <div class="auth-note-grid" aria-label="Recursos da conta">
-      <div class="auth-note">
-        <strong>OC educativa</strong>
-        <span>Saldo usado apenas dentro da experiência Orynth.</span>
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orynth | Login</title>
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260519-policy-modal">
+  <script src="{% static 'js/orynth.js' %}?v=20260519-policy-modal" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="shell nav">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark">O</span><span>Orynth</span></a>
+      <div class="nav-links">
+        <a class="nav-link" href="{% url 'home' %}">Mercados</a>
+        <a class="nav-link" href="{% url 'badges' %}">Badges</a>
+        <a class="nav-link" href="{% url 'rankings' %}">Ranking</a>
       </div>
-      <div class="auth-note">
-        <strong>Reputação</strong>
-        <span>Histórico, badges e ranking conectados ao seu perfil.</span>
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button>
+        <a class="btn small ghost" href="{% url 'register' %}">Criar conta</a>
       </div>
-      <div class="auth-note">
-        <strong>Modo guest</strong>
-        <span>O feed público continua disponível sem login.</span>
-      </div>
+    </nav>
+  </header>
+  <main class="shell auth-page">
+    <div class="auth-layout">
+      <section class="auth-intro">
+        <div class="auth-copy">
+          <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Acesso seguro</span></div>
+          <h1>Entre e continue seu histórico de previsões.</h1>
+          <p class="lead">Visitantes podem navegar pelos mercados públicos. A conta libera previsão, comentários, carteira e reputação pessoal.</p>
+        </div>
+        <div class="auth-note-list" aria-label="Recursos da conta">
+          <div class="auth-note">
+            <strong>OC educativa</strong>
+            <span>Saldo usado apenas dentro da experiência Orynth.</span>
+          </div>
+          <div class="auth-note">
+            <strong>Reputação</strong>
+            <span>Histórico, badges e ranking conectados ao seu perfil.</span>
+          </div>
+          <div class="auth-note">
+            <strong>Modo guest</strong>
+            <span>O feed público continua disponível sem login.</span>
+          </div>
+        </div>
+      </section>
+      <section class="auth-card">
+        <div class="auth-card-head">
+          <span class="eyebrow">Login</span>
+          <h2>Acessar conta</h2>
+        </div>
+        <form class="form-grid" method="post">
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="field full"><div class="tag risk">{{ form.non_field_errors|join:", " }}</div></div>{% endif %}
+          <div class="field full"><label for="{{ form.email.id_for_label }}">Email</label><input id="{{ form.email.id_for_label }}" name="{{ form.email.name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email"></div>
+          <div class="field full"><label for="{{ form.password.id_for_label }}">Senha</label><input id="{{ form.password.id_for_label }}" name="{{ form.password.name }}" type="password" value="" autocomplete="current-password"></div>
+          <button class="btn primary full" type="submit">Entrar</button>
+        </form>
+        <div class="auth-footer">
+          <span>Novo por aqui?</span>
+          <a href="{% url 'register' %}">Criar conta</a>
+        </div>
+        <div class="auth-divider"><span>ou entre com</span></div>
+        <div class="auth-social">
+          <button class="btn ghost" type="button">Google</button>
+          <button class="btn ghost" type="button">Facebook</button>
+        </div>
+        <p class="auth-disclaimer">Orynth Coins não representam dinheiro real, investimento ou saque financeiro.</p>
+      </section>
     </div>
-  </section>
-  <section class="panel auth-card">
-    <span class="eyebrow">Login</span>
-    <h2>Acessar conta</h2>
-    <form class="form-stack auth-form">
-      <label>Email<input type="email" placeholder="voce@exemplo.com" autocomplete="email"></label>
-      <label>Senha<input type="password" placeholder="Sua senha" autocomplete="current-password"></label>
-      <button class="btn primary" type="button">Entrar</button>
-    </form>
-    <div class="auth-footer">
-      <span>Novo por aqui?</span>
-      <a href="{% url 'register' %}">Criar conta</a>
-    </div>
-    <div class="auth-divider"><span>ou entre com</span></div>
-    <div class="auth-social">
-      <button class="btn ghost" type="button">Google</button>
-      <button class="btn ghost" type="button">Facebook</button>
-    </div>
-    <p class="auth-disclaimer">Orynth Coins não representam dinheiro real, investimento ou saque financeiro.</p>
-  </section>
-</main>
-{% endblock %}
+  </main>
+</body>
+</html>

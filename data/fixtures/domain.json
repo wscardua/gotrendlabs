@@ -1,7 +1,7 @@
 {
   "viewer": {
     "name": "Will Costa",
-    "handle": "willcosta",
+    "handle": "@willcosta",
     "initials": "WL",
     "balance_oc": 2480,
     "locked_oc": 410,
@@ -21,24 +21,28 @@
       "slug": "openai-gpt6-2026",
       "title": "OpenAI anuncia GPT-6 publicamente até 31 dez 2026?",
       "category": "IA",
+      "subcategory": "Modelos",
       "kind": "binary",
       "status": "open",
       "status_label": "Aberto",
       "primary_outcome": "SIM",
       "primary_probability": 62,
+      "primary_probability_exact": 62.0,
       "secondary_probability": 38,
+      "secondary_probability_exact": 38.0,
       "volume_oc": "18.240 OC",
       "participants": "1.204 usuários",
       "source": "blog oficial/OpenAI",
       "closes_in": "228d",
       "close_label": "Fecha previsões em 31 dez 2026",
+      "is_featured": true,
       "thumb": "AI",
       "thumb_color": "#d8ece2",
       "summary": "62% SIM representa o consenso atual da comunidade, não garantia de resultado.",
       "resolution_criteria": "Será considerado SIM caso a OpenAI publique anúncio oficial de um modelo chamado GPT-6 até 31/12/2026. Rumores, vazamentos ou nomenclaturas não oficiais não resolvem o mercado.",
       "options": [
-        {"label": "SIM", "probability": 62, "hint": "Comunidade favorece esta opção"},
-        {"label": "NAO", "probability": 38, "hint": "Contraponto ao consenso atual"}
+        {"label": "SIM", "probability": 62, "probability_exact": 62.0, "hint": "Comunidade favorece esta opção"},
+        {"label": "NAO", "probability": 38, "probability_exact": 38.0, "hint": "Contraponto ao consenso atual"}
       ],
       "comments": [
         {"author": "Ana", "reputation": 91, "body": "O ponto decisivo para mim é se a OpenAI chamará isso oficialmente de GPT-6 ou outro nome comercial.", "up": 24, "down": 3},
@@ -49,12 +53,15 @@
       "slug": "tiktok-ban-eua-2026",
       "title": "TikTok será banido das lojas de app dos EUA em 2026?",
       "category": "Política",
+      "subcategory": "Regulação",
       "kind": "binary",
       "status": "open",
       "status_label": "Sensível",
       "primary_outcome": "NAO",
       "primary_probability": 54,
+      "primary_probability_exact": 54.0,
       "secondary_probability": 46,
+      "secondary_probability_exact": 46.0,
       "volume_oc": "9.880 OC",
       "participants": "743 usuários",
       "source": "documento regulatório",
@@ -64,8 +71,8 @@
       "summary": "Mercado sensível com resolução baseada em evidência regulatória pública.",
       "resolution_criteria": "Resolve conforme documentação regulatória pública sobre disponibilidade nas lojas de apps dos EUA.",
       "options": [
-        {"label": "SIM", "probability": 46, "hint": "Banimento confirmado"},
-        {"label": "NAO", "probability": 54, "hint": "Permanece disponível"}
+        {"label": "SIM", "probability": 46, "probability_exact": 46.0, "hint": "Banimento confirmado"},
+        {"label": "NAO", "probability": 54, "probability_exact": 54.0, "hint": "Permanece disponível"}
       ],
       "comments": []
     },
@@ -73,12 +80,15 @@
       "slug": "lider-vendas-ev-4t26",
       "title": "Qual empresa lidera vendas globais de carros elétricos no 4T26?",
       "category": "Negócios",
+      "subcategory": "Automotivo",
       "kind": "multiple",
       "status": "open",
       "status_label": "Múltipla escolha",
       "primary_outcome": "Tesla",
       "primary_probability": 37,
+      "primary_probability_exact": 37.0,
       "secondary_probability": 63,
+      "secondary_probability_exact": 63.0,
       "volume_oc": "13.410 OC",
       "participants": "936 usuários",
       "source": "relatório trimestral",
@@ -88,9 +98,9 @@
       "summary": "Mercado de múltipla escolha com consenso distribuído entre fabricantes.",
       "resolution_criteria": "Resolve pelo relatório consolidado de vendas globais do quarto trimestre de 2026.",
       "options": [
-        {"label": "Tesla", "probability": 37, "hint": "Líder atual do consenso"},
-        {"label": "BYD", "probability": 34, "hint": "Forte concorrente"},
-        {"label": "Outra", "probability": 29, "hint": "Demais fabricantes"}
+        {"label": "Tesla", "probability": 37, "probability_exact": 37.0, "hint": "Líder atual do consenso"},
+        {"label": "BYD", "probability": 34, "probability_exact": 34.0, "hint": "Forte concorrente"},
+        {"label": "Outra", "probability": 29, "probability_exact": 29.0, "hint": "Demais fabricantes"}
       ],
       "comments": []
     },
@@ -98,12 +108,15 @@
       "slug": "tiktok-resolvido-2026",
       "title": "TikTok será banido das lojas de app dos EUA em 2026?",
       "category": "Política",
+      "subcategory": "Regulação",
       "kind": "binary",
       "status": "resolved",
       "status_label": "Resolvido",
       "primary_outcome": "NAO",
       "primary_probability": 100,
+      "primary_probability_exact": 100.0,
       "secondary_probability": 0,
+      "secondary_probability_exact": 0.0,
       "volume_oc": "Crédito distribuído",
       "participants": "1.812 usuários recompensados",
       "source": "fonte regulatória validada",
@@ -113,8 +126,8 @@
       "summary": "Mercado resolvido com trilha pública e créditos distribuídos.",
       "resolution_criteria": "Resultado final: NAO, conforme fonte regulatória validada.",
       "options": [
-        {"label": "SIM", "probability": 0, "hint": "Opção perdedora"},
-        {"label": "NAO", "probability": 100, "hint": "Resultado final"}
+        {"label": "SIM", "probability": 0, "probability_exact": 0.0, "hint": "Opção perdedora"},
+        {"label": "NAO", "probability": 100, "probability_exact": 100.0, "hint": "Resultado final"}
       ],
       "comments": []
     }

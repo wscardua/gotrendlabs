@@ -1,0 +1,4223 @@
+from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
+from ipaddress import ip_address as parse_ip_address
+import re
+from typing import Optional
+import unicodedata
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from fastapi import FastAPI, Header, HTTPException, Query, Request, status
+
+from backend_api.badge_engine import BadgeAwardEngine
+from backend_api.db import get_connection
+from backend_api.schemas import (
+    AdminCategoryPayload,
+    AdminBadgeListResponse,
+    AdminBadgePayload,
+    AdminBadgeResponse,
+    AdminUserDetailResponse,
+    AdminUserListResponse,
+    AdminUserWalletAdjustmentPayload,
+    FeedbackRewardPayload,
+    AdminMarketActionPayload,
+    AdminMarketListResponse,
+    AdminMarketPayload,
+    AdminMarketResolvePayload,
+    AdminSubcategoryPayload,
+    AdminTaxonomyResponse,
+    AuthResponse,
+    BadgeListResponse,
+    BadgeResponse,
+    CommentCreatePayload,
+    CommentListResponse,
+    CommentModerationPayload,
+    CommentResponse,
+    LedgerResponse,
+    LoginPayload,
+    MarketListResponse,
+    MarketResponse,
+    MarketSuggestionPayload,
+    PredictionCreatePayload,
+    PredictionCreateResponse,
+    PredictionPreviewResponse,
+    ProfileUpdatePayload,
+    ProductFeedbackPayload,
+    QueueItemResponse,
+    PublicUserProfileResponse,
+    QueueListResponse,
+    QueueReviewPayload,
+    RankingResponse,
+    RegisterPayload,
+    SessionContextResponse,
+    SuggestionRewardPayload,
+    UserProfileResponse,
+)
+from backend_api.security import check_password, hash_token, issue_token, make_password
+from config.recaptcha import RecaptchaError, verify_recaptcha_response
+
+SESSION_TTL = timedelta(days=14)
+INITIAL_GRANT_OC = 2000
+INITIAL_REPUTATION = 100
+BASE_PREDICTION_WEIGHT = 10_000
+PROBABILITY_QUANT = Decimal("0.0001")
+REPUTATION_K_FACTOR = Decimal("10")
+TERMS_VERSION = "2026-05-17"
+BADGE_RULE_TYPES = {
+    "founding_member",
+    "resolved_predictions_count",
+    "correct_predictions_count",
+    "streak_count",
+    "ranking_position",
+    "comments_count",
+    "approved_suggestions_count",
+    "rewarded_feedback_count",
+}
+BADGE_TYPES = {"global", "category", "performance", "engagement"}
+
+app = FastAPI(title="Orynth Backend API", version="0.1.0")
+
+
+def _row_value(row, key, index):
+    if isinstance(row, dict):
+        return row[key]
+    return row[index]
+
+
+def _decimal_probability(value):
+    return Decimal(str(value or 0)).quantize(PROBABILITY_QUANT)
+
+
+def _display_probability(value):
+    return int(_decimal_probability(value).to_integral_value(rounding=ROUND_DOWN))
+
+
+def _even_probability_exact(total):
+    if total <= 0:
+        return Decimal("0.0000")
+    return (Decimal("100") / Decimal(total)).quantize(PROBABILITY_QUANT)
+
+
+def _client_meta(request):
+    forwarded_for = request.headers.get("x-forwarded-for", "")
+    ip_address = forwarded_for.split(",")[0].strip() or (request.client.host if request.client else None)
+    try:
+        parse_ip_address(ip_address)
+    except ValueError:
+        ip_address = None
+    user_agent = request.headers.get("user-agent", "")[:255]
+    return ip_address, user_agent
+
+
+def _ensure_recaptcha(token, request):
+    ip_address, _ = _client_meta(request)
+    try:
+        verify_recaptcha_response(token, remote_ip=ip_address)
+    except RecaptchaError as exc:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+
+
+def _clean_handle(handle):
+    return _handle_seed(handle)
+
+
+def _handle_seed(value):
+    normalized = unicodedata.normalize("NFKD", value or "")
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+    seed = re.sub(r"[^a-z0-9]+", "", ascii_value.lower())
+    if len(seed) < 2:
+        seed = "user"
+    return f"@{seed[:149]}"
+
+
+def _slug_seed(value, *, max_length=160):
+    normalized = unicodedata.normalize("NFKD", value or "")
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+    seed = re.sub(r"[^a-z0-9]+", "-", ascii_value.lower()).strip("-")
+    return (seed or "item")[:max_length]
+
+
+def _unique_slug(cursor, table_name, value, *, max_length=160):
+    base = _slug_seed(value, max_length=max_length)
+    slug = base
+    suffix = 2
+    while True:
+        cursor.execute(f"SELECT id FROM {table_name} WHERE slug = %s", (slug,))
+        if not cursor.fetchone():
+            return slug
+        suffix_text = f"-{suffix}"
+        slug = f"{base[:max_length - len(suffix_text)]}{suffix_text}"
+        suffix += 1
+
+
+def _unique_handle(cursor, value):
+    base = _handle_seed(value)
+    handle = base
+    suffix = 2
+    while True:
+        cursor.execute("SELECT id FROM orynth_users WHERE lower(username) = lower(%s)", (handle,))
+        if not cursor.fetchone():
+            return handle
+        suffix_text = str(suffix)
+        handle = f"{base[:150 - len(suffix_text)]}{suffix_text}"
+        suffix += 1
+
+
+def _user_response(row):
+    return {
+        "id": row["id"],
+        "handle": _handle_seed(row["username"]),
+        "email": row["email"],
+        "display_name": row["first_name"] or _handle_seed(row["username"]),
+        "preferred_language": row["preferred_language"],
+        "created_at": row["date_joined"].isoformat(),
+        "last_login": row["last_login"].isoformat() if row["last_login"] else None,
+        "account_status": row["account_status"],
+        "is_staff": bool(row["is_staff"]) if "is_staff" in row else False,
+    }
+
+
+def _admin_user_response(row):
+    return {
+        "id": row["id"],
+        "handle": _handle_seed(row["username"]),
+        "email": row["email"],
+        "display_name": row["first_name"] or _handle_seed(row["username"]),
+        "preferred_language": row["preferred_language"],
+        "account_status": row["account_status"],
+        "is_active": bool(row["is_active"]),
+        "is_staff": bool(row["is_staff"]),
+        "is_superuser": bool(row["is_superuser"]),
+        "created_at": row["date_joined"].isoformat(),
+        "last_login": row["last_login"].isoformat() if row["last_login"] else None,
+        "deactivated_at": row["deactivated_at"].isoformat() if row["deactivated_at"] else None,
+        "available_oc": int(row.get("available_oc") or 0),
+        "locked_oc": int(row.get("locked_oc") or 0),
+        "reputation_score": int(row.get("reputation_score") or 0),
+    }
+
+
+def _public_user_response(row):
+    return {
+        "id": row["id"],
+        "handle": _handle_seed(row["username"]),
+        "display_name": row["first_name"] or _handle_seed(row["username"]),
+    }
+
+
+def _ensure_user_core(cursor, user_id, *, display_name=None):
+    now = datetime.now(timezone.utc)
+    cursor.execute("SELECT id, username, first_name FROM orynth_users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+
+    profile_name = display_name or user["first_name"] or user["username"]
+    cursor.execute(
+        """
+        INSERT INTO orynth_user_profiles (user_id, display_name, bio, strong_category, birth_date, sex, is_public, created_at, updated_at)
+        VALUES (%s, %s, '', '', NULL, '', true, %s, %s)
+        ON CONFLICT (user_id) DO NOTHING
+        """,
+        (user_id, profile_name, now, now),
+    )
+    cursor.execute(
+        """
+        INSERT INTO orynth_user_reputations
+            (user_id, reputation_score, resolved_predictions_count, accuracy_indicator, streak, strong_category, last_updated_at)
+        VALUES (%s, %s, 0, '0%%', 0, '', %s)
+        ON CONFLICT (user_id) DO NOTHING
+        """,
+        (user_id, INITIAL_REPUTATION, now),
+    )
+    cursor.execute("SELECT 1 FROM orynth_wallet_ledger WHERE user_id = %s AND entry_type = 'grant_initial'", (user_id,))
+    if not cursor.fetchone():
+        _record_wallet_entry(
+            cursor,
+            user_id,
+            entry_type="grant_initial",
+            amount=INITIAL_GRANT_OC,
+            direction="credit",
+            description="Saldo inicial do Orynth",
+            reference_type="auth_register",
+            reference_id=str(user_id),
+        )
+    else:
+        _ensure_wallet_balance(cursor, user_id)
+    cursor.execute(
+        """
+        INSERT INTO orynth_user_badges (user_id, code, name, description, status, earned_at)
+        VALUES (%s, 'founding_member', 'Membro fundador', 'Entrou no Orynth durante a fase inicial.', 'earned', %s)
+        ON CONFLICT (user_id, code) DO NOTHING
+        """,
+        (user_id, now),
+    )
+    cursor.execute(
+        """
+        INSERT INTO orynth_user_badges (user_id, code, name, description, status, earned_at)
+        VALUES
+            (%s, 'calibrated', 'Calibrado', 'Desbloqueado ao demonstrar consistência preditiva.', 'locked', NULL),
+            (%s, 'early_signal', 'Early signal', 'Desbloqueado ao acertar antes do consenso virar.', 'locked', NULL),
+            (%s, 'top_1_percent', 'Top 1%%', 'Desbloqueado ao alcançar elite do ranking.', 'locked', NULL)
+        ON CONFLICT (user_id, code) DO NOTHING
+        """,
+        (user_id, user_id, user_id),
+    )
+    BadgeAwardEngine.on_user_registered(cursor, user_id)
+    cursor.execute(
+        """
+        INSERT INTO orynth_user_activities (user_id, activity_type, title, description, reference_type, reference_id, occurred_at)
+        SELECT %s, 'register', 'Conta criada', 'Perfil, carteira e reputação inicial ativados.', 'user', %s, %s
+        WHERE NOT EXISTS (
+            SELECT 1 FROM orynth_user_activities
+            WHERE user_id = %s AND activity_type = 'register'
+        )
+        """,
+        (user_id, str(user_id), now, user_id),
+    )
+
+
+def _ranking_positions(cursor):
+    cursor.execute(
+        """
+        SELECT u.id
+        FROM orynth_user_reputations r
+        JOIN orynth_users u ON u.id = r.user_id
+        WHERE u.is_active = true
+        ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
+        """
+    )
+    return {row["id"]: index + 1 for index, row in enumerate(cursor.fetchall())}
+
+
+def _badge_response(row):
+    return {
+        "code": row["code"],
+        "name": row["name"],
+        "description": row["description"],
+        "rule_description": row["rule_description"] or "",
+        "badge_type": row["badge_type"] or "global",
+        "image_url": row["image_url"] or "",
+        "image_dark_url": row["image_dark_url"] or "",
+        "status": "earned" if row["awarded_at"] else "locked",
+        "earned_at": row["awarded_at"].isoformat() if row["awarded_at"] else None,
+        "reason_snapshot": row["reason_snapshot"] or "",
+    }
+
+
+def _badge_rows(cursor, user_id=None, include_inactive=False):
+    active_sql = "" if include_inactive else "WHERE b.is_active = true"
+    params = []
+    if user_id:
+        award_select = "a.awarded_at, a.reason_snapshot"
+        award_join = "LEFT JOIN orynth_user_badge_awards a ON a.badge_id = b.id AND a.user_id = %s"
+        params.append(user_id)
+    else:
+        award_select = "NULL AS awarded_at, '' AS reason_snapshot"
+        award_join = ""
+    cursor.execute(
+        f"""
+        SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
+               {award_select}
+        FROM orynth_badge_definitions b
+        {award_join}
+        {active_sql}
+        ORDER BY (CASE WHEN a.awarded_at IS NULL THEN 1 ELSE 0 END) ASC, a.awarded_at ASC NULLS LAST, b.name ASC, b.code ASC
+        """ if user_id else
+        f"""
+        SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
+               {award_select}
+        FROM orynth_badge_definitions b
+        {active_sql}
+        ORDER BY b.name ASC, b.code ASC
+        """,
+        params,
+    )
+    return [_badge_response(row) for row in cursor.fetchall()]
+
+
+def _admin_badge_response(row):
+    return {
+        "code": row["code"],
+        "name": row["name"],
+        "description": row["description"],
+        "rule_description": row["rule_description"] or "",
+        "badge_type": row["badge_type"] or "global",
+        "image_url": row["image_url"] or "",
+        "image_dark_url": row["image_dark_url"] or "",
+        "is_active": bool(row["is_active"]),
+        "rule_type": row["rule_type"],
+        "threshold_value": float(row["threshold_value"] or 0),
+        "category": row["category"] or "",
+        "subcategory": row["subcategory"] or "",
+        "rule_active": bool(row["rule_active"]),
+        "awards_count": int(row["awards_count"] or 0),
+        "created_at": row["created_at"].isoformat(),
+        "updated_at": row["updated_at"].isoformat(),
+    }
+
+
+def _admin_badge_rows(cursor, where_sql="", params=None):
+    cursor.execute(
+        f"""
+        SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
+               b.is_active, b.created_at, b.updated_at,
+               r.rule_type, r.threshold_value, r.category, r.subcategory, r.is_active AS rule_active,
+               COUNT(a.id) AS awards_count
+        FROM orynth_badge_definitions b
+        JOIN orynth_badge_rules r ON r.badge_id = b.id
+        LEFT JOIN orynth_user_badge_awards a ON a.badge_id = b.id
+        {where_sql}
+        GROUP BY b.id, r.id
+        ORDER BY b.is_active DESC, b.name ASC, b.code ASC
+        """,
+        params or [],
+    )
+    return [_admin_badge_response(row) for row in cursor.fetchall()]
+
+
+def _validate_badge_payload(payload):
+    badge_type = payload.badge_type if payload.badge_type in BADGE_TYPES else "global"
+    rule_type = payload.rule_type
+    if rule_type not in BADGE_RULE_TYPES:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de regra de badge inválido.")
+    return badge_type, rule_type
+
+
+def _ledger_wallet_totals(cursor, user_id):
+    cursor.execute(
+        """
+        SELECT
+            COALESCE(SUM(CASE
+                WHEN direction = 'credit' THEN amount
+                WHEN direction = 'debit' THEN -amount
+                WHEN direction = 'lock' THEN -amount
+                WHEN direction = 'release' THEN amount
+                ELSE 0
+            END), 0) AS available_oc,
+            COALESCE(SUM(CASE WHEN direction = 'lock' THEN amount WHEN direction IN ('release', 'settle') THEN -amount ELSE 0 END), 0) AS locked_oc,
+            COALESCE(SUM(CASE
+                WHEN direction = 'credit' AND entry_type IN ('prediction_payout', 'reward_feedback', 'reward_suggestion') THEN amount
+                WHEN direction = 'debit' AND entry_type = 'prediction_payout_reversal' THEN -amount
+                ELSE 0
+            END), 0) AS total_earned_oc
+        FROM orynth_wallet_ledger
+        WHERE user_id = %s
+        """,
+        (user_id,),
+    )
+    row = cursor.fetchone()
+    return {
+        "available_oc": int(_row_value(row, "available_oc", 0) or 0),
+        "locked_oc": int(_row_value(row, "locked_oc", 1) or 0),
+        "total_earned_oc": int(_row_value(row, "total_earned_oc", 2) or 0),
+    }
+
+
+def _ensure_wallet_balance(cursor, user_id):
+    cursor.execute("SELECT user_id FROM orynth_wallet_balances WHERE user_id = %s", (user_id,))
+    if cursor.fetchone():
+        return
+    totals = _ledger_wallet_totals(cursor, user_id)
+    cursor.execute(
+        """
+        INSERT INTO orynth_wallet_balances (user_id, available_oc, locked_oc, total_earned_oc, updated_at)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (user_id) DO NOTHING
+        """,
+        (
+            user_id,
+            totals["available_oc"],
+            totals["locked_oc"],
+            totals["total_earned_oc"],
+            datetime.now(timezone.utc),
+        ),
+    )
+
+
+def _wallet_summary(cursor, user_id):
+    _ensure_wallet_balance(cursor, user_id)
+    cursor.execute(
+        """
+        SELECT available_oc, locked_oc, total_earned_oc
+        FROM orynth_wallet_balances
+        WHERE user_id = %s
+        """,
+        (user_id,),
+    )
+    row = cursor.fetchone()
+    return {
+        "available_oc": int(row["available_oc"] or 0),
+        "locked_oc": int(row["locked_oc"] or 0),
+        "total_earned_oc": int(row["total_earned_oc"] or 0),
+    }
+
+
+def _record_wallet_entry(
+    cursor,
+    user_id,
+    *,
+    entry_type,
+    amount,
+    direction,
+    description,
+    reference_type="",
+    reference_id="",
+    created_by_id=None,
+):
+    _ensure_wallet_balance(cursor, user_id)
+    cursor.execute(
+        """
+        INSERT INTO orynth_wallet_ledger
+            (user_id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (
+            user_id,
+            entry_type,
+            amount,
+            direction,
+            description,
+            reference_type,
+            reference_id,
+            created_by_id,
+            datetime.now(timezone.utc),
+        ),
+    )
+    entry_id = _row_value(cursor.fetchone(), "id", 0)
+    available_delta = 0
+    locked_delta = 0
+    earned_delta = 0
+    if direction == "credit":
+        available_delta = amount
+        if entry_type in ("prediction_payout", "reward_feedback", "reward_suggestion"):
+            earned_delta = amount
+    elif direction == "debit":
+        available_delta = -amount
+        if entry_type == "prediction_payout_reversal":
+            earned_delta = -amount
+    elif direction == "lock":
+        available_delta = -amount
+        locked_delta = amount
+    elif direction == "release":
+        available_delta = amount
+        locked_delta = -amount
+    elif direction == "settle":
+        locked_delta = -amount
+
+    cursor.execute(
+        """
+        UPDATE orynth_wallet_balances
+        SET available_oc = available_oc + %s,
+            locked_oc = locked_oc + %s,
+            total_earned_oc = total_earned_oc + %s,
+            updated_at = %s
+        WHERE user_id = %s
+        """,
+        (available_delta, locked_delta, earned_delta, datetime.now(timezone.utc), user_id),
+    )
+    return entry_id
+
+
+def _current_user(cursor, authorization):
+    token = _bearer_token(authorization)
+    cursor.execute(
+        """
+        SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
+               u.date_joined, u.last_login, u.account_status, u.is_staff
+        FROM orynth_auth_sessions s
+        JOIN orynth_users u ON u.id = s.user_id
+        WHERE s.token_hash = %s
+          AND s.revoked_at IS NULL
+          AND s.expires_at > %s
+          AND u.is_active = true
+          AND u.account_status = 'active'
+        """,
+        (hash_token(token), datetime.now(timezone.utc)),
+    )
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
+    cursor.execute(
+        "UPDATE orynth_auth_sessions SET last_seen_at = %s WHERE token_hash = %s",
+        (datetime.now(timezone.utc), hash_token(token)),
+    )
+    _ensure_user_core(cursor, user["id"])
+    return user
+
+
+def _current_staff_user(cursor, authorization):
+    user = _current_user(cursor, authorization)
+    if not user["is_staff"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso administrativo restrito.")
+    return user
+
+
+def _optional_current_user(cursor, authorization):
+    if not authorization:
+        return None
+    try:
+        return _current_user(cursor, authorization)
+    except HTTPException:
+        return None
+
+
+def _profile_response(cursor, user):
+    _ensure_user_core(cursor, user["id"])
+    positions = _ranking_positions(cursor)
+    cursor.execute(
+        """
+        SELECT p.id AS profile_id, p.bio, p.strong_category AS profile_category,
+               p.birth_date, p.sex, p.is_public, p.created_at AS profile_created_at,
+               p.updated_at AS profile_updated_at,
+               r.reputation_score, r.resolved_predictions_count, r.accuracy_indicator,
+               r.streak, r.strong_category AS reputation_category, r.last_updated_at
+        FROM orynth_user_profiles p
+        JOIN orynth_user_reputations r ON r.user_id = p.user_id
+        WHERE p.user_id = %s
+        """,
+        (user["id"],),
+    )
+    profile = cursor.fetchone()
+    return {
+        "user": _user_response(user),
+        "profile_id": profile["profile_id"],
+        "bio": profile["bio"],
+        "strong_category": profile["profile_category"] or profile["reputation_category"],
+        "birth_date": profile["birth_date"].isoformat() if profile["birth_date"] else None,
+        "sex": profile["sex"] or "",
+        "profile_created_at": profile["profile_created_at"].isoformat(),
+        "profile_updated_at": profile["profile_updated_at"].isoformat(),
+        "is_public": profile["is_public"],
+        "reputation": {
+            "reputation_score": profile["reputation_score"],
+            "ranking_position": positions.get(user["id"], 0),
+            "resolved_predictions_count": profile["resolved_predictions_count"],
+            "accuracy_indicator": profile["accuracy_indicator"],
+            "streak": profile["streak"],
+            "strong_category": profile["reputation_category"],
+            "last_updated_at": profile["last_updated_at"].isoformat(),
+        },
+    }
+
+
+def _public_profile_response(cursor, user):
+    profile = _profile_response(cursor, user)
+    profile["user"] = _public_user_response(user)
+    profile.pop("birth_date", None)
+    profile.pop("sex", None)
+    profile.pop("profile_id", None)
+    profile.pop("profile_created_at", None)
+    profile.pop("profile_updated_at", None)
+    return profile
+
+
+def _resolution_timezone(row):
+    if "resolution_timezone" in row and row["resolution_timezone"]:
+        return row["resolution_timezone"]
+    return row["close_timezone"] or "UTC"
+
+
+def _datetime_label(value, timezone_name):
+    if not value:
+        return ""
+    try:
+        target_timezone = ZoneInfo(timezone_name or "UTC")
+    except ZoneInfoNotFoundError:
+        target_timezone = timezone.utc
+        timezone_name = "UTC"
+    localized = value.astimezone(target_timezone) if value.tzinfo else value.replace(tzinfo=timezone.utc).astimezone(target_timezone)
+    return f"{localized.strftime('%d/%m/%Y %H:%M')} {timezone_name or 'UTC'}"
+
+
+def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order ASC, m.id ASC"):
+    cursor.execute(
+        f"""
+        SELECT m.id, m.slug, m.title, m.summary, m.kind, m.status, m.status_label,
+               m.primary_outcome, m.primary_probability_exact, m.secondary_probability_exact,
+               m.volume_oc, m.participants, m.source, m.closes_in, m.close_label,
+               m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
+               m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
+               m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
+               COALESCE(SUM(CASE WHEN cr.reaction = 'like' THEN 1 ELSE 0 END), 0) AS market_like_count,
+               c.name AS category, sc.name AS subcategory
+        FROM orynth_markets m
+        JOIN orynth_market_categories c ON c.id = m.category_id
+        JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
+        LEFT JOIN orynth_market_comments mc ON mc.market_id = m.id AND mc.status = 'visible'
+        LEFT JOIN orynth_comment_reactions cr ON cr.comment_id = mc.id
+        {where_sql}
+        GROUP BY m.id, c.name, sc.name
+        ORDER BY {order_sql}
+        """,
+        params or [],
+    )
+    return cursor.fetchall()
+
+
+def _market_status_label(status_value):
+    return {
+        "draft": "Rascunho",
+        "scheduled": "Agendado",
+        "open": "Aberto",
+        "locked": "Fechado",
+        "resolved": "Resolvido",
+        "canceled": "Cancelado",
+    }.get(status_value, status_value)
+
+
+def _short_close_label(close_at):
+    if not close_at:
+        return ""
+    now = datetime.now(timezone.utc)
+    target = close_at if close_at.tzinfo else close_at.replace(tzinfo=timezone.utc)
+    delta = target - now
+    seconds = int(delta.total_seconds())
+    if seconds <= 0:
+        return "fim"
+    days = seconds // 86400
+    if days >= 1:
+        return f"{days}d"
+    hours = max(1, seconds // 3600)
+    return f"{hours}h"
+
+
+def _sparkline_paths(points, *, width=220, height=44, pad=4):
+    if not points:
+        points = [50]
+    if len(points) == 1:
+        points = [points[0], points[0]]
+    step = (width - (pad * 2)) / max(len(points) - 1, 1)
+    coords = []
+    for index, value in enumerate(points):
+        probability = max(Decimal("0"), min(Decimal("100"), _decimal_probability(value)))
+        x = Decimal(str(pad)) + (Decimal(str(index)) * Decimal(str(step)))
+        y = Decimal(str(pad)) + ((Decimal("100") - probability) / Decimal("100")) * Decimal(str(height - (pad * 2)))
+        coords.append((round(x, 2), round(y, 2)))
+    path = " ".join(f"{'M' if index == 0 else 'L'} {x:g} {y:g}" for index, (x, y) in enumerate(coords))
+    area = f"M {coords[0][0]:g} {height - pad:g} " + " ".join(f"L {x:g} {y:g}" for x, y in coords) + f" L {coords[-1][0]:g} {height - pad:g} Z"
+    return {"sparkline_path": path, "sparkline_area_path": area}
+
+
+def _market_sparklines(cursor, market_id, options):
+    option_ids = [option["id"] for option in options]
+    if not option_ids:
+        fallback = _sparkline_paths([50])
+        return {**fallback, "series": []}
+    weights = {option_id: BASE_PREDICTION_WEIGHT for option_id in option_ids}
+    points_by_option = {option_id: [] for option_id in option_ids}
+
+    def append_points():
+        total = sum(weights.values())
+        for option_id in option_ids:
+            points_by_option[option_id].append((Decimal(weights[option_id]) * Decimal("100") / Decimal(total)).quantize(PROBABILITY_QUANT))
+
+    append_points()
+    cursor.execute(
+        """
+        SELECT market_option_id, weight_at_entry
+        FROM orynth_predictions
+        WHERE market_id = %s AND status IN ('open', 'resolved')
+        ORDER BY created_at ASC, id ASC
+        """,
+        (market_id,),
+    )
+    for prediction in cursor.fetchall():
+        option_id = prediction["market_option_id"]
+        if option_id not in weights:
+            continue
+        weights[option_id] += int(prediction["weight_at_entry"] or 0)
+        append_points()
+    primary = _sparkline_paths(points_by_option[option_ids[0]])
+    series = []
+    for option in options:
+        series.append(
+            {
+                "id": option["id"],
+                "label": option["label"],
+                "path": _sparkline_paths(points_by_option[option["id"]])["sparkline_path"],
+            }
+        )
+    return {**primary, "series": series}
+
+
+def _comment_status_label(value):
+    return {"visible": "Visível", "hidden": "Oculto"}.get(value, value)
+
+
+def _comment_response(row):
+    return {
+        "id": row["id"],
+        "market_slug": row["market_slug"],
+        "author_id": row["author_id"],
+        "author_handle": _handle_seed(row["author_handle"]),
+        "author_display_name": row["author_display_name"] or _handle_seed(row["author_handle"]),
+        "body": row["body"],
+        "status": row["status"],
+        "like_count": int(row["like_count"] or 0),
+        "dislike_count": int(row["dislike_count"] or 0),
+        "viewer_reaction": row.get("viewer_reaction"),
+        "moderation_note": row["moderation_note"] or "",
+        "moderated_by": row["moderated_by_id"],
+        "moderated_at": row["moderated_at"].isoformat() if row["moderated_at"] else None,
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _age_label(row["created_at"]),
+    }
+
+
+def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, viewer_id=None):
+    where = []
+    params = []
+    if market_id is not None:
+        where.append("mc.market_id = %s")
+        params.append(market_id)
+    if slug is not None:
+        where.append("m.slug = %s")
+        params.append(slug)
+    if visible_only:
+        where.append("mc.status = 'visible'")
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+    viewer_join = ""
+    viewer_select = "NULL AS viewer_reaction"
+    viewer_group = ""
+    if viewer_id:
+        viewer_join = "LEFT JOIN orynth_comment_reactions vr ON vr.comment_id = mc.id AND vr.user_id = %s"
+        viewer_select = "vr.reaction AS viewer_reaction"
+        viewer_group = ", vr.reaction"
+        params = [viewer_id, *params]
+    cursor.execute(
+        f"""
+        SELECT mc.id, mc.body, mc.status, mc.moderation_note, mc.moderated_by_id,
+               mc.moderated_at, mc.created_at, mc.updated_at,
+               m.slug AS market_slug,
+               u.id AS author_id, u.username AS author_handle, u.first_name AS author_display_name,
+               COALESCE(SUM(CASE WHEN cr.reaction = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
+               COALESCE(SUM(CASE WHEN cr.reaction = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
+               {viewer_select}
+        FROM orynth_market_comments mc
+        JOIN orynth_markets m ON m.id = mc.market_id
+        JOIN orynth_users u ON u.id = mc.author_id
+        LEFT JOIN orynth_comment_reactions cr ON cr.comment_id = mc.id
+        {viewer_join}
+        {where_sql}
+        GROUP BY mc.id, mc.body, mc.status, mc.moderation_note, mc.moderated_by_id,
+                 mc.moderated_at, mc.created_at, mc.updated_at,
+                 m.slug, u.id, u.username, u.first_name{viewer_group}
+        ORDER BY mc.created_at DESC, mc.id DESC
+        """,
+        params,
+    )
+    return [_comment_response(row) for row in cursor.fetchall()]
+
+
+def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
+    cursor.execute(
+        """
+        SELECT id, label, probability_exact, hint
+        FROM orynth_market_options
+        WHERE market_id = %s
+        ORDER BY display_order ASC, id ASC
+        """,
+        (row["id"],),
+    )
+    options = [
+        {
+            "id": option["id"],
+            "label": option["label"],
+            "probability": _display_probability(option["probability_exact"]),
+            "probability_exact": float(_decimal_probability(option["probability_exact"])),
+            "hint": option["hint"],
+        }
+        for option in cursor.fetchall()
+    ]
+    sparkline = _market_sparklines(cursor, row["id"], options)
+    options = [
+        {**option, "sparkline_path": next((item["path"] for item in sparkline["series"] if item["id"] == option["id"]), "")}
+        for option in options
+    ]
+    return {
+        "slug": row["slug"],
+        "title": row["title"],
+        "category": row["category"],
+        "subcategory": row["subcategory"],
+        "kind": row["kind"],
+        "status": row["status"],
+        "status_label": _market_status_label(row["status"]),
+        "primary_outcome": row["primary_outcome"],
+        "primary_probability": _display_probability(row["primary_probability_exact"]),
+        "primary_probability_exact": float(_decimal_probability(row["primary_probability_exact"])),
+        "secondary_probability": _display_probability(row["secondary_probability_exact"]),
+        "secondary_probability_exact": float(_decimal_probability(row["secondary_probability_exact"])),
+        "volume_oc": row["volume_oc"],
+        "participants": row["participants"],
+        "source": row["source"],
+        "closes_in": _short_close_label(row["close_at"]) or row["closes_in"],
+        "close_label": row["close_label"] or _market_status_label(row["status"]),
+        "thumb": row["thumb"],
+        "thumb_color": row["thumb_color"],
+        "image_url": row["image_url"],
+        "summary": row["summary"],
+        "resolution_criteria": row["resolution_criteria"],
+        "close_at": row["close_at"].isoformat() if row["close_at"] else None,
+        "close_timezone": row["close_timezone"],
+        "auto_close_enabled": row["auto_close_enabled"],
+        "is_featured": bool(row["is_featured"]) if "is_featured" in row else False,
+        "resolved_at": row["resolved_at"].isoformat() if "resolved_at" in row and row["resolved_at"] else None,
+        "resolved_at_label": _datetime_label(row["resolved_at"], _resolution_timezone(row)) if "resolved_at" in row and row["resolved_at"] else "",
+        "resolution_timezone": _resolution_timezone(row),
+        "winning_option_id": row["winning_option_id"] if "winning_option_id" in row else None,
+        "resolution_note": (row["resolution_note"] or "") if "resolution_note" in row else "",
+        "resolution_type": (row["resolution_type"] or "") if "resolution_type" in row else "",
+        "market_like_count": int(row["market_like_count"] or 0) if "market_like_count" in row else 0,
+        "view_count": int(row["view_count"] or 0) if "view_count" in row else 0,
+        "share_count": int(row["share_count"] or 0) if "share_count" in row else 0,
+        "created_at": row["created_at"].isoformat() if "created_at" in row and row["created_at"] else "",
+        "sparkline_path": sparkline["sparkline_path"],
+        "sparkline_area_path": sparkline["sparkline_area_path"],
+        "sparkline_series": sparkline["series"],
+        "options": options,
+        "comments": _market_comments(cursor, row["id"], viewer_id=viewer_id) if include_comments else [],
+    }
+
+
+def _participants_label(count):
+    if count == 1:
+        return "1 participante"
+    return f"{count} participantes"
+
+
+def _volume_label(amount):
+    return f"{amount} OC"
+
+
+def _market_probability_snapshot(cursor, market_id):
+    cursor.execute(
+        """
+        SELECT o.id, o.label, o.hint, o.display_order,
+               %s + COALESCE(SUM(p.weight_at_entry), 0) AS total_weight
+        FROM orynth_market_options o
+        LEFT JOIN orynth_predictions p
+          ON p.market_option_id = o.id
+         AND p.status = 'open'
+        WHERE o.market_id = %s
+        GROUP BY o.id, o.label, o.hint, o.display_order
+        ORDER BY o.display_order ASC, o.id ASC
+        """,
+        (BASE_PREDICTION_WEIGHT, market_id),
+    )
+    rows = cursor.fetchall()
+    total_weight = sum(int(row["total_weight"] or 0) for row in rows)
+    if not rows or total_weight <= 0:
+        return []
+
+    probability_by_id = {}
+    for row in rows:
+        value = (Decimal(int(row["total_weight"] or 0)) * Decimal("100") / Decimal(total_weight)).quantize(PROBABILITY_QUANT)
+        probability_by_id[row["id"]] = value
+
+    snapshot = []
+    for row in rows:
+        probability_exact = probability_by_id[row["id"]]
+        cursor.execute(
+            "UPDATE orynth_market_options SET probability_exact = %s, updated_at = %s WHERE id = %s",
+            (probability_exact, datetime.now(timezone.utc), row["id"]),
+        )
+        probability = _display_probability(probability_exact)
+        snapshot.append({"id": row["id"], "label": row["label"], "probability": probability, "probability_exact": float(probability_exact), "hint": row["hint"]})
+
+    primary_probability_exact = _decimal_probability(snapshot[0]["probability_exact"]) if snapshot else Decimal("0")
+    secondary_probability_exact = _decimal_probability(snapshot[1]["probability_exact"]) if len(snapshot) > 1 else Decimal("0")
+    cursor.execute(
+        """
+        SELECT COALESCE(SUM(stake_amount), 0) AS volume_oc,
+               COUNT(DISTINCT user_id) AS participants
+        FROM orynth_predictions
+        WHERE market_id = %s AND status = 'open'
+        """,
+        (market_id,),
+    )
+    totals = cursor.fetchone()
+    volume_oc = int(totals["volume_oc"] or 0)
+    participants = int(totals["participants"] or 0)
+    cursor.execute(
+        """
+        UPDATE orynth_markets
+        SET primary_probability_exact = %s,
+            secondary_probability_exact = %s,
+            volume_oc = %s,
+            participants = %s,
+            updated_at = %s
+        WHERE id = %s
+        """,
+        (
+            primary_probability_exact,
+            secondary_probability_exact,
+            _volume_label(volume_oc),
+            _participants_label(participants),
+            datetime.now(timezone.utc),
+            market_id,
+        ),
+    )
+    return snapshot
+
+
+def _prediction_preview(cursor, slug, payload):
+    cursor.execute(
+        """
+        SELECT id, status
+        FROM orynth_markets
+        WHERE slug = %s
+        """,
+        (slug,),
+    )
+    market = cursor.fetchone()
+    if not market:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+    if market["status"] != "open":
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado fechado para novas previsões.")
+
+    cursor.execute(
+        """
+        SELECT id, probability_exact
+        FROM orynth_market_options
+        WHERE id = %s AND market_id = %s
+        """,
+        (payload.option_id, market["id"]),
+    )
+    option = cursor.fetchone()
+    if not option:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opção inválida para este mercado.")
+
+    probability_exact = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
+    estimated_return = int((Decimal(payload.stake_amount) * Decimal("100") / probability_exact).to_integral_value())
+    return {
+        "market_id": market["id"],
+        "option_id": option["id"],
+        "stake_amount": payload.stake_amount,
+        "probability_exact": float(probability_exact),
+        "estimated_return": estimated_return,
+    }
+
+
+def _sync_featured_market(cursor, market_id, is_featured):
+    if not is_featured:
+        return
+    if market_id is None:
+        cursor.execute(
+            """
+            SELECT id
+            FROM orynth_markets
+            WHERE is_featured = true
+            ORDER BY updated_at DESC, display_order ASC, id ASC
+            """
+        )
+    else:
+        cursor.execute(
+            """
+            SELECT id
+            FROM orynth_markets
+            WHERE is_featured = true
+              AND id <> %s
+            ORDER BY updated_at DESC, display_order ASC, id ASC
+            """,
+            (market_id,),
+        )
+    keep_ids = [row["id"] for row in cursor.fetchall()[:1]]
+    if keep_ids:
+        if market_id is None:
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET is_featured = false,
+                    updated_at = %s
+                WHERE is_featured = true
+                  AND id <> ALL(%s)
+                """,
+                (datetime.now(timezone.utc), keep_ids),
+            )
+        else:
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET is_featured = false,
+                    updated_at = %s
+                WHERE is_featured = true
+                  AND id <> %s
+                  AND id <> ALL(%s)
+                """,
+                (datetime.now(timezone.utc), market_id, keep_ids),
+            )
+        return
+
+
+def _ensure_featured_allowed(market_status, is_featured):
+    if is_featured and market_status == "canceled":
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercados cancelados não podem ficar em destaque.")
+
+
+def _record_admin_event(cursor, actor_id, action, entity_type, entity_identifier, note=""):
+    cursor.execute(
+        """
+        INSERT INTO orynth_admin_events (actor_id, action, entity_type, entity_identifier, note, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        """,
+        (actor_id, action, entity_type, entity_identifier, note or "", datetime.now(timezone.utc)),
+    )
+
+
+def _admin_user_row(cursor, user_id):
+    cursor.execute(
+        """
+        SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
+               u.date_joined, u.last_login, u.account_status, u.is_active,
+               u.is_staff, u.is_superuser, u.deactivated_at,
+               COALESCE(w.available_oc, 0) AS available_oc,
+               COALESCE(w.locked_oc, 0) AS locked_oc,
+               COALESCE(r.reputation_score, 0) AS reputation_score
+        FROM orynth_users u
+        LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
+        LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
+        WHERE u.id = %s
+        """,
+        (user_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
+    _ensure_user_core(cursor, user_id)
+    cursor.execute(
+        """
+        SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
+               u.date_joined, u.last_login, u.account_status, u.is_active,
+               u.is_staff, u.is_superuser, u.deactivated_at,
+               COALESCE(w.available_oc, 0) AS available_oc,
+               COALESCE(w.locked_oc, 0) AS locked_oc,
+               COALESCE(r.reputation_score, 0) AS reputation_score
+        FROM orynth_users u
+        LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
+        LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
+        WHERE u.id = %s
+        """,
+        (user_id,),
+    )
+    return cursor.fetchone()
+
+
+def _require_admin_target(staff, target, *, allow_superuser=False):
+    if int(staff["id"]) == int(target["id"]):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Operador não pode executar esta ação sobre a própria conta.")
+    if target["is_superuser"] and not allow_superuser:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ação não permitida para superusuário.")
+
+
+def _ledger_entries(cursor, user_id, limit=10):
+    cursor.execute(
+        """
+        SELECT id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at
+        FROM orynth_wallet_ledger
+        WHERE user_id = %s
+        ORDER BY created_at DESC, id DESC
+        LIMIT %s
+        """,
+        (user_id, limit),
+    )
+    return [
+        {
+            "entry_id": row["id"],
+            "entry_type": row["entry_type"],
+            "amount": row["amount"],
+            "direction": row["direction"],
+            "description": row["description"],
+            "reference_type": row["reference_type"],
+            "reference_id": row["reference_id"],
+            "created_at": row["created_at"].isoformat(),
+            "created_by": row["created_by_id"],
+        }
+        for row in cursor.fetchall()
+    ]
+
+
+def _admin_user_detail(cursor, user_id):
+    user = _admin_user_row(cursor, user_id)
+    wallet = _wallet_summary(cursor, user_id)
+    profile = _profile_response(cursor, user)
+
+    cursor.execute(
+        """
+        SELECT p.id, p.status, p.stake_amount, p.won, p.created_at,
+               m.slug AS market_slug, m.title AS market_title, mo.label AS option_label
+        FROM orynth_predictions p
+        JOIN orynth_markets m ON m.id = p.market_id
+        JOIN orynth_market_options mo ON mo.id = p.market_option_id
+        WHERE p.user_id = %s
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT 10
+        """,
+        (user_id,),
+    )
+    predictions = [
+        {
+            "id": row["id"],
+            "status": row["status"],
+            "stake_amount": row["stake_amount"],
+            "won": row["won"],
+            "market_slug": row["market_slug"],
+            "market_title": row["market_title"],
+            "option_label": row["option_label"],
+            "created_at": row["created_at"].isoformat(),
+        }
+        for row in cursor.fetchall()
+    ]
+    cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_predictions WHERE user_id = %s GROUP BY status", (user_id,))
+    prediction_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
+
+    cursor.execute(
+        """
+        SELECT mc.id, mc.status, mc.body, mc.created_at, m.slug AS market_slug, m.title AS market_title
+        FROM orynth_market_comments mc
+        JOIN orynth_markets m ON m.id = mc.market_id
+        WHERE mc.author_id = %s
+        ORDER BY mc.created_at DESC, mc.id DESC
+        LIMIT 10
+        """,
+        (user_id,),
+    )
+    comments = [
+        {
+            "id": row["id"],
+            "status": row["status"],
+            "body": row["body"],
+            "market_slug": row["market_slug"],
+            "market_title": row["market_title"],
+            "created_at": row["created_at"].isoformat(),
+        }
+        for row in cursor.fetchall()
+    ]
+    cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_comments WHERE author_id = %s GROUP BY status", (user_id,))
+    comment_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
+
+    cursor.execute(
+        """
+        SELECT b.code, b.name, b.description, b.badge_type, b.image_url, b.image_dark_url,
+               a.awarded_at, a.reason_snapshot
+        FROM orynth_user_badge_awards a
+        JOIN orynth_badge_definitions b ON b.id = a.badge_id
+        WHERE a.user_id = %s
+        ORDER BY a.awarded_at DESC, b.name ASC
+        LIMIT 20
+        """,
+        (user_id,),
+    )
+    badges = [
+        {
+            "code": row["code"],
+            "name": row["name"],
+            "description": row["description"],
+            "badge_type": row["badge_type"],
+            "image_url": row["image_url"] or "",
+            "image_dark_url": row["image_dark_url"] or "",
+            "awarded_at": row["awarded_at"].isoformat() if row["awarded_at"] else None,
+            "reason_snapshot": row["reason_snapshot"] or "",
+        }
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute(
+        """
+        SELECT id, question, status, reward_oc, created_at
+        FROM orynth_market_suggestions
+        WHERE author_id = %s
+        ORDER BY created_at DESC, id DESC
+        LIMIT 10
+        """,
+        (user_id,),
+    )
+    suggestions = [
+        {
+            "id": row["id"],
+            "title": row["question"],
+            "status": row["status"],
+            "reward_oc": row["reward_oc"],
+            "created_at": row["created_at"].isoformat(),
+        }
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute(
+        """
+        SELECT id, feedback_type, severity, status, reward_oc, created_at
+        FROM orynth_product_feedback
+        WHERE author_id = %s
+        ORDER BY created_at DESC, id DESC
+        LIMIT 10
+        """,
+        (user_id,),
+    )
+    feedback = [
+        {
+            "id": row["id"],
+            "title": row["feedback_type"],
+            "severity": row["severity"],
+            "status": row["status"],
+            "reward_oc": row["reward_oc"],
+            "created_at": row["created_at"].isoformat(),
+        }
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute(
+        """
+        SELECT id, created_at, last_seen_at, expires_at, revoked_at, ip_address, user_agent
+        FROM orynth_auth_sessions
+        WHERE user_id = %s
+        ORDER BY created_at DESC, id DESC
+        LIMIT 10
+        """,
+        (user_id,),
+    )
+    sessions = [
+        {
+            "id": row["id"],
+            "created_at": row["created_at"].isoformat(),
+            "last_seen_at": row["last_seen_at"].isoformat() if row["last_seen_at"] else None,
+            "expires_at": row["expires_at"].isoformat(),
+            "revoked_at": row["revoked_at"].isoformat() if row["revoked_at"] else None,
+            "ip_address": str(row["ip_address"] or ""),
+            "user_agent": row["user_agent"] or "",
+        }
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute(
+        """
+        SELECT event_type, email, provider, ip_address, user_agent, created_at
+        FROM orynth_auth_events
+        WHERE user_id = %s OR lower(email) = lower(%s)
+        ORDER BY created_at DESC, id DESC
+        LIMIT 10
+        """,
+        (user_id, user["email"]),
+    )
+    auth_events = [
+        {
+            "event_type": row["event_type"],
+            "email": row["email"],
+            "provider": row["provider"],
+            "ip_address": str(row["ip_address"] or ""),
+            "user_agent": row["user_agent"] or "",
+            "created_at": row["created_at"].isoformat(),
+        }
+        for row in cursor.fetchall()
+    ]
+
+    cursor.execute(
+        """
+        SELECT action, entity_type, entity_identifier, note, created_at, actor_id
+        FROM orynth_admin_events
+        WHERE (entity_type = 'user' AND entity_identifier = %s) OR actor_id = %s
+        ORDER BY created_at DESC, id DESC
+        LIMIT 10
+        """,
+        (str(user_id), user_id),
+    )
+    admin_events = [
+        {
+            "action": row["action"],
+            "entity_type": row["entity_type"],
+            "entity_identifier": row["entity_identifier"],
+            "note": row["note"],
+            "actor_id": row["actor_id"],
+            "created_at": row["created_at"].isoformat(),
+        }
+        for row in cursor.fetchall()
+    ]
+    return {
+        "user": _admin_user_response(user),
+        "profile": {
+            "bio": profile["bio"],
+            "strong_category": profile["strong_category"],
+            "birth_date": profile["birth_date"],
+            "sex": profile["sex"],
+            "is_public": profile["is_public"],
+            "profile_created_at": profile["profile_created_at"],
+            "profile_updated_at": profile["profile_updated_at"],
+        },
+        "wallet": wallet,
+        "ledger": _ledger_entries(cursor, user_id),
+        "reputation": profile["reputation"],
+        "prediction_counts": prediction_counts,
+        "predictions": predictions,
+        "comment_counts": comment_counts,
+        "comments": comments,
+        "badges": badges,
+        "suggestions": suggestions,
+        "feedback": feedback,
+        "sessions": sessions,
+        "auth_events": auth_events,
+        "admin_events": admin_events,
+    }
+
+
+def _accuracy_indicator(cursor, user_id):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total,
+               COALESCE(SUM(CASE WHEN won = true THEN 1 ELSE 0 END), 0) AS wins
+        FROM orynth_predictions
+        WHERE user_id = %s
+          AND status = 'resolved'
+        """,
+        (user_id,),
+    )
+    row = cursor.fetchone()
+    total = int(row["total"] or 0)
+    if total <= 0:
+        return "0%"
+    wins = int(row["wins"] or 0)
+    return f"{int((Decimal(wins) * Decimal('100') / Decimal(total)).to_integral_value(rounding=ROUND_HALF_UP))}%"
+
+
+def _apply_reputation_delta(cursor, user_id, probability_at_entry, won, now):
+    _ensure_user_core(cursor, user_id)
+    probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(probability_at_entry) / Decimal("100")))
+    delta = REPUTATION_K_FACTOR * (Decimal("1") - probability) if won else -(REPUTATION_K_FACTOR * probability)
+    rounded_delta = int(delta.to_integral_value(rounding=ROUND_HALF_UP))
+    cursor.execute(
+        """
+        SELECT reputation_score, streak
+        FROM orynth_user_reputations
+        WHERE user_id = %s
+        FOR UPDATE
+        """,
+        (user_id,),
+    )
+    reputation = cursor.fetchone()
+    current_score = int(reputation["reputation_score"] if reputation else INITIAL_REPUTATION)
+    current_streak = int(reputation["streak"] if reputation else 0)
+    new_score = max(0, current_score + rounded_delta)
+    new_streak = current_streak + 1 if won else 0
+    cursor.execute(
+        """
+        UPDATE orynth_user_reputations
+        SET reputation_score = %s,
+            resolved_predictions_count = (
+                SELECT COUNT(*)
+                FROM orynth_predictions
+                WHERE user_id = %s
+                  AND status = 'resolved'
+            ),
+            accuracy_indicator = %s,
+            streak = %s,
+            last_updated_at = %s
+        WHERE user_id = %s
+        """,
+        (new_score, user_id, _accuracy_indicator(cursor, user_id), new_streak, now, user_id),
+    )
+
+
+def _recalculate_user_reputation(cursor, user_id, now):
+    _ensure_user_core(cursor, user_id)
+    cursor.execute(
+        """
+        SELECT probability_at_entry, won
+        FROM orynth_predictions
+        WHERE user_id = %s
+          AND status = 'resolved'
+        ORDER BY updated_at ASC, id ASC
+        """,
+        (user_id,),
+    )
+    rows = cursor.fetchall()
+    score = INITIAL_REPUTATION
+    for prediction in rows:
+        probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(prediction["probability_at_entry"]) / Decimal("100")))
+        delta = REPUTATION_K_FACTOR * (Decimal("1") - probability) if prediction["won"] else -(REPUTATION_K_FACTOR * probability)
+        score = max(0, score + int(delta.to_integral_value(rounding=ROUND_HALF_UP)))
+
+    cursor.execute(
+        """
+        SELECT won
+        FROM orynth_predictions
+        WHERE user_id = %s
+          AND status = 'resolved'
+        ORDER BY updated_at DESC, id DESC
+        """,
+        (user_id,),
+    )
+    streak = 0
+    for prediction in cursor.fetchall():
+        if not prediction["won"]:
+            break
+        streak += 1
+
+    cursor.execute(
+        """
+        UPDATE orynth_user_reputations
+        SET reputation_score = %s,
+            resolved_predictions_count = %s,
+            accuracy_indicator = %s,
+            streak = %s,
+            last_updated_at = %s
+        WHERE user_id = %s
+        """,
+        (score, len(rows), _accuracy_indicator(cursor, user_id), streak, now, user_id),
+    )
+
+
+def _resolve_market_predictions(cursor, market_id, winning_option_id, staff_id, slug, now):
+    cursor.execute(
+        """
+        SELECT id, user_id, market_option_id, stake_amount, probability_at_entry, potential_payout
+        FROM orynth_predictions
+        WHERE market_id = %s
+          AND status = 'open'
+        ORDER BY id ASC
+        FOR UPDATE
+        """,
+        (market_id,),
+    )
+    predictions = cursor.fetchall()
+    for prediction in predictions:
+        won = prediction["market_option_id"] == winning_option_id
+        cursor.execute(
+            """
+            UPDATE orynth_predictions
+            SET status = 'resolved',
+                won = %s,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (won, now, prediction["id"]),
+        )
+        if won:
+            _record_wallet_entry(
+                cursor,
+                prediction["user_id"],
+                entry_type="prediction_refund",
+                amount=int(prediction["stake_amount"]),
+                direction="release",
+                description=f"Stake liberado por acerto: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+                created_by_id=staff_id,
+            )
+            payout_total = int(prediction["potential_payout"] or 0)
+            payout_net = max(0, payout_total - int(prediction["stake_amount"]))
+            if payout_net:
+                _record_wallet_entry(
+                    cursor,
+                    prediction["user_id"],
+                    entry_type="prediction_payout",
+                    amount=payout_net,
+                    direction="credit",
+                    description=f"Crédito líquido por acerto: {slug}",
+                    reference_type="prediction",
+                    reference_id=str(prediction["id"]),
+                    created_by_id=staff_id,
+                )
+        else:
+            _record_wallet_entry(
+                cursor,
+                prediction["user_id"],
+                entry_type="prediction_loss",
+                amount=int(prediction["stake_amount"]),
+                direction="settle",
+                description=f"Stake liquidado por erro: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+                created_by_id=staff_id,
+            )
+        _apply_reputation_delta(cursor, prediction["user_id"], prediction["probability_at_entry"], won, now)
+    BadgeAwardEngine.on_market_resolved(cursor, market_id)
+
+
+def _refund_market_predictions(cursor, market_id, staff_id, slug, now):
+    cursor.execute(
+        """
+        SELECT id, user_id, stake_amount
+        FROM orynth_predictions
+        WHERE market_id = %s
+          AND status = 'open'
+        ORDER BY id ASC
+        FOR UPDATE
+        """,
+        (market_id,),
+    )
+    predictions = cursor.fetchall()
+    refunds_created = 0
+    refunds_existing = 0
+    for prediction in predictions:
+        cursor.execute(
+            """
+            UPDATE orynth_predictions
+            SET status = 'canceled',
+                won = NULL,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (now, prediction["id"]),
+        )
+        cursor.execute(
+            """
+            SELECT id
+            FROM orynth_wallet_ledger
+            WHERE reference_type = 'prediction'
+              AND reference_id = %s
+              AND entry_type = 'prediction_refund'
+              AND direction = 'release'
+              AND id > COALESCE((
+                  SELECT MAX(id)
+                  FROM orynth_wallet_ledger
+                  WHERE reference_type = 'prediction'
+                    AND reference_id = %s
+                    AND direction = 'lock'
+              ), 0)
+            LIMIT 1
+            """,
+            (str(prediction["id"]), str(prediction["id"])),
+        )
+        if cursor.fetchone():
+            refunds_existing += 1
+            continue
+        _record_wallet_entry(
+            cursor,
+            prediction["user_id"],
+            entry_type="prediction_refund",
+            amount=int(prediction["stake_amount"]),
+            direction="release",
+            description=f"Refund por cancelamento: {slug}",
+            reference_type="prediction",
+            reference_id=str(prediction["id"]),
+            created_by_id=staff_id,
+        )
+        refunds_created += 1
+    return {
+        "predictions_canceled": len(predictions),
+        "refunds_created": refunds_created,
+        "refunds_existing": refunds_existing,
+    }
+
+
+def _assert_no_open_predictions(cursor, market_id, slug):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS count
+        FROM orynth_predictions
+        WHERE market_id = %s
+          AND status = 'open'
+        """,
+        (market_id,),
+    )
+    open_predictions = int(cursor.fetchone()["count"] or 0)
+    if open_predictions:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Cancelamento inconsistente para {slug}: {open_predictions} previsões permaneceram abertas.",
+        )
+
+
+def _undo_resolved_market_predictions(cursor, market_id, staff_id, slug, now):
+    cursor.execute(
+        """
+        SELECT id, user_id, stake_amount, won
+        FROM orynth_predictions
+        WHERE market_id = %s
+          AND status = 'resolved'
+        ORDER BY id ASC
+        FOR UPDATE
+        """,
+        (market_id,),
+    )
+    predictions = cursor.fetchall()
+    affected_user_ids = set()
+    for prediction in predictions:
+        affected_user_ids.add(prediction["user_id"])
+        if prediction["won"]:
+            cursor.execute(
+                """
+                SELECT COALESCE(SUM(amount), 0) AS payout_amount
+                FROM orynth_wallet_ledger
+                WHERE reference_type = 'prediction'
+                  AND reference_id = %s
+                  AND entry_type = 'prediction_payout'
+                  AND direction = 'credit'
+                """,
+                (str(prediction["id"]),),
+            )
+            payout_amount = int(cursor.fetchone()["payout_amount"] or 0)
+            if payout_amount:
+                _record_wallet_entry(
+                    cursor,
+                    prediction["user_id"],
+                    entry_type="prediction_payout_reversal",
+                    amount=payout_amount,
+                    direction="debit",
+                    description=f"Estorno de payout por cancelamento: {slug}",
+                    reference_type="prediction",
+                    reference_id=str(prediction["id"]),
+                    created_by_id=staff_id,
+                )
+            _record_wallet_entry(
+                cursor,
+                prediction["user_id"],
+                entry_type="prediction_resolution_relock",
+                amount=int(prediction["stake_amount"]),
+                direction="lock",
+                description=f"Stake rebloqueado por resolução desfeita: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+                created_by_id=staff_id,
+            )
+        else:
+            _record_wallet_entry(
+                cursor,
+                prediction["user_id"],
+                entry_type="prediction_refund",
+                amount=int(prediction["stake_amount"]),
+                direction="credit",
+                description=f"Refund intermediário por resolução desfeita: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+                created_by_id=staff_id,
+            )
+            _record_wallet_entry(
+                cursor,
+                prediction["user_id"],
+                entry_type="prediction_resolution_relock",
+                amount=int(prediction["stake_amount"]),
+                direction="lock",
+                description=f"Stake rebloqueado por resolução desfeita: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+                created_by_id=staff_id,
+            )
+        cursor.execute(
+            """
+            UPDATE orynth_predictions
+            SET status = 'open',
+                won = NULL,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (now, prediction["id"]),
+        )
+    for user_id in affected_user_ids:
+        _recalculate_user_reputation(cursor, user_id, now)
+
+
+def _age_label(created_at):
+    created = created_at if created_at.tzinfo else created_at.replace(tzinfo=timezone.utc)
+    delta = datetime.now(timezone.utc) - created
+    hours = int(delta.total_seconds() // 3600)
+    if hours < 1:
+        return "agora"
+    if hours < 24:
+        return f"{hours}h"
+    return f"{hours // 24}d"
+
+
+def _queue_status_label(value):
+    return {
+        "pending": "Pendente",
+        "converted": "Convertida",
+        "reviewed": "Revisado",
+        "rewarded": "Recompensado",
+        "rejected": "Rejeitado",
+    }.get(value, value)
+
+
+def _queue_severity_label(value):
+    return {"low": "Baixa", "medium": "Média", "high": "Alta"}.get(value, value)
+
+
+def _date_label(value):
+    return value.strftime("%d/%m/%Y %H:%M") if value else ""
+
+
+def _suggestion_response(row):
+    return {
+        "id": row["id"],
+        "kind": "suggestion",
+        "title": row["question"],
+        "category": row["category"],
+        "queue_label": "Mercado",
+        "item_type": "Sugestão de mercado",
+        "status": row["status"],
+        "status_label": _queue_status_label(row["status"]),
+        "severity": "medium",
+        "severity_label": "Média",
+        "owner_label": "Editorial",
+        "age_label": _age_label(row["created_at"]),
+        "author_handle": _handle_seed(row["author_handle"]) if row["author_handle"] else None,
+        "author_id": row["author_id"],
+        "guest_name": row["guest_name"] or "",
+        "guest_email": row["guest_email"] or "",
+        "source": row["suggested_source"],
+        "description": row["rationale"],
+        "admin_note": row["admin_note"] or "",
+        "reward_oc": row["reward_oc"],
+        "converted_market_slug": row["converted_market_slug"],
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _date_label(row["created_at"]),
+        "reviewed_at": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
+    }
+
+
+def _feedback_response(row):
+    return {
+        "id": row["id"],
+        "kind": "feedback",
+        "title": row["feedback_type"],
+        "category": "Feedback",
+        "queue_label": "Feedback",
+        "item_type": row["feedback_type"],
+        "status": row["status"],
+        "status_label": _queue_status_label(row["status"]),
+        "severity": row["severity"],
+        "severity_label": _queue_severity_label(row["severity"]),
+        "owner_label": "Operação",
+        "age_label": _age_label(row["created_at"]),
+        "author_handle": _handle_seed(row["author_handle"]) if row["author_handle"] else None,
+        "author_id": row["author_id"],
+        "guest_name": row["guest_name"] or "",
+        "guest_email": row["guest_email"] or "",
+        "source": "",
+        "description": row["description"],
+        "admin_note": row["admin_note"] or "",
+        "reward_oc": row["reward_oc"],
+        "converted_market_slug": None,
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _date_label(row["created_at"]),
+        "reviewed_at": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
+    }
+
+
+def _get_suggestion(cursor, suggestion_id):
+    cursor.execute(
+        """
+        SELECT s.*, u.username AS author_handle, m.slug AS converted_market_slug
+        FROM orynth_market_suggestions s
+        LEFT JOIN orynth_users u ON u.id = s.author_id
+        LEFT JOIN orynth_markets m ON m.id = s.converted_market_id
+        WHERE s.id = %s
+        """,
+        (suggestion_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Sugestão não encontrada.")
+    return row
+
+
+def _get_feedback(cursor, feedback_id):
+    cursor.execute(
+        """
+        SELECT f.*, u.username AS author_handle
+        FROM orynth_product_feedback f
+        LEFT JOIN orynth_users u ON u.id = f.author_id
+        WHERE f.id = %s
+        """,
+        (feedback_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feedback não encontrado.")
+    return row
+
+
+def _upsert_category(cursor, name, slug=None):
+    cleaned_slug = _slug_seed(slug or name, max_length=100)
+    cursor.execute(
+        """
+        INSERT INTO orynth_market_categories (name, slug, is_blocked, blocked_reason, created_at)
+        VALUES (%s, %s, false, '', %s)
+        ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id, name, slug, is_blocked
+        """,
+        (name.strip(), cleaned_slug, datetime.now(timezone.utc)),
+    )
+    return cursor.fetchone()
+
+
+def _upsert_subcategory(cursor, category_id, name, slug=None):
+    cleaned_slug = _slug_seed(slug or name, max_length=100)
+    cursor.execute(
+        """
+        INSERT INTO orynth_market_subcategories (category_id, name, slug, is_blocked, blocked_reason, created_at)
+        VALUES (%s, %s, %s, false, '', %s)
+        ON CONFLICT (category_id, slug) DO UPDATE SET name = EXCLUDED.name
+        RETURNING id, name, slug, is_blocked
+        """,
+        (category_id, name.strip(), cleaned_slug, datetime.now(timezone.utc)),
+    )
+    return cursor.fetchone()
+
+
+def _ensure_taxonomy_available(category, subcategory):
+    if category["is_blocked"]:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Categoria bloqueada para novos mercados.")
+    if subcategory["is_blocked"]:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Subcategoria bloqueada para novos mercados.")
+
+
+def _admin_market_by_slug(cursor, slug):
+    rows = _market_rows(cursor, "WHERE m.slug = %s", [slug])
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+    return rows[0]
+
+
+def _option_dict(option):
+    if isinstance(option, dict):
+        return option
+    if hasattr(option, "model_dump"):
+        return option.model_dump()
+    return option.dict()
+
+
+def _even_probabilities(total):
+    exact = _even_probability_exact(total)
+    return [{"probability": _display_probability(exact), "probability_exact": exact} for _ in range(total)]
+
+
+def _normalize_market_options(payload):
+    if payload.kind not in {"binary", "multiple"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de mercado inválido.")
+
+    if payload.kind == "binary":
+        return [
+            {"label": "SIM", "probability": 50, "probability_exact": Decimal("50.0000"), "hint": "Opção afirmativa"},
+            {"label": "NAO", "probability": 50, "probability_exact": Decimal("50.0000"), "hint": "Opção negativa"},
+        ]
+
+    raw_options = [_option_dict(option) for option in payload.options]
+    normalized = []
+    seen = set()
+    for option in raw_options:
+        label = (option.get("label") or "").strip()
+        if not label:
+            continue
+        label_key = label.casefold()
+        if label_key in seen:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opções duplicadas não são permitidas.")
+        seen.add(label_key)
+        normalized.append(
+            {
+                "label": label,
+                "probability": 0,
+                "probability_exact": Decimal("0.0000"),
+                "hint": (option.get("hint") or "").strip(),
+            }
+        )
+
+    if len(normalized) < 2:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado de múltipla escolha exige pelo menos duas opções.")
+
+    for option, probability in zip(normalized, _even_probabilities(len(normalized))):
+        option.update(probability)
+    return normalized
+
+
+def _validate_admin_market_payload(payload):
+    missing = []
+    required_text = {
+        "summary": payload.summary,
+        "source": payload.source,
+        "resolution_criteria": payload.resolution_criteria,
+        "close_timezone": payload.close_timezone,
+        "thumb_color": payload.thumb_color,
+    }
+    for field, value in required_text.items():
+        if not (value or "").strip():
+            missing.append(field)
+    if not payload.close_at:
+        missing.append("close_at")
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Campos obrigatórios ausentes: " + ", ".join(missing),
+        )
+
+
+def _payload_closes_in(payload):
+    return _short_close_label(payload.close_at)
+
+
+def _save_market_options(cursor, market_id, options, *, preserve_existing_probability=False):
+    cursor.execute(
+        """
+        SELECT id, label, probability_exact
+        FROM orynth_market_options
+        WHERE market_id = %s
+        """,
+        (market_id,),
+    )
+    existing_options = cursor.fetchall()
+    existing_by_label = {row["label"]: row for row in existing_options}
+    desired_labels = {option["label"].strip() for option in options}
+
+    for index, option in enumerate(options, start=1):
+        label = option["label"].strip()
+        existing = existing_by_label.get(label)
+        if existing:
+            probability_exact = existing["probability_exact"] if preserve_existing_probability else _decimal_probability(option["probability_exact"])
+            cursor.execute(
+                """
+                UPDATE orynth_market_options
+                SET probability_exact = %s,
+                    hint = %s,
+                    display_order = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (
+                    _decimal_probability(probability_exact),
+                    option.get("hint", "").strip(),
+                    index,
+                    datetime.now(timezone.utc),
+                    existing["id"],
+                ),
+            )
+        else:
+            cursor.execute(
+                """
+                INSERT INTO orynth_market_options (market_id, label, probability_exact, hint, display_order, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                """,
+                (
+                    market_id,
+                    label,
+                    _decimal_probability(option["probability_exact"]),
+                    option.get("hint", "").strip(),
+                    index,
+                    datetime.now(timezone.utc),
+                    datetime.now(timezone.utc),
+                ),
+            )
+
+    removed_ids = [row["id"] for row in existing_options if row["label"] not in desired_labels]
+    if not removed_ids:
+        return
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM orynth_predictions
+        WHERE market_option_id = ANY(%s)
+        """,
+        (removed_ids,),
+    )
+    if cursor.fetchone()["total"]:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Não é possível remover opções que já possuem previsões vinculadas.",
+        )
+    cursor.execute("DELETE FROM orynth_market_options WHERE id = ANY(%s)", (removed_ids,))
+
+
+def _validate_publishable(cursor, market_id):
+    cursor.execute(
+        """
+        SELECT title, summary, source, resolution_criteria, close_at, close_timezone, thumb_color,
+               kind, category_id, subcategory_id
+        FROM orynth_markets
+        WHERE id = %s
+        """,
+        (market_id,),
+    )
+    market = cursor.fetchone()
+    missing = []
+    for field in ("title", "summary", "source", "resolution_criteria", "close_at", "close_timezone", "thumb_color"):
+        if not market[field]:
+            missing.append(field)
+    cursor.execute(
+        """
+                SELECT label, probability_exact
+        FROM orynth_market_options
+        WHERE market_id = %s
+        ORDER BY display_order ASC, id ASC
+        """,
+        (market_id,),
+    )
+    options = cursor.fetchall()
+    option_count = len(options)
+    if market["kind"] == "binary":
+        if option_count != 2 or [option["label"] for option in options] != ["SIM", "NAO"] or [_display_probability(option["probability_exact"]) for option in options] != [50, 50]:
+            missing.append("duas opções binárias fixas 50/50")
+    if market["kind"] == "multiple" and option_count < 2:
+        missing.append("duas ou mais opções")
+    if market["kind"] == "multiple" and option_count >= 2:
+        expected = _even_probability_exact(option_count)
+        if any(_decimal_probability(option["probability_exact"]) != expected for option in options):
+            missing.append("probabilidades iniciais iguais")
+    if missing:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Mercado não publicável: " + ", ".join(missing),
+        )
+
+
+def _taxonomy_response(cursor):
+    cursor.execute(
+        """
+        SELECT c.id, c.name, c.slug, c.is_blocked, c.blocked_reason, c.blocked_at, COUNT(m.id) AS markets_count
+        FROM orynth_market_categories c
+        LEFT JOIN orynth_markets m ON m.category_id = c.id
+        GROUP BY c.id, c.name, c.slug, c.is_blocked, c.blocked_reason, c.blocked_at
+        ORDER BY c.name ASC
+        """
+    )
+    categories = []
+    for category in cursor.fetchall():
+        cursor.execute(
+            """
+            SELECT sc.name, sc.slug, sc.is_blocked, sc.blocked_reason, sc.blocked_at, COUNT(m.id) AS markets_count
+            FROM orynth_market_subcategories sc
+            LEFT JOIN orynth_markets m ON m.subcategory_id = sc.id
+            WHERE sc.category_id = %s
+            GROUP BY sc.id, sc.name, sc.slug, sc.is_blocked, sc.blocked_reason, sc.blocked_at
+            ORDER BY sc.name ASC
+            """,
+            (category["id"],),
+        )
+        categories.append(
+            {
+                "name": category["name"],
+                "slug": category["slug"],
+                "markets_count": category["markets_count"],
+                "is_blocked": category["is_blocked"],
+                "blocked_reason": category["blocked_reason"] or "",
+                "blocked_at": category["blocked_at"].isoformat() if category["blocked_at"] else None,
+                "subcategories": [
+                    {
+                        "name": row["name"],
+                        "slug": row["slug"],
+                        "markets_count": row["markets_count"],
+                        "is_blocked": row["is_blocked"],
+                        "blocked_reason": row["blocked_reason"] or "",
+                        "blocked_at": row["blocked_at"].isoformat() if row["blocked_at"] else None,
+                    }
+                    for row in cursor.fetchall()
+                ],
+            }
+        )
+    return {"categories": categories}
+
+
+def _ranking_categories(cursor):
+    cursor.execute(
+        """
+        SELECT c.id, c.name, c.slug
+        FROM orynth_market_categories c
+        ORDER BY c.name ASC
+        """
+    )
+    categories = []
+    for category in cursor.fetchall():
+        cursor.execute(
+            """
+            SELECT name, slug
+            FROM orynth_market_subcategories
+            WHERE category_id = %s
+            ORDER BY name ASC
+            """,
+            (category["id"],),
+        )
+        categories.append(
+            {
+                "name": category["name"],
+                "slug": category["slug"],
+                "subcategories": [{"name": row["name"], "slug": row["slug"]} for row in cursor.fetchall()],
+            }
+        )
+    return categories
+
+
+def _ranking_theme_rows(cursor, category, subcategory, limit=50):
+    where = ["u.is_active = true", "u.is_staff = false", "u.is_superuser = false", "p.status = 'resolved'", "c.slug = %s"]
+    params = [category]
+    if subcategory:
+        where.append("sc.slug = %s")
+        params.append(subcategory)
+    cursor.execute(
+        f"""
+        SELECT u.id, u.username, u.first_name, u.date_joined,
+               p.probability_at_entry, p.won, p.updated_at, p.id AS prediction_id,
+               c.name AS category_name, sc.name AS subcategory_name
+        FROM orynth_predictions p
+        JOIN orynth_users u ON u.id = p.user_id
+        JOIN orynth_markets m ON m.id = p.market_id
+        JOIN orynth_market_categories c ON c.id = m.category_id
+        JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
+        WHERE {" AND ".join(where)}
+        ORDER BY u.id ASC, p.updated_at ASC, p.id ASC
+        """,
+        params,
+    )
+    users = {}
+    for row in cursor.fetchall():
+        user = users.setdefault(
+            row["id"],
+            {
+                "user_id": row["id"],
+                "username": row["username"],
+                "first_name": row["first_name"],
+                "date_joined": row["date_joined"],
+                "score": INITIAL_REPUTATION,
+                "total": 0,
+                "wins": 0,
+                "strong_category": row["subcategory_name"] if subcategory else row["category_name"],
+            },
+        )
+        probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(row["probability_at_entry"]) / Decimal("100")))
+        delta = REPUTATION_K_FACTOR * (Decimal("1") - probability) if row["won"] else -(REPUTATION_K_FACTOR * probability)
+        user["score"] = max(0, user["score"] + int(delta.to_integral_value(rounding=ROUND_HALF_UP)))
+        user["total"] += 1
+        if row["won"]:
+            user["wins"] += 1
+
+    ranked = sorted(users.values(), key=lambda row: (-row["score"], row["date_joined"], row["user_id"]))[:limit]
+    rows = []
+    for index, row in enumerate(ranked, start=1):
+        accuracy = "0%"
+        if row["total"] > 0:
+            accuracy = f"{int((Decimal(row['wins']) * Decimal('100') / Decimal(row['total'])).to_integral_value(rounding=ROUND_HALF_UP))}%"
+        rows.append(
+            {
+                "position": index,
+                "user_id": row["user_id"],
+                "handle": _handle_seed(row["username"]),
+                "display_name": row["first_name"] or _handle_seed(row["username"]),
+                "reputation_score": row["score"],
+                "accuracy_indicator": accuracy,
+                "strong_category": row["strong_category"] or "Geral",
+            }
+        )
+    return rows
+
+
+def _record_event(cursor, event_type, *, user_id=None, email="", provider="", ip_address=None, user_agent=""):
+    cursor.execute(
+        """
+        INSERT INTO orynth_auth_events (user_id, event_type, email, provider, ip_address, user_agent, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
+        """,
+        (user_id, event_type, email or "", provider or "", ip_address, user_agent, datetime.now(timezone.utc)),
+    )
+
+
+def _create_session(cursor, user_id, request):
+    token = issue_token()
+    expires_at = datetime.now(timezone.utc) + SESSION_TTL
+    ip_address, user_agent = _client_meta(request)
+    cursor.execute(
+        """
+        INSERT INTO orynth_auth_sessions
+            (user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at, ip_address, user_agent)
+        VALUES (%s, %s, %s, %s, %s, NULL, %s, %s)
+        """,
+        (user_id, hash_token(token), datetime.now(timezone.utc), datetime.now(timezone.utc), expires_at, ip_address, user_agent),
+    )
+    return {"token": token, "expires_at": expires_at.isoformat()}
+
+
+def _bearer_token(authorization):
+    if not authorization or not authorization.lower().startswith("bearer "):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão ausente.")
+    return authorization.split(" ", 1)[1].strip()
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+@app.get("/")
+def root():
+    return {"name": "Orynth Backend API", "status": "ok"}
+
+
+@app.get("/markets", response_model=MarketListResponse)
+def list_markets(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    category: Optional[str] = None,
+    subcategory: Optional[str] = None,
+):
+    where = ["m.status NOT IN ('draft', 'canceled')"]
+    params = []
+    if status_filter:
+        where.append("lower(m.status) = lower(%s)")
+        params.append(status_filter)
+    if category:
+        where.append("(lower(c.name) = lower(%s) OR lower(c.slug) = lower(%s))")
+        params.extend([category, category])
+    if subcategory:
+        where.append("(lower(sc.name) = lower(%s) OR lower(sc.slug) = lower(%s))")
+        params.extend([subcategory, subcategory])
+    where_sql = "WHERE " + " AND ".join(where)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            rows = _market_rows(cursor, where_sql, params)
+            return {"markets": [_market_response(cursor, row, include_comments=False) for row in rows]}
+
+
+@app.get("/markets/{slug}", response_model=MarketResponse)
+def get_market(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            viewer = _optional_current_user(cursor, authorization)
+            rows = _market_rows(cursor, "WHERE m.slug = %s AND m.status <> 'draft'", [slug])
+            if not rows:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+            return _market_response(cursor, rows[0], viewer_id=viewer["id"] if viewer else None)
+
+
+def _increment_market_counter(cursor, slug, field_name):
+    cursor.execute(
+        f"""
+        UPDATE orynth_markets
+        SET {field_name} = {field_name} + 1, updated_at = %s
+        WHERE slug = %s AND status <> 'draft'
+        RETURNING view_count, share_count
+        """,
+        (datetime.now(timezone.utc), slug),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+    return {"view_count": int(row["view_count"] or 0), "share_count": int(row["share_count"] or 0)}
+
+
+@app.post("/markets/{slug}/view")
+def track_market_view(slug: str):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            return _increment_market_counter(cursor, slug, "view_count")
+
+
+@app.post("/markets/{slug}/share")
+def track_market_share(slug: str):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            return _increment_market_counter(cursor, slug, "share_count")
+
+
+@app.get("/markets/{slug}/comments", response_model=CommentListResponse)
+def list_market_comments(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            viewer = _optional_current_user(cursor, authorization)
+            cursor.execute("SELECT id, status FROM orynth_markets WHERE slug = %s AND status <> 'draft'", (slug,))
+            market = cursor.fetchone()
+            if not market:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+            return {"comments": _market_comments(cursor, market["id"], viewer_id=viewer["id"] if viewer else None)}
+
+
+@app.get("/badges", response_model=BadgeListResponse)
+def list_badges(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            viewer = _optional_current_user(cursor, authorization)
+            if viewer:
+                BadgeAwardEngine.reconcile_user(cursor, viewer["id"], ensure_user_core=_ensure_user_core)
+            return {"badges": _badge_rows(cursor, user_id=viewer["id"] if viewer else None)}
+
+
+@app.post("/markets/{slug}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
+def create_comment(slug: str, payload: CommentCreatePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            body = payload.body.strip()
+            if not body:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Comentário não pode ficar vazio.")
+            cursor.execute("SELECT id, status FROM orynth_markets WHERE slug = %s", (slug,))
+            market = cursor.fetchone()
+            if not market:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+            if market["status"] in {"draft", "canceled"}:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Este mercado não aceita comentários.")
+            cursor.execute(
+                """
+                INSERT INTO orynth_market_comments
+                    (market_id, author_id, body, status, moderation_note, moderated_by_id, moderated_at, created_at, updated_at)
+                VALUES (%s, %s, %s, 'visible', '', NULL, NULL, %s, %s)
+                RETURNING id
+                """,
+                (market["id"], user["id"], body, datetime.now(timezone.utc), datetime.now(timezone.utc)),
+            )
+            comment_id = cursor.fetchone()["id"]
+            BadgeAwardEngine.on_comment_created(cursor, user["id"], market_id=market["id"])
+            return next(comment for comment in _market_comments(cursor, market["id"], viewer_id=user["id"]) if comment["id"] == comment_id)
+
+
+def _set_comment_reaction(cursor, comment_id, user_id, reaction):
+    cursor.execute("SELECT mc.id FROM orynth_market_comments mc WHERE mc.id = %s AND mc.status = 'visible'", (comment_id,))
+    if not cursor.fetchone():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comentário não encontrado.")
+    cursor.execute(
+        """
+        INSERT INTO orynth_comment_reactions (comment_id, user_id, reaction, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s)
+        ON CONFLICT (comment_id, user_id)
+        DO UPDATE SET reaction = EXCLUDED.reaction, updated_at = EXCLUDED.updated_at
+        """,
+        (comment_id, user_id, reaction, datetime.now(timezone.utc), datetime.now(timezone.utc)),
+    )
+    cursor.execute("SELECT market_id FROM orynth_market_comments WHERE id = %s", (comment_id,))
+    market_id = cursor.fetchone()["market_id"]
+    return next(comment for comment in _market_comments(cursor, market_id, viewer_id=user_id) if comment["id"] == comment_id)
+
+
+def _clear_comment_reaction(cursor, comment_id, user_id, reaction):
+    cursor.execute("SELECT market_id FROM orynth_market_comments WHERE id = %s AND status = 'visible'", (comment_id,))
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comentário não encontrado.")
+    cursor.execute(
+        "DELETE FROM orynth_comment_reactions WHERE comment_id = %s AND user_id = %s AND reaction = %s",
+        (comment_id, user_id, reaction),
+    )
+    return next(comment for comment in _market_comments(cursor, row["market_id"], viewer_id=user_id) if comment["id"] == comment_id)
+
+
+@app.post("/comments/{comment_id}/like", response_model=CommentResponse)
+def like_comment(comment_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _set_comment_reaction(cursor, comment_id, user["id"], "like")
+
+
+@app.delete("/comments/{comment_id}/like", response_model=CommentResponse)
+def unlike_comment(comment_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _clear_comment_reaction(cursor, comment_id, user["id"], "like")
+
+
+@app.post("/comments/{comment_id}/dislike", response_model=CommentResponse)
+def dislike_comment(comment_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _set_comment_reaction(cursor, comment_id, user["id"], "dislike")
+
+
+@app.delete("/comments/{comment_id}/dislike", response_model=CommentResponse)
+def undislike_comment(comment_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _clear_comment_reaction(cursor, comment_id, user["id"], "dislike")
+
+
+@app.post("/markets/{slug}/prediction-preview", response_model=PredictionPreviewResponse)
+def preview_prediction(slug: str, payload: PredictionCreatePayload):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            return _prediction_preview(cursor, slug, payload)
+
+
+@app.post("/markets/{slug}/predict", response_model=PredictionCreateResponse, status_code=status.HTTP_201_CREATED)
+def create_prediction(slug: str, payload: PredictionCreatePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT id, slug, status
+                FROM orynth_markets
+                WHERE slug = %s
+                """,
+                (slug,),
+            )
+            market = cursor.fetchone()
+            if not market:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+            if market["status"] != "open":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado fechado para novas previsões.")
+
+            cursor.execute(
+                """
+                SELECT id, label, probability_exact, hint
+                FROM orynth_market_options
+                WHERE id = %s AND market_id = %s
+                """,
+                (payload.option_id, market["id"]),
+            )
+            option = cursor.fetchone()
+            if not option:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opção inválida para este mercado.")
+
+            cursor.execute(
+                """
+                SELECT id
+                FROM orynth_predictions
+                WHERE user_id = %s AND market_id = %s
+                """,
+                (user["id"], market["id"]),
+            )
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Você já registrou uma previsão neste mercado.")
+
+            cursor.execute(
+                """
+                SELECT available_oc, locked_oc, total_earned_oc
+                FROM orynth_wallet_balances
+                WHERE user_id = %s
+                FOR UPDATE
+                """,
+                (user["id"],),
+            )
+            balance = cursor.fetchone()
+            if not balance:
+                _ensure_wallet_balance(cursor, user["id"])
+                cursor.execute(
+                    """
+                    SELECT available_oc, locked_oc, total_earned_oc
+                    FROM orynth_wallet_balances
+                    WHERE user_id = %s
+                    FOR UPDATE
+                    """,
+                    (user["id"],),
+                )
+                balance = cursor.fetchone()
+            if int(balance["available_oc"] or 0) < payload.stake_amount:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo insuficiente para esta previsão.")
+
+            cursor.execute(
+                """
+                SELECT reputation_score
+                FROM orynth_user_reputations
+                WHERE user_id = %s
+                """,
+                (user["id"],),
+            )
+            reputation = cursor.fetchone()
+            reputation_score = int(reputation["reputation_score"] if reputation else INITIAL_REPUTATION)
+            probability_at_entry = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
+            weight_at_entry = reputation_score * payload.stake_amount
+            potential_payout = int((Decimal(payload.stake_amount) * Decimal("100") / probability_at_entry).to_integral_value())
+            accepted_at = datetime.now(timezone.utc)
+
+            cursor.execute(
+                """
+                INSERT INTO orynth_predictions
+                    (user_id, market_id, market_option_id, stake_amount, probability_at_entry,
+                     weight_at_entry, potential_payout, status, won, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'open', NULL, %s, %s)
+                RETURNING id, created_at
+                """,
+                (
+                    user["id"],
+                    market["id"],
+                    option["id"],
+                    payload.stake_amount,
+                    probability_at_entry,
+                    weight_at_entry,
+                    potential_payout,
+                    accepted_at,
+                    accepted_at,
+                ),
+            )
+            prediction = cursor.fetchone()
+            _record_wallet_entry(
+                cursor,
+                user["id"],
+                entry_type="prediction_stake_lock",
+                amount=payload.stake_amount,
+                direction="lock",
+                description=f"Stake bloqueado em previsão: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+            )
+            snapshot = _market_probability_snapshot(cursor, market["id"])
+            wallet_after = _wallet_summary(cursor, user["id"])
+            return {
+                "prediction_id": prediction["id"],
+                "market_id": market["id"],
+                "option_id": option["id"],
+                "stake_amount": payload.stake_amount,
+                "accepted_at": prediction["created_at"].isoformat(),
+                "wallet_balance_after": wallet_after,
+                "market_probability_snapshot": snapshot,
+                "potential_payout": potential_payout,
+            }
+
+
+@app.post("/suggestions/", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
+@app.post("/suggestions", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED)
+def create_suggestion(payload: MarketSuggestionPayload, request: Request, authorization: str = Header(default="")):
+    if payload.kind not in {"binary", "multiple"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de mercado inválido.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _optional_current_user(cursor, authorization)
+            if not user and (not payload.guest_name.strip() or not payload.guest_email):
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
+            if not user:
+                _ensure_recaptcha(payload.recaptcha_token, request)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                INSERT INTO orynth_market_suggestions
+                    (author_id, guest_name, guest_email, question, category, subcategory, kind, suggested_source, rationale,
+                     status, admin_note, reward_oc, converted_market_id, reviewed_by_id, reviewed_at, rewarded_at, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', '', NULL, NULL, NULL, NULL, NULL, %s, %s)
+                RETURNING id
+                """,
+                (
+                    user["id"] if user else None,
+                    "" if user else payload.guest_name.strip(),
+                    "" if user else str(payload.guest_email or "").lower(),
+                    payload.question.strip(),
+                    payload.category.strip(),
+                    payload.subcategory.strip(),
+                    payload.kind,
+                    payload.suggested_source.strip(),
+                    payload.rationale.strip(),
+                    now,
+                    now,
+                ),
+            )
+            suggestion_id = cursor.fetchone()["id"]
+            return _suggestion_response(_get_suggestion(cursor, suggestion_id))
+
+
+@app.post("/feedback/", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
+@app.post("/feedback", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED)
+def create_feedback(payload: ProductFeedbackPayload, request: Request, authorization: str = Header(default="")):
+    if payload.severity not in {"low", "medium", "high"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Severidade inválida.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _optional_current_user(cursor, authorization)
+            if not user and (not payload.guest_name.strip() or not payload.guest_email):
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
+            if not user:
+                _ensure_recaptcha(payload.recaptcha_token, request)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                INSERT INTO orynth_product_feedback
+                    (author_id, guest_name, guest_email, feedback_type, severity, description, status, admin_note, reward_oc,
+                     reviewed_by_id, reviewed_at, rewarded_at, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, 'pending', '', NULL, NULL, NULL, NULL, %s, %s)
+                RETURNING id
+                """,
+                (
+                    user["id"] if user else None,
+                    "" if user else payload.guest_name.strip(),
+                    "" if user else str(payload.guest_email or "").lower(),
+                    payload.feedback_type.strip(),
+                    payload.severity,
+                    payload.description.strip(),
+                    now,
+                    now,
+                ),
+            )
+            feedback_id = cursor.fetchone()["id"]
+            return _feedback_response(_get_feedback(cursor, feedback_id))
+
+
+@app.get("/admin/users", response_model=AdminUserListResponse)
+def admin_list_users(
+    q: str = Query(default=""),
+    status_filter: str = Query(default="", alias="status"),
+    role: str = Query(default=""),
+    order: str = Query(default="created_desc"),
+    authorization: str = Header(default=""),
+):
+    order_map = {
+        "created_desc": "u.date_joined DESC, u.id DESC",
+        "created_asc": "u.date_joined ASC, u.id ASC",
+        "last_login_desc": "u.last_login DESC NULLS LAST, u.id DESC",
+        "last_login_asc": "u.last_login ASC NULLS LAST, u.id ASC",
+        "wallet_desc": "COALESCE(w.available_oc, 0) DESC, u.id DESC",
+        "reputation_desc": "COALESCE(r.reputation_score, 0) DESC, u.id DESC",
+    }
+    where = []
+    params = []
+    search = (q or "").strip()
+    if search:
+        where.append("(lower(u.email) LIKE lower(%s) OR lower(u.username) LIKE lower(%s) OR lower(u.first_name) LIKE lower(%s))")
+        like = f"%{search}%"
+        params.extend([like, like, like])
+    if status_filter in {"active", "deactivated"}:
+        where.append("u.account_status = %s")
+        params.append(status_filter)
+    if role == "staff":
+        where.append("u.is_staff = true AND u.is_superuser = false")
+    elif role == "superuser":
+        where.append("u.is_superuser = true")
+    elif role == "user":
+        where.append("u.is_staff = false AND u.is_superuser = false")
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                f"""
+                SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
+                       u.date_joined, u.last_login, u.account_status, u.is_active,
+                       u.is_staff, u.is_superuser, u.deactivated_at,
+                       COALESCE(w.available_oc, 0) AS available_oc,
+                       COALESCE(w.locked_oc, 0) AS locked_oc,
+                       COALESCE(r.reputation_score, 0) AS reputation_score
+                FROM orynth_users u
+                LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
+                LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
+                {where_sql}
+                ORDER BY {order_map.get(order, order_map['created_desc'])}
+                LIMIT 100
+                """,
+                params,
+            )
+            users = [_admin_user_response(row) for row in cursor.fetchall()]
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN account_status = 'active' THEN 1 ELSE 0 END), 0) AS active,
+                    COALESCE(SUM(CASE WHEN account_status = 'deactivated' THEN 1 ELSE 0 END), 0) AS deactivated,
+                    COALESCE(SUM(CASE WHEN is_staff = true AND is_superuser = false THEN 1 ELSE 0 END), 0) AS staff,
+                    COALESCE(SUM(CASE WHEN is_superuser = true THEN 1 ELSE 0 END), 0) AS superuser,
+                    COALESCE(SUM(CASE WHEN is_staff = false AND is_superuser = false THEN 1 ELSE 0 END), 0) AS users
+                FROM orynth_users
+                """
+            )
+            counts = cursor.fetchone()
+            return {
+                "users": users,
+                "counts": {
+                    "total": int(counts["total"] or 0),
+                    "active": int(counts["active"] or 0),
+                    "deactivated": int(counts["deactivated"] or 0),
+                    "staff": int(counts["staff"] or 0),
+                    "superuser": int(counts["superuser"] or 0),
+                    "users": int(counts["users"] or 0),
+                },
+            }
+
+
+@app.get("/admin/users/{user_id}", response_model=AdminUserDetailResponse)
+def admin_get_user(user_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            return _admin_user_detail(cursor, user_id)
+
+
+@app.post("/admin/users/{user_id}/deactivate", response_model=AdminUserDetailResponse)
+def admin_deactivate_user(user_id: int, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    note = (payload.note or "").strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_users
+                SET account_status = 'deactivated',
+                    is_active = false,
+                    deactivated_at = %s
+                WHERE id = %s
+                """,
+                (now, user_id),
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_auth_sessions
+                SET revoked_at = %s
+                WHERE user_id = %s AND revoked_at IS NULL
+                """,
+                (now, user_id),
+            )
+            _record_admin_event(cursor, staff["id"], "user.deactivate", "user", str(user_id), note)
+            return _admin_user_detail(cursor, user_id)
+
+
+@app.post("/admin/users/{user_id}/reactivate", response_model=AdminUserDetailResponse)
+def admin_reactivate_user(user_id: int, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    note = (payload.note or "").strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target, allow_superuser=True)
+            cursor.execute(
+                """
+                UPDATE orynth_users
+                SET account_status = 'active',
+                    is_active = true,
+                    deactivated_at = NULL
+                WHERE id = %s
+                """,
+                (user_id,),
+            )
+            _record_admin_event(cursor, staff["id"], "user.reactivate", "user", str(user_id), note)
+            return _admin_user_detail(cursor, user_id)
+
+
+@app.post("/admin/users/{user_id}/sessions/revoke", response_model=AdminUserDetailResponse)
+def admin_revoke_user_sessions(user_id: int, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    note = (payload.note or "").strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target, allow_superuser=True)
+            cursor.execute(
+                """
+                UPDATE orynth_auth_sessions
+                SET revoked_at = %s
+                WHERE user_id = %s AND revoked_at IS NULL
+                """,
+                (datetime.now(timezone.utc), user_id),
+            )
+            _record_admin_event(cursor, staff["id"], "user.sessions_revoke", "user", str(user_id), note)
+            return _admin_user_detail(cursor, user_id)
+
+
+@app.post("/admin/users/{user_id}/wallet/adjust", response_model=AdminUserDetailResponse)
+def admin_adjust_user_wallet(user_id: int, payload: AdminUserWalletAdjustmentPayload, authorization: str = Header(default="")):
+    note = payload.note.strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    if payload.direction not in {"credit", "debit"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Direção de ajuste inválida.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target, allow_superuser=True)
+            wallet = _wallet_summary(cursor, user_id)
+            if payload.direction == "debit" and wallet["available_oc"] < payload.amount_oc:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo disponível insuficiente para débito manual.")
+            _record_wallet_entry(
+                cursor,
+                user_id,
+                entry_type="manual_adjustment",
+                amount=payload.amount_oc,
+                direction=payload.direction,
+                description=note,
+                reference_type="admin_user_adjustment",
+                reference_id=str(user_id),
+                created_by_id=staff["id"],
+            )
+            _record_admin_event(cursor, staff["id"], "user.wallet_adjust", "user", str(user_id), note)
+            return _admin_user_detail(cursor, user_id)
+
+
+@app.get("/admin/comments", response_model=CommentListResponse)
+def admin_list_comments(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    market_slug: Optional[str] = Query(default=None, alias="market"),
+    authorization: str = Header(default=""),
+):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            if status_filter and status_filter not in {"visible", "hidden"}:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Status de comentário inválido.")
+            comments = _market_comments(cursor, slug=market_slug, visible_only=False)
+            if status_filter:
+                comments = [comment for comment in comments if comment["status"] == status_filter]
+            return {"comments": comments}
+
+
+@app.patch("/admin/comments/{comment_id}/moderation", response_model=CommentResponse)
+def admin_moderate_comment(comment_id: int, payload: CommentModerationPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            if payload.status not in {"visible", "hidden"}:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Status de comentário inválido.")
+            cursor.execute(
+                """
+                SELECT mc.id, mc.market_id
+                FROM orynth_market_comments mc
+                WHERE mc.id = %s
+                """,
+                (comment_id,),
+            )
+            comment = cursor.fetchone()
+            if not comment:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comentário não encontrado.")
+            note = payload.note.strip() or ("Oculto pelo Admin Ops." if payload.status == "hidden" else "Restaurado pelo Admin Ops.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_market_comments
+                SET status = %s,
+                    moderation_note = %s,
+                    moderated_by_id = %s,
+                    moderated_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (payload.status, note, staff["id"], now, now, comment_id),
+            )
+            _record_admin_event(
+                cursor,
+                staff["id"],
+                "comment.hide" if payload.status == "hidden" else "comment.restore",
+                "market_comment",
+                str(comment_id),
+                note,
+            )
+            return next(
+                item
+                for item in _market_comments(cursor, comment["market_id"], visible_only=False)
+                if item["id"] == comment_id
+            )
+
+
+@app.get("/admin/markets", response_model=AdminMarketListResponse)
+def admin_list_markets(
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    order: str = "display",
+    authorization: str = Header(default=""),
+):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            params = []
+            where_sql = ""
+            if status_filter:
+                where_sql = "WHERE lower(m.status) = lower(%s)"
+                params.append(status_filter)
+            order_sql = {
+                "resolution_asc": "m.resolved_at ASC NULLS LAST, m.display_order ASC, m.id ASC",
+                "resolution_desc": "m.resolved_at DESC NULLS LAST, m.display_order ASC, m.id ASC",
+                "created_asc": "m.created_at ASC, m.id ASC",
+                "created_desc": "m.created_at DESC, m.id DESC",
+                "views_desc": "m.view_count DESC, m.share_count DESC, m.display_order ASC, m.id ASC",
+                "shares_desc": "m.share_count DESC, m.view_count DESC, m.display_order ASC, m.id ASC",
+            }.get(order, "m.display_order ASC, m.id ASC")
+            rows = _market_rows(cursor, where_sql, params, order_sql)
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_markets GROUP BY status")
+            counts = {row["status"]: row["total"] for row in cursor.fetchall()}
+            return {"markets": [_market_response(cursor, row, include_comments=False) for row in rows], "counts": counts}
+
+
+@app.post("/admin/markets", response_model=MarketResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_market(payload: AdminMarketPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            category = _upsert_category(cursor, payload.category)
+            subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
+            _ensure_taxonomy_available(category, subcategory)
+            slug = _slug_seed(payload.slug or payload.title)
+            cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s", (slug,))
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de mercado já está em uso.")
+            options = _normalize_market_options(payload)
+            _validate_admin_market_payload(payload)
+            _ensure_featured_allowed("draft", payload.is_featured)
+            primary = payload.primary_outcome or (options[0]["label"] if options else "")
+            primary_probability_exact = _decimal_probability(payload.primary_probability_exact or (options[0]["probability_exact"] if options else 0))
+            secondary_probability_exact = _decimal_probability(payload.secondary_probability_exact or (options[1]["probability_exact"] if len(options) > 1 else 0))
+            _sync_featured_market(cursor, None, payload.is_featured)
+            cursor.execute(
+                """
+                INSERT INTO orynth_markets
+                    (category_id, subcategory_id, slug, title, summary, kind, status, status_label,
+                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_oc, participants,
+                     source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
+                     close_at, close_timezone, auto_close_enabled, is_featured,
+                     resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
+                     view_count, share_count, display_order, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
+                RETURNING id
+                """,
+                (
+                    category["id"],
+                    subcategory["id"],
+                    slug,
+                    payload.title.strip(),
+                    payload.summary.strip(),
+                    payload.kind,
+                    payload.status_label or "Rascunho",
+                    primary,
+                    primary_probability_exact,
+                    secondary_probability_exact,
+                    payload.volume_oc,
+                    payload.participants,
+                    payload.source.strip(),
+                    _payload_closes_in(payload),
+                    payload.close_label,
+                    payload.thumb,
+                    payload.thumb_color,
+                    payload.image_url,
+                    payload.resolution_criteria.strip(),
+                    payload.close_at,
+                    payload.close_timezone,
+                    payload.auto_close_enabled,
+                    payload.is_featured,
+                    payload.resolution_type,
+                    "",
+                    payload.resolution_note,
+                    payload.admin_notes,
+                    staff["id"],
+                    staff["id"],
+                    datetime.now(timezone.utc),
+                    datetime.now(timezone.utc),
+                ),
+            )
+            market_id = cursor.fetchone()["id"]
+            _save_market_options(cursor, market_id, options)
+            _record_admin_event(cursor, staff["id"], "market.create", "market", slug, payload.admin_notes)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.get("/admin/markets/{slug}", response_model=MarketResponse)
+def admin_get_market(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.patch("/admin/markets/{slug}", response_model=MarketResponse)
+def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_by_slug(cursor, slug)
+            if row["status"] == "resolved":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar.")
+            category = _upsert_category(cursor, payload.category)
+            subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
+            _ensure_taxonomy_available(category, subcategory)
+            new_slug = _slug_seed(payload.slug or slug)
+            if new_slug != slug:
+                cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s AND id <> %s", (new_slug, row["id"]))
+                if cursor.fetchone():
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de mercado já está em uso.")
+            options = _normalize_market_options(payload)
+            _validate_admin_market_payload(payload)
+            _ensure_featured_allowed(row["status"], payload.is_featured)
+            cursor.execute("SELECT COUNT(*) AS total FROM orynth_predictions WHERE market_id = %s", (row["id"],))
+            has_predictions = bool(cursor.fetchone()["total"])
+            preserve_operational_fields = row["status"] != "draft" or has_predictions
+            if preserve_operational_fields:
+                status_label = row["status_label"]
+                primary = row["primary_outcome"]
+                primary_probability_exact = _decimal_probability(row["primary_probability_exact"])
+                secondary_probability_exact = _decimal_probability(row["secondary_probability_exact"])
+                volume_oc = row["volume_oc"]
+                participants = row["participants"]
+                resolution_type = row["resolution_type"] or ""
+                resolution_note = row["resolution_note"] or ""
+            else:
+                status_label = payload.status_label or row["status_label"]
+                primary = payload.primary_outcome or (options[0]["label"] if options else "")
+                primary_probability_exact = _decimal_probability(payload.primary_probability_exact or (options[0]["probability_exact"] if options else 0))
+                secondary_probability_exact = _decimal_probability(payload.secondary_probability_exact or (options[1]["probability_exact"] if len(options) > 1 else 0))
+                volume_oc = payload.volume_oc
+                participants = payload.participants
+                resolution_type = payload.resolution_type
+                resolution_note = payload.resolution_note
+            _sync_featured_market(cursor, row["id"], payload.is_featured)
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET category_id = %s,
+                    subcategory_id = %s,
+                    slug = %s,
+                    title = %s,
+                    summary = %s,
+                    kind = %s,
+                    status_label = %s,
+                    primary_outcome = %s,
+                    primary_probability_exact = %s,
+                    secondary_probability_exact = %s,
+                    volume_oc = %s,
+                    participants = %s,
+                    source = %s,
+                    closes_in = %s,
+                    close_label = %s,
+                    thumb = %s,
+                    thumb_color = %s,
+                    image_url = %s,
+                    resolution_criteria = %s,
+                    close_at = %s,
+                    close_timezone = %s,
+                    auto_close_enabled = %s,
+                    is_featured = %s,
+                    resolution_type = %s,
+                    resolution_note = %s,
+                    admin_notes = %s,
+                    updated_by_id = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (
+                    category["id"],
+                    subcategory["id"],
+                    new_slug,
+                    payload.title.strip(),
+                    payload.summary.strip(),
+                    payload.kind,
+                    status_label,
+                    primary,
+                    primary_probability_exact,
+                    secondary_probability_exact,
+                    volume_oc,
+                    participants,
+                    payload.source.strip(),
+                    _payload_closes_in(payload),
+                    payload.close_label,
+                    payload.thumb,
+                    payload.thumb_color,
+                    payload.image_url,
+                    payload.resolution_criteria.strip(),
+                    payload.close_at,
+                    payload.close_timezone,
+                    payload.auto_close_enabled,
+                    payload.is_featured,
+                    resolution_type,
+                    resolution_note,
+                    payload.admin_notes,
+                    staff["id"],
+                    datetime.now(timezone.utc),
+                    row["id"],
+                ),
+            )
+            _save_market_options(cursor, row["id"], options, preserve_existing_probability=preserve_operational_fields)
+            _record_admin_event(cursor, staff["id"], "market.update", "market", new_slug, payload.admin_notes)
+            return _market_response(cursor, _admin_market_by_slug(cursor, new_slug))
+
+
+@app.post("/admin/markets/{slug}/publish", response_model=MarketResponse)
+def admin_publish_market(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_by_slug(cursor, slug)
+            if row["status"] == "open":
+                return _market_response(cursor, row)
+            if row["status"] not in {"draft", "scheduled"}:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Apenas rascunhos ou mercados agendados podem ser publicados.")
+            _validate_publishable(cursor, row["id"])
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET status = 'open', status_label = 'Aberto', updated_by_id = %s, updated_at = %s
+                WHERE id = %s
+                """,
+                (staff["id"], datetime.now(timezone.utc), row["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "market.publish", "market", slug, payload.note)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.post("/admin/markets/{slug}/cancel", response_model=MarketResponse)
+def admin_cancel_market(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_by_slug(cursor, slug)
+            if row["status"] == "canceled":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado já cancelado.")
+            now = datetime.now(timezone.utc)
+            if row["status"] == "resolved":
+                _undo_resolved_market_predictions(cursor, row["id"], staff["id"], slug, now)
+                cursor.execute(
+                    """
+                    UPDATE orynth_markets
+                    SET status = 'locked',
+                        status_label = 'Fechado',
+                        winning_option_id = NULL,
+                        resolved_at = NULL,
+                        resolution_timezone = '',
+                        resolution_type = '',
+                        resolution_note = '',
+                        admin_notes = %s,
+                        updated_by_id = %s,
+                        updated_at = %s
+                    WHERE id = %s
+                    """,
+                    (payload.note, staff["id"], now, row["id"]),
+                )
+                _record_admin_event(cursor, staff["id"], "market.resolution_undo", "market", slug, payload.note)
+                return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            else:
+                _refund_market_predictions(cursor, row["id"], staff["id"], slug, now)
+                _assert_no_open_predictions(cursor, row["id"], slug)
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET status = 'canceled',
+                    status_label = 'Cancelado',
+                    is_featured = false,
+                    canceled_at = %s,
+                    admin_notes = %s,
+                    updated_by_id = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (now, payload.note, staff["id"], now, row["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "market.cancel", "market", slug, payload.note)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.post("/admin/markets/{slug}/resolve", response_model=MarketResponse)
+def admin_resolve_market(slug: str, payload: AdminMarketResolvePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_by_slug(cursor, slug)
+            if row["status"] != "locked":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Apenas mercados fechados podem ser resolvidos.")
+            evidence = (payload.source_url or "").strip()
+            note = (payload.note or "").strip()
+            if not evidence and not note:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Resolução exige fonte pública ou justificativa operacional.")
+            cursor.execute(
+                """
+                SELECT id, label
+                FROM orynth_market_options
+                WHERE id = %s
+                  AND market_id = %s
+                """,
+                (payload.winning_option_id, row["id"]),
+            )
+            winning_option = cursor.fetchone()
+            if not winning_option:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opção vencedora inválida para este mercado.")
+
+            now = datetime.now(timezone.utc)
+            resolution_timezone = (payload.resolution_timezone or row["close_timezone"] or "UTC").strip()
+            try:
+                target_timezone = ZoneInfo(resolution_timezone)
+            except ZoneInfoNotFoundError:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Timezone de resolução inválido.")
+            resolved_at = payload.resolved_at or now
+            if resolved_at.tzinfo is None:
+                resolved_at = resolved_at.replace(tzinfo=target_timezone)
+            resolved_at = resolved_at.astimezone(timezone.utc)
+            resolution_note = note
+            if evidence:
+                resolution_note = f"{note}\nFonte: {evidence}".strip()
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET status = 'resolved',
+                    status_label = 'Resolvido',
+                    primary_outcome = %s,
+                    resolution_type = 'manual',
+                    resolved_at = %s,
+                    resolution_timezone = %s,
+                    winning_option_id = %s,
+                    resolution_note = %s,
+                    updated_by_id = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (winning_option["label"], resolved_at, resolution_timezone, winning_option["id"], resolution_note, staff["id"], now, row["id"]),
+            )
+            _resolve_market_predictions(cursor, row["id"], winning_option["id"], staff["id"], slug, now)
+            _record_admin_event(cursor, staff["id"], "market.resolve", "market", slug, resolution_note)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.post("/admin/markets/{slug}/lock", response_model=MarketResponse)
+def admin_lock_market(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_by_slug(cursor, slug)
+            if row["auto_close_enabled"]:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Este mercado está configurado para fechamento automático pelo daemon.",
+                )
+            if row["status"] not in {"open", "scheduled"}:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail="Apenas mercados abertos ou agendados podem ser fechados manualmente.",
+                )
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_markets
+                SET status = 'locked',
+                    status_label = 'Fechado',
+                    admin_notes = %s,
+                    updated_by_id = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (payload.note, staff["id"], now, row["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "market.lock", "market", slug, payload.note)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.get("/admin/queues", response_model=QueueListResponse)
+def admin_list_queues(
+    kind: Optional[str] = None,
+    status_filter: Optional[str] = Query(default=None, alias="status"),
+    severity: Optional[str] = None,
+    order: str = "created_desc",
+    authorization: str = Header(default=""),
+):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            items = []
+            if kind in {None, "", "suggestion"}:
+                where = []
+                params = []
+                if status_filter:
+                    where.append("s.status = %s")
+                    params.append(status_filter)
+                where_sql = "WHERE " + " AND ".join(where) if where else ""
+                cursor.execute(
+                    f"""
+                    SELECT s.*, u.username AS author_handle, m.slug AS converted_market_slug
+                    FROM orynth_market_suggestions s
+                    LEFT JOIN orynth_users u ON u.id = s.author_id
+                    LEFT JOIN orynth_markets m ON m.id = s.converted_market_id
+                    {where_sql}
+                    ORDER BY s.created_at ASC, s.id ASC
+                    """,
+                    params,
+                )
+                items.extend(_suggestion_response(row) for row in cursor.fetchall())
+            if kind in {None, "", "feedback"}:
+                where = []
+                params = []
+                if status_filter:
+                    where.append("f.status = %s")
+                    params.append(status_filter)
+                if severity:
+                    where.append("f.severity = %s")
+                    params.append(severity)
+                where_sql = "WHERE " + " AND ".join(where) if where else ""
+                cursor.execute(
+                    f"""
+                    SELECT f.*, u.username AS author_handle
+                    FROM orynth_product_feedback f
+                    LEFT JOIN orynth_users u ON u.id = f.author_id
+                    {where_sql}
+                    ORDER BY f.created_at ASC, f.id ASC
+                    """,
+                    params,
+                )
+                items.extend(_feedback_response(row) for row in cursor.fetchall())
+            reverse = order != "created_asc"
+            items = sorted(items, key=lambda item: item["created_at"], reverse=reverse)
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_suggestions GROUP BY status")
+            suggestion_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_product_feedback GROUP BY status")
+            feedback_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
+            return {"items": items, "counts": {"suggestion": suggestion_counts, "feedback": feedback_counts}}
+
+
+@app.post("/admin/queues/{kind}/{item_id}/review", response_model=QueueItemResponse)
+def admin_review_queue_item(kind: str, item_id: int, payload: QueueReviewPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            now = datetime.now(timezone.utc)
+            if kind == "suggestion":
+                if payload.status not in {"pending", "reviewed", "rejected"}:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Status inválido para sugestão.")
+                _get_suggestion(cursor, item_id)
+                cursor.execute(
+                    """
+                    UPDATE orynth_market_suggestions
+                    SET status = %s, admin_note = %s, reviewed_by_id = %s, reviewed_at = %s, updated_at = %s
+                    WHERE id = %s
+                    """,
+                    (payload.status, payload.note, staff["id"], now, now, item_id),
+                )
+                _record_admin_event(cursor, staff["id"], "suggestion.review", "market_suggestion", str(item_id), payload.note)
+                suggestion = _get_suggestion(cursor, item_id)
+                if suggestion["author_id"] and payload.status == "reviewed":
+                    BadgeAwardEngine.on_suggestion_approved(cursor, suggestion["author_id"], suggestion_id=item_id)
+                return _suggestion_response(suggestion)
+            if kind == "feedback":
+                if payload.status not in {"pending", "reviewed", "rejected"}:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Status inválido para feedback.")
+                _get_feedback(cursor, item_id)
+                cursor.execute(
+                    """
+                    UPDATE orynth_product_feedback
+                    SET status = %s, admin_note = %s, reviewed_by_id = %s, reviewed_at = %s, updated_at = %s
+                    WHERE id = %s
+                    """,
+                    (payload.status, payload.note, staff["id"], now, now, item_id),
+                )
+                _record_admin_event(cursor, staff["id"], "feedback.review", "product_feedback", str(item_id), payload.note)
+                return _feedback_response(_get_feedback(cursor, item_id))
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fila não encontrada.")
+
+
+@app.post("/admin/queues/suggestions/{suggestion_id}/convert-draft", response_model=QueueItemResponse)
+def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            suggestion = _get_suggestion(cursor, suggestion_id)
+            if suggestion["status"] == "converted":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sugestão já convertida.")
+            category = _upsert_category(cursor, suggestion["category"])
+            subcategory = _upsert_subcategory(cursor, category["id"], suggestion["subcategory"] or "Geral")
+            _ensure_taxonomy_available(category, subcategory)
+            now = datetime.now(timezone.utc)
+            close_at = now + timedelta(days=30)
+            slug = _unique_slug(cursor, "orynth_markets", suggestion["question"])
+            options = _normalize_market_options(
+                AdminMarketPayload(
+                    title=suggestion["question"],
+                    kind=suggestion["kind"],
+                    category=suggestion["category"],
+                    subcategory=suggestion["subcategory"] or "Geral",
+                    summary=suggestion["rationale"] or "Sugestão enviada por usuário para curadoria editorial.",
+                    source=suggestion["suggested_source"],
+                    resolution_criteria="A definir pela curadoria antes da publicação.",
+                    close_at=close_at,
+                    close_timezone="America/Sao_Paulo",
+                    thumb_color="#d8ece2",
+                    options=[{"label": "Opção A"}, {"label": "Opção B"}] if suggestion["kind"] == "multiple" else [],
+                )
+            )
+            primary = options[0]["label"] if options else ""
+            primary_probability_exact = _decimal_probability(options[0]["probability_exact"] if options else 0)
+            secondary_probability_exact = _decimal_probability(options[1]["probability_exact"] if len(options) > 1 else 0)
+            cursor.execute(
+                """
+                INSERT INTO orynth_markets
+                    (category_id, subcategory_id, slug, title, summary, kind, status, status_label,
+                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_oc, participants,
+                     source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
+                     close_at, close_timezone, auto_close_enabled, is_featured,
+                     resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
+                     view_count, share_count, display_order, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 OC', '0 usuários',
+                        %s, %s, '', '', '#d8ece2', '', 'A definir pela curadoria antes da publicação.',
+                        %s, 'America/Sao_Paulo', true, false, '', '', '', %s, %s, %s,
+                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
+                RETURNING id
+                """,
+                (
+                    category["id"],
+                    subcategory["id"],
+                    slug,
+                    suggestion["question"],
+                    suggestion["rationale"] or "Sugestão enviada por usuário para curadoria editorial.",
+                    suggestion["kind"],
+                    primary,
+                    primary_probability_exact,
+                    secondary_probability_exact,
+                    suggestion["suggested_source"],
+                    _short_close_label(close_at),
+                    close_at,
+                    payload.note,
+                    staff["id"],
+                    staff["id"],
+                    now,
+                    now,
+                ),
+            )
+            market_id = cursor.fetchone()["id"]
+            _save_market_options(cursor, market_id, options)
+            cursor.execute(
+                """
+                UPDATE orynth_market_suggestions
+                SET status = 'converted',
+                    admin_note = %s,
+                    converted_market_id = %s,
+                    reviewed_by_id = %s,
+                    reviewed_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (payload.note, market_id, staff["id"], now, now, suggestion_id),
+            )
+            _record_admin_event(cursor, staff["id"], "suggestion.convert_draft", "market_suggestion", str(suggestion_id), payload.note)
+            _record_admin_event(cursor, staff["id"], "market.create", "market", slug, f"Rascunho criado a partir da sugestão {suggestion_id}.")
+            return _suggestion_response(_get_suggestion(cursor, suggestion_id))
+
+
+@app.post("/admin/queues/suggestions/{suggestion_id}/reward", response_model=QueueItemResponse)
+def admin_reward_suggestion(suggestion_id: int, payload: SuggestionRewardPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            suggestion = _get_suggestion(cursor, suggestion_id)
+            if not suggestion["author_id"]:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sugestão sem usuário cadastrado não pode receber créditos.")
+            if suggestion["reward_oc"]:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sugestão já recebeu créditos.")
+            now = datetime.now(timezone.utc)
+            _record_wallet_entry(
+                cursor,
+                suggestion["author_id"],
+                entry_type="reward_suggestion",
+                amount=payload.amount_oc,
+                direction="credit",
+                description="Crédito por sugestão validada",
+                reference_type="suggestion",
+                reference_id=str(suggestion_id),
+                created_by_id=staff["id"],
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_market_suggestions
+                SET status = 'rewarded',
+                    admin_note = %s,
+                    reward_oc = %s,
+                    reviewed_by_id = %s,
+                    reviewed_at = %s,
+                    rewarded_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (payload.note, payload.amount_oc, staff["id"], now, now, now, suggestion_id),
+            )
+            _record_admin_event(cursor, staff["id"], "suggestion.reward", "market_suggestion", str(suggestion_id), payload.note)
+            BadgeAwardEngine.on_suggestion_rewarded(cursor, suggestion["author_id"], suggestion_id=suggestion_id)
+            return _suggestion_response(_get_suggestion(cursor, suggestion_id))
+
+
+@app.post("/admin/queues/feedback/{feedback_id}/reward", response_model=QueueItemResponse)
+def admin_reward_feedback(feedback_id: int, payload: FeedbackRewardPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            feedback = _get_feedback(cursor, feedback_id)
+            if not feedback["author_id"]:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Feedback sem usuário não pode receber recompensa.")
+            if feedback["status"] == "rewarded" or feedback["reward_oc"]:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Feedback já recompensado.")
+            now = datetime.now(timezone.utc)
+            _record_wallet_entry(
+                cursor,
+                feedback["author_id"],
+                entry_type="reward_feedback",
+                amount=payload.amount_oc,
+                direction="credit",
+                description="Recompensa por feedback validado",
+                reference_type="feedback",
+                reference_id=str(feedback_id),
+                created_by_id=staff["id"],
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_product_feedback
+                SET status = 'rewarded',
+                    admin_note = %s,
+                    reward_oc = %s,
+                    reviewed_by_id = %s,
+                    reviewed_at = %s,
+                    rewarded_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (payload.note, payload.amount_oc, staff["id"], now, now, now, feedback_id),
+            )
+            _record_admin_event(cursor, staff["id"], "feedback.reward", "product_feedback", str(feedback_id), payload.note)
+            BadgeAwardEngine.on_feedback_rewarded(cursor, feedback["author_id"], feedback_id=feedback_id)
+            return _feedback_response(_get_feedback(cursor, feedback_id))
+
+
+@app.get("/admin/badges", response_model=AdminBadgeListResponse)
+def admin_get_badges(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            return {"badges": _admin_badge_rows(cursor)}
+
+
+@app.post("/admin/badges", response_model=AdminBadgeResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            badge_type, rule_type = _validate_badge_payload(payload)
+            code = _slug_seed(payload.code or payload.name, max_length=80)
+            cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe badge com este código.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                INSERT INTO orynth_badge_definitions
+                    (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """,
+                (
+                    code,
+                    payload.name.strip(),
+                    payload.description.strip(),
+                    (payload.rule_description or payload.description).strip(),
+                    badge_type,
+                    payload.image_url.strip(),
+                    payload.image_dark_url.strip(),
+                    payload.is_active,
+                    now,
+                    now,
+                ),
+            )
+            badge_id = cursor.fetchone()["id"]
+            cursor.execute(
+                """
+                INSERT INTO orynth_badge_rules
+                    (badge_id, rule_type, threshold_value, category, subcategory, is_active, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, true, %s, %s)
+                """,
+                (
+                    badge_id,
+                    rule_type,
+                    _decimal_probability(payload.threshold_value),
+                    payload.category.strip(),
+                    payload.subcategory.strip(),
+                    now,
+                    now,
+                ),
+            )
+            _record_admin_event(cursor, staff["id"], "badge.create", "badge", code, payload.rule_description)
+            return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
+
+
+@app.patch("/admin/badges/{code}", response_model=AdminBadgeResponse)
+def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            badge_type, rule_type = _validate_badge_payload(payload)
+            cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
+            badge = cursor.fetchone()
+            if not badge:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_badge_definitions
+                SET name = %s,
+                    description = %s,
+                    rule_description = %s,
+                    badge_type = %s,
+                    image_url = %s,
+                    image_dark_url = %s,
+                    is_active = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (
+                    payload.name.strip(),
+                    payload.description.strip(),
+                    (payload.rule_description or payload.description).strip(),
+                    badge_type,
+                    payload.image_url.strip(),
+                    payload.image_dark_url.strip(),
+                    payload.is_active,
+                    now,
+                    badge["id"],
+                ),
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_badge_rules
+                SET rule_type = %s,
+                    threshold_value = %s,
+                    category = %s,
+                    subcategory = %s,
+                    is_active = true,
+                    updated_at = %s
+                WHERE badge_id = %s
+                """,
+                (
+                    rule_type,
+                    _decimal_probability(payload.threshold_value),
+                    payload.category.strip(),
+                    payload.subcategory.strip(),
+                    now,
+                    badge["id"],
+                ),
+            )
+            _record_admin_event(cursor, staff["id"], "badge.update", "badge", code, payload.rule_description)
+            return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
+
+
+@app.post("/admin/badges/{code}/deactivate", response_model=AdminBadgeResponse)
+def admin_deactivate_badge(code: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
+            badge = cursor.fetchone()
+            if not badge:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
+            now = datetime.now(timezone.utc)
+            cursor.execute("UPDATE orynth_badge_definitions SET is_active = false, updated_at = %s WHERE id = %s", (now, badge["id"]))
+            cursor.execute("UPDATE orynth_badge_rules SET is_active = false, updated_at = %s WHERE badge_id = %s", (now, badge["id"]))
+            _record_admin_event(cursor, staff["id"], "badge.deactivate", "badge", code, payload.note)
+            return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
+
+
+@app.get("/admin/taxonomy", response_model=AdminTaxonomyResponse)
+def admin_get_taxonomy(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories", response_model=AdminTaxonomyResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_category(payload: AdminCategoryPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            category = _upsert_category(cursor, payload.name, payload.slug)
+            _record_admin_event(cursor, staff["id"], "category.create", "category", category["slug"])
+            return _taxonomy_response(cursor)
+
+
+@app.patch("/admin/categories/{slug}", response_model=AdminTaxonomyResponse)
+def admin_update_category(slug: str, payload: AdminCategoryPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            new_slug = _slug_seed(payload.slug or payload.name, max_length=100)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s AND id <> %s", (new_slug, category["id"]))
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de categoria já está em uso.")
+            cursor.execute(
+                "UPDATE orynth_market_categories SET name = %s, slug = %s WHERE id = %s",
+                (payload.name.strip(), new_slug, category["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "category.update", "category", new_slug)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/block", response_model=AdminTaxonomyResponse)
+def admin_block_category(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_market_categories
+                SET is_blocked = true, blocked_at = %s, blocked_reason = %s
+                WHERE id = %s
+                """,
+                (now, payload.note or "Bloqueada pelo Admin Ops.", category["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "category.block", "category", slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/unblock", response_model=AdminTaxonomyResponse)
+def admin_unblock_category(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            cursor.execute(
+                """
+                UPDATE orynth_market_categories
+                SET is_blocked = false, blocked_at = NULL, blocked_reason = ''
+                WHERE id = %s
+                """,
+                (category["id"],),
+            )
+            _record_admin_event(cursor, staff["id"], "category.unblock", "category", slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/subcategories", response_model=AdminTaxonomyResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_subcategory(slug: str, payload: AdminSubcategoryPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            subcategory = _upsert_subcategory(cursor, category["id"], payload.name, payload.slug)
+            _record_admin_event(cursor, staff["id"], "subcategory.create", "subcategory", subcategory["slug"])
+            return _taxonomy_response(cursor)
+
+
+@app.patch("/admin/categories/{slug}/subcategories/{subcategory_slug}", response_model=AdminTaxonomyResponse)
+def admin_update_subcategory(slug: str, subcategory_slug: str, payload: AdminSubcategoryPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            cursor.execute(
+                "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+                (category["id"], subcategory_slug),
+            )
+            subcategory = cursor.fetchone()
+            if not subcategory:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subcategoria não encontrada.")
+            new_slug = _slug_seed(payload.slug or payload.name, max_length=100)
+            cursor.execute(
+                """
+                SELECT id FROM orynth_market_subcategories
+                WHERE category_id = %s AND slug = %s AND id <> %s
+                """,
+                (category["id"], new_slug, subcategory["id"]),
+            )
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de subcategoria já está em uso.")
+            cursor.execute(
+                "UPDATE orynth_market_subcategories SET name = %s, slug = %s WHERE id = %s",
+                (payload.name.strip(), new_slug, subcategory["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "subcategory.update", "subcategory", new_slug)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/subcategories/{subcategory_slug}/block", response_model=AdminTaxonomyResponse)
+def admin_block_subcategory(slug: str, subcategory_slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            cursor.execute(
+                "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+                (category["id"], subcategory_slug),
+            )
+            subcategory = cursor.fetchone()
+            if not subcategory:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subcategoria não encontrada.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_market_subcategories
+                SET is_blocked = true, blocked_at = %s, blocked_reason = %s
+                WHERE id = %s
+                """,
+                (now, payload.note or "Bloqueada pelo Admin Ops.", subcategory["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "subcategory.block", "subcategory", subcategory_slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/subcategories/{subcategory_slug}/unblock", response_model=AdminTaxonomyResponse)
+def admin_unblock_subcategory(slug: str, subcategory_slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            category = cursor.fetchone()
+            if not category:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+            cursor.execute(
+                "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+                (category["id"], subcategory_slug),
+            )
+            subcategory = cursor.fetchone()
+            if not subcategory:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subcategoria não encontrada.")
+            cursor.execute(
+                """
+                UPDATE orynth_market_subcategories
+                SET is_blocked = false, blocked_at = NULL, blocked_reason = ''
+                WHERE id = %s
+                """,
+                (subcategory["id"],),
+            )
+            _record_admin_event(cursor, staff["id"], "subcategory.unblock", "subcategory", subcategory_slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/auth/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+def register(payload: RegisterPayload, request: Request):
+    if not payload.terms_accepted:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="É preciso aceitar a política de uso para criar conta.")
+    _ensure_recaptcha(payload.recaptcha_token, request)
+
+    language = payload.language if payload.language in {"pt-br", "en"} else "pt-br"
+    ip_address, user_agent = _client_meta(request)
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT id FROM orynth_users WHERE lower(email) = lower(%s)",
+                (payload.email,),
+            )
+            if cursor.fetchone():
+                _record_event(cursor, "login_failure", email=payload.email, ip_address=ip_address, user_agent=user_agent)
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já está em uso.")
+
+            now = datetime.now(timezone.utc)
+            handle = _unique_handle(cursor, payload.display_name)
+            cursor.execute(
+                """
+                INSERT INTO orynth_users
+                    (password, last_login, is_superuser, username, first_name, last_name, is_staff, is_active,
+                     date_joined, email, preferred_language, external_provider, external_subject,
+                     terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at)
+                VALUES (%s, NULL, false, %s, %s, '', false, true, %s, %s, %s, '', '',
+                        %s, %s, 'active', NULL, NULL)
+                RETURNING id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff
+                """,
+                (
+                    make_password(payload.password),
+                    handle,
+                    payload.display_name.strip(),
+                    now,
+                    payload.email.lower(),
+                    language,
+                    now,
+                    TERMS_VERSION,
+                ),
+            )
+            user = cursor.fetchone()
+            _ensure_user_core(cursor, user["id"], display_name=payload.display_name.strip())
+            session = _create_session(cursor, user["id"], request)
+            _record_event(cursor, "register", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+            return {"user": _user_response(user), "session": session}
+
+
+@app.post("/auth/login", response_model=AuthResponse)
+def login(payload: LoginPayload, request: Request):
+    ip_address, user_agent = _client_meta(request)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, username, email, first_name, preferred_language, password, is_active,
+                       date_joined, last_login, account_status, is_staff
+                FROM orynth_users
+                WHERE lower(email) = lower(%s)
+                """,
+                (payload.email,),
+            )
+            user = cursor.fetchone()
+            if not user or not user["is_active"] or user["account_status"] != "active" or not check_password(payload.password, user["password"]):
+                _record_event(cursor, "login_failure", user_id=user["id"] if user else None, email=payload.email, ip_address=ip_address, user_agent=user_agent)
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha inválidos.")
+
+            now = datetime.now(timezone.utc)
+            cursor.execute("UPDATE orynth_users SET last_login = %s WHERE id = %s", (now, user["id"]))
+            user["last_login"] = now
+            session = _create_session(cursor, user["id"], request)
+            _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+            return {"user": _user_response(user), "session": session}
+
+
+@app.get("/auth/session", response_model=SessionContextResponse)
+def session_context(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return {"user": _user_response(user), "authenticated": True}
+
+
+@app.post("/auth/logout", status_code=status.HTTP_204_NO_CONTENT)
+def logout(request: Request, authorization: str = Header(default="")):
+    token = _bearer_token(authorization)
+    ip_address, user_agent = _client_meta(request)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                UPDATE orynth_auth_sessions
+                SET revoked_at = %s
+                WHERE token_hash = %s AND revoked_at IS NULL
+                RETURNING user_id
+                """,
+                (datetime.now(timezone.utc), hash_token(token)),
+            )
+            row = cursor.fetchone()
+            if row:
+                _record_event(cursor, "logout", user_id=row["user_id"], ip_address=ip_address, user_agent=user_agent)
+    return None
+
+
+@app.post("/auth/social/{provider}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
+def social_login(provider: str):
+    if provider not in {"google", "facebook"}:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Provedor não suportado.")
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Login social ainda depende da credencial OAuth do provedor.")
+
+
+@app.get("/users/me", response_model=UserProfileResponse)
+def get_me(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _profile_response(cursor, user)
+
+
+@app.patch("/users/me", response_model=UserProfileResponse)
+def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            updates = []
+            values = []
+            if payload.display_name is not None:
+                updates.append("display_name = %s")
+                values.append(payload.display_name.strip())
+                cursor.execute("UPDATE orynth_users SET first_name = %s WHERE id = %s", (payload.display_name.strip(), user["id"]))
+                user["first_name"] = payload.display_name.strip()
+            if payload.email is not None and payload.email.lower() != user["email"].lower():
+                cursor.execute("SELECT id FROM orynth_users WHERE lower(email) = lower(%s) AND id <> %s", (payload.email, user["id"]))
+                if cursor.fetchone():
+                    raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe uma conta com este email.")
+                cursor.execute("UPDATE orynth_users SET email = %s WHERE id = %s", (payload.email.lower(), user["id"]))
+                user["email"] = payload.email.lower()
+            if payload.handle is not None:
+                handle = _handle_seed(payload.handle)
+                if len(handle) < 2:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Identificador inválido.")
+                if handle != user["username"]:
+                    cursor.execute("SELECT id FROM orynth_users WHERE lower(username) = lower(%s) AND id <> %s", (handle, user["id"]))
+                    if cursor.fetchone():
+                        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe uma conta com este identificador.")
+                    cursor.execute("UPDATE orynth_users SET username = %s WHERE id = %s", (handle, user["id"]))
+                    user["username"] = handle
+            if payload.preferred_language is not None:
+                language = payload.preferred_language if payload.preferred_language in {"pt-br", "en"} else "pt-br"
+                cursor.execute("UPDATE orynth_users SET preferred_language = %s WHERE id = %s", (language, user["id"]))
+                user["preferred_language"] = language
+            if "birth_date" in payload.model_fields_set:
+                if payload.birth_date and payload.birth_date > date.today():
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Data de nascimento não pode ser futura.")
+                updates.append("birth_date = %s")
+                values.append(payload.birth_date)
+            if "sex" in payload.model_fields_set:
+                sex = (payload.sex or "").strip()
+                if sex and sex not in {"male", "female", "other", "prefer_not_to_say"}:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sexo inválido.")
+                updates.append("sex = %s")
+                values.append(sex)
+            if payload.bio is not None:
+                updates.append("bio = %s")
+                values.append(payload.bio.strip())
+            if updates:
+                updates.append("updated_at = %s")
+                values.append(datetime.now(timezone.utc))
+                values.append(user["id"])
+                cursor.execute(f"UPDATE orynth_user_profiles SET {', '.join(updates)} WHERE user_id = %s", values)
+            return _profile_response(cursor, user)
+
+
+@app.post("/auth/account-deletion-request", status_code=status.HTTP_204_NO_CONTENT)
+def request_account_deletion(request: Request, authorization: str = Header(default="")):
+    ip_address, user_agent = _client_meta(request)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_users
+                SET account_status = 'deactivated',
+                    is_active = false,
+                    deletion_requested_at = %s,
+                    deactivated_at = %s
+                WHERE id = %s
+                """,
+                (now, now, user["id"]),
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_auth_sessions
+                SET revoked_at = %s
+                WHERE user_id = %s AND revoked_at IS NULL
+                """,
+                (now, user["id"]),
+            )
+            _record_event(
+                cursor,
+                "account_deletion_requested",
+                user_id=user["id"],
+                email=user["email"],
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+    return None
+
+
+@app.get("/users/me/wallet")
+def get_my_wallet(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _wallet_summary(cursor, user["id"])
+
+
+@app.get("/users/me/ledger", response_model=LedgerResponse)
+def get_my_ledger(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            wallet = _wallet_summary(cursor, user["id"])
+            cursor.execute(
+                """
+                SELECT id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at
+                FROM orynth_wallet_ledger
+                WHERE user_id = %s
+                ORDER BY created_at DESC, id DESC
+                """,
+                (user["id"],),
+            )
+            entries = [
+                {
+                    "entry_id": row["id"],
+                    "entry_type": row["entry_type"],
+                    "amount": row["amount"],
+                    "direction": row["direction"],
+                    "description": row["description"],
+                    "reference_type": row["reference_type"],
+                    "reference_id": row["reference_id"],
+                    "created_at": row["created_at"].isoformat(),
+                    "created_by": row["created_by_id"],
+                }
+                for row in cursor.fetchall()
+            ]
+            return {"wallet": wallet, "entries": entries}
+
+
+@app.get("/users/me/badges", response_model=list[BadgeResponse])
+def get_my_badges(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            BadgeAwardEngine.reconcile_user(cursor, user["id"], ensure_user_core=_ensure_user_core)
+            return _badge_rows(cursor, user_id=user["id"])
+
+
+@app.get("/users/me/activity")
+def get_my_activity(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT activity_type, title, description, reference_type, reference_id, occurred_at
+                FROM orynth_user_activities
+                WHERE user_id = %s
+                ORDER BY occurred_at DESC, id DESC
+                LIMIT 20
+                """,
+                (user["id"],),
+            )
+            return [
+                {
+                    "activity_type": row["activity_type"],
+                    "title": row["title"],
+                    "description": row["description"],
+                    "reference_type": row["reference_type"],
+                    "reference_id": row["reference_id"],
+                    "occurred_at": row["occurred_at"].isoformat(),
+                }
+                for row in cursor.fetchall()
+            ]
+
+
+@app.get("/users/{handle}", response_model=PublicUserProfileResponse)
+def get_public_profile(handle: str):
+    cleaned = _clean_handle(handle)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff
+                FROM orynth_users
+                WHERE lower(username) = lower(%s) AND is_active = true AND account_status = 'active'
+                """,
+                (cleaned,),
+            )
+            user = cursor.fetchone()
+            if not user:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil não encontrado.")
+            _ensure_user_core(cursor, user["id"])
+            cursor.execute("SELECT is_public FROM orynth_user_profiles WHERE user_id = %s", (user["id"],))
+            if not cursor.fetchone()["is_public"]:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil não encontrado.")
+            return _public_profile_response(cursor, user)
+
+
+@app.get("/rankings", response_model=RankingResponse)
+def get_rankings(category: Optional[str] = Query(default=None), subcategory: Optional[str] = Query(default=None)):
+    selected_category = (category or "").strip()
+    selected_subcategory = (subcategory or "").strip() if selected_category else ""
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            categories = _ranking_categories(cursor)
+            cursor.execute("SELECT id FROM orynth_users WHERE is_active = true")
+            for row in cursor.fetchall():
+                _ensure_user_core(cursor, row["id"])
+            if selected_category:
+                return {
+                    "rows": _ranking_theme_rows(cursor, selected_category, selected_subcategory),
+                    "categories": categories,
+                    "selected_category": selected_category,
+                    "selected_subcategory": selected_subcategory,
+                }
+            cursor.execute(
+                """
+                SELECT u.id, u.username, u.first_name, r.reputation_score, r.accuracy_indicator, r.strong_category
+                FROM orynth_user_reputations r
+                JOIN orynth_users u ON u.id = r.user_id
+                WHERE u.is_active = true
+                  AND u.is_staff = false
+                  AND u.is_superuser = false
+                ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
+                LIMIT 50
+                """
+            )
+            rows = []
+            for index, row in enumerate(cursor.fetchall(), start=1):
+                rows.append(
+                    {
+                        "position": index,
+                        "user_id": row["id"],
+                        "handle": _handle_seed(row["username"]),
+                        "display_name": row["first_name"] or _handle_seed(row["username"]),
+                        "reputation_score": row["reputation_score"],
+                        "accuracy_indicator": row["accuracy_indicator"],
+                        "strong_category": row["strong_category"] or "Geral",
+                    }
+                )
+            return {
+                "rows": rows,
+                "categories": categories,
+                "selected_category": selected_category,
+                "selected_subcategory": selected_subcategory,
+            }

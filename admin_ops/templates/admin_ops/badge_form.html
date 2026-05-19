@@ -1,0 +1,144 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="editor-layout">
+    <div class="panel">
+      <div class="section-head">
+        <div>
+          <h1 class="large-title">{{ title }}</h1>
+          <p class="muted">A regra executável é controlada pelo domínio; o texto explica a conquista para o usuário.</p>
+        </div>
+        <a class="btn ghost" href="{% url 'admin-ops-badges' %}">Voltar</a>
+      </div>
+      {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+      {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+      <form class="form-grid" method="post" enctype="multipart/form-data" data-taxonomy-form data-badge-form>
+        {% csrf_token %}
+        <div class="field">
+          <label for="{{ form.name.id_for_label }}">Nome <span class="required-marker">Obrigatório</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<small>{{ form.name.errors|join:", " }}</small>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ form.code.id_for_label }}">Código</label>
+          {{ form.code }}
+          {% if form.code.errors %}<small>{{ form.code.errors|join:", " }}</small>{% endif %}
+        </div>
+        <div class="field full">
+          <label for="{{ form.description.id_for_label }}">Descrição <span class="required-marker">Obrigatório</span></label>
+          {{ form.description }}
+          {% if form.description.errors %}<small>{{ form.description.errors|join:", " }}</small>{% endif %}
+        </div>
+        <div class="field full">
+          <label for="{{ form.rule_description.id_for_label }}">Descrição da regra</label>
+          {{ form.rule_description }}
+          {% if form.rule_description.errors %}<small>{{ form.rule_description.errors|join:", " }}</small>{% endif %}
+        </div>
+        <div class="field">
+          <label for="{{ form.badge_type.id_for_label }}">Tipo <span class="required-marker">Obrigatório</span></label>
+          {{ form.badge_type }}
+        </div>
+        <div class="field">
+          <label for="{{ form.rule_type.id_for_label }}">Regra automática <span class="required-marker">Obrigatório</span></label>
+          {{ form.rule_type }}
+        </div>
+        <div class="field">
+          <label for="{{ form.threshold_value.id_for_label }}">Valor mínimo/posição <span class="required-marker">Obrigatório</span></label>
+          {{ form.threshold_value }}
+          {% if form.threshold_value.errors %}<small>{{ form.threshold_value.errors|join:", " }}</small>{% endif %}
+        </div>
+        <div class="field-pair full">
+          <div class="field">
+            <label for="{{ form.badge_image.id_for_label }}">Imagem tema claro</label>
+            {{ form.badge_image }}
+            {{ form.image_url }}
+            {% if form.image_url.value %}<small>Imagem clara atual: {{ form.image_url.value }}</small>{% endif %}
+          </div>
+          <div class="field">
+            <label for="{{ form.badge_dark_image.id_for_label }}">Imagem tema escuro</label>
+            {{ form.badge_dark_image }}
+            {{ form.image_dark_url }}
+            {% if form.image_dark_url.value %}<small>Imagem escura atual: {{ form.image_dark_url.value }}</small>{% endif %}
+          </div>
+        </div>
+        <div class="field-pair full">
+          <div class="field">
+            <label for="{{ form.category.id_for_label }}">Categoria opcional</label>
+            <select id="{{ form.category.id_for_label }}" name="{{ form.category.html_name }}" data-category-select>
+              <option value="" {% if not form.category.value %}selected{% endif %}>Todas as categorias</option>
+              {% for category in taxonomy_options.categories %}
+                <option value="{{ category.name }}" {% if category.name == form.category.value %}selected{% endif %}>{{ category.name }}</option>
+              {% endfor %}
+            </select>
+            {% if form.category.errors %}<small>{{ form.category.errors|join:", " }}</small>{% endif %}
+          </div>
+          <div class="field">
+            <label for="{{ form.subcategory.id_for_label }}">Subcategoria opcional</label>
+            <select id="{{ form.subcategory.id_for_label }}" name="{{ form.subcategory.html_name }}" data-subcategory-select>
+              <option value="" {% if not form.subcategory.value %}selected{% endif %}>Todas as subcategorias</option>
+              {% for subcategory in taxonomy_options.subcategories %}
+                <option value="{{ subcategory.name }}" data-category="{{ subcategory.category }}" {% if subcategory.name == form.subcategory.value %}selected{% endif %}>{{ subcategory.name }}</option>
+              {% endfor %}
+            </select>
+            {% if form.subcategory.errors %}<small>{{ form.subcategory.errors|join:", " }}</small>{% endif %}
+          </div>
+        </div>
+        <label class="toggle-row full">{{ form.is_active }} <span>Badge ativa para exibição e concessão</span></label>
+        <div class="actions full">
+          <button class="btn primary" type="submit" name="action" value="save">Salvar badge</button>
+          {% if mode != "new" and badge.is_active %}
+            <button class="btn danger" type="submit" name="action" value="deactivate">Desativar</button>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+    <aside class="panel trade-box badge-preview-panel">
+      <h3>Prévia da badge</h3>
+      <article class="badge-card{% if not form.is_active.value %} locked{% endif %}" data-badge-preview>
+        {% if form.image_url.value %}
+          <img class="badge-image badge-image-light{% if form.image_dark_url.value %} has-dark{% endif %}" src="{{ form.image_url.value }}" alt="" data-preview-badge-image-light>
+          {% if form.image_dark_url.value %}
+            <img class="badge-image badge-image-dark" src="{{ form.image_dark_url.value }}" alt="" data-preview-badge-image-dark>
+          {% else %}
+            <img class="badge-image badge-image-dark is-hidden" src="" alt="" data-preview-badge-image-dark>
+          {% endif %}
+          <span class="badge-icon is-hidden" data-preview-badge-icon>✓</span>
+        {% else %}
+          <img class="badge-image badge-image-light is-hidden" src="" alt="" data-preview-badge-image-light>
+          <img class="badge-image badge-image-dark is-hidden" src="" alt="" data-preview-badge-image-dark>
+          <span class="badge-icon" data-preview-badge-icon>✓</span>
+        {% endif %}
+        <div class="badge-copy">
+          <strong data-preview-badge-name>{{ form.name.value|default:"Nome da badge" }}</strong>
+          <span data-preview-badge-description>{{ form.description.value|default:"Descrição curta da conquista aparece aqui." }}</span>
+          <small data-preview-badge-rule>{{ form.rule_description.value|default:"Descrição da regra aparece aqui." }}</small>
+          <span class="badge-status" data-preview-badge-status>{% if form.is_active.value %}Ativa para concessão{% else %}Inativa{% endif %}</span>
+        </div>
+      </article>
+      <div class="ticket-note">A prévia usa o mesmo card da área pública. Imagens locais aparecem antes de salvar.</div>
+      <div class="badge-help-card">
+        <h3>Tipos e regras</h3>
+        <dl>
+          <div><dt>Global</dt><dd>Conquistas gerais da conta, como membro fundador.</dd></div>
+          <div><dt>Categoria</dt><dd>Use quando a badge depende de categoria/subcategoria.</dd></div>
+          <div><dt>Performance</dt><dd>Acertos, resoluções, sequência e posição no ranking.</dd></div>
+          <div><dt>Engajamento</dt><dd>Comentários, sugestões aprovadas e feedback recompensado.</dd></div>
+        </dl>
+        <h4>Regras automáticas</h4>
+        <ul>
+          <li><strong>Membro fundador:</strong> concedida no cadastro da conta.</li>
+          <li><strong>Previsões resolvidas:</strong> conta previsões resolvidas do usuário.</li>
+          <li><strong>Acertos:</strong> conta previsões vencidas.</li>
+          <li><strong>Sequência:</strong> usa o streak persistido da reputação.</li>
+          <li><strong>Ranking:</strong> concede quando a posição é menor ou igual ao valor.</li>
+          <li><strong>Comentários:</strong> conta comentários visíveis.</li>
+          <li><strong>Sugestões aprovadas:</strong> conta sugestões revisadas, convertidas ou recompensadas.</li>
+          <li><strong>Feedback recompensado:</strong> conta feedbacks com recompensa operacional.</li>
+        </ul>
+        <p>Categoria/subcategoria vazias aplicam a regra no contexto geral.</p>
+      </div>
+    </aside>
+  </section>
+</main>
+{% endblock %}

@@ -1,0 +1,33 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel">
+    <span class="eyebrow">Taxonomia</span>
+    <h1 class="large-title">{{ title }}</h1>
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
+    {% if action == "badge-rules" %}
+      <div class="editor-section"><h3>Regras futuras de badge</h3><p class="muted">Badges por categoria serão calculadas depois da implementação de previsão, resolução e reputação avançada.</p></div>
+    {% elif action == "delete" %}
+      <div class="editor-section"><h3>Exclusão física bloqueada</h3><p class="muted">Categorias com uso em mercados devem ser preservadas. Nesta etapa, ajuste nome/subcategorias ou deixe sem uso em novos mercados.</p></div>
+    {% else %}
+      <form class="form-grid" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="kind" value="category">
+        <input type="hidden" name="category_slug" value="{{ request.GET.category }}">
+        <div class="field"><label for="{{ category_form.name.id_for_label }}">Categoria</label>{{ category_form.name }}</div>
+        <div class="field"><label for="{{ category_form.slug.id_for_label }}">Slug</label>{{ category_form.slug }}</div>
+        <button class="btn primary" type="submit">Salvar categoria</button>
+        <a class="btn ghost" href="{% url 'admin-ops-taxonomy' %}">Voltar</a>
+      </form>
+    {% endif %}
+    <table class="table">
+      <tr><th>Categoria</th><th>Subcategorias</th><th>Mercados</th></tr>
+      {% for category in taxonomy.categories %}
+        <tr><td>{{ category.name }}</td><td>{% for subcategory in category.subcategories %}{{ subcategory.name }}{% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</td><td>{{ category.markets_count }}</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+</main>
+{% endblock %}

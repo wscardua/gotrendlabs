@@ -3,8 +3,8 @@ id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
 versao: 0.1
 status_spec: draft
-status_impl: nao_iniciada
-ultima_atualizacao: 2026-05-17
+status_impl: parcial
+ultima_atualizacao: 2026-05-19
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -28,16 +28,24 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 ## Escopo incluído
 
 - cadastro
+- aceite obrigatório da política de uso no cadastro
+- página pública de política de uso e leitura em modal no fluxo de cadastro
+- proteção anti-abuso com reCAPTCHA v2 checkbox no cadastro quando configurado
 - login por credencial ou provedor social
 - criação e validação de sessão
 - logout
 - recuperação do contexto do usuário autenticado
+- edição básica de perfil autenticado
+- exclusão lógica de conta
+- gestão administrativa de usuários cadastrados para suporte operacional
 
 ## Escopo excluído
 
 - MFA
 - SSO corporativo
 - gestão avançada de dispositivos
+- gestão de operadores/staff
+- ajuste manual de reputação
 
 ## Fluxo do usuário
 
@@ -48,17 +56,33 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - sessões inválidas redirecionam para autenticação
 - login social cria ou vincula conta de forma rastreável
 - idioma preferencial acompanha a sessão
+- cadastro sem aceite da política de uso é rejeitado
+- link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
+- telas de login e cadastro mantêm navegação pública para feed/mercados, badges e ranking, além do retorno compacto `← Feed` no primeiro painel de conteúdo
+- tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
+- cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
+- perfil autenticado exibe reputação em cards e mantém edição de dados na própria tela de perfil, sem rota separada
+- `birth_date`, `sex`, email e bio são privados ao usuário autenticado e não aparecem no perfil público
+- exclusão lógica desativa login e sessões sem apagar dados físicos
+- Admin Ops lista usuários, abre detalhe operacional amplo e exibe badges adquiridas para suporte
+- ações administrativas de usuário usam contratos staff da FastAPI; o Django apenas renderiza estado e envia formulários
 
 ## Regras de domínio
 
 - um usuário deve possuir identidade única no domínio
 - cada sessão precisa ser validável e revogável
 - login social não pode gerar duplicidade silenciosa de contas
+- aceite de política de uso deve guardar data e versão aceita
+- reCAPTCHA protege criação de conta contra abuso automatizado sem substituir validações de identidade, senha e aceite
+- exclusão lógica deve preservar histórico e bloquear uso normal
+- ações administrativas sobre conta exigem usuário staff, nota operacional e auditoria
+- operador não pode desativar, revogar sessões ou ajustar wallet da própria conta
+- gestão administrativa não permite alterar `is_staff`, `is_superuser` nem reputação manualmente nesta fatia
 
 ## Responsabilidades por camada
 
 - `frontend-web`: formulários, telas, redirecionamento e mensagens localizadas
-- `backend-api`: autenticação, sessão, vínculo de provedor, política de acesso
+- `backend-api`: autenticação, sessão, vínculo de provedor, política de acesso e contratos staff de suporte a usuários
 - `database`: usuário, credenciais externas, sessão e preferências
 - `communications`: email de boas-vindas e fluxos transacionais futuros
 
@@ -66,9 +90,12 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 - usuário
 - perfil básico
+- data de nascimento e sexo opcionais no perfil privado/editável (`birth_date` em `YYYY-MM-DD`; `sex` como `male`, `female`, `other` ou `prefer_not_to_say`)
 - provedores externos vinculados
 - preferência de idioma
 - sessões e rastros de autenticação
+- aceite de política de uso
+- estado da conta e timestamps de exclusão lógica
 
 ## Contratos afetados
 
@@ -84,18 +111,42 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte
+- Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação e revogação de sessões via contratos staff
+- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust` em `orynth_admin_events`
+- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`
 
 ## Testes esperados
 
 - unitários para vínculo e validação de sessão
 - integração para login social e persistência de preferência de idioma
 - fluxo de cadastro, login e logout
+- fluxo de aceite obrigatório da política de uso
+- renderização de política de uso pública e modal de política no cadastro
+- renderização de navegação pública e retorno compacto `← Feed` em login/cadastro
+- prévia de cadastro seleciona mercado não cancelado com mais curtidas e usa mercado mais recente quando não há curtidas
+- fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
+- fluxo de edição de perfil na própria página autenticada
+- fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público
+- fluxo de exclusão lógica
+- fluxo staff de listagem/detalhe administrativo de usuário
+- detalhe administrativo exibe badges adquiridas sem recalcular elegibilidade na UI
+- fluxo staff de desativação, reativação e revogação de sessões com auditoria
+- bloqueio de ações administrativas perigosas sobre a própria conta do operador
 
 ## Critérios de aceite
 
 - usuário consegue criar e acessar conta
+- usuário consegue abrir a política de uso no cadastro sem sair do fluxo
+- visitantes em login/cadastro conseguem voltar para mercados pelo `← Feed` e acessar mercados, badges e ranking pela navegação pública
+- cadastro protegido exige conclusão do reCAPTCHA quando configurado
 - sessão inválida é tratada corretamente
 - idioma preferencial é respeitado após autenticação
+- usuário autenticado consegue editar dados pessoais sem sair da tela de perfil
+- perfil público não expõe email, data de nascimento, sexo nem metadados privados do perfil
+- conta desativada não consegue efetuar login
+- staff consegue consultar usuários, abrir detalhe operacional e agir sobre status/sessões sem mutação local no Django
+- ações administrativas de usuário exigem nota, registram auditoria e preservam histórico
+- ajuste manual de wallet no detalhe administrativo exige escolha explícita de direção, sem valor pré-selecionado
 
 ## Impacto de mudança
 

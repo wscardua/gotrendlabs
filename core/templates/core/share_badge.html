@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Compartilhar badge{% endblock %}
+{% block extra_head %}{% include "core/partials/share_meta.html" %}{% endblock %}
+{% block content %}
+<main class="shell hero">
+  <section class="panel share-badge-panel">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}</div>
+    <div class="share-badge-card share-card-preview">
+      <div class="share-badge-art">
+        {% if badge.image_url %}
+          <img class="badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="">
+          {% if badge.image_dark_url %}<img class="badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="">{% endif %}
+        {% else %}
+          <span class="badge-icon">✓</span>
+        {% endif %}
+      </div>
+      <div>
+        <div class="share-brand-block">
+          <p class="share-brand">Orynth</p>
+          <p class="share-context">Previsões educativas com reputação pública e resolução auditável.</p>
+        </div>
+        <h1 class="large-title">{{ share_viewer.name }} conquistou {{ badge.name }}.</h1>
+        <p class="lead">{{ badge.description }}</p>
+        {% if badge.rule_description %}<p>{{ badge.rule_description }}</p>{% endif %}
+        <p class="share-canonical">{{ share.display_url }}</p>
+      </div>
+    </div>
+    <div class="hero-actions">
+      {% include "core/partials/share_actions.html" %}
+    </div>
+    {% include "core/partials/share_crawl_notice.html" %}
+  </section>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc>Card da conquista pronto para compartilhamento.</p><div class="actions"><button class="btn primary" data-close-modal>OK</button></div></div></div>
+{% endblock %}

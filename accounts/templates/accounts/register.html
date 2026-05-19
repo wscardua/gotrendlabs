@@ -1,17 +1,163 @@
-{% extends "base.html" %}
-{% block title %}Orynth | Cadastro{% endblock %}
-{% block content %}
-<main class="shell auth-layout">
-  <section class="panel auth-card">
-    <span class="eyebrow">Nova conta</span>
-    <h1>Criar conta</h1>
-    <p class="lead">Cadastro visual com preferência de idioma, pronto para integração futura com o contrato de auth.</p>
-    <form class="form-stack">
-      <label>Nome público<input type="text" placeholder="Will Costa"></label>
-      <label>Email<input type="email" placeholder="voce@exemplo.com"></label>
-      <label>Idioma<select><option>PT-BR</option><option>EN</option></select></label>
-      <button class="btn primary" type="button">Criar conta</button>
-    </form>
-  </section>
-</main>
-{% endblock %}
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orynth | Criar conta</title>
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260519-policy-modal">
+  {% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}
+  <script src="{% static 'js/orynth.js' %}?v=20260519-policy-modal" defer></script>
+</head>
+<body>
+  <header class="topbar">
+    <nav class="shell nav">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark">O</span><span>Orynth</span></a>
+      <div class="nav-links">
+        <a class="nav-link" href="{% url 'home' %}">Mercados</a>
+        <a class="nav-link" href="{% url 'badges' %}">Badges</a>
+        <a class="nav-link" href="{% url 'rankings' %}">Ranking</a>
+      </div>
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button>
+        <a class="btn small ghost" href="{% url 'login' %}">Entrar</a>
+      </div>
+    </nav>
+  </header>
+  <main class="shell auth-page">
+    <div class="auth-layout">
+      <section class="auth-intro">
+        <div class="auth-copy">
+          <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Nova conta</span></div>
+          <h1>Crie seu histórico público de previsão.</h1>
+          <p class="lead">A conta habilita previsões com OC educativa, comentários, sugestões, carteira, badges e reputação auditável.</p>
+        </div>
+        <div class="signup-showcase" aria-label="Prévia do histórico público">
+          <section class="signup-ticket">
+            <div class="signup-ticket-head">
+              <div>
+                <span class="tag safe">Mais curtido</span>
+                <small>{{ signup_market.category|default:"IA" }} · {{ signup_market.status_label|default:"Mercado binário" }} · {{ signup_market.market_like_count|default:0 }} curtidas</small>
+              </div>
+              <strong>{{ signup_market.stake_oc|default:80 }} OC</strong>
+            </div>
+            <h3>{{ signup_market.title|default:"OpenAI lançará GPT-6 em 2026?" }}</h3>
+            <div class="signup-ticket-chart">
+              <div class="sparkline-card-wrap">
+                <svg class="sparkline-card" viewBox="0 0 220 44" preserveAspectRatio="none" role="img" aria-label="Mini gráfico de evolução do consenso">
+                  {% for series in signup_market.sparkline_series %}
+                    <path class="sparkline-line series-{{ forloop.counter }}" d="{{ series.path }}"></path>
+                  {% empty %}
+                    <path class="sparkline-line series-1" d="M 4 29 L 38 27 L 72 24 L 106 20 L 140 22 L 174 17 L 216 14"></path>
+                    <path class="sparkline-line series-2" d="M 4 15 L 38 17 L 72 20 L 106 24 L 140 22 L 174 27 L 216 30"></path>
+                  {% endfor %}
+                </svg>
+              </div>
+              <div class="mini-consensus" aria-label="Distribuição atual das opções">
+                {% for option in signup_market.options %}
+                  <span class="segment segment-{{ forloop.counter }}" style="width:{{ option.probability_exact }}%" title="{{ option.label }} {{ option.probability }}%"></span>
+                {% empty %}
+                  <span class="segment segment-1" style="width:62%" title="SIM 62%"></span>
+                  <span class="segment segment-2" style="width:38%" title="NÃO 38%"></span>
+                {% endfor %}
+              </div>
+              <div class="mini-options">
+                {% for option in signup_market.options|slice:":3" %}
+                  <span>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %} {{ option.probability }}%</span>
+                {% empty %}
+                  <span>SIM 62%</span><span>NÃO 38%</span>
+                {% endfor %}
+                <span>{{ signup_market.closes_in|default:"fecha em 12d" }}</span>
+              </div>
+            </div>
+            <div class="signup-ticket-foot">
+              <span>Escolha: <strong>{{ signup_market.display_primary_outcome|default:"SIM" }}</strong></span>
+              <span>Retorno estimado: <strong>{{ signup_market.estimated_return_oc|default:129 }} OC</strong></span>
+            </div>
+          </section>
+          <section class="signup-badges" aria-label="Badges iniciais bloqueadas">
+            <div class="signup-mini-badge">
+              <span>1</span>
+              <strong>Primeira previsão</strong>
+              <small>Registre um palpite válido.</small>
+            </div>
+            <div class="signup-mini-badge">
+              <span>5</span>
+              <strong>Sequência</strong>
+              <small>Acerte mercados resolvidos.</small>
+            </div>
+            <div class="signup-mini-badge">
+              <span>#</span>
+              <strong>Ranking</strong>
+              <small>Suba por reputação.</small>
+            </div>
+          </section>
+        </div>
+        <div class="auth-note-list" aria-label="Pilares da conta">
+          <div class="auth-note">
+            <strong>0 R$</strong>
+            <span>Orynth Coins não representam dinheiro real, investimento ou saque.</span>
+          </div>
+          <div class="auth-note">
+            <strong>@handle</strong>
+            <span>Seu identificador público nasce automaticamente do nome informado.</span>
+          </div>
+          <div class="auth-note">
+            <strong>PT/EN</strong>
+            <span>Idioma preferido salvo junto ao perfil e à sessão.</span>
+          </div>
+        </div>
+      </section>
+      <section class="auth-card">
+        <div class="auth-card-head">
+          <span class="eyebrow">Cadastro</span>
+          <h2>Criar conta</h2>
+        </div>
+        <form class="form-grid" method="post">
+          {% csrf_token %}
+          {% if form.non_field_errors %}<div class="field full"><div class="tag risk">{{ form.non_field_errors|join:", " }}</div></div>{% endif %}
+          <div class="field full"><label for="{{ form.display_name.id_for_label }}">Nome público</label><input id="{{ form.display_name.id_for_label }}" name="{{ form.display_name.name }}" value="{{ form.display_name.value|default:'' }}" autocomplete="name">{% if form.display_name.errors %}<small>{{ form.display_name.errors|join:", " }}</small>{% endif %}</div>
+          <div class="field full"><label for="{{ form.email.id_for_label }}">Email</label><input id="{{ form.email.id_for_label }}" name="{{ form.email.name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email">{% if form.email.errors %}<small>{{ form.email.errors|join:", " }}</small>{% endif %}</div>
+          <div class="field full"><label for="{{ form.language.id_for_label }}">Idioma</label><select id="{{ form.language.id_for_label }}" name="{{ form.language.name }}"><option value="pt-br" {% if form.language.value == "pt-br" or not form.language.value %}selected{% endif %}>PT-BR</option><option value="en" {% if form.language.value == "en" %}selected{% endif %}>EN</option></select></div>
+          <div class="field full"><label for="{{ form.password.id_for_label }}">Senha</label><input id="{{ form.password.id_for_label }}" name="{{ form.password.name }}" type="password" autocomplete="new-password">{% if form.password.errors %}<small>{{ form.password.errors|join:", " }}</small>{% endif %}</div>
+          <div class="field full checkbox-field"><label><input name="{{ form.terms_accepted.name }}" type="checkbox" {% if form.terms_accepted.value %}checked{% endif %}> <span>Aceito a <a class="inline-policy-link" href="{% url 'use-policy' %}" data-open-modal="#use-policy-modal">política de uso</a>, incluindo que Orynth Coins não representam dinheiro real.</span></label>{% if form.terms_accepted.errors %}<small>{{ form.terms_accepted.errors|join:", " }}</small>{% endif %}</div>
+          {% if recaptcha_enabled and recaptcha_site_key %}<div class="field full recaptcha-field"><div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div></div>{% endif %}
+          <button class="btn primary full" type="submit">Criar conta</button>
+        </form>
+        <div class="auth-footer">
+          <span>Já tem conta?</span>
+          <a href="{% url 'login' %}">Entrar</a>
+        </div>
+        <div class="auth-divider"><span>ou cadastre com</span></div>
+        <div class="auth-social">
+          <button class="btn ghost" type="button">Google</button>
+          <button class="btn ghost" type="button">Facebook</button>
+        </div>
+        <p class="auth-disclaimer">O identificador público será gerado automaticamente no formato @nome.</p>
+      </section>
+    </div>
+  </main>
+  <div class="modal policy-modal" id="use-policy-modal" role="dialog" aria-modal="true" aria-labelledby="use-policy-modal-title">
+    <div class="modal-card policy-modal-card">
+      <div class="policy-modal-head">
+        <span class="eyebrow">Política de uso</span>
+        <button class="modal-close" type="button" data-close-modal aria-label="Fechar política de uso">×</button>
+      </div>
+      <h3 id="use-policy-modal-title">Orynth Coins são educativas e não representam dinheiro real.</h3>
+      <div class="policy-modal-body">
+        <p>Ao criar conta, você aceita participar de uma rede social de previsões com moeda interna, reputação pública e resolução auditável.</p>
+        <ul>
+          <li>OC não é dinheiro real, investimento, prêmio sacável ou ativo transferível fora da plataforma.</li>
+          <li>Previsões ficam vinculadas ao seu histórico público e seguem os estados do mercado.</li>
+          <li>Comentários, sugestões, feedbacks e contas podem passar por moderação operacional.</li>
+          <li>Mercados exigem prazo, opções finitas e critério verificável de resolução.</li>
+        </ul>
+      </div>
+      <div class="actions">
+        <button class="btn primary" type="button" data-close-modal>Entendi</button>
+        <a class="btn ghost" href="{% url 'use-policy' %}" target="_blank" rel="noopener noreferrer">Página completa</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

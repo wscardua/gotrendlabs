@@ -2,6 +2,17 @@
 {% block title %}Orynth | Feed{% endblock %}
 {% block content %}
 <main class="shell">
+  {% if messages %}
+    <div class="modal show" id="message-modal">
+      <div class="modal-card">
+        {% for message in messages %}
+          <h3>Recebido</h3>
+          <p>{{ message }}</p>
+        {% endfor %}
+        <div class="actions"><button class="btn primary" data-close-modal>OK</button></div>
+      </div>
+    </div>
+  {% endif %}
   <section class="hero">
     <div class="hero-grid">
       <div class="hero-card">
@@ -15,72 +26,84 @@
         </div>
         <div class="metrics">
           <div class="metric"><strong>{{ stats.open_markets }}</strong><span>mercados abertos</span></div>
-          <div class="metric"><strong>{{ stats.monthly_predictions }}</strong><span>previsões no mês</span></div>
-          <div class="metric"><strong>{{ stats.resolution_sla }}</strong><span>resoluções no SLA</span></div>
+          <div class="metric"><strong>{{ stats.total_predictions }}</strong><span>previsões totais</span></div>
           <div class="metric"><strong>{{ stats.real_money }}</strong><span>sem dinheiro real</span></div>
         </div>
       </div>
       <aside class="watch-card">
         <span class="eyebrow">Ao vivo</span>
-        <h2>IA, política e cultura puxam o feed hoje.</h2>
+        {% if featured_markets %}
+          <h2>Destaques escolhidos pela curadoria.</h2>
+        {% else %}
+          <h2>Mercados ativos puxam o feed hoje.</h2>
+        {% endif %}
         <p>Probabilidades refletem o consenso atual da comunidade, não garantia de resultado.</p>
         <div class="book">
-          {% for market in markets|slice:":2" %}
-            <div class="book-row"><span>{{ market.title }}</span><strong>{{ market.primary_probability }}% {{ market.primary_outcome }}</strong></div>
-            <div class="bar {% if market.primary_outcome == 'NAO' %}no{% endif %}"><span style="width:{{ market.primary_probability }}%"></span></div>
+          {% for market in featured_markets %}
+            <div class="book-row"><span>{{ market.title }}</span><strong>{{ market.primary_probability }}% {% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong></div>
+            <div class="bar {% if market.primary_outcome == 'NAO' %}no{% endif %}"><span style="width:{{ market.primary_probability_exact }}%"></span></div>
           {% endfor %}
         </div>
-        <a class="btn success" href="{% url 'market-detail' 'openai-gpt6-2026' %}">Fazer previsão agora</a>
+        {% if featured_market %}
+          <a class="btn success" href="{% url 'market-detail' featured_market.slug %}">Fazer previsão agora</a>
+        {% else %}
+          <a class="btn success" href="{% url 'suggestion' %}">Sugerir primeiro mercado</a>
+        {% endif %}
       </aside>
     </div>
   </section>
 
-  <div class="page-grid" id="mercados">
-    <section>
-      <div class="section-head">
-        <div>
-          <h2>Mercados em destaque</h2>
-          <p>Inspirado em navegação de mercado: filtros rápidos, volume, tendência, tempo e fonte de resolução.</p>
+  <div class="page-grid home-grid" id="mercados">
+    <aside class="side-stack home-insight-strip">
+      {% if is_guest %}
+        <div class="side-card">
+          <span class="eyebrow">Modo visitante</span>
+          <h3>Explore antes de entrar</h3>
+          <p>Você pode ver mercados, consenso, critérios, ranking público e cards de compartilhamento. Para prever, comentar ou ver carteira, entre na conta.</p>
+          <a class="btn primary" href="{% url 'login' %}">Entrar para prever</a>
         </div>
-      </div>
-      <div class="filters" data-filter-group>
-        <button class="filter active" data-filter>Trending</button>
-        <button class="filter" data-filter>Encerrando</button>
-        <button class="filter" data-filter>Mais volume</button>
-        <button class="filter" data-filter>Novos</button>
-        <button class="filter" data-filter>Favoritos</button>
-      </div>
-      <section class="progress-strip">
-        <div>
-          <span class="eyebrow">Sua progressão</span>
-          <h3>Faltam 3 acertos em IA para liberar o badge Especialista emergente.</h3>
-          <p>Você está no top 8% em IA · sequência atual {{ viewer.streak }} · reputação geral {{ viewer.reputation }}.</p>
+      {% else %}
+        <div class="balance">
+          <span>Carteira educativa</span>
+          <strong>{{ viewer.balance_oc }} OC</strong>
+          <p>{{ viewer.locked_oc }} OC bloqueados em previsões abertas. OC não é dinheiro real.</p>
+          <a class="btn" href="{% url 'wallet' %}">Ver extrato</a>
         </div>
-        <div class="progress-track"><span style="width:72%"></span></div>
-        <a class="btn small ghost" href="{% url 'profile' %}">Ver progresso</a>
-      </section>
-      <div class="market-list">
-        {% for market in markets %}
-          {% include "components/market_card.html" with market=market %}
-        {% endfor %}
-      </div>
-    </section>
-    <aside class="side-stack">
-      <div class="balance">
-        <span>Carteira educativa</span>
-        <strong>{{ viewer.balance_oc }} OC</strong>
-        <p>{{ viewer.locked_oc }} OC bloqueados em previsões abertas. OC não é dinheiro real.</p>
-        <a class="btn" href="{% url 'wallet' %}">Ver extrato</a>
-      </div>
-      <div class="side-card">
-        <h3>Seu resumo</h3>
-        <p>Reputação {{ viewer.reputation }} · acerto {{ viewer.accuracy }} · sequência {{ viewer.streak }}</p>
-        <div class="badge-grid" style="grid-template-columns: repeat(3, minmax(0, 1fr));">
-          <a class="badge-card" href="{% url 'profile' %}"><span class="badge-icon">🏅</span><strong>Calibrado</strong></a>
-          <a class="badge-card" href="{% url 'profile' %}"><span class="badge-icon">⚡</span><strong>Early</strong></a>
-          <a class="badge-card" href="{% url 'profile' %}"><span class="badge-icon">🔎</span><strong>Auditor</strong></a>
+      {% endif %}
+      {% if user_summary %}
+        <div class="side-card summary-card" aria-label="Seu resumo: Reputação {{ user_summary.reputation.reputation_score }}">
+          <div class="summary-head">
+            <div>
+              <span class="eyebrow">Seu resumo</span>
+              <h3>{{ user_summary.reputation.reputation_score }} reputação</h3>
+            </div>
+            <a class="btn small ghost" href="{% url 'profile' %}">Perfil</a>
+          </div>
+          <div class="summary-stats">
+            <span><strong>{{ user_summary.reputation.accuracy_indicator }}</strong><small>acerto</small></span>
+            <span><strong>{{ user_summary.reputation.streak }}</strong><small>sequência</small></span>
+            <span><strong>#{{ user_summary.reputation.ranking_position }}</strong><small>ranking</small></span>
+          </div>
+          <div class="summary-badges" aria-label="Badges recentes">
+            {% for badge in user_badges|slice:":5" %}
+              <a class="summary-badge{% if badge.status != 'earned' %} locked{% endif %}" href="{% url 'profile' %}" title="{{ badge.name }}" aria-label="{{ badge.name }}: {% if badge.status == 'earned' %}Conquistada{% else %}Bloqueada{% endif %}">
+                {% if badge.image_url %}
+                  <img class="badge-image small badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="{{ badge.name }}">
+                  {% if badge.image_dark_url %}<img class="badge-image small badge-image-dark" src="{{ badge.image_dark_url }}" alt="{{ badge.name }}">{% endif %}
+                {% else %}<span class="badge-icon">{% if badge.status == 'earned' %}✓{% else %}–{% endif %}</span>{% endif %}
+              </a>
+            {% empty %}
+              <a class="summary-badge locked empty" href="{% url 'profile' %}" title="Sem badges">
+                <span class="badge-icon">–</span>
+              </a>
+            {% endfor %}
+          </div>
+          <div class="summary-foot">
+            <span>{% if user_badges %}Badges recentes{% else %}Sem badges por enquanto{% endif %}</span>
+            <a href="{% url 'badges' %}">Ver catálogo</a>
+          </div>
         </div>
-      </div>
+      {% endif %}
       <div class="side-card onboarding">
         <h3>Como prever em 40 segundos</h3>
         <div class="step"><b>1</b><span>Escolha uma opção do mercado.</span></div>
@@ -89,6 +112,38 @@
         <div class="step"><b>4</b><span>Ganhe crédito de acerto e reputação se acertar.</span></div>
       </div>
     </aside>
+    <section>
+      <div class="section-head">
+        <div>
+          <h2>Mercados em destaque</h2>
+          <p>Ordene rapidamente por tendência, fechamento, volume, novidades e destaques da curadoria.</p>
+        </div>
+      </div>
+      <div class="filters" data-filter-group data-filter-target="[data-market-list]">
+        <button class="filter active" type="button" data-filter="trending">Trending</button>
+        <button class="filter" type="button" data-filter="closing">Encerrando</button>
+        <button class="filter" type="button" data-filter="volume">Mais volume</button>
+        <button class="filter" type="button" data-filter="new">Novos</button>
+        <button class="filter" type="button" data-filter="featured">Favoritos</button>
+        <button class="filter" type="button" data-filter="resolved">Resolvidos</button>
+      </div>
+      {% if user_summary %}
+        <section class="progress-strip">
+          <div>
+            <span class="eyebrow">Sua progressão</span>
+            <h3>Reputação inicial ativa. As próximas previsões vão alimentar sua evolução.</h3>
+            <p>#{{ user_summary.reputation.ranking_position }} no ranking · sequência {{ user_summary.reputation.streak }} · reputação {{ user_summary.reputation.reputation_score }}.</p>
+          </div>
+          <div class="progress-track"><span style="width:24%"></span></div>
+          <a class="btn small ghost" href="{% url 'profile' %}">Ver progresso</a>
+        </section>
+      {% endif %}
+      <div class="market-list" data-market-list>
+        {% for market in markets %}
+          {% include "components/market_card.html" with market=market %}
+        {% endfor %}
+      </div>
+    </section>
   </div>
 </main>
 {% endblock %}

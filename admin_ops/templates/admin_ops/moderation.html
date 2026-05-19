@@ -1,0 +1,45 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Filas{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel">
+    <div class="section-head">
+      <div>
+        <h1 class="large-title">Filas operacionais</h1>
+        <p class="muted">Gerencie filas de mercado, feedback, comentários e créditos usados para manter a operação auditável.</p>
+      </div>
+    </div>
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+    <div class="filters">
+      <a class="filter {% if not active_kind and not active_status and not active_severity %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Todas</a>
+      <a class="filter {% if active_kind == 'suggestion' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=suggestion">Mercado {{ queue_data.counts.suggestion.pending|default:0 }}</a>
+      <a class="filter {% if active_kind == 'feedback' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=feedback">Feedback {{ queue_data.counts.feedback.pending|default:0 }}</a>
+      <a class="filter {% if active_kind == 'comment' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=comment">Comentários {{ queue_data.counts.comment.visible|default:0 }}</a>
+      <a class="filter {% if active_status == 'pending' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?status=pending">Pendentes</a>
+      <a class="filter {% if active_status == 'hidden' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=comment&status=hidden">Ocultos</a>
+      <a class="filter {% if active_order == 'created_desc' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?order=created_desc">Mais recentes</a>
+      <a class="filter {% if active_order == 'created_asc' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?order=created_asc">Mais antigas</a>
+    </div>
+    <table class="table">
+      <tr><th>Fila</th><th>Item</th><th>Tipo</th><th>Criado em</th><th>Severidade</th><th>Status</th><th>Ação</th></tr>
+      {% for item in queue_data.items %}
+        <tr>
+          <td>{{ item.queue_label }}</td>
+          <td>{{ item.title }}{% if item.author_handle %}<br><small>{{ item.author_handle }}</small>{% endif %}</td>
+          <td>{{ item.item_type }}</td>
+          <td>{{ item.created_at_label }}</td>
+          <td>{{ item.severity_label }}</td>
+          <td>{{ item.status_label }}</td>
+          <td>
+            <a class="btn small" href="{% url 'admin-ops-queue-item-action' item.kind item.id 'review' %}">Abrir fila</a>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7">Nenhum item encontrado para os filtros atuais.</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+</main>
+<div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc>Confirmação necessária para ações críticas.</p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>
+{% endblock %}

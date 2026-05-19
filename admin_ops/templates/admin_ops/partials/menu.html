@@ -1,0 +1,10 @@
+<aside class="panel admin-menu">
+  <a class="{% if active == 'dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
+  <a class="{% if active == 'users' %}active{% endif %}" href="{% url 'admin-ops-users' %}">Usuários</a>
+  <a class="{% if active == 'taxonomy' %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>
+  <a class="{% if active == 'badges' %}active{% endif %}" href="{% url 'admin-ops-badges' %}">Badge</a>
+  <a class="{% if active == 'markets' %}active{% endif %}" href="{% url 'admin-ops-markets' %}">Mercado</a>
+  <a class="{% if active == 'resolution' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}">Resolver mercados</a>
+  <a class="{% if active == 'moderation' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Filas operacionais</a>
+  <a href="{% url 'home' %}">Ver site público</a>
+</aside>

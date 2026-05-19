@@ -1,0 +1,207 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Taxonomia{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel taxonomy-workbench taxonomy-browse">
+    <div class="section-head">
+      <div>
+        <h1 class="large-title">Categorias e subcategorias</h1>
+        <p class="muted">Gerencie os temas usados na criação de mercados e nos filtros públicos.</p>
+      </div>
+      <details class="taxonomy-create-toggle">
+        <summary class="btn primary">Criar categoria</summary>
+        <form class="taxonomy-inline-form taxonomy-create-form" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="create_category">
+          <div class="field">
+            <label for="{{ category_form.name.id_for_label }}">Nome</label>
+            {{ category_form.name }}
+          </div>
+          <div class="field">
+            <label for="{{ category_form.slug.id_for_label }}">Slug</label>
+            {{ category_form.slug }}
+            <small>Opcional. Identificador público/operacional estável.</small>
+          </div>
+          <button class="btn primary small" type="submit">Criar categoria</button>
+        </form>
+      </details>
+    </div>
+
+    {% if admin_error %}<div class="tag risk taxonomy-alert">{{ admin_error }}</div>{% endif %}
+    {% if admin_message %}<div class="tag safe taxonomy-alert">{{ admin_message }}</div>{% endif %}
+
+    <div class="taxonomy-layout">
+      <div class="taxonomy-main">
+        <div class="filters" data-filter-group data-taxonomy-filters>
+          <button class="filter active" type="button" data-filter data-taxonomy-filter="all">Todas {{ taxonomy_summary.categories_count }}</button>
+          <button class="filter" type="button" data-filter data-taxonomy-filter="with-markets">Mercados vinculados</button>
+          <button class="filter" type="button" data-filter data-taxonomy-filter="without-markets">Sem mercados</button>
+          <button class="filter" type="button" data-filter data-taxonomy-filter="without-subcategories">Sem subcategorias</button>
+          <button class="filter" type="button" data-filter data-taxonomy-filter="blocked">Bloqueadas {{ taxonomy_summary.blocked_count }}</button>
+        </div>
+
+        <table class="table taxonomy-table">
+          <tr>
+            <th>Categoria</th>
+            <th>Subcategorias</th>
+            <th>Mercados</th>
+            <th>Slug</th>
+            <th>Ações</th>
+          </tr>
+          {% for category in taxonomy.categories %}
+            <tr
+              class="taxonomy-category-row"
+              data-taxonomy-category
+              data-markets-count="{{ category.markets_count }}"
+              data-subcategories-count="{{ category.subcategories|length }}"
+              data-blocked="{% if category.has_blocked_item %}true{% else %}false{% endif %}"
+            >
+              <td>
+                <strong>{{ category.name }}</strong>
+                <span class="taxonomy-row-note">
+                  Categoria
+                  {% if category.is_blocked %}<span class="taxonomy-state blocked">Bloqueada</span>{% else %}<span class="taxonomy-state active">Ativa</span>{% endif %}
+                </span>
+              </td>
+              <td>{{ category.subcategories|length }}</td>
+              <td>{{ category.markets_count }}</td>
+              <td><code class="taxonomy-code">{{ category.slug }}</code></td>
+              <td class="taxonomy-table-actions">
+                <details class="taxonomy-action">
+                  <summary class="btn small">Editar categoria</summary>
+                  <form class="taxonomy-inline-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_category">
+                    <input type="hidden" name="category_slug" value="{{ category.slug }}">
+                    <div class="field">
+                      <label>Nome</label>
+                      <input type="text" name="name" maxlength="80" required value="{{ category.name }}">
+                    </div>
+                    <div class="field">
+                      <label>Slug</label>
+                      <input type="text" name="slug" maxlength="100" value="{{ category.slug }}">
+                      <small>Identificador usado por filtros e links operacionais.</small>
+                    </div>
+                    <button class="btn primary small" type="submit">Salvar categoria</button>
+                  </form>
+                </details>
+                <details class="taxonomy-action">
+                  <summary class="btn small ghost">Adicionar subcategoria</summary>
+                  <form class="taxonomy-inline-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="create_subcategory">
+                    <input type="hidden" name="category_slug" value="{{ category.slug }}">
+                    <div class="field">
+                      <label>Subcategoria</label>
+                      <input type="text" name="name" maxlength="80" required>
+                    </div>
+                    <div class="field">
+                      <label>Slug</label>
+                      <input type="text" name="slug" maxlength="100">
+                      <small>Opcional. Se ficar vazio, a API cria a partir do nome.</small>
+                    </div>
+                    <button class="btn primary small" type="submit">Criar subcategoria</button>
+                  </form>
+                </details>
+                <details class="taxonomy-action">
+                  <summary class="btn small ghost">{% if category.is_blocked %}Desbloquear{% else %}Bloquear{% endif %}</summary>
+                  <form class="taxonomy-inline-form" method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if category.is_blocked %}unblock_category{% else %}block_category{% endif %}">
+                    <input type="hidden" name="category_slug" value="{{ category.slug }}">
+                    <div class="field">
+                      <label>Nota operacional</label>
+                      <textarea name="block_note">{% if category.is_blocked %}Reativada pelo Admin Ops.{% else %}Bloqueada pelo Admin Ops.{% endif %}</textarea>
+                      <small>Bloqueio impede uso em novos mercados; não remove histórico.</small>
+                    </div>
+                    <button class="btn {% if category.is_blocked %}primary{% else %}danger{% endif %} small" type="submit">{% if category.is_blocked %}Desbloquear{% else %}Bloquear categoria{% endif %}</button>
+                  </form>
+                </details>
+              </td>
+            </tr>
+            <tr class="taxonomy-subcategory-row" data-taxonomy-subcategory-row>
+              <td colspan="5">
+                <div class="taxonomy-subtable">
+                  {% for subcategory in category.subcategories %}
+                    <div class="taxonomy-subitem">
+                      <div>
+                        <strong>{{ subcategory.name }}</strong>
+                        <span>
+                          <code class="taxonomy-code">{{ subcategory.slug }}</code>
+                          · {{ subcategory.markets_count }} mercado{% if subcategory.markets_count != 1 %}s{% endif %}
+                          · {% if subcategory.is_blocked %}<span class="taxonomy-state blocked">Bloqueada</span>{% else %}<span class="taxonomy-state active">Ativa</span>{% endif %}
+                        </span>
+                      </div>
+                      <div class="taxonomy-table-actions">
+                        <details class="taxonomy-action">
+                          <summary class="btn small ghost">Editar</summary>
+                          <form class="taxonomy-inline-form" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_subcategory">
+                            <input type="hidden" name="category_slug" value="{{ category.slug }}">
+                            <input type="hidden" name="subcategory_slug" value="{{ subcategory.slug }}">
+                            <div class="field">
+                              <label>Subcategoria</label>
+                              <input type="text" name="name" maxlength="80" required value="{{ subcategory.name }}">
+                            </div>
+                            <div class="field">
+                              <label>Slug</label>
+                              <input type="text" name="slug" maxlength="100" value="{{ subcategory.slug }}">
+                            </div>
+                            <button class="btn primary small" type="submit">Salvar subcategoria</button>
+                          </form>
+                        </details>
+                        <details class="taxonomy-action">
+                          <summary class="btn small ghost">{% if subcategory.is_blocked %}Desbloquear{% else %}Bloquear{% endif %}</summary>
+                          <form class="taxonomy-inline-form" method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="{% if subcategory.is_blocked %}unblock_subcategory{% else %}block_subcategory{% endif %}">
+                            <input type="hidden" name="category_slug" value="{{ category.slug }}">
+                            <input type="hidden" name="subcategory_slug" value="{{ subcategory.slug }}">
+                            <div class="field">
+                              <label>Nota operacional</label>
+                              <textarea name="block_note">{% if subcategory.is_blocked %}Reativada pelo Admin Ops.{% else %}Bloqueada pelo Admin Ops.{% endif %}</textarea>
+                              <small>Bloqueio impede uso em novos mercados; não remove histórico.</small>
+                            </div>
+                            <button class="btn {% if subcategory.is_blocked %}primary{% else %}danger{% endif %} small" type="submit">{% if subcategory.is_blocked %}Desbloquear{% else %}Bloquear subcategoria{% endif %}</button>
+                          </form>
+                        </details>
+                      </div>
+                    </div>
+                  {% empty %}
+                    <div class="taxonomy-subitem muted">Nenhuma subcategoria cadastrada.</div>
+                  {% endfor %}
+                </div>
+              </td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">Nenhuma categoria cadastrada.</td></tr>
+          {% endfor %}
+          <tr data-taxonomy-empty hidden><td colspan="5">Nenhuma categoria corresponde ao filtro selecionado.</td></tr>
+        </table>
+      </div>
+
+      <aside class="taxonomy-policy-card">
+        <h2>Regras de bloqueio</h2>
+        <p>Não existe exclusão física de categorias ou subcategorias. Para tirar um tema do uso, bloqueie o item; ele fica preservado no histórico e marcado visualmente.</p>
+        <div class="taxonomy-policy-stats">
+          <span><strong>{{ taxonomy_summary.categories_count }}</strong> categorias</span>
+          <span><strong>{{ taxonomy_summary.subcategories_count }}</strong> subcategorias</span>
+          <span><strong>{{ taxonomy_summary.blocked_count }}</strong> bloqueadas</span>
+          <span><strong>{{ taxonomy_summary.markets_count }}</strong> mercados vinculados</span>
+        </div>
+        <a class="btn small ghost" href="{% url 'admin-ops-category-action' 'delete' %}">Ver política completa</a>
+      </aside>
+    </div>
+  </section>
+</main>
+<div class="modal" id="confirm-modal">
+  <div class="modal-card">
+    <h3 data-confirm-title></h3>
+    <p data-confirm-desc>Esta operação está bloqueada nesta etapa.</p>
+    <div class="actions">
+      <button class="btn primary" data-close-modal>Entendi</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="editor-layout">
+    <div class="panel">
+      <span class="eyebrow">Editor operacional</span>
+      <h1 class="large-title">{{ title }}</h1>
+      {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+      {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
+      {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+      {% if is_readonly %}<div class="notice red market-readonly-notice">Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar.</div>{% endif %}
+      <form class="form-grid" method="post" enctype="multipart/form-data" data-market-form>
+        {% csrf_token %}
+        <fieldset class="form-grid full" {% if is_readonly %}disabled{% endif %}>
+        <div class="editor-section full">
+          <h3>1. Pergunta e classificação</h3>
+          <div class="form-grid">
+            <div class="field full"><label for="{{ form.title.id_for_label }}">Pergunta PT-BR <span class="required-marker">Obrigatório</span></label>{{ form.title }}{% if form.title.errors %}<small>{{ form.title.errors|join:", " }}</small>{% endif %}</div>
+            <div class="field"><label for="{{ form.slug.id_for_label }}">Slug</label>{{ form.slug }}</div>
+            <div class="field"><label for="{{ form.kind.id_for_label }}">Tipo <span class="required-marker">Obrigatório</span></label>{{ form.kind }}</div>
+            <div class="field">
+              <label for="{{ form.category.id_for_label }}">Categoria <span class="required-marker">Obrigatório</span></label>
+              <select id="{{ form.category.id_for_label }}" name="{{ form.category.html_name }}" data-category-select required>
+                <option value="" {% if not form.category.value %}selected{% endif %}>Selecione a categoria</option>
+                {% for category in taxonomy_options.categories %}
+                  <option value="{{ category.name }}" {% if category.name == form.category.value %}selected{% endif %}>{{ category.name }}</option>
+                {% empty %}
+                  <option value="">Cadastre uma categoria primeiro</option>
+                {% endfor %}
+              </select>
+              {% if form.category.errors %}<small>{{ form.category.errors|join:", " }}</small>{% endif %}
+            </div>
+            <div class="field">
+              <label for="{{ form.subcategory.id_for_label }}">Subcategoria <span class="required-marker">Obrigatório</span></label>
+              <select id="{{ form.subcategory.id_for_label }}" name="{{ form.subcategory.html_name }}" data-subcategory-select required>
+                <option value="" {% if not form.subcategory.value %}selected{% endif %}>Selecione a subcategoria</option>
+                {% for subcategory in taxonomy_options.subcategories %}
+                  <option value="{{ subcategory.name }}" data-category="{{ subcategory.category }}" {% if subcategory.name == form.subcategory.value %}selected{% endif %}>{{ subcategory.name }}</option>
+                {% empty %}
+                  <option value="">Cadastre uma subcategoria primeiro</option>
+                {% endfor %}
+              </select>
+              {% if form.subcategory.errors %}<small>{{ form.subcategory.errors|join:", " }}</small>{% endif %}
+            </div>
+            <div class="field full"><label for="{{ form.summary.id_for_label }}">Resumo <span class="required-marker">Obrigatório</span></label>{{ form.summary }}</div>
+          </div>
+        </div>
+        <div class="editor-section full option-editor" data-market-options>
+          <div class="option-section-head">
+            <div>
+              <h3>2. Opções</h3>
+              <p data-option-help>Sim/Não usa duas opções fixas com probabilidade inicial balanceada.</p>
+              <p class="muted tiny-note">Os percentuais são salvos em <code>orynth_market_options.probability_exact</code>; o admin não edita manualmente nesta etapa.</p>
+            </div>
+            <button class="btn small ghost" type="button" data-add-option>Adicionar opção</button>
+          </div>
+          <div class="option-rule" data-binary-options>
+            <div class="option-rule-copy">
+              <strong>Regra aplicada pela API</strong>
+              <span>Este tipo não aceita opções customizadas: o mercado sempre nasce balanceado.</span>
+            </div>
+            <div class="binary-options">
+              <div class="option-pill"><strong>SIM</strong><span>50%</span><small>Opção afirmativa</small></div>
+              <div class="option-pill"><strong>NAO</strong><span>50%</span><small>Opção negativa</small></div>
+            </div>
+          </div>
+          <div class="option-builder" data-multiple-options>
+            <div class="option-builder-head">
+              <span>Alternativa</span>
+              <span>% inicial</span>
+              <span>Hint público</span>
+              <span></span>
+            </div>
+            {% for option in option_rows %}
+              <div class="option-line dynamic-option">
+                <input type="text" name="option_label" value="{{ option.label }}" placeholder="Opção">
+                <span class="option-percent" data-option-percent>{{ option.probability|default:"" }}%</span>
+                <input type="text" name="option_hint" value="{{ option.hint }}" placeholder="Hint opcional">
+                <button class="icon-action danger" type="button" data-remove-option aria-label="Remover opção">×</button>
+              </div>
+            {% empty %}
+              <div class="option-line dynamic-option">
+                <input type="text" name="option_label" placeholder="Opção">
+                <span class="option-percent" data-option-percent>50%</span>
+                <input type="text" name="option_hint" placeholder="Hint opcional">
+                <button class="icon-action danger" type="button" data-remove-option aria-label="Remover opção">×</button>
+              </div>
+              <div class="option-line dynamic-option">
+                <input type="text" name="option_label" placeholder="Opção">
+                <span class="option-percent" data-option-percent>50%</span>
+                <input type="text" name="option_hint" placeholder="Hint opcional">
+                <button class="icon-action danger" type="button" data-remove-option aria-label="Remover opção">×</button>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="editor-section full">
+          <h3>3. Resolução e card público</h3>
+          <div class="form-grid">
+            <div class="field"><label for="{{ form.close_at.id_for_label }}">Data/hora de fechamento <span class="required-marker">Obrigatório</span></label>{{ form.close_at }}{% if form.close_at.errors %}<small>{{ form.close_at.errors|join:", " }}</small>{% endif %}</div>
+            <div class="field"><label for="{{ form.close_timezone.id_for_label }}">Fuso de fechamento <span class="required-marker">Obrigatório</span></label>{{ form.close_timezone }}</div>
+            <div class="field checkbox-field">
+              <label for="{{ form.auto_close_enabled.id_for_label }}">{{ form.auto_close_enabled }} <span>Fechamento automático pelo daemon</span></label>
+              <small data-auto-close-help>Se desmarcado, o mercado será fechado manualmente pelo Admin Ops depois de publicado.</small>
+            </div>
+            <div class="field checkbox-field">
+              <label for="{{ form.is_featured.id_for_label }}">{{ form.is_featured }} <span>Usar como destaque do feed</span></label>
+              <small>Até dois mercados podem ficar em destaque no feed. Ao marcar um terceiro, o destaque mais antigo sai da vitrine.</small>
+            </div>
+            <div class="field"><label for="{{ form.close_label.id_for_label }}">Mensagem pública de fechamento</label>{{ form.close_label }}<small>Opcional. Texto curto exibido ao usuário sobre o fechamento; não controla o daemon.</small></div>
+            <div class="field"><label for="{{ form.thumb.id_for_label }}">Sigla do card</label>{{ form.thumb }}</div>
+            <div class="field color-field"><label for="{{ form.thumb_color.id_for_label }}">Cor do card <span class="required-marker">Obrigatório</span></label>{{ form.thumb_color }}<div class="color-swatches" data-color-swatches><button type="button" data-color="#d8ece2" style="--swatch:#d8ece2"></button><button type="button" data-color="#efe0c4" style="--swatch:#efe0c4"></button><button type="button" data-color="#dce6f0" style="--swatch:#dce6f0"></button><button type="button" data-color="#f0d6cf" style="--swatch:#f0d6cf"></button><button type="button" data-color="#e6ddf0" style="--swatch:#e6ddf0"></button></div></div>
+            <div class="field full"><label for="{{ form.thumbnail_file.id_for_label }}">Thumbnail do card</label>{{ form.thumbnail_file }}{{ form.image_url }}<small>Use uma imagem horizontal ou quadrada; a prévia abaixo atualiza antes de salvar.</small></div>
+            <div class="field full"><label for="{{ form.source.id_for_label }}">Fonte esperada <span class="required-marker">Obrigatório</span></label>{{ form.source }}</div>
+            <div class="field full"><label for="{{ form.resolution_criteria.id_for_label }}">Critério de resolução <span class="required-marker">Obrigatório</span></label>{{ form.resolution_criteria }}</div>
+            <div class="field full"><label for="{{ form.admin_notes.id_for_label }}">Notas internas</label>{{ form.admin_notes }}</div>
+          </div>
+        </div>
+        </fieldset>
+        <div class="actions full">
+          {% if not is_readonly %}
+            <button class="btn" name="action" value="save" type="submit">{% if mode == "new" or not market or market.status == "draft" %}Salvar rascunho{% else %}Salvar alterações{% endif %}</button>
+            {% if can_publish %}<button class="btn primary" name="action" value="publish" type="submit">Publicar mercado</button>{% endif %}
+            {% if can_manual_close %}<button class="btn" name="action" value="lock" type="submit" formnovalidate>Fechar manualmente</button>{% endif %}
+            {% if mode == "new" %}<button class="btn disabled" type="button" disabled data-manual-close-disabled>Fechar manualmente após publicar</button>{% endif %}
+            {% if mode != "new" and not can_manual_close and market.auto_close_enabled == False %}<button class="btn disabled" type="button" disabled data-manual-close-disabled>Fechar manualmente disponível quando estiver aberto</button>{% endif %}
+            {% if mode != "new" %}
+              <button class="btn danger" name="action" value="cancel" type="submit" data-confirm="Cancelar mercado?" data-confirm-desc="Cancelamento devolve 100% dos stakes bloqueados e não altera reputação.">Cancelar mercado</button>
+            {% endif %}
+          {% endif %}
+          <a class="btn ghost" href="{% url 'admin-ops-markets' %}">Voltar</a>
+        </div>
+        {% if mode != "new" and not is_readonly %}
+          <div class="ticket-note full">Cancelar um mercado com previsões aplica refund total automaticamente: todos os stakes bloqueados voltam ao saldo disponível e nenhuma reputação é alterada.</div>
+        {% endif %}
+      </form>
+    </div>
+    <aside class="panel trade-box">
+      <h3>Prévia pública</h3>
+      <div class="preview-card" data-market-preview>
+        <div class="thumb" data-preview-thumb style="width:76px;--thumb:{{ preview.thumb_color|default:'#d8ece2' }}">{% if preview.image_url %}<img src="{{ preview.image_url }}" alt="">{% else %}<span data-preview-thumb-text>{{ preview.thumb|default:"MK" }}</span>{% endif %}</div>
+        <div>
+          <strong data-preview-title>{{ preview.title|default:"Novo mercado" }}</strong>
+          <div class="mini-stats"><span data-preview-category>{{ preview.category|default:"Categoria" }}</span><span data-preview-subcategory>{{ preview.subcategory|default:"Subcategoria" }}</span><span data-preview-kind>{% if preview.kind == "multiple" %}Múltipla escolha{% else %}Sim/Não{% endif %}</span></div>
+          <div class="bar" style="margin-top:8px"><span data-preview-bar style="width:{{ preview.primary_probability_exact|default:50 }}%"></span></div>
+          <p data-preview-summary>{{ preview.summary|default:"Resumo do mercado aparece aqui conforme você preenche." }}</p>
+        </div>
+      </div>
+      <div class="ticket-note">Publicar exige pergunta, resumo, fonte, critério e opções válidas.</div>
+      {% if market %}
+        <div class="ticket-note">
+          <strong>Popularidade operacional</strong><br>
+          {{ market.view_count|default:0 }} visualizações · {{ market.share_count|default:0 }} compartilhamentos
+        </div>
+      {% endif %}
+      {% if market %}<a class="btn small ghost" href="{% url 'market-detail' market.slug %}">Ver página pública</a>{% endif %}
+    </aside>
+  </section>
+</main>
+{% endblock %}

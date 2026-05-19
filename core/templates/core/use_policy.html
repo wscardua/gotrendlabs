@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Orynth | Política de uso{% endblock %}
+{% block content %}
+<main class="shell page-content doc-page">
+  <section class="hero-card doc-hero policy-hero">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Política de uso</span></div>
+    <div class="doc-hero-grid">
+      <div>
+        <h1>Regras para uma experiência de previsão educativa.</h1>
+        <p class="lead">Ao criar conta na Orynth, você aceita participar de uma rede social de previsões com moeda interna, reputação pública e resolução auditável. Esta política resume as regras essenciais do MVP.</p>
+      </div>
+      <div class="doc-slate policy-version" aria-label="Versão da política">
+        <span class="doc-slate-label">Versão vigente</span>
+        <strong>2026-05-17</strong>
+        <p>O versionamento administrável fica para etapa futura. Por enquanto, esta é a versão registrada no aceite de cadastro.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="doc-layout">
+    <section class="doc-main">
+      <article class="doc-section">
+        <div class="section-kicker"><span class="eyebrow">01</span><span class="tag safe">Sem dinheiro real</span></div>
+        <h2>Orynth Coins são educativas.</h2>
+        <p>Orynth Coins, ou OC, são uma unidade interna de participação. Elas não representam dinheiro real, investimento, promessa de retorno financeiro, prêmio sacável ou ativo transferível fora da plataforma.</p>
+      </article>
+
+      <article class="doc-section">
+        <div class="section-kicker"><span class="eyebrow">02</span><span class="tag">Conta</span></div>
+        <h2>Sua conta mantém histórico público e dados privados separados.</h2>
+        <p>Seu handle, reputação, badges e previsões resolvidas podem aparecer publicamente. Email, data de nascimento, sexo e dados editáveis privados não devem aparecer no perfil público. A exclusão lógica bloqueia acesso normal sem apagar registros necessários para integridade histórica.</p>
+      </article>
+
+      <article class="doc-section">
+        <div class="section-kicker"><span class="eyebrow">03</span><span class="tag hot">Conduta</span></div>
+        <h2>Participação deve respeitar mercados, usuários e operação.</h2>
+        <p>Não use a plataforma para spam, abuso, manipulação coordenada, tentativa de burlar autenticação, exploração de bugs, assédio, publicação de conteúdo ilegal ou envio deliberado de informações falsas para prejudicar a comunidade.</p>
+      </article>
+
+      <article class="doc-section">
+        <div class="section-kicker"><span class="eyebrow">04</span><span class="tag risk">Mercados</span></div>
+        <h2>Previsões dependem de critérios verificáveis.</h2>
+        <p>Mercados devem ter opções finitas, prazo e critério de resolução. Apenas mercados abertos aceitam previsões. Mercados cancelados preservam histórico, devolvem stakes abertos conforme regra de domínio e não alteram reputação.</p>
+      </article>
+
+      <article class="doc-section">
+        <div class="section-kicker"><span class="eyebrow">05</span><span class="tag">Moderação</span></div>
+        <h2>A Orynth pode moderar conteúdo e ações abusivas.</h2>
+        <p>Comentários, sugestões, feedbacks, mercados e contas podem passar por revisão operacional. Ações administrativas relevantes devem preservar trilha, operador e justificativa quando aplicável.</p>
+      </article>
+
+      <article class="doc-section">
+        <div class="section-kicker"><span class="eyebrow">06</span><span class="tag safe">Transparência</span></div>
+        <h2>O MVP ainda está evoluindo.</h2>
+        <p>Alguns recursos de segurança avançada, comunicações transacionais, denúncias públicas, OAuth real e gestão refinada de operadores ainda estão documentados como próximos passos. Mudanças relevantes devem respeitar os contratos de domínio e as specs do projeto.</p>
+      </article>
+    </section>
+
+    <aside class="doc-rail">
+      <section class="panel doc-rail-card">
+        <h3>Leituras relacionadas</h3>
+        <a href="{% url 'concepts' %}">Conceitos e cálculos</a>
+        <a href="{% url 'security' %}">Segurança</a>
+        <a href="{% url 'feedback' %}">Enviar feedback</a>
+      </section>
+      <section class="panel">
+        <span class="eyebrow">Aceite</span>
+        <h3>Cadastro</h3>
+        <p>Ao marcar o aceite no cadastro, você confirma que entendeu a natureza educativa das OC e as regras básicas de participação.</p>
+      </section>
+    </aside>
+  </div>
+</main>
+{% endblock %}

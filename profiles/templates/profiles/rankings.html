@@ -3,18 +3,56 @@
 {% block content %}
 <main class="shell page-grid">
   <section class="panel">
-    <span class="eyebrow">Ranking social</span>
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Ranking social</span></div>
     <h1 class="large-title">Quem prevê melhor?</h1>
-    <div class="filters" data-filter-group><button class="filter active" data-filter>Global</button><button class="filter" data-filter>IA</button><button class="filter" data-filter>Política</button><button class="filter" data-filter>30 dias</button><button class="filter" data-filter>Alta convicção</button></div>
+    {% if ranking_error %}<div class="notice danger">{{ ranking_error }}</div>{% endif %}
+    <form class="ranking-filters" method="get" data-ranking-filters>
+      <div class="field">
+        <label for="ranking-category">Categoria</label>
+        <select id="ranking-category" name="category" data-ranking-category>
+          <option value="">Global</option>
+          {% for category in ranking_categories %}
+            <option value="{{ category.slug }}" {% if selected_category == category.slug %}selected{% endif %}>{{ category.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="ranking-subcategory">Subcategoria</label>
+        <select id="ranking-subcategory" name="subcategory" data-ranking-subcategory>
+          <option value="">Todas</option>
+          {% for category in ranking_categories %}
+            {% for subcategory in category.subcategories %}
+              <option value="{{ subcategory.slug }}" data-category="{{ category.slug }}" {% if selected_category == category.slug and selected_subcategory == subcategory.slug %}selected{% endif %}>{{ subcategory.name }}</option>
+            {% endfor %}
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn primary" type="submit">Aplicar</button>
+      <a class="btn ghost" href="{% url 'rankings' %}">Global</a>
+    </form>
     <table class="table">
-      <tr><th>#</th><th>Usuário</th><th>Rep</th><th>Acerto</th><th>Categoria forte</th></tr>
+      <tr><th>#</th><th>Usuário</th><th>Reputação</th><th>Acerto</th><th>Categoria forte</th></tr>
       {% for row in ranking %}
-        <tr><td>{{ row.position }}</td><td>{{ row.name }}</td><td>{{ row.reputation }}</td><td>{{ row.accuracy }}</td><td>{{ row.category }}</td></tr>
+        <tr><td>{{ row.position }}</td><td>{{ row.handle }}</td><td>{{ row.reputation_score }}</td><td>{{ row.accuracy_indicator }}</td><td>{{ row.strong_category }}</td></tr>
+      {% empty %}
+        <tr><td colspan="5">Ainda não há previsões resolvidas para este recorte.</td></tr>
       {% endfor %}
     </table>
   </section>
   <aside class="side-stack">
-    <div class="side-card"><h3>Seu recorte</h3><p>Você está no top 12% global e top 8% em IA.</p><a class="btn primary" href="{% url 'profile' %}">Ver perfil</a></div>
+    <div class="side-card">
+      <h3>Seu recorte</h3>
+      {% if is_guest %}
+        <p>Entre para acompanhar sua posição real no ranking conforme suas previsões forem resolvidas.</p>
+        <a class="btn primary" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Entrar</a>
+      {% elif viewer_ranking %}
+        <p>Você está em #{{ viewer_ranking.position }} neste recorte, com reputação {{ viewer_ranking.reputation_score }} e acerto {{ viewer_ranking.accuracy_indicator }}.</p>
+        <a class="btn primary" href="{% url 'profile' %}">Ver perfil</a>
+      {% else %}
+        <p>Você ainda não aparece neste recorte. O ranking considera apenas previsões resolvidas.</p>
+        <a class="btn primary" href="{% url 'home' %}">Ver mercados</a>
+      {% endif %}
+    </div>
     <div class="side-card"><h3>Como subir</h3><p>Acertos em mercados difíceis e previsões antecipadas pesam mais.</p></div>
   </aside>
 </main>

@@ -1,20 +1,62 @@
-<article class="market-card">
-  <div class="thumb" style="--thumb:{{ market.thumb_color }}">{{ market.thumb }}</div>
+<article
+  class="market-card"
+  data-market-card
+  data-market-slug="{{ market.slug }}"
+  data-market-featured="{{ market.is_featured|yesno:'true,false' }}"
+  data-market-likes="{{ market.market_like_count|default:0 }}"
+  data-market-volume="{{ market.volume_oc }}"
+  data-market-created-at="{{ market.created_at }}"
+  data-market-close-at="{{ market.close_at }}"
+  data-market-status="{{ market.status }}"
+>
+  <div class="thumb" style="--thumb:{{ market.thumb_color }}">
+    {% if market.image_url %}
+      <img src="{{ market.image_url }}" alt="">
+    {% else %}
+      {{ market.thumb|default:"OR" }}
+    {% endif %}
+  </div>
   <div>
     <div class="market-title">
       <h3>{{ market.title }}</h3>
       <span class="tag hot">{{ market.category }}</span>
+      <span class="tag">{{ market.subcategory }}</span>
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{{ market.status_label }}</span>
     </div>
-    <div class="mini-stats"><span>{{ market.volume_oc }} previstos</span><span>{{ market.participants }}</span><span>Fonte: {{ market.source }}</span></div>
+    <div class="mini-stats">
+      <span>{{ market.volume_oc }} previstos</span>
+      <span>{{ market.participants }}</span>
+      <span class="like-chip" aria-label="{% if market.market_like_count == 1 %}1 curtida{% else %}{{ market.market_like_count|default:0 }} curtidas{% endif %}">
+        <span class="like-mark">♥</span>
+        {% if market.market_like_count == 1 %}1 curtida{% else %}{{ market.market_like_count|default:0 }} curtidas{% endif %}
+      </span>
+      <span>Fonte: {{ market.source }}</span>
+    </div>
   </div>
   <div class="market-side">
-    <div class="prob-row"><strong>{% if market.status == "resolved" %}Crédito distribuído{% else %}{{ market.primary_outcome }} {{ market.primary_probability }}%{% endif %}</strong><span class="time-ring" style="--p:{{ market.primary_probability }}%">{{ market.closes_in }}</span></div>
-    <div class="bar {% if market.primary_outcome == 'NAO' %}no{% endif %}"><span style="width:{{ market.primary_probability }}%"></span></div>
-    <svg class="spark" viewBox="0 0 220 44"><path d="M2 31 C35 12, 51 36, 76 21 S122 6, 151 19 S185 35, 218 12" fill="none" stroke="{% if market.primary_outcome == 'NAO' %}#b7493d{% elif market.kind == 'multiple' %}#2d5e88{% else %}#136f4a{% endif %}" stroke-width="4" stroke-linecap="round"/></svg>
+    <div class="prob-row"><strong>{% if market.status == "resolved" %}Crédito distribuído{% else %}{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %} {{ market.primary_probability }}%{% endif %}</strong><span class="time-ring" style="--p:{{ market.primary_probability_exact }}%">{{ market.closes_in }}</span></div>
+    <div class="sparkline-card-wrap">
+      <svg class="sparkline-card" viewBox="0 0 220 44" preserveAspectRatio="none" role="img" aria-label="Evolução das probabilidades">
+        {% for series in market.sparkline_series %}
+          <path class="sparkline-line series-{{ forloop.counter }}" d="{{ series.path }}"></path>
+        {% empty %}
+          <path class="sparkline-line series-1" d="{{ market.sparkline_path|default:'M 4 22 L 216 22' }}"></path>
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="mini-consensus" aria-label="Distribuição atual das opções">
+      {% for option in market.options %}
+        <span class="segment segment-{{ forloop.counter }}" style="width:{{ option.probability_exact }}%" title="{{ option.label }} {{ option.probability }}%"></span>
+      {% endfor %}
+    </div>
+    <div class="mini-options">
+      {% for option in market.options|slice:":3" %}
+        <span>{{ option.label }} {{ option.probability }}%</span>
+      {% endfor %}
+    </div>
     <div class="market-foot">
-      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% elif market.kind == "multiple" %}Ver opções{% else %}Prever{% endif %}</a>
-      <a class="btn small ghost" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Compartilhar{% else %}Compartilhar{% endif %}</a>
+      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% else %}Prever{% endif %}</a>
+      <a class="btn small ghost" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}">Compartilhar</a>
     </div>
   </div>
 </article>

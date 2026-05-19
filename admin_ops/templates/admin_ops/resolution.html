@@ -1,0 +1,46 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Resolução{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel">
+    <h1 class="large-title">Mercados aguardando decisão</h1>
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+    <div class="filters" data-filter-group>
+      <button class="filter active" data-filter>Fechados e resolvidos</button>
+      <a class="filter {% if active_order == 'resolution_desc' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=resolution_desc">Resolução recente</a>
+      <a class="filter {% if active_order == 'resolution_asc' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=resolution_asc">Resolução antiga</a>
+      <a class="filter {% if active_order == 'pending_first' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=pending_first">Pendentes primeiro</a>
+    </div>
+    <table class="table">
+      <tr><th>Mercado</th><th>Status</th><th>Resolução</th><th>Impacto</th><th>Ações</th></tr>
+      {% for market in market_data.markets %}
+        <tr>
+          <td>{{ market.title }}</td>
+          <td>{{ market.status_label }}</td>
+          <td>
+            {% if market.resolved_at_label %}
+              <strong>{{ market.resolved_at_label }}</strong>
+            {% else %}
+              <span class="muted">Aguardando decisão</span><br><small>{{ market.resolution_timezone|default:"UTC" }}</small>
+            {% endif %}
+          </td>
+          <td>{{ market.participants|default:"0 participantes" }} · {{ market.volume_oc|default:"0 OC" }}</td>
+          <td>
+            <div class="table-actions">
+            {% if market.status == "locked" %}
+              <a class="btn small primary" href="{% url 'admin-ops-resolution-market-action' market.slug 'resolve' %}">Resolver</a>
+            {% elif market.status == "resolved" %}
+              <a class="btn small danger" href="{% url 'admin-ops-resolution-market-action' market.slug 'cancel-refund' %}">Desfazer resolução</a>
+            {% endif %}
+            <a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Revisar</a>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="5">Nenhum mercado fechado ou resolvido na fila operacional.</td></tr>
+      {% endfor %}
+    </table>
+  </section>
+</main>
+{% endblock %}
