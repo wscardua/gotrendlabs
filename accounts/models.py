@@ -172,6 +172,39 @@ class WalletBalance(models.Model):
         db_table = "orynth_wallet_balances"
 
 
+class WalletRechargeRequest(models.Model):
+    STATUS_CHOICES = (("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected"))
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet_recharge_requests")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
+    amount_oc = models.PositiveIntegerField(null=True, blank=True)
+    admin_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="reviewed_wallet_recharge_requests",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "orynth_wallet_recharge_requests"
+        indexes = [
+            models.Index(fields=["status", "-created_at"]),
+            models.Index(fields=["user", "-created_at"]),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status="pending"),
+                name="uniq_pending_wallet_recharge_user",
+            ),
+        ]
+
+
 class UserBadge(models.Model):
     STATUS_CHOICES = (("earned", "Earned"), ("locked", "Locked"))
 

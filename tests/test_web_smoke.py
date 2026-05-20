@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from accounts.api_client import AuthAPIError
-from accounts.models import BadgeDefinition, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry
+from accounts.models import BadgeDefinition, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
@@ -509,8 +509,8 @@ class BackendAuthAPITests(TestCase):
                 cursor.execute(
                     """
                     INSERT INTO orynth_site_config
-                        (singleton_key, email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds, default_from_email, default_reply_to_email, updated_by_id, updated_at)
-                    VALUES (1, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '', %s, %s)
+                        (singleton_key, wallet_recharge_min_balance_oc, email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds, default_from_email, default_reply_to_email, updated_by_id, updated_at)
+                    VALUES (1, 100, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '', %s, %s)
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
                         smtp_host = EXCLUDED.smtp_host,
@@ -2393,6 +2393,43 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(feedback.json()["kind"], "feedback")
         self.assertTrue(ProductFeedback.objects.filter(severity="high").exists())
 
+        blocked_recharge = client.post("/users/me/wallet/recharge-requests", headers=user_headers)
+        self.assertEqual(blocked_recharge.status_code, 422)
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_site_config (
+                        singleton_key,
+                        wallet_recharge_min_balance_oc,
+                        email_enabled,
+                        smtp_host,
+                        smtp_port,
+                        smtp_username,
+                        smtp_use_tls,
+                        smtp_use_ssl,
+                        smtp_timeout_seconds,
+                        default_from_email,
+                        default_reply_to_email,
+                        updated_at
+                    )
+                    VALUES (1, 10000, false, '', 587, '', true, false, 10, '', '', NOW())
+                    ON CONFLICT (singleton_key)
+                    DO UPDATE SET wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc, updated_at = NOW()
+                    """
+                )
+
+        recharge = client.post("/users/me/wallet/recharge-requests", headers=user_headers)
+        self.assertEqual(recharge.status_code, 201)
+        self.assertEqual(recharge.json()["status"], "pending")
+        recharge_id = recharge.json()["id"]
+        self.assertTrue(WalletRechargeRequest.objects.filter(id=recharge_id, status="pending").exists())
+        duplicate_recharge = client.post("/users/me/wallet/recharge-requests", headers=user_headers)
+        self.assertEqual(duplicate_recharge.status_code, 409)
+        my_recharges = client.get("/users/me/wallet/recharge-requests", headers=user_headers)
+        self.assertEqual(my_recharges.status_code, 200)
+        self.assertEqual(my_recharges.json()["requests"][0]["id"], recharge_id)
+
         common_queue = client.get("/admin/queues", headers=user_headers)
         self.assertEqual(common_queue.status_code, 403)
 
@@ -2416,6 +2453,56 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(queue.status_code, 200)
         self.assertIn("suggestion", [item["kind"] for item in queue.json()["items"]])
         self.assertIn("feedback", [item["kind"] for item in queue.json()["items"]])
+        self.assertIn("wallet_recharge", [item["kind"] for item in queue.json()["items"]])
+        recharge_queue = client.get("/admin/queues", headers=staff_headers, params={"kind": "wallet_recharge"})
+        self.assertEqual(recharge_queue.status_code, 200)
+        self.assertEqual(recharge_queue.json()["items"][0]["id"], recharge_id)
+
+        approved_recharge = client.post(
+            f"/admin/queues/wallet-recharges/{recharge_id}/approve",
+            headers=staff_headers,
+            json={"amount_oc": 250, "note": "Recarga educativa controlada."},
+        )
+        self.assertEqual(approved_recharge.status_code, 200)
+        self.assertEqual(approved_recharge.json()["status"], "approved")
+        self.assertEqual(approved_recharge.json()["reward_oc"], 250)
+        self.assertTrue(
+            WalletLedgerEntry.objects.filter(
+                entry_type="educational_recharge",
+                direction="credit",
+                amount=250,
+                reference_type="wallet_recharge_request",
+                reference_id=str(recharge_id),
+            ).exists()
+        )
+        self.assertTrue(AdminEvent.objects.filter(action="wallet_recharge.approve", entity_identifier=str(recharge_id)).exists())
+        duplicate_recharge_approval = client.post(
+            f"/admin/queues/wallet-recharges/{recharge_id}/approve",
+            headers=staff_headers,
+            json={"amount_oc": 100, "note": "Duplicado."},
+        )
+        self.assertEqual(duplicate_recharge_approval.status_code, 422)
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    UPDATE orynth_site_config
+                    SET wallet_recharge_min_balance_oc = 10000, updated_at = NOW()
+                    WHERE singleton_key = 1
+                    """
+                )
+        second_recharge = client.post("/users/me/wallet/recharge-requests", headers=user_headers)
+        self.assertEqual(second_recharge.status_code, 201)
+        rejected_recharge = client.post(
+            f"/admin/queues/wallet-recharges/{second_recharge.json()['id']}/reject",
+            headers=staff_headers,
+            json={"note": "Saldo ainda suficiente para participar."},
+        )
+        self.assertEqual(rejected_recharge.status_code, 200)
+        self.assertEqual(rejected_recharge.json()["status"], "rejected")
+        self.assertFalse(WalletLedgerEntry.objects.filter(reference_type="wallet_recharge_request", reference_id=str(second_recharge.json()["id"])).exists())
+        self.assertTrue(AdminEvent.objects.filter(action="wallet_recharge.reject", entity_identifier=str(second_recharge.json()["id"])).exists())
 
         suggestion_id = suggestion.json()["id"]
         converted = client.post(
@@ -2464,7 +2551,7 @@ class BackendAuthAPITests(TestCase):
         )
         self.assertEqual(duplicate_suggestion_reward.status_code, 422)
         balance = WalletBalance.objects.get(user__username="@queueuser")
-        self.assertEqual(balance.available_oc, 2105)
+        self.assertEqual(balance.available_oc, 2355)
         self.assertEqual(balance.total_earned_oc, 105)
 
         anonymous_feedback = client.post(
@@ -3097,6 +3184,7 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Controles da plataforma")
             self.assertContains(response, "Segredo SMTP")
             self.assertContains(response, "Configurado por ambiente")
+            self.assertContains(response, "Saldo máximo para solicitar")
             self.assertNotContains(response, "super-secret-smtp")
 
             response = self.client.post(
@@ -3104,6 +3192,7 @@ class WebSmokeTests(TestCase):
                 {
                     "maintenance-maintenance_enabled": "on",
                     "maintenance-maintenance_message": "Voltamos logo depois da janela operacional.",
+                    "economy-wallet_recharge_min_balance_oc": "150",
                     "email-email_enabled": "on",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "587",
@@ -3130,6 +3219,7 @@ class WebSmokeTests(TestCase):
             self.assertEqual(site_config.smtp_timeout_seconds, 15)
             self.assertEqual(site_config.default_from_email, "no-reply@example.com")
             self.assertEqual(site_config.default_reply_to_email, "support@example.com")
+            self.assertEqual(site_config.wallet_recharge_min_balance_oc, 150)
             self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
 
     def test_admin_config_rejects_tls_and_ssl_together(self):
@@ -3150,6 +3240,7 @@ class WebSmokeTests(TestCase):
                 reverse("admin-ops-config"),
                 {
                     "maintenance-maintenance_message": "Manutenção rápida.",
+                    "economy-wallet_recharge_min_balance_oc": "100",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "465",
                     "email-smtp_use_tls": "on",
@@ -4151,6 +4242,158 @@ class WebSmokeTests(TestCase):
             self.assertEqual(response.status_code, 302)
             moderate.assert_called_once_with("staff-token", 77, "hidden", "Ocultar.")
 
+    def test_wallet_recharge_web_flow_uses_api_and_admin_queue(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": 91,
+            "handle": "@rechargeuser",
+            "email": "recharge-user@example.com",
+            "display_name": "Recharge User",
+            "preferred_language": "pt-br",
+        }
+        session.save()
+        ledger_payload = {"wallet": {"available_oc": 0, "locked_oc": 0, "total_earned_oc": 0}, "entries": []}
+        recharge_requests = {
+            "requests": [
+                {
+                    "id": 12,
+                    "status": "pending",
+                    "status_label": "Pendente",
+                    "amount_oc": None,
+                    "created_at": "2026-05-20T12:00:00+00:00",
+                    "created_at_label": "20/05/2026 12:00",
+                    "reviewed_at": None,
+                }
+            ]
+        }
+
+        with patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_me", return_value={"reputation": {}}), patch(
+            "wallet.views.get_wallet_recharge_requests", return_value=recharge_requests
+        ):
+            response = self.client.get(reverse("wallet"))
+            self.assertContains(response, "Em análise")
+            self.assertContains(response, "Histórico")
+            self.assertContains(response, "últimas 3")
+
+        with patch("wallet.views.create_wallet_recharge_request", return_value={"id": 13}) as create_recharge:
+            response = self.client.post(reverse("wallet-recharge-request"))
+            self.assertEqual(response.status_code, 302)
+            create_recharge.assert_called_once_with("api-token")
+
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 92,
+            "handle": "rechargeadmin",
+            "email": "recharge-admin@example.com",
+            "display_name": "Recharge Admin",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        queue_item = {
+            "id": 12,
+            "kind": "wallet_recharge",
+            "title": "Solicitação de recarga educativa",
+            "queue_label": "Recarga",
+            "item_type": "Recarga educativa",
+            "status": "pending",
+            "status_label": "Pendente",
+            "severity_label": "Média",
+            "author_handle": "@rechargeuser",
+            "author_id": 91,
+            "created_at": "2026-05-20T12:00:00+00:00",
+            "created_at_label": "20/05/2026 12:00",
+            "description": "Pedido de crédito educativo.",
+            "admin_note": "",
+            "reward_oc": None,
+        }
+        with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}):
+            response = self.client.get(reverse("admin-ops-moderation") + "?kind=wallet_recharge")
+            self.assertContains(response, "Recarga")
+            self.assertContains(response, "Solicitação de recarga educativa")
+
+        with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
+            "admin_ops.views.admin_approve_wallet_recharge", return_value={**queue_item, "status": "approved", "reward_oc": 300}
+        ) as approve:
+            response = self.client.post(
+                reverse("admin-ops-queue-item-action", args=["wallet_recharge", 12, "review"]),
+                {"operation": "approve-recharge", "amount_oc": 300, "note": "Recarga aprovada."},
+            )
+            self.assertEqual(response.status_code, 302)
+            approve.assert_called_once_with("staff-token", 12, 300, "Recarga aprovada.")
+
+        with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
+            "admin_ops.views.admin_reject_wallet_recharge", return_value={**queue_item, "status": "rejected"}
+        ) as reject:
+            response = self.client.post(
+                reverse("admin-ops-queue-item-action", args=["wallet_recharge", 12, "review"]),
+                {"operation": "reject-recharge", "note": "Aguardar nova tentativa."},
+            )
+            self.assertEqual(response.status_code, 302)
+            reject.assert_called_once_with("staff-token", 12, "Aguardar nova tentativa.")
+
+    def test_wallet_ledger_and_recharge_history_are_paginated(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": 93,
+            "handle": "@walletpages",
+            "email": "wallet-pages@example.com",
+            "display_name": "Wallet Pages",
+            "preferred_language": "pt-br",
+        }
+        session.save()
+        ledger_entries = [
+            {
+                "entry_id": index,
+                "entry_type": "manual_adjustment",
+                "amount": index,
+                "direction": "credit",
+                "description": f"Movimentação {index}",
+                "reference_type": "test",
+                "reference_id": str(index),
+                "created_at": f"2026-05-{index:02d}T12:00:00+00:00",
+                "created_by": None,
+            }
+            for index in range(1, 13)
+        ]
+        ledger_payload = {"wallet": {"available_oc": 1200, "locked_oc": 0, "total_earned_oc": 0}, "entries": ledger_entries}
+        recharge_payload = {
+            "requests": [
+                {
+                    "id": index,
+                    "status": "approved",
+                    "status_label": f"Status {index}",
+                    "amount_oc": index * 10,
+                    "created_at": f"2026-05-{index:02d}T12:00:00+00:00",
+                    "created_at_label": f"20/05/2026 1{index}:00",
+                    "reviewed_at": None,
+                }
+                for index in range(1, 5)
+            ]
+        }
+
+        with patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_me", return_value={"reputation": {}}), patch(
+            "wallet.views.get_wallet_recharge_requests", return_value=recharge_payload
+        ):
+            first_page = self.client.get(reverse("wallet"))
+            self.assertContains(first_page, "Movimentação 1")
+            self.assertContains(first_page, "Movimentação 10")
+            self.assertNotContains(first_page, "Movimentação 11")
+            self.assertContains(first_page, "página 1 de 2")
+            self.assertContains(first_page, "Próxima")
+            self.assertContains(first_page, "Status 1")
+            self.assertContains(first_page, "Status 3")
+            self.assertNotContains(first_page, "Status 4")
+
+            second_page = self.client.get(f"{reverse('wallet')}?ledger_page=2")
+            self.assertNotContains(second_page, "Movimentação 9")
+            self.assertContains(second_page, "Movimentação 11")
+            self.assertContains(second_page, "Movimentação 12")
+            self.assertContains(second_page, "página 2 de 2")
+
     def test_login_page_has_focused_auth_layout(self):
         response = self.client.get(reverse("login"))
 
@@ -4213,6 +4456,40 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "@apirow")
             self.assertContains(response, "IA")
             self.assertContains(response, "Modelos")
+
+    def test_ranking_page_paginates_rows_by_ten(self):
+        payload = {
+            "rows": [
+                {
+                    "position": index,
+                    "user_id": index,
+                    "handle": f"@rank{index}",
+                    "display_name": f"Rank {index}",
+                    "reputation_score": 200 - index,
+                    "accuracy_indicator": "50%",
+                    "strong_category": "Geral",
+                }
+                for index in range(1, 13)
+            ],
+            "categories": [{"name": "IA", "slug": "ia", "subcategories": [{"name": "Modelos", "slug": "modelos"}]}],
+            "selected_category": "ia",
+            "selected_subcategory": "modelos",
+        }
+
+        with patch("profiles.views.get_rankings", return_value=payload):
+            first_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos")
+            self.assertContains(first_page, "@rank1")
+            self.assertContains(first_page, "@rank10")
+            self.assertNotContains(first_page, "@rank11")
+            self.assertContains(first_page, "página 1 de 2")
+            self.assertContains(first_page, "Próxima")
+            self.assertContains(first_page, "category=ia&subcategory=modelos&page=2")
+
+            second_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&page=2")
+            self.assertNotContains(second_page, "@rank10")
+            self.assertContains(second_page, "@rank11")
+            self.assertContains(second_page, "@rank12")
+            self.assertContains(second_page, "página 2 de 2")
 
     def test_profile_wallet_and_ranking_render_api_data(self):
         session = self.client.session
@@ -4311,7 +4588,7 @@ class WebSmokeTests(TestCase):
         with patch(
             "wallet.views.get_me",
             return_value={**profile_payload, "reputation": {**profile_payload["reputation"], "reputation_score": 117}},
-        ), patch("wallet.views.get_ledger", return_value=ledger_payload):
+        ), patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_wallet_recharge_requests", return_value={"requests": []}):
             response = self.client.get(reverse("wallet"))
             self.assertContains(response, "2000 OC")
             self.assertContains(response, "117")

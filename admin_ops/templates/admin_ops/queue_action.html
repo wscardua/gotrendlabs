@@ -41,16 +41,50 @@
         </section>
 
         <aside class="queue-actions">
-          <form class="panel queue-action-card" method="post">
-            {% csrf_token %}
-            <input type="hidden" name="operation" value="review">
-            <h3>{% if item.kind == "comment" %}Moderar comentário{% else %}Registrar revisão{% endif %}</h3>
-            <div class="form-grid">
-              <div class="field full">{{ review_form.status.label_tag }}{{ review_form.status }}</div>
-              <div class="field full">{{ review_form.note.label_tag }}{{ review_form.note }}</div>
-            </div>
-            <button class="btn primary" type="submit" data-confirm="{% if item.kind == 'comment' %}Moderar comentário?{% else %}Registrar revisão?{% endif %}">{% if item.kind == "comment" %}Salvar moderação{% else %}Registrar revisão{% endif %}</button>
-          </form>
+          {% if item.kind == "wallet_recharge" %}
+            <form class="panel queue-action-card" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="operation" value="approve-recharge">
+              <h3>Aprovar recarga</h3>
+              {% if item.status == "pending" %}
+                <p class="muted">Defina o valor educativo que será creditado na carteira do usuário.</p>
+                <div class="form-grid">
+                  <div class="field full">{{ recharge_form.amount_oc.label_tag }}{{ recharge_form.amount_oc }}</div>
+                  <div class="field full">{{ recharge_form.note.label_tag }}{{ recharge_form.note }}</div>
+                </div>
+                <button class="btn success" type="submit" data-confirm="Aprovar recarga educativa?">Aprovar recarga</button>
+              {% else %}
+                <p class="muted">Esta solicitação já foi revisada.</p>
+                <button class="btn success" type="button" disabled>Recarga revisada</button>
+              {% endif %}
+            </form>
+
+            <form class="panel queue-action-card" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="operation" value="reject-recharge">
+              <h3>Rejeitar solicitação</h3>
+              {% if item.status == "pending" %}
+                <div class="form-grid">
+                  <div class="field full">{{ recharge_reject_form.note.label_tag }}{{ recharge_reject_form.note }}</div>
+                </div>
+                <button class="btn danger" type="submit" data-confirm="Rejeitar recarga educativa?">Rejeitar recarga</button>
+              {% else %}
+                {% if item.admin_note %}<div class="field full"><label>Nota operacional</label><textarea disabled>{{ item.admin_note }}</textarea></div>{% endif %}
+                <button class="btn danger" type="button" disabled>Solicitação revisada</button>
+              {% endif %}
+            </form>
+          {% else %}
+            <form class="panel queue-action-card" method="post">
+              {% csrf_token %}
+              <input type="hidden" name="operation" value="review">
+              <h3>{% if item.kind == "comment" %}Moderar comentário{% else %}Registrar revisão{% endif %}</h3>
+              <div class="form-grid">
+                <div class="field full">{{ review_form.status.label_tag }}{{ review_form.status }}</div>
+                <div class="field full">{{ review_form.note.label_tag }}{{ review_form.note }}</div>
+              </div>
+              <button class="btn primary" type="submit" data-confirm="{% if item.kind == 'comment' %}Moderar comentário?{% else %}Registrar revisão?{% endif %}">{% if item.kind == "comment" %}Salvar moderação{% else %}Registrar revisão{% endif %}</button>
+            </form>
+          {% endif %}
 
           {% if item.kind == "suggestion" %}
             <form class="panel queue-action-card" method="post">
@@ -68,7 +102,7 @@
             </form>
           {% endif %}
 
-          {% if item.kind != "comment" %}
+          {% if item.kind != "comment" and item.kind != "wallet_recharge" %}
             <form class="panel queue-action-card" method="post">
               {% csrf_token %}
               <input type="hidden" name="operation" value="reward">

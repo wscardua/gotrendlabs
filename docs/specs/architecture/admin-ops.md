@@ -84,6 +84,9 @@
 - Conversão em rascunho aparece apenas para sugestão de mercado; depois de convertida, a seção fica indisponível para novo envio.
 - Aprovação de créditos aparece para Feedback e Mercado quando houver usuário cadastrado; depois de aprovada, a seção fica indisponível para alteração ou reenvio.
 - Recompensas de fila usam ledger/projeção da wallet e bloqueiam duplicidade por item.
+- Configuração geral de Admin Ops define `wallet_recharge_min_balance_oc`, o saldo máximo para usuário solicitar recarga educativa.
+- Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor OC ou rejeita com nota, mantendo uma solicitação pendente por usuário.
+- Aprovação de recarga educativa cria ledger `educational_recharge`, atualiza projeção de saldo e registra `wallet_recharge.approve`; rejeição registra `wallet_recharge.reject` sem alterar wallet.
 - Comentários entram na fila operacional de moderação com filtro próprio e status `visible`/`hidden`.
 - A tela de revisão de comentário permite ocultar/restaurar com nota operacional.
 - Moderação de comentário registra `comment.hide` ou `comment.restore` em `orynth_admin_events`.

@@ -48,6 +48,15 @@ class SiteEmailConfigForm(forms.Form):
         return cleaned_data
 
 
+class EconomyConfigForm(forms.Form):
+    wallet_recharge_min_balance_oc = forms.IntegerField(
+        label="Saldo máximo para solicitar recarga",
+        min_value=0,
+        max_value=1000000,
+        initial=100,
+    )
+
+
 def _display_probability(value):
     return int(Decimal(str(value or 0)).quantize(PROBABILITY_QUANT).to_integral_value(rounding=ROUND_DOWN))
 
@@ -249,6 +258,15 @@ class QueueReviewForm(forms.Form):
 class FeedbackRewardForm(forms.Form):
     amount_oc = forms.IntegerField(label="Recompensa OC", min_value=1, max_value=10000, initial=50)
     note = forms.CharField(label="Nota operacional", widget=forms.Textarea, required=False)
+
+
+class WalletRechargeApprovalForm(forms.Form):
+    amount_oc = forms.IntegerField(label="Recarga OC", min_value=1, max_value=10000, initial=250)
+    note = forms.CharField(label="Nota operacional", widget=forms.Textarea, required=False)
+
+
+class WalletRechargeRejectForm(forms.Form):
+    note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
 
 
 class AdminUserNoteForm(forms.Form):

@@ -80,6 +80,14 @@ def get_ledger(token):
     return _request("GET", "/users/me/ledger", token=token)
 
 
+def get_wallet_recharge_requests(token):
+    return _request("GET", "/users/me/wallet/recharge-requests", token=token)
+
+
+def create_wallet_recharge_request(token):
+    return _request("POST", "/users/me/wallet/recharge-requests", token=token)
+
+
 def get_badges(token):
     return _request("GET", "/users/me/badges", token=token)
 
@@ -291,6 +299,14 @@ def admin_reward_feedback(token, item_id, amount_oc, note=""):
 
 def admin_reward_suggestion(token, item_id, amount_oc, note=""):
     return _request("POST", f"/admin/queues/suggestions/{item_id}/reward", {"amount_oc": amount_oc, "note": note}, token=token)
+
+
+def admin_approve_wallet_recharge(token, item_id, amount_oc, note=""):
+    return _request("POST", f"/admin/queues/wallet-recharges/{item_id}/approve", {"amount_oc": amount_oc, "note": note}, token=token)
+
+
+def admin_reject_wallet_recharge(token, item_id, note=""):
+    return _request("POST", f"/admin/queues/wallet-recharges/{item_id}/reject", {"note": note}, token=token)
 
 
 def admin_get_taxonomy(token):

@@ -45,6 +45,8 @@ from accounts.api_client import (
     admin_revoke_user_sessions,
     admin_reward_feedback,
     admin_reward_suggestion,
+    admin_approve_wallet_recharge,
+    admin_reject_wallet_recharge,
     admin_unblock_category,
     admin_unblock_subcategory,
     admin_update_user_roles,
@@ -62,11 +64,14 @@ from admin_ops.forms import (
     AdminUserNoteForm,
     AdminUserRoleForm,
     AdminUserWalletAdjustmentForm,
+    EconomyConfigForm,
     FeedbackRewardForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
     QueueReviewForm,
     SiteEmailConfigForm,
+    WalletRechargeApprovalForm,
+    WalletRechargeRejectForm,
 )
 from admin_ops.models import SiteConfig
 from core.platform_config import load_platform_config, save_platform_config
@@ -360,7 +365,12 @@ def config(request):
         },
         prefix="email",
     )
-    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid():
+    economy_form = EconomyConfigForm(
+        request.POST or None,
+        initial={"wallet_recharge_min_balance_oc": site_config.wallet_recharge_min_balance_oc},
+        prefix="economy",
+    )
+    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid() and economy_form.is_valid():
         save_platform_config(
             {
                 "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
@@ -370,6 +380,7 @@ def config(request):
         )
         for field, value in email_form.cleaned_data.items():
             setattr(site_config, field, value)
+        site_config.wallet_recharge_min_balance_oc = economy_form.cleaned_data["wallet_recharge_min_balance_oc"]
         site_config.updated_by = _admin_model_user(request)
         site_config.save()
         messages.success(request, "Configurações atualizadas.")
@@ -381,6 +392,7 @@ def config(request):
         {
             "maintenance_form": maintenance_form,
             "email_form": email_form,
+            "economy_form": economy_form,
             "platform_config": platform_config,
             "site_config": site_config,
             "smtp_secret_configured": smtp_secret_configured,
@@ -726,7 +738,7 @@ def moderation(request):
     error = ""
     try:
         if filters["kind"] != "comment":
-            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback"} else ""}
+            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback", "wallet_recharge"} else ""}
             queue_data = admin_get_queues(token, **queue_filters)
     except AuthAPIError as exc:
         queue_data = {"items": [], "counts": {}}
@@ -1098,6 +1110,7 @@ def queue_action(request, action, kind=None, item_id=None):
     titles = {
         "convert-draft": "Converter sugestão em rascunho",
         "reward-feedback": "Aprovar recompensa",
+        "approve-recharge": "Aprovar recarga",
         "view-item": "Visualizar item da fila",
         "moderate": "Moderar item",
         "review": "Revisar item",
@@ -1108,6 +1121,8 @@ def queue_action(request, action, kind=None, item_id=None):
     item = None
     review_form = QueueReviewForm()
     reward_form = FeedbackRewardForm()
+    recharge_form = WalletRechargeApprovalForm()
+    recharge_reject_form = WalletRechargeRejectForm()
     if kind and item_id:
         try:
             if kind == "comment":
@@ -1125,10 +1140,37 @@ def queue_action(request, action, kind=None, item_id=None):
         if kind == "comment":
             review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
         reward_form = FeedbackRewardForm(initial={"amount_oc": item.get("reward_oc") or 50, "note": item.get("admin_note", "")})
+        recharge_form = WalletRechargeApprovalForm(initial={"amount_oc": item.get("reward_oc") or 250, "note": item.get("admin_note", "")})
+        recharge_reject_form = WalletRechargeRejectForm(initial={"note": item.get("admin_note", "")})
     if request.method == "POST" and item and not error:
         operation = request.POST.get("operation", "review")
         try:
-            if kind == "comment":
+            if kind == "wallet_recharge" and operation == "approve-recharge":
+                recharge_form = WalletRechargeApprovalForm(request.POST)
+                if item.get("status") != "pending":
+                    error = "Solicitação de recarga já revisada."
+                    raise AuthAPIError(error, 422)
+                if recharge_form.is_valid():
+                    admin_approve_wallet_recharge(
+                        token,
+                        item_id,
+                        recharge_form.cleaned_data["amount_oc"],
+                        recharge_form.cleaned_data.get("note") or "",
+                    )
+                    messages.success(request, "Recarga educativa aprovada.")
+                    return redirect("admin-ops-moderation")
+                error = "Revise a recarga."
+            elif kind == "wallet_recharge" and operation == "reject-recharge":
+                recharge_reject_form = WalletRechargeRejectForm(request.POST)
+                if item.get("status") != "pending":
+                    error = "Solicitação de recarga já revisada."
+                    raise AuthAPIError(error, 422)
+                if recharge_reject_form.is_valid():
+                    admin_reject_wallet_recharge(token, item_id, recharge_reject_form.cleaned_data["note"])
+                    messages.success(request, "Recarga educativa rejeitada.")
+                    return redirect("admin-ops-moderation")
+                error = "Informe a nota operacional."
+            elif kind == "comment":
                 review_form = QueueReviewForm(request.POST)
                 review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
                 if review_form.is_valid():
@@ -1163,6 +1205,8 @@ def queue_action(request, action, kind=None, item_id=None):
                     messages.success(request, "Sugestão recompensada.")
                     return redirect("admin-ops-moderation")
                 error = "Revise a recompensa."
+            elif kind == "wallet_recharge":
+                error = "Escolha aprovar ou rejeitar a recarga."
             else:
                 review_form = QueueReviewForm(request.POST)
                 if review_form.is_valid():
@@ -1183,6 +1227,8 @@ def queue_action(request, action, kind=None, item_id=None):
             "item": item,
             "review_form": review_form,
             "reward_form": reward_form,
+            "recharge_form": recharge_form,
+            "recharge_reject_form": recharge_reject_form,
             "admin_message": message,
             "admin_error": error,
         },

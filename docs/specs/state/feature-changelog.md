@@ -326,6 +326,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-REP-001
 
+### 2026-05-20 - v0.9
+- tela pública de ranking passou a paginar a lista em 10 linhas por página
+- paginação preserva filtros de categoria/subcategoria aplicados
+- contratos relacionados: `reputation-ranking.md`
+- status de implementação: `parcial`
+
 ### 2026-05-19 - v0.8
 - ranking web passou a consumir `GET /rankings` como fonte única
 - fallback local de cálculo de ranking/reputação no Django foi removido; falha da API exibe erro/estado vazio
@@ -389,6 +395,18 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-WALLET-001
+
+### 2026-05-20 - v0.9
+- Admin Ops Config ganhou parâmetro `wallet_recharge_min_balance_oc` para definir o saldo máximo elegível à solicitação de recarga educativa
+- backend e wallet web bloqueiam nova solicitação quando `available_oc` está acima do piso configurado
+- histórico de recargas na wallet mostra apenas os 3 itens mais recentes e o extrato pagina 10 lançamentos por vez
+- status de implementação: `parcial`
+
+### 2026-05-20 - v0.8
+- wallet passou a permitir solicitação autenticada de recarga educativa com uma pendência por usuário
+- Admin Ops passou a listar `wallet_recharge` nas filas e aprovar ou rejeitar solicitações com auditoria
+- aprovação cria ledger `educational_recharge`, atualiza `orynth_wallet_balances` e não altera reputação nem `total_earned_oc`
+- status de implementação: `parcial`
 
 ### 2026-05-19 - v0.7
 - ajuste manual de wallet por staff passou a usar `manual_adjustment`, `admin_user_adjustment`, operador e nota obrigatória
