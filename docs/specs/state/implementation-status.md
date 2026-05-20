@@ -12,7 +12,7 @@
 | FEAT-COMMENT-001 | draft | parcial | 2026-05-18 | Comentários reais em mercados com criação autenticada, listagem pública, like/dislike único por usuário e moderação staff por ocultar/restaurar |
 | FEAT-SUGGEST-001 | draft | parcial | 2026-05-19 | Sugestões de mercado e feedback possuem persistência, envio autenticado/guest com reCAPTCHA v2 opcional para visitantes, fila real no Admin Ops, conversão em rascunho e crédito operacional idempotente; Admin Ops não executa fallback local mutável |
 | FEAT-NOTIFY-001 | draft | parcial | 2026-05-20 | Configuração SMTP operacional não sensível persistida em banco via Admin Ops; envio/event bus ainda pendente |
-| FEAT-I18N-001 | draft | nao_iniciada | 2026-05-17 | Estrutura documental criada |
+| FEAT-I18N-001 | draft | nao_iniciada | 2026-05-20 | Estrutura documental criada; branding público renomeado para `Orynth Trends` sem iniciar extração completa de strings |
 | FEAT-OPSLOG-001 | draft | parcial | 2026-05-20 | Logs técnicos persistidos em `orynth_system_logs`, captura Django/FastAPI/logging Python e logs técnicos de segurança, redaction de segredos, retenção de 90 dias com prune backend reutilizável, `Carregar mais` em blocos de 10 e consulta staff por identificador de usuário no Admin Ops; Dashboard Admin Ops consome resumo agregado staff de saúde operacional incluindo status do daemon com limites configuráveis |
 
 ## Regras de atualização

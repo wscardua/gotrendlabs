@@ -484,7 +484,7 @@ $$("[data-share-native], [data-share-badge]").forEach((button) => {
   button.addEventListener("click", async () => {
     trackShareAction(button.dataset.shareTrack);
     const shareData = {
-      title: button.dataset.shareTitle || "Orynth",
+      title: button.dataset.shareTitle || "Orynth Trends",
       text: button.dataset.shareText || "",
       url: button.dataset.shareUrl || window.location.href,
     };

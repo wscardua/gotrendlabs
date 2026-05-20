@@ -1,10 +1,10 @@
 ---
 id: FEAT-I18N-001
 titulo: "Localização e conteúdo"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: nao_iniciada
-ultima_atualizacao: 2026-05-17
+ultima_atualizacao: 2026-05-20
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -50,6 +50,7 @@ Usuário interage com o sistema no idioma preferido e recebe conteúdo e formata
 
 - conteúdo base e traduzido precisam permanecer rastreáveis
 - identificadores não dependem apenas da tradução
+- branding visível usa `Orynth Trends`, preservando `Orynth Coins` como nome textual da moeda educativa e identificadores técnicos `orynth_*`
 
 ## Responsabilidades por camada
 

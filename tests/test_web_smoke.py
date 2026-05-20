@@ -3554,7 +3554,7 @@ class WebSmokeTests(TestCase):
             self.assertNotContains(response, 'data-share-text="Badge Viewer conquistou')
             self.assertContains(response, "/media/badge_images/founding.png")
             self.assertContains(response, "/media/badge_images/founding-dark.png")
-            self.assertContains(response, "Orynth")
+            self.assertContains(response, "Orynth Trends")
             self.assertContains(response, "testserver/share/badge/founding_member")
             self.assertContains(response, "t=")
             self.assertNotContains(response, "u=50")
@@ -3618,7 +3618,7 @@ class WebSmokeTests(TestCase):
 
         with patch("core.views.get_market", return_value=market):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
-            self.assertContains(response, "Orynth")
+            self.assertContains(response, "Orynth Trends")
             self.assertContains(response, "testserver/share/market/openai-gpt6-2026")
             self.assertContains(response, "Rede social de previsões educativas com reputação pública e resolução auditável")
             self.assertContains(response, "Dispute previsões, construa reputação e ganhe destaque.")
@@ -3653,12 +3653,12 @@ class WebSmokeTests(TestCase):
 
         with patch("core.views.get_market", return_value=resolved_market):
             response = self.client.get(reverse("share-result", args=["resolved-api"]))
-            self.assertContains(response, "Orynth")
+            self.assertContains(response, "Orynth Trends")
             self.assertContains(response, "Resultado vindo da API")
             self.assertContains(response, "<span>Resultado</span><strong>SIM</strong>", html=True)
             self.assertLess(response.content.decode().index("Resultado vindo da API"), response.content.decode().index("<span>Resultado</span>"))
             self.assertContains(response, "testserver/share/result/resolved-api")
-            self.assertNotContains(response, "Resultado publicado no Orynth.")
+            self.assertNotContains(response, "Resultado publicado no Orynth Trends.")
             self.assertContains(response, "Rede social de previsões educativas com reputação pública e resolução auditável")
             self.assertNotContains(response, "Will Costa")
             self.assertNotContains(response, "compartilhou um resultado.")
@@ -3817,7 +3817,7 @@ class WebSmokeTests(TestCase):
             response = self.client.get(reverse("maintenance"))
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "Manutenção de teste.")
-            self.assertContains(response, "Orynth está ficando mais estável.")
+            self.assertContains(response, "Orynth Trends está ficando mais estável.")
             self.assertContains(response, "Entrar como operador")
             self.assertContains(response, "Previsões com reputação pública")
             response = self.client.get(reverse("login"))
@@ -5290,7 +5290,7 @@ class WebSmokeTests(TestCase):
                     "entry_type": "grant_initial",
                     "amount": 2000,
                     "direction": "credit",
-                    "description": "Saldo inicial do Orynth",
+                    "description": "Saldo inicial do Orynth Trends",
                     "reference_type": "auth_register",
                     "reference_id": "20",
                     "created_at": "2026-05-17T00:00:00+00:00",
@@ -5496,7 +5496,7 @@ class WebSmokeTests(TestCase):
                 {
                     "code": "founding_member",
                     "name": "Membro fundador",
-                    "description": "Entrou no Orynth durante a fase inicial.",
+                    "description": "Entrou no Orynth Trends durante a fase inicial.",
                     "status": "earned",
                     "earned_at": "2026-05-17T00:00:00+00:00",
                 }

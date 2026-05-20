@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este guia mostra como usar as specs e as skills do Orynth para evoluir o projeto sem perder memória, sem misturar camadas e sem refazer áreas não impactadas.
+Este guia mostra como usar as specs e as skills do Orynth Trends para evoluir o projeto sem perder memória, sem misturar camadas e sem refazer áreas não impactadas.
 
 ## Ordem de trabalho
 
