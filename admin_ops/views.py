@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -21,6 +22,7 @@ from accounts.api_client import (
     admin_create_market,
     admin_create_subcategory,
     admin_convert_suggestion,
+    admin_get_dashboard_summary,
     admin_deactivate_badge,
     admin_get_badges,
     admin_get_market,
@@ -50,8 +52,23 @@ from accounts.api_client import (
     admin_update_market,
     admin_update_subcategory,
 )
-from accounts.session import admin_api_required, auth_token
-from admin_ops.forms import AdminBadgeForm, AdminCategoryForm, AdminMarketForm, AdminSubcategoryForm, AdminUserNoteForm, AdminUserRoleForm, AdminUserWalletAdjustmentForm, FeedbackRewardForm, MarketResolutionForm, QueueReviewForm
+from accounts.session import USER_KEY, admin_api_required, auth_token
+from admin_ops.forms import (
+    AdminBadgeForm,
+    AdminCategoryForm,
+    AdminMarketForm,
+    AdminSubcategoryForm,
+    AdminUserNoteForm,
+    AdminUserRoleForm,
+    AdminUserWalletAdjustmentForm,
+    FeedbackRewardForm,
+    MaintenanceConfigForm,
+    MarketResolutionForm,
+    QueueReviewForm,
+    SiteEmailConfigForm,
+)
+from admin_ops.models import SiteConfig
+from core.platform_config import load_platform_config, save_platform_config
 
 
 THUMB_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "market_thumbnails", base_url=settings.MEDIA_URL + "market_thumbnails/")
@@ -254,41 +271,98 @@ def _comment_queue_item(comment):
     }
 
 
+def _admin_session_user_label(request):
+    user = request.session.get(USER_KEY) or {}
+    return user.get("handle") or user.get("email") or user.get("display_name") or "staff"
+
+
+def _admin_model_user(request):
+    user = request.session.get(USER_KEY) or {}
+    user_id = user.get("id")
+    if not user_id:
+        return None
+    return get_user_model().objects.filter(id=user_id).first()
+
+
 @admin_api_required
 def dashboard(request):
     token = auth_token(request)
     try:
-        market_data = admin_get_markets(token)
+        dashboard_summary = admin_get_dashboard_summary(token)
     except AuthAPIError as exc:
-        market_data = {"markets": [], "counts": {}}
+        dashboard_summary = {
+            "markets": {},
+            "queues": {},
+            "users": {},
+            "engagement": {},
+            "wallet": {},
+            "badges": {},
+            "system": {},
+            "top_markets": [],
+            "recent_admin_events": [],
+        }
         error = str(exc)
     else:
         error = ""
-    try:
-        queue_data = admin_get_queues(token)
-    except AuthAPIError as exc:
-        queue_data = {"items": [], "counts": {}}
-        error = error or str(exc)
-    pending_suggestions = int(queue_data.get("counts", {}).get("suggestion", {}).get("pending") or 0)
-    pending_feedback = int(queue_data.get("counts", {}).get("feedback", {}).get("pending") or 0)
-    try:
-        comment_counts = admin_get_comments(token).get("comments", [])
-        hidden_comments = sum(1 for comment in comment_counts if comment.get("status") == "hidden")
-        visible_comments = sum(1 for comment in comment_counts if comment.get("status") == "visible")
-    except AuthAPIError:
-        hidden_comments = 0
-        visible_comments = 0
-    ops_summary = {
-        "pending_suggestions": pending_suggestions,
-        "pending_feedback": pending_feedback,
-        "hidden_comments": hidden_comments,
-        "visible_comments": visible_comments,
-        "queue_total": pending_suggestions + pending_feedback + hidden_comments,
-    }
     return render(
         request,
         "admin_ops/dashboard.html",
-        {"market_data": market_data, "ops_summary": ops_summary, "admin_error": error},
+        {"dashboard_summary": dashboard_summary, "admin_error": error},
+    )
+
+
+@admin_api_required
+def config(request):
+    platform_config = load_platform_config()
+    site_config = SiteConfig.get_solo()
+    maintenance_form = MaintenanceConfigForm(
+        request.POST or None,
+        initial={
+            "maintenance_enabled": platform_config.get("maintenance_enabled", False),
+            "maintenance_message": platform_config.get("maintenance_message", ""),
+        },
+        prefix="maintenance",
+    )
+    email_form = SiteEmailConfigForm(
+        request.POST or None,
+        initial={
+            "email_enabled": site_config.email_enabled,
+            "smtp_host": site_config.smtp_host,
+            "smtp_port": site_config.smtp_port,
+            "smtp_username": site_config.smtp_username,
+            "smtp_use_tls": site_config.smtp_use_tls,
+            "smtp_use_ssl": site_config.smtp_use_ssl,
+            "smtp_timeout_seconds": site_config.smtp_timeout_seconds,
+            "default_from_email": site_config.default_from_email,
+            "default_reply_to_email": site_config.default_reply_to_email,
+        },
+        prefix="email",
+    )
+    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid():
+        save_platform_config(
+            {
+                "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
+                "maintenance_message": maintenance_form.cleaned_data["maintenance_message"],
+                "updated_by": _admin_session_user_label(request),
+            }
+        )
+        for field, value in email_form.cleaned_data.items():
+            setattr(site_config, field, value)
+        site_config.updated_by = _admin_model_user(request)
+        site_config.save()
+        messages.success(request, "Configurações atualizadas.")
+        return redirect("admin-ops-config")
+    smtp_secret_configured = bool(settings.ORYNTH_SMTP_PASSWORD or settings.ORYNTH_SMTP_API_KEY)
+    return render(
+        request,
+        "admin_ops/config.html",
+        {
+            "maintenance_form": maintenance_form,
+            "email_form": email_form,
+            "platform_config": platform_config,
+            "site_config": site_config,
+            "smtp_secret_configured": smtp_secret_configured,
+        },
     )
 
 

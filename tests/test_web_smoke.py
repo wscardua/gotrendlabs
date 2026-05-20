@@ -2,8 +2,11 @@ from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from io import StringIO
 import logging
+import os
+from tempfile import TemporaryDirectory
 from urllib.parse import quote, urlparse
 
+from django.conf import settings
 from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.urls import reverse
@@ -15,11 +18,14 @@ from unittest.mock import patch
 from accounts.api_client import AuthAPIError
 from accounts.models import BadgeDefinition, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry
 from accounts.session import TOKEN_KEY, USER_KEY
+from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
+from backend_api.db import database_config
 from backend_api.main import app
 from backend_api.main import _record_wallet_entry
 from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
+from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
 from markets.models import AdminEvent, CommentReaction, Market, MarketComment, MarketOption, MarketSuggestion, Prediction, ProductFeedback
 from system_logs.models import SystemLog
@@ -437,6 +443,115 @@ class BackendAuthAPITests(TestCase):
         )
         self.assertEqual(combo_listing.status_code, 200)
         self.assertGreaterEqual(combo_listing.json()["total"], 1)
+
+    def test_admin_dashboard_summary_contract_staff_gate_and_metrics(self):
+        client = TestClient(app)
+        staff = client.post(
+            "/auth/register",
+            json={"display_name": "Dashboard Staff", "email": "dashboard-staff@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        user = client.post(
+            "/auth/register",
+            json={"display_name": "Dashboard User", "email": "dashboard-user@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        self.assertEqual(staff.status_code, 201)
+        self.assertEqual(user.status_code, 201)
+        staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
+        user_headers = {"Authorization": f"Bearer {user.json()['session']['token']}"}
+        now = timezone.now()
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("dashboard-staff@example.com",))
+                cursor.execute("SELECT id FROM orynth_users WHERE email = %s", ("dashboard-staff@example.com",))
+                staff_id = cursor.fetchone()["id"]
+                cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s", ("openai-gpt6-2026",))
+                market_id = cursor.fetchone()["id"]
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_market_suggestions
+                        (author_id, guest_name, guest_email, question, category, subcategory, kind, suggested_source, rationale, status, admin_note, created_at, updated_at)
+                    VALUES (%s, '', '', 'Contrato operacional pendente?', 'IA', 'Modelos', 'binary', 'Fonte', '', 'pending', '', %s, %s)
+                    """,
+                    (staff_id, now, now),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_product_feedback
+                        (author_id, guest_name, guest_email, feedback_type, severity, description, status, admin_note, created_at, updated_at)
+                    VALUES (%s, '', '', 'bug', 'high', 'Falha importante para dashboard.', 'pending', '', %s, %s)
+                    """,
+                    (staff_id, now, now),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_market_comments
+                        (market_id, author_id, body, status, moderation_note, created_at, updated_at)
+                    VALUES (%s, %s, 'Comentário oculto de teste.', 'hidden', '', %s, %s)
+                    """,
+                    (market_id, staff_id, now, now),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_admin_events
+                        (actor_id, action, entity_type, entity_identifier, note, created_at)
+                    VALUES (%s, 'dashboard_probe', 'market', 'openai-gpt6-2026', 'Evento para resumo', %s)
+                    """,
+                    (staff_id, now),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_system_logs
+                        (created_at, expires_at, level, source, logger_name, event_type, message, request_id, method, path, status_code, duration_ms, user_id, ip_address, user_agent, exception_type, stack_trace, context)
+                    VALUES (%s, %s, 'ERROR', 'fastapi', 'test.dashboard', 'dashboard_error', 'Erro para resumo', 'req-dashboard', 'GET', '/admin/dashboard-summary', 500, 12, %s, '127.0.0.1', 'test', 'RuntimeError', 'RuntimeError: boom', '{}'::jsonb)
+                    """,
+                    (now, now + timedelta(days=90), staff_id),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_site_config
+                        (singleton_key, email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds, default_from_email, default_reply_to_email, updated_by_id, updated_at)
+                    VALUES (1, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '', %s, %s)
+                    ON CONFLICT (singleton_key) DO UPDATE SET
+                        email_enabled = EXCLUDED.email_enabled,
+                        smtp_host = EXCLUDED.smtp_host,
+                        smtp_port = EXCLUDED.smtp_port,
+                        default_from_email = EXCLUDED.default_from_email,
+                        updated_at = EXCLUDED.updated_at
+                    """,
+                    (staff_id, now),
+                )
+
+        with TemporaryDirectory() as tmpdir:
+            config_path = os.path.join(tmpdir, "platform_config.json")
+            with open(config_path, "w", encoding="utf-8") as config_file:
+                config_file.write('{"maintenance_enabled": true}')
+            with patch.dict(
+                os.environ,
+                {
+                    "ORYNTH_RUNTIME_CONFIG_PATH": config_path,
+                    "ORYNTH_SMTP_PASSWORD": "secret",
+                    "RECAPTCHA_ENABLED": "1",
+                },
+            ):
+                forbidden = client.get("/admin/dashboard-summary", headers=user_headers)
+                self.assertEqual(forbidden.status_code, 403)
+                summary = client.get("/admin/dashboard-summary", headers=staff_headers)
+
+        self.assertEqual(summary.status_code, 200)
+        payload = summary.json()
+        self.assertIn("markets", payload)
+        self.assertIn("queues", payload)
+        self.assertIn("system", payload)
+        self.assertGreaterEqual(payload["markets"]["open"], 1)
+        self.assertGreaterEqual(payload["queues"]["suggestions_pending"], 1)
+        self.assertGreaterEqual(payload["queues"]["feedback_high_pending"], 1)
+        self.assertGreaterEqual(payload["queues"]["comments_hidden"], 1)
+        self.assertGreaterEqual(payload["system"]["logs_error_7d"], 1)
+        self.assertTrue(payload["system"]["maintenance_enabled"])
+        self.assertTrue(payload["system"]["recaptcha_enabled"])
+        self.assertEqual(payload["system"]["smtp_status"], "ready")
+        self.assertTrue(any(event["action"] == "dashboard_probe" for event in payload["recent_admin_events"]))
+        self.assertTrue(any(market["slug"] == "openai-gpt6-2026" for market in payload["top_markets"]))
 
     def test_system_log_capture_and_python_logging_handler(self):
         client = TestClient(app)
@@ -2934,6 +3049,183 @@ class WebSmokeTests(TestCase):
         market.refresh_from_db()
         self.assertEqual(market.share_count, 1)
 
+    def test_admin_config_persists_maintenance_json_and_smtp_database_config(self):
+        staff = get_user_model().objects.create_user(
+            username="@configstaff",
+            email="config-staff@example.com",
+            password="testpass123",
+            first_name="Config Staff",
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        with TemporaryDirectory() as tmpdir, override_settings(
+            ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
+            ORYNTH_SMTP_PASSWORD="super-secret-smtp",
+            ORYNTH_SMTP_API_KEY="",
+        ):
+            response = self.client.get(reverse("admin-ops-config"))
+            self.assertContains(response, "Controles da plataforma")
+            self.assertContains(response, "Segredo SMTP")
+            self.assertContains(response, "Configurado por ambiente")
+            self.assertNotContains(response, "super-secret-smtp")
+
+            response = self.client.post(
+                reverse("admin-ops-config"),
+                {
+                    "maintenance-maintenance_enabled": "on",
+                    "maintenance-maintenance_message": "Voltamos logo depois da janela operacional.",
+                    "email-email_enabled": "on",
+                    "email-smtp_host": "smtp.example.com",
+                    "email-smtp_port": "587",
+                    "email-smtp_username": "mailer@example.com",
+                    "email-smtp_use_tls": "on",
+                    "email-smtp_timeout_seconds": "15",
+                    "email-default_from_email": "no-reply@example.com",
+                    "email-default_reply_to_email": "support@example.com",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            config = load_platform_config()
+            self.assertTrue(config["maintenance_enabled"])
+            self.assertEqual(config["maintenance_message"], "Voltamos logo depois da janela operacional.")
+            self.assertEqual(config["updated_by"], "@configstaff")
+            self.assertNotIn("super-secret-smtp", str(config))
+
+            site_config = SiteConfig.get_solo()
+            self.assertTrue(site_config.email_enabled)
+            self.assertEqual(site_config.smtp_host, "smtp.example.com")
+            self.assertEqual(site_config.smtp_port, 587)
+            self.assertTrue(site_config.smtp_use_tls)
+            self.assertFalse(site_config.smtp_use_ssl)
+            self.assertEqual(site_config.smtp_timeout_seconds, 15)
+            self.assertEqual(site_config.default_from_email, "no-reply@example.com")
+            self.assertEqual(site_config.default_reply_to_email, "support@example.com")
+            self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
+
+    def test_admin_config_rejects_tls_and_ssl_together(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 404,
+            "handle": "@staff",
+            "email": "staff@example.com",
+            "display_name": "Staff",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
+            response = self.client.post(
+                reverse("admin-ops-config"),
+                {
+                    "maintenance-maintenance_message": "Manutenção rápida.",
+                    "email-smtp_host": "smtp.example.com",
+                    "email-smtp_port": "465",
+                    "email-smtp_use_tls": "on",
+                    "email-smtp_use_ssl": "on",
+                    "email-smtp_timeout_seconds": "10",
+                    "email-default_from_email": "no-reply@example.com",
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "TLS e SSL não podem ficar ativos ao mesmo tempo.")
+
+    def test_maintenance_mode_redirects_public_pages_without_blocking_admin_or_assets(self):
+        with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
+            save_platform_config(
+                {
+                    "maintenance_enabled": True,
+                    "maintenance_message": "Manutenção de teste.",
+                    "updated_by": "@ops",
+                }
+            )
+            response = self.client.get(reverse("home"))
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response["Location"], reverse("maintenance"))
+            response = self.client.get(reverse("rankings"))
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(response["Location"], reverse("maintenance"))
+            response = self.client.get(reverse("maintenance"))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Manutenção de teste.")
+            self.assertContains(response, "Orynth está ficando mais estável.")
+            self.assertContains(response, "Entrar como operador")
+            self.assertContains(response, "Previsões com reputação pública")
+            response = self.client.get(reverse("login"))
+            self.assertEqual(response.status_code, 200)
+            response = self.client.get(reverse("admin-ops-config"))
+            self.assertEqual(response.status_code, 302)
+            self.assertIn(reverse("login"), response["Location"])
+            response = self.client.get(f"{settings.STATIC_URL}css/orynth.css")
+            self.assertNotEqual(response.status_code, 302)
+
+    def test_staff_can_browse_public_site_during_maintenance_with_operator_banner(self):
+        staff = get_user_model().objects.create_user(
+            username="@maintstaff",
+            email="maint-staff@example.com",
+            password="testpass123",
+            first_name="Maint Staff",
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+            "is_superuser": False,
+        }
+        session.save()
+        with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
+            save_platform_config(
+                {
+                    "maintenance_enabled": True,
+                    "maintenance_message": "Manutenção para visitantes.",
+                    "updated_by": "@ops",
+                }
+            )
+            response = self.client.get(reverse("home"))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Modo manutenção ativo")
+            self.assertContains(response, "Você está navegando como operador")
+            self.assertContains(response, reverse("admin-ops-config"))
+
+    def test_database_config_prefers_fastapi_postgres_environment(self):
+        with patch.dict(
+            os.environ,
+            {
+                "FASTAPI_POSTGRES_DB": "orynth_api",
+                "FASTAPI_POSTGRES_USER": "orynth_fastapi",
+                "FASTAPI_POSTGRES_PASSWORD": "fastapi-secret",
+                "FASTAPI_POSTGRES_HOST": "db.internal",
+                "FASTAPI_POSTGRES_PORT": "6543",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                database_config(),
+                {
+                    "dbname": "orynth_api",
+                    "user": "orynth_fastapi",
+                    "password": "fastapi-secret",
+                    "host": "db.internal",
+                    "port": "6543",
+                },
+            )
+
     def test_admin_ops_does_not_render_local_market_data_when_api_errors(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
         market.view_count = 12
@@ -3050,6 +3342,7 @@ class WebSmokeTests(TestCase):
     def test_admin_ops_requires_staff_and_renders_api_data(self):
         admin_routes = [
             reverse("admin-ops-dashboard"),
+            reverse("admin-ops-config"),
             reverse("admin-ops-markets"),
             reverse("admin-ops-users"),
             reverse("admin-ops-user-detail", args=[1]),
@@ -3119,12 +3412,73 @@ class WebSmokeTests(TestCase):
             ]
         }
 
-        with patch("admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock:
+        dashboard_summary = {
+            "markets": {"total": 1, "open": 1, "draft": 0, "locked": 0, "closing_24h": 0, "total_views": 42, "total_shares": 7},
+            "queues": {
+                "suggestions_pending": 1,
+                "feedback_pending": 2,
+                "feedback_high_pending": 1,
+                "comments_hidden": 0,
+                "action_total": 4,
+            },
+            "users": {"total": 3, "active": 2, "deactivated": 1, "staff": 1, "superuser": 0, "new_7d": 1},
+            "engagement": {
+                "predictions_total": 12,
+                "predictions_open": 4,
+                "predictions_resolved": 7,
+                "predictions_canceled": 1,
+                "predictions_7d": 5,
+                "comments_total": 3,
+                "comments_visible": 3,
+                "comments_hidden": 0,
+            },
+            "wallet": {"available_oc": 2000, "locked_oc": 50},
+            "badges": {"active_catalog": 2, "awarded": 6},
+            "system": {
+                "logs_error_7d": 1,
+                "logs_warning_7d": 2,
+                "logs_critical_7d": 0,
+                "admin_events_7d": 3,
+                "maintenance_enabled": True,
+                "smtp_status": "pending",
+                "recaptcha_enabled": True,
+            },
+            "top_markets": [
+                {
+                    "slug": "openai-gpt6-2026",
+                    "title": "Mercado admin API",
+                    "status": "open",
+                    "status_label": "Aberto",
+                    "category": "IA",
+                    "subcategory": "Modelos",
+                    "view_count": 42,
+                    "share_count": 7,
+                }
+            ],
+            "recent_admin_events": [
+                {
+                    "action": "market_publish",
+                    "entity_type": "market",
+                    "entity_identifier": "openai-gpt6-2026",
+                    "note": "Publicado",
+                    "created_at": "2026-05-20T00:00:00+00:00",
+                    "actor": "staffuser",
+                }
+            ],
+        }
+
+        with patch("admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary) as dashboard_mock, patch("admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock:
             response = self.client.get(reverse("admin-ops-dashboard"))
             self.assertContains(response, "Mercado admin API")
+            self.assertContains(response, "Ação necessária")
+            self.assertContains(response, "Saúde técnica")
+            self.assertContains(response, "Top mercados")
+            self.assertContains(response, "Eventos administrativos recentes")
+            self.assertContains(response, "Pendente")
             self.assertContains(response, reverse("admin-ops-resolution"))
             self.assertContains(response, reverse("admin-ops-users"))
             self.assertNotContains(response, 'class="panel admin-menu"')
+            dashboard_mock.assert_called_once_with("staff-token")
             response = self.client.get(reverse("admin-ops-markets"))
             self.assertContains(response, "Mercado admin API")
             self.assertContains(response, "Destaque")

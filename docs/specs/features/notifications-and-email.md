@@ -33,11 +33,13 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 - confirmação de previsão
 - aviso de mercado resolvido
 - comunicações de feedback/sugestão quando definido
+- configuração operacional SMTP não sensível no Admin Ops
 
 ## Escopo excluído
 
 - automação de marketing complexa
 - push mobile
+- armazenamento de senha/API key SMTP no banco ou na interface administrativa
 
 ## Fluxo do usuário
 
@@ -64,6 +66,7 @@ Usuário recebe mensagens coerentes com ações relevantes ou estados importante
 - eventos consumidos
 - templates
 - trilha de envio
+- configuração SMTP singleton: ativo, host, porta, usuário, TLS/SSL, timeout, remetente e reply-to
 
 ## Contratos afetados
 
@@ -77,15 +80,18 @@ Usuário recebe mensagens coerentes com ações relevantes ou estados importante
 ## Observabilidade e operação
 
 - taxa de entrega, falha e reenvio
+- parâmetros SMTP são administráveis por staff; segredo de envio vem de variável de ambiente/secret manager
 
 ## Testes esperados
 
 - integração de evento para envio
 - verificação de idioma correto
+- validação de configuração SMTP, incluindo bloqueio de TLS e SSL simultâneos
 
 ## Critérios de aceite
 
 - mensagens são disparadas pelos eventos corretos e no idioma esperado
+- staff consegue visualizar e alterar parâmetros SMTP não sensíveis sem expor senha/API key
 
 ## Impacto de mudança
 

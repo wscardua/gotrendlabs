@@ -7,39 +7,205 @@
       <div>
         <span class="eyebrow">Painel customizado</span>
         <h1 class="large-title">Operação e saúde da plataforma</h1>
-        <p>Resumo diário para acompanhar publicação, filas e pontos que pedem atenção editorial.</p>
+        <p>Leitura rápida de publicação, filas, usuários, reputação, configuração e pontos que pedem ação do time.</p>
       </div>
+      <a class="btn small ghost" href="{% url 'admin-ops-config' %}">Config</a>
     </div>
-    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
-    <div class="admin-grid ops-grid">
-      <a class="admin-card ops-card" href="{% url 'admin-ops-markets' %}?status=open"><span class="eyebrow">Feed público</span><strong>{{ market_data.counts.open|default:0 }}</strong><p>Mercados abertos e disponíveis para previsão.</p></a>
-      <a class="admin-card ops-card" href="{% url 'admin-ops-markets' %}?status=draft"><span class="eyebrow">Curadoria</span><strong>{{ market_data.counts.draft|default:0 }}</strong><p>Rascunhos aguardando revisão antes de publicar.</p></a>
-      <a class="admin-card ops-card" href="{% url 'admin-ops-markets' %}?status=locked"><span class="eyebrow">Resolução</span><strong>{{ market_data.counts.locked|default:0 }}</strong><p>Mercados fechados que podem precisar de resolução.</p></a>
-      <a class="admin-card ops-card" href="{% url 'admin-ops-moderation' %}"><span class="eyebrow">Filas</span><strong>{{ ops_summary.queue_total|default:0 }}</strong><p>{{ ops_summary.pending_suggestions|default:0 }} sugestões, {{ ops_summary.pending_feedback|default:0 }} feedbacks e {{ ops_summary.hidden_comments|default:0 }} comentários ocultos.</p></a>
-    </div>
-    <section class="panel admin-dashboard-panel">
-      <div class="section-head compact">
-        <div>
-          <h3>Mercados recentes</h3>
-          <p>Atalho operacional para editar ou visualizar o contrato do mercado.</p>
+    {% if admin_error %}
+      <div class="admin-alert risk">Resumo operacional indisponível: {{ admin_error }}</div>
+    {% endif %}
+    {% with markets=dashboard_summary.markets queues=dashboard_summary.queues users=dashboard_summary.users engagement=dashboard_summary.engagement wallet=dashboard_summary.wallet badges=dashboard_summary.badges system=dashboard_summary.system %}
+      <div class="admin-dashboard-kpis">
+        <a class="admin-card dashboard-kpi {% if queues.action_total %}is-risk{% endif %}" href="{% url 'admin-ops-moderation' %}">
+          <span>Ação necessária</span>
+          <strong>{{ queues.action_total|default:0 }}</strong>
+          <small>Filas, comentários e mercados travados</small>
+        </a>
+        <a class="admin-card dashboard-kpi" href="{% url 'admin-ops-markets' %}?status=open">
+          <span>Mercados abertos</span>
+          <strong>{{ markets.open|default:0 }}</strong>
+          <small>{{ markets.total_views|default:0 }} views · {{ markets.total_shares|default:0 }} shares</small>
+        </a>
+        <a class="admin-card dashboard-kpi" href="{% url 'admin-ops-users' %}">
+          <span>Usuários ativos</span>
+          <strong>{{ users.active|default:0 }}</strong>
+          <small>{{ users.new_7d|default:0 }} novos em 7 dias</small>
+        </a>
+        <a class="admin-card dashboard-kpi" href="{% url 'admin-ops-markets' %}">
+          <span>Previsões 7 dias</span>
+          <strong>{{ engagement.predictions_7d|default:0 }}</strong>
+          <small>{{ engagement.predictions_open|default:0 }} abertas</small>
+        </a>
+        <a class="admin-card dashboard-kpi {% if system.logs_critical_7d or system.logs_error_7d %}is-risk{% endif %}" href="{% url 'admin-ops-system-logs' %}?level=ERROR">
+          <span>Erros 7 dias</span>
+          <strong>{{ system.logs_error_7d|default:0 }}</strong>
+          <small>{{ system.logs_critical_7d|default:0 }} críticos · {{ system.logs_warning_7d|default:0 }} warnings</small>
+        </a>
+        <a class="admin-card dashboard-kpi" href="{% url 'admin-ops-users' %}?order=wallet_desc">
+          <span>OC bloqueado</span>
+          <strong>{{ wallet.locked_oc|default:0 }}</strong>
+          <small>{{ wallet.available_oc|default:0 }} OC disponível</small>
+        </a>
+      </div>
+
+      <div class="dashboard-split">
+        <section class="panel dashboard-panel">
+          <div class="section-head compact">
+            <div>
+              <h3>Ação necessária</h3>
+              <p>Filas e estados que podem bloquear operação ou experiência pública.</p>
+            </div>
+            <a class="btn small ghost" href="{% url 'admin-ops-moderation' %}">Filas</a>
+          </div>
+          <div class="dashboard-metric-list">
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-resolution' %}">
+              <span>Mercados fechados sem resolução</span>
+              <strong class="{% if markets.locked %}risk-text{% endif %}">{{ markets.locked|default:0 }}</strong>
+            </a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-markets' %}">
+              <span>Fechamento nas próximas 24h</span>
+              <strong>{{ markets.closing_24h|default:0 }}</strong>
+            </a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-moderation' %}">
+              <span>Sugestões pendentes</span>
+              <strong>{{ queues.suggestions_pending|default:0 }}</strong>
+            </a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-moderation' %}">
+              <span>Feedbacks pendentes</span>
+              <strong>{{ queues.feedback_pending|default:0 }}</strong>
+            </a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-moderation' %}">
+              <span>Feedbacks altos pendentes</span>
+              <strong class="{% if queues.feedback_high_pending %}risk-text{% endif %}">{{ queues.feedback_high_pending|default:0 }}</strong>
+            </a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-moderation' %}">
+              <span>Comentários ocultos</span>
+              <strong>{{ queues.comments_hidden|default:0 }}</strong>
+            </a>
+          </div>
+        </section>
+
+        <section class="panel dashboard-panel">
+          <div class="section-head compact">
+            <div>
+              <h3>Saúde técnica</h3>
+              <p>Configuração de plataforma, logs recentes e atividade administrativa.</p>
+            </div>
+            <a class="btn small ghost" href="{% url 'admin-ops-system-logs' %}">Logs</a>
+          </div>
+          <div class="dashboard-health-grid">
+            <a class="dashboard-health-item {% if system.maintenance_enabled %}is-risk{% endif %}" href="{% url 'admin-ops-config' %}">
+              <span>Manutenção</span>
+              <strong>{% if system.maintenance_enabled %}Ativa{% else %}Inativa{% endif %}</strong>
+            </a>
+            <a class="dashboard-health-item {% if system.smtp_status == 'pending' %}is-warn{% endif %}" href="{% url 'admin-ops-config' %}">
+              <span>SMTP</span>
+              <strong>
+                {% if system.smtp_status == "ready" %}Pronto{% elif system.smtp_status == "pending" %}Pendente{% else %}Inativo{% endif %}
+              </strong>
+            </a>
+            <div class="dashboard-health-item">
+              <span>reCAPTCHA</span>
+              <strong>{% if system.recaptcha_enabled %}Ativo{% else %}Inativo{% endif %}</strong>
+            </div>
+            <a class="dashboard-health-item {% if system.logs_critical_7d %}is-risk{% endif %}" href="{% url 'admin-ops-system-logs' %}?level=CRITICAL">
+              <span>Críticos 7d</span>
+              <strong>{{ system.logs_critical_7d|default:0 }}</strong>
+            </a>
+            <a class="dashboard-health-item {% if system.logs_warning_7d %}is-warn{% endif %}" href="{% url 'admin-ops-system-logs' %}?level=WARNING">
+              <span>Warnings 7d</span>
+              <strong>{{ system.logs_warning_7d|default:0 }}</strong>
+            </a>
+            <div class="dashboard-health-item">
+              <span>Eventos admin 7d</span>
+              <strong>{{ system.admin_events_7d|default:0 }}</strong>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="dashboard-split">
+        <section class="panel dashboard-panel">
+          <div class="section-head compact">
+            <div>
+              <h3>Engajamento</h3>
+              <p>Volume de atividade, comentários e usuários cadastrados.</p>
+            </div>
+          </div>
+          <div class="dashboard-metric-list compact">
+            <div class="dashboard-metric-row"><span>Previsões totais</span><strong>{{ engagement.predictions_total|default:0 }}</strong></div>
+            <div class="dashboard-metric-row"><span>Previsões resolvidas</span><strong>{{ engagement.predictions_resolved|default:0 }}</strong></div>
+            <div class="dashboard-metric-row"><span>Previsões canceladas</span><strong>{{ engagement.predictions_canceled|default:0 }}</strong></div>
+            <div class="dashboard-metric-row"><span>Comentários visíveis</span><strong>{{ engagement.comments_visible|default:0 }}</strong></div>
+            <div class="dashboard-metric-row"><span>Usuários desativados</span><strong>{{ users.deactivated|default:0 }}</strong></div>
+          </div>
+        </section>
+
+        <section class="panel dashboard-panel">
+          <div class="section-head compact">
+            <div>
+              <h3>Economia e reputação</h3>
+              <p>Indicadores agregados de OC e badges concedidas.</p>
+            </div>
+          </div>
+          <div class="dashboard-metric-list compact">
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-users' %}?role=staff"><span>Staff</span><strong>{{ users.staff|default:0 }}</strong></a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-users' %}?role=superuser"><span>Superusers</span><strong>{{ users.superuser|default:0 }}</strong></a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-badges' %}"><span>Badges concedidas</span><strong>{{ badges.awarded|default:0 }}</strong></a>
+            <a class="dashboard-metric-row" href="{% url 'admin-ops-badges' %}"><span>Badges ativas no catálogo</span><strong>{{ badges.active_catalog|default:0 }}</strong></a>
+            <div class="dashboard-metric-row"><span>OC disponível</span><strong>{{ wallet.available_oc|default:0 }}</strong></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="panel admin-dashboard-panel">
+        <div class="section-head compact">
+          <div>
+            <h3>Top mercados</h3>
+            <p>Mercados com maior sinal de leitura e compartilhamento.</p>
+          </div>
+          <a class="btn small ghost" href="{% url 'admin-ops-markets' %}">Ver todos</a>
         </div>
-        <a class="btn small ghost" href="{% url 'admin-ops-markets' %}">Ver todos</a>
-      </div>
-      <table class="table">
-        <tr><th>Mercado</th><th>Status</th><th>Categoria</th><th>Destaque</th><th>Ação</th></tr>
-        {% for market in market_data.markets|slice:":5" %}
-          <tr>
-            <td>{{ market.title }}</td>
-            <td>{{ market.status_label }}</td>
-            <td>{{ market.category }} / {{ market.subcategory }}</td>
-            <td>{% if market.is_featured %}<span class="tag hot">Destaque</span>{% else %}<span class="tag">Padrão</span>{% endif %}</td>
-            <td><a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a></td>
-          </tr>
-        {% empty %}
-          <tr><td colspan="5">Nenhum mercado cadastrado.</td></tr>
-        {% endfor %}
-      </table>
-    </section>
+        <table class="table dashboard-table">
+          <tr><th>Mercado</th><th>Status</th><th>Categoria</th><th>Views</th><th>Shares</th><th>Ação</th></tr>
+          {% for market in dashboard_summary.top_markets %}
+            <tr>
+              <td><strong>{{ market.title }}</strong></td>
+              <td>{{ market.status_label|default:market.status }}</td>
+              <td>{{ market.category }}{% if market.subcategory %} / {{ market.subcategory }}{% endif %}</td>
+              <td>{{ market.view_count|default:0 }}</td>
+              <td>{{ market.share_count|default:0 }}</td>
+              <td><a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar</a></td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="6">Nenhum mercado encontrado no resumo operacional.</td></tr>
+          {% endfor %}
+        </table>
+      </section>
+
+      <section class="panel admin-dashboard-panel">
+        <div class="section-head compact">
+          <div>
+            <h3>Eventos administrativos recentes</h3>
+            <p>Últimas ações registradas por operadores da plataforma.</p>
+          </div>
+        </div>
+        <table class="table dashboard-table">
+          <tr><th>Ação</th><th>Entidade</th><th>Operador</th><th>Nota</th><th>Quando</th></tr>
+          {% for event in dashboard_summary.recent_admin_events %}
+            <tr>
+              <td><strong>{{ event.action }}</strong></td>
+              <td>{{ event.entity_type }}{% if event.entity_identifier %} · {{ event.entity_identifier }}{% endif %}</td>
+              <td>{{ event.actor }}</td>
+              <td>{{ event.note|default:"-" }}</td>
+              <td>{{ event.created_at|slice:":16"|default:"-" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">Nenhum evento administrativo recente.</td></tr>
+          {% endfor %}
+        </table>
+      </section>
+    {% endwith %}
   </section>
 </main>
 {% endblock %}

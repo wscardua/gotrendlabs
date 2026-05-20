@@ -654,3 +654,29 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: evoluir alertas, paginação avançada e integração externa de observabilidade quando priorizado
 - Reversão lógica: ocultar telas/rotas de logs no Admin Ops e manter tabela para auditoria técnica temporária até expiração
+
+## WFLOW-20260520-002
+
+- Tipo: `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-NOTIFY-001`, `FEAT-OPSLOG-001`
+- Objetivo: implementar Config operacional, modo manutenção, separação de credenciais PostgreSQL por serviço, SMTP não sensível persistido e Dashboard Admin Ops ampliado com saúde operacional
+- Etapa atual: concluído; `.venv/bin/python manage.py check`, `.venv/bin/python manage.py makemigrations --check --dry-run`, `.venv/bin/python manage.py test` e `git diff --check` executados com sucesso em 2026-05-20
+- Artefatos afetados:
+  - `backend_api/`
+  - `accounts/api_client.py`
+  - `admin_ops/`
+  - `core/`
+  - `config/`
+  - `templates/`
+  - `static/css/orynth.css`
+  - `.env.example`
+  - `README.md`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: evoluir envio real em `communications`, criação operacional de roles PostgreSQL de menor privilégio e gráficos/históricos do dashboard quando priorizado
+- Reversão lógica: ocultar Config/Dashboard ampliado no Admin Ops, manter `orynth_site_config` preservada e desativar middleware de manutenção se necessário

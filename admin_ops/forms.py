@@ -6,6 +6,48 @@ from django import forms
 PROBABILITY_QUANT = Decimal("0.0001")
 
 
+class MaintenanceConfigForm(forms.Form):
+    maintenance_enabled = forms.BooleanField(label="Modo manutenção ativo", required=False)
+    maintenance_message = forms.CharField(
+        label="Mensagem pública",
+        max_length=280,
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean_maintenance_message(self):
+        message = (self.cleaned_data.get("maintenance_message") or "").strip()
+        if self.cleaned_data.get("maintenance_enabled") and not message:
+            raise forms.ValidationError("Informe a mensagem exibida na página de manutenção.")
+        return message
+
+
+class SiteEmailConfigForm(forms.Form):
+    email_enabled = forms.BooleanField(label="Envio de email ativo", required=False)
+    smtp_host = forms.CharField(label="Servidor SMTP", max_length=255, required=False)
+    smtp_port = forms.IntegerField(label="Porta", min_value=1, max_value=65535, initial=587)
+    smtp_username = forms.CharField(label="Usuário SMTP", max_length=255, required=False)
+    smtp_use_tls = forms.BooleanField(label="Usar TLS", required=False, initial=True)
+    smtp_use_ssl = forms.BooleanField(label="Usar SSL", required=False)
+    smtp_timeout_seconds = forms.IntegerField(label="Timeout em segundos", min_value=1, max_value=120, initial=10)
+    default_from_email = forms.EmailField(label="Email remetente padrão", required=False)
+    default_reply_to_email = forms.EmailField(label="Reply-to padrão", required=False)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get("smtp_use_tls") and cleaned_data.get("smtp_use_ssl"):
+            raise forms.ValidationError("TLS e SSL não podem ficar ativos ao mesmo tempo.")
+        if cleaned_data.get("email_enabled"):
+            required_fields = {
+                "smtp_host": "Informe o servidor SMTP.",
+                "default_from_email": "Informe o email remetente padrão.",
+            }
+            for field, error in required_fields.items():
+                if not cleaned_data.get(field):
+                    self.add_error(field, error)
+        return cleaned_data
+
+
 def _display_probability(value):
     return int(Decimal(str(value or 0)).quantize(PROBABILITY_QUANT).to_integral_value(rounding=ROUND_DOWN))
 

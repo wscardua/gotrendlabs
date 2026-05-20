@@ -6,6 +6,21 @@ from psycopg.rows import dict_row
 
 
 def database_config():
+    fastapi_config = {
+        "dbname": os.environ.get("FASTAPI_POSTGRES_DB"),
+        "user": os.environ.get("FASTAPI_POSTGRES_USER"),
+        "password": os.environ.get("FASTAPI_POSTGRES_PASSWORD"),
+        "host": os.environ.get("FASTAPI_POSTGRES_HOST"),
+        "port": os.environ.get("FASTAPI_POSTGRES_PORT"),
+    }
+    if any(fastapi_config.values()):
+        return {
+            "dbname": fastapi_config["dbname"] or os.environ.get("POSTGRES_DB", "orynth"),
+            "user": fastapi_config["user"] or os.environ.get("POSTGRES_USER", "orynth"),
+            "password": fastapi_config["password"] or os.environ.get("POSTGRES_PASSWORD", "orynth_dev_password"),
+            "host": fastapi_config["host"] or os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+            "port": fastapi_config["port"] or os.environ.get("POSTGRES_PORT", "5432"),
+        }
     try:
         from django.conf import settings
 

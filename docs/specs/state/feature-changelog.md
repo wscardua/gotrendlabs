@@ -15,6 +15,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-OPSLOG-001
 
+### 2026-05-20 - v0.3
+- FastAPI passou a expor `GET /admin/dashboard-summary` como contrato staff agregado para saúde operacional da plataforma
+- Dashboard Admin Ops passou a renderizar KPIs, ação necessária, saúde técnica, top mercados e eventos administrativos recentes a partir desse contrato
+- métricas recentes usam janela de 7 dias e preservam agregações operacionais sem recalcular regras de domínio
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.2
 - Admin Ops passou a paginar o browse de logs e preservar filtros entre páginas
 - filtro de usuário passou a usar identificador pesquisável por `@handle`, nome, email ou ID, carregando usuários comuns, staff e superusers
@@ -476,6 +482,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-NOTIFY-001
+
+### 2026-05-20 - v0.2
+- Admin Ops passou a persistir configuração SMTP não sensível em `orynth_site_config`
+- senha/API key SMTP permanecem fora do banco, via `ORYNTH_SMTP_PASSWORD` ou `ORYNTH_SMTP_API_KEY`
+- TLS e SSL são mutuamente exclusivos na configuração operacional
+- status de implementação: `parcial`
 
 ### 2026-05-17 - v0.1
 - spec inicial criada

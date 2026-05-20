@@ -67,3 +67,12 @@
 - registrada política pública de uso com leitura em modal no cadastro, mantendo aceite obrigatório versionado
 - registrado que login/cadastro mantêm navegação pública compacta e retorno `← Feed` no primeiro painel de conteúdo
 - registrado ticket de onboarding do cadastro selecionado por maior `view_count` entre mercados publicados não cancelados, excluindo `draft` e `canceled`, com fallback para mercado mais recente em empate/ausência de visualizações
+
+## 2026-05-20
+
+- registrada área Config no Admin Ops para modo manutenção em runtime JSON e parâmetros SMTP não sensíveis em banco
+- registrado que segredo SMTP permanece fora do banco/interface, via ambiente ou secret manager
+- registrada separação operacional de credenciais PostgreSQL por serviço Django/FastAPI com fallback local `POSTGRES_*`
+- registrado `GET /admin/dashboard-summary` como contrato staff agregado para Dashboard Admin Ops
+- registrado que o Dashboard Admin Ops usa métricas de saúde operacional sem consultas locais espalhadas no Django
+- atualizado mapa de integração para refletir JSON runtime de manutenção, `orynth_site_config`, SMTP via ambiente e resumo operacional centralizado na FastAPI
