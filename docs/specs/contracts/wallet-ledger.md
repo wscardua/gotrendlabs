@@ -20,6 +20,7 @@
 - `manual_adjustment`
 - `reward_feedback`
 - `reward_suggestion`
+- `educational_recharge`
 
 ## Campos mínimos
 
@@ -62,6 +63,10 @@
 - `prediction_loss` deve usar `direction="settle"` e baixar stake bloqueado sem alterar saldo disponível.
 - `reward_feedback` deve ser `credit`, usar `reference_type="feedback"` e apontar para o feedback revisado.
 - `reward_suggestion` deve ser `credit`, usar `reference_type="suggestion"` e apontar para a sugestão revisada.
+- `educational_recharge` deve ser `credit`, usar `reference_type="wallet_recharge_request"` e apontar para a solicitação aprovada.
 - Recompensas operacionais exigem usuário cadastrado e valor inteiro positivo.
 - Uma recompensa operacional não pode ser registrada mais de uma vez para o mesmo `entry_type`, `reference_type` e `reference_id`.
 - Recompensas por feedback ou sugestão não geram reputação.
+- Recarga educativa aprovada não gera reputação nem incrementa `total_earned_oc`.
+- Solicitação de recarga educativa deve ser bloqueada quando `available_oc` for maior que `orynth_site_config.wallet_recharge_min_balance_oc`.
+- Usuário pode manter no máximo uma solicitação de recarga educativa `pending`; novas solicitações ficam bloqueadas até aprovação ou rejeição administrativa.

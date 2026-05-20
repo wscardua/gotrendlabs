@@ -138,6 +138,21 @@ class LedgerResponse(BaseModel):
     entries: List[LedgerEntryResponse]
 
 
+class WalletRechargeRequestResponse(BaseModel):
+    id: int
+    status: str
+    status_label: str
+    amount_oc: Optional[int] = None
+    admin_note: str = ""
+    created_at: str
+    created_at_label: str = ""
+    reviewed_at: Optional[str] = None
+
+
+class WalletRechargeRequestListResponse(BaseModel):
+    requests: List[WalletRechargeRequestResponse]
+
+
 class AdminUserResponse(BaseModel):
     id: int
     handle: str
@@ -552,6 +567,15 @@ class FeedbackRewardPayload(BaseModel):
 class SuggestionRewardPayload(BaseModel):
     amount_oc: int = Field(gt=0, le=10000)
     note: str = ""
+
+
+class WalletRechargeApprovalPayload(BaseModel):
+    amount_oc: int = Field(gt=0, le=10000)
+    note: str = ""
+
+
+class WalletRechargeRejectPayload(BaseModel):
+    note: str = Field(min_length=1, max_length=2000)
 
 
 class QueueItemResponse(BaseModel):

@@ -22,6 +22,10 @@
           <span>Segredo SMTP</span>
           <strong>{% if smtp_secret_configured %}Configurado{% else %}Ausente{% endif %}</strong>
         </div>
+        <div>
+          <span>Piso recarga</span>
+          <strong>{{ site_config.wallet_recharge_min_balance_oc }} OC</strong>
+        </div>
       </div>
     </div>
 
@@ -30,6 +34,7 @@
     {% endif %}
     {% if maintenance_form.non_field_errors %}<div class="notice red">{{ maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if economy_form.non_field_errors %}<div class="notice red">{{ economy_form.non_field_errors|join:", " }}</div>{% endif %}
 
     <form class="admin-config-surface" method="post">
       {% csrf_token %}
@@ -62,6 +67,28 @@
             <strong>{{ platform_config.updated_at|default:"Ainda não registrada" }}</strong>
             <span>Operador</span>
             <strong>{{ platform_config.updated_by|default:"-" }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Economia educativa</span>
+            <h2>Recarga de wallet</h2>
+            <p>Define quando o usuário pode entrar na fila de recarga educativa. A aprovação e o valor final continuam sob decisão administrativa.</p>
+          </div>
+          <span class="config-status is-on">{{ site_config.wallet_recharge_min_balance_oc }} OC</span>
+        </div>
+        <div class="config-controls">
+          <label class="field compact-field">
+            <span>Saldo máximo para solicitar</span>
+            {{ economy_form.wallet_recharge_min_balance_oc }}
+            {% if economy_form.wallet_recharge_min_balance_oc.errors %}<small>{{ economy_form.wallet_recharge_min_balance_oc.errors|join:", " }}</small>{% endif %}
+          </label>
+          <div class="config-meta">
+            <span>Regra ativa</span>
+            <strong>Usuários com saldo disponível até {{ site_config.wallet_recharge_min_balance_oc }} OC podem solicitar recarga.</strong>
           </div>
         </div>
       </section>

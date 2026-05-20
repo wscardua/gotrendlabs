@@ -64,6 +64,10 @@ from backend_api.schemas import (
     SystemLogListResponse,
     SystemLogResponse,
     UserProfileResponse,
+    WalletRechargeApprovalPayload,
+    WalletRechargeRejectPayload,
+    WalletRechargeRequestListResponse,
+    WalletRechargeRequestResponse,
 )
 from backend_api.security import check_password, hash_token, issue_token, make_password
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
@@ -1529,6 +1533,7 @@ def _queue_status_label(value):
         "converted": "Convertida",
         "reviewed": "Revisado",
         "rewarded": "Recompensado",
+        "approved": "Aprovada",
         "rejected": "Rejeitado",
     }.get(value, value)
 
@@ -1597,6 +1602,68 @@ def _feedback_response(row):
         "created_at_label": _date_label(row["created_at"]),
         "reviewed_at": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
     }
+
+
+def _wallet_recharge_response(row):
+    title = "Solicitação de recarga educativa"
+    amount_oc = row["amount_oc"]
+    if amount_oc:
+        title = f"{title} · {amount_oc} OC"
+    return {
+        "id": row["id"],
+        "kind": "wallet_recharge",
+        "title": title,
+        "category": "Wallet",
+        "queue_label": "Recarga",
+        "item_type": "Recarga educativa",
+        "status": row["status"],
+        "status_label": _queue_status_label(row["status"]),
+        "severity": "medium",
+        "severity_label": "Média",
+        "owner_label": "Operação",
+        "age_label": _age_label(row["created_at"]),
+        "author_handle": _handle_seed(row["author_handle"]) if row["author_handle"] else None,
+        "author_id": row["user_id"],
+        "guest_name": "",
+        "guest_email": "",
+        "source": "",
+        "description": "Pedido de crédito educativo para voltar a participar dos mercados.",
+        "admin_note": row["admin_note"] or "",
+        "reward_oc": amount_oc,
+        "converted_market_slug": None,
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _date_label(row["created_at"]),
+        "reviewed_at": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
+    }
+
+
+def _wallet_recharge_public_response(row):
+    return {
+        "id": row["id"],
+        "status": row["status"],
+        "status_label": _queue_status_label(row["status"]),
+        "amount_oc": row["amount_oc"],
+        "admin_note": row["admin_note"] or "",
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _date_label(row["created_at"]),
+        "reviewed_at": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
+    }
+
+
+def _get_wallet_recharge_request(cursor, request_id):
+    cursor.execute(
+        """
+        SELECT r.*, u.username AS author_handle
+        FROM orynth_wallet_recharge_requests r
+        JOIN orynth_users u ON u.id = r.user_id
+        WHERE r.id = %s
+        """,
+        (request_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação de recarga não encontrada.")
+    return row
 
 
 def _get_suggestion(cursor, suggestion_id):
@@ -3589,13 +3656,33 @@ def admin_list_queues(
                     params,
                 )
                 items.extend(_feedback_response(row) for row in cursor.fetchall())
+            if kind in {None, "", "wallet_recharge"}:
+                where = []
+                params = []
+                if status_filter:
+                    where.append("r.status = %s")
+                    params.append(status_filter)
+                where_sql = "WHERE " + " AND ".join(where) if where else ""
+                cursor.execute(
+                    f"""
+                    SELECT r.*, u.username AS author_handle
+                    FROM orynth_wallet_recharge_requests r
+                    JOIN orynth_users u ON u.id = r.user_id
+                    {where_sql}
+                    ORDER BY r.created_at ASC, r.id ASC
+                    """,
+                    params,
+                )
+                items.extend(_wallet_recharge_response(row) for row in cursor.fetchall())
             reverse = order != "created_asc"
             items = sorted(items, key=lambda item: item["created_at"], reverse=reverse)
             cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_suggestions GROUP BY status")
             suggestion_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
             cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_product_feedback GROUP BY status")
             feedback_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
-            return {"items": items, "counts": {"suggestion": suggestion_counts, "feedback": feedback_counts}}
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_wallet_recharge_requests GROUP BY status")
+            recharge_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
+            return {"items": items, "counts": {"suggestion": suggestion_counts, "feedback": feedback_counts, "wallet_recharge": recharge_counts}}
 
 
 @app.post("/admin/queues/{kind}/{item_id}/review", response_model=QueueItemResponse)
@@ -3805,6 +3892,72 @@ def admin_reward_feedback(feedback_id: int, payload: FeedbackRewardPayload, auth
             _record_admin_event(cursor, staff["id"], "feedback.reward", "product_feedback", str(feedback_id), payload.note)
             BadgeAwardEngine.on_feedback_rewarded(cursor, feedback["author_id"], feedback_id=feedback_id)
             return _feedback_response(_get_feedback(cursor, feedback_id))
+
+
+@app.post("/admin/queues/wallet-recharges/{request_id}/approve", response_model=QueueItemResponse)
+def admin_approve_wallet_recharge(request_id: int, payload: WalletRechargeApprovalPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            recharge = _get_wallet_recharge_request(cursor, request_id)
+            if recharge["status"] != "pending":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Solicitação de recarga já revisada.")
+            now = datetime.now(timezone.utc)
+            note = payload.note.strip() or "Recarga educativa aprovada pelo Admin Ops."
+            _record_wallet_entry(
+                cursor,
+                recharge["user_id"],
+                entry_type="educational_recharge",
+                amount=payload.amount_oc,
+                direction="credit",
+                description=note,
+                reference_type="wallet_recharge_request",
+                reference_id=str(request_id),
+                created_by_id=staff["id"],
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_wallet_recharge_requests
+                SET status = 'approved',
+                    amount_oc = %s,
+                    admin_note = %s,
+                    reviewed_by_id = %s,
+                    reviewed_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (payload.amount_oc, note, staff["id"], now, now, request_id),
+            )
+            _record_admin_event(cursor, staff["id"], "wallet_recharge.approve", "wallet_recharge_request", str(request_id), note)
+            return _wallet_recharge_response(_get_wallet_recharge_request(cursor, request_id))
+
+
+@app.post("/admin/queues/wallet-recharges/{request_id}/reject", response_model=QueueItemResponse)
+def admin_reject_wallet_recharge(request_id: int, payload: WalletRechargeRejectPayload, authorization: str = Header(default="")):
+    note = payload.note.strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            recharge = _get_wallet_recharge_request(cursor, request_id)
+            if recharge["status"] != "pending":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Solicitação de recarga já revisada.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_wallet_recharge_requests
+                SET status = 'rejected',
+                    admin_note = %s,
+                    reviewed_by_id = %s,
+                    reviewed_at = %s,
+                    updated_at = %s
+                WHERE id = %s
+                """,
+                (note, staff["id"], now, now, request_id),
+            )
+            _record_admin_event(cursor, staff["id"], "wallet_recharge.reject", "wallet_recharge_request", str(request_id), note)
+            return _wallet_recharge_response(_get_wallet_recharge_request(cursor, request_id))
 
 
 @app.get("/admin/badges", response_model=AdminBadgeListResponse)
@@ -4430,6 +4583,67 @@ def get_my_wallet(authorization: str = Header(default="")):
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
             return _wallet_summary(cursor, user["id"])
+
+
+@app.get("/users/me/wallet/recharge-requests", response_model=WalletRechargeRequestListResponse)
+def get_my_wallet_recharge_requests(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT id, status, amount_oc, admin_note, created_at, reviewed_at
+                FROM orynth_wallet_recharge_requests
+                WHERE user_id = %s
+                ORDER BY created_at DESC, id DESC
+                LIMIT 10
+                """,
+                (user["id"],),
+            )
+            return {"requests": [_wallet_recharge_public_response(row) for row in cursor.fetchall()]}
+
+
+@app.post("/users/me/wallet/recharge-requests", response_model=WalletRechargeRequestResponse, status_code=status.HTTP_201_CREATED)
+def create_my_wallet_recharge_request(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            wallet = _wallet_summary(cursor, user["id"])
+            cursor.execute(
+                """
+                SELECT wallet_recharge_min_balance_oc
+                FROM orynth_site_config
+                WHERE singleton_key = 1
+                """
+            )
+            site_config = cursor.fetchone()
+            min_balance = int(site_config["wallet_recharge_min_balance_oc"] if site_config else 100)
+            if wallet["available_oc"] > min_balance:
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"Recarga disponível apenas para saldo disponível de até {min_balance} OC.",
+                )
+            cursor.execute(
+                """
+                SELECT id
+                FROM orynth_wallet_recharge_requests
+                WHERE user_id = %s AND status = 'pending'
+                """,
+                (user["id"],),
+            )
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Você já possui uma solicitação de recarga pendente.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                INSERT INTO orynth_wallet_recharge_requests
+                    (user_id, status, amount_oc, admin_note, reviewed_by_id, reviewed_at, created_at, updated_at)
+                VALUES (%s, 'pending', NULL, '', NULL, NULL, %s, %s)
+                RETURNING id, status, amount_oc, admin_note, created_at, reviewed_at
+                """,
+                (user["id"], now, now),
+            )
+            return _wallet_recharge_public_response(cursor.fetchone())
 
 
 @app.get("/users/me/ledger", response_model=LedgerResponse)

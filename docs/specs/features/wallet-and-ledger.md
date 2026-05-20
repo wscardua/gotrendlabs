@@ -1,10 +1,10 @@
 ---
 id: FEAT-WALLET-001
 titulo: "Wallet e extrato"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-19
+ultima_atualizacao: 2026-05-20
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -31,6 +31,7 @@ Exibir saldo, histórico de movimentações e rastreabilidade da moeda interna d
 - extrato
 - referências às causas de cada lançamento
 - recompensas operacionais aprovadas para feedback e sugestão de mercado
+- solicitação de recarga educativa com aprovação ou rejeição administrativa
 - ajuste manual auditado por staff no detalhe administrativo de usuário
 
 ## Escopo excluído
@@ -60,6 +61,11 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - recompensa operacional exige usuário cadastrado, valor inteiro positivo e referência ao item revisado
 - a mesma fila operacional não pode gerar crédito mais de uma vez para o mesmo item
 - recompensa por feedback ou sugestão não altera reputação
+- solicitação de recarga educativa só pode ser criada quando o saldo disponível do usuário estiver menor ou igual ao piso `wallet_recharge_min_balance_oc` configurado em Admin Ops
+- usuário pode ter no máximo uma solicitação de recarga educativa `pending`
+- recarga educativa aprovada pelo Admin Ops exige valor inteiro positivo, operador e referência à solicitação
+- recarga educativa usa `educational_recharge`, `direction="credit"` e `reference_type="wallet_recharge_request"`
+- recarga educativa não altera reputação nem `total_earned_oc`
 - cancelamento de mercado com previsão aberta gera refund total por `prediction_refund`
 - resolução vencedora libera stake e credita apenas o ganho líquido por `prediction_payout`
 - resolução perdedora baixa o stake bloqueado por `prediction_loss` sem devolver saldo disponível
@@ -78,6 +84,8 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - ledger de wallet
 - projeção de saldo atual
 - referências a previsões, payouts, reversões, ajustes e recompensas operacionais
+- solicitações de recarga educativa com status, valor aprovado, nota e revisor
+- parâmetro operacional `wallet_recharge_min_balance_oc` em `orynth_site_config`
 
 ## Contratos afetados
 
@@ -97,6 +105,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - integração para previsão, refund e payout
 - integração para `reward_feedback` e `reward_suggestion`
 - integração para ajuste manual administrativo com crédito, débito, nota obrigatória, bloqueio de saldo insuficiente e auditoria
+- integração para solicitação, bloqueio de duplicidade pendente, aprovação e rejeição de recarga educativa
 - fluxo de visualização do extrato
 - bloqueio de recompensa operacional duplicada
 
@@ -105,6 +114,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - saldo exibido bate com o extrato
 - toda movimentação possui causa rastreável
 - crédito operacional aprovado aparece no extrato e atualiza saldo disponível
+- recarga educativa aprovada aparece no extrato e atualiza saldo disponível sem alterar ganhos por acerto
 - ajuste manual administrativo aparece no ledger, atualiza a projeção e preserva operador/justificativa
 
 ## Impacto de mudança

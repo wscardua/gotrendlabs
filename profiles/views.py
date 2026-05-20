@@ -1,3 +1,4 @@
+from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 
 from accounts.api_client import AuthAPIError, get_activity, get_badges, get_me, get_rankings, request_account_deletion, update_me
@@ -91,11 +92,13 @@ def rankings(request):
         viewer_handle = (auth_user(request) or {}).get("handle", "")
         viewer_handle = viewer_handle if viewer_handle.startswith("@") else f"@{viewer_handle}"
     viewer_ranking = next((row for row in ranking_rows if row.get("handle") == viewer_handle), None)
+    ranking_page = Paginator(ranking_rows, 10).get_page(request.GET.get("page") or 1)
     return render(
         request,
         "profiles/rankings.html",
         {
-            "ranking": ranking_rows,
+            "ranking": list(ranking_page.object_list),
+            "ranking_page": ranking_page,
             "ranking_categories": ranking_payload.get("categories", []),
             "selected_category": ranking_payload.get("selected_category", selected_category),
             "selected_subcategory": ranking_payload.get("selected_subcategory", selected_subcategory),

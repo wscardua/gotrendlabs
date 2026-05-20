@@ -4,6 +4,7 @@ from django.db import models
 
 class SiteConfig(models.Model):
     singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
+    wallet_recharge_min_balance_oc = models.PositiveIntegerField(default=100)
     email_enabled = models.BooleanField(default=False)
     smtp_host = models.CharField(max_length=255, blank=True)
     smtp_port = models.PositiveIntegerField(default=587)

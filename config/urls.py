@@ -38,6 +38,7 @@ urlpatterns = [
     path("password-reset/confirm/<str:token>/", account_views.password_reset_confirm_view, name="password-reset-confirm"),
     path("logout/", account_views.logout_view, name="logout"),
     path("wallet/", wallet_views.wallet_home, name="wallet"),
+    path("wallet/recharge-request/", wallet_views.request_recharge, name="wallet-recharge-request"),
     path("profile/", profile_views.profile, name="profile"),
     path("rankings/", profile_views.rankings, name="rankings"),
     path("admin-ops/", admin_ops_views.dashboard, name="admin-ops-dashboard"),

@@ -33,6 +33,8 @@
 - `FEAT-OPSLOG-001` registra requests Django/FastAPI e logs Python em `orynth_system_logs`; Admin Ops consome `/admin/system-logs` para troubleshooting sem alterar domínio.
 - Admin Ops consome `GET /admin/dashboard-summary` via FastAPI para consolidar métricas operacionais de mercados, filas, usuários, engajamento, wallet, badges, logs, manutenção, SMTP e reCAPTCHA.
 - Config operacional usa duas fontes por fronteira: modo manutenção em JSON runtime para sobreviver sem banco/API e parâmetros SMTP não sensíveis em `orynth_site_config`.
+- Recarga educativa de wallet usa `orynth_site_config.wallet_recharge_min_balance_oc` como piso operacional configurado no Admin Ops; Django e FastAPI bloqueiam solicitação quando `available_oc` está acima desse valor.
+- Ranking web consome `GET /rankings` como fonte autoritativa e pagina a apresentação em 10 linhas por página sem recalcular reputação no Django.
 
 ## Skills técnicas por stack
 

@@ -11,6 +11,8 @@
       <div class="metric"><strong>{{ wallet.total_earned_oc }} OC</strong><span>ganhos por acerto</span></div>
       <div class="metric"><strong>{{ reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação</span></div>
     </div>
+    {% if messages %}{% for message in messages %}<div class="tag {% if message.tags == 'error' %}risk{% else %}safe{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
+    {% if recharge_error %}<div class="tag risk">{{ recharge_error }}</div>{% endif %}
     <h3>Extrato</h3>
     <table class="table">
       <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>OC</th></tr>
@@ -20,9 +22,70 @@
         <tr><td colspan="4">Nenhum lançamento encontrado.</td></tr>
       {% endfor %}
     </table>
+    {% if entries_page.paginator.num_pages > 1 %}
+      <div class="wallet-pagination" aria-label="Paginação do extrato">
+        <span>página {{ entries_page.number }} de {{ entries_page.paginator.num_pages }}</span>
+        <div class="wallet-pagination-actions">
+          {% if entries_page.has_previous %}
+            <a class="btn small ghost" href="?ledger_page={{ entries_page.previous_page_number }}">Anterior</a>
+          {% else %}
+            <span class="btn small disabled">Anterior</span>
+          {% endif %}
+          {% if entries_page.has_next %}
+            <a class="btn small ghost" href="?ledger_page={{ entries_page.next_page_number }}">Próxima</a>
+          {% else %}
+            <span class="btn small disabled">Próxima</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
   </section>
   <aside class="side-stack">
-    <div class="side-card"><h3>Recarga controlada</h3><p>O MVP pode liberar OC educativos para evitar travamento de uso, sem compra, saque ou valor financeiro.</p><button class="btn primary" data-confirm="Solicitar recarga educativa" data-confirm-desc="A recarga entra em análise automática para evitar abuso.">Solicitar recarga</button></div>
+    <div class="side-card recharge-card">
+      <div class="recharge-card-head">
+        <div>
+          <span class="recharge-label">Fila Admin Ops</span>
+          <h3>Recarga controlada</h3>
+        </div>
+        <div class="recharge-balance"><span>Saldo livre</span><strong>{{ wallet.available_oc }} OC</strong></div>
+      </div>
+      <p class="recharge-copy">Crédito educativo sob revisão administrativa, disponível quando seu saldo livre estiver em até {{ recharge_min_balance }} OC.</p>
+      <div class="recharge-flow" aria-label="Fluxo da recarga educativa">
+        <span><strong>1</strong> Solicitação</span>
+        <span><strong>2</strong> Revisão</span>
+        <span><strong>3</strong> Crédito</span>
+      </div>
+      {% if pending_recharge_request %}
+        <div class="recharge-pending">
+          <div><span>Status</span><strong>Em análise</strong></div>
+          <div><span>Enviada</span><strong>{{ pending_recharge_request.created_at_label }}</strong></div>
+        </div>
+        <button class="btn primary recharge-cta" type="button" disabled>Em análise</button>
+      {% elif not recharge_eligible %}
+        <div class="recharge-pending">
+          <div><span>Elegibilidade</span><strong>Saldo acima do limite</strong></div>
+          <div><span>Limite atual</span><strong>{{ recharge_min_balance }} OC</strong></div>
+        </div>
+        <button class="btn primary recharge-cta" type="button" disabled>Recarga indisponível</button>
+      {% else %}
+        <form class="recharge-form" method="post" action="{% url 'wallet-recharge-request' %}">
+          {% csrf_token %}
+          <button class="btn primary recharge-cta" type="submit" data-confirm="Solicitar recarga educativa" data-confirm-desc="A solicitação entra em fila para análise administrativa.">Solicitar recarga educativa</button>
+        </form>
+      {% endif %}
+      {% if recharge_requests %}
+        <div class="recharge-history">
+          <div class="recharge-history-title"><span>Histórico</span><strong>últimas 3</strong></div>
+          {% for request in recharge_requests|slice:":3" %}
+            <div class="recharge-history-row">
+              <span>{{ request.created_at_label }}</span>
+              <strong>{{ request.status_label }}</strong>
+              <em>{{ request.amount_oc|default:"-" }}{% if request.amount_oc %} OC{% endif %}</em>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
     <div class="side-card"><h3>Separando conceitos</h3><p>Saldo é uso disponível. Bloqueado está em previsões abertas. Ganhos vêm de acertos. Reputação mede histórico.</p></div>
   </aside>
 </main>
