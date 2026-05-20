@@ -51,6 +51,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-AUTH-001
 
+### 2026-05-20 - v0.11
+- login e cadastro passaram a renderizar botões sociais iconizados para Google, Facebook e X, preservando rótulos acessíveis
+- placeholder FastAPI de login social passou a reconhecer `x` junto de `google` e `facebook`, ainda retornando `501` até existir OAuth real
+- layout das páginas standalone de auth passou a usar altura natural para evitar espaçamento vertical divergente entre login, cadastro e rodapé
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.10
 - telas standalone de autenticação passaram a renderizar o rodapé público compartilhado via partial reutilizável
 - `base.html` passou a usar o mesmo componente de rodapé, reduzindo divergência entre páginas públicas comuns e fluxos de auth

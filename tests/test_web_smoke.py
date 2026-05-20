@@ -46,6 +46,16 @@ class FixtureDomainClientTests(TestCase):
 
 
 class BackendAuthAPITests(TestCase):
+    def test_social_auth_placeholder_supports_initial_providers(self):
+        client = TestClient(app)
+
+        for provider in ("google", "facebook", "x"):
+            response = client.post(f"/auth/social/{provider}")
+            self.assertEqual(response.status_code, 501)
+
+        unsupported = client.post("/auth/social/apple")
+        self.assertEqual(unsupported.status_code, 404)
+
     def test_system_log_model_defaults_retention_and_context(self):
         log = SystemLog.objects.create(
             level="INFO",
@@ -4548,6 +4558,7 @@ class WebSmokeTests(TestCase):
         self.assertContains(response, "Acessar conta")
         self.assertContains(response, "Google")
         self.assertContains(response, "Facebook")
+        self.assertContains(response, "Entrar com X")
         self.assertNotContains(response, "will@example.com")
         self.assertNotContains(response, "2FA")
         self.assertNotContains(response, "Continuar com Apple")

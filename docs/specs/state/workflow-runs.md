@@ -771,3 +771,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: manter novos layouts públicos usando o partial de rodapé compartilhado para evitar divergência visual
 - Reversão lógica: remover o include do rodapé nas telas standalone de auth e ajustar a spec para voltar a exigir apenas navegação pública
+
+## WFLOW-20260520-006
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AUTH-001`
+- Objetivo: padronizar botões sociais iconizados em login/cadastro, incluir X no placeholder social e corrigir espaçamento vertical das telas de auth
+- Etapa atual: concluído; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_social_auth_placeholder_supports_initial_providers`, `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_login_page_has_focused_auth_layout`, `.venv/bin/python manage.py test tests.test_web_smoke`, `git diff --check` e screenshots locais via Chrome/Playwright executados com sucesso em 2026-05-20
+- Artefatos afetados:
+  - `accounts/templates/accounts/login.html`
+  - `accounts/templates/accounts/register.html`
+  - `backend_api/main.py`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/features/auth-and-session.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: implementar OAuth real para `google`, `facebook` e `x` quando credenciais/callbacks forem priorizados
+- Reversão lógica: restaurar botões textuais antigos e remover `x` do placeholder FastAPI, mantendo o ajuste de altura natural de auth se a correção visual permanecer desejável
