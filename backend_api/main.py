@@ -1,6 +1,7 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from ipaddress import ip_address as parse_ip_address
+import os
 import re
 import time
 from typing import Optional
@@ -18,6 +19,7 @@ from backend_api.schemas import (
     AdminBadgeResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
+    AdminUserRolePayload,
     AdminUserWalletAdjustmentPayload,
     FeedbackRewardPayload,
     AdminMarketActionPayload,
@@ -38,6 +40,10 @@ from backend_api.schemas import (
     MarketListResponse,
     MarketResponse,
     MarketSuggestionPayload,
+    PasswordResetConfirmPayload,
+    PasswordResetConfirmResponse,
+    PasswordResetRequestPayload,
+    PasswordResetRequestResponse,
     PredictionCreatePayload,
     PredictionCreateResponse,
     PredictionPreviewResponse,
@@ -60,6 +66,8 @@ from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
 
 SESSION_TTL = timedelta(days=14)
+PASSWORD_RESET_TTL = timedelta(hours=1)
+PASSWORD_RESET_MESSAGE = "Se o email estiver cadastrado, enviaremos instruções para recuperar a senha."
 INITIAL_GRANT_OC = 2000
 INITIAL_REPUTATION = 100
 BASE_PREDICTION_WEIGHT = 10_000
@@ -77,6 +85,7 @@ BADGE_RULE_TYPES = {
     "rewarded_feedback_count",
 }
 BADGE_TYPES = {"global", "category", "performance", "engagement"}
+PUBLIC_WEB_BASE_URL = os.environ.get("ORYNTH_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 app = FastAPI(title="Orynth Backend API", version="0.1.0")
 
@@ -606,7 +615,7 @@ def _current_user(cursor, authorization):
     cursor.execute(
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
-               u.date_joined, u.last_login, u.account_status, u.is_staff
+               u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser
         FROM orynth_auth_sessions s
         JOIN orynth_users u ON u.id = s.user_id
         WHERE s.token_hash = %s
@@ -1220,6 +1229,11 @@ def _require_admin_target(staff, target, *, allow_superuser=False):
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Operador não pode executar esta ação sobre a própria conta.")
     if target["is_superuser"] and not allow_superuser:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ação não permitida para superusuário.")
+
+
+def _require_superuser(staff):
+    if not staff["is_superuser"]:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas superusuários podem alterar privilégios administrativos.")
 
 
 def _ledger_entries(cursor, user_id, limit=10):
@@ -3088,6 +3102,47 @@ def admin_adjust_user_wallet(user_id: int, payload: AdminUserWalletAdjustmentPay
             return _admin_user_detail(cursor, user_id)
 
 
+@app.post("/admin/users/{user_id}/roles", response_model=AdminUserDetailResponse)
+def admin_update_user_roles(user_id: int, payload: AdminUserRolePayload, authorization: str = Header(default="")):
+    note = payload.note.strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _require_superuser(staff)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target, allow_superuser=True)
+            is_superuser = bool(payload.is_superuser)
+            is_staff = bool(payload.is_staff) or is_superuser
+            if target["is_superuser"] and not is_superuser:
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) AS total
+                    FROM orynth_users
+                    WHERE is_superuser = true
+                      AND is_active = true
+                      AND account_status = 'active'
+                      AND id <> %s
+                    """,
+                    (user_id,),
+                )
+                if int(cursor.fetchone()["total"] or 0) == 0:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Não é possível remover o último superusuário ativo.")
+            cursor.execute(
+                """
+                UPDATE orynth_users
+                SET is_staff = %s,
+                    is_superuser = %s
+                WHERE id = %s
+                """,
+                (is_staff, is_superuser, user_id),
+            )
+            role_label = "superuser" if is_superuser else "staff" if is_staff else "user"
+            _record_admin_event(cursor, staff["id"], "user.roles_update", "user", str(user_id), f"{note} | role={role_label}")
+            return _admin_user_detail(cursor, user_id)
+
+
 @app.get("/admin/comments", response_model=CommentListResponse)
 def admin_list_comments(
     status_filter: Optional[str] = Query(default=None, alias="status"),
@@ -4205,6 +4260,89 @@ def login(payload: LoginPayload, request: Request):
             session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
             return {"user": _user_response(user), "session": session}
+
+
+@app.post("/auth/password-reset/request", response_model=PasswordResetRequestResponse)
+def request_password_reset(payload: PasswordResetRequestPayload, request: Request):
+    ip_address, user_agent = _client_meta(request)
+    reset_url = ""
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT id, email
+                FROM orynth_users
+                WHERE lower(email) = lower(%s)
+                  AND is_active = true
+                  AND account_status = 'active'
+                """,
+                (payload.email,),
+            )
+            user = cursor.fetchone()
+            if user:
+                token = issue_token()
+                now = datetime.now(timezone.utc)
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_password_reset_tokens
+                        (user_id, token_hash, created_at, expires_at, used_at, ip_address, user_agent)
+                    VALUES (%s, %s, %s, %s, NULL, %s, %s)
+                    """,
+                    (user["id"], hash_token(token), now, now + PASSWORD_RESET_TTL, ip_address, user_agent),
+                )
+                _record_event(cursor, "password_reset_requested", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+                reset_url = f"{PUBLIC_WEB_BASE_URL}/password-reset/confirm/{token}/"
+    return {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
+
+
+@app.post("/auth/password-reset/confirm", response_model=PasswordResetConfirmResponse)
+def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Request):
+    ip_address, user_agent = _client_meta(request)
+    now = datetime.now(timezone.utc)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT t.id, t.user_id, u.email
+                FROM orynth_password_reset_tokens t
+                JOIN orynth_users u ON u.id = t.user_id
+                WHERE t.token_hash = %s
+                  AND t.used_at IS NULL
+                  AND t.expires_at > %s
+                  AND u.is_active = true
+                  AND u.account_status = 'active'
+                """,
+                (hash_token(payload.token), now),
+            )
+            token_row = cursor.fetchone()
+            if not token_row:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Link de recuperação inválido ou expirado.")
+            cursor.execute(
+                """
+                UPDATE orynth_users
+                SET password = %s
+                WHERE id = %s
+                """,
+                (make_password(payload.password), token_row["user_id"]),
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_auth_sessions
+                SET revoked_at = %s
+                WHERE user_id = %s AND revoked_at IS NULL
+                """,
+                (now, token_row["user_id"]),
+            )
+            cursor.execute(
+                """
+                UPDATE orynth_password_reset_tokens
+                SET used_at = %s
+                WHERE id = %s
+                """,
+                (now, token_row["id"]),
+            )
+            _record_event(cursor, "password_reset_confirmed", user_id=token_row["user_id"], email=token_row["email"], ip_address=ip_address, user_agent=user_agent)
+    return {"message": "Senha atualizada com sucesso."}
 
 
 @app.get("/auth/session", response_model=SessionContextResponse)

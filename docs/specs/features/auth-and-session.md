@@ -34,6 +34,7 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - login por credencial ou provedor social
 - criação e validação de sessão
 - logout
+- recuperação de senha por token de uso único
 - recuperação do contexto do usuário autenticado
 - edição básica de perfil autenticado
 - exclusão lógica de conta
@@ -44,7 +45,6 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - MFA
 - SSO corporativo
 - gestão avançada de dispositivos
-- gestão de operadores/staff
 - ajuste manual de reputação
 
 ## Fluxo do usuário
@@ -60,6 +60,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
 - telas de login e cadastro mantêm navegação pública para feed/mercados, badges e ranking, além do retorno compacto `← Feed` no primeiro painel de conteúdo
 - login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
+- login oferece recuperação de senha por email; em desenvolvimento local o link pode ser exposto na UI para validação sem SMTP real
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - perfil autenticado exibe reputação em cards e mantém edição de dados na própria tela de perfil, sem rota separada
@@ -78,7 +79,10 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - exclusão lógica deve preservar histórico e bloquear uso normal
 - ações administrativas sobre conta exigem usuário staff, nota operacional e auditoria
 - operador não pode desativar, revogar sessões ou ajustar wallet da própria conta
-- gestão administrativa não permite alterar `is_staff`, `is_superuser` nem reputação manualmente nesta fatia
+- alteração de `is_staff` e `is_superuser` exige operador `is_superuser=true`, nota operacional e auditoria
+- operador não pode alterar privilégios da própria conta; `is_superuser=true` implica `is_staff=true`
+- sistema não permite remover o último superusuário ativo
+- gestão administrativa não permite alterar reputação manualmente nesta fatia
 
 ## Responsabilidades por camada
 
@@ -95,6 +99,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - provedores externos vinculados
 - preferência de idioma
 - sessões e rastros de autenticação
+- tokens de recuperação de senha com hash, expiração e uso único
 - aceite de política de uso
 - estado da conta e timestamps de exclusão lógica
 
@@ -112,15 +117,16 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte
-- Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação e revogação de sessões via contratos staff
-- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust` em `orynth_admin_events`
-- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`
+- Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação, revogação de sessões e gestão controlada de papéis via contratos staff
+- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust` ou `user.roles_update` em `orynth_admin_events`
+- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`, `POST /admin/users/{user_id}/roles`
 
 ## Testes esperados
 
 - unitários para vínculo e validação de sessão
 - integração para login social e persistência de preferência de idioma
 - fluxo de cadastro, login e logout
+- fluxo de recuperação de senha com solicitação, token válido, token inválido/expirado e token reutilizado
 - fluxo de aceite obrigatório da política de uso
 - renderização de política de uso pública e modal de política no cadastro
 - renderização de navegação pública e retorno compacto `← Feed` em login/cadastro
@@ -133,11 +139,13 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo staff de listagem/detalhe administrativo de usuário
 - detalhe administrativo exibe badges adquiridas sem recalcular elegibilidade na UI
 - fluxo staff de desativação, reativação e revogação de sessões com auditoria
+- fluxo superuser de promoção/rebaixamento de papéis administrativos com auditoria
 - bloqueio de ações administrativas perigosas sobre a própria conta do operador
 
 ## Critérios de aceite
 
 - usuário consegue criar e acessar conta
+- usuário consegue solicitar recuperação e definir nova senha com link válido
 - usuário consegue abrir a política de uso no cadastro sem sair do fluxo
 - visitantes em login/cadastro conseguem voltar para mercados pelo `← Feed` e acessar mercados, badges e ranking pela navegação pública
 - cadastro protegido exige conclusão do reCAPTCHA quando configurado
@@ -147,6 +155,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - perfil público não expõe email, data de nascimento, sexo nem metadados privados do perfil
 - conta desativada não consegue efetuar login
 - staff consegue consultar usuários, abrir detalhe operacional e agir sobre status/sessões sem mutação local no Django
+- superuser consegue alterar papel administrativo de outro usuário com nota operacional
 - ações administrativas de usuário exigem nota, registram auditoria e preservam histórico
 - ajuste manual de wallet no detalhe administrativo exige escolha explícita de direção, sem valor pré-selecionado
 

@@ -4,6 +4,7 @@
 
 - Ser a fonte principal da verdade do domínio.
 - Autenticar usuários e emitir/validar sessão.
+- Emitir e validar tokens de recuperação de senha de uso único.
 - Expor contratos JSON consumidos pelo frontend e pelo admin.
 - Centralizar regras de mercado, previsão, stake, wallet, reputação, ranking e resolução.
 - Validar reCAPTCHA server-side nos fluxos públicos protegidos quando configurado.
@@ -34,6 +35,8 @@
 - `GET /admin/users` deve suportar busca por email/handle/nome, filtros por status/papel e ordenações operacionais por criação, último login, saldo e reputação.
 - `GET /admin/users/{user_id}` deve expor detalhe operacional amplo para staff, incluindo perfil privado, wallet, ledger recente, reputação, previsões, comentários, sugestões, feedback, sessões, eventos de auth, eventos administrativos e badges adquiridas.
 - Ações staff em `/admin/users/{user_id}` devem cobrir desativação, reativação, revogação de sessões e ajuste manual de wallet, sempre com nota operacional e auditoria.
+- `POST /admin/users/{user_id}/roles` deve exigir operador superuser, nota operacional, bloquear autoalteração, tratar `is_superuser` como implicando `is_staff` e registrar `user.roles_update`.
+- Recuperação de senha deve expor `POST /auth/password-reset/request` e `POST /auth/password-reset/confirm`, armazenando apenas hash do token, expiração e uso único; confirmação revoga sessões ativas.
 - Concessão automática de badge deve ser idempotente e não pode alterar reputação, ranking, wallet ou ledger.
 - A `BadgeAwardEngine` é o ponto único para avaliar regras e persistir conquistas em `orynth_user_badge_awards`; handlers HTTP e ações administrativas devem apenas disparar eventos de domínio.
 - Resolução de mercado deve chamar a engine após persistir resultado, reputation delta, streak e ranking derivado dos participantes afetados.

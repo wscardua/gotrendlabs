@@ -65,6 +65,8 @@ class AuthEvent(models.Model):
         ("logout", "Logout"),
         ("session_check", "Session check"),
         ("account_deletion_requested", "Account deletion requested"),
+        ("password_reset_requested", "Password reset requested"),
+        ("password_reset_confirmed", "Password reset confirmed"),
     )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)
@@ -80,6 +82,23 @@ class AuthEvent(models.Model):
         indexes = [
             models.Index(fields=["event_type", "created_at"]),
             models.Index(fields=["email", "created_at"]),
+        ]
+
+
+class PasswordResetToken(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="password_reset_tokens")
+    token_hash = models.CharField(max_length=64, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "orynth_password_reset_tokens"
+        indexes = [
+            models.Index(fields=["token_hash"]),
+            models.Index(fields=["user", "used_at", "expires_at"]),
         ]
 
 

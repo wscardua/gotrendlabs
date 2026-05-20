@@ -18,6 +18,24 @@ class LoginPayload(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class PasswordResetRequestPayload(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetRequestResponse(BaseModel):
+    message: str
+    reset_url: str = ""
+
+
+class PasswordResetConfirmPayload(BaseModel):
+    token: str = Field(min_length=20, max_length=255)
+    password: str = Field(min_length=8, max_length=128)
+
+
+class PasswordResetConfirmResponse(BaseModel):
+    message: str
+
+
 class UserResponse(BaseModel):
     id: int
     handle: str
@@ -164,6 +182,12 @@ class AdminUserDetailResponse(BaseModel):
 class AdminUserWalletAdjustmentPayload(BaseModel):
     direction: str
     amount_oc: int = Field(gt=0, le=1000000)
+    note: str = Field(min_length=1, max_length=2000)
+
+
+class AdminUserRolePayload(BaseModel):
+    is_staff: bool = False
+    is_superuser: bool = False
     note: str = Field(min_length=1, max_length=2000)
 
 

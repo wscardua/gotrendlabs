@@ -219,6 +219,25 @@ class AdminUserWalletAdjustmentForm(forms.Form):
     note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
 
 
+class AdminUserRoleForm(forms.Form):
+    role = forms.ChoiceField(
+        label="Papel administrativo",
+        choices=(
+            ("user", "Usuário comum"),
+            ("staff", "Staff/Admin"),
+            ("superuser", "Superuser"),
+        ),
+    )
+    note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
+
+    def role_flags(self):
+        role = self.cleaned_data["role"]
+        return {
+            "is_staff": role in {"staff", "superuser"},
+            "is_superuser": role == "superuser",
+        }
+
+
 RESOLUTION_TIMEZONE_CHOICES = (
     ("America/Sao_Paulo", "America/Sao_Paulo"),
     ("UTC", "UTC"),

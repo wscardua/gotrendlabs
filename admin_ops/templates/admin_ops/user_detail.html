@@ -213,17 +213,12 @@
             <p class="muted">Ações críticas exigem nota operacional e são auditadas pela FastAPI.</p>
             <form class="support-form" method="post">
               {% csrf_token %}
-              <label for="{{ note_form.note.id_for_label }}-status">{% if detail.user.account_status == "active" %}Motivo da desativação{% else %}Motivo da reativação{% endif %}</label>
-              <textarea id="{{ note_form.note.id_for_label }}-status" name="note" rows="4" required></textarea>
-              <input type="hidden" name="action" value="{% if detail.user.account_status == 'active' %}deactivate{% else %}reactivate{% endif %}">
-              <button class="btn small {% if detail.user.account_status == "active" %}danger{% else %}primary{% endif %}" type="submit">{% if detail.user.account_status == "active" %}Desativar conta{% else %}Reativar conta{% endif %}</button>
-            </form>
-            <form class="support-form" method="post">
-              {% csrf_token %}
-              <label for="{{ note_form.note.id_for_label }}-sessions">Motivo da revogação</label>
-              <textarea id="{{ note_form.note.id_for_label }}-sessions" name="note" rows="4" required></textarea>
-              <input type="hidden" name="action" value="revoke_sessions">
-              <button class="btn small" type="submit">Revogar sessões</button>
+              <label for="{{ role_form.role.id_for_label }}">Papel administrativo</label>
+              {{ role_form.role }}
+              <label for="{{ role_form.note.id_for_label }}">Justificativa</label>
+              {{ role_form.note }}
+              <input type="hidden" name="action" value="roles_update">
+              <button class="btn small primary" type="submit">Atualizar papel</button>
             </form>
             <form class="support-form" method="post">
               {% csrf_token %}
@@ -235,6 +230,20 @@
               {{ wallet_form.note }}
               <input type="hidden" name="action" value="wallet_adjust">
               <button class="btn small primary" type="submit">Registrar ajuste</button>
+            </form>
+            <form class="support-form" method="post">
+              {% csrf_token %}
+              <label for="{{ note_form.note.id_for_label }}-sessions">Motivo da revogação</label>
+              <textarea id="{{ note_form.note.id_for_label }}-sessions" name="note" rows="4" required></textarea>
+              <input type="hidden" name="action" value="revoke_sessions">
+              <button class="btn small" type="submit">Revogar sessões</button>
+            </form>
+            <form class="support-form" method="post">
+              {% csrf_token %}
+              <label for="{{ note_form.note.id_for_label }}-status">{% if detail.user.account_status == "active" %}Motivo da desativação{% else %}Motivo da reativação{% endif %}</label>
+              <textarea id="{{ note_form.note.id_for_label }}-status" name="note" rows="4" required></textarea>
+              <input type="hidden" name="action" value="{% if detail.user.account_status == 'active' %}deactivate{% else %}reactivate{% endif %}">
+              <button class="btn small {% if detail.user.account_status == "active" %}danger{% else %}primary{% endif %}" type="submit">{% if detail.user.account_status == "active" %}Desativar conta{% else %}Reativar conta{% endif %}</button>
             </form>
           </div>
         </aside>

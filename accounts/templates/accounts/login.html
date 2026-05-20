@@ -59,6 +59,9 @@
           <div class="field full checkbox-field"><label><input name="{{ form.remember_me.name }}" type="checkbox" {% if form.remember_me.value %}checked{% endif %}> <span>Lembrar meu acesso neste dispositivo</span></label></div>
           <button class="btn primary full" type="submit">Entrar</button>
         </form>
+        <div class="auth-footer reset-link">
+          <a href="{% url 'password-reset' %}">Esqueci minha senha</a>
+        </div>
         <div class="auth-footer">
           <span>Novo por aqui?</span>
           <a href="{% url 'register' %}">Criar conta</a>
