@@ -4,7 +4,7 @@ titulo: "Feed de mercados"
 versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-19
+ultima_atualizacao: 2026-05-20
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -51,6 +51,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - mercados cancelados não aparecem na página inicial nem no feed público padrão
 - categorias ajudam recorrência e descoberta
 - cards exibem CTA `Prever` para mercados abertos, incluindo múltipla escolha
+- títulos dos cards de mercado também navegam para o detalhe, reduzindo atrito além do CTA principal
 - cards exibem curtidas agregadas do mercado como sinal social discreto
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
 - mini gráficos devem continuar refletindo histórico após resolução; previsões `resolved` permanecem na série visual e previsões `canceled` ficam fora
@@ -131,6 +132,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - renderização dos modos de ordenação rápida e do recorte `Resolvidos` no feed web
 - regressão para métrica de previsões totais baseada em previsões persistidas reais
 - renderização de `data-*` de ordenação e contador de curtidas no card
+- regressão para título do card como link para o detalhe do mercado
 - regressão para contadores operacionais de visualizações/compartilhamentos expostos no contrato e ocultos do feed público
 - regressão para ordenação administrativa por mercados mais visualizados e mais compartilhados
 - seleção do card principal por `view_count`, excluindo `draft` e `canceled`, com desempate por mercado mais recente
@@ -147,6 +149,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - usuário consegue reordenar a lista por tendência, encerramento, volume, novidade e favoritos editoriais sem recarregar
 - usuário consegue alternar para o recorte de mercados resolvidos sem recarregar
 - cards exibem informações mínimas coerentes
+- título e CTA principal levam ao detalhe do mercado
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
 - destaque principal exibe até dois mercados publicados não cancelados mais visualizados, excluindo `draft` e `canceled`, incluindo resolvidos quando liderarem por popularidade
 

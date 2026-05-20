@@ -18,7 +18,7 @@
   </div>
   <div>
     <div class="market-title">
-      <h3>{{ market.title }}</h3>
+      <h3><a class="market-title-link" href="{% url 'market-detail' market.slug %}">{{ market.title }}</a></h3>
       <span class="tag hot">{{ market.category }}</span>
       <span class="tag">{{ market.subcategory }}</span>
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{{ market.status_label }}</span>

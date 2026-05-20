@@ -3044,6 +3044,14 @@ class WebSmokeTests(TestCase):
 
         self.assertContains(response, '<img src="/media/market_thumbnails/test-thumb.jpg" alt="">', html=True)
 
+    def test_market_card_title_links_to_market_detail(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+            response = self.client.get(reverse("home"))
+
+        expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
+        self.assertContains(response, expected, html=True)
+
     def test_market_card_renders_thumb_fallback_when_api_payload_has_empty_thumb(self):
         market = {
             **get_domain_client().market("openai-gpt6-2026"),
