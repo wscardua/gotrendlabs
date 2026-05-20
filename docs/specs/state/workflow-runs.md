@@ -631,3 +631,26 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-19
 - Retomada: evoluir gestão de operadores, mascaramento seletivo de dados sensíveis ou ajuste de reputação apenas com nova decisão técnica
 - Reversão lógica: ocultar rotas/telas de usuários no Admin Ops e manter eventos/ledger preservados para auditoria
+
+## WFLOW-20260520-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-OPSLOG-001`
+- Objetivo: implementar logs técnicos persistidos para troubleshooting em Django, FastAPI, logging Python e Admin Ops
+- Etapa atual: concluído; `.venv/bin/python manage.py test`, checks de migration e testes focados de Admin Ops/logs executados com sucesso em 2026-05-20
+- Artefatos afetados:
+  - `system_logs/`
+  - `backend_api/`
+  - `admin_ops/`
+  - `accounts/api_client.py`
+  - `config/`
+  - `templates/admin_base.html`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: evoluir alertas, paginação avançada e integração externa de observabilidade quando priorizado
+- Reversão lógica: ocultar telas/rotas de logs no Admin Ops e manter tabela para auditoria técnica temporária até expiração

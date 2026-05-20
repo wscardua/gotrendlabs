@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -165,6 +165,37 @@ class AdminUserWalletAdjustmentPayload(BaseModel):
     direction: str
     amount_oc: int = Field(gt=0, le=1000000)
     note: str = Field(min_length=1, max_length=2000)
+
+
+class SystemLogResponse(BaseModel):
+    id: int
+    created_at: str
+    expires_at: str
+    level: str
+    source: str
+    logger_name: str = ""
+    event_type: str
+    message: str
+    request_id: str = ""
+    method: str = ""
+    path: str = ""
+    status_code: Optional[int] = None
+    duration_ms: Optional[int] = None
+    user_id: Optional[int] = None
+    user_identifier: str = ""
+    ip_address: str = ""
+    user_agent: str = ""
+    exception_type: str = ""
+    stack_trace: str = ""
+    context: dict[str, Any] = Field(default_factory=dict)
+
+
+class SystemLogListResponse(BaseModel):
+    logs: List[SystemLogResponse]
+    counts: dict
+    page: int
+    page_size: int
+    total: int
 
 
 class BadgeResponse(BaseModel):

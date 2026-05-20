@@ -1,6 +1,7 @@
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from io import StringIO
+import logging
 from urllib.parse import quote
 
 from django.core.management import call_command
@@ -21,6 +22,8 @@ from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
 from core.social_share import public_badge_share_token
 from markets.models import AdminEvent, CommentReaction, Market, MarketComment, MarketOption, MarketSuggestion, Prediction, ProductFeedback
+from system_logs.models import SystemLog
+from system_logs.services import log_system_event
 
 
 class FixtureDomainClientTests(TestCase):
@@ -35,6 +38,17 @@ class FixtureDomainClientTests(TestCase):
 
 
 class BackendAuthAPITests(TestCase):
+    def test_system_log_model_defaults_retention_and_context(self):
+        log = SystemLog.objects.create(
+            level="INFO",
+            source="django",
+            event_type="request",
+            message="Modelo de log operacional",
+            context={"request_id": "model-smoke"},
+        )
+        self.assertEqual(log.context["request_id"], "model-smoke")
+        self.assertGreater(log.expires_at, timezone.now() + timedelta(days=89))
+
     def test_market_api_seed_filters_and_detail_contract(self):
         self.assertEqual(Market.objects.filter(slug="openai-gpt6-2026").count(), 1)
         self.assertGreaterEqual(MarketOption.objects.filter(market__slug="openai-gpt6-2026").count(), 2)
@@ -239,6 +253,86 @@ class BackendAuthAPITests(TestCase):
         allowed_login = client.post("/auth/login", json={"email": "managed-user@example.com", "password": "testpass123"})
         self.assertEqual(allowed_login.status_code, 200)
         self.assertTrue(AdminEvent.objects.filter(action="user.reactivate", entity_identifier=str(target_id)).exists())
+
+    def test_admin_system_logs_contracts_filters_redaction_and_staff_gate(self):
+        client = TestClient(app)
+        staff = client.post(
+            "/auth/register",
+            json={"display_name": "Logs Staff", "email": "logs-staff@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        user = client.post(
+            "/auth/register",
+            json={"display_name": "Logs User", "email": "logs-user@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        self.assertEqual(staff.status_code, 201)
+        self.assertEqual(user.status_code, 201)
+        staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
+        user_headers = {"Authorization": f"Bearer {user.json()['session']['token']}"}
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("logs-staff@example.com",))
+
+        forbidden = client.get("/admin/system-logs", headers=user_headers)
+        self.assertEqual(forbidden.status_code, 403)
+
+        request_id = "req-system-log-test"
+        log_id = log_system_event(
+            level="ERROR",
+            source="fastapi",
+            logger_name="orynth.test",
+            event_type="request_exception",
+            message="Falha simulada de troubleshooting",
+            request_id=request_id,
+            method="POST",
+            path="/admin/test",
+            status_code=500,
+            user_id=user.json()["user"]["id"],
+            exception_type="RuntimeError",
+            stack_trace="RuntimeError: boom",
+            context={"headers": {"Authorization": "Bearer secret-token"}, "password": "hidden"},
+        )
+        self.assertIsNotNone(log_id)
+
+        listing = client.get(
+            "/admin/system-logs",
+            headers=staff_headers,
+            params={"level": "ERROR", "source": "fastapi", "status_code": 500, "request_id": request_id, "exception_type": "RuntimeError", "user_identifier": "@logsuser"},
+        )
+        self.assertEqual(listing.status_code, 200)
+        payload = listing.json()
+        self.assertGreaterEqual(payload["total"], 1)
+        self.assertEqual(payload["logs"][0]["request_id"], request_id)
+        self.assertIn("@logsuser", payload["logs"][0]["user_identifier"])
+        self.assertIn("counts", payload)
+
+        detail = client.get(f"/admin/system-logs/{log_id}", headers=staff_headers)
+        self.assertEqual(detail.status_code, 200)
+        detail_payload = detail.json()
+        self.assertEqual(detail_payload["exception_type"], "RuntimeError")
+        self.assertIn("@logsuser", detail_payload["user_identifier"])
+        self.assertEqual(detail_payload["context"]["headers"]["Authorization"], "[REDACTED]")
+        self.assertEqual(detail_payload["context"]["password"], "[REDACTED]")
+
+        combo_listing = client.get(
+            "/admin/system-logs",
+            headers=staff_headers,
+            params={"request_id": request_id, "user_identifier": "@logsuser · Logs User · logs-user@example.com"},
+        )
+        self.assertEqual(combo_listing.status_code, 200)
+        self.assertGreaterEqual(combo_listing.json()["total"], 1)
+
+    def test_system_log_capture_and_python_logging_handler(self):
+        client = TestClient(app)
+        request_id = "req-capture-smoke"
+        response = client.get("/markets", headers={"X-Request-ID": request_id, "Authorization": "Bearer should-not-leak"})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.headers["x-request-id"], request_id)
+        self.assertTrue(SystemLog.objects.filter(request_id=request_id, source="fastapi", event_type="request").exists())
+        captured = SystemLog.objects.filter(request_id=request_id).latest("id")
+        self.assertEqual(captured.context["headers"]["authorization"], "[REDACTED]")
+
+        logging.getLogger("orynth.tests.system_logs").warning("handler persistence smoke", extra={"api_token": "secret"})
+        self.assertTrue(SystemLog.objects.filter(logger_name="orynth.tests.system_logs", event_type="logging", message__icontains="handler persistence smoke").exists())
 
     def test_register_handle_collision_keeps_at_prefix(self):
         client = TestClient(app)
@@ -2164,6 +2258,30 @@ class WebSmokeTests(TestCase):
                 if route == reverse("feedback"):
                     self.assertContains(response, "Enviar feedback/Suporte")
 
+    def test_django_system_log_uses_orynth_session_user(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="@loggedweb", email="logged-web@example.com", password="testpass123", first_name="Logged Web")
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+
+        with patch("system_logs.middleware.log_system_event") as log_mock:
+            response = self.client.get(reverse("rankings"), HTTP_X_REQUEST_ID="django-session-user-log")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(log_mock.called)
+        self.assertEqual(log_mock.call_args.kwargs["request_id"], "django-session-user-log")
+        self.assertEqual(log_mock.call_args.kwargs["source"], "django")
+        self.assertEqual(log_mock.call_args.kwargs["user_id"], user.id)
+
     def test_register_links_to_use_policy(self):
         response = self.client.get(reverse("register"))
 
@@ -2818,6 +2936,8 @@ class WebSmokeTests(TestCase):
             reverse("admin-ops-markets"),
             reverse("admin-ops-users"),
             reverse("admin-ops-user-detail", args=[1]),
+            reverse("admin-ops-system-logs"),
+            reverse("admin-ops-system-log-detail", args=[1]),
             reverse("admin-ops-badges"),
             reverse("admin-ops-badge-new"),
             reverse("admin-ops-badge-edit", args=["founding-member"]),
@@ -2958,6 +3078,73 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Ajuste de wallet")
             self.assertContains(response, '<option value="" selected>Selecione</option>', html=True)
             self.assertContains(response, "Revogar sessões")
+
+        log_payload = {
+            "logs": [
+                {
+                    "id": 10,
+                    "created_at": "2026-05-20T00:00:00+00:00",
+                    "expires_at": "2026-08-18T00:00:00+00:00",
+                    "level": "ERROR",
+                    "source": "fastapi",
+                    "logger_name": "fastapi.request",
+                    "event_type": "request_exception",
+                    "message": "Falha simulada",
+                    "request_id": "req-admin-log",
+                    "method": "GET",
+                    "path": "/admin/system-logs",
+                    "status_code": 500,
+                    "duration_ms": 42,
+                    "user_id": 55,
+                    "user_identifier": "@operated · Operated User",
+                    "ip_address": "127.0.0.1",
+                    "user_agent": "test",
+                    "exception_type": "RuntimeError",
+                    "stack_trace": "RuntimeError: boom",
+                    "context": {"headers": {"authorization": "[REDACTED]"}},
+                }
+            ],
+            "counts": {"total": 120, "info": 0, "warning": 0, "error": 1, "critical": 0},
+            "page": 1,
+            "page_size": 50,
+            "total": 120,
+        }
+        with patch("admin_ops.views.admin_get_system_logs", return_value=log_payload) as logs_mock, patch("admin_ops.views.admin_get_system_log", return_value=log_payload["logs"][0]), patch("admin_ops.views.admin_get_users", return_value=user_data) as log_users_mock:
+            response = self.client.get(reverse("admin-ops-system-logs"))
+            self.assertContains(response, "Logs do sistema")
+            self.assertContains(response, "Troubleshooting")
+            self.assertContains(response, '<datalist id="system-log-users">')
+            self.assertContains(response, 'value="@operated · Operated User · operated@example.com"')
+            self.assertContains(response, "@operated · Operated User")
+            self.assertNotContains(response, "Falha simulada")
+            self.assertContains(response, "página 1 de 3")
+            self.assertContains(response, "Próxima")
+            log_users_mock.assert_any_call("staff-token", order="created_desc")
+            log_users_mock.assert_any_call("staff-token", role="staff", order="created_desc")
+            log_users_mock.assert_any_call("staff-token", role="superuser", order="created_desc")
+            response = self.client.get(f"{reverse('admin-ops-system-logs')}?level=ERROR&source=fastapi&request_id=req-admin-log&user_identifier=%40operated")
+            self.assertContains(response, "req-admin-log")
+            logs_mock.assert_any_call(
+                "staff-token",
+                q="",
+                level="ERROR",
+                source="fastapi",
+                logger="",
+                event_type="",
+                method="",
+                path="",
+                status_code="",
+                user_identifier="@operated",
+                request_id="req-admin-log",
+                exception_type="",
+                **{"from": "", "to": "", "page": "1", "page_size": "50"},
+            )
+            response = self.client.get(reverse("admin-ops-system-log-detail", args=[10]))
+            self.assertContains(response, "Log #10")
+            self.assertContains(response, "Evento registrado")
+            self.assertContains(response, "@operated · Operated User")
+            self.assertContains(response, "RuntimeError")
+            self.assertContains(response, "[REDACTED]")
 
         badge_data = {
             "badges": [

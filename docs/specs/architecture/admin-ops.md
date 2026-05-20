@@ -82,4 +82,5 @@
 - Formulário administrativo de badge deve exibir prévia do card público, atualizando nome, descrição, regra, imagens de tema e status antes de salvar.
 - Regras de badge com recorte temático devem selecionar categoria e subcategoria a partir da taxonomia dinâmica persistida; subcategorias são filtradas pela categoria escolhida.
 - Criação, edição e desativação de badge passam por contratos staff da FastAPI e registram `badge.create`, `badge.update` ou `badge.deactivate` em `orynth_admin_events`.
+- Logs técnicos de troubleshooting ficam disponíveis no Admin Ops em área própria, com filtros operacionais e detalhe completo por contrato staff da FastAPI.
 - Denúncias por usuários, moderação avançada, comunicações assíncronas de resolução, gestão de operadores e ajuste manual de reputação permanecem fora desta fatia.

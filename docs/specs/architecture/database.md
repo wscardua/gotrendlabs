@@ -22,6 +22,7 @@
 - Gestão administrativa de usuários reutiliza `orynth_users`, `orynth_user_profiles`, `orynth_auth_sessions`, `orynth_auth_events`, `orynth_wallet_ledger`, `orynth_wallet_balances` e `orynth_user_badge_awards` para suporte sem criar nova tabela.
 - Ações administrativas de usuário devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust` em `orynth_admin_events`.
 - Ajuste manual de wallet deve ser persistido em `orynth_wallet_ledger` como `manual_adjustment` e atualizar `orynth_wallet_balances` na mesma transação.
+- Logs técnicos de troubleshooting ficam em `orynth_system_logs`, com retenção por `expires_at`, índices de consulta operacional e contexto JSON redigido/truncado.
 
 ## Não Responsabilidades
 
