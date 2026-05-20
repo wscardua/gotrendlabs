@@ -857,3 +857,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: aplicar o mesmo padrão a novos browses web simples, mantendo paginação por offset apenas em auditorias ou telas que precisem de posição explícita
 - Reversão lógica: restaurar os controles de página/offset nas views/templates afetados, preservando contratos backend e documentação histórica
+
+## WFLOW-20260520-009
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-I18N-001`, `sistema-documental`
+- Objetivo: renomear a marca pública da plataforma para `Orynth Trends` preservando identificadores técnicos e `Orynth Coins`
+- Etapa atual: concluído; testes e busca final registrados na implementação desta branch
+- Artefatos afetados:
+  - `templates/`
+  - `accounts/templates/accounts/`
+  - `core/`
+  - `backend_api/main.py`
+  - `static/js/orynth.js`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: extrair strings de marca para catálogos quando `FEAT-I18N-001` avançar
+- Reversão lógica: restaurar textos públicos para `Orynth`, mantendo `Orynth Coins` e identificadores técnicos inalterados

@@ -4,14 +4,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Orynth Admin{% endblock %}</title>
+  <title>{% block title %}Orynth Trends Admin{% endblock %}</title>
   <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260520-orynth-cent">
   <script src="{% static 'js/orynth.js' %}?v=20260520-orynth-cent" defer></script>
 </head>
 <body>
   <header class="topbar">
     <nav class="shell nav">
-      <a class="brand" href="{% url 'admin-ops-dashboard' %}"><span class="brand-mark">A</span><span>Orynth Admin</span></a>
+      <a class="brand" href="{% url 'admin-ops-dashboard' %}"><span class="brand-mark">A</span><span>Orynth Trends Admin</span></a>
       <div class="nav-links">
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>

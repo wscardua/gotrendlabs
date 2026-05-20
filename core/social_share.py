@@ -54,13 +54,13 @@ def build_share_context(request, *, kind, title, description, text, image_view_n
 
 
 def market_share_context(request, market):
-    title = str(market.get("title", "Mercado Orynth"))
+    title = str(market.get("title", "Mercado Orynth Trends"))
     volume_label = currency_label(market.get("volume_oc", 0))
     description = (
         f"Consenso atual: {market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · "
         f"{volume_label} previstos. {MARKET_CTA} {ORYNTH_CONTEXT}"
     )
-    text = f"No Orynth: {title}. {MARKET_CTA}"
+    text = f"No Orynth Trends: {title}. {MARKET_CTA}"
     return build_share_context(
         request,
         kind="market",
@@ -74,16 +74,16 @@ def market_share_context(request, market):
 
 def result_share_context(request, market, viewer):
     if viewer.get("is_authenticated"):
-        title = f"{viewer.get('name', 'Usuario')} compartilhou um resultado no Orynth."
+        title = f"{viewer.get('name', 'Usuario')} compartilhou um resultado no Orynth Trends."
         description = (
             f"Resultado: {market.get('primary_outcome', '')}. Mercado: {market.get('title', 'mercado')}. "
             f"Reputacao atual {viewer.get('reputation', 0)}. {ORYNTH_CONTEXT}"
         )
-        text = f"{viewer.get('name', 'Usuario')} compartilhou um resultado no Orynth: {market.get('title', '')}"
+        text = f"{viewer.get('name', 'Usuario')} compartilhou um resultado no Orynth Trends: {market.get('title', '')}"
     else:
-        title = f"Resultado: {market.get('primary_outcome', '')} · Orynth"
+        title = f"Resultado: {market.get('primary_outcome', '')} · Orynth Trends"
         description = f"Mercado: {market.get('title', 'mercado')}. {ORYNTH_CONTEXT}"
-        text = f"Resultado no Orynth: {market.get('title', '')}"
+        text = f"Resultado no Orynth Trends: {market.get('title', '')}"
     return build_share_context(
         request,
         kind="result",
@@ -101,8 +101,8 @@ def public_badge_share_token(user_id, badge_code):
 
 def badge_share_context(request, badge, viewer):
     title = f"{viewer.get('name', 'Usuario')} conquistou {badge.get('name', 'uma badge')}."
-    description = f"{badge.get('description') or 'Conquista registrada no Orynth.'} {ORYNTH_CONTEXT}"
-    text = f"{viewer.get('name', 'Usuario')} conquistou a badge {badge.get('name', 'Orynth')} no Orynth."
+    description = f"{badge.get('description') or 'Conquista registrada no Orynth Trends.'} {ORYNTH_CONTEXT}"
+    text = f"{viewer.get('name', 'Usuario')} conquistou a badge {badge.get('name', 'Orynth Trends')} no Orynth Trends."
     query = {"t": viewer["share_token"]} if viewer.get("share_token") else None
     return build_share_context(
         request,
@@ -118,8 +118,8 @@ def badge_share_context(request, badge, viewer):
 
 def render_market_card(market, share):
     return _render_card(
-        eyebrow=f"Orynth · {market.get('category', 'Mercado')}",
-        title=str(market.get("title", "Mercado Orynth")),
+        eyebrow=f"Orynth Trends · {market.get('category', 'Mercado')}",
+        title=str(market.get("title", "Mercado Orynth Trends")),
         lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {currency_label(market.get('volume_oc', 0))} previstos",
         body=f"{MARKET_CTA} Fonte: {market.get('source', 'verificavel')}",
         url=share["display_url"],
@@ -130,13 +130,13 @@ def render_market_card(market, share):
 
 def render_result_card(market, viewer, share):
     if viewer.get("is_authenticated"):
-        title = str(market.get("title", "Mercado Orynth"))
+        title = str(market.get("title", "Mercado Orynth Trends"))
         body = f"Reputacao atual {viewer.get('reputation', 0)} · {ORYNTH_CONTEXT}"
     else:
-        title = str(market.get("title", "Mercado Orynth"))
+        title = str(market.get("title", "Mercado Orynth Trends"))
         body = ORYNTH_CONTEXT
     return _render_card(
-        eyebrow=f"Orynth · Resultado: {market.get('primary_outcome', '')}",
+        eyebrow=f"Orynth Trends · Resultado: {market.get('primary_outcome', '')}",
         title=title,
         lead=f"Resultado: {market.get('primary_outcome', '')}",
         body=body,
@@ -148,9 +148,9 @@ def render_result_card(market, viewer, share):
 
 def render_badge_card(badge, viewer, share):
     return _render_card(
-        eyebrow="Orynth · Badge conquistada",
+        eyebrow="Orynth Trends · Badge conquistada",
         title=f"{viewer.get('name', 'Usuario')} conquistou {badge.get('name', 'uma badge')}.",
-        lead=str(badge.get("description") or "Conquista registrada no Orynth."),
+        lead=str(badge.get("description") or "Conquista registrada no Orynth Trends."),
         body=f"{badge.get('rule_description') or 'Conquista validada pela plataforma.'} {ORYNTH_CONTEXT}",
         url=share["display_url"],
         image_url=badge.get("image_url"),
@@ -204,7 +204,7 @@ def _render_card(*, eyebrow, title, lead, body, url, image_url=None, fallback_ma
     _soft_background(draw)
 
     draw.rounded_rectangle((36, 36, 1164, 594), radius=34, fill=CARD_PANEL, outline=LINE, width=2)
-    draw.text((74, 74), "Orynth", fill=GREEN, font=_font(34, bold=True))
+    draw.text((74, 74), "Orynth Trends", fill=GREEN, font=_font(34, bold=True))
     draw.text((74, 546), url, fill=GREEN, font=_font(24, bold=True))
     draw.text((930, 78), eyebrow, fill=MUTED, font=_font(24), anchor="ra")
 

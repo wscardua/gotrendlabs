@@ -592,6 +592,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-I18N-001
 
+### 2026-05-20 - v0.2
+- marca pública da plataforma alterada para `Orynth Trends` em templates, compartilhamento social, API title/health, README e specs ativas
+- nomes técnicos, identificadores `orynth_*`, arquivos, comandos, env vars e `Orynth Coins` foram preservados
+- extração completa de strings para catálogos `pt-BR`/`en` segue fora desta fatia
+- status de implementação: `nao_iniciada`
+
 ### 2026-05-17 - v0.1
 - spec inicial criada
 - contratos relacionados: `i18n-content.md`

@@ -5,7 +5,7 @@
 
 ## Objetivo da revisão
 
-Validar se a estrutura de specs, skills, workflows, testes e memória operacional está eficaz e eficiente para desenvolvimento assistido por IA no Orynth.
+Validar se a estrutura de specs, skills, workflows, testes e memória operacional está eficaz e eficiente para desenvolvimento assistido por IA no Orynth Trends.
 
 ## Conclusão
 

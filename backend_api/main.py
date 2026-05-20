@@ -97,7 +97,7 @@ BADGE_RULE_TYPES = {
 BADGE_TYPES = {"global", "category", "performance", "engagement"}
 PUBLIC_WEB_BASE_URL = os.environ.get("ORYNTH_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
-app = FastAPI(title="Orynth Backend API", version="0.1.0")
+app = FastAPI(title="Orynth Trends Backend API", version="0.1.0")
 
 
 def _runtime_config_path():
@@ -351,7 +351,7 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
             entry_type="grant_initial",
             amount=INITIAL_GRANT_OC,
             direction="credit",
-            description="Saldo inicial do Orynth",
+            description="Saldo inicial do Orynth Trends",
             reference_type="auth_register",
             reference_id=str(user_id),
         )
@@ -360,7 +360,7 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
     cursor.execute(
         """
         INSERT INTO orynth_user_badges (user_id, code, name, description, status, earned_at)
-        VALUES (%s, 'founding_member', 'Membro fundador', 'Entrou no Orynth durante a fase inicial.', 'earned', %s)
+        VALUES (%s, 'founding_member', 'Membro fundador', 'Entrou no Orynth Trends durante a fase inicial.', 'earned', %s)
         ON CONFLICT (user_id, code) DO NOTHING
         """,
         (user_id, now),
@@ -2171,7 +2171,7 @@ def health():
 
 @app.get("/")
 def root():
-    return {"name": "Orynth Backend API", "status": "ok"}
+    return {"name": "Orynth Trends Backend API", "status": "ok"}
 
 
 @app.get("/markets", response_model=MarketListResponse)
