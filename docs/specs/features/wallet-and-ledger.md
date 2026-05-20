@@ -48,6 +48,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - saldo e extrato são consistentes
 - saldo é exibido por projeção operacional reconciliável com ledger
 - usuário consegue entender a origem de cada lançamento
+- extrato usa `Carregar mais` em lotes cumulativos de 10 lançamentos
 
 ## Regras de domínio
 

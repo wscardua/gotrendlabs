@@ -1,10 +1,24 @@
-from django.core.paginator import Paginator
 from django.shortcuts import redirect, render
 
 from accounts.api_client import AuthAPIError, get_activity, get_badges, get_me, get_rankings, request_account_deletion, update_me
 from accounts.forms import ProfileForm
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, clear_auth_session, is_authenticated, store_auth_session
+
+
+LOAD_MORE_STEP = 10
+
+
+def _load_more_limit(raw_limit, total, step=LOAD_MORE_STEP):
+    try:
+        limit = int(raw_limit or step)
+    except (TypeError, ValueError):
+        limit = step
+    if limit < step:
+        limit = step
+    if limit % step:
+        limit = ((limit // step) + 1) * step
+    return min(limit, total) if total else step
 
 
 def _profile_form_initial(profile_data):
@@ -92,13 +106,18 @@ def rankings(request):
         viewer_handle = (auth_user(request) or {}).get("handle", "")
         viewer_handle = viewer_handle if viewer_handle.startswith("@") else f"@{viewer_handle}"
     viewer_ranking = next((row for row in ranking_rows if row.get("handle") == viewer_handle), None)
-    ranking_page = Paginator(ranking_rows, 10).get_page(request.GET.get("page") or 1)
+    ranking_total = len(ranking_rows)
+    ranking_limit = _load_more_limit(request.GET.get("limit"), ranking_total)
+    ranking_visible = ranking_rows[:ranking_limit]
     return render(
         request,
         "profiles/rankings.html",
         {
-            "ranking": list(ranking_page.object_list),
-            "ranking_page": ranking_page,
+            "ranking": list(ranking_visible),
+            "ranking_total": ranking_total,
+            "ranking_visible_count": len(ranking_visible),
+            "ranking_has_more": len(ranking_visible) < ranking_total,
+            "ranking_next_limit": ranking_limit + LOAD_MORE_STEP,
             "ranking_categories": ranking_payload.get("categories", []),
             "selected_category": ranking_payload.get("selected_category", selected_category),
             "selected_subcategory": ranking_payload.get("selected_subcategory", selected_subcategory),

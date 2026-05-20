@@ -70,6 +70,7 @@
 - Campos obrigatórios devem ser marcados visualmente no formulário e ações concluídas devem gerar feedback de sucesso para o operador.
 - Browse de mercados administrativos filtra por status via query string e mantém contadores globais por status.
 - Browse de mercados administrativos exibe `view_count` e `share_count` como indicadores compactos de popularidade operacional e permite ordenar por padrão, mais visualizados ou mais compartilhados.
+- Browses principais de usuários, mercados, resolução, filas e logs usam `Carregar mais` em blocos cumulativos de 10 itens, preservando filtros aplicados.
 - Browse de mercados administrativos deve degradar para leitura local em Postgres quando a FastAPI administrativa estiver indisponível ou retornar erro transitório, evitando bloquear a operação de visualização.
 - Browse de mercados administrativos deve manter a ação primária focada em `Editar/visualizar`; acesso à página pública fica no editor do mercado, não na tabela de listagem.
 - Gestão administrativa de usuários usa contratos staff da FastAPI para listagem, busca, detalhe operacional, desativação/reativação, revogação de sessões e ajuste manual de wallet.

@@ -22,19 +22,12 @@
         <tr><td colspan="4">Nenhum lançamento encontrado.</td></tr>
       {% endfor %}
     </table>
-    {% if entries_page.paginator.num_pages > 1 %}
-      <div class="wallet-pagination" aria-label="Paginação do extrato">
-        <span>página {{ entries_page.number }} de {{ entries_page.paginator.num_pages }}</span>
+    {% if entries_total > 10 %}
+      <div class="wallet-pagination" aria-label="Mais lançamentos do extrato">
+        <span>mostrando {{ entries_visible_count }} de {{ entries_total }}</span>
         <div class="wallet-pagination-actions">
-          {% if entries_page.has_previous %}
-            <a class="btn small ghost" href="?ledger_page={{ entries_page.previous_page_number }}">Anterior</a>
-          {% else %}
-            <span class="btn small disabled">Anterior</span>
-          {% endif %}
-          {% if entries_page.has_next %}
-            <a class="btn small ghost" href="?ledger_page={{ entries_page.next_page_number }}">Próxima</a>
-          {% else %}
-            <span class="btn small disabled">Próxima</span>
+          {% if entries_has_more %}
+            <a class="btn small ghost" href="?ledger_limit={{ entries_next_limit }}">Carregar mais</a>
           {% endif %}
         </div>
       </div>

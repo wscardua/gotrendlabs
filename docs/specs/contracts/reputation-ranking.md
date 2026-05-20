@@ -52,7 +52,7 @@ Campos mínimos de cada linha em `rows`:
 - Ranking filtrado por categoria/subcategoria é uma projeção de leitura recalculada a partir de previsões resolvidas daquele recorte, usando a mesma fórmula MVP.
 - Usuários administrativos (`is_staff` ou `is_superuser`) não participam do ranking público.
 - A UI pública deve exibir o identificador (`handle`) como identificação do usuário no ranking.
-- A UI pública deve paginar a apresentação em 10 linhas por página, preservando filtros de categoria/subcategoria.
+- A UI pública deve apresentar o ranking em blocos cumulativos de 10 linhas com `Carregar mais`, preservando filtros de categoria/subcategoria.
 - Conteúdo personalizado do quadro "Seu recorte" deve depender de sessão/dados reais; visitantes não devem ver posição estimada ou percentual fictício.
 
 ## Contrato de badges

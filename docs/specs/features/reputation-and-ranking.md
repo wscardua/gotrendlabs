@@ -78,7 +78,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - desfazer resolução remove os efeitos reputacionais daquele mercado ao recalcular previsões ainda resolvidas do usuário
 - ranking global usa a reputação persistida do usuário
 - ranking temático por categoria/subcategoria é recalculado em leitura usando apenas previsões resolvidas do recorte
-- tela pública de ranking pagina a apresentação em lotes de 10 linhas, preservando filtros aplicados
+- tela pública de ranking usa `Carregar mais` em lotes cumulativos de 10 linhas, preservando filtros aplicados
 - usuários `is_staff` ou `is_superuser` são excluídos do ranking público
 - mudanças futuras de fórmula exigem decisão técnica registrada
 - badges não alteram reputação, ranking nem wallet
@@ -95,7 +95,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 
 ## Responsabilidades por camada
 
-- `frontend-web`: ranking paginado de 10 em 10, filtros de categoria/subcategoria, perfil, catálogo de badges, rota autenticada de compartilhamento de badge conquistada, rota pública por token opaco e card social com metadados; não calcula reputação nem elegibilidade de badges no navegador; alterna imagem clara/escura da badge conforme tema ativo
+- `frontend-web`: ranking com `Carregar mais` de 10 em 10, filtros de categoria/subcategoria, perfil, catálogo de badges, rota autenticada de compartilhamento de badge conquistada, rota pública por token opaco e card social com metadados; não calcula reputação nem elegibilidade de badges no navegador; alterna imagem clara/escura da badge conforme tema ativo
 - `backend-api`: cálculo e exposição do score global/temático, catálogo de badges, validação administrativa e concessão automática centralizada na `BadgeAwardEngine`
 - `admin-ops`: cadastro operacional de badges consumindo contratos staff do backend, incluindo upload local de imagem para tema claro e tema escuro
 - `database`: persistência de definições, regras e conquistas; materialização auxiliar quando necessário

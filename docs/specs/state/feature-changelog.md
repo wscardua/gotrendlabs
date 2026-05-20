@@ -363,6 +363,13 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-REP-001
 
+### 2026-05-20 - v1.0
+- padrão web de listas simples passou a usar `Carregar mais` em blocos cumulativos de 10 itens
+- tela pública de ranking trocou navegação `Anterior`/`Próxima` por `Carregar mais`, preservando filtros de categoria/subcategoria
+- browses principais do Admin Ops de usuários, mercados, resolução, filas e logs passaram a usar o mesmo padrão em blocos de 10
+- contratos relacionados: `reputation-ranking.md`
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.9
 - tela pública de ranking passou a paginar a lista em 10 linhas por página
 - paginação preserva filtros de categoria/subcategoria aplicados
@@ -432,6 +439,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-WALLET-001
+
+### 2026-05-20 - v1.0
+- extrato da wallet trocou navegação `Anterior`/`Próxima` por `Carregar mais` em blocos cumulativos de 10 lançamentos
+- histórico de recargas permanece limitado às últimas 3 solicitações
+- status de implementação: `parcial`
 
 ### 2026-05-20 - v0.9
 - Admin Ops Config ganhou parâmetro `wallet_recharge_min_balance_oc` para definir o saldo máximo elegível à solicitação de recarga educativa

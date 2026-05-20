@@ -38,19 +38,12 @@
         <tr><td colspan="5">Ainda não há previsões resolvidas para este recorte.</td></tr>
       {% endfor %}
     </table>
-    {% if ranking_page.paginator.num_pages > 1 %}
-      <div class="wallet-pagination" aria-label="Paginação do ranking">
-        <span>página {{ ranking_page.number }} de {{ ranking_page.paginator.num_pages }}</span>
+    {% if ranking_total > 10 %}
+      <div class="wallet-pagination" aria-label="Mais resultados do ranking">
+        <span>mostrando {{ ranking_visible_count }} de {{ ranking_total }}</span>
         <div class="wallet-pagination-actions">
-          {% if ranking_page.has_previous %}
-            <a class="btn small ghost" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_subcategory %}subcategory={{ selected_subcategory }}&{% endif %}page={{ ranking_page.previous_page_number }}">Anterior</a>
-          {% else %}
-            <span class="btn small disabled">Anterior</span>
-          {% endif %}
-          {% if ranking_page.has_next %}
-            <a class="btn small ghost" href="?{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_subcategory %}subcategory={{ selected_subcategory }}&{% endif %}page={{ ranking_page.next_page_number }}">Próxima</a>
-          {% else %}
-            <span class="btn small disabled">Próxima</span>
+          {% if ranking_has_more %}
+            <a class="btn small ghost" href="?{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if selected_subcategory %}subcategory={{ selected_subcategory|urlencode }}&{% endif %}limit={{ ranking_next_limit }}">Carregar mais</a>
           {% endif %}
         </div>
       </div>

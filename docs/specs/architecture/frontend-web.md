@@ -37,6 +37,7 @@
 - A opção de lembrar acesso no login prolonga a sessão Django no dispositivo sem persistir senha ou alterar o contrato de autenticação da API.
 - A tela de login deve oferecer recuperação de senha; o Django renderiza os formulários, preserva navegação pública e alternância de tema nas telas de recuperação, mas a solicitação e confirmação da senha passam pela FastAPI.
 - Usuários autenticados veem ações iconizadas de `like`/`dislike`; a UI só representa a reação retornada pelo domínio.
+- Listas web simples do produto e browses principais do Admin Ops devem usar o padrão `Carregar mais` em blocos cumulativos de 10 itens; paginação por offset fica reservada para auditorias ou telas com necessidade explícita de navegação posicional.
 - Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`viewer_has_favorite`, `viewer_has_prediction`, `viewer_has_like`, `is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
 - Favoritos no feed da home representam mercados salvos pelo usuário autenticado; `is_featured` permanece como curadoria editorial para destaques visuais.

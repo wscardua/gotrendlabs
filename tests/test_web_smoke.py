@@ -4233,7 +4233,7 @@ class WebSmokeTests(TestCase):
             ],
             "counts": {"total": 120, "info": 0, "warning": 0, "error": 1, "critical": 0},
             "page": 1,
-            "page_size": 50,
+            "page_size": 10,
             "total": 120,
         }
         with patch("admin_ops.views.admin_get_system_logs", return_value=log_payload) as logs_mock, patch("admin_ops.views.admin_get_system_log", return_value=log_payload["logs"][0]), patch("admin_ops.views.admin_get_users", return_value=user_data) as log_users_mock:
@@ -4244,8 +4244,9 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, 'value="@operated · Operated User · operated@example.com"')
             self.assertContains(response, "@operated · Operated User")
             self.assertNotContains(response, "Falha simulada")
-            self.assertContains(response, "página 1 de 3")
-            self.assertContains(response, "Próxima")
+            self.assertContains(response, "1")
+            self.assertContains(response, "de 120 registros filtrados")
+            self.assertContains(response, "Carregar mais")
             log_users_mock.assert_any_call("staff-token", order="created_desc")
             log_users_mock.assert_any_call("staff-token", role="staff", order="created_desc")
             log_users_mock.assert_any_call("staff-token", role="superuser", order="created_desc")
@@ -4264,7 +4265,7 @@ class WebSmokeTests(TestCase):
                 user_identifier="@operated",
                 request_id="req-admin-log",
                 exception_type="",
-                **{"from": "", "to": "", "page": "1", "page_size": "50"},
+                **{"from": "", "to": "", "page": "1", "page_size": "10"},
             )
             response = self.client.get(reverse("admin-ops-system-log-detail", args=[10]))
             self.assertContains(response, "Log #10")
@@ -4565,6 +4566,171 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "disabled", html=False)
             self.assertNotContains(response, "Salvar alterações")
             self.assertNotContains(response, "Cancelar mercado")
+
+    def test_admin_list_pages_use_load_more_blocks_of_ten(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "staffuser",
+            "email": "staff-user@example.com",
+            "display_name": "Staff User",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        users = [
+            {
+                "id": index,
+                "handle": f"@adminuser{index}",
+                "email": f"admin-user-{index}@example.com",
+                "display_name": f"Admin Usuário {index}",
+                "preferred_language": "pt-br",
+                "account_status": "active",
+                "is_active": True,
+                "is_staff": False,
+                "is_superuser": False,
+                "created_at": "2026-05-20T00:00:00+00:00",
+                "last_login": "2026-05-20T00:00:00+00:00",
+                "deactivated_at": None,
+                "available_oc": 1000 + index,
+                "locked_oc": 0,
+                "reputation_score": index,
+            }
+            for index in range(1, 13)
+        ]
+        with patch("admin_ops.views.admin_get_users", return_value={"users": users, "counts": {"total": 12}}):
+            first_page = self.client.get(reverse("admin-ops-users"))
+            self.assertContains(first_page, "mostrando 10 de 12")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertNotContains(first_page, "Admin Usuário 11")
+            second_page = self.client.get(f"{reverse('admin-ops-users')}?limit=20")
+            self.assertContains(second_page, "mostrando 12 de 12")
+            self.assertContains(second_page, "Admin Usuário 11")
+            self.assertNotContains(second_page, "Carregar mais")
+
+        markets = [
+            {
+                "slug": f"admin-market-{index}",
+                "title": f"Mercado Admin {index}",
+                "status": "open",
+                "status_label": "Aberto",
+                "is_featured": False,
+                "kind": "binary",
+                "category": "IA",
+                "subcategory": "Modelos",
+                "view_count": index,
+                "share_count": index,
+            }
+            for index in range(1, 13)
+        ]
+        with patch("admin_ops.views.admin_get_markets", return_value={"markets": markets, "counts": {"open": 12}}):
+            first_page = self.client.get(reverse("admin-ops-markets"))
+            self.assertContains(first_page, "mostrando 10 de 12")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertNotContains(first_page, "Mercado Admin 11")
+            second_page = self.client.get(f"{reverse('admin-ops-markets')}?limit=20")
+            self.assertContains(second_page, "mostrando 12 de 12")
+            self.assertContains(second_page, "Mercado Admin 11")
+            self.assertNotContains(second_page, "Carregar mais")
+
+        resolution_markets = [
+            {
+                **markets[index - 1],
+                "slug": f"locked-market-{index}",
+                "title": f"Resolução Admin {index}",
+                "status": "locked",
+                "status_label": "Fechado",
+                "resolved_at": None,
+                "resolution_timezone": "America/Sao_Paulo",
+                "participants": f"{index} participantes",
+                "volume_oc": f"{index * 10} OC",
+            }
+            for index in range(1, 13)
+        ]
+
+        def resolution_markets_payload(token, status="", order="resolution_desc"):
+            if status == "locked":
+                return {"markets": resolution_markets, "counts": {"locked": 12}}
+            return {"markets": [], "counts": {"resolved": 0}}
+
+        with patch("admin_ops.views.admin_get_markets", side_effect=resolution_markets_payload):
+            first_page = self.client.get(reverse("admin-ops-resolution"))
+            self.assertContains(first_page, "mostrando 10 de 12")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertNotContains(first_page, "Resolução Admin 11")
+            second_page = self.client.get(f"{reverse('admin-ops-resolution')}?limit=20")
+            self.assertContains(second_page, "mostrando 12 de 12")
+            self.assertContains(second_page, "Resolução Admin 11")
+            self.assertNotContains(second_page, "Carregar mais")
+
+        queue_items = [
+            {
+                "id": index,
+                "kind": "suggestion",
+                "title": f"Fila Admin {index}",
+                "queue_label": "Mercado",
+                "item_type": "Sugestão",
+                "created_at": f"2026-05-20T{index:02d}:00:00+00:00",
+                "created_at_label": f"20/05/2026 {index:02d}:00",
+                "severity_label": "Média",
+                "status": "pending",
+                "status_label": "Pendente",
+            }
+            for index in range(1, 13)
+        ]
+        with patch("admin_ops.views.admin_get_queues", return_value={"items": queue_items, "counts": {}}), patch("admin_ops.views.admin_get_comments", return_value={"comments": []}):
+            first_page = self.client.get(f"{reverse('admin-ops-moderation')}?order=created_asc")
+            self.assertContains(first_page, "mostrando 10 de 12")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertNotContains(first_page, "Fila Admin 11")
+            second_page = self.client.get(f"{reverse('admin-ops-moderation')}?order=created_asc&limit=20")
+            self.assertContains(second_page, "mostrando 12 de 12")
+            self.assertContains(second_page, "Fila Admin 11")
+            self.assertNotContains(second_page, "Carregar mais")
+
+        logs = [
+            {
+                "id": index,
+                "created_at": f"2026-05-20T{index:02d}:00:00+00:00",
+                "expires_at": "2026-08-18T00:00:00+00:00",
+                "level": "INFO",
+                "source": "django",
+                "logger_name": "django.request",
+                "event_type": "request",
+                "message": f"Log Admin {index}",
+                "request_id": f"req-admin-{index}",
+                "method": "GET",
+                "path": "/admin-ops/logs/",
+                "status_code": 200,
+                "duration_ms": 10,
+                "user_id": 41,
+                "user_identifier": "@staffuser",
+                "ip_address": "127.0.0.1",
+                "user_agent": "test",
+                "exception_type": "",
+                "stack_trace": "",
+                "context": {},
+            }
+            for index in range(1, 13)
+        ]
+
+        def logs_payload(token, **filters):
+            page_size = int(filters.get("page_size") or 10)
+            return {"logs": logs[:page_size], "counts": {"total": 12}, "page": 1, "page_size": page_size, "total": 12}
+
+        with patch("admin_ops.views.admin_get_system_logs", side_effect=logs_payload), patch("admin_ops.views.admin_get_users", return_value={"users": []}):
+            first_page = self.client.get(reverse("admin-ops-system-logs"))
+            self.assertContains(first_page, "10")
+            self.assertContains(first_page, "de 12 registros filtrados")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertNotContains(first_page, "req-admin-11")
+            second_page = self.client.get(f"{reverse('admin-ops-system-logs')}?limit=20")
+            self.assertContains(second_page, "12")
+            self.assertContains(second_page, "de 12 registros filtrados")
+            self.assertContains(second_page, "req-admin-11")
+            self.assertNotContains(second_page, "Carregar mais")
 
     def test_admin_markets_shows_api_error_without_local_fallback(self):
         session = self.client.session
@@ -4879,7 +5045,7 @@ class WebSmokeTests(TestCase):
             self.assertEqual(response.status_code, 302)
             reject.assert_called_once_with("staff-token", 12, "Aguardar nova tentativa.")
 
-    def test_wallet_ledger_and_recharge_history_are_paginated(self):
+    def test_wallet_ledger_and_recharge_history_use_load_more(self):
         session = self.client.session
         session[TOKEN_KEY] = "api-token"
         session[USER_KEY] = {
@@ -4927,17 +5093,19 @@ class WebSmokeTests(TestCase):
             self.assertContains(first_page, "Movimentação 1")
             self.assertContains(first_page, "Movimentação 10")
             self.assertNotContains(first_page, "Movimentação 11")
-            self.assertContains(first_page, "página 1 de 2")
-            self.assertContains(first_page, "Próxima")
+            self.assertContains(first_page, "mostrando 10 de 12")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertContains(first_page, "?ledger_limit=20")
             self.assertContains(first_page, "Status 1")
             self.assertContains(first_page, "Status 3")
             self.assertNotContains(first_page, "Status 4")
 
-            second_page = self.client.get(f"{reverse('wallet')}?ledger_page=2")
-            self.assertNotContains(second_page, "Movimentação 9")
+            second_page = self.client.get(f"{reverse('wallet')}?ledger_limit=20")
+            self.assertContains(second_page, "Movimentação 9")
             self.assertContains(second_page, "Movimentação 11")
             self.assertContains(second_page, "Movimentação 12")
-            self.assertContains(second_page, "página 2 de 2")
+            self.assertContains(second_page, "mostrando 12 de 12")
+            self.assertNotContains(second_page, "Carregar mais")
 
     def test_login_page_has_focused_auth_layout(self):
         response = self.client.get(reverse("login"))
@@ -5003,7 +5171,7 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "IA")
             self.assertContains(response, "Modelos")
 
-    def test_ranking_page_paginates_rows_by_ten(self):
+    def test_ranking_page_uses_load_more_rows_by_ten(self):
         payload = {
             "rows": [
                 {
@@ -5027,15 +5195,16 @@ class WebSmokeTests(TestCase):
             self.assertContains(first_page, "@rank1")
             self.assertContains(first_page, "@rank10")
             self.assertNotContains(first_page, "@rank11")
-            self.assertContains(first_page, "página 1 de 2")
-            self.assertContains(first_page, "Próxima")
-            self.assertContains(first_page, "category=ia&subcategory=modelos&page=2")
+            self.assertContains(first_page, "mostrando 10 de 12")
+            self.assertContains(first_page, "Carregar mais")
+            self.assertContains(first_page, "category=ia&subcategory=modelos&limit=20")
 
-            second_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&page=2")
-            self.assertNotContains(second_page, "@rank10")
+            second_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&limit=20")
+            self.assertContains(second_page, "@rank10")
             self.assertContains(second_page, "@rank11")
             self.assertContains(second_page, "@rank12")
-            self.assertContains(second_page, "página 2 de 2")
+            self.assertContains(second_page, "mostrando 12 de 12")
+            self.assertNotContains(second_page, "Carregar mais")
 
     def test_profile_wallet_and_ranking_render_api_data(self):
         session = self.client.session

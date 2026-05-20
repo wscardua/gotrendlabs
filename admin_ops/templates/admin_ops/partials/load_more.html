@@ -1,0 +1,10 @@
+{% if pagination.show %}
+  <div class="wallet-pagination" aria-label="{{ label }}">
+    <span>mostrando {{ pagination.visible_count }} de {{ pagination.total }}</span>
+    <div class="wallet-pagination-actions">
+      {% if pagination.has_more %}
+        <a class="btn small ghost" href="{{ pagination.next_url }}">Carregar mais</a>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}

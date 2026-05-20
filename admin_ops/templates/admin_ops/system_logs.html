@@ -92,14 +92,6 @@
         <span>Até</span>
         <input type="datetime-local" name="to" value="{{ filters.to }}">
       </label>
-      <label>
-        <span>Por página</span>
-        <select name="page_size">
-          <option value="25" {% if filters.page_size == "25" %}selected{% endif %}>25</option>
-          <option value="50" {% if filters.page_size == "50" %}selected{% endif %}>50</option>
-          <option value="100" {% if filters.page_size == "100" %}selected{% endif %}>100</option>
-        </select>
-      </label>
       <div class="user-filter-actions">
         <button class="btn small primary" type="submit">Aplicar</button>
         <a class="btn small ghost" href="{% url 'admin-ops-system-logs' %}">Limpar</a>
@@ -108,15 +100,9 @@
 
     <div class="system-log-pagination-bar">
       <div class="user-result-meta">
-        <strong>{{ pagination.start }}-{{ pagination.end }}</strong>
-        <span>de {{ pagination.total }} registros filtrados · página {{ pagination.page }} de {{ pagination.total_pages }}</span>
+        <strong>{{ pagination.visible_count }}</strong>
+        <span>de {{ pagination.total }} registros filtrados</span>
       </div>
-      <nav class="system-log-pagination" aria-label="Paginação de logs">
-        {% if pagination.first_url %}<a class="btn small ghost" href="{{ pagination.first_url }}">Primeira</a>{% else %}<span class="btn small ghost disabled">Primeira</span>{% endif %}
-        {% if pagination.previous_url %}<a class="btn small ghost" href="{{ pagination.previous_url }}">Anterior</a>{% else %}<span class="btn small ghost disabled">Anterior</span>{% endif %}
-        {% if pagination.next_url %}<a class="btn small ghost" href="{{ pagination.next_url }}">Próxima</a>{% else %}<span class="btn small ghost disabled">Próxima</span>{% endif %}
-        {% if pagination.last_url %}<a class="btn small ghost" href="{{ pagination.last_url }}">Última</a>{% else %}<span class="btn small ghost disabled">Última</span>{% endif %}
-      </nav>
     </div>
 
     <div class="admin-table-wrap">
@@ -140,16 +126,7 @@
       </table>
     </div>
 
-    <div class="system-log-pagination-bar bottom">
-      <div class="user-result-meta">
-        <strong>Página {{ pagination.page }}</strong>
-        <span>{{ pagination.page_size }} registros por página</span>
-      </div>
-      <nav class="system-log-pagination" aria-label="Paginação de logs">
-        {% if pagination.previous_url %}<a class="btn small ghost" href="{{ pagination.previous_url }}">Anterior</a>{% else %}<span class="btn small ghost disabled">Anterior</span>{% endif %}
-        {% if pagination.next_url %}<a class="btn small primary" href="{{ pagination.next_url }}">Próxima</a>{% else %}<span class="btn small primary disabled">Próxima</span>{% endif %}
-      </nav>
-    </div>
+    {% include "admin_ops/partials/load_more.html" with pagination=pagination label="Mais logs" %}
   </section>
 </main>
 {% endblock %}
