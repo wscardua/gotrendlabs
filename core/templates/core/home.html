@@ -121,11 +121,14 @@
       </div>
       <div class="filters" data-filter-group data-filter-target="[data-market-list]">
         <button class="filter active" type="button" data-filter="trending">Trending</button>
-        <button class="filter" type="button" data-filter="closing">Encerrando</button>
-        <button class="filter" type="button" data-filter="volume">Mais volume</button>
         <button class="filter" type="button" data-filter="new">Novos</button>
-        <button class="filter" type="button" data-filter="featured">Favoritos</button>
+        <button class="filter" type="button" data-filter="open">Aberto</button>
+        <button class="filter" type="button" data-filter="closing">Encerrado</button>
         <button class="filter" type="button" data-filter="resolved">Resolvidos</button>
+        <button class="filter" type="button" data-filter="volume">Mais volume</button>
+        {% if not is_guest %}<button class="filter" type="button" data-filter="favorited">Favoritos</button>{% endif %}
+        <button class="filter" type="button" data-filter="likes">Mais curtidas</button>
+        {% if not is_guest %}<button class="filter personal-filter" type="button" data-filter="predicted">Minhas previsões</button>{% endif %}
       </div>
       {% if user_summary %}
         <section class="progress-strip">
@@ -138,10 +141,19 @@
           <a class="btn small ghost" href="{% url 'profile' %}">Ver progresso</a>
         </section>
       {% endif %}
-      <div class="market-list" data-market-list>
+      <div class="market-list" data-market-list data-market-page-size="18">
         {% for market in markets %}
-          {% include "components/market_card.html" with market=market %}
+          {% if forloop.counter > 18 %}
+            {% include "components/market_card.html" with market=market initial_hidden=True %}
+          {% else %}
+            {% include "components/market_card.html" with market=market %}
+          {% endif %}
         {% endfor %}
+      </div>
+      <p class="market-empty" data-market-empty hidden>Nenhum mercado com previsão sua ainda.</p>
+      <div class="market-load-more" data-market-load-more {% if markets|length <= 18 %}hidden{% endif %}>
+        <span data-market-load-more-summary>Exibindo 18 de {{ markets|length }} mercados</span>
+        <button class="market-load-more-button" type="button" data-market-load-more-button>Carregar mais</button>
       </div>
     </section>
   </div>

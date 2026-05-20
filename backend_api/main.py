@@ -783,13 +783,12 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
                m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
-               COALESCE(SUM(CASE WHEN cr.reaction = 'like' THEN 1 ELSE 0 END), 0) AS market_like_count,
+               COALESCE(COUNT(ml.id), 0) AS market_like_count,
                c.name AS category, sc.name AS subcategory
         FROM orynth_markets m
         JOIN orynth_market_categories c ON c.id = m.category_id
         JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
-        LEFT JOIN orynth_market_comments mc ON mc.market_id = m.id AND mc.status = 'visible'
-        LEFT JOIN orynth_comment_reactions cr ON cr.comment_id = mc.id
+        LEFT JOIN orynth_market_likes ml ON ml.market_id = m.id
         {where_sql}
         GROUP BY m.id, c.name, sc.name
         ORDER BY {order_sql}
@@ -979,6 +978,40 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         {**option, "sparkline_path": next((item["path"] for item in sparkline["series"] if item["id"] == option["id"]), "")}
         for option in options
     ]
+    viewer_has_prediction = False
+    viewer_has_favorite = False
+    viewer_has_like = False
+    if viewer_id:
+        cursor.execute(
+            """
+            SELECT 1
+            FROM orynth_predictions
+            WHERE market_id = %s AND user_id = %s
+            LIMIT 1
+            """,
+            (row["id"], viewer_id),
+        )
+        viewer_has_prediction = bool(cursor.fetchone())
+        cursor.execute(
+            """
+            SELECT 1
+            FROM orynth_market_favorites
+            WHERE market_id = %s AND user_id = %s
+            LIMIT 1
+            """,
+            (row["id"], viewer_id),
+        )
+        viewer_has_favorite = bool(cursor.fetchone())
+        cursor.execute(
+            """
+            SELECT 1
+            FROM orynth_market_likes
+            WHERE market_id = %s AND user_id = %s
+            LIMIT 1
+            """,
+            (row["id"], viewer_id),
+        )
+        viewer_has_like = bool(cursor.fetchone())
     return {
         "slug": row["slug"],
         "title": row["title"],
@@ -1015,6 +1048,9 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "market_like_count": int(row["market_like_count"] or 0) if "market_like_count" in row else 0,
         "view_count": int(row["view_count"] or 0) if "view_count" in row else 0,
         "share_count": int(row["share_count"] or 0) if "share_count" in row else 0,
+        "viewer_has_prediction": viewer_has_prediction,
+        "viewer_has_favorite": viewer_has_favorite,
+        "viewer_has_like": viewer_has_like,
         "created_at": row["created_at"].isoformat() if "created_at" in row and row["created_at"] else "",
         "sparkline_path": sparkline["sparkline_path"],
         "sparkline_area_path": sparkline["sparkline_area_path"],
@@ -2111,6 +2147,7 @@ def list_markets(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     category: Optional[str] = None,
     subcategory: Optional[str] = None,
+    authorization: str = Header(default=""),
 ):
     where = ["m.status NOT IN ('draft', 'canceled')"]
     params = []
@@ -2126,8 +2163,9 @@ def list_markets(
     where_sql = "WHERE " + " AND ".join(where)
     with get_connection() as connection:
         with connection.cursor() as cursor:
+            viewer = _optional_current_user(cursor, authorization)
             rows = _market_rows(cursor, where_sql, params)
-            return {"markets": [_market_response(cursor, row, include_comments=False) for row in rows]}
+            return {"markets": [_market_response(cursor, row, viewer_id=viewer["id"] if viewer else None, include_comments=False) for row in rows]}
 
 
 @app.get("/markets/{slug}", response_model=MarketResponse)
@@ -2139,6 +2177,81 @@ def get_market(slug: str, authorization: str = Header(default="")):
             if not rows:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
             return _market_response(cursor, rows[0], viewer_id=viewer["id"] if viewer else None)
+
+
+def _public_market_row_or_404(cursor, slug):
+    rows = _market_rows(cursor, "WHERE m.slug = %s AND m.status NOT IN ('draft', 'canceled')", [slug])
+    if not rows:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+    return rows[0]
+
+
+@app.post("/markets/{slug}/favorite", response_model=MarketResponse)
+def favorite_market(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            row = _public_market_row_or_404(cursor, slug)
+            cursor.execute(
+                """
+                INSERT INTO orynth_market_favorites (user_id, market_id, created_at)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id, market_id) DO NOTHING
+                """,
+                (user["id"], row["id"], datetime.now(timezone.utc)),
+            )
+            return _market_response(cursor, row, viewer_id=user["id"], include_comments=False)
+
+
+@app.delete("/markets/{slug}/favorite", response_model=MarketResponse)
+def unfavorite_market(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            row = _public_market_row_or_404(cursor, slug)
+            cursor.execute(
+                """
+                DELETE FROM orynth_market_favorites
+                WHERE user_id = %s AND market_id = %s
+                """,
+                (user["id"], row["id"]),
+            )
+            return _market_response(cursor, row, viewer_id=user["id"], include_comments=False)
+
+
+@app.post("/markets/{slug}/like", response_model=MarketResponse)
+def like_market(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            row = _public_market_row_or_404(cursor, slug)
+            cursor.execute(
+                """
+                INSERT INTO orynth_market_likes (user_id, market_id, created_at)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (user_id, market_id) DO NOTHING
+                """,
+                (user["id"], row["id"], datetime.now(timezone.utc)),
+            )
+            rows = _market_rows(cursor, "WHERE m.slug = %s AND m.status NOT IN ('draft', 'canceled')", [slug])
+            return _market_response(cursor, rows[0], viewer_id=user["id"], include_comments=False)
+
+
+@app.delete("/markets/{slug}/like", response_model=MarketResponse)
+def unlike_market(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            row = _public_market_row_or_404(cursor, slug)
+            cursor.execute(
+                """
+                DELETE FROM orynth_market_likes
+                WHERE user_id = %s AND market_id = %s
+                """,
+                (user["id"], row["id"]),
+            )
+            rows = _market_rows(cursor, "WHERE m.slug = %s AND m.status NOT IN ('draft', 'canceled')", [slug])
+            return _market_response(cursor, rows[0], viewer_id=user["id"], include_comments=False)
 
 
 def _increment_market_counter(cursor, slug, field_name):

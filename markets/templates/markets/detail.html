@@ -3,6 +3,34 @@
 {% block content %}
 <main class="shell layout-detail">
   <section class="panel detail-hero">
+    <div class="detail-market-actions">
+      {% if not is_guest %}
+        <form class="market-like-form" method="post" action="{% url 'market-like-toggle' market.slug %}" data-market-like-form data-market-slug="{{ market.slug }}">
+          {% csrf_token %}
+          <input type="hidden" name="current_like" value="{{ market.viewer_has_like|yesno:'true,false' }}" data-market-like-current>
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="market-like-button detail-like-button {% if market.viewer_has_like %}active{% endif %}" type="submit" aria-label="{% if market.viewer_has_like %}Remover curtida{% else %}Curtir mercado{% endif %}" title="{% if market.viewer_has_like %}Remover curtida{% else %}Curtir mercado{% endif %}" data-market-like-button>
+            <span class="like-mark" aria-hidden="true">👍</span>
+            <span data-market-like-count data-market-like-format="short">{{ market.market_like_count|default:0 }}</span>
+          </button>
+        </form>
+      {% else %}
+        <button class="market-like-button detail-like-button readonly" type="button" aria-label="{% if market.market_like_count == 1 %}1 curtida. Entre para curtir mercados.{% else %}{{ market.market_like_count|default:0 }} curtidas. Entre para curtir mercados.{% endif %}" title="Entre para curtir mercados" data-guest-like-button>
+          <span class="like-mark" aria-hidden="true">👍</span>
+          <span data-market-like-count data-market-like-format="short">{{ market.market_like_count|default:0 }}</span>
+        </button>
+      {% endif %}
+      {% if not is_guest %}
+        <form class="market-favorite-form" method="post" action="{% url 'market-favorite-toggle' market.slug %}" data-market-favorite-form data-market-slug="{{ market.slug }}">
+          {% csrf_token %}
+          <input type="hidden" name="current_favorite" value="{{ market.viewer_has_favorite|yesno:'true,false' }}" data-market-favorite-current>
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="market-favorite-button detail-favorite-button {% if market.viewer_has_favorite %}active{% endif %}" type="submit" aria-label="{% if market.viewer_has_favorite %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}" title="{% if market.viewer_has_favorite %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}" data-market-favorite-button>
+            <span aria-hidden="true">♥</span>
+          </button>
+        </form>
+      {% endif %}
+    </div>
     <div class="tags page-kicker-row">
       {% include "components/context_back.html" %}
       <span class="tag hot">{{ market.category }}</span>
@@ -124,26 +152,51 @@
   </section>
   <aside class="panel trade-box">
     <span class="eyebrow">Ticket de previsão</span>
+    <div class="market-lifecycle-card" aria-label="Ciclo deste mercado">
+      <div class="lifecycle-step done">
+        <span>1</span>
+        <strong>Criação</strong>
+      </div>
+      <div class="lifecycle-step {% if market.status == 'open' or market.status == 'scheduled' %}active{% elif market.status == 'locked' or market.status == 'resolved' or market.status == 'canceled' %}done{% endif %}">
+        <span>2</span>
+        <strong>Aberto</strong>
+      </div>
+      <div class="lifecycle-step {% if market.status == 'locked' %}active{% elif market.status == 'resolved' or market.status == 'canceled' %}done{% endif %}">
+        <span>3</span>
+        <strong>Fechamento</strong>
+      </div>
+      <div class="lifecycle-step {% if market.status == 'resolved' %}done{% endif %}">
+        <span>4</span>
+        <strong>Resolução</strong>
+      </div>
+      <div class="lifecycle-step {% if market.status == 'resolved' %}active{% endif %}">
+        <span>5</span>
+        <strong>Distribuição</strong>
+      </div>
+    </div>
     {% if market.status != "open" %}
-      <h2>{% if market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
+      <h2 class="market-state-title">{% if market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
       {% if market.status == "resolved" %}
-        <p>Resultado final: <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>.</p>
-        <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span></div>
-        {% if existing_prediction and existing_prediction.status == "resolved" %}
-          {% if existing_prediction.won %}
-            <div class="notice green prediction-result-note">
-              <strong>Você acertou esta previsão.</strong>
-              <p>Sua leitura ficou registrada no histórico. O stake foi liberado e o ganho líquido entrou na carteira; acompanhe novos mercados para manter a sequência.</p>
-            </div>
+        <div class="result-highlight">
+          <span>Resultado oficial</span>
+          <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>
+          <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span><span>{{ market.status_label }}</span></div>
+          {% if existing_prediction and existing_prediction.status == "resolved" %}
+            {% if existing_prediction.won %}
+              <div class="prediction-result-note success">
+                <strong>Você acertou esta previsão.</strong>
+                <p>Stake liberado, ganho líquido creditado e leitura registrada no histórico.</p>
+              </div>
+            {% else %}
+              <div class="prediction-result-note miss">
+                <strong>Você não acertou desta vez.</strong>
+                <p>O resultado entrou no seu histórico. Compare sua entrada com o consenso e siga para o próximo mercado.</p>
+              </div>
+            {% endif %}
           {% else %}
-            <div class="notice red prediction-result-note">
-              <strong>Você não acertou desta vez.</strong>
-              <p>O resultado já entrou no seu histórico. Revise a probabilidade de entrada, compare com o consenso e volte para a próxima previsão com mais informação.</p>
-            </div>
+            <div class="ticket-note">Resultado auditado publicado. Entre em novos mercados para construir histórico e reputação.</div>
           {% endif %}
-        {% else %}
-          <div class="ticket-note">Resultado auditado publicado. Entre em novos mercados para construir histórico e reputação.</div>
-        {% endif %}
+        </div>
       {% elif market.status == "canceled" %}
         <p>Mercado cancelado com refund total dos stakes bloqueados.</p>
       {% else %}

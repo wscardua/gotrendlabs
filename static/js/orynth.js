@@ -37,9 +37,11 @@ function marketSortValue(card) {
     closeAt: parseDateScore(card.dataset.marketCloseAt, Number.POSITIVE_INFINITY),
     createdAt: parseDateScore(card.dataset.marketCreatedAt),
     featured: card.dataset.marketFeatured === "true" ? 1 : 0,
+    favorited: card.dataset.marketFavorited === "true" ? 1 : 0,
     likes: parseNumber(card.dataset.marketLikes),
     originalOrder: parseNumber(card.dataset.originalOrder),
     status: card.dataset.marketStatus || "",
+    views: parseNumber(card.dataset.marketViews),
     volume: parseNumber(card.dataset.marketVolume),
   };
 }
@@ -48,13 +50,11 @@ function compareMarkets(mode, a, b) {
   const left = marketSortValue(a);
   const right = marketSortValue(b);
   const tieBreak = right.createdAt - left.createdAt || left.originalOrder - right.originalOrder;
-  if (mode === "closing") {
-    const leftOpen = left.status === "open" ? 1 : 0;
-    const rightOpen = right.status === "open" ? 1 : 0;
-    return rightOpen - leftOpen || left.closeAt - right.closeAt || tieBreak;
-  }
   if (mode === "volume") {
     return right.volume - left.volume || tieBreak;
+  }
+  if (mode === "likes") {
+    return right.likes - left.likes || tieBreak;
   }
   if (mode === "new") {
     return right.createdAt - left.createdAt || left.originalOrder - right.originalOrder;
@@ -62,19 +62,65 @@ function compareMarkets(mode, a, b) {
   if (mode === "featured") {
     return right.featured - left.featured || right.likes - left.likes || tieBreak;
   }
-  return right.likes - left.likes || tieBreak;
+  return right.views - left.views || tieBreak;
 }
 
-function sortMarketList(group, mode) {
+function marketMatchesMode(card, mode) {
+  return !(
+    (mode === "resolved" && card.dataset.marketStatus !== "resolved") ||
+    (mode === "open" && card.dataset.marketStatus !== "open") ||
+    (mode === "closing" && card.dataset.marketStatus !== "locked") ||
+    (mode === "favorited" && card.dataset.marketFavorited !== "true") ||
+    (mode === "predicted" && card.dataset.marketPredicted !== "true")
+  );
+}
+
+function renderMarketChunk(list, mode, requestedVisibleCount) {
+  const cards = $$("[data-market-card]", list);
+  const pageSize = Math.max(1, Number(list.dataset.marketPageSize || 18));
+  const matchingCards = cards.filter((card) => marketMatchesMode(card, mode));
+  const visibleCount = Math.min(
+    Math.max(pageSize, Number(requestedVisibleCount || pageSize)),
+    Math.max(pageSize, matchingCards.length),
+  );
+
+  cards.forEach((card) => {
+    const matchIndex = matchingCards.indexOf(card);
+    card.hidden = matchIndex < 0 || matchIndex >= visibleCount;
+  });
+
+  const empty = list.parentElement?.querySelector("[data-market-empty]");
+  if (empty) {
+    const emptyMessages = {
+      favorited: "Nenhum mercado favorito ainda.",
+      predicted: "Nenhum mercado com previsão sua ainda.",
+    };
+    empty.textContent = emptyMessages[mode] || "";
+    empty.hidden = !(emptyMessages[mode] && matchingCards.length === 0);
+  }
+
+  const loadMore = list.parentElement?.querySelector("[data-market-load-more]");
+  if (loadMore) {
+    const shownCount = Math.min(visibleCount, matchingCards.length);
+    const summary = $("[data-market-load-more-summary]", loadMore);
+    const button = $("[data-market-load-more-button]", loadMore);
+    loadMore.hidden = matchingCards.length <= pageSize || shownCount >= matchingCards.length;
+    if (summary) summary.textContent = `Exibindo ${shownCount} de ${matchingCards.length} mercados`;
+    if (button) button.disabled = shownCount >= matchingCards.length;
+  }
+
+  list.dataset.marketVisibleCount = String(visibleCount);
+}
+
+function sortMarketList(group, mode, visibleCount) {
   const target = group.dataset.filterTarget;
   const list = target ? $(target) : null;
   if (!list) return;
+  list.dataset.marketFilterMode = mode;
   const cards = $$("[data-market-card]", list);
-  cards.forEach((card) => {
-    card.hidden = mode === "resolved" && card.dataset.marketStatus !== "resolved";
-  });
   cards.sort((a, b) => compareMarkets(mode, a, b));
   cards.forEach((card) => list.appendChild(card));
+  renderMarketChunk(list, mode, visibleCount);
 }
 
 $$("[data-market-card]").forEach((card, index) => {
@@ -93,6 +139,150 @@ $$("[data-filter]").forEach((button) => {
 $$("[data-filter-group][data-filter-target]").forEach((group) => {
   const active = $(".filter.active[data-filter]", group) || $("[data-filter]", group);
   if (active) sortMarketList(group, active.dataset.filter || "trending");
+});
+
+$$("[data-market-load-more-button]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const section = button.closest("section");
+    const list = section ? $("[data-market-list]", section) : null;
+    const group = section ? $("[data-filter-group][data-filter-target]", section) : null;
+    if (!list || !group) return;
+    const pageSize = Math.max(1, Number(list.dataset.marketPageSize || 18));
+    const nextVisibleCount = Number(list.dataset.marketVisibleCount || pageSize) + pageSize;
+    sortMarketList(group, list.dataset.marketFilterMode || "trending", nextVisibleCount);
+  });
+});
+
+function syncMarketFavorite(slug, favorited) {
+  const value = favorited ? "true" : "false";
+  $$(`[data-market-slug="${slug}"]`).forEach((element) => {
+    if (element.dataset.marketCard !== undefined) element.dataset.marketFavorited = value;
+  });
+  $$(`[data-market-favorite-form][data-market-slug="${slug}"]`).forEach((form) => {
+    const input = $("[data-market-favorite-current]", form);
+    const button = $("[data-market-favorite-button]", form);
+    if (input) input.value = value;
+    if (button) {
+      button.classList.toggle("active", favorited);
+      const label = favorited ? "Remover dos favoritos" : "Adicionar aos favoritos";
+      button.setAttribute("aria-label", label);
+      button.title = label;
+      button.disabled = false;
+    }
+  });
+  $$("[data-filter-group][data-filter-target]").forEach((group) => {
+    const list = $(group.dataset.filterTarget);
+    if (list?.dataset.marketFilterMode === "favorited") {
+      sortMarketList(group, "favorited", Number(list.dataset.marketVisibleCount || list.dataset.marketPageSize || 18));
+    }
+  });
+}
+
+function marketLikeLabel(count) {
+  return `${count} ${count === 1 ? "curtida" : "curtidas"}`;
+}
+
+function renderMarketLikeCount(element, count) {
+  element.textContent = element.dataset.marketLikeFormat === "short" ? String(count) : marketLikeLabel(count);
+}
+
+function syncMarketLike(slug, liked, likeCount) {
+  const value = liked ? "true" : "false";
+  $$(`[data-market-slug="${slug}"]`).forEach((element) => {
+    if (element.dataset.marketCard !== undefined) {
+      element.dataset.marketLiked = value;
+      element.dataset.marketLikes = String(likeCount);
+    }
+  });
+  $$(`[data-market-like-form][data-market-slug="${slug}"]`).forEach((form) => {
+    const input = $("[data-market-like-current]", form);
+    const button = $("[data-market-like-button]", form);
+    const count = $("[data-market-like-count]", form);
+    if (input) input.value = value;
+    if (count) renderMarketLikeCount(count, likeCount);
+    if (button) {
+      button.classList.toggle("active", liked);
+      const actionLabel = liked ? "Remover curtida" : "Curtir mercado";
+      button.setAttribute("aria-label", actionLabel);
+      button.title = actionLabel;
+      button.disabled = false;
+    }
+  });
+  $$(`[data-market-card][data-market-slug="${slug}"] [data-market-like-count]`).forEach((count) => {
+    renderMarketLikeCount(count, likeCount);
+  });
+}
+
+$$("[data-market-like-form]").forEach((form) => {
+  form.addEventListener("submit", async (event) => {
+    if (!window.fetch) return;
+    event.preventDefault();
+    const button = $("[data-market-like-button]", form);
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: {"X-Requested-With": "XMLHttpRequest"},
+        credentials: "same-origin",
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || "like failed");
+      syncMarketLike(payload.slug || form.dataset.marketSlug, Boolean(payload.liked), Number(payload.like_count || 0));
+    } catch (error) {
+      if (button) button.disabled = false;
+      form.submit();
+    }
+  });
+});
+
+let guestLikeNoticeTimeout = null;
+
+function showGuestLikeNotice() {
+  let notice = $("[data-guest-like-notice]");
+  if (!notice) {
+    notice = document.createElement("div");
+    notice.className = "market-auth-toast";
+    notice.dataset.guestLikeNotice = "true";
+    notice.setAttribute("role", "status");
+    notice.setAttribute("aria-live", "polite");
+    document.body.appendChild(notice);
+  }
+  notice.textContent = "Curtir mercados é permitido apenas para usuários logados.";
+  notice.hidden = false;
+  notice.classList.add("visible");
+  window.clearTimeout(guestLikeNoticeTimeout);
+  guestLikeNoticeTimeout = window.setTimeout(() => {
+    notice.classList.remove("visible");
+    notice.hidden = true;
+  }, 3600);
+}
+
+$$("[data-guest-like-button]").forEach((button) => {
+  button.addEventListener("click", showGuestLikeNotice);
+});
+
+$$("[data-market-favorite-form]").forEach((form) => {
+  form.addEventListener("submit", async (event) => {
+    if (!window.fetch) return;
+    event.preventDefault();
+    const button = $("[data-market-favorite-button]", form);
+    if (button) button.disabled = true;
+    try {
+      const response = await fetch(form.action, {
+        method: "POST",
+        body: new FormData(form),
+        headers: {"X-Requested-With": "XMLHttpRequest"},
+        credentials: "same-origin",
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.ok) throw new Error(payload.error || "favorite failed");
+      syncMarketFavorite(payload.slug || form.dataset.marketSlug, Boolean(payload.favorited));
+    } catch (error) {
+      if (button) button.disabled = false;
+      form.submit();
+    }
+  });
 });
 
 function syncRankingSubcategories(form) {

@@ -19,7 +19,7 @@ from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from core.domain_client import get_domain_client, local_market, local_markets, local_stats
 from core.platform_config import load_platform_config
 from core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
-from markets.models import Market, MarketSuggestion, ProductFeedback
+from markets.models import Market, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback
 from accounts.models import UserBadgeAward, UserProfile, UserReputation
 
 
@@ -99,11 +99,60 @@ def _hydrate_market_visuals(markets):
                 for option in market.get("options", [])
             ]
         hydrated.append(merged)
-    return [{**market, "thumb": _market_thumb_fallback(market), "thumb_color": market.get("thumb_color") or "#d8ece2"} for market in hydrated]
+    return [
+        {
+            **market,
+            "thumb": _market_thumb_fallback(market),
+            "thumb_color": market.get("thumb_color") or "#d8ece2",
+            "viewer_has_prediction": bool(market.get("viewer_has_prediction")),
+            "viewer_has_favorite": bool(market.get("viewer_has_favorite")),
+            "viewer_has_like": bool(market.get("viewer_has_like")),
+        }
+        for market in hydrated
+    ]
 
 
 def _public_visible_markets(markets):
     return [market for market in markets if market.get("status") != "canceled"]
+
+
+def _mark_viewer_prediction_flags(markets, user_id):
+    if not user_id:
+        return markets
+    slugs = [market.get("slug") for market in markets if market.get("slug")]
+    try:
+        predicted_slugs = set(
+            Prediction.objects.filter(user_id=user_id, market__slug__in=slugs).values_list("market__slug", flat=True)
+        )
+    except DatabaseError:
+        predicted_slugs = set()
+    return [{**market, "viewer_has_prediction": market.get("viewer_has_prediction") or market.get("slug") in predicted_slugs} for market in markets]
+
+
+def _mark_viewer_favorite_flags(markets, user_id):
+    if not user_id:
+        return markets
+    slugs = [market.get("slug") for market in markets if market.get("slug")]
+    try:
+        favorite_slugs = set(
+            MarketFavorite.objects.filter(user_id=user_id, market__slug__in=slugs).values_list("market__slug", flat=True)
+        )
+    except DatabaseError:
+        favorite_slugs = set()
+    return [{**market, "viewer_has_favorite": market.get("viewer_has_favorite") or market.get("slug") in favorite_slugs} for market in markets]
+
+
+def _mark_viewer_like_flags(markets, user_id):
+    if not user_id:
+        return markets
+    slugs = [market.get("slug") for market in markets if market.get("slug")]
+    try:
+        liked_slugs = set(
+            MarketLike.objects.filter(user_id=user_id, market__slug__in=slugs).values_list("market__slug", flat=True)
+        )
+    except DatabaseError:
+        liked_slugs = set()
+    return [{**market, "viewer_has_like": market.get("viewer_has_like") or market.get("slug") in liked_slugs} for market in markets]
 
 
 def _share_viewer(request):
@@ -240,10 +289,13 @@ def _select_featured_markets(markets, limit=2):
 
 def home(request):
     try:
-        raw_markets = get_markets()
+        raw_markets = get_markets(token=auth_token(request) if is_authenticated(request) else None)
     except AuthAPIError:
         raw_markets = local_markets()
     markets = _hydrate_market_visuals(_public_visible_markets(raw_markets))
+    markets = _mark_viewer_prediction_flags(markets, (auth_user(request) or {}).get("id") if is_authenticated(request) else None)
+    markets = _mark_viewer_favorite_flags(markets, (auth_user(request) or {}).get("id") if is_authenticated(request) else None)
+    markets = _mark_viewer_like_flags(markets, (auth_user(request) or {}).get("id") if is_authenticated(request) else None)
     featured_candidates_by_slug = {market.get("slug"): market for market in _hydrate_market_visuals(_public_visible_markets(raw_markets)) if market.get("slug")}
     for market in _hydrate_market_visuals(local_markets()):
         slug = market.get("slug")

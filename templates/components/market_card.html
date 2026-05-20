@@ -4,10 +4,15 @@
   data-market-slug="{{ market.slug }}"
   data-market-featured="{{ market.is_featured|yesno:'true,false' }}"
   data-market-likes="{{ market.market_like_count|default:0 }}"
+  data-market-views="{{ market.view_count|default:0 }}"
   data-market-volume="{{ market.volume_oc }}"
   data-market-created-at="{{ market.created_at }}"
   data-market-close-at="{{ market.close_at }}"
   data-market-status="{{ market.status }}"
+  data-market-predicted="{{ market.viewer_has_prediction|yesno:'true,false' }}"
+  data-market-favorited="{{ market.viewer_has_favorite|yesno:'true,false' }}"
+  data-market-liked="{{ market.viewer_has_like|yesno:'true,false' }}"
+  {% if initial_hidden %}hidden{% endif %}
 >
   <div class="thumb" style="--thumb:{{ market.thumb_color }}">
     {% if market.image_url %}
@@ -26,10 +31,6 @@
     <div class="mini-stats">
       <span>{{ market.volume_oc }} previstos</span>
       <span>{{ market.participants }}</span>
-      <span class="like-chip" aria-label="{% if market.market_like_count == 1 %}1 curtida{% else %}{{ market.market_like_count|default:0 }} curtidas{% endif %}">
-        <span class="like-mark">♥</span>
-        {% if market.market_like_count == 1 %}1 curtida{% else %}{{ market.market_like_count|default:0 }} curtidas{% endif %}
-      </span>
       <span>Fonte: {{ market.source }}</span>
     </div>
   </div>
@@ -57,6 +58,34 @@
     <div class="market-foot">
       <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% else %}Prever{% endif %}</a>
       <a class="btn small ghost" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}">Compartilhar</a>
+      <div class="market-card-actions">
+        {% if not is_guest %}
+          <form class="market-like-form" method="post" action="{% url 'market-like-toggle' market.slug %}" data-market-like-form data-market-slug="{{ market.slug }}">
+            {% csrf_token %}
+            <input type="hidden" name="current_like" value="{{ market.viewer_has_like|yesno:'true,false' }}" data-market-like-current>
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="market-like-button {% if market.viewer_has_like %}active{% endif %}" type="submit" aria-label="{% if market.viewer_has_like %}Remover curtida{% else %}Curtir mercado{% endif %}" title="{% if market.viewer_has_like %}Remover curtida{% else %}Curtir mercado{% endif %}" data-market-like-button>
+              <span class="like-mark" aria-hidden="true">👍</span>
+              <span data-market-like-count data-market-like-format="short">{{ market.market_like_count|default:0 }}</span>
+            </button>
+          </form>
+        {% else %}
+          <button class="market-like-button readonly" type="button" aria-label="{% if market.market_like_count == 1 %}1 curtida. Entre para curtir mercados.{% else %}{{ market.market_like_count|default:0 }} curtidas. Entre para curtir mercados.{% endif %}" title="Entre para curtir mercados" data-guest-like-button>
+            <span class="like-mark" aria-hidden="true">👍</span>
+            <span data-market-like-count data-market-like-format="short">{{ market.market_like_count|default:0 }}</span>
+          </button>
+        {% endif %}
+        {% if not is_guest %}
+          <form class="market-favorite-form" method="post" action="{% url 'market-favorite-toggle' market.slug %}" data-market-favorite-form data-market-slug="{{ market.slug }}">
+            {% csrf_token %}
+            <input type="hidden" name="current_favorite" value="{{ market.viewer_has_favorite|yesno:'true,false' }}" data-market-favorite-current>
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button class="market-favorite-button {% if market.viewer_has_favorite %}active{% endif %}" type="submit" aria-label="{% if market.viewer_has_favorite %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}" title="{% if market.viewer_has_favorite %}Remover dos favoritos{% else %}Adicionar aos favoritos{% endif %}" data-market-favorite-button>
+              <span aria-hidden="true">♥</span>
+            </button>
+          </form>
+        {% endif %}
+      </div>
     </div>
   </div>
 </article>

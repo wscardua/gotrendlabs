@@ -1,3 +1,4 @@
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.db import DatabaseError
 from django.db.models import F
@@ -11,14 +12,18 @@ from accounts.api_client import (
     clear_comment_reaction,
     create_comment,
     create_prediction,
+    favorite_market,
     preview_prediction,
     track_market_view,
     get_market,
+    like_market,
     react_to_comment,
+    unfavorite_market,
+    unlike_market,
 )
 from accounts.session import auth_token, auth_user, is_authenticated
 from core.domain_client import local_market
-from markets.models import CommentReaction, Market, MarketComment, MarketOption, Prediction
+from markets.models import CommentReaction, Market, MarketComment, MarketFavorite, MarketLike, MarketOption, Prediction
 
 
 def _display_handle(value):
@@ -171,6 +176,22 @@ def _detail_context(request, slug, market, **extra):
         "resolved_at_label": market.get("resolved_at_label") or _datetime_label(market.get("resolved_at"), resolution_timezone),
     }
     user = auth_user(request) or {}
+    if is_authenticated(request) and not market.get("viewer_has_favorite") and user.get("id"):
+        try:
+            market = {
+                **market,
+                "viewer_has_favorite": MarketFavorite.objects.filter(user_id=user["id"], market__slug=slug).exists(),
+            }
+        except DatabaseError:
+            market = {**market, "viewer_has_favorite": bool(market.get("viewer_has_favorite"))}
+    if is_authenticated(request) and not market.get("viewer_has_like") and user.get("id"):
+        try:
+            market = {
+                **market,
+                "viewer_has_like": MarketLike.objects.filter(user_id=user["id"], market__slug=slug).exists(),
+            }
+        except DatabaseError:
+            market = {**market, "viewer_has_like": bool(market.get("viewer_has_like"))}
     if "comments" not in market:
         market = {**market, "comments": _local_comments(slug, user.get("id"))}
     else:
@@ -315,3 +336,46 @@ def comment_reaction(request, slug, comment_id):
     except AuthAPIError:
         pass
     return redirect(f"{reverse('market-detail', args=[slug])}#comments")
+
+
+@require_POST
+def favorite_toggle(request, slug):
+    if not is_authenticated(request):
+        return redirect(f"{reverse('login')}?next={request.POST.get('next') or reverse('home')}")
+    should_unfavorite = request.POST.get("current_favorite") == "true"
+    if should_unfavorite:
+        action = unfavorite_market
+    else:
+        action = favorite_market
+    try:
+        result = action(auth_token(request), slug)
+        favorited = bool(result.get("viewer_has_favorite"))
+    except AuthAPIError as exc:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": str(exc)}, status=400 if exc.status_code != 401 else 401)
+        return redirect(request.POST.get("next") or reverse("home"))
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "slug": slug, "favorited": favorited})
+    return redirect(request.POST.get("next") or reverse("home"))
+
+
+@require_POST
+def like_toggle(request, slug):
+    if not is_authenticated(request):
+        return redirect(f"{reverse('login')}?next={request.POST.get('next') or reverse('home')}")
+    should_unlike = request.POST.get("current_like") == "true"
+    if should_unlike:
+        action = unlike_market
+    else:
+        action = like_market
+    try:
+        result = action(auth_token(request), slug)
+        liked = bool(result.get("viewer_has_like"))
+        like_count = int(result.get("market_like_count") or 0)
+    except AuthAPIError as exc:
+        if request.headers.get("x-requested-with") == "XMLHttpRequest":
+            return JsonResponse({"ok": False, "error": str(exc)}, status=400 if exc.status_code != 401 else 401)
+        return redirect(request.POST.get("next") or reverse("home"))
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True, "slug": slug, "liked": liked, "like_count": like_count})
+    return redirect(request.POST.get("next") or reverse("home"))

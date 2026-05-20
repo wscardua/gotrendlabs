@@ -29,7 +29,7 @@ from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
 from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
-from markets.models import AdminEvent, CommentReaction, Market, MarketComment, MarketOption, MarketSuggestion, Prediction, ProductFeedback
+from markets.models import AdminEvent, CommentReaction, Market, MarketComment, MarketFavorite, MarketLike, MarketOption, MarketSuggestion, Prediction, ProductFeedback
 from system_logs.models import SystemLog
 from system_logs.services import log_system_event
 
@@ -103,6 +103,135 @@ class BackendAuthAPITests(TestCase):
 
         missing = client.get("/markets/mercado-inexistente")
         self.assertEqual(missing.status_code, 404)
+
+    def test_market_listing_marks_viewer_predictions_when_authenticated(self):
+        client = TestClient(app)
+        register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Feed Prediction User",
+                "email": "feed-prediction-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(register.status_code, 201)
+        headers = {"Authorization": f"Bearer {register.json()['session']['token']}"}
+        option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
+
+        prediction = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=headers,
+            json={"option_id": option.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(prediction.status_code, 201)
+
+        authenticated_listing = client.get("/markets", headers=headers)
+        self.assertEqual(authenticated_listing.status_code, 200)
+        predicted_market = next(market for market in authenticated_listing.json()["markets"] if market["slug"] == "openai-gpt6-2026")
+        self.assertTrue(predicted_market["viewer_has_prediction"])
+
+        guest_listing = client.get("/markets")
+        guest_market = next(market for market in guest_listing.json()["markets"] if market["slug"] == "openai-gpt6-2026")
+        self.assertFalse(guest_market["viewer_has_prediction"])
+
+    def test_market_favorites_api_is_personal_and_idempotent(self):
+        client = TestClient(app)
+        register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Favorite User",
+                "email": "favorite-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(register.status_code, 201)
+        headers = {"Authorization": f"Bearer {register.json()['session']['token']}"}
+
+        guest_listing = client.get("/markets")
+        guest_market = next(market for market in guest_listing.json()["markets"] if market["slug"] == "openai-gpt6-2026")
+        self.assertFalse(guest_market["viewer_has_favorite"])
+
+        favorite = client.post("/markets/openai-gpt6-2026/favorite", headers=headers)
+        self.assertEqual(favorite.status_code, 200)
+        self.assertTrue(favorite.json()["viewer_has_favorite"])
+        second_favorite = client.post("/markets/openai-gpt6-2026/favorite", headers=headers)
+        self.assertEqual(second_favorite.status_code, 200)
+        self.assertEqual(MarketFavorite.objects.filter(market__slug="openai-gpt6-2026").count(), 1)
+
+        authenticated_listing = client.get("/markets", headers=headers)
+        favorite_market = next(market for market in authenticated_listing.json()["markets"] if market["slug"] == "openai-gpt6-2026")
+        self.assertTrue(favorite_market["viewer_has_favorite"])
+
+        unfavorite = client.delete("/markets/openai-gpt6-2026/favorite", headers=headers)
+        self.assertEqual(unfavorite.status_code, 200)
+        self.assertFalse(unfavorite.json()["viewer_has_favorite"])
+        second_unfavorite = client.delete("/markets/openai-gpt6-2026/favorite", headers=headers)
+        self.assertEqual(second_unfavorite.status_code, 200)
+        self.assertEqual(MarketFavorite.objects.filter(market__slug="openai-gpt6-2026").count(), 0)
+
+    def test_market_likes_api_is_personal_idempotent_and_separate_from_comment_likes(self):
+        client = TestClient(app)
+        first = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Like User",
+                "email": "like-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        second = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Second Like User",
+                "email": "second-like-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 201)
+        first_headers = {"Authorization": f"Bearer {first.json()['session']['token']}"}
+        second_headers = {"Authorization": f"Bearer {second.json()['session']['token']}"}
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        comment = MarketComment.objects.create(market=market, author_id=first.json()["user"]["id"], body="Comentário com like.")
+        CommentReaction.objects.create(comment=comment, user_id=second.json()["user"]["id"], reaction="like")
+
+        guest_market = next(market for market in client.get("/markets").json()["markets"] if market["slug"] == "openai-gpt6-2026")
+        self.assertFalse(guest_market["viewer_has_like"])
+        self.assertEqual(guest_market["market_like_count"], 0)
+
+        like = client.post("/markets/openai-gpt6-2026/like", headers=first_headers)
+        self.assertEqual(like.status_code, 200)
+        self.assertTrue(like.json()["viewer_has_like"])
+        self.assertEqual(like.json()["market_like_count"], 1)
+        second_like = client.post("/markets/openai-gpt6-2026/like", headers=first_headers)
+        self.assertEqual(second_like.status_code, 200)
+        self.assertEqual(second_like.json()["market_like_count"], 1)
+        self.assertEqual(MarketLike.objects.filter(market__slug="openai-gpt6-2026").count(), 1)
+
+        other_like = client.post("/markets/openai-gpt6-2026/like", headers=second_headers)
+        self.assertEqual(other_like.status_code, 200)
+        self.assertEqual(other_like.json()["market_like_count"], 2)
+
+        authenticated_listing = client.get("/markets", headers=first_headers)
+        liked_market = next(market for market in authenticated_listing.json()["markets"] if market["slug"] == "openai-gpt6-2026")
+        self.assertTrue(liked_market["viewer_has_like"])
+        self.assertEqual(liked_market["market_like_count"], 2)
+
+        unlike = client.delete("/markets/openai-gpt6-2026/like", headers=first_headers)
+        self.assertEqual(unlike.status_code, 200)
+        self.assertFalse(unlike.json()["viewer_has_like"])
+        self.assertEqual(unlike.json()["market_like_count"], 1)
+        second_unlike = client.delete("/markets/openai-gpt6-2026/like", headers=first_headers)
+        self.assertEqual(second_unlike.status_code, 200)
+        self.assertEqual(second_unlike.json()["market_like_count"], 1)
 
     def test_market_popularity_api_tracks_views_and_shares(self):
         client = TestClient(app)
@@ -2740,6 +2869,10 @@ class WebSmokeTests(TestCase):
                 self.assertEqual(response.status_code, 200)
                 if route == reverse("feedback"):
                     self.assertContains(response, "Enviar feedback/Suporte")
+                if route == reverse("market-detail", args=["openai-gpt6-2026"]):
+                    self.assertContains(response, "detail-market-actions")
+                    self.assertContains(response, "detail-like-button readonly")
+                    self.assertNotContains(response, '<form class="market-like-form"')
 
     def test_django_system_log_uses_orynth_session_user(self):
         User = get_user_model()
@@ -2951,11 +3084,20 @@ class WebSmokeTests(TestCase):
         with patch("markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
-        self.assertContains(response, "Resolvido em: 18/05/2026 09:30 America/Sao_Paulo")
+        self.assertContains(response, "Resultado oficial")
+        self.assertContains(response, "detail-market-actions")
+        self.assertContains(response, "detail-like-button")
+        self.assertContains(response, "detail-favorite-button")
+        self.assertContains(response, "Criação")
+        self.assertContains(response, "Aberto")
+        self.assertContains(response, "Fechamento")
+        self.assertContains(response, "Resolução")
+        self.assertContains(response, "Distribuição")
+        self.assertContains(response, "18/05/2026 09:30 America/Sao_Paulo")
         self.assertContains(response, "Timezone: America/Sao_Paulo")
         self.assertNotContains(response, '<div class="resolution-meta"><span>18/05/2026 09:30 America/Sao_Paulo</span><span>America/Sao_Paulo</span></div>', html=True)
         self.assertContains(response, "Você acertou esta previsão.")
-        self.assertContains(response, "acompanhe novos mercados")
+        self.assertContains(response, "ganho líquido creditado")
 
     def test_market_detail_renders_comments_and_comment_actions_use_api(self):
         session = self.client.session
@@ -3052,6 +3194,240 @@ class WebSmokeTests(TestCase):
         expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
         self.assertContains(response, expected, html=True)
 
+    def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
+        market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}
+
+        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+            guest_response = self.client.get(reverse("home"))
+        self.assertNotContains(guest_response, 'data-filter="predicted"')
+        self.assertNotContains(guest_response, 'data-filter="favorited"')
+        self.assertNotContains(guest_response, "market-favorite-button")
+        self.assertNotContains(guest_response, '<form class="market-like-form"')
+        self.assertContains(guest_response, "market-like-button readonly")
+        self.assertContains(guest_response, "data-guest-like-button")
+        self.assertContains(guest_response, 'data-filter="likes"')
+        self.assertContains(guest_response, "market-card-actions")
+        self.assertContains(guest_response, 'data-market-predicted="true"')
+        self.assertContains(guest_response, 'data-market-favorited="true"')
+        self.assertContains(guest_response, 'data-market-liked="true"')
+
+        session = self.client.session
+        session[TOKEN_KEY] = "feed-token"
+        session[USER_KEY] = {
+            "id": 40,
+            "handle": "@feedpredictionuser",
+            "email": "feed-prediction-user@example.com",
+            "display_name": "Feed Prediction User",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        with (
+            patch("core.views.get_markets", return_value=[market]) as get_markets,
+            patch("core.views.get_rankings", side_effect=AuthAPIError("off")),
+            patch("core.views.get_me", side_effect=AuthAPIError("off")),
+            patch("core.views.get_badges", side_effect=AuthAPIError("off")),
+        ):
+            auth_response = self.client.get(reverse("home"))
+
+        get_markets.assert_called_once_with(token="feed-token")
+        self.assertContains(auth_response, 'class="filter personal-filter" type="button" data-filter="predicted"')
+        self.assertContains(auth_response, 'data-filter="favorited"')
+        self.assertContains(auth_response, 'data-filter="likes"')
+        self.assertContains(auth_response, "Minhas previsões")
+        self.assertContains(auth_response, 'data-market-predicted="true"')
+        self.assertContains(auth_response, 'data-market-favorited="true"')
+        self.assertContains(auth_response, 'data-market-liked="true"')
+        self.assertContains(auth_response, "market-favorite-button active")
+        self.assertContains(auth_response, "market-card-actions")
+        self.assertContains(auth_response, "market-like-button active")
+        self.assertContains(auth_response, "Nenhum mercado com previsão sua ainda.")
+
+    def test_home_prediction_filter_uses_local_prediction_flag_when_api_payload_is_stale(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="@feedlocal", email="feed-local@example.com", password="testpass123")
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = MarketOption.objects.get(market=market, label="SIM")
+        Prediction.objects.create(
+            user=user,
+            market=market,
+            market_option=option,
+            stake_amount=50,
+            probability_at_entry=Decimal("50.0000"),
+            weight_at_entry=5000,
+            potential_payout=100,
+        )
+        MarketFavorite.objects.create(user=user, market=market)
+        MarketLike.objects.create(user=user, market=market)
+        api_market = get_domain_client().market("openai-gpt6-2026")
+        api_market.pop("viewer_has_prediction", None)
+        api_market.pop("viewer_has_favorite", None)
+        api_market.pop("viewer_has_like", None)
+        session = self.client.session
+        session[TOKEN_KEY] = "feed-local-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": "Feed Local",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+
+        with (
+            patch("core.views.get_markets", return_value=[api_market]),
+            patch("core.views.get_rankings", side_effect=AuthAPIError("off")),
+            patch("core.views.get_me", side_effect=AuthAPIError("off")),
+            patch("core.views.get_badges", side_effect=AuthAPIError("off")),
+        ):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, 'data-market-predicted="true"')
+        self.assertContains(response, 'data-market-favorited="true"')
+        self.assertContains(response, 'data-market-liked="true"')
+
+    def test_market_filter_javascript_supports_open_and_view_based_trending(self):
+        script = (settings.BASE_DIR / "static/js/orynth.js").read_text()
+
+        self.assertIn("views: parseNumber(card.dataset.marketViews)", script)
+        self.assertIn('mode === "likes"', script)
+        self.assertIn("return right.likes - left.likes || tieBreak;", script)
+        self.assertIn('mode === "open" && card.dataset.marketStatus !== "open"', script)
+        self.assertIn('mode === "closing" && card.dataset.marketStatus !== "locked"', script)
+        self.assertIn('mode === "favorited" && card.dataset.marketFavorited !== "true"', script)
+        self.assertIn('favorited: "Nenhum mercado favorito ainda."', script)
+        self.assertIn("return right.views - left.views || tieBreak;", script)
+        self.assertIn("Number(list.dataset.marketPageSize || 18)", script)
+        self.assertIn("renderMarketChunk(list, mode, visibleCount)", script)
+        self.assertIn("data-market-load-more-button", script)
+        self.assertIn("[data-market-favorite-form]", script)
+        self.assertIn("[data-market-like-form]", script)
+        self.assertIn("[data-guest-like-button]", script)
+        self.assertIn("Curtir mercados é permitido apenas para usuários logados.", script)
+        self.assertIn('headers: {"X-Requested-With": "XMLHttpRequest"}', script)
+        self.assertIn("syncMarketFavorite(payload.slug || form.dataset.marketSlug", script)
+        self.assertIn("syncMarketLike(payload.slug || form.dataset.marketSlug", script)
+        styles = (settings.BASE_DIR / "static/css/orynth.css").read_text()
+        self.assertIn('[data-market-list][data-market-filter-mode="closing"] [data-market-card]:not([data-market-status="locked"])', styles)
+        self.assertIn('[data-market-list][data-market-filter-mode="favorited"] [data-market-card][data-market-favorited="false"]', styles)
+        self.assertIn(".market-favorite-button", styles)
+        self.assertIn(".like-chip-button", styles)
+        self.assertIn(".market-like-button.readonly", styles)
+        self.assertIn(".market-auth-toast", styles)
+        self.assertIn("color: var(--red)", styles)
+        self.assertIn(".detail-market-actions", styles)
+        self.assertIn(".detail-like-button", styles)
+        self.assertIn(".market-load-more", styles)
+        self.assertIn(".market-load-more[hidden]", styles)
+        self.assertIn('body[data-theme="dark"] .result-highlight .resolution-meta span', styles)
+        self.assertIn('body[data-theme="dark"] .result-highlight .ticket-note', styles)
+
+    def test_home_guest_load_more_is_available_when_feed_has_more_than_one_chunk(self):
+        api_market = get_domain_client().market("openai-gpt6-2026")
+        markets = [
+            {
+                **api_market,
+                "slug": f"guest-load-more-{index}",
+                "title": f"Mercado visitante {index}",
+                "view_count": index,
+                "created_at": f"2026-05-{index:02d}T12:00:00+00:00",
+            }
+            for index in range(1, 20)
+        ]
+
+        with patch("core.views.get_markets", return_value=markets), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+            response = self.client.get(reverse("home"))
+
+        html = response.content.decode()
+        self.assertNotIn('data-filter="predicted"', html)
+        self.assertContains(response, 'data-market-page-size="18"')
+        self.assertContains(response, 'data-market-load-more')
+        self.assertContains(response, "Exibindo 18 de 19 mercados")
+        load_more = html.split('<div class="market-load-more" data-market-load-more', 1)[1].split(">", 1)[0]
+        self.assertNotIn("hidden", load_more)
+        rendered_cards = html.split("<article\n  class=\"market-card\"")[1:]
+        self.assertEqual(len(rendered_cards), 19)
+        first_chunk_opening_tags = [card.split(">", 1)[0] for card in rendered_cards[:18]]
+        nineteenth_opening_tag = rendered_cards[18].split(">", 1)[0]
+        self.assertTrue(all("hidden" not in tag for tag in first_chunk_opening_tags))
+        self.assertIn("hidden", nineteenth_opening_tag)
+
+    def test_market_favorite_toggle_view_requires_login_and_calls_api(self):
+        login_redirect = self.client.post(reverse("market-favorite-toggle", args=["openai-gpt6-2026"]), {"next": reverse("home")})
+        self.assertEqual(login_redirect.status_code, 302)
+        self.assertIn(reverse("login"), login_redirect["Location"])
+
+        session = self.client.session
+        session[TOKEN_KEY] = "favorite-token"
+        session[USER_KEY] = {
+            "id": 51,
+            "handle": "@favoriteuser",
+            "email": "favorite-user@example.com",
+            "display_name": "Favorite User",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+
+        with patch("markets.views.favorite_market", return_value={"viewer_has_favorite": True}) as favorite:
+            response = self.client.post(
+                reverse("market-favorite-toggle", args=["openai-gpt6-2026"]),
+                {"current_favorite": "false", "next": reverse("home")},
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True, "slug": "openai-gpt6-2026", "favorited": True})
+        favorite.assert_called_once_with("favorite-token", "openai-gpt6-2026")
+
+        with patch("markets.views.unfavorite_market", return_value={"viewer_has_favorite": False}) as unfavorite:
+            response = self.client.post(
+                reverse("market-favorite-toggle", args=["openai-gpt6-2026"]),
+                {"current_favorite": "true", "next": reverse("home")},
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["favorited"])
+        unfavorite.assert_called_once_with("favorite-token", "openai-gpt6-2026")
+
+    def test_market_like_toggle_view_requires_login_and_calls_api_without_refresh(self):
+        login_redirect = self.client.post(reverse("market-like-toggle", args=["openai-gpt6-2026"]), {"next": reverse("home")})
+        self.assertEqual(login_redirect.status_code, 302)
+        self.assertIn(reverse("login"), login_redirect["Location"])
+
+        session = self.client.session
+        session[TOKEN_KEY] = "like-token"
+        session[USER_KEY] = {
+            "id": 52,
+            "handle": "@likeuser",
+            "email": "like-user@example.com",
+            "display_name": "Like User",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+
+        with patch("markets.views.like_market", return_value={"viewer_has_like": True, "market_like_count": 12}) as like:
+            response = self.client.post(
+                reverse("market-like-toggle", args=["openai-gpt6-2026"]),
+                {"current_like": "false", "next": reverse("home")},
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"ok": True, "slug": "openai-gpt6-2026", "liked": True, "like_count": 12})
+        like.assert_called_once_with("like-token", "openai-gpt6-2026")
+
+        with patch("markets.views.unlike_market", return_value={"viewer_has_like": False, "market_like_count": 11}) as unlike:
+            response = self.client.post(
+                reverse("market-like-toggle", args=["openai-gpt6-2026"]),
+                {"current_like": "true", "next": reverse("home")},
+                HTTP_X_REQUESTED_WITH="XMLHttpRequest",
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(response.json()["liked"])
+        self.assertEqual(response.json()["like_count"], 11)
+        unlike.assert_called_once_with("like-token", "openai-gpt6-2026")
+
     def test_market_card_renders_thumb_fallback_when_api_payload_has_empty_thumb(self):
         market = {
             **get_domain_client().market("openai-gpt6-2026"),
@@ -3080,7 +3456,10 @@ class WebSmokeTests(TestCase):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, open_market["title"])
-        market_list = response.content.decode().split('<div class="market-list" data-market-list>', 1)[1]
+        market_list = response.content.decode().split(
+            '<div class="market-list" data-market-list data-market-page-size="18">',
+            1,
+        )[1]
         self.assertNotIn(canceled_market["title"], market_list)
 
     def test_public_badges_page_renders_for_guest_and_authenticated_user(self):
@@ -4123,7 +4502,7 @@ class WebSmokeTests(TestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "orynth.js?v=20260519-badges-ui")
+            self.assertContains(response, "orynth.js?v=20260520-market-likes")
 
         posted_market = {
             **api_market,
@@ -5019,22 +5398,40 @@ class WebSmokeTests(TestCase):
             self.assertNotIn("Cancelado com curtidas", watch_card)
             self.assertContains(response, "Ver mercado")
             self.assertContains(response, 'data-filter-target="[data-market-list]"')
-            self.assertContains(response, 'data-filter="trending"')
-            self.assertContains(response, 'data-filter="closing"')
-            self.assertContains(response, 'data-filter="volume"')
-            self.assertContains(response, 'data-filter="new"')
-            self.assertContains(response, 'data-filter="featured"')
-            self.assertContains(response, 'data-filter="resolved"')
+            filter_html = response.content.decode().split('<div class="filters" data-filter-group data-filter-target="[data-market-list]">', 1)[1].split("</div>", 1)[0]
+            expected_filter_order = [
+                'data-filter="trending"',
+                'data-filter="new"',
+                'data-filter="open"',
+                'data-filter="closing"',
+                'data-filter="resolved"',
+                'data-filter="volume"',
+                'data-filter="likes"',
+            ]
+            self.assertEqual([filter_html.index(item) for item in expected_filter_order], sorted(filter_html.index(item) for item in expected_filter_order))
+            self.assertNotIn('data-filter="featured"', filter_html)
+            self.assertNotIn('data-filter="favorited"', filter_html)
+            self.assertIn("Encerrado", filter_html)
             self.assertContains(response, "data-market-card")
             self.assertContains(response, 'data-market-likes="9"')
+            self.assertContains(response, 'data-market-views="9"')
             self.assertContains(response, 'data-market-created-at="2026-05-17T12:00:00+00:00"')
             self.assertContains(response, 'data-market-featured="false"')
+            self.assertContains(response, 'data-market-page-size="18"')
+            self.assertContains(response, 'data-market-load-more')
+            self.assertContains(response, 'data-market-load-more-button')
+            self.assertContains(response, 'Carregar mais')
             self.assertContains(response, "9 curtidas")
             self.assertContains(response, "1 curtida")
+            self.assertContains(response, '<span class="like-mark" aria-hidden="true">👍</span>')
+            self.assertNotContains(response, '<span class="like-mark">♥</span>')
             self.assertContains(response, "Mercado com mais curtidas")
             self.assertContains(response, "Mercado com poucas curtidas")
             self.assertContains(response, "Resolvido com curtidas")
-            market_list = response.content.decode().split('<div class="market-list" data-market-list>', 1)[1]
+            market_list = response.content.decode().split(
+                '<div class="market-list" data-market-list data-market-page-size="18">',
+                1,
+            )[1]
             self.assertNotIn("Cancelado com curtidas", market_list)
 
         with patch("core.views.get_markets", return_value=[liked_market]), patch("core.views.local_markets", return_value=[]):
