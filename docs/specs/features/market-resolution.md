@@ -1,10 +1,10 @@
 ---
 id: FEAT-RES-001
 titulo: "Resolução de mercado"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-18
+ultima_atualizacao: 2026-05-20
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -38,6 +38,7 @@ Permitir fechamento e definição do resultado de um mercado, com aplicação co
 - registrar evidência e operador
 - aplicar efeitos em wallet e reputação
 - desfazer resolução operacionalmente quando necessário, retornando o mercado para fechado
+- auditar resolução aplicada com distribuição de coins, losses, payouts, participantes e badges
 
 ## Escopo excluído
 
@@ -55,6 +56,8 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - resultado fica visível no detalhe do mercado
 - operador informa opção vencedora, fonte pública, justificativa, data/hora efetiva e timezone controlado no Admin Ops
 - browse de resolução lista mercados `locked` e `resolved`, mostra data/hora/timezone quando houver resolução e permite ordenar por resolução recente, resolução antiga ou pendências
+- mercado resolvido oferece ação administrativa read-only de auditoria da resolução aplicada
+- auditoria lista participantes em páginas de 10 itens na UI, preservando `limit`/`offset`
 
 ## Regras de domínio
 
@@ -69,14 +72,16 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - cancelamento administrativo deve falhar como inconsistência operacional se, após o refund, ainda houver previsão `open` no mercado
 - reconciliação de mercado cancelado é operação excepcional para dados já inconsistentes; ela cancela previsões órfãs `open`, cria refunds ausentes de forma idempotente e registra `market.cancel_reconcile`
 - desfazer resolução retorna o mercado para `locked`, estorna payout líquido, rebloqueia stakes e recalcula reputação
+- auditoria de resolução não altera estado, wallet, reputação ou badges; ela apenas agrega dados já persistidos
+- auditoria de resolução só é válida para mercado `resolved`; demais estados retornam erro de domínio `422`
 
 ## Responsabilidades por camada
 
-- `backend-api`: regras de transição e aplicação de efeitos
+- `backend-api`: regras de transição e aplicação de efeitos, centralizadas em `MarketLifecycleEngine`; contrato staff read-only de auditoria por SQL agregado
 - `database`: estado final, evidência, operador, lançamentos e histórico
 - `scheduler-jobs`: lock automático
 - `communications`: notificação de resultado
-- `admin-ops`: revisão e resolução operacional
+- `admin-ops`: revisão, resolução operacional e tela de auditoria consumindo o contrato staff
 
 ## Dados e persistência
 
@@ -92,6 +97,7 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - `prediction_loss` para baixa auditável de stake perdido
 - `prediction_payout_reversal` para estornar ganho líquido ao desfazer resolução
 - `prediction_resolution_relock` para rebloquear stake ao desfazer resolução
+- auditoria de resolução derivada de `orynth_predictions`, `orynth_wallet_ledger` e `orynth_user_badge_awards`, filtrando badges por `reason_snapshot` do evento `market_resolved:{market_id}`
 
 ## Contratos afetados
 
@@ -116,12 +122,15 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - integração de resolução com wallet e reputação
 - fluxo de lock automático + resolução administrativa
 - regressão para mercado `canceled` com previsão `open` órfã, validando refund, saldo, reputação inalterada e idempotência
+- integração staff para auditoria de mercado resolvido, incluindo `403` para usuário comum, `422` para mercado não resolvido e conferência de totais de ledger/badges
+- renderização Admin Ops de botão “Auditoria” apenas para mercado resolvido e paginação de participantes
 
 ## Critérios de aceite
 
 - mercado resolvido reflete corretamente opção vencedora e efeitos associados
 - mercado cancelado devolve 100% dos stakes bloqueados e preserva reputação
 - mercado resolvido com resolução desfeita retorna para `locked` e fica pronto para nova decisão
+- auditoria administrativa mostra como a resolução distribuiu refunds, payouts, losses e badges, sem mutação
 
 ## Impacto de mudança
 

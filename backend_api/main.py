@@ -13,6 +13,7 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request, status
 
 from backend_api.badge_engine import BadgeAwardEngine
 from backend_api.db import get_connection
+from backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from backend_api.schemas import (
     AdminCategoryPayload,
     AdminBadgeListResponse,
@@ -27,6 +28,7 @@ from backend_api.schemas import (
     AdminMarketActionPayload,
     AdminMarketListResponse,
     AdminMarketPayload,
+    AdminMarketResolutionAuditResponse,
     AdminMarketResolvePayload,
     AdminSubcategoryPayload,
     AdminTaxonomyResponse,
@@ -1201,6 +1203,17 @@ def _record_admin_event(cursor, actor_id, action, entity_type, entity_identifier
     )
 
 
+def _market_lifecycle_engine(cursor, staff_id):
+    return MarketLifecycleEngine(
+        cursor,
+        staff_id=staff_id,
+        record_wallet_entry=_record_wallet_entry,
+        record_admin_event=_record_admin_event,
+        ensure_user_core=_ensure_user_core,
+        validate_publishable=_validate_publishable,
+    )
+
+
 def _admin_user_row(cursor, user_id):
     cursor.execute(
         """
@@ -1497,353 +1510,6 @@ def _admin_user_detail(cursor, user_id):
         "auth_events": auth_events,
         "admin_events": admin_events,
     }
-
-
-def _accuracy_indicator(cursor, user_id):
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS total,
-               COALESCE(SUM(CASE WHEN won = true THEN 1 ELSE 0 END), 0) AS wins
-        FROM orynth_predictions
-        WHERE user_id = %s
-          AND status = 'resolved'
-        """,
-        (user_id,),
-    )
-    row = cursor.fetchone()
-    total = int(row["total"] or 0)
-    if total <= 0:
-        return "0%"
-    wins = int(row["wins"] or 0)
-    return f"{int((Decimal(wins) * Decimal('100') / Decimal(total)).to_integral_value(rounding=ROUND_HALF_UP))}%"
-
-
-def _apply_reputation_delta(cursor, user_id, probability_at_entry, won, now):
-    _ensure_user_core(cursor, user_id)
-    probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(probability_at_entry) / Decimal("100")))
-    delta = REPUTATION_K_FACTOR * (Decimal("1") - probability) if won else -(REPUTATION_K_FACTOR * probability)
-    rounded_delta = int(delta.to_integral_value(rounding=ROUND_HALF_UP))
-    cursor.execute(
-        """
-        SELECT reputation_score, streak
-        FROM orynth_user_reputations
-        WHERE user_id = %s
-        FOR UPDATE
-        """,
-        (user_id,),
-    )
-    reputation = cursor.fetchone()
-    current_score = int(reputation["reputation_score"] if reputation else INITIAL_REPUTATION)
-    current_streak = int(reputation["streak"] if reputation else 0)
-    new_score = max(0, current_score + rounded_delta)
-    new_streak = current_streak + 1 if won else 0
-    cursor.execute(
-        """
-        UPDATE orynth_user_reputations
-        SET reputation_score = %s,
-            resolved_predictions_count = (
-                SELECT COUNT(*)
-                FROM orynth_predictions
-                WHERE user_id = %s
-                  AND status = 'resolved'
-            ),
-            accuracy_indicator = %s,
-            streak = %s,
-            last_updated_at = %s
-        WHERE user_id = %s
-        """,
-        (new_score, user_id, _accuracy_indicator(cursor, user_id), new_streak, now, user_id),
-    )
-
-
-def _recalculate_user_reputation(cursor, user_id, now):
-    _ensure_user_core(cursor, user_id)
-    cursor.execute(
-        """
-        SELECT probability_at_entry, won
-        FROM orynth_predictions
-        WHERE user_id = %s
-          AND status = 'resolved'
-        ORDER BY updated_at ASC, id ASC
-        """,
-        (user_id,),
-    )
-    rows = cursor.fetchall()
-    score = INITIAL_REPUTATION
-    for prediction in rows:
-        probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(prediction["probability_at_entry"]) / Decimal("100")))
-        delta = REPUTATION_K_FACTOR * (Decimal("1") - probability) if prediction["won"] else -(REPUTATION_K_FACTOR * probability)
-        score = max(0, score + int(delta.to_integral_value(rounding=ROUND_HALF_UP)))
-
-    cursor.execute(
-        """
-        SELECT won
-        FROM orynth_predictions
-        WHERE user_id = %s
-          AND status = 'resolved'
-        ORDER BY updated_at DESC, id DESC
-        """,
-        (user_id,),
-    )
-    streak = 0
-    for prediction in cursor.fetchall():
-        if not prediction["won"]:
-            break
-        streak += 1
-
-    cursor.execute(
-        """
-        UPDATE orynth_user_reputations
-        SET reputation_score = %s,
-            resolved_predictions_count = %s,
-            accuracy_indicator = %s,
-            streak = %s,
-            last_updated_at = %s
-        WHERE user_id = %s
-        """,
-        (score, len(rows), _accuracy_indicator(cursor, user_id), streak, now, user_id),
-    )
-
-
-def _resolve_market_predictions(cursor, market_id, winning_option_id, staff_id, slug, now):
-    cursor.execute(
-        """
-        SELECT id, user_id, market_option_id, stake_amount, probability_at_entry, potential_payout
-        FROM orynth_predictions
-        WHERE market_id = %s
-          AND status = 'open'
-        ORDER BY id ASC
-        FOR UPDATE
-        """,
-        (market_id,),
-    )
-    predictions = cursor.fetchall()
-    for prediction in predictions:
-        won = prediction["market_option_id"] == winning_option_id
-        cursor.execute(
-            """
-            UPDATE orynth_predictions
-            SET status = 'resolved',
-                won = %s,
-                updated_at = %s
-            WHERE id = %s
-            """,
-            (won, now, prediction["id"]),
-        )
-        if won:
-            _record_wallet_entry(
-                cursor,
-                prediction["user_id"],
-                entry_type="prediction_refund",
-                amount=int(prediction["stake_amount"]),
-                direction="release",
-                description=f"Stake liberado por acerto: {slug}",
-                reference_type="prediction",
-                reference_id=str(prediction["id"]),
-                created_by_id=staff_id,
-            )
-            payout_total = int(prediction["potential_payout"] or 0)
-            payout_net = max(0, payout_total - int(prediction["stake_amount"]))
-            if payout_net:
-                _record_wallet_entry(
-                    cursor,
-                    prediction["user_id"],
-                    entry_type="prediction_payout",
-                    amount=payout_net,
-                    direction="credit",
-                    description=f"Crédito líquido por acerto: {slug}",
-                    reference_type="prediction",
-                    reference_id=str(prediction["id"]),
-                    created_by_id=staff_id,
-                )
-        else:
-            _record_wallet_entry(
-                cursor,
-                prediction["user_id"],
-                entry_type="prediction_loss",
-                amount=int(prediction["stake_amount"]),
-                direction="settle",
-                description=f"Stake liquidado por erro: {slug}",
-                reference_type="prediction",
-                reference_id=str(prediction["id"]),
-                created_by_id=staff_id,
-            )
-        _apply_reputation_delta(cursor, prediction["user_id"], prediction["probability_at_entry"], won, now)
-    BadgeAwardEngine.on_market_resolved(cursor, market_id)
-
-
-def _refund_market_predictions(cursor, market_id, staff_id, slug, now):
-    cursor.execute(
-        """
-        SELECT id, user_id, stake_amount
-        FROM orynth_predictions
-        WHERE market_id = %s
-          AND status = 'open'
-        ORDER BY id ASC
-        FOR UPDATE
-        """,
-        (market_id,),
-    )
-    predictions = cursor.fetchall()
-    refunds_created = 0
-    refunds_existing = 0
-    for prediction in predictions:
-        cursor.execute(
-            """
-            UPDATE orynth_predictions
-            SET status = 'canceled',
-                won = NULL,
-                updated_at = %s
-            WHERE id = %s
-            """,
-            (now, prediction["id"]),
-        )
-        cursor.execute(
-            """
-            SELECT id
-            FROM orynth_wallet_ledger
-            WHERE reference_type = 'prediction'
-              AND reference_id = %s
-              AND entry_type = 'prediction_refund'
-              AND direction = 'release'
-              AND id > COALESCE((
-                  SELECT MAX(id)
-                  FROM orynth_wallet_ledger
-                  WHERE reference_type = 'prediction'
-                    AND reference_id = %s
-                    AND direction = 'lock'
-              ), 0)
-            LIMIT 1
-            """,
-            (str(prediction["id"]), str(prediction["id"])),
-        )
-        if cursor.fetchone():
-            refunds_existing += 1
-            continue
-        _record_wallet_entry(
-            cursor,
-            prediction["user_id"],
-            entry_type="prediction_refund",
-            amount=int(prediction["stake_amount"]),
-            direction="release",
-            description=f"Refund por cancelamento: {slug}",
-            reference_type="prediction",
-            reference_id=str(prediction["id"]),
-            created_by_id=staff_id,
-        )
-        refunds_created += 1
-    return {
-        "predictions_canceled": len(predictions),
-        "refunds_created": refunds_created,
-        "refunds_existing": refunds_existing,
-    }
-
-
-def _assert_no_open_predictions(cursor, market_id, slug):
-    cursor.execute(
-        """
-        SELECT COUNT(*) AS count
-        FROM orynth_predictions
-        WHERE market_id = %s
-          AND status = 'open'
-        """,
-        (market_id,),
-    )
-    open_predictions = int(cursor.fetchone()["count"] or 0)
-    if open_predictions:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Cancelamento inconsistente para {slug}: {open_predictions} previsões permaneceram abertas.",
-        )
-
-
-def _undo_resolved_market_predictions(cursor, market_id, staff_id, slug, now):
-    cursor.execute(
-        """
-        SELECT id, user_id, stake_amount, won
-        FROM orynth_predictions
-        WHERE market_id = %s
-          AND status = 'resolved'
-        ORDER BY id ASC
-        FOR UPDATE
-        """,
-        (market_id,),
-    )
-    predictions = cursor.fetchall()
-    affected_user_ids = set()
-    for prediction in predictions:
-        affected_user_ids.add(prediction["user_id"])
-        if prediction["won"]:
-            cursor.execute(
-                """
-                SELECT COALESCE(SUM(amount), 0) AS payout_amount
-                FROM orynth_wallet_ledger
-                WHERE reference_type = 'prediction'
-                  AND reference_id = %s
-                  AND entry_type = 'prediction_payout'
-                  AND direction = 'credit'
-                """,
-                (str(prediction["id"]),),
-            )
-            payout_amount = int(cursor.fetchone()["payout_amount"] or 0)
-            if payout_amount:
-                _record_wallet_entry(
-                    cursor,
-                    prediction["user_id"],
-                    entry_type="prediction_payout_reversal",
-                    amount=payout_amount,
-                    direction="debit",
-                    description=f"Estorno de payout por cancelamento: {slug}",
-                    reference_type="prediction",
-                    reference_id=str(prediction["id"]),
-                    created_by_id=staff_id,
-                )
-            _record_wallet_entry(
-                cursor,
-                prediction["user_id"],
-                entry_type="prediction_resolution_relock",
-                amount=int(prediction["stake_amount"]),
-                direction="lock",
-                description=f"Stake rebloqueado por resolução desfeita: {slug}",
-                reference_type="prediction",
-                reference_id=str(prediction["id"]),
-                created_by_id=staff_id,
-            )
-        else:
-            _record_wallet_entry(
-                cursor,
-                prediction["user_id"],
-                entry_type="prediction_refund",
-                amount=int(prediction["stake_amount"]),
-                direction="credit",
-                description=f"Refund intermediário por resolução desfeita: {slug}",
-                reference_type="prediction",
-                reference_id=str(prediction["id"]),
-                created_by_id=staff_id,
-            )
-            _record_wallet_entry(
-                cursor,
-                prediction["user_id"],
-                entry_type="prediction_resolution_relock",
-                amount=int(prediction["stake_amount"]),
-                direction="lock",
-                description=f"Stake rebloqueado por resolução desfeita: {slug}",
-                reference_type="prediction",
-                reference_id=str(prediction["id"]),
-                created_by_id=staff_id,
-            )
-        cursor.execute(
-            """
-            UPDATE orynth_predictions
-            SET status = 'open',
-                won = NULL,
-                updated_at = %s
-            WHERE id = %s
-            """,
-            (now, prediction["id"]),
-        )
-    for user_id in affected_user_ids:
-        _recalculate_user_reputation(cursor, user_id, now)
 
 
 def _age_label(created_at):
@@ -3669,20 +3335,7 @@ def admin_publish_market(slug: str, payload: AdminMarketActionPayload, authoriza
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
-            if row["status"] == "open":
-                return _market_response(cursor, row)
-            if row["status"] not in {"draft", "scheduled"}:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Apenas rascunhos ou mercados agendados podem ser publicados.")
-            _validate_publishable(cursor, row["id"])
-            cursor.execute(
-                """
-                UPDATE orynth_markets
-                SET status = 'open', status_label = 'Aberto', updated_by_id = %s, updated_at = %s
-                WHERE id = %s
-                """,
-                (staff["id"], datetime.now(timezone.utc), row["id"]),
-            )
-            _record_admin_event(cursor, staff["id"], "market.publish", "market", slug, payload.note)
+            _market_lifecycle_engine(cursor, staff["id"]).publish_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug))
 
 
@@ -3692,48 +3345,7 @@ def admin_cancel_market(slug: str, payload: AdminMarketActionPayload, authorizat
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
-            if row["status"] == "canceled":
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado já cancelado.")
-            now = datetime.now(timezone.utc)
-            if row["status"] == "resolved":
-                _undo_resolved_market_predictions(cursor, row["id"], staff["id"], slug, now)
-                cursor.execute(
-                    """
-                    UPDATE orynth_markets
-                    SET status = 'locked',
-                        status_label = 'Fechado',
-                        winning_option_id = NULL,
-                        resolved_at = NULL,
-                        resolution_timezone = '',
-                        resolution_type = '',
-                        resolution_note = '',
-                        admin_notes = %s,
-                        updated_by_id = %s,
-                        updated_at = %s
-                    WHERE id = %s
-                    """,
-                    (payload.note, staff["id"], now, row["id"]),
-                )
-                _record_admin_event(cursor, staff["id"], "market.resolution_undo", "market", slug, payload.note)
-                return _market_response(cursor, _admin_market_by_slug(cursor, slug))
-            else:
-                _refund_market_predictions(cursor, row["id"], staff["id"], slug, now)
-                _assert_no_open_predictions(cursor, row["id"], slug)
-            cursor.execute(
-                """
-                UPDATE orynth_markets
-                SET status = 'canceled',
-                    status_label = 'Cancelado',
-                    is_featured = false,
-                    canceled_at = %s,
-                    admin_notes = %s,
-                    updated_by_id = %s,
-                    updated_at = %s
-                WHERE id = %s
-                """,
-                (now, payload.note, staff["id"], now, row["id"]),
-            )
-            _record_admin_event(cursor, staff["id"], "market.cancel", "market", slug, payload.note)
+            _market_lifecycle_engine(cursor, staff["id"]).cancel_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug))
 
 
@@ -3743,58 +3355,176 @@ def admin_resolve_market(slug: str, payload: AdminMarketResolvePayload, authoriz
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
-            if row["status"] != "locked":
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Apenas mercados fechados podem ser resolvidos.")
-            evidence = (payload.source_url or "").strip()
-            note = (payload.note or "").strip()
-            if not evidence and not note:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Resolução exige fonte pública ou justificativa operacional.")
-            cursor.execute(
-                """
-                SELECT id, label
-                FROM orynth_market_options
-                WHERE id = %s
-                  AND market_id = %s
-                """,
-                (payload.winning_option_id, row["id"]),
-            )
-            winning_option = cursor.fetchone()
-            if not winning_option:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opção vencedora inválida para este mercado.")
-
-            now = datetime.now(timezone.utc)
-            resolution_timezone = (payload.resolution_timezone or row["close_timezone"] or "UTC").strip()
-            try:
-                target_timezone = ZoneInfo(resolution_timezone)
-            except ZoneInfoNotFoundError:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Timezone de resolução inválido.")
-            resolved_at = payload.resolved_at or now
-            if resolved_at.tzinfo is None:
-                resolved_at = resolved_at.replace(tzinfo=target_timezone)
-            resolved_at = resolved_at.astimezone(timezone.utc)
-            resolution_note = note
-            if evidence:
-                resolution_note = f"{note}\nFonte: {evidence}".strip()
-            cursor.execute(
-                """
-                UPDATE orynth_markets
-                SET status = 'resolved',
-                    status_label = 'Resolvido',
-                    primary_outcome = %s,
-                    resolution_type = 'manual',
-                    resolved_at = %s,
-                    resolution_timezone = %s,
-                    winning_option_id = %s,
-                    resolution_note = %s,
-                    updated_by_id = %s,
-                    updated_at = %s
-                WHERE id = %s
-                """,
-                (winning_option["label"], resolved_at, resolution_timezone, winning_option["id"], resolution_note, staff["id"], now, row["id"]),
-            )
-            _resolve_market_predictions(cursor, row["id"], winning_option["id"], staff["id"], slug, now)
-            _record_admin_event(cursor, staff["id"], "market.resolve", "market", slug, resolution_note)
+            _market_lifecycle_engine(cursor, staff["id"]).resolve_market(row, slug, payload)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+
+
+@app.get("/admin/markets/{slug}/resolution-audit", response_model=AdminMarketResolutionAuditResponse)
+def admin_get_market_resolution_audit(
+    slug: str,
+    limit: int = Query(default=50, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    authorization: str = Header(default=""),
+):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT m.id, m.slug, m.title, m.status, m.winning_option_id, m.resolved_at,
+                       m.resolution_timezone, m.resolution_note, m.source,
+                       o.label AS winning_option_label
+                FROM orynth_markets m
+                LEFT JOIN orynth_market_options o ON o.id = m.winning_option_id
+                WHERE m.slug = %s
+                """,
+                (slug,),
+            )
+            market = cursor.fetchone()
+            if not market:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+            if market["status"] != "resolved":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Auditoria disponível apenas para mercados resolvidos.")
+
+            reason_pattern = f"%market_resolved:{market['id']}%"
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS predictions_total,
+                       COALESCE(SUM(CASE WHEN won IS TRUE THEN 1 ELSE 0 END), 0) AS winners_total,
+                       COALESCE(SUM(CASE WHEN won IS FALSE THEN 1 ELSE 0 END), 0) AS losers_total,
+                       COALESCE(SUM(stake_amount), 0) AS stake_total
+                FROM orynth_predictions
+                WHERE market_id = %s
+                """,
+                (market["id"],),
+            )
+            prediction_totals = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT COALESCE(SUM(CASE WHEN l.entry_type = 'prediction_refund' THEN l.amount ELSE 0 END), 0) AS refund_total,
+                       COALESCE(SUM(CASE WHEN l.entry_type = 'prediction_payout' THEN l.amount ELSE 0 END), 0) AS payout_total,
+                       COALESCE(SUM(CASE WHEN l.entry_type = 'prediction_loss' THEN l.amount ELSE 0 END), 0) AS loss_total
+                FROM orynth_predictions p
+                LEFT JOIN orynth_wallet_ledger l
+                  ON l.reference_type = 'prediction'
+                 AND l.reference_id = p.id::text
+                 AND l.entry_type IN ('prediction_refund', 'prediction_payout', 'prediction_loss')
+                WHERE p.market_id = %s
+                """,
+                (market["id"],),
+            )
+            ledger_totals = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT COUNT(*) AS total
+                FROM orynth_user_badge_awards a
+                WHERE a.reason_snapshot LIKE %s
+                  AND a.user_id IN (SELECT user_id FROM orynth_predictions WHERE market_id = %s)
+                """,
+                (reason_pattern, market["id"]),
+            )
+            badge_total = cursor.fetchone()["total"]
+            cursor.execute("SELECT COUNT(*) AS total FROM orynth_predictions WHERE market_id = %s", (market["id"],))
+            participant_total = int(cursor.fetchone()["total"] or 0)
+            cursor.execute(
+                """
+                WITH ledger_totals AS (
+                    SELECT reference_id::bigint AS prediction_id,
+                           COALESCE(SUM(CASE WHEN entry_type = 'prediction_refund' THEN amount ELSE 0 END), 0) AS prediction_refund,
+                           COALESCE(SUM(CASE WHEN entry_type = 'prediction_payout' THEN amount ELSE 0 END), 0) AS prediction_payout,
+                           COALESCE(SUM(CASE WHEN entry_type = 'prediction_loss' THEN amount ELSE 0 END), 0) AS prediction_loss
+                    FROM orynth_wallet_ledger
+                    WHERE reference_type = 'prediction'
+                      AND reference_id ~ '^[0-9]+$'
+                      AND entry_type IN ('prediction_refund', 'prediction_payout', 'prediction_loss')
+                    GROUP BY reference_id::bigint
+                )
+                SELECT p.id AS prediction_id, p.user_id, u.username AS handle, u.first_name AS display_name,
+                       o.label AS option_label, p.stake_amount, p.probability_at_entry,
+                       p.potential_payout, p.won,
+                       COALESCE(lt.prediction_refund, 0) AS prediction_refund,
+                       COALESCE(lt.prediction_payout, 0) AS prediction_payout,
+                       COALESCE(lt.prediction_loss, 0) AS prediction_loss
+                FROM orynth_predictions p
+                JOIN orynth_users u ON u.id = p.user_id
+                JOIN orynth_market_options o ON o.id = p.market_option_id
+                LEFT JOIN ledger_totals lt ON lt.prediction_id = p.id
+                WHERE p.market_id = %s
+                ORDER BY p.id ASC
+                LIMIT %s OFFSET %s
+                """,
+                (market["id"], limit, offset),
+            )
+            participant_rows = cursor.fetchall()
+            participant_user_ids = [row["user_id"] for row in participant_rows]
+            badges_by_user = {user_id: [] for user_id in participant_user_ids}
+            if participant_user_ids:
+                cursor.execute(
+                    """
+                    SELECT a.user_id, b.code, b.name, a.awarded_at, a.reason_snapshot
+                    FROM orynth_user_badge_awards a
+                    JOIN orynth_badge_definitions b ON b.id = a.badge_id
+                    WHERE a.reason_snapshot LIKE %s
+                      AND a.user_id = ANY(%s)
+                    ORDER BY a.awarded_at ASC, b.code ASC
+                    """,
+                    (reason_pattern, participant_user_ids),
+                )
+                for badge in cursor.fetchall():
+                    badges_by_user.setdefault(badge["user_id"], []).append(
+                        {
+                            "code": badge["code"],
+                            "name": badge["name"],
+                            "awarded_at": badge["awarded_at"].isoformat(),
+                            "reason_snapshot": badge["reason_snapshot"] or "",
+                        }
+                    )
+
+            return {
+                "market": {
+                    "slug": market["slug"],
+                    "title": market["title"],
+                    "status": market["status"],
+                    "winning_option_id": market["winning_option_id"],
+                    "winning_option_label": market["winning_option_label"] or "",
+                    "resolved_at": market["resolved_at"].isoformat() if market["resolved_at"] else None,
+                    "resolved_at_label": _datetime_label(market["resolved_at"], market["resolution_timezone"]) if market["resolved_at"] else "",
+                    "resolution_timezone": market["resolution_timezone"] or "",
+                    "resolution_note": market["resolution_note"] or "",
+                    "source": market["source"] or "",
+                },
+                "summary": {
+                    "predictions_total": int(prediction_totals["predictions_total"] or 0),
+                    "winners_total": int(prediction_totals["winners_total"] or 0),
+                    "losers_total": int(prediction_totals["losers_total"] or 0),
+                    "stake_total": int(prediction_totals["stake_total"] or 0),
+                    "refund_total": int(ledger_totals["refund_total"] or 0),
+                    "payout_total": int(ledger_totals["payout_total"] or 0),
+                    "loss_total": int(ledger_totals["loss_total"] or 0),
+                    "badge_awards_total": int(badge_total or 0),
+                },
+                "participants": [
+                    {
+                        "user_id": row["user_id"],
+                        "handle": _handle_seed(row["handle"]),
+                        "display_name": row["display_name"] or _handle_seed(row["handle"]),
+                        "prediction_id": row["prediction_id"],
+                        "option_label": row["option_label"],
+                        "stake_amount": int(row["stake_amount"] or 0),
+                        "probability_at_entry": float(row["probability_at_entry"] or 0),
+                        "potential_payout": int(row["potential_payout"] or 0),
+                        "won": row["won"],
+                        "ledger": {
+                            "prediction_refund": int(row["prediction_refund"] or 0),
+                            "prediction_payout": int(row["prediction_payout"] or 0),
+                            "prediction_loss": int(row["prediction_loss"] or 0),
+                        },
+                        "badges": badges_by_user.get(row["user_id"], []),
+                    }
+                    for row in participant_rows
+                ],
+                "pagination": {"limit": limit, "offset": offset, "total": participant_total},
+            }
 
 
 @app.post("/admin/markets/{slug}/lock", response_model=MarketResponse)
@@ -3803,30 +3533,7 @@ def admin_lock_market(slug: str, payload: AdminMarketActionPayload, authorizatio
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
-            if row["auto_close_enabled"]:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Este mercado está configurado para fechamento automático pelo daemon.",
-                )
-            if row["status"] not in {"open", "scheduled"}:
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="Apenas mercados abertos ou agendados podem ser fechados manualmente.",
-                )
-            now = datetime.now(timezone.utc)
-            cursor.execute(
-                """
-                UPDATE orynth_markets
-                SET status = 'locked',
-                    status_label = 'Fechado',
-                    admin_notes = %s,
-                    updated_by_id = %s,
-                    updated_at = %s
-                WHERE id = %s
-                """,
-                (payload.note, staff["id"], now, row["id"]),
-            )
-            _record_admin_event(cursor, staff["id"], "market.lock", "market", slug, payload.note)
+            _market_lifecycle_engine(cursor, staff["id"]).lock_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug))
 
 

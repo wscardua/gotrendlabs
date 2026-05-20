@@ -76,3 +76,7 @@
 - registrado `GET /admin/dashboard-summary` como contrato staff agregado para Dashboard Admin Ops
 - registrado que o Dashboard Admin Ops usa métricas de saúde operacional sem consultas locais espalhadas no Django
 - atualizado mapa de integração para refletir JSON runtime de manutenção, `orynth_site_config`, SMTP via ambiente e resumo operacional centralizado na FastAPI
+- registrada `MarketLifecycleEngine` como ponto central do ciclo operacional de mercado no backend
+- registrado `GET /admin/markets/{slug}/resolution-audit` como contrato staff read-only para auditoria de resolução
+- registrado que Admin Ops mostra ação “Auditoria” em mercados resolvidos, com paginação de 10 participantes e legenda de ledger
+- registrada rodada QA hard com 100 usuários simulados em `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`

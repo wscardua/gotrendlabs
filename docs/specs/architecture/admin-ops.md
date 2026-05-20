@@ -35,6 +35,7 @@
 - Dashboard consome o contrato staff `GET /admin/dashboard-summary` da FastAPI e exibe saúde operacional da plataforma em blocos de KPIs, ação necessária, saúde técnica, engajamento, economia/reputação, top mercados e eventos administrativos recentes.
 - Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.
 - Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP e reCAPTCHA; não recalculam reputação, payout, probabilidade ou regra de domínio.
+- Dashboard deve manter contraste legível em modo escuro para KPIs, blocos de saúde, linhas métricas, tabelas e alertas.
 - Mercado e taxonomia possuem primeira fatia real via FastAPI/Postgres.
 - Endpoints administrativos cobrem listagem, criação, edição, publicação e cancelamento lógico de mercados.
 - Categorias e subcategorias podem ser criadas, alteradas, bloqueadas e desbloqueadas pelo painel customizado.
@@ -57,6 +58,10 @@
 - Ação de resolver exige resultado, fonte pública, justificativa operacional, data/hora efetiva e timezone selecionado de lista controlada.
 - Data/hora da resolução deve vir pré-preenchida com o momento atual no timezone do mercado, mas pode ser alterada pelo operador antes da publicação.
 - Mercado `resolved` fica somente leitura no editor; alteração exige desfazer resolução antes.
+- Mercado `resolved` deve exibir ação “Auditoria”, abrindo tela read-only consumida de `GET /admin/markets/{slug}/resolution-audit`.
+- Tela de auditoria de resolução deve mostrar resumo do mercado, opção vencedora, data/hora/timezone, fonte/nota, totais de participantes, vencedores, perdedores, stake, refunds, payouts, losses e badges.
+- Lista de participantes da auditoria deve paginar de 10 em 10 na UI e preservar `limit`/`offset`.
+- Auditoria deve incluir legenda operacional do ledger explicando `refund`, `payout`, `loss`, `0 OC` e badges, sem recalcular domínio no Django.
 - O rótulo curto de prazo exibido nos cards é derivado automaticamente de `close_at`; admin não informa esse texto manualmente.
 - A mensagem pública de fechamento (`close_label`) é opcional e textual; não controla o daemon.
 - Percentuais iniciais das opções são persistidos em `orynth_market_options.probability_exact`; inteiros são derivados apenas na serialização/UI.

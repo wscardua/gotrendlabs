@@ -680,3 +680,28 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: evoluir envio real em `communications`, criação operacional de roles PostgreSQL de menor privilégio e gráficos/históricos do dashboard quando priorizado
 - Reversão lógica: ocultar Config/Dashboard ampliado no Admin Ops, manter `orynth_site_config` preservada e desativar middleware de manutenção se necessário
+
+## WFLOW-20260520-003
+
+- Tipo: `refactor-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-RES-001`
+- Objetivo: centralizar ciclo de vida de mercado em engine backend, adicionar auditoria read-only de resolução no Admin Ops e validar fluxo hard com 100 usuários simulados
+- Etapa atual: concluído; `.venv/bin/python manage.py test tests`, testes focados de Admin Ops/resolução e `git diff --check` executados com sucesso em 2026-05-20
+- Artefatos afetados:
+  - `backend_api/market_lifecycle_engine.py`
+  - `backend_api/main.py`
+  - `backend_api/schemas.py`
+  - `accounts/api_client.py`
+  - `admin_ops/`
+  - `markets/management/commands/reconcile_canceled_market_refunds.py`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: evoluir auditorias públicas/usuário final, snapshots históricos materializados e exportação operacional quando priorizado
+- Reversão lógica: remover ação/tela/contrato de auditoria, manter `MarketLifecycleEngine` se o refactor permanecer desejável; se necessário, mover chamadas de lifecycle de volta para handlers preservando testes de ledger/reputação

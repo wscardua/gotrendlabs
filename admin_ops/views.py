@@ -26,6 +26,7 @@ from accounts.api_client import (
     admin_deactivate_badge,
     admin_get_badges,
     admin_get_market,
+    admin_get_market_resolution_audit,
     admin_get_markets,
     admin_get_comments,
     admin_get_queues,
@@ -282,6 +283,27 @@ def _admin_model_user(request):
     if not user_id:
         return None
     return get_user_model().objects.filter(id=user_id).first()
+
+
+def _audit_pagination(audit_data):
+    pagination = audit_data.get("pagination", {})
+    limit = int(pagination.get("limit") or 10)
+    offset = int(pagination.get("offset") or 0)
+    total = int(pagination.get("total") or 0)
+    previous_offset = max(0, offset - limit)
+    next_offset = offset + limit
+    pagination.update(
+        {
+            "has_previous": offset > 0,
+            "has_next": next_offset < total,
+            "previous_offset": previous_offset,
+            "next_offset": next_offset,
+            "start": offset + 1 if total else 0,
+            "end": min(offset + limit, total),
+        }
+    )
+    audit_data["pagination"] = pagination
+    return audit_data
 
 
 @admin_api_required
@@ -998,6 +1020,7 @@ def resolution_action(request, action, slug=None):
     titles = {
         "resolve": "Resolver mercado",
         "cancel-refund": "Desfazer resolução",
+        "audit": "Auditoria da resolução",
         "review": "Revisar mercado",
         "request-review": "Pedir revisão",
     }
@@ -1010,6 +1033,31 @@ def resolution_action(request, action, slug=None):
             market = admin_get_market(token, slug)
         except AuthAPIError as exc:
             error = str(exc)
+    if action == "audit" and market:
+        try:
+            limit = min(100, max(1, int(request.GET.get("limit") or 10)))
+            offset = max(0, int(request.GET.get("offset") or 0))
+        except ValueError:
+            limit = 10
+            offset = 0
+        audit_data = None
+        if not error:
+            try:
+                audit_data = _audit_pagination(admin_get_market_resolution_audit(token, market["slug"], limit=limit, offset=offset))
+            except AuthAPIError as exc:
+                error = str(exc)
+        return render(
+            request,
+            "admin_ops/resolution_audit.html",
+            {
+                "title": titles[action],
+                "action": action,
+                "slug": slug,
+                "market": _market_resolution_meta(market),
+                "audit": audit_data,
+                "admin_error": error,
+            },
+        )
     if action == "resolve" and market:
         form = MarketResolutionForm(request.POST or None, market=market)
         if request.method == "POST" and form.is_valid():

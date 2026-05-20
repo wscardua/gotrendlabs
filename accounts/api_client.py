@@ -242,6 +242,11 @@ def admin_resolve_market(token, slug, winning_option_id, source_url="", note="",
     )
 
 
+def admin_get_market_resolution_audit(token, slug, limit=50, offset=0):
+    query = urlencode({"limit": limit, "offset": offset})
+    return _request("GET", f"/admin/markets/{slug}/resolution-audit?{query}", token=token)
+
+
 def admin_get_queues(token, **filters):
     query = urlencode({key: value for key, value in filters.items() if value})
     path = f"/admin/queues?{query}" if query else "/admin/queues"

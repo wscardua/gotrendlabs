@@ -460,6 +460,64 @@ class AdminMarketResolvePayload(BaseModel):
     resolution_timezone: str = Field(default="", max_length=64)
 
 
+class AdminMarketResolutionAuditMarketResponse(BaseModel):
+    slug: str
+    title: str
+    status: str
+    winning_option_id: Optional[int] = None
+    winning_option_label: str = ""
+    resolved_at: Optional[str] = None
+    resolved_at_label: str = ""
+    resolution_timezone: str = ""
+    resolution_note: str = ""
+    source: str = ""
+
+
+class AdminMarketResolutionAuditSummaryResponse(BaseModel):
+    predictions_total: int = 0
+    winners_total: int = 0
+    losers_total: int = 0
+    stake_total: int = 0
+    refund_total: int = 0
+    payout_total: int = 0
+    loss_total: int = 0
+    badge_awards_total: int = 0
+
+
+class AdminMarketResolutionAuditBadgeResponse(BaseModel):
+    code: str
+    name: str
+    awarded_at: str
+    reason_snapshot: str = ""
+
+
+class AdminMarketResolutionAuditParticipantResponse(BaseModel):
+    user_id: int
+    handle: str
+    display_name: str
+    prediction_id: int
+    option_label: str
+    stake_amount: int
+    probability_at_entry: float
+    potential_payout: int
+    won: Optional[bool] = None
+    ledger: dict
+    badges: List[AdminMarketResolutionAuditBadgeResponse] = Field(default_factory=list)
+
+
+class AdminMarketResolutionAuditPaginationResponse(BaseModel):
+    limit: int
+    offset: int
+    total: int
+
+
+class AdminMarketResolutionAuditResponse(BaseModel):
+    market: AdminMarketResolutionAuditMarketResponse
+    summary: AdminMarketResolutionAuditSummaryResponse
+    participants: List[AdminMarketResolutionAuditParticipantResponse]
+    pagination: AdminMarketResolutionAuditPaginationResponse
+
+
 class MarketSuggestionPayload(BaseModel):
     guest_name: str = Field(default="", max_length=150)
     guest_email: Optional[EmailStr] = None
