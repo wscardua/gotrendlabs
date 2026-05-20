@@ -158,6 +158,38 @@ class Prediction(models.Model):
         ]
 
 
+class MarketFavorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="market_favorites")
+    market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name="favorites")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "orynth_market_favorites"
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="orynth_fav_user_id_8f6c74_idx"),
+            models.Index(fields=["market"], name="orynth_fav_market_0f7d22_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "market"], name="uniq_market_favorite_user_market"),
+        ]
+
+
+class MarketLike(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="market_likes")
+    market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name="likes")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "orynth_market_likes"
+        indexes = [
+            models.Index(fields=["user", "-created_at"], name="orynth_like_user_id_7d3f2a_idx"),
+            models.Index(fields=["market"], name="orynth_like_market_6b8a91_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["user", "market"], name="uniq_market_like_user_market"),
+        ]
+
+
 class MarketComment(models.Model):
     STATUS_CHOICES = (("visible", "Visible"), ("hidden", "Hidden"))
 

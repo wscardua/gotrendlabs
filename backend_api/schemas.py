@@ -380,6 +380,9 @@ class MarketResponse(BaseModel):
     market_like_count: int = 0
     view_count: int = 0
     share_count: int = 0
+    viewer_has_prediction: bool = False
+    viewer_has_favorite: bool = False
+    viewer_has_like: bool = False
     created_at: str = ""
     sparkline_path: str = ""
     sparkline_area_path: str = ""

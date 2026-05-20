@@ -130,7 +130,7 @@ Skills locais uteis:
 
 - Handles publicos sao canonicos no formato `@nome`, nascem automaticamente do nome publico e preservam unicidade com sufixo.
 - Os cards de destaque do feed priorizam ate dois mercados publicados nao cancelados com mais visualizacoes; empate usa o mercado mais novo.
-- Marcacoes editoriais de destaque continuam existindo para filtro/curadoria, mas nao superam a ordenacao por visualizacoes no card principal da home.
-- Os filtros da home sao ordenacoes client-side: tendencia, encerramento, volume, novos e favoritos editoriais.
+- Marcacoes editoriais de destaque continuam existindo para curadoria, mas nao superam a ordenacao por visualizacoes no card principal da home.
+- Os filtros da home sao ordenacoes/recortes client-side: tendencia, novos, aberto, encerrado, resolvidos, volume, mais curtidas, favoritos pessoais autenticados e minhas previsoes.
 - O dashboard do Admin Ops consome o resumo staff da FastAPI (`/admin/dashboard-summary`) e acompanha saúde operacional; criação de mercados fica concentrada na área `Mercados`.
 - Orynth Coins sao educativos e nao representam dinheiro real.

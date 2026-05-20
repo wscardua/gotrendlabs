@@ -154,11 +154,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ### 2026-05-19 - v0.14
 - cards de mercado passaram a usar fallback visual de thumbnail quando `image_url` e `thumb` estão vazios, derivando iniciais de categoria/subcategoria/título
 - fallback de thumbnail também é aplicado aos cards de compartilhamento social e imagens Open Graph de mercado/resultado
+- curtidas do card foram separadas de reações em comentários; `market_like_count` passa a representar curtidas reais do mercado
 - status de implementação: `parcial`
 
 ### 2026-05-18 - v0.13
 - feed público passou a ter ordenações rápidas client-side por tendência, encerramento, volume, novidade e favoritos editoriais
-- cards de mercado passaram a exibir contador compacto de curtidas derivado de comentários visíveis
+- cards de mercado passaram a exibir contador compacto de curtidas
 - contrato/renderização do feed usa `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para destaque e ordenação visual
 - destaque principal do feed prioriza os mercados não cancelados mais visualizados, incluindo resolvidos quando liderarem por popularidade, com mercado mais novo como desempate
 - status de implementação: `parcial`

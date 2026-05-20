@@ -98,6 +98,7 @@ Usuário autenticado comenta em um mercado e visualiza a discussão associada.
 - `GET /admin/comments`
 - `PATCH /admin/comments/{id}/moderation`
 - `MarketResponse.comments` retorna comentários visíveis com contagem de `like`/`dislike` e reação do usuário autenticado quando houver sessão.
+- Likes/dislikes de comentários são reações internas dos comentários e não alimentam `market_like_count` do mercado.
 
 ## I18n e conteúdo
 

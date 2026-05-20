@@ -37,9 +37,10 @@
 - A opção de lembrar acesso no login prolonga a sessão Django no dispositivo sem persistir senha ou alterar o contrato de autenticação da API.
 - A tela de login deve oferecer recuperação de senha; o Django renderiza os formulários, preserva navegação pública e alternância de tema nas telas de recuperação, mas a solicitação e confirmação da senha passam pela FastAPI.
 - Usuários autenticados veem ações iconizadas de `like`/`dislike`; a UI só representa a reação retornada pelo domínio.
-- Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
+- Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`viewer_has_favorite`, `viewer_has_prediction`, `viewer_has_like`, `is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
-- Favoritos no feed público representam curadoria editorial (`is_featured`) até existir uma feature própria de favoritos por usuário.
+- Favoritos no feed da home representam mercados salvos pelo usuário autenticado; `is_featured` permanece como curadoria editorial para destaques visuais.
+- Curtidas no card representam engajamento público do mercado e são separadas de favoritos pessoais e de likes/dislikes em comentários.
 - Páginas públicas fora da home devem expor retorno compacto para o feed dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags, evitando barra global solta entre header e conteúdo.
 - Em desenvolvimento local, a camada Django pode degradar para leitura local quando a FastAPI ainda não foi reiniciada após mudança de rota, mas não deve criar, moderar, reagir, creditar, converter, resolver ou executar qualquer mutação crítica localmente.
 - Em fallback local de sugestão/feedback guest, o Django deve validar reCAPTCHA server-side antes de persistir localmente.

@@ -106,10 +106,10 @@ def get_rankings(**filters):
     return _request("GET", path)
 
 
-def get_markets(**filters):
+def get_markets(token=None, **filters):
     query = urlencode({key: value for key, value in filters.items() if value})
     path = f"/markets?{query}" if query else "/markets"
-    return _request("GET", path)["markets"]
+    return _request("GET", path, token=token)["markets"]
 
 
 def get_market(slug, token=None):
@@ -122,6 +122,22 @@ def track_market_view(slug):
 
 def track_market_share(slug):
     return _request("POST", f"/markets/{slug}/share")
+
+
+def favorite_market(token, slug):
+    return _request("POST", f"/markets/{slug}/favorite", token=token)
+
+
+def unfavorite_market(token, slug):
+    return _request("DELETE", f"/markets/{slug}/favorite", token=token)
+
+
+def like_market(token, slug):
+    return _request("POST", f"/markets/{slug}/like", token=token)
+
+
+def unlike_market(token, slug):
+    return _request("DELETE", f"/markets/{slug}/like", token=token)
 
 
 def create_prediction(token, slug, data):

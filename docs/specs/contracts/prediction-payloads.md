@@ -57,6 +57,9 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - `resolution_timezone`
 - `winning_option_id`
 - `resolution_note`
+- `viewer_has_prediction`
+- `viewer_has_favorite`
+- `viewer_has_like`
 - `sparkline_series`
 - `sparkline_path`
 - `sparkline_area_path`
