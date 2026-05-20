@@ -58,7 +58,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - idioma preferencial acompanha a sessão
 - cadastro sem aceite da política de uso é rejeitado
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
-- telas de login e cadastro mantêm navegação pública para feed/mercados, badges e ranking, além do retorno compacto `← Feed` no primeiro painel de conteúdo
+- telas de login, cadastro e recuperação de senha mantêm navegação pública para feed/mercados, badges e ranking, alternância de tema, além do retorno compacto `← Feed` no primeiro painel de conteúdo
 - login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
 - login oferece recuperação de senha por email; em desenvolvimento local o link pode ser exposto na UI para validação sem SMTP real
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
@@ -129,7 +129,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo de recuperação de senha com solicitação, token válido, token inválido/expirado e token reutilizado
 - fluxo de aceite obrigatório da política de uso
 - renderização de política de uso pública e modal de política no cadastro
-- renderização de navegação pública e retorno compacto `← Feed` em login/cadastro
+- renderização de navegação pública, alternância de tema e retorno compacto `← Feed` em login/cadastro/recuperação de senha
 - login com lembrar acesso mantém sessão prolongada e login sem essa opção preserva expiração padrão
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
 - fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
@@ -147,7 +147,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - usuário consegue criar e acessar conta
 - usuário consegue solicitar recuperação e definir nova senha com link válido
 - usuário consegue abrir a política de uso no cadastro sem sair do fluxo
-- visitantes em login/cadastro conseguem voltar para mercados pelo `← Feed` e acessar mercados, badges e ranking pela navegação pública
+- visitantes em login/cadastro/recuperação de senha conseguem voltar para mercados pelo `← Feed`, alternar tema e acessar mercados, badges e ranking pela navegação pública
 - cadastro protegido exige conclusão do reCAPTCHA quando configurado
 - sessão inválida é tratada corretamente
 - idioma preferencial é respeitado após autenticação

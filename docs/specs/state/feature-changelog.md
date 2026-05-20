@@ -34,6 +34,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-20 - v0.9
 - recuperação de senha passou a usar tokens de uso único emitidos pela FastAPI, com confirmação por contrato e revogação de sessões antigas
+- telas de recuperação de senha passaram a preservar navegação pública, retorno `← Feed` e alternância de tema
 - Admin Ops passou a permitir gestão controlada de `is_staff`/`is_superuser` por superuser, com nota operacional e auditoria `user.roles_update`
 - status de implementação: parcial
 
