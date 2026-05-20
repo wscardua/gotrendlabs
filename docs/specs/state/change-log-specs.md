@@ -72,6 +72,7 @@
 
 - registrado que telas públicas de autenticação mantêm rodapé público compartilhado além de navegação, tema e retorno `← Feed`
 - registrado que login/cadastro expõem provedores sociais iniciais Google, Facebook e X como affordances iconizadas, mantendo OAuth real como gap
+- registrado que títulos de cards de mercado navegam para o detalhe como redução de atrito no feed público
 - registrada área Config no Admin Ops para modo manutenção em runtime JSON e parâmetros SMTP não sensíveis em banco
 - registrado que segredo SMTP permanece fora do banco/interface, via ambiente ou secret manager
 - registrada separação operacional de credenciais PostgreSQL por serviço Django/FastAPI com fallback local `POSTGRES_*`

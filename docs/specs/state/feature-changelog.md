@@ -121,6 +121,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-001
 
+### 2026-05-20 - v0.19
+- título dos cards de mercado passou a ser link para o detalhe, reduzindo atrito de navegação no feed/home e listas que reutilizam o card
+- smoke test passa a proteger o link do título para o detalhe do mercado
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.18
 - fechamento automático de mercados vencidos com `auto_close_enabled=true` foi centralizado em serviço backend e em entrada própria da `MarketLifecycleEngine`
 - comando `run_orynth_daemon` foi adicionado como processo operacional fino, sem duplicar regra de domínio
