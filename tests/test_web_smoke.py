@@ -2806,6 +2806,8 @@ class WebSmokeTests(TestCase):
                 self.assertContains(response, "Badges")
                 self.assertContains(response, "Ranking")
                 self.assertContains(response, "← Feed")
+                self.assertContains(response, 'class="footer"')
+                self.assertContains(response, "Rede social de previsões com moeda educativa")
                 self.assertContains(response, cta)
                 if route == reverse("login"):
                     self.assertContains(response, "Lembrar meu acesso neste dispositivo")

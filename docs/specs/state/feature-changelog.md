@@ -51,6 +51,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-AUTH-001
 
+### 2026-05-20 - v0.10
+- telas standalone de autenticação passaram a renderizar o rodapé público compartilhado via partial reutilizável
+- `base.html` passou a usar o mesmo componente de rodapé, reduzindo divergência entre páginas públicas comuns e fluxos de auth
+- smoke tests passam a validar rodapé em login e cadastro
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.9
 - recuperação de senha passou a usar tokens de uso único emitidos pela FastAPI, com confirmação por contrato e revogação de sessões antigas
 - telas de recuperação de senha passaram a preservar navegação pública, retorno `← Feed` e alternância de tema

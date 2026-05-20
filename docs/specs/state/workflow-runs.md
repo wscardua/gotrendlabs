@@ -749,3 +749,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: evoluir cadência/janela automática de recargas, materialização futura do ranking ou controles operacionais mais granulares quando priorizado
 - Reversão lógica: ocultar botões/rotas de recarga e filtro `wallet_recharge`, manter ledger/solicitações preservados para auditoria; remover paginação web apenas na camada Django se houver regressão de UX
+
+## WFLOW-20260520-005
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AUTH-001`
+- Objetivo: restaurar rodapé público nas telas standalone de autenticação e alinhar a regra documental de apresentação pública
+- Etapa atual: concluído; testes focados de auth web, verificação HTTP local de `/login/` e `git diff --check` executados com sucesso em 2026-05-20
+- Artefatos afetados:
+  - `accounts/templates/accounts/`
+  - `templates/base.html`
+  - `templates/components/footer.html`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/features/auth-and-session.md`
+  - `docs/specs/architecture/frontend-web.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: manter novos layouts públicos usando o partial de rodapé compartilhado para evitar divergência visual
+- Reversão lógica: remover o include do rodapé nas telas standalone de auth e ajustar a spec para voltar a exigir apenas navegação pública
