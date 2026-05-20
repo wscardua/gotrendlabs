@@ -34,7 +34,9 @@
 - Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Usuários, Categorias, Badge, Mercado, Resolução e Filas; menus secundários duplicados não devem ser renderizados nas telas internas.
 - Dashboard consome o contrato staff `GET /admin/dashboard-summary` da FastAPI e exibe saúde operacional da plataforma em blocos de KPIs, ação necessária, saúde técnica, engajamento, economia/reputação, top mercados e eventos administrativos recentes.
 - Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.
-- Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP e reCAPTCHA; não recalculam reputação, payout, probabilidade ou regra de domínio.
+- Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP, reCAPTCHA e status do daemon; não recalculam reputação, payout, probabilidade ou regra de domínio.
+- Dashboard exibe o daemon como `Ativo`, `Atrasado` ou `Sem sinal` a partir do heartbeat calculado pela FastAPI, sem consultar processos locais no Django.
+- Limites de status do daemon são configurados em Admin Ops Config por `daemon_stale_after_minutes` e `daemon_missing_after_minutes`; o limite de sem sinal deve ser maior que o limite de atraso.
 - Dashboard deve manter contraste legível em modo escuro para KPIs, blocos de saúde, linhas métricas, tabelas e alertas.
 - Mercado e taxonomia possuem primeira fatia real via FastAPI/Postgres.
 - Endpoints administrativos cobrem listagem, criação, edição, publicação e cancelamento lógico de mercados.
@@ -49,7 +51,7 @@
 - Edição de mercado deve sincronizar opções preservando registros existentes quando já houver previsões vinculadas; opções referenciadas por `orynth_predictions` não podem ser apagadas/recriadas silenciosamente.
 - Criação/edição exige controles operacionais mínimos antes de salvar: resumo, fonte, critério de resolução, data/hora de fechamento, fuso e cor do card.
 - Editor de mercado possui prévia ao vivo do card e aceita thumbnail do card como mídia local referenciada por URL.
-- `close_at`, `close_timezone` e `auto_close_enabled` ficam persistidos para integração futura com scheduler/daemon.
+- `close_at`, `close_timezone` e `auto_close_enabled` ficam persistidos para integração com scheduler/daemon.
 - Quando `auto_close_enabled=true`, o fechamento para `locked` deve ser feito pelo daemon/scheduler; quando `false`, o Admin Ops deve oferecer ação manual de fechamento para mercados `open` ou `scheduled`.
 - Fechamento manual move o mercado para `locked` e registra evento `market.lock` em `orynth_admin_events`.
 - Cancelamento administrativo aplica refund total, cancela previsões abertas e deve validar que não restou previsão `open` antes de concluir a transição.
@@ -85,6 +87,7 @@
 - Aprovação de créditos aparece para Feedback e Mercado quando houver usuário cadastrado; depois de aprovada, a seção fica indisponível para alteração ou reenvio.
 - Recompensas de fila usam ledger/projeção da wallet e bloqueiam duplicidade por item.
 - Configuração geral de Admin Ops define `wallet_recharge_min_balance_oc`, o saldo máximo para usuário solicitar recarga educativa.
+- Configuração geral de Admin Ops define os limites de heartbeat do daemon para status `Atrasado` e `Sem sinal`.
 - Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor OC ou rejeita com nota, mantendo uma solicitação pendente por usuário.
 - Aprovação de recarga educativa cria ledger `educational_recharge`, atualiza projeção de saldo e registra `wallet_recharge.approve`; rejeição registra `wallet_recharge.reject` sem alterar wallet.
 - Comentários entram na fila operacional de moderação com filtro próprio e status `visible`/`hidden`.

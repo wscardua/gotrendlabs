@@ -34,6 +34,8 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - `request_id` propagado por header `X-Request-ID`
 - mascaramento de segredos antes de persistir contexto
 - retenção padrão de 90 dias com comando de limpeza
+- limpeza de logs expirada centralizada em serviço backend reutilizável, consumido pelo daemon e pelo comando operacional
+- heartbeat e resultado de ciclos do daemon operacional para troubleshooting
 - consulta administrativa paginada com filtros, identificador amigável de usuário e detalhe completo do log
 
 ## Escopo excluído
@@ -51,6 +53,9 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - tokens, cookies, senhas, CSRF, session keys e chaves secretas nunca devem ser persistidos em claro
 - contexto e textos longos devem ser truncados com indicação explícita
 - falha ao persistir log não pode quebrar a request principal
+- logs do daemon usam `logger_name=orynth.daemon` e eventos como `daemon.heartbeat`, `daemon.run_started`, `daemon.markets_locked`, `daemon.logs_pruned` e `daemon.run_failed`
+- ausência ou atraso de heartbeat deve aparecer no Dashboard Admin Ops como status operacional do daemon
+- status do daemon usa limites configuráveis em `orynth_site_config`: `daemon_stale_after_minutes` e `daemon_missing_after_minutes`
 - logs associados a usuários devem expor identificador operacional amigável (`@handle`, nome e/ou email) no Admin Ops, sem exigir que o operador saiba o ID numérico
 - filtro administrativo de usuário deve aceitar `@handle`, nome, email ou ID e oferecer seleção pesquisável baseada nos usuários cadastrados, incluindo staff e superusers
 - listagem administrativa deve ser paginada e não renderizar uma página infinita
@@ -71,3 +76,5 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - filtros principais retornam registros esperados, incluindo usuário por `@handle`, nome, email ou valor completo selecionado no combo
 - listagem permite navegação por páginas e limite por página
 - dados sensíveis aparecem mascarados
+- comando de prune e daemon usam a mesma rotina backend de retenção, sem duplicar regra em camada Django
+- Admin Ops Config permite ajustar os limites de heartbeat do daemon, validando que `Sem sinal` seja maior que `Atrasado`

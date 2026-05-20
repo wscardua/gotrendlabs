@@ -2311,6 +2311,11 @@ input[type="range"] {
   background: linear-gradient(180deg, rgba(255, 236, 232, 0.84), rgba(255, 253, 247, 0.9));
 }
 
+.dashboard-health-item.is-safe {
+  border-color: rgba(19, 111, 74, 0.3);
+  background: linear-gradient(180deg, rgba(220, 244, 232, 0.78), rgba(255, 253, 247, 0.9));
+}
+
 .dashboard-split {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2375,6 +2380,12 @@ input[type="range"] {
 
 .dashboard-health-item strong {
   text-align: left;
+}
+
+.dashboard-health-item small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.3;
 }
 
 .dashboard-health-item.is-warn {
@@ -5194,6 +5205,12 @@ body[data-theme="dark"] .dashboard-health-item.is-risk {
   border-color: rgba(255, 137, 123, 0.34);
   background:
     linear-gradient(180deg, rgba(81, 39, 35, 0.78), rgba(29, 24, 23, 0.96));
+}
+
+body[data-theme="dark"] .dashboard-health-item.is-safe {
+  border-color: rgba(89, 196, 137, 0.38);
+  background:
+    linear-gradient(180deg, rgba(24, 74, 51, 0.74), rgba(22, 31, 27, 0.96));
 }
 
 body[data-theme="dark"] .dashboard-health-item.is-warn {

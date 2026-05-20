@@ -34,6 +34,7 @@
 - Admin Ops consome `GET /admin/dashboard-summary` via FastAPI para consolidar métricas operacionais de mercados, filas, usuários, engajamento, wallet, badges, logs, manutenção, SMTP e reCAPTCHA.
 - Config operacional usa duas fontes por fronteira: modo manutenção em JSON runtime para sobreviver sem banco/API e parâmetros SMTP não sensíveis em `orynth_site_config`.
 - Recarga educativa de wallet usa `orynth_site_config.wallet_recharge_min_balance_oc` como piso operacional configurado no Admin Ops; Django e FastAPI bloqueiam solicitação quando `available_oc` está acima desse valor.
+- Status do daemon no Dashboard usa `orynth_site_config.daemon_stale_after_minutes` e `orynth_site_config.daemon_missing_after_minutes` como limites operacionais configurados no Admin Ops.
 - Ranking web consome `GET /rankings` como fonte autoritativa e pagina a apresentação em 10 linhas por página sem recalcular reputação no Django.
 
 ## Skills técnicas por stack

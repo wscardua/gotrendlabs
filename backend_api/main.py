@@ -11,8 +11,10 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, status
 
+from backend_api.admin_events import record_admin_event
 from backend_api.badge_engine import BadgeAwardEngine
 from backend_api.db import get_connection
+from backend_api.daemon_services import daemon_dashboard_status
 from backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from backend_api.schemas import (
     AdminCategoryPayload,
@@ -1198,13 +1200,7 @@ def _ensure_featured_allowed(market_status, is_featured):
 
 
 def _record_admin_event(cursor, actor_id, action, entity_type, entity_identifier, note=""):
-    cursor.execute(
-        """
-        INSERT INTO orynth_admin_events (actor_id, action, entity_type, entity_identifier, note, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """,
-        (actor_id, action, entity_type, entity_identifier, note or "", datetime.now(timezone.utc)),
-    )
+    record_admin_event(cursor, actor_id, action, entity_type, entity_identifier, note)
 
 
 def _market_lifecycle_engine(cursor, staff_id):
@@ -2800,7 +2796,8 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             ]
             cursor.execute(
                 """
-                SELECT email_enabled, smtp_host, smtp_port, default_from_email
+                SELECT email_enabled, smtp_host, smtp_port, default_from_email,
+                       daemon_stale_after_minutes, daemon_missing_after_minutes
                 FROM orynth_site_config
                 WHERE singleton_key = 1
                 """
@@ -2816,6 +2813,12 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                 and smtp_secret_configured
             )
             smtp_status = "ready" if smtp_ready else "pending" if site_config and site_config["email_enabled"] else "inactive"
+            daemon_status = daemon_dashboard_status(
+                cursor,
+                now=now,
+                stale_after_minutes=int(site_config["daemon_stale_after_minutes"] or 5) if site_config else 5,
+                missing_after_minutes=int(site_config["daemon_missing_after_minutes"] or 15) if site_config else 15,
+            )
             return {
                 "markets": {
                     **market_counts,
@@ -2869,6 +2872,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "maintenance_enabled": _maintenance_mode_active(),
                     "smtp_status": smtp_status,
                     "recaptcha_enabled": os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
+                    **daemon_status,
                 },
                 "top_markets": top_markets,
                 "recent_admin_events": recent_admin_events,

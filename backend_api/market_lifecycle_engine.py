@@ -181,6 +181,32 @@ class MarketLifecycleEngine:
         )
         self.record_admin_event(self.cursor, self.staff_id, "market.lock", "market", slug, note)
 
+    def lock_market_automatically(self, row, slug, note="", now=None):
+        if not row["auto_close_enabled"]:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Este mercado está configurado para fechamento manual.",
+            )
+        if row["status"] not in {"open", "scheduled"}:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Apenas mercados abertos ou agendados podem ser fechados automaticamente.",
+            )
+        now = now or datetime.now(timezone.utc)
+        self.cursor.execute(
+            """
+            UPDATE orynth_markets
+            SET status = 'locked',
+                status_label = 'Fechado',
+                admin_notes = %s,
+                updated_by_id = NULL,
+                updated_at = %s
+            WHERE id = %s
+            """,
+            (note, now, row["id"]),
+        )
+        self.record_admin_event(self.cursor, None, "market.lock", "market", slug, note)
+
     def reconcile_canceled_market_refunds(self, market_id, slug, now):
         return self._refund_market_predictions(market_id, slug, now)
 

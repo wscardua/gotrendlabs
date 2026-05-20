@@ -17,12 +17,14 @@
 - Mercado `multiple` exige ao menos duas opções, sem limite máximo fixo nesta etapa; snapshots iniciais são distribuídos automaticamente e devem somar `100%`.
 - Opções de mercado são entidades referenciáveis por previsões; edição administrativa deve atualizar opções existentes por identidade/label estável quando possível.
 - Opção com previsão vinculada em `orynth_predictions` não pode ser removida fisicamente; tentativa de remoção deve retornar erro de domínio claro.
-- Mercados administrativos devem persistir `close_at`, `close_timezone` e `auto_close_enabled` para permitir fechamento automático futuro pelo scheduler/daemon.
+- Mercados administrativos devem persistir `close_at`, `close_timezone` e `auto_close_enabled` para permitir fechamento automático pelo scheduler/daemon.
 - `closes_in` é rótulo derivado de `close_at` para apresentação; não deve ser informado manualmente pelo admin.
 - `close_label` é mensagem pública opcional sobre fechamento; não substitui `close_at` nem controla transição de estado.
 - Se `auto_close_enabled=true`, a transição para `locked` deve ser executada pelo daemon/scheduler quando `close_at` vencer.
 - Se `auto_close_enabled=false`, a transição para `locked` deve ser executada por operador staff via Admin Ops.
 - Fechamento manual só é permitido para mercados `open` ou `scheduled` e deve registrar `market.lock`.
+- Fechamento automático só é permitido para mercados `open` ou `scheduled`, com `auto_close_enabled=true`, `close_at` preenchido e vencido.
+- Fechamento automático deve registrar `market.lock` com ator nulo/sistema e nota operacional `Fechamento automático pelo daemon.`
 - Mercado sem campos operacionais mínimos não deve ser salvo pelo admin customizado.
 - Mercado novo ou editado não pode usar categoria/subcategoria bloqueada.
 - Categorias e subcategorias são preservadas fisicamente; bloqueio/desbloqueio administrativo é a forma operacional de retirar ou devolver uso.
@@ -32,7 +34,7 @@
 - A transição `locked -> resolved` exige operador ou processo autorizado, evidência, justificativa, opção vencedora, data/hora efetiva e timezone de resolução.
 - `resolved_at` deve guardar o momento efetivo da resolução; `resolution_timezone` deve preservar o timezone selecionado para apresentação/auditoria.
 - Timezone de resolução no Admin Ops deve ser selecionado a partir de lista controlada, não informado em texto livre.
-- No backend, publicação, fechamento manual, cancelamento, resolução e desfazer resolução devem permanecer centralizados em `MarketLifecycleEngine`, operando sobre cursor/transação recebidos de fora.
+- No backend, publicação, fechamento manual, fechamento automático, cancelamento, resolução e desfazer resolução devem permanecer centralizados em `MarketLifecycleEngine`, operando sobre cursor/transação recebidos de fora.
 - Cancelamento administrativo muda o mercado para `canceled`, preserva o registro e deve gravar evento administrativo.
 - `canceled` devolve 100% dos stakes bloqueados por previsões abertas, marca previsões como `canceled` e não altera reputação.
 - O fluxo normal de cancelamento deve validar que nenhuma previsão `open` permaneceu no mercado antes de concluir a transição para `canceled`.
