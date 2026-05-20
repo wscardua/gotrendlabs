@@ -4,8 +4,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 
-from accounts.api_client import AuthAPIError, get_markets, login_user, logout_user, register_user
-from accounts.forms import LoginForm, RegisterForm
+from accounts.api_client import AuthAPIError, confirm_password_reset, get_markets, login_user, logout_user, register_user, request_password_reset
+from accounts.forms import LoginForm, PasswordResetConfirmForm, PasswordResetRequestForm, RegisterForm
 from accounts.session import auth_token, clear_auth_session, is_authenticated, store_auth_session
 from core.domain_client import local_markets
 
@@ -117,6 +117,38 @@ def register_view(request):
             "signup_market": _popular_signup_market(),
         },
     )
+
+
+def password_reset_request_view(request):
+    if is_authenticated(request):
+        return redirect("home")
+    form = PasswordResetRequestForm(request.POST or None)
+    reset_url = ""
+    message = ""
+    if request.method == "POST" and form.is_valid():
+        try:
+            response = request_password_reset(form.cleaned_data["email"])
+        except AuthAPIError as exc:
+            form.add_error(None, str(exc))
+        else:
+            message = response.get("message") or "Se o email estiver cadastrado, enviaremos instruções."
+            reset_url = response.get("reset_url") or ""
+    return render(request, "accounts/password_reset_request.html", {"form": form, "message": message, "reset_url": reset_url})
+
+
+def password_reset_confirm_view(request, token):
+    if is_authenticated(request):
+        return redirect("home")
+    form = PasswordResetConfirmForm(request.POST or None)
+    success = False
+    if request.method == "POST" and form.is_valid():
+        try:
+            confirm_password_reset(token, form.cleaned_data["password"])
+        except AuthAPIError as exc:
+            form.add_error(None, str(exc))
+        else:
+            success = True
+    return render(request, "accounts/password_reset_confirm.html", {"form": form, "success": success})
 
 
 def logout_view(request):

@@ -44,13 +44,14 @@ from accounts.api_client import (
     admin_reward_suggestion,
     admin_unblock_category,
     admin_unblock_subcategory,
+    admin_update_user_roles,
     admin_update_badge,
     admin_update_category,
     admin_update_market,
     admin_update_subcategory,
 )
 from accounts.session import admin_api_required, auth_token
-from admin_ops.forms import AdminBadgeForm, AdminCategoryForm, AdminMarketForm, AdminSubcategoryForm, AdminUserNoteForm, AdminUserWalletAdjustmentForm, FeedbackRewardForm, MarketResolutionForm, QueueReviewForm
+from admin_ops.forms import AdminBadgeForm, AdminCategoryForm, AdminMarketForm, AdminSubcategoryForm, AdminUserNoteForm, AdminUserRoleForm, AdminUserWalletAdjustmentForm, FeedbackRewardForm, MarketResolutionForm, QueueReviewForm
 
 
 THUMB_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "market_thumbnails", base_url=settings.MEDIA_URL + "market_thumbnails/")
@@ -450,6 +451,7 @@ def user_detail(request, user_id):
     detail = None
     note_form = AdminUserNoteForm()
     wallet_form = AdminUserWalletAdjustmentForm()
+    role_form = AdminUserRoleForm()
     if request.method == "POST":
         action = request.POST.get("action", "")
         try:
@@ -487,12 +489,29 @@ def user_detail(request, user_id):
                     messages.success(request, "Ajuste manual de wallet registrado.")
                     return redirect("admin-ops-user-detail", user_id=user_id)
                 error = "Revise o ajuste de wallet."
+            elif action == "roles_update":
+                role_form = AdminUserRoleForm(request.POST)
+                if role_form.is_valid():
+                    flags = role_form.role_flags()
+                    admin_update_user_roles(
+                        token,
+                        user_id,
+                        flags["is_staff"],
+                        flags["is_superuser"],
+                        role_form.cleaned_data["note"],
+                    )
+                    messages.success(request, "Papel administrativo atualizado.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Revise o papel administrativo."
         except AuthAPIError as exc:
             error = str(exc)
     try:
         detail = admin_get_user(token, user_id)
     except AuthAPIError as exc:
         error = error or str(exc)
+    if detail and not request.method == "POST":
+        role = "superuser" if detail["user"].get("is_superuser") else "staff" if detail["user"].get("is_staff") else "user"
+        role_form = AdminUserRoleForm(initial={"role": role})
     return render(
         request,
         "admin_ops/user_detail.html",
@@ -500,6 +519,7 @@ def user_detail(request, user_id):
             "detail": detail,
             "note_form": note_form,
             "wallet_form": wallet_form,
+            "role_form": role_form,
             "admin_error": error,
         },
     )

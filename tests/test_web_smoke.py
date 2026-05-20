@@ -2,7 +2,7 @@ from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from io import StringIO
 import logging
-from urllib.parse import quote
+from urllib.parse import quote, urlparse
 
 from django.core.management import call_command
 from django.test import TestCase, override_settings
@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from accounts.api_client import AuthAPIError
-from accounts.models import BadgeDefinition, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry
+from accounts.models import BadgeDefinition, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry
 from accounts.session import TOKEN_KEY, USER_KEY
 from backend_api.db import get_connection
 from backend_api.main import app
@@ -253,6 +253,123 @@ class BackendAuthAPITests(TestCase):
         allowed_login = client.post("/auth/login", json={"email": "managed-user@example.com", "password": "testpass123"})
         self.assertEqual(allowed_login.status_code, 200)
         self.assertTrue(AdminEvent.objects.filter(action="user.reactivate", entity_identifier=str(target_id)).exists())
+
+    def test_admin_user_roles_require_superuser_and_preserve_last_superuser(self):
+        client = TestClient(app)
+        superuser = client.post(
+            "/auth/register",
+            json={"display_name": "Root Admin", "email": "root-admin@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        staff = client.post(
+            "/auth/register",
+            json={"display_name": "Role Staff", "email": "role-staff@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        target = client.post(
+            "/auth/register",
+            json={"display_name": "Role Target", "email": "role-target@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        self.assertEqual(superuser.status_code, 201)
+        self.assertEqual(staff.status_code, 201)
+        self.assertEqual(target.status_code, 201)
+        superuser_id = superuser.json()["user"]["id"]
+        target_id = target.json()["user"]["id"]
+        superuser_headers = {"Authorization": f"Bearer {superuser.json()['session']['token']}"}
+        staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE orynth_users SET is_staff = true, is_superuser = true WHERE email = %s", ("root-admin@example.com",))
+                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("role-staff@example.com",))
+
+        forbidden = client.post(
+            f"/admin/users/{target_id}/roles",
+            headers=staff_headers,
+            json={"is_staff": True, "is_superuser": False, "note": "Promover suporte"},
+        )
+        self.assertEqual(forbidden.status_code, 403)
+
+        promoted_staff = client.post(
+            f"/admin/users/{target_id}/roles",
+            headers=superuser_headers,
+            json={"is_staff": True, "is_superuser": False, "note": "Promover suporte"},
+        )
+        self.assertEqual(promoted_staff.status_code, 200)
+        self.assertTrue(promoted_staff.json()["user"]["is_staff"])
+        self.assertFalse(promoted_staff.json()["user"]["is_superuser"])
+
+        promoted_super = client.post(
+            f"/admin/users/{target_id}/roles",
+            headers=superuser_headers,
+            json={"is_staff": False, "is_superuser": True, "note": "Promover super"},
+        )
+        self.assertEqual(promoted_super.status_code, 200)
+        self.assertTrue(promoted_super.json()["user"]["is_staff"])
+        self.assertTrue(promoted_super.json()["user"]["is_superuser"])
+
+        self_action = client.post(
+            f"/admin/users/{superuser_id}/roles",
+            headers=superuser_headers,
+            json={"is_staff": False, "is_superuser": False, "note": "self"},
+        )
+        self.assertEqual(self_action.status_code, 422)
+
+        demoted_target = client.post(
+            f"/admin/users/{target_id}/roles",
+            headers=superuser_headers,
+            json={"is_staff": False, "is_superuser": False, "note": "Rebaixar"},
+        )
+        self.assertEqual(demoted_target.status_code, 200)
+        self.assertFalse(demoted_target.json()["user"]["is_staff"])
+        self.assertFalse(demoted_target.json()["user"]["is_superuser"])
+
+        self.assertTrue(AdminEvent.objects.filter(action="user.roles_update", entity_identifier=str(target_id)).exists())
+
+    def test_password_reset_request_confirm_revokes_sessions_and_rejects_reuse(self):
+        client = TestClient(app)
+        registered = client.post(
+            "/auth/register",
+            json={"display_name": "Reset User", "email": "reset-user@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        self.assertEqual(registered.status_code, 201)
+        old_headers = {"Authorization": f"Bearer {registered.json()['session']['token']}"}
+
+        missing = client.post("/auth/password-reset/request", json={"email": "missing-reset@example.com"})
+        self.assertEqual(missing.status_code, 200)
+        self.assertEqual(missing.json()["reset_url"], "")
+
+        requested = client.post("/auth/password-reset/request", json={"email": "reset-user@example.com"})
+        self.assertEqual(requested.status_code, 200)
+        reset_url = requested.json()["reset_url"]
+        self.assertIn("/password-reset/confirm/", reset_url)
+        token = urlparse(reset_url).path.strip("/").split("/")[-1]
+        self.assertTrue(PasswordResetToken.objects.filter(user__email="reset-user@example.com", used_at__isnull=True).exists())
+
+        invalid = client.post("/auth/password-reset/confirm", json={"token": "invalid-token-that-is-long-enough", "password": "newpass123"})
+        self.assertEqual(invalid.status_code, 422)
+
+        confirmed = client.post("/auth/password-reset/confirm", json={"token": token, "password": "newpass123"})
+        self.assertEqual(confirmed.status_code, 200)
+        self.assertEqual(client.get("/auth/session", headers=old_headers).status_code, 401)
+
+        old_login = client.post("/auth/login", json={"email": "reset-user@example.com", "password": "testpass123"})
+        self.assertEqual(old_login.status_code, 401)
+        new_login = client.post("/auth/login", json={"email": "reset-user@example.com", "password": "newpass123"})
+        self.assertEqual(new_login.status_code, 200)
+        reused = client.post("/auth/password-reset/confirm", json={"token": token, "password": "anotherpass123"})
+        self.assertEqual(reused.status_code, 422)
+
+    def test_password_reset_pages_render_from_login(self):
+        login = self.client.get(reverse("login"))
+        self.assertEqual(login.status_code, 200)
+        self.assertContains(login, "Esqueci minha senha")
+        self.assertContains(login, reverse("password-reset"))
+
+        request_page = self.client.get(reverse("password-reset"))
+        self.assertEqual(request_page.status_code, 200)
+        self.assertContains(request_page, "Recuperar senha")
+
+        confirm_page = self.client.get(reverse("password-reset-confirm", args=["dev-token-for-rendering"]))
+        self.assertEqual(confirm_page.status_code, 200)
+        self.assertContains(confirm_page, "Definir nova senha")
 
     def test_admin_system_logs_contracts_filters_redaction_and_staff_gate(self):
         client = TestClient(app)

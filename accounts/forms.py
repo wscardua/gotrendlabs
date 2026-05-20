@@ -8,6 +8,28 @@ class LoginForm(forms.Form):
     remember_me = forms.BooleanField(label="Lembrar meu acesso neste dispositivo", required=False)
 
 
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(label="Email")
+
+
+class PasswordResetConfirmForm(forms.Form):
+    password = forms.CharField(label="Nova senha", widget=forms.PasswordInput)
+    password_confirm = forms.CharField(label="Confirmar nova senha", widget=forms.PasswordInput)
+
+    def clean_password(self):
+        password = self.cleaned_data["password"]
+        validate_password(password)
+        return password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get("password")
+        password_confirm = cleaned_data.get("password_confirm")
+        if password and password_confirm and password != password_confirm:
+            self.add_error("password_confirm", "As senhas não conferem.")
+        return cleaned_data
+
+
 class RegisterForm(forms.Form):
     display_name = forms.CharField(label="Nome público", max_length=150)
     email = forms.EmailField(label="Email")

@@ -32,6 +32,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-AUTH-001
 
+### 2026-05-20 - v0.9
+- recuperação de senha passou a usar tokens de uso único emitidos pela FastAPI, com confirmação por contrato e revogação de sessões antigas
+- Admin Ops passou a permitir gestão controlada de `is_staff`/`is_superuser` por superuser, com nota operacional e auditoria `user.roles_update`
+- status de implementação: parcial
+
 ### 2026-05-19 - v0.8
 - detalhe administrativo de usuário passou a exibir badges adquiridas sem recalcular elegibilidade na UI
 - formulário de ajuste manual de wallet passou a exigir seleção explícita de direção, sem opção pré-selecionada

@@ -35,6 +35,7 @@
 - A tela de cadastro pode exibir uma prévia de onboarding baseada em dados reais de mercado, desde que não calcule regra de domínio nem simule estado pessoal inexistente.
 - Quando a prévia de onboarding usar mercado público, a seleção deve usar apenas campos serializados pelo domínio: maior `view_count` entre mercados publicados não cancelados disponíveis localmente/publicamente, excluindo `draft` e `canceled`, com mercado mais recente por `created_at` como desempate/fallback.
 - A opção de lembrar acesso no login prolonga a sessão Django no dispositivo sem persistir senha ou alterar o contrato de autenticação da API.
+- A tela de login deve oferecer recuperação de senha; o Django renderiza os formulários, mas a solicitação e confirmação da senha passam pela FastAPI.
 - Usuários autenticados veem ações iconizadas de `like`/`dislike`; a UI só representa a reação retornada pelo domínio.
 - Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.

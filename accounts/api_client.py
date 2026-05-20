@@ -52,6 +52,14 @@ def login_user(data):
     return _request("POST", "/auth/login", data)
 
 
+def request_password_reset(email):
+    return _request("POST", "/auth/password-reset/request", {"email": email})
+
+
+def confirm_password_reset(token, password):
+    return _request("POST", "/auth/password-reset/confirm", {"token": token, "password": password})
+
+
 def logout_user(token):
     return _request("POST", "/auth/logout", token=token)
 
@@ -183,6 +191,15 @@ def admin_adjust_user_wallet(token, user_id, direction, amount_oc, note):
         "POST",
         f"/admin/users/{user_id}/wallet/adjust",
         {"direction": direction, "amount_oc": amount_oc, "note": note},
+        token=token,
+    )
+
+
+def admin_update_user_roles(token, user_id, is_staff, is_superuser, note):
+    return _request(
+        "POST",
+        f"/admin/users/{user_id}/roles",
+        {"is_staff": is_staff, "is_superuser": is_superuser, "note": note},
         token=token,
     )
 

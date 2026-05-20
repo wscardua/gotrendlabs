@@ -65,6 +65,7 @@
 - Browse administrativo de usuários permite filtrar por status/papel, buscar por email/handle/nome e ordenar por criação, último login, saldo ou reputação.
 - Detalhe administrativo de usuário pode exibir dados privados para staff, incluindo perfil, wallet, ledger recente, reputação, previsões, comentários, filas, badges adquiridas, sessões e eventos.
 - Ações administrativas de usuário exigem nota operacional, não podem ser executadas sobre a própria conta do operador e registram `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust`.
+- Alteração de papel administrativo no detalhe do usuário usa contrato FastAPI, exige operador superuser, nota operacional, bloqueia alteração da própria conta e registra `user.roles_update`.
 - Ajuste manual de wallet deve iniciar sem direção pré-selecionada, usar ledger/projeção na FastAPI e não pode alterar reputação.
 - Browse de taxonomia administrativa usa tabela objetiva, filtros client-side por uso/bloqueio e card lateral com política de bloqueio.
 - Filas operacionais possuem primeira fatia real para Mercado e Feedback, com dados persistidos e listagem no Admin Ops.
