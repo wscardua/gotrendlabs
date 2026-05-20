@@ -112,8 +112,8 @@ Skills locais uteis:
 ## Regras atuais importantes
 
 - Handles publicos sao canonicos no formato `@nome`, nascem automaticamente do nome publico e preservam unicidade com sufixo.
-- Os cards de destaque do feed sao configurados no Admin Ops por mercado e ate dois mercados podem ficar em destaque por vez.
-- Se o feed tiver menos de dois destaques editoriais elegiveis, a home completa com mercados mais curtidos; empate usa o mercado mais novo.
+- Os cards de destaque do feed priorizam ate dois mercados publicados nao cancelados com mais visualizacoes; empate usa o mercado mais novo.
+- Marcacoes editoriais de destaque continuam existindo para filtro/curadoria, mas nao superam a ordenacao por visualizacoes no card principal da home.
 - Os filtros da home sao ordenacoes client-side: tendencia, encerramento, volume, novos e favoritos editoriais.
 - O dashboard do Admin Ops e uma tela de acompanhamento; criacao de mercados fica concentrada na area `Mercados`.
 - Orynth Coins sao educativos e nao representam dinheiro real.

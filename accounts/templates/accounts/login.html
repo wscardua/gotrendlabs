@@ -56,6 +56,7 @@
           {% if form.non_field_errors %}<div class="field full"><div class="tag risk">{{ form.non_field_errors|join:", " }}</div></div>{% endif %}
           <div class="field full"><label for="{{ form.email.id_for_label }}">Email</label><input id="{{ form.email.id_for_label }}" name="{{ form.email.name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email"></div>
           <div class="field full"><label for="{{ form.password.id_for_label }}">Senha</label><input id="{{ form.password.id_for_label }}" name="{{ form.password.name }}" type="password" value="" autocomplete="current-password"></div>
+          <div class="field full checkbox-field"><label><input name="{{ form.remember_me.name }}" type="checkbox" {% if form.remember_me.value %}checked{% endif %}> <span>Lembrar meu acesso neste dispositivo</span></label></div>
           <button class="btn primary full" type="submit">Entrar</button>
         </form>
         <div class="auth-footer">

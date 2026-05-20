@@ -5,6 +5,7 @@ from django.contrib.auth.password_validation import validate_password
 class LoginForm(forms.Form):
     email = forms.EmailField(label="Email")
     password = forms.CharField(label="Senha", widget=forms.PasswordInput)
+    remember_me = forms.BooleanField(label="Lembrar meu acesso neste dispositivo", required=False)
 
 
 class RegisterForm(forms.Form):

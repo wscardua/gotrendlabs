@@ -45,7 +45,7 @@
           {% endfor %}
         </div>
         {% if featured_market %}
-          <a class="btn success" href="{% url 'market-detail' featured_market.slug %}">Fazer previsão agora</a>
+          <a class="btn success" href="{% url 'market-detail' featured_market.slug %}">{% if featured_market.status == "open" %}Fazer previsão agora{% else %}Ver mercado{% endif %}</a>
         {% else %}
           <a class="btn success" href="{% url 'suggestion' %}">Sugerir primeiro mercado</a>
         {% endif %}

@@ -155,6 +155,16 @@
         </div>
       {% endif %}
       {% if market %}<a class="btn small ghost" href="{% url 'market-detail' market.slug %}">Ver página pública</a>{% endif %}
+      <div class="badge-help-card">
+        <h3>Guia rápido</h3>
+        <dl>
+          <div><dt>Tipos</dt><dd>Sim/Não cria duas opções fixas; múltipla escolha exige pelo menos duas alternativas.</dd></div>
+          <div><dt>Obrigatórios</dt><dd>Pergunta, categoria, subcategoria, resumo, fechamento, fonte, critério e cor do card.</dd></div>
+          <div><dt>Fechamento</dt><dd>Automático fica para o daemon; manual libera ação operacional quando o mercado estiver aberto.</dd></div>
+          <div><dt>Card público</dt><dd>Thumbnail, sigla e cor alimentam a prévia exibida no feed.</dd></div>
+        </dl>
+        <p>Fonte e critério devem permitir auditoria objetiva da resolução.</p>
+      </div>
     </aside>
   </section>
 </main>

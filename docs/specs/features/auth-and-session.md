@@ -59,6 +59,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - cadastro sem aceite da política de uso é rejeitado
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
 - telas de login e cadastro mantêm navegação pública para feed/mercados, badges e ranking, além do retorno compacto `← Feed` no primeiro painel de conteúdo
+- login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - perfil autenticado exibe reputação em cards e mantém edição de dados na própria tela de perfil, sem rota separada
@@ -123,7 +124,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo de aceite obrigatório da política de uso
 - renderização de política de uso pública e modal de política no cadastro
 - renderização de navegação pública e retorno compacto `← Feed` em login/cadastro
-- prévia de cadastro seleciona mercado não cancelado com mais curtidas e usa mercado mais recente quando não há curtidas
+- login com lembrar acesso mantém sessão prolongada e login sem essa opção preserva expiração padrão
+- prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
 - fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
 - fluxo de edição de perfil na própria página autenticada
 - fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público

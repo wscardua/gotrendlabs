@@ -207,7 +207,7 @@ def _image_response(image):
 
 
 def _featured_eligible(markets):
-    return [market for market in markets if market.get("status") not in {"canceled", "resolved"}]
+    return [market for market in markets if market.get("status") not in {"draft", "canceled"}]
 
 
 def _market_created_at_score(market):
@@ -220,33 +220,31 @@ def _market_created_at_score(market):
         return 0
 
 
-def _market_featured_fallback_key(market):
-    return (int(market.get("market_like_count") or 0), _market_created_at_score(market))
+def _market_featured_key(market):
+    return (int(market.get("view_count") or 0), _market_created_at_score(market))
 
 
 def _select_featured_markets(markets, limit=2):
     eligible_markets = _featured_eligible(markets)
-    selected = [market for market in eligible_markets if market.get("is_featured")][:limit]
-    if len(selected) >= limit:
-        return selected
-
-    selected_slugs = {market.get("slug") for market in selected}
-    fallback_markets = sorted(
-        [market for market in eligible_markets if market.get("slug") not in selected_slugs],
-        key=_market_featured_fallback_key,
+    return sorted(
+        eligible_markets,
+        key=_market_featured_key,
         reverse=True,
-    )
-    selected.extend(fallback_markets[: limit - len(selected)])
-    return selected
+    )[:limit]
 
 
 def home(request):
     try:
-        markets = get_markets()
+        raw_markets = get_markets()
     except AuthAPIError:
-        markets = local_markets()
-    markets = _hydrate_market_visuals(_public_visible_markets(markets))
-    featured_markets = _select_featured_markets(markets)
+        raw_markets = local_markets()
+    markets = _hydrate_market_visuals(_public_visible_markets(raw_markets))
+    featured_candidates_by_slug = {market.get("slug"): market for market in _hydrate_market_visuals(_public_visible_markets(raw_markets)) if market.get("slug")}
+    for market in _hydrate_market_visuals(local_markets()):
+        slug = market.get("slug")
+        if slug:
+            featured_candidates_by_slug[slug] = {**market, **featured_candidates_by_slug.get(slug, {})}
+    featured_markets = _select_featured_markets(list(featured_candidates_by_slug.values()))
     featured_market = featured_markets[0] if featured_markets else None
     try:
         ranking = get_rankings()["rows"][:3]
