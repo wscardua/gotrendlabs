@@ -58,16 +58,16 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - botões `Trending`, `Encerrando`, `Mais volume`, `Novos` e `Favoritos` reordenam a lista no frontend sem recarregar a página
 - botão `Resolvidos` no feed público mostra apenas cards com `status=resolved`, usando os cards já renderizados e sem recarregar a página
 - `Favoritos` no feed público significa mercados destacados pela curadoria, não favoritos salvos por usuário
-- o card principal do feed tenta exibir dois mercados elegíveis: destaques editoriais primeiro; vagas faltantes são preenchidas por mais curtidas e, em empate, por mercado mais novo
+- o card principal do feed exibe os dois mercados publicados não cancelados mais visualizados por `view_count`, excluindo `draft` e `canceled`, com mercado mais novo como desempate
 - a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, sem filtrar por mês
-- prévias públicas fora do feed, como o ticket de onboarding no cadastro, podem reutilizar mercados serializados pelo domínio como sinal social; para cadastro, usa maior `market_like_count` entre não cancelados e, se não houver curtidas, o mais recente por `created_at`
+- prévias públicas fora do feed, como o ticket de onboarding no cadastro, podem reutilizar mercados serializados pelo domínio como sinal social; para cadastro, usa maior `view_count` entre publicados não cancelados, exclui `draft` e `canceled`, e usa o mais recente por `created_at` como desempate/fallback
 
 ## Regras de domínio
 
 - o feed deve refletir estados vindos do domínio
 - probabilidades exibidas são informativas, não editáveis pela UI
 - mercados `canceled` não aparecem no feed público padrão
-- mercados `canceled` e `resolved` não entram no card principal de destaque/fallback
+- mercados `draft` e `canceled` não entram no card principal; mercados `resolved` podem entrar se liderarem por `view_count`, com CTA de visualização
 - mercados cancelados não podem permanecer marcados como destaque editorial
 - no máximo dois mercados podem ficar marcados como destaque editorial ao mesmo tempo
 - mercados de múltipla escolha iniciam com probabilidades decimais iguais para todas as opções, sem vantagem artificial por sobra de arredondamento
@@ -85,12 +85,12 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - mercados públicos persistidos em PostgreSQL como fonte principal
 - seed inicial baseado no fixture de domínio
 - `GET /markets` expõe feed público com filtros por status, categoria e subcategoria; sem filtro explícito, exclui `draft` e `canceled`
-- `MarketResponse` expõe `is_featured`, `market_like_count`, `created_at` e `close_at` para seleção visual, destaque e ordenação client-side
-- `MarketResponse` expõe `view_count` e `share_count` como métricas operacionais de popularidade, restritas ao Admin Ops nesta etapa
+- `MarketResponse` expõe `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para seleção visual, destaque e ordenação client-side
+- `MarketResponse` expõe `view_count` e `share_count` como métricas de popularidade usadas no Admin Ops e na seleção pública de destaques/onboarding
 - `GET /admin/markets` aceita ordenação operacional por `order=views_desc` e `order=shares_desc` para apoiar curadoria por popularidade
 - Django renderiza atributos `data-*` nos cards para ordenar e filtrar sem reload: destaque, curtidas, volume, datas e status
 - cards consomem `sparkline_series` quando disponível e hidratam pelo Postgres local quando a API entrega payload antigo
-- cadastro renderiza um ticket de onboarding com o mercado público não cancelado mais curtido, incluindo mini gráfico por `sparkline_series`, opções e retorno estimado meramente ilustrativo
+- cadastro renderiza um ticket de onboarding com o mercado publicado não cancelado mais visualizado, excluindo `draft` e `canceled`, incluindo mini gráfico por `sparkline_series`, opções e retorno estimado meramente ilustrativo
 - filtros rápidos do feed são implementados em JavaScript leve sobre a lista já renderizada; o modo `Resolvidos` oculta temporariamente cards que não estejam resolvidos
 - a métrica pública `previsões totais` é calculada a partir de `orynth_predictions` persistidas, sem janela mensal
 - browse administrativo de mercados usa fallback local em Postgres quando a API administrativa falha, mantendo a visualização de ativos/rascunhos disponível em desenvolvimento
@@ -133,9 +133,9 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - renderização de `data-*` de ordenação e contador de curtidas no card
 - regressão para contadores operacionais de visualizações/compartilhamentos expostos no contrato e ocultos do feed público
 - regressão para ordenação administrativa por mercados mais visualizados e mais compartilhados
-- seleção do card principal com dois destaques quando possível, completando por curtidas/data quando faltar destaque editorial
-- seleção do ticket de onboarding do cadastro por curtidas e fallback por mercado mais recente sem curtidas
-- regressão para cancelados/resolvidos fora do destaque principal
+- seleção do card principal por `view_count`, excluindo `draft` e `canceled`, com desempate por mercado mais recente
+- seleção do ticket de onboarding do cadastro por `view_count`, excluindo `draft` e `canceled`, com desempate por mercado mais recente
+- regressão para cancelados fora da lista padrão do feed e fora do card principal
 - integração para bloqueio/desbloqueio de categoria e subcategoria
 - criação/edição administrativa de mercado deve rejeitar taxonomia bloqueada
 - fluxo de navegação feed -> detalhe
@@ -148,7 +148,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - usuário consegue alternar para o recorte de mercados resolvidos sem recarregar
 - cards exibem informações mínimas coerentes
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
-- destaque principal exibe até dois mercados elegíveis e nunca inclui cancelados
+- destaque principal exibe até dois mercados publicados não cancelados mais visualizados, excluindo `draft` e `canceled`, incluindo resolvidos quando liderarem por popularidade
 
 ## Impacto de mudança
 

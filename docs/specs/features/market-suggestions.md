@@ -32,7 +32,7 @@ Permitir que usuários enviem sugestões de perguntas para futura curadoria admi
 ## Escopo incluído
 
 - envio de sugestão de mercado por usuário autenticado ou visitante identificado por nome e email
-- envio de feedback, dúvida ou melhoria por usuário autenticado ou visitante identificado por nome e email
+- envio de feedback/suporte, dúvida ou melhoria por usuário autenticado ou visitante identificado por nome e email
 - proteção anti-abuso com reCAPTCHA v2 checkbox para visitantes em sugestão e feedback quando configurado
 - confirmação de recebimento no frontend com redirecionamento para a home
 - fila administrativa real no Admin Ops para itens de Mercado e Feedback
@@ -52,7 +52,7 @@ Permitir que usuários enviem sugestões de perguntas para futura curadoria admi
 
 ## Fluxo do usuário
 
-Usuário autenticado preenche proposta de mercado ou feedback e envia; nome e email são herdados do cadastro e a tela informa que o envio não é guest. Visitante informa nome e email junto do conteúdo. Após submissão válida, o frontend exibe confirmação e retorna para a home.
+Usuário autenticado preenche proposta de mercado ou feedback/suporte e envia; nome e email são herdados do cadastro e a tela informa que o envio não é guest. Visitante informa nome e email junto do conteúdo. Após submissão válida, o frontend exibe confirmação e retorna para a home.
 
 Itens enviados entram na fila operacional para revisão por staff.
 
@@ -137,7 +137,7 @@ Itens enviados entram na fila operacional para revisão por staff.
 ## Critérios de aceite
 
 - usuário consegue enviar sugestão
-- visitante consegue enviar sugestão ou feedback informando nome e email
+- visitante consegue enviar sugestão ou feedback/suporte informando nome e email
 - visitante precisa passar no reCAPTCHA quando a proteção estiver configurada
 - operação consegue rastrear e revisar a fila com data de criação e tipo do item
 - operação consegue converter sugestão de mercado em rascunho quando as validações forem satisfeitas

@@ -11,6 +11,7 @@ from core.domain_client import local_markets
 
 
 SIGNUP_TICKET_STAKE = 80
+REMEMBER_ME_SESSION_AGE = 60 * 60 * 24 * 30
 
 
 def _display_outcome(label):
@@ -22,18 +23,25 @@ def _market_created_at_score(market):
     return parsed.timestamp() if parsed else 0
 
 
-def _liked_signup_market():
+def _market_view_score(market):
+    return int(market.get("view_count") or 0)
+
+
+def _popular_signup_market():
     try:
         markets = get_markets()
     except AuthAPIError:
-        markets = local_markets()
+        markets = []
     try:
         local_by_slug = {market["slug"]: market for market in local_markets()}
     except Exception:
         local_by_slug = {}
+    combined = {market.get("slug"): market for market in markets if market.get("slug")}
+    for slug, market in local_by_slug.items():
+        combined[slug] = {**market, **combined.get(slug, {})}
     hydrated = []
-    for market in markets:
-        if market.get("status") == "canceled":
+    for market in combined.values():
+        if market.get("status") in {"draft", "canceled"}:
             continue
         local = local_by_slug.get(market.get("slug"), {})
         merged = {**local, **market}
@@ -41,15 +49,12 @@ def _liked_signup_market():
             merged["sparkline_series"] = local.get("sparkline_series", [])
         if not merged.get("options"):
             merged["options"] = local.get("options", [])
-        if "market_like_count" not in merged:
-            merged["market_like_count"] = local.get("market_like_count", 0)
+        if merged.get("view_count") is None:
+            merged["view_count"] = local.get("view_count", 0)
         hydrated.append(merged)
     if not hydrated:
         return None
-    if any(int(market.get("market_like_count") or 0) > 0 for market in hydrated):
-        market = max(hydrated, key=lambda item: int(item.get("market_like_count") or 0))
-    else:
-        market = max(hydrated, key=_market_created_at_score)
+    market = max(hydrated, key=lambda item: (_market_view_score(item), _market_created_at_score(item)))
     primary_label = market.get("primary_outcome") or (market.get("options") or [{}])[0].get("label", "SIM")
     primary_probability = max(float(market.get("primary_probability_exact") or market.get("primary_probability") or 50), 1)
     return {
@@ -65,12 +70,20 @@ def login_view(request):
         return redirect("home")
     form = LoginForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
+        credentials = {
+            "email": form.cleaned_data["email"],
+            "password": form.cleaned_data["password"],
+        }
         try:
-            response = login_user(form.cleaned_data)
+            response = login_user(credentials)
         except AuthAPIError as exc:
             form.add_error(None, str(exc))
         else:
             store_auth_session(request, response)
+            if form.cleaned_data.get("remember_me"):
+                request.session.set_expiry(REMEMBER_ME_SESSION_AGE)
+            else:
+                request.session.set_expiry(None)
             return redirect(request.GET.get("next") or reverse("home"))
     return render(request, "accounts/login.html", {"form": form})
 
@@ -101,7 +114,7 @@ def register_view(request):
             "form": form,
             "recaptcha_enabled": settings.RECAPTCHA_ENABLED,
             "recaptcha_site_key": settings.RECAPTCHA_SITE_KEY,
-            "signup_market": _liked_signup_market(),
+            "signup_market": _popular_signup_market(),
         },
     )
 

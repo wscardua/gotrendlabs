@@ -33,9 +33,10 @@
 - Telas públicas de autenticação (`/login/` e `/register/`) devem manter navegação pública compacta para mercados, badges e ranking.
 - O aceite de política de uso no cadastro deve permitir leitura sem abandonar o formulário; a UI pode abrir modal com resumo e manter link de fallback para a página pública completa de política.
 - A tela de cadastro pode exibir uma prévia de onboarding baseada em dados reais de mercado, desde que não calcule regra de domínio nem simule estado pessoal inexistente.
-- Quando a prévia de onboarding usar mercado público, a seleção deve usar apenas campos serializados pelo domínio: maior `market_like_count` entre mercados não cancelados; se nenhum tiver curtida, mercado mais recente por `created_at`.
+- Quando a prévia de onboarding usar mercado público, a seleção deve usar apenas campos serializados pelo domínio: maior `view_count` entre mercados publicados não cancelados disponíveis localmente/publicamente, excluindo `draft` e `canceled`, com mercado mais recente por `created_at` como desempate/fallback.
+- A opção de lembrar acesso no login prolonga a sessão Django no dispositivo sem persistir senha ou alterar o contrato de autenticação da API.
 - Usuários autenticados veem ações iconizadas de `like`/`dislike`; a UI só representa a reação retornada pelo domínio.
-- Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`is_featured`, `market_like_count`, `created_at`, `close_at`, status e volume).
+- Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
 - Favoritos no feed público representam curadoria editorial (`is_featured`) até existir uma feature própria de favoritos por usuário.
 - Páginas públicas fora da home devem expor retorno compacto para o feed dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags, evitando barra global solta entre header e conteúdo.

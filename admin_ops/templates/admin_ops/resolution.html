@@ -3,7 +3,12 @@
 {% block content %}
 <main class="shell admin-layout">
   <section class="panel">
-    <h1 class="large-title">Mercados aguardando decisão</h1>
+    <div class="section-head">
+      <div>
+        <h1 class="large-title">Mercados aguardando decisão</h1>
+        <p class="muted">Revise mercados fechados, publique decisões e desfaça resoluções quando houver necessidade operacional.</p>
+      </div>
+    </div>
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
     <div class="filters" data-filter-group>

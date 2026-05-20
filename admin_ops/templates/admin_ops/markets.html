@@ -15,6 +15,7 @@
       <a class="filter {% if not active_status %}active{% endif %}" href="{% url 'admin-ops-markets' %}?order={{ active_order }}">Todos</a>
       <a class="filter {% if active_status == 'open' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=open&order={{ active_order }}">Abertos {{ market_data.counts.open|default:0 }}</a>
       <a class="filter {% if active_status == 'draft' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=draft&order={{ active_order }}">Rascunhos {{ market_data.counts.draft|default:0 }}</a>
+      <a class="filter {% if active_status == 'locked' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=locked&order={{ active_order }}">Fechados {{ market_data.counts.locked|default:0 }}</a>
       <a class="filter {% if active_status == 'canceled' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=canceled&order={{ active_order }}">Cancelados {{ market_data.counts.canceled|default:0 }}</a>
     </div>
     <div class="filters metric-filters" aria-label="Ordenar por popularidade">

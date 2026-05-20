@@ -195,11 +195,12 @@ def _local_market_response(market):
     }
 
 
-def local_markets():
+def local_markets(include_canceled=False):
     from markets.models import Market
 
+    excluded_statuses = ["draft"] if include_canceled else ["draft", "canceled"]
     markets = (
-        Market.objects.exclude(status__in=["draft", "canceled"])
+        Market.objects.exclude(status__in=excluded_statuses)
         .select_related("category", "subcategory")
         .prefetch_related("options")
         .order_by("display_order", "id")

@@ -2161,6 +2161,8 @@ class WebSmokeTests(TestCase):
             with self.subTest(route=route):
                 response = self.client.get(route)
                 self.assertEqual(response.status_code, 200)
+                if route == reverse("feedback"):
+                    self.assertContains(response, "Enviar feedback/Suporte")
 
     def test_register_links_to_use_policy(self):
         response = self.client.get(reverse("register"))
@@ -2170,35 +2172,38 @@ class WebSmokeTests(TestCase):
         self.assertContains(response, 'data-open-modal="#use-policy-modal"')
         self.assertContains(response, 'id="use-policy-modal"')
         self.assertContains(response, 'target="_blank"')
-        self.assertContains(response, "Mais curtido")
+        self.assertContains(response, "Mais visitado")
+        self.assertContains(response, "visualizações")
         self.assertContains(response, "Mini gráfico de evolução do consenso")
         self.assertContains(response, "Primeira previsão")
         self.assertContains(response, "Orynth Coins não representam dinheiro real")
 
-    def test_register_ticket_uses_most_liked_market(self):
+    def test_register_ticket_uses_most_viewed_market(self):
         api_market = get_domain_client().market("openai-gpt6-2026")
-        lower = {**api_market, "slug": "lower-signup", "title": "Mercado menos curtido", "market_like_count": 2}
-        liked = {**api_market, "slug": "liked-signup", "title": "Mercado preferido no cadastro", "market_like_count": 15}
-        canceled = {**api_market, "slug": "canceled-signup", "title": "Cancelado não aparece", "status": "canceled", "market_like_count": 99}
+        lower = {**api_market, "slug": "lower-signup", "title": "Mercado menos visitado", "view_count": 2}
+        viewed = {**api_market, "slug": "viewed-signup", "title": "Mercado preferido no cadastro", "view_count": 15}
+        draft = {**api_market, "slug": "draft-signup", "title": "Rascunho mais visitado", "status": "draft", "status_label": "Rascunho", "view_count": 120}
+        canceled = {**api_market, "slug": "canceled-signup", "title": "Mercado cancelado mais visitado", "status": "canceled", "status_label": "Cancelado", "view_count": 99}
 
-        with patch("accounts.views.get_markets", return_value=[lower, canceled, liked]):
+        with patch("accounts.views.get_markets", return_value=[lower, draft, canceled, viewed]), patch("accounts.views.local_markets", return_value=[]):
             response = self.client.get(reverse("register"))
 
         self.assertContains(response, "Mercado preferido no cadastro")
-        self.assertContains(response, "15 curtidas")
-        self.assertNotContains(response, "Mercado menos curtido")
-        self.assertNotContains(response, "Cancelado não aparece")
+        self.assertContains(response, "15 visualizações")
+        self.assertNotContains(response, "Mercado menos visitado")
+        self.assertNotContains(response, "Rascunho mais visitado")
+        self.assertNotContains(response, "Mercado cancelado mais visitado")
 
-    def test_register_ticket_uses_newest_market_when_no_likes(self):
+    def test_register_ticket_uses_newest_market_when_no_views(self):
         api_market = get_domain_client().market("openai-gpt6-2026")
-        older = {**api_market, "slug": "older-signup", "title": "Mercado antigo sem curtidas", "market_like_count": 0, "created_at": "2026-05-17T12:00:00+00:00"}
-        newer = {**api_market, "slug": "newer-signup", "title": "Mercado novo sem curtidas", "market_like_count": 0, "created_at": "2026-05-19T12:00:00+00:00"}
+        older = {**api_market, "slug": "older-signup", "title": "Mercado antigo sem visualizações", "view_count": 0, "created_at": "2026-05-17T12:00:00+00:00"}
+        newer = {**api_market, "slug": "newer-signup", "title": "Mercado novo sem visualizações", "view_count": 0, "created_at": "2026-05-19T12:00:00+00:00"}
 
-        with patch("accounts.views.get_markets", return_value=[older, newer]):
+        with patch("accounts.views.get_markets", return_value=[older, newer]), patch("accounts.views.local_markets", return_value=[]):
             response = self.client.get(reverse("register"))
 
-        self.assertContains(response, "Mercado novo sem curtidas")
-        self.assertNotContains(response, "Mercado antigo sem curtidas")
+        self.assertContains(response, "Mercado novo sem visualizações")
+        self.assertNotContains(response, "Mercado antigo sem visualizações")
 
     def test_auth_pages_show_public_navigation(self):
         for route, cta in ((reverse("login"), "Criar conta"), (reverse("register"), "Entrar")):
@@ -2211,6 +2216,8 @@ class WebSmokeTests(TestCase):
                 self.assertContains(response, "Ranking")
                 self.assertContains(response, "← Feed")
                 self.assertContains(response, cta)
+                if route == reverse("login"):
+                    self.assertContains(response, "Lembrar meu acesso neste dispositivo")
 
     def test_ranking_guest_card_uses_real_session_state(self):
         response = self.client.get(reverse("rankings"))
@@ -2462,7 +2469,8 @@ class WebSmokeTests(TestCase):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, open_market["title"])
-        self.assertNotContains(response, canceled_market["title"])
+        market_list = response.content.decode().split('<div class="market-list" data-market-list>', 1)[1]
+        self.assertNotIn(canceled_market["title"], market_list)
 
     def test_public_badges_page_renders_for_guest_and_authenticated_user(self):
         badges = [
@@ -2862,7 +2870,7 @@ class WebSmokeTests(TestCase):
         }
         session.save()
         api_market = {**get_domain_client().market("openai-gpt6-2026"), "title": "Mercado admin API", "auto_close_enabled": False}
-        market_data = {"markets": [api_market], "counts": {"open": 1, "draft": 0, "canceled": 0}}
+        market_data = {"markets": [api_market], "counts": {"open": 1, "draft": 0, "locked": 0, "canceled": 0}}
         taxonomy_data = {
             "categories": [
                 {
@@ -2886,9 +2894,13 @@ class WebSmokeTests(TestCase):
             self.assertNotContains(response, 'class="panel admin-menu"')
             self.assertNotContains(response, "Ver público")
             self.assertContains(response, "Gerencie contratos publicados, rascunhos e cancelamentos usados no feed público.")
+            self.assertContains(response, "Fechados 0")
             response = self.client.get(f"{reverse('admin-ops-markets')}?status=draft")
             self.assertContains(response, "Rascunhos")
             markets_mock.assert_any_call("staff-token", status="draft", order="display")
+            response = self.client.get(f"{reverse('admin-ops-markets')}?status=locked")
+            self.assertContains(response, "Fechados")
+            markets_mock.assert_any_call("staff-token", status="locked", order="display")
 
         user_data = {
             "users": [
@@ -3022,6 +3034,7 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Resolver")
             self.assertContains(response, "Desfazer resolução")
             self.assertContains(response, "Resolução recente")
+            self.assertContains(response, "Revise mercados fechados, publique decisões e desfaça resoluções quando houver necessidade operacional.")
             self.assertContains(response, "18/05/2026 09:00 America/Sao_Paulo")
             self.assertContains(response, "Aguardando decisão")
 
@@ -3112,6 +3125,8 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Mensagem pública de fechamento")
             self.assertContains(response, "Fechar manualmente")
             self.assertContains(response, "Salvar alterações")
+            self.assertContains(response, "Guia rápido")
+            self.assertContains(response, "Fonte e critério devem permitir auditoria objetiva da resolução.")
             self.assertNotContains(response, "Salvar rascunho")
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
@@ -3765,50 +3780,65 @@ class WebSmokeTests(TestCase):
         with patch("core.views.get_markets", return_value=[api_market]):
             response = self.client.get(reverse("home"))
             self.assertContains(response, "Mercado vindo da API")
+            self.assertContains(response, "Feedback/suporte")
 
-        featured_market = {**api_market, "slug": "featured-api", "title": "Mercado destacado pela curadoria", "is_featured": True, "created_at": "2026-05-16T12:00:00+00:00"}
-        second_featured_market = {**api_market, "slug": "featured-api-2", "title": "Segundo mercado destacado", "is_featured": True, "created_at": "2026-05-17T12:00:00+00:00"}
+        featured_market = {**api_market, "slug": "featured-api", "title": "Mercado destacado pela curadoria", "is_featured": True, "view_count": 4, "created_at": "2026-05-16T12:00:00+00:00"}
+        second_featured_market = {**api_market, "slug": "featured-api-2", "title": "Segundo mercado destacado", "is_featured": True, "view_count": 5, "created_at": "2026-05-17T12:00:00+00:00"}
         regular_market = {
             **api_market,
             "slug": "regular-api",
-            "title": "Mercado comum da lista",
+            "title": "Mercado comum mais visitado",
             "is_featured": False,
             "market_like_count": 100,
+            "view_count": 20,
             "created_at": "2026-05-18T12:00:00+00:00",
         }
-        with patch("core.views.get_markets", return_value=[regular_market, featured_market, second_featured_market]):
+        second_viewed_market = {
+            **api_market,
+            "slug": "second-viewed-api",
+            "title": "Segundo mercado mais visitado",
+            "is_featured": False,
+            "view_count": 12,
+            "created_at": "2026-05-18T13:00:00+00:00",
+        }
+        with patch("core.views.get_markets", return_value=[regular_market, featured_market, second_featured_market, second_viewed_market]):
             response = self.client.get(reverse("home"))
             watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertIn("Mercado destacado pela curadoria", watch_card)
-            self.assertIn("Segundo mercado destacado", watch_card)
-            self.assertNotIn("Mercado comum da lista", watch_card)
+            self.assertIn("Mercado comum mais visitado", watch_card)
+            self.assertIn("Segundo mercado mais visitado", watch_card)
+            self.assertNotIn("Mercado destacado pela curadoria", watch_card)
+            self.assertNotIn("Segundo mercado destacado", watch_card)
             self.assertNotContains(response, "IA, política e cultura puxam o feed hoje.")
 
-        one_featured_market = {**api_market, "slug": "one-featured-api", "title": "Unico destaque manual", "is_featured": True, "market_like_count": 0, "created_at": "2026-05-15T12:00:00+00:00"}
-        fallback_market = {**api_market, "slug": "fallback-api", "title": "Segundo destaque por curtidas", "is_featured": False, "market_like_count": 8, "created_at": "2026-05-16T12:00:00+00:00"}
-        lower_fallback_market = {**api_market, "slug": "lower-fallback-api", "title": "Nao deve completar destaque", "is_featured": False, "market_like_count": 2, "created_at": "2026-05-18T12:00:00+00:00"}
+        one_featured_market = {**api_market, "slug": "one-featured-api", "title": "Unico destaque manual", "is_featured": True, "view_count": 7, "created_at": "2026-05-15T12:00:00+00:00"}
+        fallback_market = {**api_market, "slug": "fallback-api", "title": "Segundo destaque por visualizações", "is_featured": False, "view_count": 8, "created_at": "2026-05-16T12:00:00+00:00"}
+        lower_fallback_market = {**api_market, "slug": "lower-fallback-api", "title": "Nao deve completar destaque", "is_featured": False, "view_count": 2, "created_at": "2026-05-18T12:00:00+00:00"}
         with patch("core.views.get_markets", return_value=[lower_fallback_market, fallback_market, one_featured_market]):
             response = self.client.get(reverse("home"))
             watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
+            self.assertIn("Segundo destaque por visualizações", watch_card)
             self.assertIn("Unico destaque manual", watch_card)
-            self.assertIn("Segundo destaque por curtidas", watch_card)
             self.assertNotIn("Nao deve completar destaque", watch_card)
 
-        tied_older_market = {**api_market, "slug": "tied-older-api", "title": "Empate antigo", "is_featured": False, "market_like_count": 9, "created_at": "2026-05-16T12:00:00+00:00"}
-        tied_newer_market = {**api_market, "slug": "tied-newer-api", "title": "Empate mais novo", "is_featured": False, "market_like_count": 9, "created_at": "2026-05-18T12:00:00+00:00"}
-        lower_like_market = {**api_market, "slug": "lower-like-api", "title": "Menos curtido", "is_featured": False, "market_like_count": 3, "created_at": "2026-05-19T12:00:00+00:00"}
+        tied_older_market = {**api_market, "slug": "tied-older-api", "title": "Empate antigo", "is_featured": False, "view_count": 9, "created_at": "2026-05-16T12:00:00+00:00"}
+        tied_newer_market = {**api_market, "slug": "tied-newer-api", "title": "Empate mais novo", "is_featured": False, "view_count": 9, "created_at": "2026-05-18T12:00:00+00:00"}
+        lower_like_market = {**api_market, "slug": "lower-like-api", "title": "Menos visitado", "is_featured": False, "view_count": 3, "created_at": "2026-05-19T12:00:00+00:00"}
         with patch("core.views.get_markets", return_value=[tied_older_market, lower_like_market, tied_newer_market]):
             response = self.client.get(reverse("home"))
             watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
             self.assertLess(watch_card.index("Empate mais novo"), watch_card.index("Empate antigo"))
-            self.assertNotIn("Menos curtido", watch_card)
+            self.assertNotIn("Menos visitado", watch_card)
 
-        liked_market = {**api_market, "slug": "liked-api", "title": "Mercado com mais curtidas", "is_featured": False, "market_like_count": 9, "created_at": "2026-05-17T12:00:00+00:00"}
-        low_like_market = {**api_market, "slug": "low-like-api", "title": "Mercado com poucas curtidas", "is_featured": False, "market_like_count": 1, "created_at": "2026-05-18T12:00:00+00:00"}
-        resolved_liked_market = {**api_market, "slug": "resolved-liked-api", "title": "Resolvido com curtidas", "status": "resolved", "is_featured": False, "market_like_count": 99, "created_at": "2026-05-19T12:00:00+00:00"}
-        canceled_liked_market = {**api_market, "slug": "canceled-liked-api", "title": "Cancelado com curtidas", "status": "canceled", "is_featured": False, "market_like_count": 100, "created_at": "2026-05-20T12:00:00+00:00"}
+        liked_market = {**api_market, "slug": "liked-api", "title": "Mercado com mais curtidas", "is_featured": False, "market_like_count": 9, "view_count": 9, "created_at": "2026-05-17T12:00:00+00:00"}
+        low_like_market = {**api_market, "slug": "low-like-api", "title": "Mercado com poucas curtidas", "is_featured": False, "market_like_count": 1, "view_count": 1, "created_at": "2026-05-18T12:00:00+00:00"}
+        resolved_liked_market = {**api_market, "slug": "resolved-liked-api", "title": "Resolvido com curtidas", "status": "resolved", "is_featured": False, "market_like_count": 99, "view_count": 99, "created_at": "2026-05-19T12:00:00+00:00"}
+        canceled_liked_market = {**api_market, "slug": "canceled-liked-api", "title": "Cancelado com curtidas", "status": "canceled", "is_featured": False, "market_like_count": 100, "view_count": 100, "created_at": "2026-05-20T12:00:00+00:00"}
         with patch("core.views.get_markets", return_value=[low_like_market, resolved_liked_market, canceled_liked_market, liked_market]):
             response = self.client.get(reverse("home"))
+            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
+            self.assertIn("Resolvido com curtidas", watch_card)
+            self.assertNotIn("Cancelado com curtidas", watch_card)
+            self.assertContains(response, "Ver mercado")
             self.assertContains(response, 'data-filter-target="[data-market-list]"')
             self.assertContains(response, 'data-filter="trending"')
             self.assertContains(response, 'data-filter="closing"')
@@ -3825,12 +3855,10 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Mercado com mais curtidas")
             self.assertContains(response, "Mercado com poucas curtidas")
             self.assertContains(response, "Resolvido com curtidas")
-            self.assertNotContains(response, "Cancelado com curtidas")
-            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertNotIn("Resolvido com curtidas", watch_card)
-            self.assertNotIn("Cancelado com curtidas", watch_card)
+            market_list = response.content.decode().split('<div class="market-list" data-market-list>', 1)[1]
+            self.assertNotIn("Cancelado com curtidas", market_list)
 
-        with patch("core.views.get_markets", return_value=[liked_market]):
+        with patch("core.views.get_markets", return_value=[liked_market]), patch("core.views.local_markets", return_value=[]):
             response = self.client.get(reverse("home"))
             watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
             self.assertIn("Mercado com mais curtidas", watch_card)
@@ -3878,12 +3906,25 @@ class WebSmokeTests(TestCase):
         with patch("accounts.views.logout_user", return_value={}):
             self.client.get(reverse("logout"))
 
-        with patch("accounts.views.login_user", return_value=auth_response):
+        with patch("accounts.views.login_user", return_value=auth_response) as login_user:
             response = self.client.post(
                 reverse("login"),
                 {"email": "carol@orynth.test", "password": "testpass123"},
             )
         self.assertRedirects(response, reverse("home"))
+        self.assertEqual(login_user.call_args.args[0], {"email": "carol@orynth.test", "password": "testpass123"})
+        self.assertLess(self.client.session.get_expiry_age(), 60 * 60 * 24 * 30)
+
+        with patch("accounts.views.logout_user", return_value={}):
+            self.client.get(reverse("logout"))
+
+        with patch("accounts.views.login_user", return_value=auth_response):
+            response = self.client.post(
+                reverse("login"),
+                {"email": "carol@orynth.test", "password": "testpass123", "remember_me": "on"},
+            )
+        self.assertRedirects(response, reverse("home"))
+        self.assertGreaterEqual(self.client.session.get_expiry_age(), (60 * 60 * 24 * 30) - 5)
 
     def test_prediction_preview_partial_renders(self):
         option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")

@@ -43,7 +43,7 @@
 - registrada regra de integridade para opções de mercado: opções com previsões vinculadas não podem ser removidas/recriadas silenciosamente durante edição administrativa
 - registrada primeira fatia real de comentários em mercados com criação autenticada, like/dislike, ocultação/restauração administrativa e trilha via eventos administrativos
 - registrados detalhes de contrato/arquitetura da FEAT-COMMENT-001: endpoints públicos/admin, tabelas de comentário/reação, handles `@`, ações iconizadas e fallback local de desenvolvimento
-- registrada atualização da FEAT-MARKET-001 para filtros rápidos funcionais no feed, destaque editorial de até dois mercados, fallback por curtidas/data e contador de curtidas nos cards
+- registrada atualização da FEAT-MARKET-001 para filtros rápidos funcionais no feed, destaque principal por visualizações excluindo `draft`/`canceled` e contador de curtidas nos cards
 
 ## 2026-05-19
 
@@ -66,4 +66,4 @@
 - registrado fallback visual de thumbnail para mercado sem imagem/thumb, aplicado ao feed e às imagens sociais
 - registrada política pública de uso com leitura em modal no cadastro, mantendo aceite obrigatório versionado
 - registrado que login/cadastro mantêm navegação pública compacta e retorno `← Feed` no primeiro painel de conteúdo
-- registrado ticket de onboarding do cadastro selecionado por maior `market_like_count` entre mercados não cancelados, com fallback para mercado mais recente quando não houver curtidas
+- registrado ticket de onboarding do cadastro selecionado por maior `view_count` entre mercados publicados não cancelados, excluindo `draft` e `canceled`, com fallback para mercado mais recente em empate/ausência de visualizações

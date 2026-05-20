@@ -69,13 +69,13 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-19 - v0.17
 - mercados passaram a persistir `view_count` e `share_count` como contadores operacionais de popularidade sem deduplicação
-- contrato público/admin expõe os contadores, mas a UI pública do feed continua sem exibi-los nesta etapa
+- contrato público/admin expõe os contadores, e `view_count` passa a guiar a seleção pública de destaque da home e do ticket de cadastro
 - Admin Ops lista popularidade por mercado em `Mercados ativos e rascunhos`, com indicadores compactos e ordenação por mais visualizados ou mais compartilhados
 - status de implementação: `parcial`
 
 ### 2026-05-19 - v0.16
-- ticket de onboarding do cadastro passou a usar mercado público não cancelado com maior `market_like_count`
-- quando nenhum mercado possui curtidas, o ticket de onboarding usa o mercado mais recente por `created_at`
+- ticket de onboarding do cadastro passou a usar o mercado publicado não cancelado com maior `view_count`, excluindo `draft` e `canceled`
+- quando houver empate ou ausência de visualizações, o ticket de onboarding usa o mercado mais recente por `created_at`
 - prévia reutiliza `sparkline_series`, opções e dados serializados do domínio, com fallback local quando a API está indisponível
 - status de implementação: `parcial`
 
@@ -94,8 +94,8 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ### 2026-05-18 - v0.13
 - feed público passou a ter ordenações rápidas client-side por tendência, encerramento, volume, novidade e favoritos editoriais
 - cards de mercado passaram a exibir contador compacto de curtidas derivado de comentários visíveis
-- contrato/renderização do feed usa `is_featured`, `market_like_count`, `created_at` e `close_at` para destaque e ordenação visual
-- destaque principal do feed prioriza até dois mercados editoriais e completa vagas por curtidas, com mercado mais novo como desempate
+- contrato/renderização do feed usa `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para destaque e ordenação visual
+- destaque principal do feed prioriza os mercados não cancelados mais visualizados, incluindo resolvidos quando liderarem por popularidade, com mercado mais novo como desempate
 - status de implementação: `parcial`
 
 ### 2026-05-18 - v0.12

@@ -397,7 +397,7 @@ Usuário acompanha resultado no perfil e ranking
 | Wallet | Exibir carteira, saldo disponível, saldo bloqueado e extrato |
 | Rankings | Comparar desempenho entre usuários |
 | Categorias | Filtrar mercados por tema |
-| Feedback | Enviar feedback para a plataforma |
+| Feedback/Suporte | Enviar feedback ou pedido de suporte para a plataforma |
 | Suggestion | Enviar sugestão de mercado para curadoria |
 | Admin | Operar criação, moderação e resolução via painel customizado |
 
@@ -1564,7 +1564,7 @@ Observação: a arquitetura deve permitir adicionar outros provedores no futuro 
 - exibir pergunta, categoria, subcategoria/evento quando houver, probabilidade atual e volume básico;
 - exibir contador simples de curtidas no card do mercado como sinal social;
 - permitir destaque editorial de até dois mercados no card principal do feed;
-- preencher destaque principal com mercados mais curtidos quando faltar curadoria manual, usando mercado mais novo como desempate;
+- preencher destaque principal com mercados publicados não cancelados mais visualizados, excluindo `draft` e `cancelled`, usando mercado mais novo como desempate;
 - exibir tipo de mercado quando isso ajudar a leitura;
 - ser renderizado no Django com possibilidade de atualização parcial via HTMX.
 
@@ -2272,7 +2272,7 @@ Mercado passa a exibir resultado final
 2. O ranking principal será por reputação, saldo em `Orynth Coins` ou combinação dos dois?
 3. Haverá fechamento automático antes da resolução ou o mercado aceita previsões até o limite?
 4. As `Orynth Coins` retornam como `reward bruto` ou `lucro líquido + devolução de stake`?
-5. Resolvido para o MVP: o feed oferece ordenações rápidas por tendência, encerramento, volume, novidade e favoritos editoriais; o destaque principal prioriza curadoria e completa por curtidas/data.
+5. Resolvido para o MVP: o feed oferece ordenações rápidas por tendência, encerramento, volume, novidade e favoritos editoriais; o destaque principal prioriza mercados publicados não cancelados por `view_count`, excluindo `draft` e `cancelled`, com desempate por data mais recente.
 6. O perfil será público para todos os usuários desde o MVP?
 7. Qual será o limite inicial de opções por mercado de múltipla escolha no MVP?
 8. Quais serão os valores finais de recarga automática e bônus de indicação no MVP?
