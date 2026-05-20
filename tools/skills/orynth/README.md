@@ -23,6 +23,12 @@ Fonte canônica das skills do Orynth. Essas skills orientam agentes de IA a trab
 | `orynth-postgres-modeling` | PostgreSQL, ledger, integridade e índices | modelagem auditável e aderente ao domínio |
 | `orynth-ops-scheduler-communications` | scheduler, eventos, emails e async ops | jobs idempotentes, comunicações rastreáveis e eventos estáveis |
 
+## Skills de produto e curadoria
+
+| Skill | Quando usar | Saída esperada |
+|---|---|---|
+| `orynth-prediction-markets` | sugerir mercados de previsão com dados internos, trends sociais, diversidade e links exatos de verificação | mercados binários/múltiplos com prazo, fonte, critério objetivo e anti-repetição |
+
 ## Ordem recomendada
 
 1. `orynth-workflow-governor`

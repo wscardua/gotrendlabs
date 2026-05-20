@@ -83,3 +83,5 @@
 - registrado `GET /admin/markets/{slug}/resolution-audit` como contrato staff read-only para auditoria de resolução
 - registrado que Admin Ops mostra ação “Auditoria” em mercados resolvidos, com paginação de 10 participantes e legenda de ledger
 - registrada rodada QA hard com 100 usuários simulados em `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`
+- adicionada skill `orynth-prediction-markets` para curadoria assistida de mercados de previsão com dados internos, trends sociais, diversidade, links exatos de verificação e anti-repetição
+- adicionado guia `docs/guides/orynth-prediction-markets-skill.md` para uso da skill de curadoria de mercados
