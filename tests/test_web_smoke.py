@@ -21,6 +21,8 @@ from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
 from backend_api.db import database_config
+from backend_api.daemon_services import AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_system_logs
+from backend_api.daemon_services import _locked_markets_message
 from backend_api.main import app
 from backend_api.main import _record_wallet_entry
 from config.recaptcha import RecaptchaError
@@ -508,14 +510,32 @@ class BackendAuthAPITests(TestCase):
                 )
                 cursor.execute(
                     """
+                    INSERT INTO orynth_system_logs
+                        (created_at, expires_at, level, source, logger_name, event_type, message, request_id, method, path, status_code, duration_ms, user_id, ip_address, user_agent, exception_type, stack_trace, context)
+                    VALUES (%s, %s, 'INFO', 'python', 'orynth.daemon', 'daemon.heartbeat', 'Daemon operacional ativo.', '', '', '', NULL, NULL, NULL, NULL, '', '', '', '{"locked_markets": 1}'::jsonb)
+                    """,
+                    (now, now + timedelta(days=90)),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_admin_events
+                        (actor_id, action, entity_type, entity_identifier, note, created_at)
+                    VALUES (NULL, 'market.lock', 'market', 'daemon-dashboard-market', %s, %s)
+                    """,
+                    (AUTO_CLOSE_NOTE, now),
+                )
+                cursor.execute(
+                    """
                     INSERT INTO orynth_site_config
-                        (singleton_key, wallet_recharge_min_balance_oc, email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds, default_from_email, default_reply_to_email, updated_by_id, updated_at)
-                    VALUES (1, 100, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '', %s, %s)
+                        (singleton_key, wallet_recharge_min_balance_oc, daemon_stale_after_minutes, daemon_missing_after_minutes, email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds, default_from_email, default_reply_to_email, updated_by_id, updated_at)
+                    VALUES (1, 100, 5, 15, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '', %s, %s)
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
                         smtp_host = EXCLUDED.smtp_host,
                         smtp_port = EXCLUDED.smtp_port,
                         default_from_email = EXCLUDED.default_from_email,
+                        daemon_stale_after_minutes = EXCLUDED.daemon_stale_after_minutes,
+                        daemon_missing_after_minutes = EXCLUDED.daemon_missing_after_minutes,
                         updated_at = EXCLUDED.updated_at
                     """,
                     (staff_id, now),
@@ -550,8 +570,120 @@ class BackendAuthAPITests(TestCase):
         self.assertTrue(payload["system"]["maintenance_enabled"])
         self.assertTrue(payload["system"]["recaptcha_enabled"])
         self.assertEqual(payload["system"]["smtp_status"], "ready")
+        self.assertEqual(payload["system"]["daemon_status"], "active")
+        self.assertEqual(payload["system"]["daemon_status_label"], "Ativo")
+        self.assertGreaterEqual(payload["system"]["daemon_locked_markets_24h"], 1)
         self.assertTrue(any(event["action"] == "dashboard_probe" for event in payload["recent_admin_events"]))
         self.assertTrue(any(market["slug"] == "openai-gpt6-2026" for market in payload["top_markets"]))
+
+    def test_daemon_backend_services_auto_close_prune_and_status(self):
+        now = timezone.now()
+        due_close_at = now - timedelta(minutes=5)
+        future_close_at = now + timedelta(hours=2)
+        expired_at = now - timedelta(days=1)
+        valid_expires_at = now + timedelta(days=10)
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id FROM orynth_users WHERE is_staff = true ORDER BY id LIMIT 1")
+                staff = cursor.fetchone()
+                staff_id = staff["id"] if staff else None
+                cursor.execute("SELECT id FROM orynth_market_categories ORDER BY id LIMIT 1")
+                category_id = cursor.fetchone()["id"]
+                cursor.execute("SELECT id FROM orynth_market_subcategories WHERE category_id = %s ORDER BY id LIMIT 1", (category_id,))
+                subcategory_id = cursor.fetchone()["id"]
+                market_rows = [
+                    ("daemon-auto-vencido", "open", True, due_close_at),
+                    ("daemon-manual-vencido", "open", False, due_close_at),
+                    ("daemon-auto-futuro", "open", True, future_close_at),
+                    ("daemon-auto-resolvido", "resolved", True, due_close_at),
+                ]
+                for slug, status_value, auto_close_enabled, close_at in market_rows:
+                    cursor.execute(
+                        """
+                        INSERT INTO orynth_markets
+                            (slug, title, summary, kind, status, status_label, primary_outcome, primary_probability_exact,
+                             secondary_probability_exact, volume_oc, participants, source, closes_in, close_label, thumb,
+                             thumb_color, image_url, resolution_criteria, resolution_type, close_at, close_timezone,
+                             auto_close_enabled, resolved_at, resolution_timezone, canceled_at, winning_option_id,
+                             resolution_note, admin_notes, category_id, subcategory_id, created_by_id, updated_by_id,
+                             display_order, view_count, share_count, is_featured, created_at, updated_at)
+                        VALUES
+                            (%s, %s, 'Resumo daemon', 'binary', %s, %s, '', 0, 0, '', '', 'Fonte',
+                             '', '', '', '#136f4a', '', 'Critério', '', %s, 'America/Sao_Paulo',
+                             %s, NULL, '', NULL, NULL, '', '', %s, %s, %s, %s, 0, 0, 0, false, %s, %s)
+                        """,
+                        (
+                            slug,
+                            slug,
+                            status_value,
+                            "Aberto" if status_value == "open" else "Resolvido",
+                            close_at,
+                            auto_close_enabled,
+                            category_id,
+                            subcategory_id,
+                            staff_id,
+                            staff_id,
+                            now - timedelta(days=30),
+                            now - timedelta(days=30),
+                        ),
+                    )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_system_logs
+                        (created_at, expires_at, level, source, logger_name, event_type, message, request_id, method, path, status_code, duration_ms, user_id, ip_address, user_agent, exception_type, stack_trace, context)
+                    VALUES
+                        (%s, %s, 'INFO', 'python', 'test.prune', 'expired', 'expired', '', '', '', NULL, NULL, NULL, NULL, '', '', '', '{}'::jsonb),
+                        (%s, %s, 'INFO', 'python', 'test.prune', 'valid', 'valid', '', '', '', NULL, NULL, NULL, NULL, '', '', '', '{}'::jsonb)
+                    """,
+                    (now - timedelta(days=2), expired_at, now, valid_expires_at),
+                )
+
+        locked = close_due_auto_markets(now=now)
+        self.assertEqual([market["slug"] for market in locked], ["daemon-auto-vencido"])
+        self.assertEqual(Market.objects.get(slug="daemon-auto-vencido").status, "locked")
+        self.assertEqual(Market.objects.get(slug="daemon-manual-vencido").status, "open")
+        self.assertEqual(Market.objects.get(slug="daemon-auto-futuro").status, "open")
+        self.assertEqual(Market.objects.get(slug="daemon-auto-resolvido").status, "resolved")
+        self.assertTrue(AdminEvent.objects.filter(action="market.lock", actor__isnull=True, entity_identifier="daemon-auto-vencido", note=AUTO_CLOSE_NOTE).exists())
+
+        removed = prune_expired_system_logs(now=now)
+        self.assertGreaterEqual(removed, 1)
+        self.assertFalse(SystemLog.objects.filter(logger_name="test.prune", event_type="expired").exists())
+        self.assertTrue(SystemLog.objects.filter(logger_name="test.prune", event_type="valid").exists())
+
+        log_system_event(logger_name="orynth.daemon", event_type="daemon.heartbeat", message="Daemon operacional ativo.")
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                status_payload = daemon_dashboard_status(cursor, now=now + timedelta(minutes=1))
+                self.assertEqual(status_payload["daemon_status"], "active")
+                status_payload = daemon_dashboard_status(cursor, now=now + timedelta(minutes=6), stale_after_minutes=5, missing_after_minutes=15)
+                self.assertEqual(status_payload["daemon_status"], "stale")
+                status_payload = daemon_dashboard_status(cursor, now=now + timedelta(minutes=16), stale_after_minutes=5, missing_after_minutes=15)
+                self.assertEqual(status_payload["daemon_status"], "missing")
+
+    def test_daemon_management_commands_use_backend_services(self):
+        out = StringIO()
+        with patch("system_logs.management.commands.run_orynth_daemon.run_daemon_cycle", return_value={"locked_markets": [{"slug": "x"}], "pruned_logs": 2}) as cycle:
+            call_command("run_orynth_daemon", "--once", stdout=out)
+        cycle.assert_called_once()
+        self.assertIn("locked 1 market", out.getvalue())
+
+        out = StringIO()
+        with patch("system_logs.management.commands.prune_system_logs.prune_expired_system_logs", return_value=3) as prune:
+            call_command("prune_system_logs", stdout=out)
+        prune.assert_called_once()
+        self.assertIn("Removed 3 expired system logs.", out.getvalue())
+
+    def test_daemon_locked_markets_message_includes_market_slugs(self):
+        self.assertEqual(
+            _locked_markets_message([{"slug": "mercado-a"}]),
+            "Daemon fechou 1 mercado(s) automaticamente: mercado-a.",
+        )
+        many_markets = [{"slug": f"mercado-{index}"} for index in range(12)]
+        message = _locked_markets_message(many_markets)
+        self.assertIn("Daemon fechou 12 mercado(s) automaticamente.", message)
+        self.assertIn("mercado-0, mercado-1", message)
+        self.assertIn("Mais 2 no detalhe do log.", message)
 
     def test_system_log_capture_and_python_logging_handler(self):
         client = TestClient(app)
@@ -2402,6 +2534,8 @@ class BackendAuthAPITests(TestCase):
                     INSERT INTO orynth_site_config (
                         singleton_key,
                         wallet_recharge_min_balance_oc,
+                        daemon_stale_after_minutes,
+                        daemon_missing_after_minutes,
                         email_enabled,
                         smtp_host,
                         smtp_port,
@@ -2413,7 +2547,7 @@ class BackendAuthAPITests(TestCase):
                         default_reply_to_email,
                         updated_at
                     )
-                    VALUES (1, 10000, false, '', 587, '', true, false, 10, '', '', NOW())
+                    VALUES (1, 10000, 5, 15, false, '', 587, '', true, false, 10, '', '', NOW())
                     ON CONFLICT (singleton_key)
                     DO UPDATE SET wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc, updated_at = NOW()
                     """
@@ -3193,6 +3327,8 @@ class WebSmokeTests(TestCase):
                     "maintenance-maintenance_enabled": "on",
                     "maintenance-maintenance_message": "Voltamos logo depois da janela operacional.",
                     "economy-wallet_recharge_min_balance_oc": "150",
+                    "daemon-daemon_stale_after_minutes": "7",
+                    "daemon-daemon_missing_after_minutes": "21",
                     "email-email_enabled": "on",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "587",
@@ -3220,6 +3356,8 @@ class WebSmokeTests(TestCase):
             self.assertEqual(site_config.default_from_email, "no-reply@example.com")
             self.assertEqual(site_config.default_reply_to_email, "support@example.com")
             self.assertEqual(site_config.wallet_recharge_min_balance_oc, 150)
+            self.assertEqual(site_config.daemon_stale_after_minutes, 7)
+            self.assertEqual(site_config.daemon_missing_after_minutes, 21)
             self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
 
     def test_admin_config_rejects_tls_and_ssl_together(self):
@@ -3241,6 +3379,8 @@ class WebSmokeTests(TestCase):
                 {
                     "maintenance-maintenance_message": "Manutenção rápida.",
                     "economy-wallet_recharge_min_balance_oc": "100",
+                    "daemon-daemon_stale_after_minutes": "5",
+                    "daemon-daemon_missing_after_minutes": "15",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "465",
                     "email-smtp_use_tls": "on",
@@ -3553,6 +3693,9 @@ class WebSmokeTests(TestCase):
                 "maintenance_enabled": True,
                 "smtp_status": "pending",
                 "recaptcha_enabled": True,
+                "daemon_status": "stale",
+                "daemon_status_label": "Atrasado",
+                "daemon_locked_markets_24h": 2,
             },
             "top_markets": [
                 {
@@ -3586,6 +3729,9 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Top mercados")
             self.assertContains(response, "Eventos administrativos recentes")
             self.assertContains(response, "Pendente")
+            self.assertContains(response, "Daemon")
+            self.assertContains(response, "Atrasado")
+            self.assertContains(response, "2 fechamentos 24h")
             self.assertContains(response, reverse("admin-ops-resolution"))
             self.assertContains(response, reverse("admin-ops-users"))
             self.assertNotContains(response, 'class="panel admin-menu"')

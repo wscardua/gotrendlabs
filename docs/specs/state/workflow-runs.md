@@ -40,6 +40,26 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Retomada: usar novos workflows para mudanças futuras
 - Reversão lógica: substituir por novo workflow que revise a estrutura documental
 
+## WFLOW-20260520-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-OPSLOG-001`
+- Objetivo: implementar daemon operacional com regras temporizadas centralizadas no backend
+- Etapa atual: concluído
+- Artefatos afetados:
+  - `backend_api/`
+  - `system_logs/management/commands/`
+  - `admin_ops/templates/admin_ops/dashboard.html`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: evoluir operação do daemon para supervisor/container e alertas externos quando houver decisão de deploy
+- Reversão lógica: desativar execução do comando `run_orynth_daemon` preservando serviços backend e eventos já registrados
+
 ## WFLOW-20260517-002
 
 - Tipo: `change-feature`
@@ -308,11 +328,11 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `config/`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
-- Bloqueios: scheduler/daemon real para fechamento automático permanece fora desta entrega
+- Bloqueios: histórico superado; daemon operacional implementado em `WFLOW-20260520-001`
 - Iniciado em: 2026-05-18
 - Atualizado em: 2026-05-18
 - Encerrado em: 2026-05-18
-- Retomada: implementar scheduler usando `close_at`, `close_timezone` e `auto_close_enabled`
+- Retomada: histórico superado; evoluir supervisor/deploy do daemon se necessário
 - Reversão lógica: manter campos no banco e ocultar controles avançados no editor se necessário
 
 ## WFLOW-20260518-013
@@ -330,11 +350,11 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `templates/`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
-- Bloqueios: daemon/scheduler real para fechamento automático ainda não está implementado
+- Bloqueios: histórico superado; daemon operacional implementado em `WFLOW-20260520-001`
 - Iniciado em: 2026-05-18
 - Atualizado em: 2026-05-18
 - Encerrado em: 2026-05-18
-- Retomada: implementar scheduler que observa `close_at`, `close_timezone` e `auto_close_enabled=true`
+- Retomada: histórico superado; evoluir supervisor/deploy do daemon se necessário
 - Reversão lógica: ocultar botão de fechamento manual e desabilitar endpoint `/admin/markets/{slug}/lock` se necessário
 
 ## WFLOW-20260518-014

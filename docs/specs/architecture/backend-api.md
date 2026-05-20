@@ -29,6 +29,7 @@
 - Moderação administrativa de comentário deve registrar evento administrativo e preservar o registro original.
 - Resolução administrativa deve persistir opção vencedora, `resolved_at`, `resolution_timezone`, nota/fonte, efeitos de ledger e evento administrativo na mesma transação.
 - O ciclo operacional de mercado deve ser centralizado na `MarketLifecycleEngine`; handlers HTTP apenas autenticam/autorizam staff, abrem transação/conexão, chamam a engine e serializam a resposta.
+- Fechamento automático pelo daemon deve usar entrada própria da `MarketLifecycleEngine`, separada do fechamento manual, mantendo `market.lock` auditável com ator sistema/nulo.
 - `GET /admin/markets/{slug}/resolution-audit` deve expor auditoria staff read-only para mercados `resolved`, agregando previsões, ledger e badges sem mutação e retornando `422` para demais estados.
 - Ranking público deve excluir usuários administrativos (`is_staff` e `is_superuser`).
 - Ranking global usa reputação persistida; ranking por categoria/subcategoria pode ser calculado em leitura a partir de previsões resolvidas enquanto não houver materialização dedicada.
@@ -44,6 +45,8 @@
 - Resolução de mercado deve chamar a engine após persistir resultado, reputation delta, streak e ranking derivado dos participantes afetados.
 - Prévia de previsão deve ser calculada pelo backend sem efeitos colaterais; criação de previsão, stake, ledger, probabilidades e payout permanecem mutações exclusivas da FastAPI.
 - Logs técnicos de troubleshooting devem ser expostos por contratos staff em `/admin/system-logs`, preservando redaction de segredos e sem substituir eventos administrativos de domínio.
+- Rotinas temporizadas operacionais, incluindo fechamento automático de mercado, prune de logs e cálculo de status do daemon, devem viver em serviços backend reutilizáveis; comandos/processos externos não duplicam SQL ou regra.
 - `GET /admin/dashboard-summary` deve expor resumo agregado para staff com blocos `markets`, `queues`, `users`, `engagement`, `wallet`, `badges`, `system`, `top_markets` e `recent_admin_events`.
 - O resumo do Dashboard deve usar somente agregações SQL/contagens e janela fixa de 7 dias para métricas recentes, sem recalcular reputação, payout, probabilidade ou regras de domínio.
-- O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `orynth_site_config` mais segredo em ambiente, reCAPTCHA por ambiente e logs técnicos recentes por severidade.
+- O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `orynth_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
+- Status do daemon deve usar `orynth_site_config.daemon_stale_after_minutes` para `Atrasado` e `orynth_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.

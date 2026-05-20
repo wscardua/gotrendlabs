@@ -64,6 +64,7 @@ from admin_ops.forms import (
     AdminUserNoteForm,
     AdminUserRoleForm,
     AdminUserWalletAdjustmentForm,
+    DaemonConfigForm,
     EconomyConfigForm,
     FeedbackRewardForm,
     MaintenanceConfigForm,
@@ -370,7 +371,15 @@ def config(request):
         initial={"wallet_recharge_min_balance_oc": site_config.wallet_recharge_min_balance_oc},
         prefix="economy",
     )
-    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid() and economy_form.is_valid():
+    daemon_form = DaemonConfigForm(
+        request.POST or None,
+        initial={
+            "daemon_stale_after_minutes": site_config.daemon_stale_after_minutes,
+            "daemon_missing_after_minutes": site_config.daemon_missing_after_minutes,
+        },
+        prefix="daemon",
+    )
+    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid() and economy_form.is_valid() and daemon_form.is_valid():
         save_platform_config(
             {
                 "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
@@ -381,6 +390,8 @@ def config(request):
         for field, value in email_form.cleaned_data.items():
             setattr(site_config, field, value)
         site_config.wallet_recharge_min_balance_oc = economy_form.cleaned_data["wallet_recharge_min_balance_oc"]
+        site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
+        site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.updated_by = _admin_model_user(request)
         site_config.save()
         messages.success(request, "Configurações atualizadas.")
@@ -393,6 +404,7 @@ def config(request):
             "maintenance_form": maintenance_form,
             "email_form": email_form,
             "economy_form": economy_form,
+            "daemon_form": daemon_form,
             "platform_config": platform_config,
             "site_config": site_config,
             "smtp_secret_configured": smtp_secret_configured,

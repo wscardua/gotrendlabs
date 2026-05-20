@@ -26,6 +26,10 @@
           <span>Piso recarga</span>
           <strong>{{ site_config.wallet_recharge_min_balance_oc }} OC</strong>
         </div>
+        <div>
+          <span>Daemon</span>
+          <strong>{{ site_config.daemon_stale_after_minutes }}/{{ site_config.daemon_missing_after_minutes }} min</strong>
+        </div>
       </div>
     </div>
 
@@ -35,6 +39,7 @@
     {% if maintenance_form.non_field_errors %}<div class="notice red">{{ maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if economy_form.non_field_errors %}<div class="notice red">{{ economy_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if daemon_form.non_field_errors %}<div class="notice red">{{ daemon_form.non_field_errors|join:", " }}</div>{% endif %}
 
     <form class="admin-config-surface" method="post">
       {% csrf_token %}
@@ -89,6 +94,35 @@
           <div class="config-meta">
             <span>Regra ativa</span>
             <strong>Usuários com saldo disponível até {{ site_config.wallet_recharge_min_balance_oc }} OC podem solicitar recarga.</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Operação</span>
+            <h2>Status do daemon</h2>
+            <p>Define quando o heartbeat do daemon deixa de ser considerado ativo e quando passa a ser tratado como sem sinal.</p>
+          </div>
+          <span class="config-status is-on">{{ site_config.daemon_stale_after_minutes }}/{{ site_config.daemon_missing_after_minutes }} min</span>
+        </div>
+        <div class="config-controls">
+          <div class="config-form-grid">
+            <label class="field compact-field">
+              <span>Minutos até atrasado</span>
+              {{ daemon_form.daemon_stale_after_minutes }}
+              {% if daemon_form.daemon_stale_after_minutes.errors %}<small>{{ daemon_form.daemon_stale_after_minutes.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Minutos até sem sinal</span>
+              {{ daemon_form.daemon_missing_after_minutes }}
+              {% if daemon_form.daemon_missing_after_minutes.errors %}<small>{{ daemon_form.daemon_missing_after_minutes.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+          <div class="config-meta">
+            <span>Regra ativa</span>
+            <strong>Ativo até {{ site_config.daemon_stale_after_minutes }} min, atrasado até {{ site_config.daemon_missing_after_minutes }} min e sem sinal depois disso.</strong>
           </div>
         </div>
       </section>

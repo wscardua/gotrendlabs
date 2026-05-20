@@ -15,6 +15,19 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-OPSLOG-001
 
+### 2026-05-20 - v0.5
+- Admin Ops Config passou a persistir limites de heartbeat do daemon em `orynth_site_config`
+- Dashboard Summary passou a calcular `Ativo`, `Atrasado` e `Sem sinal` com base em `daemon_stale_after_minutes` e `daemon_missing_after_minutes`
+- validação administrativa impede limite de `Sem sinal` menor ou igual ao limite de `Atrasado`
+- status de implementação: `parcial`
+
+### 2026-05-20 - v0.4
+- rotinas de prune de logs e status do daemon passaram a viver em serviço backend reutilizável
+- comando `prune_system_logs` deixou de conter regra própria e passou a chamar o backend
+- daemon operacional passou a registrar heartbeat, início, falhas, fechamentos e prune em `orynth_system_logs`
+- Dashboard Admin Ops passou a exibir status do daemon a partir do heartbeat calculado pela FastAPI
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.3
 - FastAPI passou a expor `GET /admin/dashboard-summary` como contrato staff agregado para saúde operacional da plataforma
 - Dashboard Admin Ops passou a renderizar KPIs, ação necessária, saúde técnica, top mercados e eventos administrativos recentes a partir desse contrato
@@ -95,6 +108,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-MARKET-001
+
+### 2026-05-20 - v0.18
+- fechamento automático de mercados vencidos com `auto_close_enabled=true` foi centralizado em serviço backend e em entrada própria da `MarketLifecycleEngine`
+- comando `run_orynth_daemon` foi adicionado como processo operacional fino, sem duplicar regra de domínio
+- fechamentos automáticos registram `market.lock` com ator sistema/nulo e nota operacional padronizada
+- status de implementação: `parcial`
 
 ### 2026-05-19 - v0.17
 - mercados passaram a persistir `view_count` e `share_count` como contadores operacionais de popularidade sem deduplicação

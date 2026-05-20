@@ -57,6 +57,29 @@ class EconomyConfigForm(forms.Form):
     )
 
 
+class DaemonConfigForm(forms.Form):
+    daemon_stale_after_minutes = forms.IntegerField(
+        label="Minutos até status atrasado",
+        min_value=1,
+        max_value=1440,
+        initial=5,
+    )
+    daemon_missing_after_minutes = forms.IntegerField(
+        label="Minutos até status sem sinal",
+        min_value=2,
+        max_value=10080,
+        initial=15,
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        stale_after = cleaned_data.get("daemon_stale_after_minutes")
+        missing_after = cleaned_data.get("daemon_missing_after_minutes")
+        if stale_after is not None and missing_after is not None and missing_after <= stale_after:
+            self.add_error("daemon_missing_after_minutes", "O limite de sem sinal deve ser maior que o limite de atraso.")
+        return cleaned_data
+
+
 def _display_probability(value):
     return int(Decimal(str(value or 0)).quantize(PROBABILITY_QUANT).to_integral_value(rounding=ROUND_DOWN))
 
