@@ -44,6 +44,10 @@
 - `orynth-postgres-modeling`: modelagem relacional, ledger, integridade, índices e rastreabilidade
 - `orynth-ops-scheduler-communications`: jobs temporizados, eventos, emails, observabilidade operacional e fluxos assíncronos
 
+## Skills de produto e curadoria
+
+- `orynth-prediction-markets`: sugere mercados de previsão binários ou múltiplos usando dados internos da Orynth, trends sociais, links exatos de verificação, diversidade editorial e checagem anti-repetição
+
 ## Skill de governança de processo
 
 - `orynth-workflow-governor`: abre, acompanha, retoma, bloqueia, conclui, cancela ou substitui workflows que tocam múltiplos documentos

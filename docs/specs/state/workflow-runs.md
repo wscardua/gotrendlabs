@@ -879,3 +879,22 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: extrair strings de marca para catálogos quando `FEAT-I18N-001` avançar
 - Reversão lógica: restaurar textos públicos para `Orynth`, mantendo `Orynth Coins` e identificadores técnicos inalterados
+
+## WFLOW-20260520-010
+
+- Tipo: `docs-tooling`
+- Status: `concluido`
+- Feature alvo: `sistema-documental`, `curadoria-de-mercados`
+- Objetivo: criar skill local para sugerir mercados de previsão com dados internos da Orynth, trends sociais, links exatos de verificação, diversidade editorial e anti-repetição
+- Etapa atual: concluído; `python3 /Users/williamsca/.codex/skills/.system/skill-creator/scripts/quick_validate.py tools/skills/orynth/orynth-prediction-markets` executado com sucesso em 2026-05-20
+- Artefatos afetados:
+  - `tools/skills/orynth/orynth-prediction-markets/`
+  - `tools/skills/orynth/README.md`
+  - `docs/guides/orynth-prediction-markets-skill.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: configurar tokens opcionais de redes sociais quando a operação quiser consultar APIs externas diretamente
+- Reversão lógica: remover a skill e o guia, mantendo apenas o histórico documental desta decisão
