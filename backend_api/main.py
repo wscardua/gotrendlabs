@@ -4477,7 +4477,7 @@ def logout(request: Request, authorization: str = Header(default="")):
 
 @app.post("/auth/social/{provider}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
 def social_login(provider: str):
-    if provider not in {"google", "facebook"}:
+    if provider not in {"google", "facebook", "x"}:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Provedor não suportado.")
     raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Login social ainda depende da credencial OAuth do provedor.")
 

@@ -6,7 +6,7 @@
 - Gráficos de consenso são recalculados sob demanda a partir de previsões `open`/`resolved`; ainda falta snapshot materializado por tempo para auditoria histórica mais rica e escala.
 - FEAT-COMMENT-001 possui comentários, reações e ocultação/restauração; ainda faltam denúncias por usuários, respostas/thread, edição/exclusão pelo autor, paginação avançada e event bus assíncrono.
 - FEAT-NOTIFY-001 já possui configuração SMTP operacional não sensível no Admin Ops, com segredo fora do banco; ainda faltam envio real em `communications`, event bus, templates, cadência, preferências e trilha de entrega.
-- FEAT-AUTH-001 ainda não possui OAuth real para Google/Facebook; endpoint social existe apenas como placeholder de contrato.
+- FEAT-AUTH-001 ainda não possui OAuth real para Google/Facebook/X; endpoint social existe apenas como placeholder de contrato para `google`, `facebook` e `x`.
 - FEAT-AUTH-001 ainda precisa de política final para cookie seguro, refresh/revogação avançada e hardening fora do ambiente local.
 - FEAT-AUTH-001 ainda não confirma alteração de email por mensagem transacional; alteração é direta nesta fase.
 - FEAT-AUTH-001 usa versão fixa de política de uso `2026-05-17`; versionamento administrável fica para etapa futura.
