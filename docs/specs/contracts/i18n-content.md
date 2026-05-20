@@ -12,6 +12,7 @@
 - Datas, números e formatações respeitam localidade ativa.
 - Slugs e identificadores não dependem exclusivamente do texto traduzido.
 - Conteúdo de mercado traduzido precisa manter rastreabilidade ao conteúdo base.
+- A moeda educativa é exibida em textos de produto como `O₵`; nomes técnicos, campos e sufixos internos permanecem como `_oc`.
 
 ## Campos de conteúdo com potencial multilíngue
 

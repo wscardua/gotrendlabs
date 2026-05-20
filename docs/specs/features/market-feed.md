@@ -1,7 +1,7 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.7
+versao: 0.8
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-05-20
@@ -10,6 +10,7 @@ origem:
 contratos_afetados:
   - market-lifecycle.md
   - i18n-content.md
+  - wallet-ledger.md
 dependencias:
   - FEAT-AUTH-001
 impacta:
@@ -38,6 +39,7 @@ Exibir mercados relevantes com filtros e informações suficientes para descober
 - mini gráfico de evolução do consenso por opção
 - contador compacto de curtidas no card do mercado
 - navegação para detalhe
+- métricas públicas de economia educativa na home
 
 ## Escopo excluído
 
@@ -73,7 +75,9 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - visitante não vê o filtro `Favoritos` nem ação de favoritar
 - visitante não vê o filtro `Minhas previsões`
 - o card principal do feed exibe os dois mercados publicados não cancelados mais visualizados por `view_count`, excluindo `draft` e `canceled`, com mercado mais novo como desempate
-- a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, sem filtrar por mês
+- a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, total de `O₵` distribuídas e total de `O₵` movimentadas em previsões, sem filtrar por mês
+- métricas públicas de moeda devem usar o símbolo de apresentação `O₵`; campos e identificadores técnicos permanecem com sufixo `_oc`
+- o texto da home deve preservar o contexto educativo e evitar termos que sugiram dinheiro real, trading ou saque
 - prévias públicas fora do feed, como o ticket de onboarding no cadastro, podem reutilizar mercados serializados pelo domínio como sinal social; para cadastro, usa maior `view_count` entre publicados não cancelados, exclui `draft` e `canceled`, e usa o mais recente por `created_at` como desempate/fallback
 
 ## Regras de domínio
@@ -91,7 +95,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 ## Responsabilidades por camada
 
 - `frontend-web`: listagem, ordenações rápidas, cards, destaque principal e carregamento incremental/interações parciais
-- `backend-api`: busca, filtros públicos, favoritos pessoais, curtidas de mercado e serialização
+- `backend-api`: busca, filtros públicos, favoritos pessoais, curtidas de mercado, estatísticas públicas e serialização
 - `database`: índices por status, categoria, datas relevantes, favoritos por usuário e curtidas por usuário
 
 ## Implementação atual
@@ -115,7 +119,10 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - o modo `Favoritos` usa `viewer_has_favorite` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - o modo `Minhas previsões` usa `viewer_has_prediction` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - controle `Carregar mais` do feed atua sobre a lista filtrada/ordenada no cliente, sem chamada adicional ao backend
+- `GET /stats` expõe métricas públicas da home: `open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`, `resolution_sla` e `real_money`
 - a métrica pública `previsões totais` é calculada a partir de `orynth_predictions` persistidas, sem janela mensal
+- a métrica pública `O₵ distribuídas` soma créditos positivos registrados no ledger de wallet e é enviada como label pronto para apresentação
+- a métrica pública `O₵ movimentadas` soma stakes de previsões registradas e é enviada como label pronto para apresentação
 - browse administrativo de mercados usa fallback local em Postgres quando a API administrativa falha, mantendo a visualização de ativos/rascunhos disponível em desenvolvimento
 - browse administrativo de mercados exibe popularidade em indicadores compactos e permite alternar entre ordem padrão, mais visualizados e mais compartilhados
 - Admin Ops gerencia categorias/subcategorias em tela de browse operacional com criação, edição, bloqueio/desbloqueio e indicação visual de estado
@@ -143,6 +150,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 
 - `market-lifecycle.md`
 - `i18n-content.md`
+- `wallet-ledger.md`
 
 ## I18n e conteúdo
 
@@ -159,6 +167,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - renderização dos modos de ordenação rápida e do recorte `Resolvidos` no feed web
 - regressão para o modo `Mais curtidas` ordenando por curtidas reais do mercado
 - regressão para métrica de previsões totais baseada em previsões persistidas reais
+- regressão para métricas públicas de `O₵ distribuídas` e `O₵ movimentadas` na home e no contrato `/stats`
 - renderização de `data-*` de ordenação e contador de curtidas no card
 - regressão para título do card como link para o detalhe do mercado
 - regressão para contadores operacionais de visualizações/compartilhamentos expostos no contrato e ocultos do feed público
@@ -192,6 +201,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - título e CTA principal levam ao detalhe do mercado
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
 - destaque principal exibe até dois mercados publicados não cancelados mais visualizados, excluindo `draft` e `canceled`, incluindo resolvidos quando liderarem por popularidade
+- home exibe métricas públicas de economia educativa com `O₵ distribuídas` e `O₵ movimentadas em previsões`, sem sugerir dinheiro real
 
 ## Impacto de mudança
 

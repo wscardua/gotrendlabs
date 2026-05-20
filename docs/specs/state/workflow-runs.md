@@ -60,6 +60,30 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Retomada: evoluir operação do daemon para supervisor/container e alertas externos quando houver decisão de deploy
 - Reversão lógica: desativar execução do comando `run_orynth_daemon` preservando serviços backend e eventos já registrados
 
+## WFLOW-20260520-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-WALLET-001`, `FEAT-AUTH-001`
+- Objetivo: padronizar símbolo público `O₵`, expor métricas educativas na home e reorganizar rodapé/Admin Ops
+- Etapa atual: concluído
+- Artefatos afetados:
+  - `backend_api/main.py`
+  - `core/domain_client.py`
+  - `accounts/api_client.py`
+  - `core/templates/core/home.html`
+  - `templates/base.html`
+  - `templates/components/footer.html`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: evoluir um formatador central de moeda/i18n quando `FEAT-I18N-001` avançar
+- Reversão lógica: restaurar labels visíveis antigos, remover métricas públicas da home e voltar Admin Ops para a navegação anterior preservando contratos internos `_oc`
+
 ## WFLOW-20260517-002
 
 - Tipo: `change-feature`

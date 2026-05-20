@@ -30,7 +30,7 @@
               <span class="muted">Aguardando decisão</span><br><small>{{ market.resolution_timezone|default:"UTC" }}</small>
             {% endif %}
           </td>
-          <td>{{ market.participants|default:"0 participantes" }} · {{ market.volume_oc|default:"0 OC" }}</td>
+          <td>{{ market.participants|default:"0 participantes" }} · {{ market.volume_oc|default:"0 O₵" }}</td>
           <td>
             <div class="table-actions">
             {% if market.status == "locked" %}

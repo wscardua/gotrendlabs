@@ -27,7 +27,8 @@
         <div class="metrics">
           <div class="metric"><strong>{{ stats.open_markets }}</strong><span>mercados abertos</span></div>
           <div class="metric"><strong>{{ stats.total_predictions }}</strong><span>previsões totais</span></div>
-          <div class="metric"><strong>{{ stats.real_money }}</strong><span>sem dinheiro real</span></div>
+          <div class="metric"><strong>{{ stats.distributed_oc }} O₵</strong><span>distribuídas</span></div>
+          <div class="metric"><strong>{{ stats.moved_oc }} O₵</strong><span>movimentadas em previsões</span></div>
         </div>
       </div>
       <aside class="watch-card">
@@ -65,8 +66,8 @@
       {% else %}
         <div class="balance">
           <span>Carteira educativa</span>
-          <strong>{{ viewer.balance_oc }} OC</strong>
-          <p>{{ viewer.locked_oc }} OC bloqueados em previsões abertas. OC não é dinheiro real.</p>
+          <strong>{{ viewer.balance_oc }} O₵</strong>
+          <p>{{ viewer.locked_oc }} O₵ bloqueados em previsões abertas. O₵ não é dinheiro real.</p>
           <a class="btn" href="{% url 'wallet' %}">Ver extrato</a>
         </div>
       {% endif %}
@@ -107,7 +108,7 @@
       <div class="side-card onboarding">
         <h3>Como prever em 40 segundos</h3>
         <div class="step"><b>1</b><span>Escolha uma opção do mercado.</span></div>
-        <div class="step"><b>2</b><span>Defina quantas OC educativas comprometer.</span></div>
+        <div class="step"><b>2</b><span>Defina quantas O₵ educativas comprometer.</span></div>
         <div class="step"><b>3</b><span>Aguarde fechamento e resolução auditável.</span></div>
         <div class="step"><b>4</b><span>Ganhe crédito de acerto e reputação se acertar.</span></div>
       </div>

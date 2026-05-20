@@ -42,9 +42,9 @@
           <small>{{ system.logs_critical_7d|default:0 }} críticos · {{ system.logs_warning_7d|default:0 }} warnings</small>
         </a>
         <a class="admin-card dashboard-kpi" href="{% url 'admin-ops-users' %}?order=wallet_desc">
-          <span>OC bloqueado</span>
+          <span>O₵ bloqueado</span>
           <strong>{{ wallet.locked_oc|default:0 }}</strong>
-          <small>{{ wallet.available_oc|default:0 }} OC disponível</small>
+          <small>{{ wallet.available_oc|default:0 }} O₵ disponível</small>
         </a>
       </div>
 
@@ -150,7 +150,7 @@
           <div class="section-head compact">
             <div>
               <h3>Economia e reputação</h3>
-              <p>Indicadores agregados de OC e badges concedidas.</p>
+              <p>Indicadores agregados de O₵ e badges concedidas.</p>
             </div>
           </div>
           <div class="dashboard-metric-list compact">
@@ -158,7 +158,7 @@
             <a class="dashboard-metric-row" href="{% url 'admin-ops-users' %}?role=superuser"><span>Superusers</span><strong>{{ users.superuser|default:0 }}</strong></a>
             <a class="dashboard-metric-row" href="{% url 'admin-ops-badges' %}"><span>Badges concedidas</span><strong>{{ badges.awarded|default:0 }}</strong></a>
             <a class="dashboard-metric-row" href="{% url 'admin-ops-badges' %}"><span>Badges ativas no catálogo</span><strong>{{ badges.active_catalog|default:0 }}</strong></a>
-            <div class="dashboard-metric-row"><span>OC disponível</span><strong>{{ wallet.available_oc|default:0 }}</strong></div>
+            <div class="dashboard-metric-row"><span>O₵ disponível</span><strong>{{ wallet.available_oc|default:0 }}</strong></div>
           </div>
         </section>
       </div>

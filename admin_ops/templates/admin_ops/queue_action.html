@@ -21,7 +21,7 @@
           <div class="queue-meta">
             <span class="tag">{{ item.queue_label }}</span>
             <span class="tag">{{ item.status_label }}</span>
-            {% if item.reward_oc %}<span class="tag safe">{{ item.reward_oc }} OC aprovados</span>{% endif %}
+            {% if item.reward_oc %}<span class="tag safe">{{ item.reward_oc }} O₵ aprovados</span>{% endif %}
           </div>
           <h2>{{ item.title }}</h2>
           <dl class="queue-detail-list">
@@ -110,7 +110,7 @@
               {% if item.reward_oc %}
                 <p class="muted">Créditos já aprovados e lançados no extrato do usuário.</p>
                 <div class="form-grid">
-                  <div class="field full"><label>Valor aprovado</label><input value="{{ item.reward_oc }} OC" disabled></div>
+                  <div class="field full"><label>Valor aprovado</label><input value="{{ item.reward_oc }} O₵" disabled></div>
                   {% if item.admin_note %}<div class="field full"><label>Nota operacional</label><textarea disabled>{{ item.admin_note }}</textarea></div>{% endif %}
                 </div>
                 <button class="btn success" type="button" disabled>Créditos já aprovados</button>

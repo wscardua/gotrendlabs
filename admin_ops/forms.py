@@ -235,7 +235,7 @@ class AdminMarketForm(forms.Form):
             "primary_outcome": self.initial.get("primary_outcome") or primary["label"],
             "primary_probability_exact": self.initial.get("primary_probability_exact", primary.get("probability_exact", primary["probability"])),
             "secondary_probability_exact": self.initial.get("secondary_probability_exact", secondary.get("probability_exact", secondary["probability"])),
-            "volume_oc": self.initial.get("volume_oc") or "0 OC",
+            "volume_oc": self.initial.get("volume_oc") or "0 O₵",
             "participants": self.initial.get("participants") or "0 usuários",
             "source": self.cleaned_data.get("source") or "",
             "closes_in": "",
@@ -279,12 +279,12 @@ class QueueReviewForm(forms.Form):
 
 
 class FeedbackRewardForm(forms.Form):
-    amount_oc = forms.IntegerField(label="Recompensa OC", min_value=1, max_value=10000, initial=50)
+    amount_oc = forms.IntegerField(label="Recompensa O₵", min_value=1, max_value=10000, initial=50)
     note = forms.CharField(label="Nota operacional", widget=forms.Textarea, required=False)
 
 
 class WalletRechargeApprovalForm(forms.Form):
-    amount_oc = forms.IntegerField(label="Recarga OC", min_value=1, max_value=10000, initial=250)
+    amount_oc = forms.IntegerField(label="Recarga O₵", min_value=1, max_value=10000, initial=250)
     note = forms.CharField(label="Nota operacional", widget=forms.Textarea, required=False)
 
 
@@ -298,7 +298,7 @@ class AdminUserNoteForm(forms.Form):
 
 class AdminUserWalletAdjustmentForm(forms.Form):
     direction = forms.ChoiceField(label="Direção", choices=(("", "Selecione"), ("credit", "Crédito"), ("debit", "Débito")))
-    amount_oc = forms.IntegerField(label="Valor OC", min_value=1, max_value=1000000)
+    amount_oc = forms.IntegerField(label="Valor O₵", min_value=1, max_value=1000000)
     note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
 
 

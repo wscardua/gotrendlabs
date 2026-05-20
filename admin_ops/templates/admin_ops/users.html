@@ -80,7 +80,7 @@
             <span class="tag">{% if user.is_superuser %}Superuser{% elif user.is_staff %}Staff{% else %}Usuário{% endif %}</span>
           </div>
           <div class="user-row-metrics">
-            <div><span>Saldo</span><strong>{{ user.available_oc }} OC</strong><small>{{ user.locked_oc }} bloqueado</small></div>
+            <div><span>Saldo</span><strong>{{ user.available_oc }} O₵</strong><small>{{ user.locked_oc }} bloqueado</small></div>
             <div><span>Rep</span><strong>{{ user.reputation_score }}</strong><small>score atual</small></div>
             <div><span>Login</span><strong>{{ user.last_login|default:"-" }}</strong><small>último acesso</small></div>
           </div>

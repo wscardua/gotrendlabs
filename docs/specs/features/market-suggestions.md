@@ -72,7 +72,7 @@ Itens enviados entram na fila operacional para revisão por staff.
 - histórico de sugestão precisa ser rastreável
 - visitante pode submeter conteúdo, mas não recebe créditos enquanto não houver usuário associado
 - visitante precisa concluir reCAPTCHA válido quando a proteção estiver habilitada; usuário autenticado não sofre essa fricção em sugestão/feedback
-- recompensa exige usuário cadastrado, valor inteiro positivo em OC e item ainda não recompensado
+- recompensa exige usuário cadastrado, valor inteiro positivo em O₵ e item ainda não recompensado
 - recompensa por feedback ou sugestão não concede reputação
 - conversão em rascunho precisa respeitar validações de mercado e taxonomia existentes
 - staff não autenticado ou usuário não staff recebe bloqueio administrativo
@@ -89,8 +89,8 @@ Itens enviados entram na fila operacional para revisão por staff.
 
 ## Dados e persistência
 
-- sugestão: autor opcional, nome/email guest, pergunta, categoria, subcategoria, tipo interno, fonte, justificativa, status, nota administrativa, recompensa em OC, mercado convertido opcional, datas de criação/revisão/recompensa
-- feedback: autor opcional, nome/email guest, tipo, severidade interna, descrição, status, nota administrativa, recompensa em OC, datas de criação/revisão/recompensa
+- sugestão: autor opcional, nome/email guest, pergunta, categoria, subcategoria, tipo interno, fonte, justificativa, status, nota administrativa, recompensa em O₵, mercado convertido opcional, datas de criação/revisão/recompensa
+- feedback: autor opcional, nome/email guest, tipo, severidade interna, descrição, status, nota administrativa, recompensa em O₵, datas de criação/revisão/recompensa
 - status canônicos de sugestão: `pending`, `reviewed`, `converted`, `rewarded`, `rejected`
 - status canônicos de feedback: `pending`, `reviewed`, `rewarded`, `rejected`
 

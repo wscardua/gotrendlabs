@@ -15,7 +15,7 @@ from django.utils import timezone
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 
-from accounts.api_client import AuthAPIError
+from accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
 from accounts.models import BadgeDefinition, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
@@ -43,6 +43,13 @@ class FixtureDomainClientTests(TestCase):
         self.assertIn("resolution_criteria", market)
         self.assertIn("probability_exact", market["options"][0])
         self.assertGreaterEqual(len(market["options"]), 2)
+
+    def test_api_client_normalizes_legacy_oc_volume_labels(self):
+        with patch("accounts.api_client._request", return_value={"slug": "legacy", "volume_oc": "1355 OC"}):
+            self.assertEqual(api_get_market("legacy")["volume_oc"], "1355 O₵")
+
+        with patch("accounts.api_client._request", return_value={"markets": [{"slug": "legacy", "volume_oc": "1355 OC"}]}):
+            self.assertEqual(api_get_markets()[0]["volume_oc"], "1355 O₵")
 
 
 class BackendAuthAPITests(TestCase):
@@ -2090,7 +2097,7 @@ class BackendAuthAPITests(TestCase):
             "primary_outcome": "SIM",
             "primary_probability_exact": 0,
             "secondary_probability_exact": 0,
-            "volume_oc": "0 OC",
+            "volume_oc": "0 O₵",
             "participants": "0 usuários",
             "resolution_type": "",
             "resolution_note": "",
@@ -2131,7 +2138,7 @@ class BackendAuthAPITests(TestCase):
             "primary_outcome": "NAO",
             "primary_probability_exact": 0,
             "secondary_probability_exact": 0,
-            "volume_oc": "0 OC",
+            "volume_oc": "0 O₵",
             "participants": "0 usuários",
             "resolution_type": "",
             "resolution_note": "",
@@ -2483,7 +2490,7 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(edit_after_prediction.json()["title"], "Energia solar será maioria em 2030? Revisado")
         self.assertFalse(edit_after_prediction.json()["auto_close_enabled"])
         self.assertEqual(edit_after_prediction.json()["status_label"], "Aberto")
-        self.assertEqual(edit_after_prediction.json()["volume_oc"], "20 OC")
+        self.assertEqual(edit_after_prediction.json()["volume_oc"], "20 O₵")
         self.assertEqual(edit_after_prediction.json()["participants"], "1 participante")
         self.assertEqual(
             Decimal(str(next(option for option in edit_after_prediction.json()["options"] if option["label"] == "SIM")["probability_exact"])),
@@ -2493,7 +2500,7 @@ class BackendAuthAPITests(TestCase):
         republish_open = client.post("/admin/markets/energia-solar-maioria-2030/publish", headers=headers, json={"note": "publicar de novo"})
         self.assertEqual(republish_open.status_code, 200)
         self.assertEqual(republish_open.json()["status"], "open")
-        self.assertEqual(republish_open.json()["volume_oc"], "20 OC")
+        self.assertEqual(republish_open.json()["volume_oc"], "20 O₵")
         self.assertEqual(
             Decimal(str(next(option for option in republish_open.json()["options"] if option["label"] == "SIM")["probability_exact"])),
             probability_after_prediction,
@@ -2950,7 +2957,8 @@ class WebSmokeTests(TestCase):
                 self.assertContains(response, "Ranking")
                 self.assertContains(response, "← Feed")
                 self.assertContains(response, 'class="footer"')
-                self.assertContains(response, "Rede social de previsões com moeda educativa")
+                self.assertContains(response, "Rede social de previsões educativas")
+                self.assertContains(response, "O₵ educativa")
                 self.assertContains(response, cta)
                 if route == reverse("login"):
                     self.assertContains(response, "Lembrar meu acesso neste dispositivo")
@@ -3853,6 +3861,42 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Você está navegando como operador")
             self.assertContains(response, reverse("admin-ops-config"))
 
+    def test_user_chip_admin_link_only_renders_for_staff_or_superuser(self):
+        response = self.client.get(reverse("home"))
+        self.assertNotContains(response, reverse("admin-ops-dashboard"))
+
+        session = self.client.session
+        session[TOKEN_KEY] = "common-token"
+        session[USER_KEY] = {
+            "id": 501,
+            "handle": "@commonfooter",
+            "email": "common-footer@example.com",
+            "display_name": "Common Footer",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+            "is_superuser": False,
+        }
+        session.save()
+        response = self.client.get(reverse("home"))
+        self.assertNotContains(response, reverse("admin-ops-dashboard"))
+        self.assertContains(response, "Carteira e extrato")
+
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 502,
+            "handle": "@stafffooter",
+            "email": "staff-footer@example.com",
+            "display_name": "Staff Footer",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+            "is_superuser": False,
+        }
+        session.save()
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "Admin")
+        self.assertContains(response, reverse("admin-ops-dashboard"))
+
     def test_database_config_prefers_fastapi_postgres_environment(self):
         with patch.dict(
             os.environ,
@@ -4193,7 +4237,7 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Suporte operacional")
             self.assertContains(response, "Usuários")
             self.assertContains(response, "Operated User")
-            self.assertContains(response, "2100 OC")
+            self.assertContains(response, "2100 O₵")
             response = self.client.get(f"{reverse('admin-ops-users')}?q=operated&status=active&role=user&order=wallet_desc")
             self.assertContains(response, "Operated User")
             users_mock.assert_any_call("staff-token", q="operated", status="active", role="user", order="wallet_desc")
@@ -4422,7 +4466,7 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Crédito líquido do vencedor")
             self.assertContains(response, "Liquida o stake de quem errou")
             self.assertContains(response, "SIM")
-            self.assertContains(response, "payout 80 OC")
+            self.assertContains(response, "payout 80 O₵")
             self.assertContains(response, "Primeira resolução")
             self.assertContains(response, "Próxima")
             audit_mock.assert_called_once_with("staff-token", "resolved-api", limit=1, offset=0)
@@ -4503,7 +4547,7 @@ class WebSmokeTests(TestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "orynth.js?v=20260520-market-likes")
+            self.assertContains(response, "orynth.js?v=20260520-orynth-cent")
 
         posted_market = {
             **api_market,
@@ -4514,7 +4558,7 @@ class WebSmokeTests(TestCase):
             "primary_outcome": "SIM",
             "primary_probability_exact": 72.0721,
             "secondary_probability_exact": 27.9279,
-            "volume_oc": "910 OC",
+            "volume_oc": "910 O₵",
             "participants": "10 participantes",
             "resolution_type": "manual",
             "resolution_note": "Nota interna preservada",
@@ -4551,7 +4595,7 @@ class WebSmokeTests(TestCase):
             sent_payload = update_market.call_args.args[2]
             self.assertFalse(sent_payload["auto_close_enabled"])
             self.assertEqual(sent_payload["status_label"], "Aberto")
-            self.assertEqual(sent_payload["volume_oc"], "910 OC")
+            self.assertEqual(sent_payload["volume_oc"], "910 O₵")
             self.assertEqual(sent_payload["participants"], "10 participantes")
             self.assertEqual(sent_payload["primary_probability_exact"], 72.0721)
             self.assertEqual(sent_payload["secondary_probability_exact"], 27.9279)
@@ -4645,7 +4689,7 @@ class WebSmokeTests(TestCase):
                 "resolved_at": None,
                 "resolution_timezone": "America/Sao_Paulo",
                 "participants": f"{index} participantes",
-                "volume_oc": f"{index * 10} OC",
+                "volume_oc": f"{index * 10} O₵",
             }
             for index in range(1, 13)
         ]
@@ -5305,7 +5349,7 @@ class WebSmokeTests(TestCase):
             return_value={**profile_payload, "reputation": {**profile_payload["reputation"], "reputation_score": 117}},
         ), patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_wallet_recharge_requests", return_value={"requests": []}):
             response = self.client.get(reverse("wallet"))
-            self.assertContains(response, "2000 OC")
+            self.assertContains(response, "2000 O₵")
             self.assertContains(response, "117")
             self.assertContains(response, "grant_initial")
 
@@ -5478,6 +5522,13 @@ class WebSmokeTests(TestCase):
         user = User.objects.create_user(username="totalpredictions", email="total-predictions@example.com", password="testpass123")
         market = Market.objects.get(slug="openai-gpt6-2026")
         option = MarketOption.objects.filter(market=market).first()
+        WalletLedgerEntry.objects.create(
+            user=user,
+            entry_type="reward_feedback",
+            amount=1200,
+            direction="credit",
+            description="Recompensa pública para métrica da home",
+        )
         prediction = Prediction.objects.create(
             user=user,
             market=market,
@@ -5491,12 +5542,24 @@ class WebSmokeTests(TestCase):
         )
         Prediction.objects.filter(id=prediction.id).update(created_at=timezone.now() - timedelta(days=45))
         total_predictions = Prediction.objects.count()
+        distributed_oc = sum(WalletLedgerEntry.objects.filter(direction="credit").values_list("amount", flat=True))
+        moved_oc = sum(Prediction.objects.values_list("stake_amount", flat=True))
+        distributed_label = f"{distributed_oc:,}".replace(",", ".")
+        moved_label = f"{moved_oc:,}".replace(",", ".")
 
         response = self.client.get(reverse("home"))
 
         self.assertContains(response, "previsões totais")
         self.assertContains(response, f"<strong>{total_predictions}</strong><span>previsões totais</span>", html=True)
+        self.assertContains(response, f"<strong>{distributed_label} O₵</strong><span>distribuídas</span>", html=True)
+        self.assertContains(response, f"<strong>{moved_label} O₵</strong><span>movimentadas em previsões</span>", html=True)
         self.assertNotContains(response, "previsões no mês")
+        self.assertNotContains(response, "<span>sem dinheiro real</span>", html=True)
+
+        api_response = TestClient(app).get("/stats")
+        self.assertEqual(api_response.status_code, 200)
+        self.assertIn("distributed_oc", api_response.json())
+        self.assertIn("moved_oc", api_response.json())
 
     def test_market_pages_consume_api_and_fallback_to_fixture(self):
         api_market = {
@@ -5682,5 +5745,5 @@ class WebSmokeTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "SIM")
-        self.assertContains(response, "120 OC")
-        self.assertContains(response, "240 OC")
+        self.assertContains(response, "120 O₵")
+        self.assertContains(response, "240 O₵")

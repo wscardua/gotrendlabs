@@ -51,6 +51,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-AUTH-001
 
+### 2026-05-20 - v0.12
+- rodapé público passou a ser organizado em quatro colunas: Institucional, Produto, Confiança e Suporte
+- links de conta, mercados recorrentes e operações administrativas foram removidos do rodapé público
+- Admin Ops passou a aparecer no chip do usuário apenas para contexto autenticado `is_staff` ou `is_superuser`
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.11
 - login e cadastro passaram a renderizar botões sociais iconizados para Google, Facebook e X, preservando rótulos acessíveis
 - placeholder FastAPI de login social passou a reconhecer `x` junto de `google` e `facebook`, ainda retornando `501` até existir OAuth real
@@ -85,7 +91,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - login e cadastro passaram a exibir navegação pública compacta para mercados, badges e ranking
 - login e cadastro passaram a exibir retorno compacto `← Feed` no primeiro painel de conteúdo, seguindo o padrão das páginas públicas fora da home
 - cadastro passou a expor política de uso em modal, mantendo link para página pública completa `/use-policy/`
-- painel de cadastro passou a apresentar prévia de onboarding com ticket de mercado, badges bloqueadas e confiança/OC sem dinheiro real
+- painel de cadastro passou a apresentar prévia de onboarding com ticket de mercado, badges bloqueadas e confiança/O₵ sem dinheiro real
 - status de implementação: `parcial`
 
 ### 2026-05-19 - v0.5
@@ -120,6 +126,13 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-MARKET-001
+
+### 2026-05-20 - v0.20
+- home passou a exibir métricas públicas de economia educativa com `O₵ distribuídas` e `O₵ movimentadas em previsões`
+- FastAPI passou a expor `GET /stats` com `open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`, `resolution_sla` e `real_money`
+- fallback local Django passou a calcular `distributed_oc` a partir de créditos do ledger e `moved_oc` a partir de stakes de previsões
+- textos visíveis de moeda foram padronizados para `O₵`, preservando campos e identificadores técnicos `_oc`
+- status de implementação: `parcial`
 
 ### 2026-05-20 - v0.19
 - título dos cards de mercado passou a ser link para o detalhe, reduzindo atrito de navegação no feed/home e listas que reutilizam o card
@@ -440,6 +453,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-WALLET-001
 
+### 2026-05-20 - v1.1
+- ledger passou a alimentar o agregado público `O₵ distribuídas` usado nas métricas da home
+- agregado público considera apenas lançamentos `direction="credit"` e não expõe recorte individual de wallet ou extrato
+- movimentação pública em previsões é exibida como soma de stakes registrados, mantendo o contexto educativo de `O₵`
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v1.0
 - extrato da wallet trocou navegação `Anterior`/`Próxima` por `Carregar mais` em blocos cumulativos de 10 lançamentos
 - histórico de recargas permanece limitado às últimas 3 solicitações
@@ -491,7 +510,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-17 - v0.2
 - criado ledger PostgreSQL `orynth_wallet_ledger` como fonte do saldo do usuário
-- cadastro passou a registrar `grant_initial` de `2000 OC` na mesma transação do usuário
+- cadastro passou a registrar `grant_initial` de `2000 O₵` na mesma transação do usuário
 - adicionados endpoints FastAPI de wallet e extrato autenticado
 - Django passou a renderizar carteira e extrato a partir da FastAPI
 - status de implementação: `parcial`

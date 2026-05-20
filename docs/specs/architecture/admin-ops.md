@@ -63,7 +63,7 @@
 - Mercado `resolved` deve exibir ação “Auditoria”, abrindo tela read-only consumida de `GET /admin/markets/{slug}/resolution-audit`.
 - Tela de auditoria de resolução deve mostrar resumo do mercado, opção vencedora, data/hora/timezone, fonte/nota, totais de participantes, vencedores, perdedores, stake, refunds, payouts, losses e badges.
 - Lista de participantes da auditoria deve paginar de 10 em 10 na UI e preservar `limit`/`offset`.
-- Auditoria deve incluir legenda operacional do ledger explicando `refund`, `payout`, `loss`, `0 OC` e badges, sem recalcular domínio no Django.
+- Auditoria deve incluir legenda operacional do ledger explicando `refund`, `payout`, `loss`, `0 O₵` e badges, sem recalcular domínio no Django.
 - O rótulo curto de prazo exibido nos cards é derivado automaticamente de `close_at`; admin não informa esse texto manualmente.
 - A mensagem pública de fechamento (`close_label`) é opcional e textual; não controla o daemon.
 - Percentuais iniciais das opções são persistidos em `orynth_market_options.probability_exact`; inteiros são derivados apenas na serialização/UI.
@@ -89,7 +89,7 @@
 - Recompensas de fila usam ledger/projeção da wallet e bloqueiam duplicidade por item.
 - Configuração geral de Admin Ops define `wallet_recharge_min_balance_oc`, o saldo máximo para usuário solicitar recarga educativa.
 - Configuração geral de Admin Ops define os limites de heartbeat do daemon para status `Atrasado` e `Sem sinal`.
-- Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor OC ou rejeita com nota, mantendo uma solicitação pendente por usuário.
+- Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor em O₵ ou rejeita com nota, mantendo uma solicitação pendente por usuário.
 - Aprovação de recarga educativa cria ledger `educational_recharge`, atualiza projeção de saldo e registra `wallet_recharge.approve`; rejeição registra `wallet_recharge.reject` sem alterar wallet.
 - Comentários entram na fila operacional de moderação com filtro próprio e status `visible`/`hidden`.
 - A tela de revisão de comentário permite ocultar/restaurar com nota operacional.

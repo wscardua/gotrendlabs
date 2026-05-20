@@ -70,3 +70,5 @@
 - Recarga educativa aprovada não gera reputação nem incrementa `total_earned_oc`.
 - Solicitação de recarga educativa deve ser bloqueada quando `available_oc` for maior que `orynth_site_config.wallet_recharge_min_balance_oc`.
 - Usuário pode manter no máximo uma solicitação de recarga educativa `pending`; novas solicitações ficam bloqueadas até aprovação ou rejeição administrativa.
+- O agregado público `distributed_oc` usado pela home soma apenas lançamentos `direction="credit"` do ledger, incluindo `grant_initial`, recompensas operacionais, recargas educativas aprovadas, ajustes manuais de crédito e payouts líquidos.
+- Agregados públicos derivados do ledger não expõem usuário, saldo individual nem extrato, e não substituem a projeção `orynth_wallet_balances`.

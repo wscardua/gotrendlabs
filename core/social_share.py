@@ -21,6 +21,11 @@ ORYNTH_CONTEXT = "Rede social de previsões educativas com reputação pública 
 MARKET_CTA = "Dispute previsões, construa reputação e ganhe destaque."
 
 
+def currency_label(value):
+    label = str(value or "0 O₵").replace(" OC", " O₵")
+    return label if "O₵" in label else f"{label} O₵"
+
+
 def absolute_url(request, view_name, *args, query=None):
     path = reverse(view_name, args=args)
     public_base_url = getattr(settings, "PUBLIC_SHARE_BASE_URL", "")
@@ -50,9 +55,10 @@ def build_share_context(request, *, kind, title, description, text, image_view_n
 
 def market_share_context(request, market):
     title = str(market.get("title", "Mercado Orynth"))
+    volume_label = currency_label(market.get("volume_oc", 0))
     description = (
         f"Consenso atual: {market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · "
-        f"{market.get('volume_oc', 0)} OC previstos. {MARKET_CTA} {ORYNTH_CONTEXT}"
+        f"{volume_label} previstos. {MARKET_CTA} {ORYNTH_CONTEXT}"
     )
     text = f"No Orynth: {title}. {MARKET_CTA}"
     return build_share_context(
@@ -114,7 +120,7 @@ def render_market_card(market, share):
     return _render_card(
         eyebrow=f"Orynth · {market.get('category', 'Mercado')}",
         title=str(market.get("title", "Mercado Orynth")),
-        lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {market.get('volume_oc', 0)} OC previstos",
+        lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {currency_label(market.get('volume_oc', 0))} previstos",
         body=f"{MARKET_CTA} Fonte: {market.get('source', 'verificavel')}",
         url=share["display_url"],
         image_url=market.get("image_url"),
