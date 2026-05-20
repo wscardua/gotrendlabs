@@ -5,9 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Orynth | Criar conta</title>
-  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260520-market-likes">
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260520-orynth-cent">
   {% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}
-  <script src="{% static 'js/orynth.js' %}?v=20260520-market-likes" defer></script>
+  <script src="{% static 'js/orynth.js' %}?v=20260520-orynth-cent" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -30,7 +30,7 @@
         <div class="auth-copy">
           <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Nova conta</span></div>
           <h1>Crie seu histórico público de previsão.</h1>
-          <p class="lead">A conta habilita previsões com OC educativa, comentários, sugestões, carteira, badges e reputação auditável.</p>
+          <p class="lead">A conta habilita previsões com O₵ educativa, comentários, sugestões, carteira, badges e reputação auditável.</p>
         </div>
         <div class="signup-showcase" aria-label="Prévia do histórico público">
           <section class="signup-ticket">
@@ -39,7 +39,7 @@
                 <span class="tag safe">Mais visitado</span>
                 <small>{{ signup_market.category|default:"IA" }} · {{ signup_market.status_label|default:"Mercado binário" }} · {{ signup_market.view_count|default:0 }} visualizações</small>
               </div>
-              <strong>{{ signup_market.stake_oc|default:80 }} OC</strong>
+              <strong>{{ signup_market.stake_oc|default:80 }} O₵</strong>
             </div>
             <h3>{{ signup_market.title|default:"OpenAI lançará GPT-6 em 2026?" }}</h3>
             <div class="signup-ticket-chart">
@@ -72,7 +72,7 @@
             </div>
             <div class="signup-ticket-foot">
               <span>Escolha: <strong>{{ signup_market.display_primary_outcome|default:"SIM" }}</strong></span>
-              <span>Retorno estimado: <strong>{{ signup_market.estimated_return_oc|default:129 }} OC</strong></span>
+              <span>Retorno estimado: <strong>{{ signup_market.estimated_return_oc|default:129 }} O₵</strong></span>
             </div>
           </section>
           <section class="signup-badges" aria-label="Badges iniciais bloqueadas">
@@ -158,7 +158,7 @@
       <div class="policy-modal-body">
         <p>Ao criar conta, você aceita participar de uma rede social de previsões com moeda interna, reputação pública e resolução auditável.</p>
         <ul>
-          <li>OC não é dinheiro real, investimento, prêmio sacável ou ativo transferível fora da plataforma.</li>
+          <li>O₵ não é dinheiro real, investimento, prêmio sacável ou ativo transferível fora da plataforma.</li>
           <li>Previsões ficam vinculadas ao seu histórico público e seguem os estados do mercado.</li>
           <li>Comentários, sugestões, feedbacks e contas podem passar por moderação operacional.</li>
           <li>Mercados exigem prazo, opções finitas e critério verificável de resolução.</li>

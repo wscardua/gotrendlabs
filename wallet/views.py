@@ -70,7 +70,7 @@ def request_recharge(request):
         wallet = get_ledger(auth_token(request)).get("wallet", {})
         recharge_min_balance = SiteConfig.get_solo().wallet_recharge_min_balance_oc
         if int(wallet.get("available_oc") or 0) > recharge_min_balance:
-            messages.error(request, f"Recarga disponível apenas para saldo disponível de até {recharge_min_balance} OC.")
+            messages.error(request, f"Recarga disponível apenas para saldo disponível de até {recharge_min_balance} O₵.")
             return redirect("wallet")
     except AuthAPIError:
         pass

@@ -350,9 +350,9 @@ function updatePredictionPreview() {
   $$("[data-amount]").forEach((range) => {
     const amount = Number(range.value || 0);
     const output = $(`[data-amount-output="${range.dataset.amount}"]`);
-    if (output) output.textContent = `${range.value} OC`;
+    if (output) output.textContent = `${range.value} O₵`;
     const lockedBox = $(`[data-locked-output="${range.dataset.amount}"]`);
-    if (lockedBox) lockedBox.textContent = `${range.value} OC`;
+    if (lockedBox) lockedBox.textContent = `${range.value} O₵`;
   });
   const form = $("[data-prediction-preview-url]");
   const preview = $("#prediction-preview");

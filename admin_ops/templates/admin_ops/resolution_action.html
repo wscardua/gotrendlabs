@@ -17,7 +17,7 @@
       <div class="admin-grid">
         <div class="metric"><strong>{{ market.status_label }}</strong><span>status atual</span></div>
         <div class="metric"><strong>{{ market.participants|default:"0 participantes" }}</strong><span>impacto</span></div>
-        <div class="metric"><strong>{{ market.volume_oc|default:"0 OC" }}</strong><span>stake bloqueado</span></div>
+        <div class="metric"><strong>{{ market.volume_oc|default:"0 O₵" }}</strong><span>stake bloqueado</span></div>
         <div class="metric"><strong>{{ market.resolved_at_label|default:"pendente" }}</strong><span>resolução</span></div>
       </div>
       {% if action == "resolve" and form %}

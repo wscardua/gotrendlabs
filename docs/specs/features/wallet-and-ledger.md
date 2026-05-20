@@ -1,7 +1,7 @@
 ---
 id: FEAT-WALLET-001
 titulo: "Wallet e extrato"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-05-20
@@ -33,6 +33,7 @@ Exibir saldo, histórico de movimentações e rastreabilidade da moeda interna d
 - recompensas operacionais aprovadas para feedback e sugestão de mercado
 - solicitação de recarga educativa com aprovação ou rejeição administrativa
 - ajuste manual auditado por staff no detalhe administrativo de usuário
+- agregado público de `O₵` distribuídas para métricas educativas da home
 
 ## Escopo excluído
 
@@ -67,6 +68,8 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - recarga educativa aprovada pelo Admin Ops exige valor inteiro positivo, operador e referência à solicitação
 - recarga educativa usa `educational_recharge`, `direction="credit"` e `reference_type="wallet_recharge_request"`
 - recarga educativa não altera reputação nem `total_earned_oc`
+- o agregado público `O₵ distribuídas` deve contar lançamentos de ledger com `direction="credit"`, incluindo grant inicial, recompensas, recargas aprovadas e payouts líquidos
+- o agregado público de distribuição não expõe recortes por usuário nem substitui saldo, extrato ou projeção de wallet
 - cancelamento de mercado com previsão aberta gera refund total por `prediction_refund`
 - resolução vencedora libera stake e credita apenas o ganho líquido por `prediction_payout`
 - resolução perdedora baixa o stake bloqueado por `prediction_loss` sem devolver saldo disponível
@@ -74,8 +77,8 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 
 ## Responsabilidades por camada
 
-- `frontend-web`: visão de saldo e extrato
-- `backend-api`: leitura consolidada e regras de consistência
+- `frontend-web`: visão de saldo, extrato e apresentação de agregados públicos já calculados
+- `backend-api`: leitura consolidada, estatísticas públicas e regras de consistência
 - `database`: ledger e referências
 - `admin-ops`: ajustes manuais permitidos e auditados
 - `queues`: aprovações operacionais que disparam crédito rastreável
@@ -107,6 +110,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - integração para `reward_feedback` e `reward_suggestion`
 - integração para ajuste manual administrativo com crédito, débito, nota obrigatória, bloqueio de saldo insuficiente e auditoria
 - integração para solicitação, bloqueio de duplicidade pendente, aprovação e rejeição de recarga educativa
+- regressão para agregado público de `O₵ distribuídas` baseado apenas em créditos do ledger
 - fluxo de visualização do extrato
 - bloqueio de recompensa operacional duplicada
 
@@ -117,6 +121,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - crédito operacional aprovado aparece no extrato e atualiza saldo disponível
 - recarga educativa aprovada aparece no extrato e atualiza saldo disponível sem alterar ganhos por acerto
 - ajuste manual administrativo aparece no ledger, atualiza a projeção e preserva operador/justificativa
+- home consegue exibir total público de `O₵ distribuídas` sem revelar dados privados de wallet
 
 ## Impacto de mudança
 

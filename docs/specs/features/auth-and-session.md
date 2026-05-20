@@ -59,6 +59,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - cadastro sem aceite da política de uso é rejeitado
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
 - telas de login, cadastro e recuperação de senha mantêm navegação pública para feed/mercados, badges e ranking, alternância de tema, rodapé público e retorno compacto `← Feed` no primeiro painel de conteúdo
+- rodapé público mantém links institucionais, produto, confiança e suporte; links de conta, mercados e operações administrativas não aparecem no rodapé
+- link de Admin Ops aparece apenas no chip do usuário autenticado quando o contexto indica `is_staff` ou `is_superuser`
 - login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
 - login oferece recuperação de senha por email; em desenvolvimento local o link pode ser exposto na UI para validação sem SMTP real
 - login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`), mesmo enquanto OAuth real permanecer como placeholder
@@ -131,6 +133,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo de aceite obrigatório da política de uso
 - renderização de política de uso pública e modal de política no cadastro
 - renderização de navegação pública, alternância de tema, rodapé público e retorno compacto `← Feed` em login/cadastro/recuperação de senha
+- renderização do rodapé público sem links de conta/admin e renderização condicional de Admin Ops no chip apenas para staff/superuser
 - renderização de botões sociais iconizados para Google, Facebook e X em login/cadastro, com rótulos acessíveis e contrato placeholder sem OAuth real
 - login com lembrar acesso mantém sessão prolongada e login sem essa opção preserva expiração padrão
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
@@ -150,6 +153,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - usuário consegue solicitar recuperação e definir nova senha com link válido
 - usuário consegue abrir a política de uso no cadastro sem sair do fluxo
 - visitantes em login/cadastro/recuperação de senha conseguem voltar para mercados pelo `← Feed`, alternar tema, acessar mercados, badges e ranking pela navegação pública e consultar links do rodapé público
+- visitantes e usuários comuns não veem Admin Ops no rodapé nem no chip do usuário; staff e superusers veem Admin Ops no chip autenticado
 - visitantes em login/cadastro veem os provedores sociais iniciais como ícones acessíveis para Google, Facebook e X
 - cadastro protegido exige conclusão do reCAPTCHA quando configurado
 - sessão inválida é tratada corretamente

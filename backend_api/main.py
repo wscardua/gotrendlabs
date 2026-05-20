@@ -1025,7 +1025,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "primary_probability_exact": float(_decimal_probability(row["primary_probability_exact"])),
         "secondary_probability": _display_probability(row["secondary_probability_exact"]),
         "secondary_probability_exact": float(_decimal_probability(row["secondary_probability_exact"])),
-        "volume_oc": row["volume_oc"],
+        "volume_oc": _currency_label(row["volume_oc"]),
         "participants": row["participants"],
         "source": row["source"],
         "closes_in": _short_close_label(row["close_at"]) or row["closes_in"],
@@ -1066,8 +1066,40 @@ def _participants_label(count):
     return f"{count} participantes"
 
 
+def _currency_label(value):
+    return str(value or "0 O₵").replace(" OC", " O₵")
+
+
+def _format_oc_amount(value):
+    return f"{int(value or 0):,}".replace(",", ".")
+
+
 def _volume_label(amount):
-    return f"{amount} OC"
+    return _currency_label(f"{amount} O₵")
+
+
+@app.get("/stats")
+def get_public_stats():
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM orynth_markets WHERE status = 'open') AS open_markets,
+                    (SELECT COUNT(*) FROM orynth_predictions) AS total_predictions,
+                    (SELECT COALESCE(SUM(amount), 0) FROM orynth_wallet_ledger WHERE direction = 'credit') AS distributed_oc,
+                    (SELECT COALESCE(SUM(stake_amount), 0) FROM orynth_predictions) AS moved_oc
+                """
+            )
+            row = cursor.fetchone()
+    return {
+        "open_markets": int(row["open_markets"] or 0),
+        "total_predictions": int(row["total_predictions"] or 0),
+        "distributed_oc": _format_oc_amount(row["distributed_oc"]),
+        "moved_oc": _format_oc_amount(row["moved_oc"]),
+        "resolution_sla": "pendente",
+        "real_money": "R$0",
+    }
 
 
 def _market_probability_snapshot(cursor, market_id):
@@ -1640,7 +1672,7 @@ def _wallet_recharge_response(row):
     title = "Solicitação de recarga educativa"
     amount_oc = row["amount_oc"]
     if amount_oc:
-        title = f"{title} · {amount_oc} OC"
+        title = f"{title} · {amount_oc} O₵"
     return {
         "id": row["id"],
         "kind": "wallet_recharge",
@@ -3883,7 +3915,7 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 OC', '0 usuários',
+                VALUES (%s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 O₵', '0 usuários',
                         %s, %s, '', '', '#d8ece2', '', 'A definir pela curadoria antes da publicação.',
                         %s, 'America/Sao_Paulo', true, false, '', '', '', %s, %s, %s,
                         0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
@@ -4738,7 +4770,7 @@ def create_my_wallet_recharge_request(authorization: str = Header(default="")):
             if wallet["available_oc"] > min_balance:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Recarga disponível apenas para saldo disponível de até {min_balance} OC.",
+                    detail=f"Recarga disponível apenas para saldo disponível de até {min_balance} O₵.",
                 )
             cursor.execute(
                 """

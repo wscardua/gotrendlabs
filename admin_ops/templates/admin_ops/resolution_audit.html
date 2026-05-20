@@ -29,10 +29,10 @@
         <div class="metric"><strong>{{ audit.summary.predictions_total }}</strong><span>participantes</span></div>
         <div class="metric"><strong>{{ audit.summary.winners_total }}</strong><span>vencedores</span></div>
         <div class="metric"><strong>{{ audit.summary.losers_total }}</strong><span>perdedores</span></div>
-        <div class="metric"><strong>{{ audit.summary.stake_total }} OC</strong><span>stake total</span></div>
-        <div class="metric"><strong>{{ audit.summary.refund_total }} OC</strong><span>refunds</span></div>
-        <div class="metric"><strong>{{ audit.summary.payout_total }} OC</strong><span>payout líquido</span></div>
-        <div class="metric"><strong>{{ audit.summary.loss_total }} OC</strong><span>losses</span></div>
+        <div class="metric"><strong>{{ audit.summary.stake_total }} O₵</strong><span>stake total</span></div>
+        <div class="metric"><strong>{{ audit.summary.refund_total }} O₵</strong><span>refunds</span></div>
+        <div class="metric"><strong>{{ audit.summary.payout_total }} O₵</strong><span>payout líquido</span></div>
+        <div class="metric"><strong>{{ audit.summary.loss_total }} O₵</strong><span>losses</span></div>
         <div class="metric"><strong>{{ audit.summary.badge_awards_total }}</strong><span>badges</span></div>
       </div>
 
@@ -55,7 +55,7 @@
             <dd>Liquida o stake de quem errou, retirando o valor bloqueado sem crédito disponível.</dd>
           </div>
           <div>
-            <dt>0 OC</dt>
+            <dt>0 O₵</dt>
             <dd>Indica que aquele tipo de lançamento não se aplica à previsão.</dd>
           </div>
           <div>
@@ -94,14 +94,14 @@
           <tr>
             <td><strong>{{ participant.display_name }}</strong><br><small>{{ participant.handle }} · #{{ participant.prediction_id }}</small></td>
             <td>{{ participant.option_label }}</td>
-            <td>{{ participant.stake_amount }} OC</td>
+            <td>{{ participant.stake_amount }} O₵</td>
             <td>{{ participant.probability_at_entry }}%</td>
-            <td>{{ participant.potential_payout }} OC</td>
+            <td>{{ participant.potential_payout }} O₵</td>
             <td>{% if participant.won %}<span class="tag safe">Venceu</span>{% else %}<span class="tag risk">Perdeu</span>{% endif %}</td>
             <td>
-              <span class="audit-ledger-chip">refund {{ participant.ledger.prediction_refund }} OC</span>
-              <span class="audit-ledger-chip">payout {{ participant.ledger.prediction_payout }} OC</span>
-              <span class="audit-ledger-chip">loss {{ participant.ledger.prediction_loss }} OC</span>
+              <span class="audit-ledger-chip">refund {{ participant.ledger.prediction_refund }} O₵</span>
+              <span class="audit-ledger-chip">payout {{ participant.ledger.prediction_payout }} O₵</span>
+              <span class="audit-ledger-chip">loss {{ participant.ledger.prediction_loss }} O₵</span>
             </td>
             <td>
               {% for badge in participant.badges %}

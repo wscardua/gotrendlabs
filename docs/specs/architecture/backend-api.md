@@ -50,3 +50,6 @@
 - O resumo do Dashboard deve usar somente agregações SQL/contagens e janela fixa de 7 dias para métricas recentes, sem recalcular reputação, payout, probabilidade ou regras de domínio.
 - O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `orynth_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
 - Status do daemon deve usar `orynth_site_config.daemon_stale_after_minutes` para `Atrasado` e `orynth_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.
+- `GET /stats` deve expor métricas públicas de leitura para a home, incluindo mercados abertos, previsões totais, `O₵` distribuídas e `O₵` movimentadas, sem efeitos colaterais.
+- `distributed_oc` em `/stats` é agregado a partir de créditos do ledger de wallet; `moved_oc` é agregado a partir de stakes de previsões registradas.
+- Respostas públicas de moeda podem entregar labels prontos para apresentação com `O₵`, preservando nomes técnicos `_oc` nos contratos.

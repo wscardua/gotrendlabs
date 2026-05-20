@@ -5,10 +5,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Orynth{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260520-market-likes">
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260520-orynth-cent">
   {% block extra_head %}{% endblock %}
   <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
-  <script src="{% static 'js/orynth.js' %}?v=20260520-market-likes" defer></script>
+  <script src="{% static 'js/orynth.js' %}?v=20260520-orynth-cent" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -29,13 +29,14 @@
           <div class="user-chip">
             <button class="user-button" type="button">
               <span class="avatar">{{ viewer.initials }}</span>
-              <span class="chip-meta"><strong>{{ viewer.handle }}</strong><span>{{ viewer.name }} · {{ viewer.balance_oc }} OC · Rep {{ viewer.reputation }}</span></span>
+              <span class="chip-meta"><strong>{{ viewer.handle }}</strong><span>{{ viewer.name }} · {{ viewer.balance_oc }} O₵ · Rep {{ viewer.reputation }}</span></span>
             </button>
             <div class="user-menu">
               <a href="{% url 'profile' %}">Perfil e badges</a>
               <a href="{% url 'wallet' %}">Carteira e extrato</a>
               <a href="{% url 'suggestion' %}">Sugerir mercado</a>
               <a href="{% url 'feedback' %}">Feedback/suporte</a>
+              {% if can_access_admin_ops %}<a href="{% url 'admin-ops-dashboard' %}">Admin</a>{% endif %}
               <a href="{% url 'logout' %}">Sair desta sessão</a>
             </div>
           </div>

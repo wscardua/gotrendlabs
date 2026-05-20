@@ -44,6 +44,16 @@ def _request(method, path, payload=None, token=None):
         raise AuthAPIError("Serviço de autenticação indisponível.") from exc
 
 
+def _currency_label(value):
+    return str(value or "0 O₵").replace(" OC", " O₵")
+
+
+def _normalize_market_payload(market):
+    if isinstance(market, dict) and "volume_oc" in market:
+        return {**market, "volume_oc": _currency_label(market.get("volume_oc"))}
+    return market
+
+
 def register_user(data):
     return _request("POST", "/auth/register", data)
 
@@ -109,11 +119,11 @@ def get_rankings(**filters):
 def get_markets(token=None, **filters):
     query = urlencode({key: value for key, value in filters.items() if value})
     path = f"/markets?{query}" if query else "/markets"
-    return _request("GET", path, token=token)["markets"]
+    return [_normalize_market_payload(market) for market in _request("GET", path, token=token)["markets"]]
 
 
 def get_market(slug, token=None):
-    return _request("GET", f"/markets/{slug}", token=token)
+    return _normalize_market_payload(_request("GET", f"/markets/{slug}", token=token))
 
 
 def track_market_view(slug):
@@ -185,7 +195,10 @@ def create_feedback(data, token=None):
 def admin_get_markets(token, **filters):
     query = urlencode({key: value for key, value in filters.items() if value})
     path = f"/admin/markets?{query}" if query else "/admin/markets"
-    return _request("GET", path, token=token)
+    payload = _request("GET", path, token=token)
+    if isinstance(payload, dict) and "markets" in payload:
+        return {**payload, "markets": [_normalize_market_payload(market) for market in payload["markets"]]}
+    return payload
 
 
 def admin_get_users(token, **filters):
@@ -229,27 +242,27 @@ def admin_update_user_roles(token, user_id, is_staff, is_superuser, note):
 
 
 def admin_create_market(token, data):
-    return _request("POST", "/admin/markets", data, token=token)
+    return _normalize_market_payload(_request("POST", "/admin/markets", data, token=token))
 
 
 def admin_get_market(token, slug):
-    return _request("GET", f"/admin/markets/{slug}", token=token)
+    return _normalize_market_payload(_request("GET", f"/admin/markets/{slug}", token=token))
 
 
 def admin_update_market(token, slug, data):
-    return _request("PATCH", f"/admin/markets/{slug}", data, token=token)
+    return _normalize_market_payload(_request("PATCH", f"/admin/markets/{slug}", data, token=token))
 
 
 def admin_publish_market(token, slug, note=""):
-    return _request("POST", f"/admin/markets/{slug}/publish", {"note": note}, token=token)
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/publish", {"note": note}, token=token))
 
 
 def admin_cancel_market(token, slug, note=""):
-    return _request("POST", f"/admin/markets/{slug}/cancel", {"note": note}, token=token)
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/cancel", {"note": note}, token=token))
 
 
 def admin_lock_market(token, slug, note=""):
-    return _request("POST", f"/admin/markets/{slug}/lock", {"note": note}, token=token)
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/lock", {"note": note}, token=token))
 
 
 def admin_resolve_market(token, slug, winning_option_id, source_url="", note="", resolved_at=None, resolution_timezone=""):
@@ -258,12 +271,7 @@ def admin_resolve_market(token, slug, winning_option_id, source_url="", note="",
         payload["resolved_at"] = resolved_at.isoformat() if hasattr(resolved_at, "isoformat") else str(resolved_at)
     if resolution_timezone:
         payload["resolution_timezone"] = resolution_timezone
-    return _request(
-        "POST",
-        f"/admin/markets/{slug}/resolve",
-        payload,
-        token=token,
-    )
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/resolve", payload, token=token))
 
 
 def admin_get_market_resolution_audit(token, slug, limit=50, offset=0):

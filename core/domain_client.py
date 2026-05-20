@@ -169,7 +169,7 @@ def _local_market_response(market):
         "primary_probability_exact": float(_decimal_probability(market.primary_probability_exact)),
         "secondary_probability": _display_probability(market.secondary_probability_exact),
         "secondary_probability_exact": float(_decimal_probability(market.secondary_probability_exact)),
-        "volume_oc": market.volume_oc,
+        "volume_oc": _currency_label(market.volume_oc),
         "participants": market.participants,
         "source": market.source,
         "closes_in": _short_close_label(market.close_at) or market.closes_in,
@@ -194,6 +194,14 @@ def _local_market_response(market):
         "options": options,
         "comments": [],
     }
+
+
+def _currency_label(value):
+    return str(value or "0 O₵").replace(" OC", " O₵")
+
+
+def _format_oc_amount(value):
+    return f"{int(value or 0):,}".replace(",", ".")
 
 
 def local_markets(include_canceled=False):
@@ -225,12 +233,18 @@ def local_market(slug):
 
 
 def local_stats():
+    from django.db.models import Sum
+    from accounts.models import WalletLedgerEntry
     from markets.models import Market, Prediction
 
     total_predictions = Prediction.objects.count()
+    distributed_oc = WalletLedgerEntry.objects.filter(direction="credit").aggregate(total=Sum("amount"))["total"] or 0
+    moved_oc = Prediction.objects.aggregate(total=Sum("stake_amount"))["total"] or 0
     return {
         "open_markets": Market.objects.filter(status="open").count(),
         "total_predictions": total_predictions,
+        "distributed_oc": _format_oc_amount(distributed_oc),
+        "moved_oc": _format_oc_amount(moved_oc),
         "resolution_sla": "pendente",
         "real_money": "R$0",
     }

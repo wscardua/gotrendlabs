@@ -206,7 +206,7 @@
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
       {% if prediction_result %}
-        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} OC bloqueados. Retorno estimado: {{ prediction_result.potential_payout }} OC.</div>
+        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} O₵ bloqueados. Retorno estimado: {{ prediction_result.potential_payout }} O₵.</div>
       {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>
@@ -221,13 +221,13 @@
               </div>
             {% endfor %}
           </div>
-          <div class="ticket-note">Visitantes podem ver o consenso atual. Para escolher uma opção e comprometer OC, entre na conta.</div>
+          <div class="ticket-note">Visitantes podem ver o consenso atual. Para escolher uma opção e comprometer O₵, entre na conta.</div>
         </div>
         <a class="btn primary" href="{% url 'login' %}?next={{ request.path }}">Entrar para prever</a>
       {% elif existing_prediction %}
         <div class="prediction-locked">
           <strong>Você já registrou uma previsão neste mercado.</strong>
-          <p>Sua escolha foi <b>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</b> com {{ existing_prediction.stake_amount }} OC bloqueados. Probabilidade de entrada: {{ existing_prediction.probability_at_entry }}%.</p>
+          <p>Sua escolha foi <b>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</b> com {{ existing_prediction.stake_amount }} O₵ bloqueados. Probabilidade de entrada: {{ existing_prediction.probability_at_entry }}%.</p>
         </div>
         <div class="binary-ticket">
           <div class="binary-grid option-grid">
@@ -240,7 +240,7 @@
           </div>
           <div class="ticket-note">A primeira previsão fica registrada para auditoria. Para esta etapa do MVP, não é possível alterar ou enviar outra previsão no mesmo mercado.</div>
         </div>
-        <div class="field disabled-field"><label>Valor da previsão</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} OC</strong></div></div>
+        <div class="field disabled-field"><label>Valor da previsão</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} O₵</strong></div></div>
         <button class="btn primary" type="button" disabled>Previsão já registrada</button>
       {% else %}
         <form method="post" action="{% url 'prediction-confirm' market.slug %}" data-prediction-preview-url="{% url 'prediction-preview' market.slug %}">
@@ -255,13 +255,13 @@
                 </button>
               {% endfor %}
             </div>
-            <div class="ticket-note">Escolha uma opção e defina quantas OC educativas deseja comprometer. A porcentagem é consenso atual, não promessa de resultado.</div>
+            <div class="ticket-note">Escolha uma opção e defina quantas O₵ educativas deseja comprometer. A porcentagem é consenso atual, não promessa de resultado.</div>
           </div>
-          <div class="field"><label>Valor da previsão</label><div class="range-row"><input name="stake_amount" data-amount="open" type="range" min="1" max="500" value="80"><strong data-amount-output="open">80 OC</strong></div></div>
+          <div class="field"><label>Valor da previsão</label><div class="range-row"><input name="stake_amount" data-amount="open" type="range" min="1" max="500" value="80"><strong data-amount-output="open">80 O₵</strong></div></div>
           <div id="prediction-preview" class="calc">
             <div><span>Opção escolhida</span><strong data-selected-choice>{{ market.options.0.label }}</strong></div>
-            <div><span>Retorno estimado se acertar</span><strong data-return-output="open">130 OC</strong></div>
-            <div><span>Saldo bloqueado</span><strong data-locked-output="open">80 OC</strong></div>
+            <div><span>Retorno estimado se acertar</span><strong data-return-output="open">130 O₵</strong></div>
+            <div><span>Saldo bloqueado</span><strong data-locked-output="open">80 O₵</strong></div>
           </div>
           <button class="btn primary trade-action" type="submit" data-confirm="Confirmar previsão" data-confirm-desc="Esta ação bloqueará o stake informado na sua carteira e ficará registrada na trilha auditável.">Confirmar previsão</button>
         </form>

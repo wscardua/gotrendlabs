@@ -35,7 +35,7 @@ class Command(BaseCommand):
                     for market in markets:
                         self.stdout.write(
                             f"DRY-RUN {market['slug']}: {market['open_predictions']} open predictions, "
-                            f"stake {market['stake_amount']} OC"
+                            f"stake {market['stake_amount']} O₵"
                         )
                     self.stdout.write(f"DRY-RUN total: {len(markets)} markets, {total_predictions} open predictions.")
                     return
