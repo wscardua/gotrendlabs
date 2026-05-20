@@ -30,7 +30,7 @@
 - Comentários no detalhe do mercado exibem o autor como handle iniciado por `@`.
 - Visitantes podem ler comentários e veem CTA de login para comentar/reagir.
 - Visitantes veem reCAPTCHA em cadastro e nos envios guest de sugestão/feedback quando `RECAPTCHA_ENABLED` estiver ativo; usuários autenticados não veem CAPTCHA em sugestão/feedback.
-- Telas públicas de autenticação (`/login/` e `/register/`) devem manter navegação pública compacta para mercados, badges e ranking.
+- Telas públicas de autenticação (`/login/`, `/register/` e recuperação de senha) devem manter navegação pública compacta para mercados, badges e ranking, além do rodapé público compartilhado.
 - O aceite de política de uso no cadastro deve permitir leitura sem abandonar o formulário; a UI pode abrir modal com resumo e manter link de fallback para a página pública completa de política.
 - A tela de cadastro pode exibir uma prévia de onboarding baseada em dados reais de mercado, desde que não calcule regra de domínio nem simule estado pessoal inexistente.
 - Quando a prévia de onboarding usar mercado público, a seleção deve usar apenas campos serializados pelo domínio: maior `view_count` entre mercados publicados não cancelados disponíveis localmente/publicamente, excluindo `draft` e `canceled`, com mercado mais recente por `created_at` como desempate/fallback.

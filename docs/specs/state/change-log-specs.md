@@ -70,6 +70,7 @@
 
 ## 2026-05-20
 
+- registrado que telas públicas de autenticação mantêm rodapé público compartilhado além de navegação, tema e retorno `← Feed`
 - registrada área Config no Admin Ops para modo manutenção em runtime JSON e parâmetros SMTP não sensíveis em banco
 - registrado que segredo SMTP permanece fora do banco/interface, via ambiente ou secret manager
 - registrada separação operacional de credenciais PostgreSQL por serviço Django/FastAPI com fallback local `POSTGRES_*`
