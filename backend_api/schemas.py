@@ -222,6 +222,18 @@ class SystemLogListResponse(BaseModel):
     total: int
 
 
+class AdminDashboardSummaryResponse(BaseModel):
+    markets: dict
+    queues: dict
+    users: dict
+    engagement: dict
+    wallet: dict
+    badges: dict
+    system: dict
+    top_markets: List[dict]
+    recent_admin_events: List[dict]
+
+
 class BadgeResponse(BaseModel):
     code: str
     name: str

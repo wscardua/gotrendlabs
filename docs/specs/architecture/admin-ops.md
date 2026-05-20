@@ -27,10 +27,14 @@
 - dashboards
 - suporte técnico
 - filas operacionais
+- config operacional
 
 ## Implementação atual
 
-- Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Usuários, Categorias, Badge, Mercado, Resolução e Filas; menus secundários duplicados não devem ser renderizados nas telas internas.
+- Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Usuários, Categorias, Badge, Mercado, Resolução e Filas; menus secundários duplicados não devem ser renderizados nas telas internas.
+- Dashboard consome o contrato staff `GET /admin/dashboard-summary` da FastAPI e exibe saúde operacional da plataforma em blocos de KPIs, ação necessária, saúde técnica, engajamento, economia/reputação, top mercados e eventos administrativos recentes.
+- Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.
+- Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP e reCAPTCHA; não recalculam reputação, payout, probabilidade ou regra de domínio.
 - Mercado e taxonomia possuem primeira fatia real via FastAPI/Postgres.
 - Endpoints administrativos cobrem listagem, criação, edição, publicação e cancelamento lógico de mercados.
 - Categorias e subcategorias podem ser criadas, alteradas, bloqueadas e desbloqueadas pelo painel customizado.
@@ -84,4 +88,7 @@
 - Regras de badge com recorte temático devem selecionar categoria e subcategoria a partir da taxonomia dinâmica persistida; subcategorias são filtradas pela categoria escolhida.
 - Criação, edição e desativação de badge passam por contratos staff da FastAPI e registram `badge.create`, `badge.update` ou `badge.deactivate` em `orynth_admin_events`.
 - Logs técnicos de troubleshooting ficam disponíveis no Admin Ops em área própria, com filtros operacionais e detalhe completo por contrato staff da FastAPI.
+- Config operacional fica disponível no Admin Ops logo após Dashboard e permite controlar modo manutenção e parâmetros SMTP.
+- Modo manutenção é persistido em arquivo runtime fora do banco para desviar acesso público para página estática de manutenção mesmo quando a conexão com PostgreSQL/FastAPI estiver indisponível.
+- Config SMTP persiste parâmetros não sensíveis no banco; senha/API key ficam exclusivamente em variáveis de ambiente ou secret manager.
 - Denúncias por usuários, moderação avançada, comunicações assíncronas de resolução, gestão de operadores e ajuste manual de reputação permanecem fora desta fatia.

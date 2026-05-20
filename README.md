@@ -67,11 +67,28 @@ POSTGRES_USER=orynth
 POSTGRES_PASSWORD=orynth_dev_password
 POSTGRES_HOST=127.0.0.1
 POSTGRES_PORT=5432
+DJANGO_POSTGRES_DB=orynth
+DJANGO_POSTGRES_USER=orynth_django
+DJANGO_POSTGRES_PASSWORD=orynth_django_password
+DJANGO_POSTGRES_HOST=127.0.0.1
+DJANGO_POSTGRES_PORT=5432
+FASTAPI_POSTGRES_DB=orynth
+FASTAPI_POSTGRES_USER=orynth_fastapi
+FASTAPI_POSTGRES_PASSWORD=orynth_fastapi_password
+FASTAPI_POSTGRES_HOST=127.0.0.1
+FASTAPI_POSTGRES_PORT=5432
 BACKEND_API_URL=http://127.0.0.1:8001
+ORYNTH_RUNTIME_CONFIG_PATH=.runtime/platform_config.json
+ORYNTH_SMTP_PASSWORD=
+ORYNTH_SMTP_API_KEY=
 RECAPTCHA_ENABLED=0
 RECAPTCHA_SITE_KEY=
 RECAPTCHA_SECRET_KEY=
 ```
+
+`POSTGRES_*` continua disponivel como fallback local e bootstrap do container. Para runtime, prefira `DJANGO_POSTGRES_*` e `FASTAPI_POSTGRES_*` com usuarios de menor privilegio por aplicacao. O arquivo `.env.example` e apenas modelo versionado; a aplicacao le o `.env` local ou variaveis ja exportadas no ambiente.
+
+O modo manutencao do Admin Ops e salvo em `ORYNTH_RUNTIME_CONFIG_PATH` para continuar funcionando sem conexao com o banco. Configuracoes SMTP nao sensiveis ficam no banco; senha/API key devem ficar somente em `ORYNTH_SMTP_PASSWORD` ou `ORYNTH_SMTP_API_KEY`.
 
 Para ativar o reCAPTCHA v2 checkbox no cadastro e nos envios públicos de sugestão/feedback, preencha `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` e use `RECAPTCHA_ENABLED=1`. A site key é pública; a secret key deve ficar apenas no ambiente do servidor.
 
@@ -115,5 +132,5 @@ Skills locais uteis:
 - Os cards de destaque do feed priorizam ate dois mercados publicados nao cancelados com mais visualizacoes; empate usa o mercado mais novo.
 - Marcacoes editoriais de destaque continuam existindo para filtro/curadoria, mas nao superam a ordenacao por visualizacoes no card principal da home.
 - Os filtros da home sao ordenacoes client-side: tendencia, encerramento, volume, novos e favoritos editoriais.
-- O dashboard do Admin Ops e uma tela de acompanhamento; criacao de mercados fica concentrada na area `Mercados`.
+- O dashboard do Admin Ops consome o resumo staff da FastAPI (`/admin/dashboard-summary`) e acompanha saúde operacional; criação de mercados fica concentrada na área `Mercados`.
 - Orynth Coins sao educativos e nao representam dinheiro real.

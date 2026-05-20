@@ -1,0 +1,143 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Config{% endblock %}
+{% block content %}
+<main class="shell admin-layout admin-config-page">
+  <section>
+    <div class="config-hero">
+      <div>
+        <span class="eyebrow">Configuração operacional</span>
+        <h1 class="large-title">Controles da plataforma</h1>
+        <p>Parâmetros de disponibilidade pública e infraestrutura de comunicações, reunidos em uma única área de operação.</p>
+      </div>
+      <div class="config-health-strip" aria-label="Status das configurações">
+        <div>
+          <span>Manutenção</span>
+          <strong>{% if platform_config.maintenance_enabled %}Ativa{% else %}Inativa{% endif %}</strong>
+        </div>
+        <div>
+          <span>Email</span>
+          <strong>{% if site_config.is_ready_for_delivery and smtp_secret_configured %}Pronto{% elif site_config.email_enabled %}Pendente{% else %}Inativo{% endif %}</strong>
+        </div>
+        <div>
+          <span>Segredo SMTP</span>
+          <strong>{% if smtp_secret_configured %}Configurado{% else %}Ausente{% endif %}</strong>
+        </div>
+      </div>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
+    {% endif %}
+    {% if maintenance_form.non_field_errors %}<div class="notice red">{{ maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
+
+    <form class="admin-config-surface" method="post">
+      {% csrf_token %}
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Disponibilidade</span>
+            <h2>Modo manutenção</h2>
+            <p>Este estado fica fora do banco para continuar funcionando durante janelas de manutenção.</p>
+          </div>
+          <span class="config-status {% if platform_config.maintenance_enabled %}is-on{% endif %}">
+            {% if platform_config.maintenance_enabled %}Ativo{% else %}Inativo{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <label class="config-switch-row">
+            {{ maintenance_form.maintenance_enabled }}
+            <span>
+              <strong>Desviar acesso público</strong>
+              <small>Visitantes veem a página de manutenção; Admin Ops, login e assets continuam acessíveis.</small>
+            </span>
+          </label>
+          <label class="field full">
+            <span>Mensagem pública</span>
+            {{ maintenance_form.maintenance_message }}
+            {% if maintenance_form.maintenance_message.errors %}<small>{{ maintenance_form.maintenance_message.errors|join:", " }}</small>{% endif %}
+          </label>
+          <div class="config-meta">
+            <span>Última alteração</span>
+            <strong>{{ platform_config.updated_at|default:"Ainda não registrada" }}</strong>
+            <span>Operador</span>
+            <strong>{{ platform_config.updated_by|default:"-" }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Communications</span>
+            <h2>Email SMTP</h2>
+            <p>Dados não sensíveis ficam em <code>orynth_site_config</code>; senha ou API key permanecem no ambiente.</p>
+          </div>
+          <span class="config-status {% if site_config.is_ready_for_delivery and smtp_secret_configured %}is-on{% endif %}">
+            {% if site_config.is_ready_for_delivery and smtp_secret_configured %}Pronto{% else %}Pendente{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <label class="config-switch-row">
+            {{ email_form.email_enabled }}
+            <span>
+              <strong>Habilitar email quando communications estiver ativo</strong>
+              <small>Esta tela prepara a configuração; os disparos entram em uma etapa futura.</small>
+            </span>
+          </label>
+          <div class="config-secret-card">
+            <span>Segredo SMTP</span>
+            <strong>{% if smtp_secret_configured %}Configurado por ambiente{% else %}Não configurado{% endif %}</strong>
+            <small>Use ORYNTH_SMTP_PASSWORD ou ORYNTH_SMTP_API_KEY no ambiente. O valor não é exibido nem salvo no banco.</small>
+          </div>
+          <div class="config-form-grid">
+            <label class="field">
+              <span>Servidor SMTP</span>
+              {{ email_form.smtp_host }}
+              {% if email_form.smtp_host.errors %}<small>{{ email_form.smtp_host.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Porta</span>
+              {{ email_form.smtp_port }}
+              {% if email_form.smtp_port.errors %}<small>{{ email_form.smtp_port.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field full">
+              <span>Usuário SMTP</span>
+              {{ email_form.smtp_username }}
+            </label>
+            <div class="config-inline-options">
+              <label class="config-check-option">
+                {{ email_form.smtp_use_tls }}
+                <span><strong>TLS</strong><small>STARTTLS, porta 587.</small></span>
+              </label>
+              <label class="config-check-option">
+                {{ email_form.smtp_use_ssl }}
+                <span><strong>SSL</strong><small>Conexão direta, porta 465.</small></span>
+              </label>
+            </div>
+            <label class="field compact-field">
+              <span>Timeout</span>
+              {{ email_form.smtp_timeout_seconds }}
+              {% if email_form.smtp_timeout_seconds.errors %}<small>{{ email_form.smtp_timeout_seconds.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field">
+              <span>Remetente padrão</span>
+              {{ email_form.default_from_email }}
+              {% if email_form.default_from_email.errors %}<small>{{ email_form.default_from_email.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field">
+              <span>Reply-to padrão</span>
+              {{ email_form.default_reply_to_email }}
+              {% if email_form.default_reply_to_email.errors %}<small>{{ email_form.default_reply_to_email.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <div class="config-actions">
+        <button class="btn primary" type="submit">Salvar configurações</button>
+      </div>
+    </form>
+  </section>
+</main>
+{% endblock %}

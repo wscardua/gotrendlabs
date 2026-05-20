@@ -43,6 +43,15 @@
       </div>
     </nav>
   </header>
+  {% if operator_maintenance_notice %}
+    <div class="maintenance-operator-banner" role="status">
+      <div class="shell">
+        <strong>Modo manutenção ativo</strong>
+        <span>Você está navegando como operador; visitantes públicos estão vendo a página de manutenção.</span>
+        <a href="{% url 'admin-ops-config' %}">Abrir Config</a>
+      </div>
+    </div>
+  {% endif %}
   {% block content %}{% endblock %}
   <footer class="footer">
     <div class="shell footer-grid">

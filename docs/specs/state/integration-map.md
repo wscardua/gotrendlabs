@@ -10,7 +10,7 @@
 - `FEAT-REP-001` depende de `FEAT-RES-001`
 - `FEAT-COMMENT-001` depende de `FEAT-MARKET-002` e `FEAT-AUTH-001`
 - `FEAT-SUGGEST-001` depende de `FEAT-AUTH-001` e `admin-ops`
-- `FEAT-NOTIFY-001` depende de eventos do domínio e preferências de idioma
+- `FEAT-NOTIFY-001` depende de eventos do domínio, preferências de idioma, configuração SMTP em `orynth_site_config` e segredo de envio em ambiente/secret manager
 - `FEAT-I18N-001` é transversal às demais features
 - `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
 
@@ -31,6 +31,8 @@
 - `FEAT-AUTH-001` e `FEAT-SUGGEST-001` compartilham validação reCAPTCHA server-side configurável por ambiente.
 - Django renderiza o widget v2 e encaminha `recaptcha_token`; FastAPI é a autoridade de validação para cadastro e envios guest.
 - `FEAT-OPSLOG-001` registra requests Django/FastAPI e logs Python em `orynth_system_logs`; Admin Ops consome `/admin/system-logs` para troubleshooting sem alterar domínio.
+- Admin Ops consome `GET /admin/dashboard-summary` via FastAPI para consolidar métricas operacionais de mercados, filas, usuários, engajamento, wallet, badges, logs, manutenção, SMTP e reCAPTCHA.
+- Config operacional usa duas fontes por fronteira: modo manutenção em JSON runtime para sobreviver sem banco/API e parâmetros SMTP não sensíveis em `orynth_site_config`.
 
 ## Skills técnicas por stack
 

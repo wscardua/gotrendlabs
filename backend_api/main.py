@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from ipaddress import ip_address as parse_ip_address
 import os
+import json
 import re
 import time
 from typing import Optional
@@ -17,6 +18,7 @@ from backend_api.schemas import (
     AdminBadgeListResponse,
     AdminBadgePayload,
     AdminBadgeResponse,
+    AdminDashboardSummaryResponse,
     AdminUserDetailResponse,
     AdminUserListResponse,
     AdminUserRolePayload,
@@ -88,6 +90,19 @@ BADGE_TYPES = {"global", "category", "performance", "engagement"}
 PUBLIC_WEB_BASE_URL = os.environ.get("ORYNTH_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 app = FastAPI(title="Orynth Backend API", version="0.1.0")
+
+
+def _runtime_config_path():
+    return os.environ.get("ORYNTH_RUNTIME_CONFIG_PATH") or os.path.join(os.getcwd(), ".runtime", "platform_config.json")
+
+
+def _maintenance_mode_active():
+    try:
+        with open(_runtime_config_path(), encoding="utf-8") as config_file:
+            data = json.load(config_file)
+    except (OSError, json.JSONDecodeError):
+        return False
+    return bool(data.get("maintenance_enabled"))
 
 
 @app.middleware("http")
@@ -2903,6 +2918,228 @@ def admin_get_system_log(log_id: int, authorization: str = Header(default="")):
             if not row:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Log não encontrado.")
             return _system_log_response(row)
+
+
+@app.get("/admin/dashboard-summary", response_model=AdminDashboardSummaryResponse)
+def admin_dashboard_summary(authorization: str = Header(default="")):
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=7)
+    next_24h = now + timedelta(hours=24)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_markets GROUP BY status")
+            market_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
+            cursor.execute(
+                """
+                SELECT
+                    COALESCE(SUM(view_count), 0) AS total_views,
+                    COALESCE(SUM(share_count), 0) AS total_shares,
+                    COALESCE(SUM(CASE WHEN status IN ('open', 'scheduled') AND close_at >= %s AND close_at <= %s THEN 1 ELSE 0 END), 0) AS closing_24h
+                FROM orynth_markets
+                """,
+                (now, next_24h),
+            )
+            market_totals = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT m.slug, m.title, m.status, m.status_label, c.name AS category,
+                       s.name AS subcategory, m.view_count, m.share_count
+                FROM orynth_markets m
+                LEFT JOIN orynth_market_categories c ON c.id = m.category_id
+                LEFT JOIN orynth_market_subcategories s ON s.id = m.subcategory_id
+                ORDER BY m.view_count DESC, m.share_count DESC, m.created_at DESC
+                LIMIT 5
+                """
+            )
+            top_markets = [
+                {
+                    "slug": row["slug"],
+                    "title": row["title"],
+                    "status": row["status"],
+                    "status_label": row["status_label"],
+                    "category": row["category"] or "",
+                    "subcategory": row["subcategory"] or "",
+                    "view_count": int(row["view_count"] or 0),
+                    "share_count": int(row["share_count"] or 0),
+                }
+                for row in cursor.fetchall()
+            ]
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_suggestions GROUP BY status")
+            suggestion_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
+            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_product_feedback GROUP BY status")
+            feedback_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
+            cursor.execute(
+                """
+                SELECT severity, COUNT(*) AS total
+                FROM orynth_product_feedback
+                WHERE status = 'pending'
+                GROUP BY severity
+                """
+            )
+            feedback_severity_counts = {row["severity"]: int(row["total"] or 0) for row in cursor.fetchall()}
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN account_status = 'active' THEN 1 ELSE 0 END), 0) AS active,
+                    COALESCE(SUM(CASE WHEN account_status = 'deactivated' THEN 1 ELSE 0 END), 0) AS deactivated,
+                    COALESCE(SUM(CASE WHEN is_staff = true AND is_superuser = false THEN 1 ELSE 0 END), 0) AS staff,
+                    COALESCE(SUM(CASE WHEN is_superuser = true THEN 1 ELSE 0 END), 0) AS superuser,
+                    COALESCE(SUM(CASE WHEN date_joined >= %s THEN 1 ELSE 0 END), 0) AS new_7d
+                FROM orynth_users
+                """,
+                (since,),
+            )
+            user_counts = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN status = 'open' THEN 1 ELSE 0 END), 0) AS open,
+                    COALESCE(SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END), 0) AS resolved,
+                    COALESCE(SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END), 0) AS canceled,
+                    COALESCE(SUM(CASE WHEN created_at >= %s THEN 1 ELSE 0 END), 0) AS created_7d
+                FROM orynth_predictions
+                """,
+                (since,),
+            )
+            prediction_counts = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN status = 'visible' THEN 1 ELSE 0 END), 0) AS visible,
+                    COALESCE(SUM(CASE WHEN status = 'hidden' THEN 1 ELSE 0 END), 0) AS hidden
+                FROM orynth_market_comments
+                """
+            )
+            comment_counts = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT
+                    COALESCE(SUM(available_oc), 0) AS available_oc,
+                    COALESCE(SUM(locked_oc), 0) AS locked_oc
+                FROM orynth_wallet_balances
+                """
+            )
+            wallet_counts = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT
+                    (SELECT COUNT(*) FROM orynth_badge_definitions WHERE is_active = true) AS active_catalog,
+                    (SELECT COUNT(*) FROM orynth_user_badge_awards) AS awarded
+                """
+            )
+            badge_counts = cursor.fetchone()
+            cursor.execute(
+                """
+                SELECT level, COUNT(*) AS total
+                FROM orynth_system_logs
+                WHERE created_at >= %s
+                GROUP BY level
+                """,
+                (since,),
+            )
+            log_counts = {row["level"].lower(): int(row["total"] or 0) for row in cursor.fetchall()}
+            cursor.execute("SELECT COUNT(*) AS total FROM orynth_admin_events WHERE created_at >= %s", (since,))
+            admin_events_7d = int(cursor.fetchone()["total"] or 0)
+            cursor.execute(
+                """
+                SELECT e.action, e.entity_type, e.entity_identifier, e.note, e.created_at,
+                       u.username AS actor_handle, u.first_name AS actor_name
+                FROM orynth_admin_events e
+                LEFT JOIN orynth_users u ON u.id = e.actor_id
+                ORDER BY e.created_at DESC, e.id DESC
+                LIMIT 6
+                """
+            )
+            recent_admin_events = [
+                {
+                    "action": row["action"],
+                    "entity_type": row["entity_type"],
+                    "entity_identifier": row["entity_identifier"],
+                    "note": row["note"] or "",
+                    "created_at": row["created_at"].isoformat() if row["created_at"] else "",
+                    "actor": row["actor_handle"] or row["actor_name"] or "sistema",
+                }
+                for row in cursor.fetchall()
+            ]
+            cursor.execute(
+                """
+                SELECT email_enabled, smtp_host, smtp_port, default_from_email
+                FROM orynth_site_config
+                WHERE singleton_key = 1
+                """
+            )
+            site_config = cursor.fetchone()
+            smtp_secret_configured = bool(os.environ.get("ORYNTH_SMTP_PASSWORD") or os.environ.get("ORYNTH_SMTP_API_KEY"))
+            smtp_ready = bool(
+                site_config
+                and site_config["email_enabled"]
+                and site_config["smtp_host"]
+                and site_config["smtp_port"]
+                and site_config["default_from_email"]
+                and smtp_secret_configured
+            )
+            smtp_status = "ready" if smtp_ready else "pending" if site_config and site_config["email_enabled"] else "inactive"
+            return {
+                "markets": {
+                    **market_counts,
+                    "total": sum(market_counts.values()),
+                    "closing_24h": int(market_totals["closing_24h"] or 0),
+                    "total_views": int(market_totals["total_views"] or 0),
+                    "total_shares": int(market_totals["total_shares"] or 0),
+                },
+                "queues": {
+                    "suggestions_pending": suggestion_counts.get("pending", 0),
+                    "feedback_pending": feedback_counts.get("pending", 0),
+                    "feedback_high_pending": feedback_severity_counts.get("high", 0),
+                    "comments_hidden": int(comment_counts["hidden"] or 0),
+                    "action_total": market_counts.get("locked", 0)
+                    + suggestion_counts.get("pending", 0)
+                    + feedback_counts.get("pending", 0)
+                    + feedback_severity_counts.get("high", 0)
+                    + int(comment_counts["hidden"] or 0),
+                },
+                "users": {
+                    "total": int(user_counts["total"] or 0),
+                    "active": int(user_counts["active"] or 0),
+                    "deactivated": int(user_counts["deactivated"] or 0),
+                    "staff": int(user_counts["staff"] or 0),
+                    "superuser": int(user_counts["superuser"] or 0),
+                    "new_7d": int(user_counts["new_7d"] or 0),
+                },
+                "engagement": {
+                    "predictions_total": int(prediction_counts["total"] or 0),
+                    "predictions_open": int(prediction_counts["open"] or 0),
+                    "predictions_resolved": int(prediction_counts["resolved"] or 0),
+                    "predictions_canceled": int(prediction_counts["canceled"] or 0),
+                    "predictions_7d": int(prediction_counts["created_7d"] or 0),
+                    "comments_total": int(comment_counts["total"] or 0),
+                    "comments_visible": int(comment_counts["visible"] or 0),
+                    "comments_hidden": int(comment_counts["hidden"] or 0),
+                },
+                "wallet": {
+                    "available_oc": int(wallet_counts["available_oc"] or 0),
+                    "locked_oc": int(wallet_counts["locked_oc"] or 0),
+                },
+                "badges": {
+                    "active_catalog": int(badge_counts["active_catalog"] or 0),
+                    "awarded": int(badge_counts["awarded"] or 0),
+                },
+                "system": {
+                    "logs_error_7d": log_counts.get("error", 0),
+                    "logs_warning_7d": log_counts.get("warning", 0),
+                    "logs_critical_7d": log_counts.get("critical", 0),
+                    "admin_events_7d": admin_events_7d,
+                    "maintenance_enabled": _maintenance_mode_active(),
+                    "smtp_status": smtp_status,
+                    "recaptcha_enabled": os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
+                },
+                "top_markets": top_markets,
+                "recent_admin_events": recent_admin_events,
+            }
 
 
 @app.get("/admin/users", response_model=AdminUserListResponse)

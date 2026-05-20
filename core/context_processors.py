@@ -1,6 +1,7 @@
 from accounts.api_client import AuthAPIError, get_me, get_wallet
 from accounts.session import auth_token, auth_user, is_authenticated
 from core.domain_client import get_domain_client
+from core.platform_config import maintenance_enabled
 
 
 def _display_handle(value):
@@ -31,7 +32,16 @@ def session_context(request):
         viewer["reputation"] = reputation.get("reputation_score", viewer["reputation"])
         viewer["accuracy"] = reputation.get("accuracy_indicator", viewer.get("accuracy", "0%"))
         viewer["streak"] = reputation.get("streak", viewer.get("streak", 0))
-    return {"viewer": viewer, "is_guest": not is_authenticated(request)}
+    operator_maintenance_notice = bool(
+        user
+        and (user.get("is_staff") or user.get("is_superuser"))
+        and maintenance_enabled()
+    )
+    return {
+        "viewer": viewer,
+        "is_guest": not is_authenticated(request),
+        "operator_maintenance_notice": operator_maintenance_notice,
+    }
 
 
 def _local_wallet(user_id):

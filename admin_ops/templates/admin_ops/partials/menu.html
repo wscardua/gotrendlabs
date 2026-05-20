@@ -1,5 +1,6 @@
 <aside class="panel admin-menu">
   <a class="{% if active == 'dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
+  <a class="{% if active == 'config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>
   <a class="{% if active == 'users' %}active{% endif %}" href="{% url 'admin-ops-users' %}">Usuários</a>
   <a class="{% if active == 'taxonomy' %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>
   <a class="{% if active == 'badges' %}active{% endif %}" href="{% url 'admin-ops-badges' %}">Badge</a>

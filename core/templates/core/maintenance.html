@@ -1,0 +1,51 @@
+{% load static %}
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Orynth | Site em manutenção</title>
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260520-config">
+  <script src="{% static 'js/orynth.js' %}?v=20260520-config" defer></script>
+</head>
+<body>
+  <header class="topbar maintenance-topbar">
+    <nav class="shell nav">
+      <a class="brand" href="{% url 'maintenance' %}"><span class="brand-mark">O</span><span>Orynth</span></a>
+      <div class="nav-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button>
+        <a class="btn small primary" href="{% url 'login' %}?next={% url 'home' %}">Login operador</a>
+      </div>
+    </nav>
+  </header>
+  <main class="maintenance-shell">
+    <section class="maintenance-hero">
+      <div class="maintenance-copy">
+        <span class="eyebrow">Manutenção programada</span>
+        <h1>Orynth está ficando mais estável.</h1>
+        <p>{{ platform_config.maintenance_message|default:"Estamos ajustando a plataforma para manter previsões, rankings e operações administrativas mais estáveis. Voltamos em breve." }}</p>
+        <div class="maintenance-actions">
+          <a class="btn primary" href="{% url 'login' %}?next={% url 'home' %}">Entrar como operador</a>
+          <span>Staff, admins e superusers podem acessar o site autenticado durante a manutenção.</span>
+        </div>
+      </div>
+      <div class="maintenance-preview" aria-label="Resumo da plataforma Orynth">
+        <div class="maintenance-status">
+          <span></span>
+          <strong>Ambiente protegido</strong>
+        </div>
+        <div class="maintenance-ticket">
+          <span>Mercado social</span>
+          <strong>Previsões com reputação pública</strong>
+          <small>Usuários defendem hipóteses, acompanham consenso e ganham badges por histórico real.</small>
+        </div>
+        <div class="maintenance-metrics" aria-label="Pilares da plataforma">
+          <div><strong>OC</strong><span>Moeda educativa</span></div>
+          <div><strong>Auditável</strong><span>Resolução transparente</span></div>
+          <div><strong>Ranking</strong><span>Reputação por acerto</span></div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -23,6 +23,8 @@
 - Ações administrativas de usuário devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust` em `orynth_admin_events`.
 - Ajuste manual de wallet deve ser persistido em `orynth_wallet_ledger` como `manual_adjustment` e atualizar `orynth_wallet_balances` na mesma transação.
 - Logs técnicos de troubleshooting ficam em `orynth_system_logs`, com retenção por `expires_at`, índices de consulta operacional e contexto JSON redigido/truncado.
+- Parâmetros operacionais persistentes ficam em `orynth_site_config`, uma configuração singleton expansível para novos ajustes do site; nesta fatia inclui SMTP não sensível, com host, porta, usuário, TLS/SSL, timeout, remetente, reply-to, operador e timestamp de alteração.
+- Senhas, API keys e segredos SMTP não são persistidos no banco.
 
 ## Não Responsabilidades
 

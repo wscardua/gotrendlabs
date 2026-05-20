@@ -17,6 +17,7 @@ from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, is_authenticated
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from core.domain_client import get_domain_client, local_market, local_markets, local_stats
+from core.platform_config import load_platform_config
 from core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
 from markets.models import Market, MarketSuggestion, ProductFeedback
 from accounts.models import UserBadgeAward, UserProfile, UserReputation
@@ -46,6 +47,10 @@ def _verify_guest_recaptcha(request):
         verify_recaptcha_response(request.POST.get("g-recaptcha-response", ""), remote_ip=_request_ip(request))
     except RecaptchaError as exc:
         raise AuthAPIError(str(exc), 422) from exc
+
+
+def maintenance(request):
+    return render(request, "core/maintenance.html", {"platform_config": load_platform_config()})
 
 
 def _market_thumb_fallback(market):

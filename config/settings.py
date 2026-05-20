@@ -33,6 +33,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "core.middleware.MaintenanceModeMiddleware",
     "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -74,11 +75,11 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("POSTGRES_DB", "orynth"),
-            "USER": os.environ.get("POSTGRES_USER", "orynth"),
-            "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "orynth_dev_password"),
-            "HOST": os.environ.get("POSTGRES_HOST", "127.0.0.1"),
-            "PORT": os.environ.get("POSTGRES_PORT", "5432"),
+            "NAME": os.environ.get("DJANGO_POSTGRES_DB") or os.environ.get("POSTGRES_DB", "orynth"),
+            "USER": os.environ.get("DJANGO_POSTGRES_USER") or os.environ.get("POSTGRES_USER", "orynth"),
+            "PASSWORD": os.environ.get("DJANGO_POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD", "orynth_dev_password"),
+            "HOST": os.environ.get("DJANGO_POSTGRES_HOST") or os.environ.get("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("DJANGO_POSTGRES_PORT") or os.environ.get("POSTGRES_PORT", "5432"),
         }
     }
 
@@ -108,6 +109,9 @@ else:
     RECAPTCHA_ENABLED = bool(RECAPTCHA_SECRET_KEY)
 
 SYSTEM_LOG_RETENTION_DAYS = int(os.environ.get("SYSTEM_LOG_RETENTION_DAYS", "90"))
+ORYNTH_RUNTIME_CONFIG_PATH = os.environ.get("ORYNTH_RUNTIME_CONFIG_PATH", str(BASE_DIR / ".runtime" / "platform_config.json"))
+ORYNTH_SMTP_PASSWORD = os.environ.get("ORYNTH_SMTP_PASSWORD", "")
+ORYNTH_SMTP_API_KEY = os.environ.get("ORYNTH_SMTP_API_KEY", "")
 
 LOGGING = {
     "version": 1,

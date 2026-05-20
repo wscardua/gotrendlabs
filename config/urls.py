@@ -12,6 +12,7 @@ from wallet import views as wallet_views
 
 urlpatterns = [
     path("", core_views.home, name="home"),
+    path("maintenance/", core_views.maintenance, name="maintenance"),
     path("concepts/", core_views.concepts, name="concepts"),
     path("categories/", core_views.categories, name="categories"),
     path("security/", core_views.security, name="security"),
@@ -40,6 +41,7 @@ urlpatterns = [
     path("profile/", profile_views.profile, name="profile"),
     path("rankings/", profile_views.rankings, name="rankings"),
     path("admin-ops/", admin_ops_views.dashboard, name="admin-ops-dashboard"),
+    path("admin-ops/config/", admin_ops_views.config, name="admin-ops-config"),
     path("admin-ops/markets/", admin_ops_views.markets, name="admin-ops-markets"),
     path("admin-ops/users/", admin_ops_views.users, name="admin-ops-users"),
     path("admin-ops/users/<int:user_id>/", admin_ops_views.user_detail, name="admin-ops-user-detail"),
