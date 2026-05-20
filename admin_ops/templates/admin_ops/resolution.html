@@ -47,6 +47,7 @@
         <tr><td colspan="5">Nenhum mercado fechado ou resolvido na fila operacional.</td></tr>
       {% endfor %}
     </table>
+    {% include "admin_ops/partials/load_more.html" with pagination=resolution_pagination label="Mais mercados para resolução" %}
   </section>
 </main>
 {% endblock %}

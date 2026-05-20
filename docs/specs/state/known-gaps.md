@@ -17,4 +17,4 @@
 - FEAT-REP-001 usa fórmula MVP em resolução; fórmula avançada futura depende de decisão técnica registrada.
 - FEAT-REP-001 possui badges administráveis, concessão automática MVP e compartilhamento social com card Open Graph/Twitter; ainda faltam raridade pública, temporadas e reprocessamento administrativo em lote.
 - FEAT-SUGGEST-001 cobre a primeira fatia real de filas para sugestões de mercado e feedback recompensável, com reCAPTCHA opcional para visitantes; ainda faltam event bus assíncrono, histórico público de feedback do usuário e comunicações transacionais.
-- FEAT-OPSLOG-001 cobre logs técnicos persistidos, redaction, retenção com prune backend reutilizável, consulta staff paginada e heartbeat/status do daemon no Dashboard; ainda faltam alertas, integração externa de observabilidade e métricas operacionais temporais mais ricas.
+- FEAT-OPSLOG-001 cobre logs técnicos persistidos, redaction, retenção com prune backend reutilizável, consulta staff com `Carregar mais` e heartbeat/status do daemon no Dashboard; ainda faltam alertas, integração externa de observabilidade e métricas operacionais temporais mais ricas.

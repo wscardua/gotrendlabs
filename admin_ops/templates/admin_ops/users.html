@@ -61,8 +61,8 @@
     </form>
 
     <div class="user-result-meta">
-      <strong>{{ user_data.users|length }}</strong>
-      <span>contas nesta visualização</span>
+      <strong>{{ user_pagination.visible_count }}</strong>
+      <span>de {{ user_pagination.total }} contas nesta visualização</span>
     </div>
 
     <div class="user-list" role="list">
@@ -95,6 +95,7 @@
         </div>
       {% endfor %}
     </div>
+    {% include "admin_ops/partials/load_more.html" with pagination=user_pagination label="Mais usuários" %}
   </section>
 </main>
 {% endblock %}

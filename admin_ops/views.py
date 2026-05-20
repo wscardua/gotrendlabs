@@ -1,7 +1,6 @@
 from pathlib import Path
 import json
 from datetime import datetime
-from urllib.parse import urlencode
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
@@ -80,11 +79,49 @@ from core.platform_config import load_platform_config, save_platform_config
 
 THUMB_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "market_thumbnails", base_url=settings.MEDIA_URL + "market_thumbnails/")
 BADGE_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "badge_images", base_url=settings.MEDIA_URL + "badge_images/")
+LOAD_MORE_STEP = 10
 
 
 def _display_handle(value):
     value = (value or "").strip()
     return value if value.startswith("@") else f"@{value}"
+
+
+def _normalized_load_more_limit(raw_limit, step=LOAD_MORE_STEP):
+    try:
+        limit = int(raw_limit or step)
+    except (TypeError, ValueError):
+        limit = step
+    if limit < step:
+        limit = step
+    if limit % step:
+        limit = ((limit // step) + 1) * step
+    return limit
+
+
+def _load_more_query(request, next_limit):
+    query = request.GET.copy()
+    for key in ("page", "page_size"):
+        query.pop(key, None)
+    query["limit"] = str(next_limit)
+    return f"?{query.urlencode()}"
+
+
+def _load_more_context(request, total, visible_count, current_limit):
+    return {
+        "total": total,
+        "visible_count": visible_count,
+        "has_more": visible_count < total,
+        "next_url": _load_more_query(request, current_limit + LOAD_MORE_STEP),
+        "show": total > LOAD_MORE_STEP,
+    }
+
+
+def _slice_load_more(request, items):
+    total = len(items)
+    limit = _normalized_load_more_limit(request.GET.get("limit"))
+    visible_items = items[:limit]
+    return visible_items, _load_more_context(request, total, len(visible_items), limit)
 
 
 def _parse_datetime(value):
@@ -423,11 +460,14 @@ def markets(request):
         error = str(exc)
     else:
         error = ""
+    visible_markets, market_pagination = _slice_load_more(request, market_data.get("markets", []))
+    market_data = {**market_data, "markets": visible_markets}
     return render(
         request,
         "admin_ops/markets.html",
         {
             "market_data": market_data,
+            "market_pagination": market_pagination,
             "admin_error": error,
             "active_status": status_filter,
             "active_order": active_order,
@@ -450,11 +490,14 @@ def users(request):
         error = str(exc)
     else:
         error = ""
+    visible_users, user_pagination = _slice_load_more(request, user_data.get("users", []))
+    user_data = {**user_data, "users": visible_users}
     return render(
         request,
         "admin_ops/users.html",
         {
             "user_data": user_data,
+            "user_pagination": user_pagination,
             "admin_error": error,
             "active_q": filters["q"],
             "active_status": filters["status"],
@@ -481,8 +524,8 @@ def system_logs(request):
         "exception_type": request.GET.get("exception_type") or "",
         "from": request.GET.get("from") or "",
         "to": request.GET.get("to") or "",
-        "page": request.GET.get("page") or "1",
-        "page_size": request.GET.get("page_size") or "50",
+        "page": "1",
+        "page_size": str(_normalized_load_more_limit(request.GET.get("limit") or request.GET.get("page_size"))),
     }
     try:
         log_data = admin_get_system_logs(token, **filters)
@@ -509,29 +552,15 @@ def system_logs(request):
         except (TypeError, ValueError):
             return default
 
-    page = _safe_int(log_data.get("page") or filters["page"], 1)
     page_size = _safe_int(log_data.get("page_size") or filters["page_size"], 50)
     total = _safe_int(log_data.get("total"), 0)
-    total_pages = max(1, (total + page_size - 1) // page_size)
-    page = min(max(page, 1), total_pages)
-
-    def _page_url(target_page):
-        query = {key: value for key, value in filters.items() if value}
-        query["page"] = target_page
-        query["page_size"] = page_size
-        return f"?{urlencode(query)}"
-
     pagination = {
-        "page": page,
         "page_size": page_size,
-        "total_pages": total_pages,
         "total": total,
-        "previous_url": _page_url(page - 1) if page > 1 else "",
-        "next_url": _page_url(page + 1) if page < total_pages else "",
-        "first_url": _page_url(1) if page > 1 else "",
-        "last_url": _page_url(total_pages) if page < total_pages else "",
-        "start": ((page - 1) * page_size + 1) if total else 0,
-        "end": min(page * page_size, total),
+        "visible_count": len(log_data.get("logs", [])),
+        "has_more": len(log_data.get("logs", [])) < total,
+        "next_url": _load_more_query(request, page_size + LOAD_MORE_STEP),
+        "show": total > LOAD_MORE_STEP,
     }
     return render(
         request,
@@ -770,11 +799,14 @@ def moderation(request):
             error = error or str(exc)
     reverse = filters.get("order") != "created_asc"
     queue_data["items"] = sorted(queue_data.get("items", []), key=lambda item: (item.get("created_at", ""), item["id"]), reverse=reverse)
+    visible_items, queue_pagination = _slice_load_more(request, queue_data.get("items", []))
+    queue_data = {**queue_data, "items": visible_items}
     return render(
         request,
         "admin_ops/moderation.html",
         {
             "queue_data": queue_data,
+            "queue_pagination": queue_pagination,
             "active_kind": filters["kind"],
             "active_status": filters["status"],
             "active_severity": filters["severity"],
@@ -804,10 +836,12 @@ def resolution(request):
     pending_markets = [market for market in market_data["markets"] if not _parse_datetime(market.get("resolved_at"))]
     dated_markets.sort(key=lambda market: _parse_datetime(market.get("resolved_at")), reverse=active_order != "resolution_asc")
     market_data["markets"] = [*pending_markets, *dated_markets] if active_order == "pending_first" else [*dated_markets, *pending_markets]
+    visible_markets, resolution_pagination = _slice_load_more(request, market_data["markets"])
+    market_data = {**market_data, "markets": visible_markets}
     return render(
         request,
         "admin_ops/resolution.html",
-        {"market_data": market_data, "admin_error": error, "active_order": active_order},
+        {"market_data": market_data, "resolution_pagination": resolution_pagination, "admin_error": error, "active_order": active_order},
     )
 
 

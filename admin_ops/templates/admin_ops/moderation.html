@@ -40,6 +40,7 @@
         <tr><td colspan="7">Nenhum item encontrado para os filtros atuais.</td></tr>
       {% endfor %}
     </table>
+    {% include "admin_ops/partials/load_more.html" with pagination=queue_pagination label="Mais itens de fila" %}
   </section>
 </main>
 <div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc>Confirmação necessária para ações críticas.</p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>

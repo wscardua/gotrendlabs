@@ -45,6 +45,7 @@
         <tr><td colspan="7">Nenhum mercado cadastrado.</td></tr>
       {% endfor %}
     </table>
+    {% include "admin_ops/partials/load_more.html" with pagination=market_pagination label="Mais mercados" %}
   </section>
 </main>
 {% endblock %}
