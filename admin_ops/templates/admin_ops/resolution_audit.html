@@ -1,0 +1,123 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel resolution-audit">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Auditoria read-only</span>
+        <h1 class="large-title">{{ title }}</h1>
+        {% if market %}<p>{{ market.title }}</p>{% endif %}
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-resolution' %}">Voltar</a>
+    </div>
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    {% if audit %}
+      <div class="resolution-audit-hero">
+        <div>
+          <span>Resultado aplicado</span>
+          <strong>{{ audit.market.winning_option_label|default:"-" }}</strong>
+          <small>{% if audit.market.resolved_at_label %}{{ audit.market.resolved_at_label }}{% else %}{{ audit.market.resolved_at }}{% endif %}{% if audit.market.resolution_timezone %} · {{ audit.market.resolution_timezone }}{% endif %}</small>
+        </div>
+        <div>
+          <span>Fonte / nota</span>
+          <p>{% if audit.market.resolution_note %}{{ audit.market.resolution_note|linebreaksbr }}{% elif audit.market.source %}{{ audit.market.source }}{% else %}Sem nota registrada.{% endif %}</p>
+        </div>
+      </div>
+
+      <div class="admin-grid audit-summary-grid">
+        <div class="metric"><strong>{{ audit.summary.predictions_total }}</strong><span>participantes</span></div>
+        <div class="metric"><strong>{{ audit.summary.winners_total }}</strong><span>vencedores</span></div>
+        <div class="metric"><strong>{{ audit.summary.losers_total }}</strong><span>perdedores</span></div>
+        <div class="metric"><strong>{{ audit.summary.stake_total }} OC</strong><span>stake total</span></div>
+        <div class="metric"><strong>{{ audit.summary.refund_total }} OC</strong><span>refunds</span></div>
+        <div class="metric"><strong>{{ audit.summary.payout_total }} OC</strong><span>payout líquido</span></div>
+        <div class="metric"><strong>{{ audit.summary.loss_total }} OC</strong><span>losses</span></div>
+        <div class="metric"><strong>{{ audit.summary.badge_awards_total }}</strong><span>badges</span></div>
+      </div>
+
+      <div class="audit-ledger-guide" aria-label="Legenda dos lançamentos do ledger">
+        <div>
+          <span>Como ler o ledger</span>
+          <p>Os valores abaixo mostram os lançamentos aplicados em cada previsão durante a resolução.</p>
+        </div>
+        <dl>
+          <div>
+            <dt>refund</dt>
+            <dd>Libera ou devolve o stake bloqueado. Em vencedores, acompanha o acerto; em cancelamentos, devolve a aposta.</dd>
+          </div>
+          <div>
+            <dt>payout</dt>
+            <dd>Crédito líquido do vencedor, calculado acima do stake já liberado.</dd>
+          </div>
+          <div>
+            <dt>loss</dt>
+            <dd>Liquida o stake de quem errou, retirando o valor bloqueado sem crédito disponível.</dd>
+          </div>
+          <div>
+            <dt>0 OC</dt>
+            <dd>Indica que aquele tipo de lançamento não se aplica à previsão.</dd>
+          </div>
+          <div>
+            <dt>badges</dt>
+            <dd>Conquistas concedidas por esta resolução, filtradas pelo evento do mercado.</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="section-head compact audit-table-head">
+        <div>
+          <h3>Participantes</h3>
+          <p>{{ audit.pagination.start }}-{{ audit.pagination.end }} de {{ audit.pagination.total }}</p>
+        </div>
+        <div class="table-actions">
+          {% if audit.pagination.has_previous %}
+            <a class="btn small ghost" href="?limit={{ audit.pagination.limit }}&offset={{ audit.pagination.previous_offset }}">Anterior</a>
+          {% endif %}
+          {% if audit.pagination.has_next %}
+            <a class="btn small ghost" href="?limit={{ audit.pagination.limit }}&offset={{ audit.pagination.next_offset }}">Próxima</a>
+          {% endif %}
+        </div>
+      </div>
+      <table class="table resolution-audit-table">
+        <tr>
+          <th>Usuário</th>
+          <th>Escolha</th>
+          <th>Stake</th>
+          <th>Prob.</th>
+          <th>Payout esperado</th>
+          <th>Resultado</th>
+          <th>Ledger</th>
+          <th>Badges</th>
+        </tr>
+        {% for participant in audit.participants %}
+          <tr>
+            <td><strong>{{ participant.display_name }}</strong><br><small>{{ participant.handle }} · #{{ participant.prediction_id }}</small></td>
+            <td>{{ participant.option_label }}</td>
+            <td>{{ participant.stake_amount }} OC</td>
+            <td>{{ participant.probability_at_entry }}%</td>
+            <td>{{ participant.potential_payout }} OC</td>
+            <td>{% if participant.won %}<span class="tag safe">Venceu</span>{% else %}<span class="tag risk">Perdeu</span>{% endif %}</td>
+            <td>
+              <span class="audit-ledger-chip">refund {{ participant.ledger.prediction_refund }} OC</span>
+              <span class="audit-ledger-chip">payout {{ participant.ledger.prediction_payout }} OC</span>
+              <span class="audit-ledger-chip">loss {{ participant.ledger.prediction_loss }} OC</span>
+            </td>
+            <td>
+              {% for badge in participant.badges %}
+                <span class="audit-badge-chip" title="{{ badge.reason_snapshot }}">{{ badge.name }}</span>
+              {% empty %}
+                <span class="muted">-</span>
+              {% endfor %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="8">Nenhum participante encontrado para este mercado.</td></tr>
+        {% endfor %}
+      </table>
+    {% elif not admin_error %}
+      <p class="muted">Auditoria indisponível para este mercado.</p>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

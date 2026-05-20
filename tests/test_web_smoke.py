@@ -1280,6 +1280,8 @@ class BackendAuthAPITests(TestCase):
         loser_prediction = Prediction.objects.get(id=loser_prediction_response.json()["prediction_id"])
         lock_response = client.post("/admin/markets/resolucao-mvp-teste/lock", headers=staff_headers, json={"note": "fechar"})
         self.assertEqual(lock_response.status_code, 200)
+        audit_locked = client.get("/admin/markets/resolucao-mvp-teste/resolution-audit", headers=staff_headers)
+        self.assertEqual(audit_locked.status_code, 422)
 
         non_staff = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
@@ -1341,6 +1343,24 @@ class BackendAuthAPITests(TestCase):
         self.assertTrue(UserBadgeAward.objects.filter(user__username="@resolutionwinner", badge__code="first_resolution").exists())
         self.assertTrue(UserBadgeAward.objects.filter(user__username="@resolutionloser", badge__code="first_resolution").exists())
         self.assertTrue(AdminEvent.objects.filter(action="market.resolve", entity_identifier="resolucao-mvp-teste").exists())
+        audit_non_staff = client.get("/admin/markets/resolucao-mvp-teste/resolution-audit", headers=winner_headers)
+        self.assertEqual(audit_non_staff.status_code, 403)
+        audit = client.get("/admin/markets/resolucao-mvp-teste/resolution-audit", headers=staff_headers, params={"limit": 1, "offset": 0})
+        self.assertEqual(audit.status_code, 200)
+        audit_payload = audit.json()
+        self.assertEqual(audit_payload["market"]["slug"], "resolucao-mvp-teste")
+        self.assertEqual(audit_payload["market"]["winning_option_id"], winning_option.id)
+        self.assertEqual(audit_payload["summary"]["predictions_total"], 2)
+        self.assertEqual(audit_payload["summary"]["winners_total"], 1)
+        self.assertEqual(audit_payload["summary"]["losers_total"], 1)
+        self.assertEqual(audit_payload["summary"]["stake_total"], 200)
+        self.assertEqual(audit_payload["summary"]["refund_total"], 100)
+        self.assertEqual(audit_payload["summary"]["payout_total"], winner_prediction.potential_payout - 100)
+        self.assertEqual(audit_payload["summary"]["loss_total"], 100)
+        self.assertGreaterEqual(audit_payload["summary"]["badge_awards_total"], 2)
+        self.assertEqual(audit_payload["pagination"], {"limit": 1, "offset": 0, "total": 2})
+        self.assertEqual(len(audit_payload["participants"]), 1)
+        self.assertIn("prediction_refund", audit_payload["participants"][0]["ledger"])
 
         duplicate = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
@@ -3691,6 +3711,7 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "Mercado resolvido API")
             self.assertContains(response, "Resolver")
             self.assertContains(response, "Desfazer resolução")
+            self.assertContains(response, "Auditoria")
             self.assertContains(response, "Resolução recente")
             self.assertContains(response, "Revise mercados fechados, publique decisões e desfaça resoluções quando houver necessidade operacional.")
             self.assertContains(response, "18/05/2026 09:00 America/Sao_Paulo")
@@ -3718,6 +3739,62 @@ class WebSmokeTests(TestCase):
             self.assertEqual(response.status_code, 302)
             self.assertEqual(resolve_mock.call_args.args[5].strftime("%Y-%m-%dT%H:%M"), "2026-05-18T20:03")
             self.assertEqual(resolve_mock.call_args.args[6], "America/Sao_Paulo")
+
+        audit_payload = {
+            "market": {
+                "slug": "resolved-api",
+                "title": "Mercado resolvido API",
+                "status": "resolved",
+                "winning_option_label": "SIM",
+                "resolved_at_label": "18/05/2026 09:00 America/Sao_Paulo",
+                "resolution_timezone": "America/Sao_Paulo",
+                "resolution_note": "Resultado confirmado.\nFonte: https://fonte.example",
+            },
+            "summary": {
+                "predictions_total": 2,
+                "winners_total": 1,
+                "losers_total": 1,
+                "stake_total": 200,
+                "refund_total": 100,
+                "payout_total": 80,
+                "loss_total": 100,
+                "badge_awards_total": 1,
+            },
+            "participants": [
+                {
+                    "user_id": 10,
+                    "handle": "@auditwinner",
+                    "display_name": "Audit Winner",
+                    "prediction_id": 90,
+                    "option_label": "SIM",
+                    "stake_amount": 100,
+                    "probability_at_entry": 55.0,
+                    "potential_payout": 180,
+                    "won": True,
+                    "ledger": {"prediction_refund": 100, "prediction_payout": 80, "prediction_loss": 0},
+                    "badges": [{"code": "first_resolution", "name": "Primeira resolução", "awarded_at": "2026-05-18T12:01:00+00:00", "reason_snapshot": "market_resolved:1"}],
+                }
+            ],
+            "pagination": {"limit": 1, "offset": 0, "total": 2},
+        }
+        with patch("admin_ops.views.admin_get_market", return_value=resolved_market), patch("admin_ops.views.admin_get_market_resolution_audit", return_value=audit_payload) as audit_mock:
+            response = self.client.get(f"{reverse('admin-ops-resolution-market-action', args=['resolved-api', 'audit'])}?limit=1&offset=0")
+            self.assertContains(response, "Auditoria da resolução")
+            self.assertContains(response, "Resultado aplicado")
+            self.assertContains(response, "Como ler o ledger")
+            self.assertContains(response, "Crédito líquido do vencedor")
+            self.assertContains(response, "Liquida o stake de quem errou")
+            self.assertContains(response, "SIM")
+            self.assertContains(response, "payout 80 OC")
+            self.assertContains(response, "Primeira resolução")
+            self.assertContains(response, "Próxima")
+            audit_mock.assert_called_once_with("staff-token", "resolved-api", limit=1, offset=0)
+
+        with patch("admin_ops.views.admin_get_market", return_value=resolved_market), patch("admin_ops.views.admin_get_market_resolution_audit", return_value={**audit_payload, "pagination": {"limit": 10, "offset": 0, "total": 20}}) as audit_mock:
+            response = self.client.get(reverse("admin-ops-resolution-market-action", args=["resolved-api", "audit"]))
+            self.assertContains(response, "1-10 de 20")
+            self.assertContains(response, "?limit=10&offset=10")
+            audit_mock.assert_called_once_with("staff-token", "resolved-api", limit=10, offset=0)
 
         queue_data = {
             "items": [

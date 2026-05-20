@@ -288,6 +288,16 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-RES-001
 
+### 2026-05-20 - v0.4
+- ciclo operacional de mercado foi centralizado na `MarketLifecycleEngine`, mantendo handlers HTTP apenas com autenticação, transação, chamada da engine e serialização
+- FastAPI passou a expor `GET /admin/markets/{slug}/resolution-audit` como contrato staff read-only para mercados resolvidos
+- auditoria agrega participantes, winners/losers, stakes, refunds, payouts, losses e badges concedidas na resolução a partir de SQL no backend
+- Admin Ops passou a mostrar ação “Auditoria” para mercados resolvidos, com tela própria, paginação de 10 participantes e legenda de ledger
+- Dashboard Admin Ops recebeu ajustes de contraste em modo escuro para KPIs, métricas, saúde técnica, tabelas e alertas
+- QA hard com 100 usuários simulados foi registrada em `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`
+- contratos relacionados: `market-lifecycle.md`, `wallet-ledger.md`, `reputation-ranking.md`, `domain-events.md`
+- status de implementação: `parcial`
+
 ### 2026-05-19 - v0.3
 - cancelamento administrativo passou a validar que não restam previsões `open` após aplicar refund total
 - adicionada reconciliação operacional idempotente para mercados já `canceled` que ainda possuam previsões `open`

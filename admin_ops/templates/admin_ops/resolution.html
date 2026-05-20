@@ -36,6 +36,7 @@
             {% if market.status == "locked" %}
               <a class="btn small primary" href="{% url 'admin-ops-resolution-market-action' market.slug 'resolve' %}">Resolver</a>
             {% elif market.status == "resolved" %}
+              <a class="btn small ghost" href="{% url 'admin-ops-resolution-market-action' market.slug 'audit' %}">Auditoria</a>
               <a class="btn small danger" href="{% url 'admin-ops-resolution-market-action' market.slug 'cancel-refund' %}">Desfazer resolução</a>
             {% endif %}
             <a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Revisar</a>

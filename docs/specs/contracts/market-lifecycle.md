@@ -32,12 +32,17 @@
 - A transição `locked -> resolved` exige operador ou processo autorizado, evidência, justificativa, opção vencedora, data/hora efetiva e timezone de resolução.
 - `resolved_at` deve guardar o momento efetivo da resolução; `resolution_timezone` deve preservar o timezone selecionado para apresentação/auditoria.
 - Timezone de resolução no Admin Ops deve ser selecionado a partir de lista controlada, não informado em texto livre.
+- No backend, publicação, fechamento manual, cancelamento, resolução e desfazer resolução devem permanecer centralizados em `MarketLifecycleEngine`, operando sobre cursor/transação recebidos de fora.
 - Cancelamento administrativo muda o mercado para `canceled`, preserva o registro e deve gravar evento administrativo.
 - `canceled` devolve 100% dos stakes bloqueados por previsões abertas, marca previsões como `canceled` e não altera reputação.
 - O fluxo normal de cancelamento deve validar que nenhuma previsão `open` permaneceu no mercado antes de concluir a transição para `canceled`.
 - Estados históricos inconsistentes, como mercado `canceled` com previsões ainda `open`, devem ser corrigidos por reconciliação operacional idempotente, com refund ausente em `prediction_refund` e evento administrativo `market.cancel_reconcile`.
 - `resolved -> locked` é uma operação administrativa excepcional para desfazer resolução; deve estornar payout líquido, rebloquear stakes, reabrir previsões internas como pendentes de resultado e recalcular reputação.
 - Mercado `resolved` não pode ser editado; alterações exigem desfazer resolução antes.
+- Mercados `resolved` devem expor auditoria staff read-only via `GET /admin/markets/{slug}/resolution-audit`, sem mutação e sem recalcular regra no Django.
+- A auditoria de resolução deve retornar erro `422` para mercados que não estejam em `resolved`.
+- A auditoria deve resumir totais de participantes, vencedores, perdedores, stakes, refunds, payouts, losses e badges concedidas na resolução.
+- A lista de participantes da auditoria deve ser paginada, com default de UI em 10 itens por página, e expor escolha, stake, probabilidade de entrada, payout esperado, resultado, lançamentos de ledger e badges da resolução.
 
 ## Campos mínimos expostos
 

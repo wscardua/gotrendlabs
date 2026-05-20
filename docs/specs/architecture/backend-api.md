@@ -28,6 +28,8 @@
 - Reações de comentário devem ser tratadas como substituição idempotente por usuário/comentário: `like` substitui `dislike` e vice-versa.
 - Moderação administrativa de comentário deve registrar evento administrativo e preservar o registro original.
 - Resolução administrativa deve persistir opção vencedora, `resolved_at`, `resolution_timezone`, nota/fonte, efeitos de ledger e evento administrativo na mesma transação.
+- O ciclo operacional de mercado deve ser centralizado na `MarketLifecycleEngine`; handlers HTTP apenas autenticam/autorizam staff, abrem transação/conexão, chamam a engine e serializam a resposta.
+- `GET /admin/markets/{slug}/resolution-audit` deve expor auditoria staff read-only para mercados `resolved`, agregando previsões, ledger e badges sem mutação e retornando `422` para demais estados.
 - Ranking público deve excluir usuários administrativos (`is_staff` e `is_superuser`).
 - Ranking global usa reputação persistida; ranking por categoria/subcategoria pode ser calculado em leitura a partir de previsões resolvidas enquanto não houver materialização dedicada.
 - Catálogo, regra executável e concessão de badges são autoridade do backend; Admin Ops e frontend apenas consomem contratos.

@@ -10,7 +10,7 @@
 - FEAT-AUTH-001 ainda precisa de política final para cookie seguro, refresh/revogação avançada e hardening fora do ambiente local.
 - FEAT-AUTH-001 ainda não confirma alteração de email por mensagem transacional; alteração é direta nesta fase.
 - FEAT-AUTH-001 usa versão fixa de política de uso `2026-05-17`; versionamento administrável fica para etapa futura.
-- FEAT-MARKET-001/002 possui admin CRUD básico real para mercado e taxonomia; ainda faltam revisão editorial avançada, gestão de operadores e auditoria avançada.
+- FEAT-MARKET-001/002 possui admin CRUD básico real para mercado e taxonomia, e FEAT-RES-001 possui auditoria staff read-only de resolução aplicada; ainda faltam revisão editorial avançada, gestão de operadores e auditorias avançadas fora do ciclo de resolução.
 - Fallbacks locais mutáveis foram removidos de previsão/stake, ranking, comentários e Admin Ops; em indisponibilidade da FastAPI, Django deve exibir erro/estado vazio em vez de alterar domínio diretamente.
 - FEAT-MARKET-001/002 usa snapshots persistidos e séries visuais derivadas de `orynth_predictions`; ainda falta tabela materializada de histórico de snapshots para analytics/escala.
 - FEAT-WALLET-001 já possui bloqueio de stake, refund, payout, perda por resolução, reconciliação operacional para cancelados inconsistentes e ajuste manual auditado por admin; ainda falta recarga educativa.
