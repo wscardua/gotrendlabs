@@ -1,0 +1,112 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Log{% endblock %}
+{% block content %}
+<main class="shell admin-layout system-log-detail-page">
+  <section class="panel system-log-detail-shell">
+    <div class="system-log-hero {% if log.level == 'ERROR' or log.level == 'CRITICAL' %}is-risk{% elif log.level == 'WARNING' %}is-warn{% else %}is-safe{% endif %}">
+      <div class="system-log-hero-main">
+        <a class="context-back" href="{% url 'admin-ops-system-logs' %}">← Logs</a>
+        <span class="eyebrow">Troubleshooting</span>
+        <h1 class="large-title">Log #{{ log.id|default:"-" }}</h1>
+        {% if log and log.event_type != "request" %}
+          <p>{{ log.message }}</p>
+        {% else %}
+          {% if not log %}<p>Não foi possível carregar o detalhe deste registro.</p>{% endif %}
+        {% endif %}
+      </div>
+      {% if log %}
+        <div class="system-log-hero-aside">
+          <span class="system-log-level">{{ log.level }}</span>
+          <span>{{ log.source }}</span>
+        </div>
+      {% endif %}
+    </div>
+
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+
+    {% if log %}
+      <div class="system-log-summary-grid">
+        <article>
+          <span>Status</span>
+          <strong>{{ log.status_code|default:"-" }}</strong>
+          <small>{{ log.duration_ms|default:"-" }} ms</small>
+        </article>
+        <article>
+          <span>Método</span>
+          <strong>{{ log.method|default:"-" }}</strong>
+          <small>{{ log.path|default:"-" }}</small>
+        </article>
+        <article>
+          <span>Request ID</span>
+          <strong>{{ log.request_id|default:"-" }}</strong>
+          <small>{{ log.created_at }}</small>
+        </article>
+        <article>
+          <span>Usuário</span>
+          <strong>{{ log.user_identifier|default:"-" }}</strong>
+          <small>{{ log.ip_address|default:"-" }}</small>
+        </article>
+      </div>
+
+      <div class="system-log-detail-grid">
+        <div class="system-log-primary">
+          {% if log.event_type != "request" or log.exception_type %}
+            <section class="system-log-panel">
+              <div class="system-log-panel-head">
+                <div>
+                  <span class="eyebrow">Mensagem</span>
+                  <h2>Evento registrado</h2>
+                </div>
+                {% if log.exception_type %}<span class="tag risk">{{ log.exception_type }}</span>{% endif %}
+              </div>
+              <p class="system-log-message">{{ log.message }}</p>
+            </section>
+          {% endif %}
+
+          <section class="system-log-panel">
+            <div class="system-log-panel-head">
+              <div>
+                <span class="eyebrow">Payload redigido</span>
+                <h2>Contexto</h2>
+              </div>
+            </div>
+            <pre class="system-log-code">{{ context_pretty }}</pre>
+          </section>
+
+          {% if log.stack_trace %}
+            <section class="system-log-panel">
+              <div class="system-log-panel-head">
+                <div>
+                  <span class="eyebrow">Exceção</span>
+                  <h2>Stack trace</h2>
+                </div>
+              </div>
+              <pre class="system-log-code">{{ log.stack_trace }}</pre>
+            </section>
+          {% endif %}
+        </div>
+
+        <aside class="system-log-sidebar">
+          <section class="system-log-panel compact">
+            <span class="eyebrow">Roteamento</span>
+            <dl class="system-log-facts">
+              <div><dt>Logger</dt><dd>{{ log.logger_name|default:"-" }}</dd></div>
+              <div><dt>Evento</dt><dd>{{ log.event_type }}</dd></div>
+              <div><dt>Origem</dt><dd>{{ log.source }}</dd></div>
+              <div><dt>Expira</dt><dd>{{ log.expires_at }}</dd></div>
+            </dl>
+          </section>
+          <section class="system-log-panel compact">
+            <span class="eyebrow">Request</span>
+            <dl class="system-log-facts">
+              <div><dt>Path</dt><dd>{{ log.path|default:"-" }}</dd></div>
+              <div><dt>User agent</dt><dd>{{ log.user_agent|default:"-" }}</dd></div>
+              <div><dt>IP</dt><dd>{{ log.ip_address|default:"-" }}</dd></div>
+            </dl>
+          </section>
+        </aside>
+      </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

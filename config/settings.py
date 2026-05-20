@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "wallet",
     "profiles",
     "admin_ops",
+    "system_logs",
 ]
 
 MIDDLEWARE = [
@@ -36,6 +37,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "system_logs.middleware.SystemLogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -104,3 +106,42 @@ if "RECAPTCHA_ENABLED" in os.environ:
     RECAPTCHA_ENABLED = os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"}
 else:
     RECAPTCHA_ENABLED = bool(RECAPTCHA_SECRET_KEY)
+
+SYSTEM_LOG_RETENTION_DAYS = int(os.environ.get("SYSTEM_LOG_RETENTION_DAYS", "90"))
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {
+        "standard": {
+            "format": "%(levelname)s %(name)s %(message)s",
+        },
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "standard",
+        },
+        "database": {
+            "class": "system_logs.logging.DatabaseLogHandler",
+            "formatter": "standard",
+            "level": "INFO",
+        },
+    },
+    "root": {
+        "handlers": ["console", "database"],
+        "level": "INFO",
+    },
+    "loggers": {
+        "django.server": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "system_logs": {
+            "handlers": ["console"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+    },
+}

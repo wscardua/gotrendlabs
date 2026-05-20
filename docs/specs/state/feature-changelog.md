@@ -13,6 +13,23 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação resultante
 ```
 
+## FEAT-OPSLOG-001
+
+### 2026-05-20 - v0.2
+- Admin Ops passou a paginar o browse de logs e preservar filtros entre páginas
+- filtro de usuário passou a usar identificador pesquisável por `@handle`, nome, email ou ID, carregando usuários comuns, staff e superusers
+- contratos administrativos de logs passaram a expor `user_identifier` para exibição operacional amigável
+- detalhe do log remove duplicações visuais de mensagem/request e mantém usuário apenas no card principal
+- spec passou a explicitar cobertura de logs técnicos de segurança e fronteira com `orynth_auth_events`
+- status de implementação: `parcial`
+
+### 2026-05-20 - v0.1
+- criada spec inicial para logs técnicos de troubleshooting
+- adicionada persistência em `orynth_system_logs` com retenção, redaction e contexto JSON
+- FastAPI passou a expor contratos staff para listagem e detalhe de logs
+- Django Admin Ops passou a consultar logs técnicos com filtros e tela de detalhe
+- status de implementação: `parcial`
+
 ## FEAT-AUTH-001
 
 ### 2026-05-19 - v0.8

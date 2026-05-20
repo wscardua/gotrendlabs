@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from ipaddress import ip_address as parse_ip_address
 import re
+import time
 from typing import Optional
 import unicodedata
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -50,10 +51,13 @@ from backend_api.schemas import (
     RegisterPayload,
     SessionContextResponse,
     SuggestionRewardPayload,
+    SystemLogListResponse,
+    SystemLogResponse,
     UserProfileResponse,
 )
 from backend_api.security import check_password, hash_token, issue_token, make_password
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
+from system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
 
 SESSION_TTL = timedelta(days=14)
 INITIAL_GRANT_OC = 2000
@@ -75,6 +79,59 @@ BADGE_RULE_TYPES = {
 BADGE_TYPES = {"global", "category", "performance", "engagement"}
 
 app = FastAPI(title="Orynth Backend API", version="0.1.0")
+
+
+@app.middleware("http")
+async def system_log_middleware(request: Request, call_next):
+    started_at = time.perf_counter()
+    request_id = request.headers.get("x-request-id") or new_request_id()
+    ip_address, user_agent = _client_meta(request)
+    user_id = _request_user_id(request.headers.get("authorization", ""))
+    try:
+        response = await call_next(request)
+    except Exception as exc:
+        duration_ms = int((time.perf_counter() - started_at) * 1000)
+        exception_type, stack_trace = exception_payload(exc)
+        log_system_event(
+            level="ERROR",
+            source="fastapi",
+            logger_name="fastapi.request",
+            event_type="request_exception",
+            message=f"{request.method} {request.url.path} raised {exception_type}",
+            request_id=request_id,
+            method=request.method,
+            path=str(request.url.path),
+            status_code=500,
+            duration_ms=duration_ms,
+            user_id=user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            exception_type=exception_type,
+            stack_trace=stack_trace,
+            context={"headers": request_headers(request.headers), "query": dict(request.query_params)},
+        )
+        raise
+    duration_ms = int((time.perf_counter() - started_at) * 1000)
+    response.headers["X-Request-ID"] = request_id
+    status_code = response.status_code
+    level = "ERROR" if status_code >= 500 else "WARNING" if status_code >= 400 else "INFO"
+    log_system_event(
+        level=level,
+        source="fastapi",
+        logger_name="fastapi.request",
+        event_type="request",
+        message=f"{request.method} {request.url.path} -> {status_code}",
+        request_id=request_id,
+        method=request.method,
+        path=str(request.url.path),
+        status_code=status_code,
+        duration_ms=duration_ms,
+        user_id=user_id,
+        ip_address=ip_address,
+        user_agent=user_agent,
+        context={"headers": request_headers(request.headers), "query": dict(request.query_params)},
+    )
+    return response
 
 
 def _row_value(row, key, index):
@@ -106,6 +163,31 @@ def _client_meta(request):
         ip_address = None
     user_agent = request.headers.get("user-agent", "")[:255]
     return ip_address, user_agent
+
+
+def _request_user_id(authorization):
+    if not authorization or not authorization.lower().startswith("bearer "):
+        return None
+    token = authorization.split(" ", 1)[1].strip()
+    if not token:
+        return None
+    try:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT user_id
+                    FROM orynth_auth_sessions
+                    WHERE token_hash = %s
+                      AND revoked_at IS NULL
+                      AND expires_at > %s
+                    """,
+                    (hash_token(token), datetime.now(timezone.utc)),
+                )
+                row = cursor.fetchone()
+                return row["user_id"] if row else None
+    except Exception:
+        return None
 
 
 def _ensure_recaptcha(token, request):
@@ -560,6 +642,36 @@ def _optional_current_user(cursor, authorization):
         return _current_user(cursor, authorization)
     except HTTPException:
         return None
+
+
+def _system_log_response(row):
+    handle = _handle_seed(row["username"]) if row.get("username") else ""
+    user_identifier = handle or row.get("user_email") or (str(row["user_id"]) if row.get("user_id") else "")
+    display_name = row.get("user_display_name") or ""
+    if display_name and handle:
+        user_identifier = f"{handle} · {display_name}"
+    return {
+        "id": row["id"],
+        "created_at": row["created_at"].isoformat(),
+        "expires_at": row["expires_at"].isoformat(),
+        "level": row["level"],
+        "source": row["source"],
+        "logger_name": row["logger_name"] or "",
+        "event_type": row["event_type"],
+        "message": row["message"],
+        "request_id": row["request_id"] or "",
+        "method": row["method"] or "",
+        "path": row["path"] or "",
+        "status_code": row["status_code"],
+        "duration_ms": row["duration_ms"],
+        "user_id": row["user_id"],
+        "user_identifier": user_identifier,
+        "ip_address": str(row["ip_address"] or ""),
+        "user_agent": row["user_agent"] or "",
+        "exception_type": row["exception_type"] or "",
+        "stack_trace": row["stack_trace"] or "",
+        "context": row["context"] or {},
+    }
 
 
 def _profile_response(cursor, user):
@@ -2620,6 +2732,163 @@ def create_feedback(payload: ProductFeedbackPayload, request: Request, authoriza
             )
             feedback_id = cursor.fetchone()["id"]
             return _feedback_response(_get_feedback(cursor, feedback_id))
+
+
+@app.get("/admin/system-logs", response_model=SystemLogListResponse)
+def admin_list_system_logs(
+    q: str = Query(default=""),
+    level: str = Query(default=""),
+    source: str = Query(default=""),
+    logger: str = Query(default=""),
+    event_type: str = Query(default=""),
+    method: str = Query(default=""),
+    path: str = Query(default=""),
+    status_code: Optional[int] = Query(default=None),
+    user_id: Optional[int] = Query(default=None),
+    user_identifier: str = Query(default=""),
+    request_id: str = Query(default=""),
+    exception_type: str = Query(default=""),
+    from_date: Optional[datetime] = Query(default=None, alias="from"),
+    to_date: Optional[datetime] = Query(default=None, alias="to"),
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=100),
+    authorization: str = Header(default=""),
+):
+    where = []
+    params = []
+    search = (q or "").strip()
+    if search:
+        where.append("(l.message ILIKE %s OR l.path ILIKE %s OR l.logger_name ILIKE %s OR l.request_id ILIKE %s OR l.exception_type ILIKE %s)")
+        like = f"%{search}%"
+        params.extend([like, like, like, like, like])
+    if level:
+        where.append("l.level = %s")
+        params.append(level.upper())
+    if source:
+        where.append("l.source = %s")
+        params.append(source)
+    if logger:
+        where.append("l.logger_name ILIKE %s")
+        params.append(f"%{logger}%")
+    if event_type:
+        where.append("l.event_type = %s")
+        params.append(event_type)
+    if method:
+        where.append("l.method = %s")
+        params.append(method.upper())
+    if path:
+        where.append("l.path ILIKE %s")
+        params.append(f"%{path}%")
+    if status_code is not None:
+        where.append("l.status_code = %s")
+        params.append(status_code)
+    if user_id is not None:
+        where.append("l.user_id = %s")
+        params.append(user_id)
+    user_identifier_search = (user_identifier or "").strip()
+    if " · " in user_identifier_search and user_identifier_search.startswith("@"):
+        user_identifier_search = user_identifier_search.split(" · ", 1)[0].strip()
+    if user_identifier_search:
+        if user_identifier_search.isdigit():
+            where.append("(l.user_id = %s OR u.username ILIKE %s OR u.email ILIKE %s OR u.first_name ILIKE %s)")
+            like = f"%{user_identifier_search}%"
+            params.extend([int(user_identifier_search), like, like, like])
+        else:
+            like = f"%{user_identifier_search}%"
+            where.append("(u.username ILIKE %s OR u.email ILIKE %s OR u.first_name ILIKE %s)")
+            params.extend([like, like, like])
+    if request_id:
+        where.append("l.request_id = %s")
+        params.append(request_id)
+    if exception_type:
+        where.append("l.exception_type ILIKE %s")
+        params.append(f"%{exception_type}%")
+    if from_date:
+        where.append("l.created_at >= %s")
+        params.append(from_date)
+    if to_date:
+        where.append("l.created_at <= %s")
+        params.append(to_date)
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+    offset = (page - 1) * page_size
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                f"""
+                SELECT COUNT(*) AS total
+                FROM orynth_system_logs l
+                LEFT JOIN orynth_users u ON u.id = l.user_id
+                {where_sql}
+                """,
+                params,
+            )
+            total = int(cursor.fetchone()["total"] or 0)
+            cursor.execute(
+                f"""
+                SELECT l.id, l.created_at, l.expires_at, l.level, l.source, l.logger_name, l.event_type, l.message,
+                       l.request_id, l.method, l.path, l.status_code, l.duration_ms, l.user_id, l.ip_address,
+                       l.user_agent, l.exception_type, l.stack_trace, l.context,
+                       u.username, u.email AS user_email, u.first_name AS user_display_name
+                FROM orynth_system_logs l
+                LEFT JOIN orynth_users u ON u.id = l.user_id
+                {where_sql}
+                ORDER BY l.created_at DESC, l.id DESC
+                LIMIT %s OFFSET %s
+                """,
+                [*params, page_size, offset],
+            )
+            logs = [_system_log_response(row) for row in cursor.fetchall()]
+            cursor.execute(
+                """
+                SELECT
+                    COUNT(*) AS total,
+                    COALESCE(SUM(CASE WHEN level = 'DEBUG' THEN 1 ELSE 0 END), 0) AS debug,
+                    COALESCE(SUM(CASE WHEN level = 'INFO' THEN 1 ELSE 0 END), 0) AS info,
+                    COALESCE(SUM(CASE WHEN level = 'WARNING' THEN 1 ELSE 0 END), 0) AS warning,
+                    COALESCE(SUM(CASE WHEN level = 'ERROR' THEN 1 ELSE 0 END), 0) AS error,
+                    COALESCE(SUM(CASE WHEN level = 'CRITICAL' THEN 1 ELSE 0 END), 0) AS critical
+                FROM orynth_system_logs
+                """
+            )
+            counts = cursor.fetchone()
+            return {
+                "logs": logs,
+                "counts": {
+                    "total": int(counts["total"] or 0),
+                    "debug": int(counts["debug"] or 0),
+                    "info": int(counts["info"] or 0),
+                    "warning": int(counts["warning"] or 0),
+                    "error": int(counts["error"] or 0),
+                    "critical": int(counts["critical"] or 0),
+                },
+                "page": page,
+                "page_size": page_size,
+                "total": total,
+            }
+
+
+@app.get("/admin/system-logs/{log_id}", response_model=SystemLogResponse)
+def admin_get_system_log(log_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT l.id, l.created_at, l.expires_at, l.level, l.source, l.logger_name, l.event_type, l.message,
+                       l.request_id, l.method, l.path, l.status_code, l.duration_ms, l.user_id, l.ip_address,
+                       l.user_agent, l.exception_type, l.stack_trace, l.context,
+                       u.username, u.email AS user_email, u.first_name AS user_display_name
+                FROM orynth_system_logs l
+                LEFT JOIN orynth_users u ON u.id = l.user_id
+                WHERE l.id = %s
+                """,
+                (log_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Log não encontrado.")
+            return _system_log_response(row)
 
 
 @app.get("/admin/users", response_model=AdminUserListResponse)

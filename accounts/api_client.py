@@ -237,6 +237,16 @@ def admin_get_comments(token, **filters):
     return _request("GET", path, token=token)
 
 
+def admin_get_system_logs(token, **filters):
+    query = urlencode({key: value for key, value in filters.items() if value})
+    path = f"/admin/system-logs?{query}" if query else "/admin/system-logs"
+    return _request("GET", path, token=token)
+
+
+def admin_get_system_log(token, log_id):
+    return _request("GET", f"/admin/system-logs/{log_id}", token=token)
+
+
 def admin_moderate_comment(token, comment_id, status, note=""):
     return _request("PATCH", f"/admin/comments/{comment_id}/moderation", {"status": status, "note": note}, token=token)
 

@@ -12,6 +12,7 @@
 - `FEAT-SUGGEST-001` depende de `FEAT-AUTH-001` e `admin-ops`
 - `FEAT-NOTIFY-001` depende de eventos do domínio e preferências de idioma
 - `FEAT-I18N-001` é transversal às demais features
+- `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
 
 ## Contratos com maior reutilização
 
@@ -29,6 +30,7 @@
 - Admin Ops consome comentários via FastAPI e pode degradar para Postgres local em desenvolvimento quando a API estiver desatualizada.
 - `FEAT-AUTH-001` e `FEAT-SUGGEST-001` compartilham validação reCAPTCHA server-side configurável por ambiente.
 - Django renderiza o widget v2 e encaminha `recaptcha_token`; FastAPI é a autoridade de validação para cadastro e envios guest.
+- `FEAT-OPSLOG-001` registra requests Django/FastAPI e logs Python em `orynth_system_logs`; Admin Ops consome `/admin/system-logs` para troubleshooting sem alterar domínio.
 
 ## Skills técnicas por stack
 

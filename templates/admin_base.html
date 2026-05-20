@@ -20,6 +20,7 @@
         <a class="nav-link {% if 'market' in request.resolver_match.url_name and 'resolution' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-markets' %}">Mercado</a>
         <a class="nav-link {% if 'resolution' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-resolution' %}">Resolução</a>
         <a class="nav-link {% if 'moderation' in request.resolver_match.url_name or 'queue' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Filas</a>
+        <a class="nav-link {% if 'system-log' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-system-logs' %}">Logs</a>
       </div>
       <div class="nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="{% url 'home' %}">Ver site público</a></div>
     </nav>

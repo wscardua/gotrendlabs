@@ -1,0 +1,155 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Admin | Logs{% endblock %}
+{% block content %}
+<main class="shell admin-layout user-directory-page">
+  <section class="panel user-directory">
+    <div class="user-directory-head">
+      <div>
+        <span class="eyebrow">Troubleshooting</span>
+        <h1 class="large-title">Logs do sistema</h1>
+        <p class="muted">Rastreamento técnico de Django, FastAPI e logging Python com filtros operacionais.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-system-logs' %}">Atualizar</a>
+    </div>
+
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+
+    <div class="user-summary-strip" aria-label="Resumo de logs">
+      <div><span>Total</span><strong>{{ log_data.counts.total|default:0 }}</strong></div>
+      <div><span>Info</span><strong>{{ log_data.counts.info|default:0 }}</strong></div>
+      <div><span>Avisos</span><strong>{{ log_data.counts.warning|default:0 }}</strong></div>
+      <div><span>Erros</span><strong>{{ log_data.counts.error|default:0 }}</strong></div>
+      <div><span>Críticos</span><strong>{{ log_data.counts.critical|default:0 }}</strong></div>
+    </div>
+
+    <form class="user-filter-panel system-log-filter" method="get">
+      <label class="user-search-field">
+        <span>Busca</span>
+        <input type="search" name="q" value="{{ filters.q }}" placeholder="Mensagem, path, logger, request id">
+      </label>
+      <label>
+        <span>Nível</span>
+        <select name="level">
+          <option value="">Todos</option>
+          <option value="DEBUG" {% if filters.level == "DEBUG" %}selected{% endif %}>Debug</option>
+          <option value="INFO" {% if filters.level == "INFO" %}selected{% endif %}>Info</option>
+          <option value="WARNING" {% if filters.level == "WARNING" %}selected{% endif %}>Warning</option>
+          <option value="ERROR" {% if filters.level == "ERROR" %}selected{% endif %}>Error</option>
+          <option value="CRITICAL" {% if filters.level == "CRITICAL" %}selected{% endif %}>Critical</option>
+        </select>
+      </label>
+      <label>
+        <span>Origem</span>
+        <select name="source">
+          <option value="">Todas</option>
+          <option value="django" {% if filters.source == "django" %}selected{% endif %}>Django</option>
+          <option value="fastapi" {% if filters.source == "fastapi" %}selected{% endif %}>FastAPI</option>
+          <option value="python" {% if filters.source == "python" %}selected{% endif %}>Python</option>
+        </select>
+      </label>
+      <label>
+        <span>Status</span>
+        <input type="number" name="status_code" value="{{ filters.status_code }}" placeholder="500">
+      </label>
+      <label>
+        <span>Método</span>
+        <input type="text" name="method" value="{{ filters.method }}" placeholder="GET">
+      </label>
+      <label>
+        <span>Path</span>
+        <input type="text" name="path" value="{{ filters.path }}" placeholder="/admin">
+      </label>
+      <label>
+        <span>Logger</span>
+        <input type="text" name="logger" value="{{ filters.logger }}" placeholder="django.request">
+      </label>
+      <label>
+        <span>Evento</span>
+        <input type="text" name="event_type" value="{{ filters.event_type }}" placeholder="request">
+      </label>
+      <label>
+        <span>Request ID</span>
+        <input type="text" name="request_id" value="{{ filters.request_id }}">
+      </label>
+      <label>
+        <span>Usuário</span>
+        <input type="search" name="user_identifier" value="{{ filters.user_identifier }}" list="system-log-users" placeholder="Digite @handle, nome ou email">
+        <datalist id="system-log-users">
+          {% for user in log_user_options %}
+            <option value="{{ user.handle }} · {{ user.display_name }} · {{ user.email }}"></option>
+          {% endfor %}
+        </datalist>
+      </label>
+      <label>
+        <span>Exceção</span>
+        <input type="text" name="exception_type" value="{{ filters.exception_type }}">
+      </label>
+      <label>
+        <span>De</span>
+        <input type="datetime-local" name="from" value="{{ filters.from }}">
+      </label>
+      <label>
+        <span>Até</span>
+        <input type="datetime-local" name="to" value="{{ filters.to }}">
+      </label>
+      <label>
+        <span>Por página</span>
+        <select name="page_size">
+          <option value="25" {% if filters.page_size == "25" %}selected{% endif %}>25</option>
+          <option value="50" {% if filters.page_size == "50" %}selected{% endif %}>50</option>
+          <option value="100" {% if filters.page_size == "100" %}selected{% endif %}>100</option>
+        </select>
+      </label>
+      <div class="user-filter-actions">
+        <button class="btn small primary" type="submit">Aplicar</button>
+        <a class="btn small ghost" href="{% url 'admin-ops-system-logs' %}">Limpar</a>
+      </div>
+    </form>
+
+    <div class="system-log-pagination-bar">
+      <div class="user-result-meta">
+        <strong>{{ pagination.start }}-{{ pagination.end }}</strong>
+        <span>de {{ pagination.total }} registros filtrados · página {{ pagination.page }} de {{ pagination.total_pages }}</span>
+      </div>
+      <nav class="system-log-pagination" aria-label="Paginação de logs">
+        {% if pagination.first_url %}<a class="btn small ghost" href="{{ pagination.first_url }}">Primeira</a>{% else %}<span class="btn small ghost disabled">Primeira</span>{% endif %}
+        {% if pagination.previous_url %}<a class="btn small ghost" href="{{ pagination.previous_url }}">Anterior</a>{% else %}<span class="btn small ghost disabled">Anterior</span>{% endif %}
+        {% if pagination.next_url %}<a class="btn small ghost" href="{{ pagination.next_url }}">Próxima</a>{% else %}<span class="btn small ghost disabled">Próxima</span>{% endif %}
+        {% if pagination.last_url %}<a class="btn small ghost" href="{{ pagination.last_url }}">Última</a>{% else %}<span class="btn small ghost disabled">Última</span>{% endif %}
+      </nav>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="table compact-table system-log-table">
+        <tr>
+          <th>Quando</th><th>Nível</th><th>Origem</th><th>Usuário</th><th>Request</th><th>Status</th><th></th>
+        </tr>
+        {% for log in log_data.logs %}
+          <tr>
+            <td>{{ log.created_at }}</td>
+            <td><span class="tag {% if log.level == 'ERROR' or log.level == 'CRITICAL' %}risk{% elif log.level == 'WARNING' %}warn{% else %}safe{% endif %}">{{ log.level }}</span></td>
+            <td>{{ log.source }}<br><small>{{ log.logger_name }}</small></td>
+            <td>{{ log.user_identifier|default:"-" }}</td>
+            <td><code>{{ log.request_id|default:"-" }}</code><br><small>{{ log.method }} {{ log.path|truncatechars:70 }}</small></td>
+            <td>{{ log.status_code|default:"-" }}{% if log.duration_ms %}<br><small>{{ log.duration_ms }} ms</small>{% endif %}</td>
+            <td><a class="btn small primary" href="{% url 'admin-ops-system-log-detail' log.id %}">Abrir</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">Nenhum log encontrado.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    <div class="system-log-pagination-bar bottom">
+      <div class="user-result-meta">
+        <strong>Página {{ pagination.page }}</strong>
+        <span>{{ pagination.page_size }} registros por página</span>
+      </div>
+      <nav class="system-log-pagination" aria-label="Paginação de logs">
+        {% if pagination.previous_url %}<a class="btn small ghost" href="{{ pagination.previous_url }}">Anterior</a>{% else %}<span class="btn small ghost disabled">Anterior</span>{% endif %}
+        {% if pagination.next_url %}<a class="btn small primary" href="{{ pagination.next_url }}">Próxima</a>{% else %}<span class="btn small primary disabled">Próxima</span>{% endif %}
+      </nav>
+    </div>
+  </section>
+</main>
+{% endblock %}

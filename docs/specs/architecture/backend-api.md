@@ -38,3 +38,4 @@
 - A `BadgeAwardEngine` é o ponto único para avaliar regras e persistir conquistas em `orynth_user_badge_awards`; handlers HTTP e ações administrativas devem apenas disparar eventos de domínio.
 - Resolução de mercado deve chamar a engine após persistir resultado, reputation delta, streak e ranking derivado dos participantes afetados.
 - Prévia de previsão deve ser calculada pelo backend sem efeitos colaterais; criação de previsão, stake, ledger, probabilidades e payout permanecem mutações exclusivas da FastAPI.
+- Logs técnicos de troubleshooting devem ser expostos por contratos staff em `/admin/system-logs`, preservando redaction de segredos e sem substituir eventos administrativos de domínio.

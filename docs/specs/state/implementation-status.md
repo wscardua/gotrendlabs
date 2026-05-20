@@ -13,6 +13,7 @@
 | FEAT-SUGGEST-001 | draft | parcial | 2026-05-19 | Sugestões de mercado e feedback possuem persistência, envio autenticado/guest com reCAPTCHA v2 opcional para visitantes, fila real no Admin Ops, conversão em rascunho e crédito operacional idempotente; Admin Ops não executa fallback local mutável |
 | FEAT-NOTIFY-001 | draft | nao_iniciada | 2026-05-17 | Estrutura documental criada |
 | FEAT-I18N-001 | draft | nao_iniciada | 2026-05-17 | Estrutura documental criada |
+| FEAT-OPSLOG-001 | draft | parcial | 2026-05-20 | Logs técnicos persistidos em `orynth_system_logs`, captura Django/FastAPI/logging Python e logs técnicos de segurança, redaction de segredos, retenção de 90 dias, paginação e consulta staff por identificador de usuário no Admin Ops |
 
 ## Regras de atualização
 

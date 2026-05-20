@@ -1,5 +1,7 @@
 from pathlib import Path
+import json
 from datetime import datetime
+from urllib.parse import urlencode
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
@@ -25,6 +27,8 @@ from accounts.api_client import (
     admin_get_markets,
     admin_get_comments,
     admin_get_queues,
+    admin_get_system_log,
+    admin_get_system_logs,
     admin_get_taxonomy,
     admin_get_user,
     admin_get_users,
@@ -336,6 +340,106 @@ def users(request):
             "active_role": filters["role"],
             "active_order": filters["order"],
         },
+    )
+
+
+@admin_api_required
+def system_logs(request):
+    token = auth_token(request)
+    filters = {
+        "q": request.GET.get("q") or "",
+        "level": request.GET.get("level") or "",
+        "source": request.GET.get("source") or "",
+        "logger": request.GET.get("logger") or "",
+        "event_type": request.GET.get("event_type") or "",
+        "method": request.GET.get("method") or "",
+        "path": request.GET.get("path") or "",
+        "status_code": request.GET.get("status_code") or "",
+        "user_identifier": request.GET.get("user_identifier") or request.GET.get("user_id") or "",
+        "request_id": request.GET.get("request_id") or "",
+        "exception_type": request.GET.get("exception_type") or "",
+        "from": request.GET.get("from") or "",
+        "to": request.GET.get("to") or "",
+        "page": request.GET.get("page") or "1",
+        "page_size": request.GET.get("page_size") or "50",
+    }
+    try:
+        log_data = admin_get_system_logs(token, **filters)
+    except AuthAPIError as exc:
+        log_data = {"logs": [], "counts": {}, "page": 1, "page_size": 50, "total": 0}
+        error = str(exc)
+    else:
+        error = ""
+    log_user_options = []
+    seen_user_ids = set()
+    for user_filters in ({"order": "created_desc"}, {"role": "staff", "order": "created_desc"}, {"role": "superuser", "order": "created_desc"}):
+        try:
+            users_payload = admin_get_users(token, **user_filters)
+        except AuthAPIError:
+            continue
+        for user in users_payload.get("users", []):
+            if user.get("id") in seen_user_ids:
+                continue
+            seen_user_ids.add(user.get("id"))
+            log_user_options.append(user)
+    def _safe_int(value, default):
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+
+    page = _safe_int(log_data.get("page") or filters["page"], 1)
+    page_size = _safe_int(log_data.get("page_size") or filters["page_size"], 50)
+    total = _safe_int(log_data.get("total"), 0)
+    total_pages = max(1, (total + page_size - 1) // page_size)
+    page = min(max(page, 1), total_pages)
+
+    def _page_url(target_page):
+        query = {key: value for key, value in filters.items() if value}
+        query["page"] = target_page
+        query["page_size"] = page_size
+        return f"?{urlencode(query)}"
+
+    pagination = {
+        "page": page,
+        "page_size": page_size,
+        "total_pages": total_pages,
+        "total": total,
+        "previous_url": _page_url(page - 1) if page > 1 else "",
+        "next_url": _page_url(page + 1) if page < total_pages else "",
+        "first_url": _page_url(1) if page > 1 else "",
+        "last_url": _page_url(total_pages) if page < total_pages else "",
+        "start": ((page - 1) * page_size + 1) if total else 0,
+        "end": min(page * page_size, total),
+    }
+    return render(
+        request,
+        "admin_ops/system_logs.html",
+        {
+            "log_data": log_data,
+            "admin_error": error,
+            "filters": filters,
+            "log_user_options": log_user_options,
+            "pagination": pagination,
+        },
+    )
+
+
+@admin_api_required
+def system_log_detail(request, log_id):
+    try:
+        log = admin_get_system_log(auth_token(request), log_id)
+    except AuthAPIError as exc:
+        log = None
+        context_pretty = "{}"
+        error = str(exc)
+    else:
+        context_pretty = json.dumps(log.get("context") or {}, ensure_ascii=False, indent=2)
+        error = ""
+    return render(
+        request,
+        "admin_ops/system_log_detail.html",
+        {"log": log, "context_pretty": context_pretty, "admin_error": error},
     )
 
 
