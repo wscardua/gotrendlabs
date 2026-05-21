@@ -1013,3 +1013,21 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-21
 - Retomada: avaliar cache-busting centralizado para assets estáticos e teste visual automatizado quando o navegador MCP estiver disponível
 - Reversão lógica: remover `is_bot`, restaurar ticket com botão desabilitado até escolha, voltar métrica `distributed_oc` para todos os créditos e retirar opções/CTA do share de mercado
+
+## WFLOW-20260521-003
+
+- Tipo: `infra-data`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`
+- Objetivo: impedir que mercados fixture sejam semeados em produção e limpar os fixtures criados no primeiro deploy
+- Etapa atual: concluído; migration inicial de mercados sem `RunPython` de seed, seed explícito restrito ao harness de testes e RDS de produção validado com `orynth_markets = 0`
+- Artefatos afetados:
+  - `markets/migrations/0001_initial.py`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-21
+- Atualizado em: 2026-05-21
+- Encerrado em: 2026-05-21
+- Retomada: criar mercados reais via Admin Ops/curadoria antes de liberar tráfego editorial de produção
+- Reversão lógica: reintroduzir seed apenas em ambiente não-produtivo, nunca via migration aplicada em PRD

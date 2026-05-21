@@ -156,6 +156,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-001
 
+### 2026-05-21 - v0.23
+- migration inicial de mercados deixou de executar seed automático a partir de `data/fixtures/domain.json`
+- produção foi alinhada para não manter mercados fixture criados pelo primeiro deploy
+- status de implementação: `parcial`
+
 ### 2026-05-21 - v0.22
 - métrica pública `O₵ distribuídas` passou a excluir créditos de `staff` e `superuser` no contrato `/stats` e no fallback local da home
 - espaçamento visual do bloco `AO VIVO`/destaques da home foi ajustado para reduzir colisão entre rótulo e título

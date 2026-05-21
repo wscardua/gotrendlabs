@@ -1,14 +1,19 @@
 from datetime import timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from io import StringIO
+import importlib
+import json
 import logging
 import os
+from pathlib import Path
+import re
 from tempfile import TemporaryDirectory
+import unicodedata
 from urllib.parse import quote, urlparse
 
 from django.conf import settings
 from django.core.management import call_command
-from django.test import TestCase, override_settings
+from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -16,7 +21,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from accounts.models import BadgeDefinition, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from accounts.models import BadgeDefinition, BadgeRule, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
@@ -30,9 +35,96 @@ from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
 from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
-from markets.models import AdminEvent, CommentReaction, Market, MarketComment, MarketFavorite, MarketLike, MarketOption, MarketSuggestion, Prediction, ProductFeedback
+from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback
 from system_logs.models import SystemLog
 from system_logs.services import log_system_event
+
+
+def _fixture_slug(value):
+    normalized = unicodedata.normalize("NFKD", value or "")
+    ascii_value = normalized.encode("ascii", "ignore").decode("ascii")
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_value.lower()).strip("-")
+    return slug or "geral"
+
+
+def _seed_test_markets():
+    fixture_path = Path(settings.BASE_DIR) / "data" / "fixtures" / "domain.json"
+    with fixture_path.open(encoding="utf-8") as fixture:
+        markets = json.load(fixture)["markets"]
+
+    for index, payload in enumerate(markets, start=1):
+        category, _ = MarketCategory.objects.update_or_create(
+            slug=_fixture_slug(payload["category"]),
+            defaults={"name": payload["category"]},
+        )
+        subcategory, _ = MarketSubcategory.objects.update_or_create(
+            category=category,
+            slug=_fixture_slug(payload["subcategory"]),
+            defaults={"name": payload["subcategory"]},
+        )
+        market, _ = Market.objects.update_or_create(
+            slug=payload["slug"],
+            defaults={
+                "category": category,
+                "subcategory": subcategory,
+                "title": payload["title"],
+                "summary": payload.get("summary", ""),
+                "kind": payload["kind"],
+                "status": payload["status"],
+                "status_label": payload.get("status_label", payload["status"]),
+                "primary_outcome": payload.get("primary_outcome", ""),
+                "primary_probability_exact": payload.get("primary_probability_exact", payload.get("primary_probability", 0)),
+                "secondary_probability_exact": payload.get("secondary_probability_exact", payload.get("secondary_probability", 0)),
+                "volume_oc": payload.get("volume_oc", ""),
+                "participants": payload.get("participants", ""),
+                "source": payload.get("source", ""),
+                "closes_in": payload.get("closes_in", ""),
+                "close_label": payload.get("close_label", ""),
+                "thumb": payload.get("thumb", ""),
+                "thumb_color": payload.get("thumb_color", ""),
+                "image_url": payload.get("image_url", ""),
+                "resolution_criteria": payload.get("resolution_criteria", ""),
+                "resolution_type": payload.get("resolution_type", ""),
+                "resolution_note": payload.get("resolution_note", ""),
+                "is_featured": payload.get("is_featured", False),
+                "display_order": index,
+            },
+        )
+        for option_index, option in enumerate(payload.get("options", []), start=1):
+            MarketOption.objects.update_or_create(
+                market=market,
+                label=option["label"],
+                defaults={
+                    "probability_exact": option.get("probability_exact", option.get("probability", 0)),
+                    "hint": option.get("hint", ""),
+                    "display_order": option_index,
+                },
+            )
+
+
+def _seed_test_badges():
+    badge_seed = importlib.import_module("accounts.migrations.0009_badgedefinition_userbadgeaward_badgerule_and_more")
+    for item in badge_seed.DEFAULT_BADGES:
+        badge, _ = BadgeDefinition.objects.update_or_create(
+            code=item["code"],
+            defaults={
+                "name": item["name"],
+                "description": item["description"],
+                "rule_description": item["rule_description"],
+                "badge_type": item["badge_type"],
+                "is_active": True,
+            },
+        )
+        BadgeRule.objects.update_or_create(
+            badge=badge,
+            defaults={
+                "rule_type": item["rule_type"],
+                "threshold_value": item["threshold_value"],
+                "category": "",
+                "subcategory": "",
+                "is_active": True,
+            },
+        )
 
 
 class FixtureDomainClientTests(TestCase):
@@ -53,7 +145,11 @@ class FixtureDomainClientTests(TestCase):
             self.assertEqual(api_get_markets()[0]["volume_oc"], "1355 O₵")
 
 
-class BackendAuthAPITests(TestCase):
+class BackendAuthAPITests(TransactionTestCase):
+    def setUp(self):
+        _seed_test_badges()
+        _seed_test_markets()
+
     def test_social_auth_placeholder_supports_initial_providers(self):
         client = TestClient(app)
 
@@ -2928,7 +3024,11 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(blocked_reward.status_code, 422)
 
 
-class WebSmokeTests(TestCase):
+class WebSmokeTests(TransactionTestCase):
+    def setUp(self):
+        _seed_test_badges()
+        _seed_test_markets()
+
     def test_user_model_uses_orynth_postgres_table(self):
         User = get_user_model()
 
