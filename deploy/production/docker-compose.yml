@@ -11,6 +11,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
+      - ../../.runtime/caddy-certs:/etc/caddy/certs:ro
       - staticfiles:/srv/static:ro
       - mediafiles:/srv/media:ro
     depends_on:

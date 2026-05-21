@@ -19,6 +19,6 @@
 }
 
 {$ORYNTH_HTTPS_SITE:https://localhost} {
-  tls internal
+  tls /etc/caddy/certs/ip.crt /etc/caddy/certs/ip.key
   import orynth_reverse_proxy
 }

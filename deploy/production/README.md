@@ -136,7 +136,8 @@ Sem dominio registrado, use acesso temporario por IP:
 
 - `ORYNTH_HTTP_SITE=http://32.199.120.235`
 - `ORYNTH_HTTPS_SITE=https://32.199.120.235`
-- o HTTPS por IP usa certificado interno temporario e pode exigir aceitar o aviso do navegador.
+- o deploy gera um certificado autoassinado temporario para o IP em `.runtime/caddy-certs/`;
+- o HTTPS por IP pode exigir aceitar o aviso do navegador.
 
 ## Observacoes operacionais
 
