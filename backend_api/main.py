@@ -320,11 +320,12 @@ def _public_user_response(row):
 
 def _ensure_user_core(cursor, user_id, *, display_name=None):
     now = datetime.now(timezone.utc)
-    cursor.execute("SELECT id, username, first_name FROM orynth_users WHERE id = %s", (user_id,))
+    cursor.execute("SELECT id, username, first_name, is_staff, is_superuser FROM orynth_users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
 
+    is_operator = user["is_staff"] or user["is_superuser"]
     profile_name = display_name or user["first_name"] or user["username"]
     cursor.execute(
         """
@@ -334,6 +335,9 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
         """,
         (user_id, profile_name, now, now),
     )
+    if is_operator:
+        _ensure_wallet_balance(cursor, user_id)
+        return
     cursor.execute(
         """
         INSERT INTO orynth_user_reputations
@@ -344,7 +348,8 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
         (user_id, INITIAL_REPUTATION, now),
     )
     cursor.execute("SELECT 1 FROM orynth_wallet_ledger WHERE user_id = %s AND entry_type = 'grant_initial'", (user_id,))
-    if not cursor.fetchone():
+    has_initial_grant = cursor.fetchone()
+    if not has_initial_grant and not is_operator:
         _record_wallet_entry(
             cursor,
             user_id,
@@ -717,7 +722,7 @@ def _profile_response(cursor, user):
                r.reputation_score, r.resolved_predictions_count, r.accuracy_indicator,
                r.streak, r.strong_category AS reputation_category, r.last_updated_at
         FROM orynth_user_profiles p
-        JOIN orynth_user_reputations r ON r.user_id = p.user_id
+        LEFT JOIN orynth_user_reputations r ON r.user_id = p.user_id
         WHERE p.user_id = %s
         """,
         (user["id"],),
@@ -734,13 +739,13 @@ def _profile_response(cursor, user):
         "profile_updated_at": profile["profile_updated_at"].isoformat(),
         "is_public": profile["is_public"],
         "reputation": {
-            "reputation_score": profile["reputation_score"],
+            "reputation_score": int(profile["reputation_score"] or 0),
             "ranking_position": positions.get(user["id"], 0),
-            "resolved_predictions_count": profile["resolved_predictions_count"],
-            "accuracy_indicator": profile["accuracy_indicator"],
-            "streak": profile["streak"],
-            "strong_category": profile["reputation_category"],
-            "last_updated_at": profile["last_updated_at"].isoformat(),
+            "resolved_predictions_count": int(profile["resolved_predictions_count"] or 0),
+            "accuracy_indicator": profile["accuracy_indicator"] or "0%",
+            "streak": int(profile["streak"] or 0),
+            "strong_category": profile["reputation_category"] or "",
+            "last_updated_at": profile["last_updated_at"].isoformat() if profile["last_updated_at"] else profile["profile_updated_at"].isoformat(),
         },
     }
 

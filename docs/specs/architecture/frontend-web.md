@@ -59,4 +59,5 @@
 - Compartilhamento social no frontend é apresentação de estado persistido: pergunta de mercado, resultado e badge podem expor links por rede, metadados Open Graph/Twitter e imagem social dinâmica, mas não disparam concessão, reputação, ranking, wallet ou ledger.
 - Cards sociais usam URL pública configurável para que crawlers de redes consigam ler `og:image`; em host local a UI deve indicar que o preview externo não é rastreável.
 - Compartilhamento de badge conquistada pode gerar URL pública com token opaco de conquista, sem expor id, email ou handle no query string.
+- Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.
 - Cards de mercado sem imagem devem exibir fallback visual legível com iniciais derivadas de categoria/subcategoria/título no feed e nas imagens sociais.

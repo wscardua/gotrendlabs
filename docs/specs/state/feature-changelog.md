@@ -56,6 +56,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-AUTH-001
 
+### 2026-05-21 - v0.13
+- bootstrap de núcleo de usuário passou a diferenciar usuário comum de operador: contas `staff`/`superuser` não recebem `grant_initial`, reputação pública, badges nem atividade social
+- contexto web deixou de exibir reputação/acerto de operadores no chip, perfil, carteira e resumo da home
+- testes cobrem que usuário comum mantém bootstrap completo e idempotente, enquanto operador permanece fora de métricas públicas
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.12
 - rodapé público passou a ser organizado em quatro colunas: Institucional, Produto, Confiança e Suporte
 - links de conta, mercados recorrentes e operações administrativas foram removidos do rodapé público
@@ -131,6 +137,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-MARKET-001
+
+### 2026-05-21 - v0.21
+- adicionadas 27 thumbnails autorais de mercado como imagens puras, quadradas e específicas por evento, usadas via `image_url`
+- documentado lote editorial seed de 27 mercados/categorias/subcategorias para retomada operacional e auditoria da fonte de verdade
+- guia da skill `orynth-prediction-markets` passou a registrar que inclusão aprovada cria taxonomia idempotente e mantém mercados em `draft`
+- status de implementação: `parcial`
 
 ### 2026-05-20 - v0.20
 - home passou a exibir métricas públicas de economia educativa com `O₵ distribuídas` e `O₵ movimentadas em previsões`

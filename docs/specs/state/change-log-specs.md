@@ -91,3 +91,6 @@
 - reforçada a skill `orynth-prediction-markets` para exigir validação da fonte de resolução antes de aceitar mercados sugeridos
 - documentado que a validação pode usar navegador local, browser automation, APIs, web search, ORM, banco ou APIs internas quando necessário
 - adicionado `Status de validacao da fonte` ao formato esperado de mercados sugeridos
+- registrado que operadores (`staff`/`superuser`) não recebem bootstrap público de reputação, wallet inicial, badges ou atividade social
+- registrado que thumbnails de mercado com `image_url` devem ser imagens puras do evento, sem título/texto embutido, mantendo HTML/API como fonte de verdade de metadados
+- documentado o lote editorial seed de 27 mercados em `docs/specs/state/editorial-seed-markets-20260521.md`
