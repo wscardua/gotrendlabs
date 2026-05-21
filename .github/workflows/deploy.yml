@@ -60,11 +60,58 @@ jobs:
       contents: read
 
     steps:
+      - name: Validate deploy configuration
+        env:
+          ENABLE_PROD_DEPLOY: ${{ vars.ENABLE_PROD_DEPLOY }}
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+          ROLE_ARN_VAR: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          ROLE_ARN_SECRET: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          INSTANCE_ID_VAR: ${{ vars.AWS_EC2_INSTANCE_ID }}
+          INSTANCE_ID_SECRET: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+        run: |
+          ROLE_ARN="${ROLE_ARN_VAR:-${ROLE_ARN_SECRET:-}}"
+          INSTANCE_ID="${INSTANCE_ID_VAR:-${INSTANCE_ID_SECRET:-}}"
+
+          if [[ "$ENABLE_PROD_DEPLOY" != "1" ]]; then
+            echo "ENABLE_PROD_DEPLOY must be set to 1 for production deploys." >&2
+            exit 1
+          fi
+
+          if [[ -z "$ROLE_ARN" ]]; then
+            echo "Missing AWS_GITHUB_ACTIONS_ROLE_ARN. Configure it as a repository variable; the legacy secret fallback remains supported temporarily." >&2
+            exit 1
+          fi
+
+          if [[ ! "$ROLE_ARN" =~ ^arn:aws:iam::204620194924:role/ ]]; then
+            echo "AWS_GITHUB_ACTIONS_ROLE_ARN must point to an IAM role in account 204620194924. Got: $ROLE_ARN" >&2
+            exit 1
+          fi
+
+          if [[ -z "$INSTANCE_ID" ]]; then
+            echo "Missing AWS_EC2_INSTANCE_ID. Configure it as a repository variable or secret." >&2
+            exit 1
+          fi
+
+          if [[ ! "$INSTANCE_ID" =~ ^i-[a-z0-9]+$ ]]; then
+            echo "AWS_EC2_INSTANCE_ID must look like an EC2 instance id. Got: $INSTANCE_ID" >&2
+            exit 1
+          fi
+
+          if [[ ! "$AWS_REGION" =~ ^[a-z]{2}-[a-z]+-[0-9]+$ ]]; then
+            echo "AWS_REGION must be a valid region code. Got: $AWS_REGION" >&2
+            exit 1
+          fi
+
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@v6.1.0
         with:
           aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
-          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-to-assume: ${{ vars.AWS_GITHUB_ACTIONS_ROLE_ARN || secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+          role-session-name: GitHubActionsDeploy
+          allowed-account-ids: 204620194924
+
+      - name: Verify assumed AWS identity
+        run: aws sts get-caller-identity
 
       - name: Trigger deploy over SSM
         id: ssm
@@ -73,7 +120,7 @@ jobs:
           APP_DIR: ${{ vars.APP_DIR || '/opt/orynth' }}
           BRANCH: ${{ vars.DEPLOY_BRANCH || 'main' }}
           REPO_URL: ${{ vars.REPO_URL || format('https://github.com/{0}.git', github.repository) }}
-          INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          INSTANCE_ID: ${{ vars.AWS_EC2_INSTANCE_ID || secrets.AWS_EC2_INSTANCE_ID }}
         run: |
           COMMAND_ID=$(aws ssm send-command \
             --region "$AWS_REGION" \
@@ -97,7 +144,7 @@ jobs:
       - name: Wait for deploy to finish
         env:
           AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-          INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          INSTANCE_ID: ${{ vars.AWS_EC2_INSTANCE_ID || secrets.AWS_EC2_INSTANCE_ID }}
           COMMAND_ID: ${{ steps.ssm.outputs.command_id }}
         run: |
           for _ in $(seq 1 60); do

@@ -37,7 +37,7 @@
 - Status do daemon no Dashboard usa `orynth_site_config.daemon_stale_after_minutes` e `orynth_site_config.daemon_missing_after_minutes` como limites operacionais configurados no Admin Ops.
 - Ranking web consome `GET /rankings` como fonte autoritativa e usa `Carregar mais` em blocos cumulativos de 10 linhas sem recalcular reputação no Django.
 - Deploy MVP usa EC2 com Docker Compose para `proxy`, `django`, `fastapi` e `daemon`; PostgreSQL de producao fica em RDS/servico gerenciado fora do Compose.
-- Infra AWS base de producao foi provisionada em `us-east-1` com EC2 `t4g.micro`, RDS PostgreSQL 16 `db.t4g.micro`, VPC dedicada, SSM, CloudWatch minimo, Parameter Store, Secrets Manager e role OIDC restrita para GitHub Actions no branch `main`.
+- Infra AWS base de producao foi provisionada em `us-east-1` com EC2 `t4g.micro`, RDS PostgreSQL 16 `db.t4g.micro`, VPC dedicada, SSM, CloudWatch minimo, Parameter Store, Secrets Manager e role OIDC restrita para GitHub Actions no branch `main`; o workflow de deploy agora faz preflight de variables/secrets e valida `aws sts get-caller-identity` antes do `ssm send-command`.
 - Acesso administrativo ao RDS usa tunel SSM pela EC2; o RDS permanece privado e aceita `5432` somente do security group da EC2.
 - Workflow `.github/workflows/deploy.yml` roda testes em `main` e esta preparado para disparar `deploy/production/deploy.sh` via SSM quando os secrets/variables do GitHub e `.env.prod` da EC2 estiverem configurados.
 

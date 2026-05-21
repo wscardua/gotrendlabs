@@ -104,6 +104,28 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Retomada: criar `.env.prod` na EC2, configurar secrets/variables do GitHub, executar primeiro deploy e apontar DNS quando houver dominio
 - Reversão lógica: remover recursos AWS provisionados em `us-east-1` usando tags `Project=orynth`, `Environment=prod`, `ManagedBy=codex-mcp`, preservando ADR como decisão substituída se a estratégia mudar
 
+## WFLOW-20260521-002
+
+- Tipo: `change-infra`
+- Status: `concluido`
+- Feature alvo: `infra-deploy-mvp`, `FEAT-OPSLOG-001`
+- Objetivo: endurecer a autenticacao OIDC do GitHub Actions para o deploy via SSM, adicionando preflight de configuracao e prova explicita da identidade AWS assumida
+- Etapa atual: concluido
+- Artefatos afetados:
+  - `.github/workflows/deploy.yml`
+  - `deploy/production/README.md`
+  - `docs/specs/state/workflow-runs.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/integration-map.md`
+  - `docs/specs/state/known-gaps.md`
+- Bloqueios: o deploy automatico ainda depende de `.env.prod` existente na EC2 e do repositório GitHub possuir as variables esperadas
+- Iniciado em: 2026-05-21
+- Atualizado em: 2026-05-21
+- Encerrado em: 2026-05-21
+- Retomada: executar o workflow na `main` com `ENABLE_PROD_DEPLOY=1` e validar a etapa `Verify assumed AWS identity` antes do primeiro deploy automatico real
+- Reversão lógica: voltar o workflow para a leitura exclusiva de secrets e remover o preflight, preservando esta entrada como histórico de endurecimento operacional
+
 ## WFLOW-20260520-002
 
 - Tipo: `change-feature`

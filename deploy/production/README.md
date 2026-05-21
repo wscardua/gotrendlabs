@@ -103,15 +103,26 @@ O repositório inclui o workflow `.github/workflows/deploy.yml` para:
 
 Configure estes valores no GitHub antes de habilitar o deploy automatico:
 
-- secret `AWS_GITHUB_ACTIONS_ROLE_ARN`: `arn:aws:iam::204620194924:role/orynth-prod-github-actions-deploy-role`
-- secret `AWS_EC2_INSTANCE_ID`: `i-0fc304f1acb85daea`
+- variable obrigatoria `ENABLE_PROD_DEPLOY`: use `1` apenas depois que `.env.prod` existir na EC2 e os valores abaixo estiverem configurados
+- variable obrigatoria `AWS_GITHUB_ACTIONS_ROLE_ARN`: `arn:aws:iam::204620194924:role/orynth-prod-github-actions-deploy-role`
+- variable recomendada `AWS_EC2_INSTANCE_ID`: `i-0fc304f1acb85daea`
 - variable `AWS_REGION` opcional, default `us-east-1`
 - variable `APP_DIR` opcional, default `/opt/orynth`
 - variable `DEPLOY_BRANCH` opcional, default `main`
 - variable `REPO_URL` opcional, default `https://github.com/<owner>/<repo>.git`
-- variable `ENABLE_PROD_DEPLOY`: use `1` apenas depois que `.env.prod` existir na EC2 e os secrets acima estiverem configurados
+- secret legado opcional `AWS_GITHUB_ACTIONS_ROLE_ARN`: fallback temporario enquanto a configuracao antiga ainda existir
+- secret legado opcional `AWS_EC2_INSTANCE_ID`: fallback temporario enquanto a configuracao antiga ainda existir
 
-O workflow esta preparado, mas nao substitui a criacao segura de `.env.prod` na EC2. O deploy automatico fica desabilitado ate `ENABLE_PROD_DEPLOY=1` para manter a `main` verde enquanto a aplicacao ainda nao foi implantada.
+Checklist exato para o workflow:
+
+1. `main` deve ser o branch que dispara o deploy de producao.
+2. `ENABLE_PROD_DEPLOY` deve ser `1`.
+3. `AWS_GITHUB_ACTIONS_ROLE_ARN` deve apontar para a conta `204620194924`.
+4. `AWS_EC2_INSTANCE_ID` deve apontar para a EC2 gerenciada por SSM.
+5. `.env.prod` deve existir em `/opt/orynth/.env.prod` antes do primeiro deploy automatico.
+6. O job deve passar pela etapa `Verify assumed AWS identity` com `aws sts get-caller-identity` retornando a conta `204620194924` antes do `send-command`.
+
+O workflow agora faz um preflight explicito da configuracao e falha cedo quando `AWS_GITHUB_ACTIONS_ROLE_ARN`, `AWS_EC2_INSTANCE_ID` ou `AWS_REGION` estiverem ausentes/inconsistentes. O deploy automatico continua nao substituindo a criacao segura de `.env.prod` na EC2.
 
 ## DNS e HTTPS
 
@@ -127,4 +138,5 @@ O Caddy emite e renova o certificado automaticamente quando:
 - O RDS deve aceitar `5432` somente a partir do security group da EC2.
 - O acesso administrativo ao banco deve usar tunel SSM pela EC2, nao public access no RDS.
 - A role OIDC do GitHub Actions esta restrita ao repositorio `wscardua/orynth` e ao branch `main`.
+- OIDC permanece o mecanismo oficial; nao reintroduza `AWS_ACCESS_KEY_ID` ou `AWS_SECRET_ACCESS_KEY` em GitHub Actions para este deploy.
 - Para evoluir para duas VMs, mantenha Django/proxy na EC2 publica e mova FastAPI/daemon para uma EC2 privada.

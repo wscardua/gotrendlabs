@@ -15,6 +15,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-OPSLOG-001
 
+### 2026-05-21 - v0.8
+- workflow `.github/workflows/deploy.yml` passou a validar `ENABLE_PROD_DEPLOY`, `AWS_GITHUB_ACTIONS_ROLE_ARN`, `AWS_EC2_INSTANCE_ID` e `AWS_REGION` antes de tentar assumir a role AWS
+- deploy GitHub Actions passou a priorizar repository variables para ARN da role e instance id, mantendo fallback temporario para secrets legados
+- etapa `Verify assumed AWS identity` passou a executar `aws sts get-caller-identity` antes do `ssm send-command`, endurecendo o diagnostico de OIDC no branch `main`
+- status de implementação: `parcial`
+
 ### 2026-05-21 - v0.7
 - infra AWS base passou a ter EC2 ARM gerenciada por SSM, CloudWatch Agent para métricas/logs mínimos de host e alarmes mínimos de EC2/RDS
 - RDS PostgreSQL 16 foi provisionado privado, com acesso administrativo via túnel SSM e sem exposição pública de `5432`
