@@ -37,6 +37,7 @@ from markets.models import (
     MarketFavorite,
     MarketLike,
     MarketOption,
+    MarketSubcategory,
     MarketSuggestion,
     Prediction,
     ProductFeedback,
