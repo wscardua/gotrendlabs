@@ -53,6 +53,7 @@
 - Ajustes manuais administrativos usam `entry_type="manual_adjustment"`, `reference_type="admin_user_adjustment"` e `reference_id` com o id do usuário afetado.
 - Ajustes manuais aceitam apenas `direction="credit"` ou `direction="debit"` sobre saldo disponível; débito maior que `available_oc` deve ser rejeitado.
 - Ajustes manuais administrativos devem registrar `user.wallet_adjust` em `orynth_admin_events` e preencher `created_by`.
+- Ajustes manuais administrativos podem ter `created_by` igual ao usuário afetado quando o operador é `staff`/`superuser`; a auditoria continua obrigatória.
 - Toda referência deve apontar para o objeto causal quando houver.
 - `prediction_stake_lock` deve reduzir `available_oc`, aumentar `locked_oc` e apontar para `reference_type="prediction"`.
 - `prediction_refund` deve usar `direction="release"` e devolver stake bloqueado para saldo disponível.
@@ -70,5 +71,5 @@
 - Recarga educativa aprovada não gera reputação nem incrementa `total_earned_oc`.
 - Solicitação de recarga educativa deve ser bloqueada quando `available_oc` for maior que `orynth_site_config.wallet_recharge_min_balance_oc`.
 - Usuário pode manter no máximo uma solicitação de recarga educativa `pending`; novas solicitações ficam bloqueadas até aprovação ou rejeição administrativa.
-- O agregado público `distributed_oc` usado pela home soma apenas lançamentos `direction="credit"` do ledger, incluindo `grant_initial`, recompensas operacionais, recargas educativas aprovadas, ajustes manuais de crédito e payouts líquidos.
+- O agregado público `distributed_oc` usado pela home soma apenas lançamentos `direction="credit"` do ledger de usuários comuns, excluindo usuários `staff` e `superuser`, incluindo `grant_initial`, recompensas operacionais, recargas educativas aprovadas, ajustes manuais de crédito e payouts líquidos desses usuários.
 - Agregados públicos derivados do ledger não expõem usuário, saldo individual nem extrato, e não substituem a projeção `orynth_wallet_balances`.

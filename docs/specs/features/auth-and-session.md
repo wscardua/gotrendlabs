@@ -1,10 +1,10 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-20
+ultima_atualizacao: 2026-05-21
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -39,6 +39,7 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - edição básica de perfil autenticado
 - exclusão lógica de conta
 - gestão administrativa de usuários cadastrados para suporte operacional
+- marcação administrativa de contas controladas por robôs internos
 
 ## Escopo excluído
 
@@ -67,9 +68,11 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - perfil autenticado exibe reputação em cards e mantém edição de dados na própria tela de perfil, sem rota separada
+- perfil autenticado usa `orynth_user_profiles.display_name` como fonte principal do nome editável; `orynth_users.first_name` permanece apenas como fallback/compatibilidade
 - `birth_date`, `sex`, email e bio são privados ao usuário autenticado e não aparecem no perfil público
 - exclusão lógica desativa login e sessões sem apagar dados físicos
 - Admin Ops lista usuários, abre detalhe operacional amplo e exibe badges adquiridas para suporte
+- Admin Ops pode marcar/desmarcar usuário como `bot` quando a conta for controlada por robôs internos; essa informação é visível apenas em contratos administrativos
 - ações administrativas de usuário usam contratos staff da FastAPI; o Django apenas renderiza estado e envia formulários
 
 ## Regras de domínio
@@ -81,11 +84,12 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - reCAPTCHA protege criação de conta contra abuso automatizado sem substituir validações de identidade, senha e aceite
 - exclusão lógica deve preservar histórico e bloquear uso normal
 - ações administrativas sobre conta exigem usuário staff, nota operacional e auditoria
-- operador não pode desativar, revogar sessões ou ajustar wallet da própria conta
+- operador não pode desativar nem revogar sessões da própria conta; ajuste manual de wallet da própria conta é permitido para `staff`/`superuser`, desde que tenha nota e auditoria
 - alteração de `is_staff` e `is_superuser` exige operador `is_superuser=true`, nota operacional e auditoria
 - operador não pode alterar privilégios da própria conta; `is_superuser=true` implica `is_staff=true`
 - sistema não permite remover o último superusuário ativo
 - gestão administrativa não permite alterar reputação manualmente nesta fatia
+- `is_bot` não deve aparecer em `/users/me`, sessão comum ou perfil público
 
 ## Responsabilidades por camada
 
@@ -105,6 +109,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - tokens de recuperação de senha com hash, expiração e uso único
 - aceite de política de uso
 - estado da conta e timestamps de exclusão lógica
+- marcador administrativo `is_bot`
 
 ## Contratos afetados
 
@@ -120,9 +125,9 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte
-- Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação, revogação de sessões e gestão controlada de papéis via contratos staff
-- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust` ou `user.roles_update` em `orynth_admin_events`
-- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`, `POST /admin/users/{user_id}/roles`
+- Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação, revogação de sessões, gestão controlada de papéis e marcação `is_bot` via contratos staff
+- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust`, `user.roles_update` ou `user.bot_update` em `orynth_admin_events`
+- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`, `POST /admin/users/{user_id}/roles`, `POST /admin/users/{user_id}/bot`
 
 ## Testes esperados
 
@@ -139,13 +144,16 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
 - fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
 - fluxo de edição de perfil na própria página autenticada
+- regressão para `/profile/` renderizar dados reais de `orynth_user_profiles`, incluindo `display_name`, `bio`, `birth_date` e `sex`
 - fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público
 - fluxo de exclusão lógica
 - fluxo staff de listagem/detalhe administrativo de usuário
 - detalhe administrativo exibe badges adquiridas sem recalcular elegibilidade na UI
 - fluxo staff de desativação, reativação e revogação de sessões com auditoria
 - fluxo superuser de promoção/rebaixamento de papéis administrativos com auditoria
+- fluxo staff de marcação/desmarcação `is_bot` com filtro administrativo e auditoria, sem exposição pública
 - bloqueio de ações administrativas perigosas sobre a própria conta do operador
+- permissão explícita de ajuste manual de wallet sobre a própria conta de operador com auditoria
 
 ## Critérios de aceite
 
@@ -159,12 +167,15 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - sessão inválida é tratada corretamente
 - idioma preferencial é respeitado após autenticação
 - usuário autenticado consegue editar dados pessoais sem sair da tela de perfil
+- nome editável do perfil vem de `orynth_user_profiles.display_name` e é sincronizado no update sem substituir dados reais por valores genéricos da sessão
 - perfil público não expõe email, data de nascimento, sexo nem metadados privados do perfil
 - conta desativada não consegue efetuar login
 - staff consegue consultar usuários, abrir detalhe operacional e agir sobre status/sessões sem mutação local no Django
 - superuser consegue alterar papel administrativo de outro usuário com nota operacional
 - ações administrativas de usuário exigem nota, registram auditoria e preservam histórico
 - ajuste manual de wallet no detalhe administrativo exige escolha explícita de direção, sem valor pré-selecionado
+- staff/superuser consegue ajustar a própria wallet com justificativa auditada; demais ações sensíveis sobre a própria conta continuam bloqueadas
+- marcador `bot` aparece e filtra apenas em Admin Ops
 
 ## Impacto de mudança
 

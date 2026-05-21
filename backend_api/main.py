@@ -23,6 +23,7 @@ from backend_api.schemas import (
     AdminBadgeResponse,
     AdminDashboardSummaryResponse,
     AdminUserDetailResponse,
+    AdminUserBotPayload,
     AdminUserListResponse,
     AdminUserRolePayload,
     AdminUserWalletAdjustmentPayload,
@@ -276,12 +277,12 @@ def _unique_handle(cursor, value):
         suffix += 1
 
 
-def _user_response(row):
+def _user_response(row, *, display_name=None):
     return {
         "id": row["id"],
         "handle": _handle_seed(row["username"]),
         "email": row["email"],
-        "display_name": row["first_name"] or _handle_seed(row["username"]),
+        "display_name": display_name or row["first_name"] or _handle_seed(row["username"]),
         "preferred_language": row["preferred_language"],
         "created_at": row["date_joined"].isoformat(),
         "last_login": row["last_login"].isoformat() if row["last_login"] else None,
@@ -295,12 +296,13 @@ def _admin_user_response(row):
         "id": row["id"],
         "handle": _handle_seed(row["username"]),
         "email": row["email"],
-        "display_name": row["first_name"] or _handle_seed(row["username"]),
+        "display_name": row.get("profile_display_name") or row["first_name"] or _handle_seed(row["username"]),
         "preferred_language": row["preferred_language"],
         "account_status": row["account_status"],
         "is_active": bool(row["is_active"]),
         "is_staff": bool(row["is_staff"]),
         "is_superuser": bool(row["is_superuser"]),
+        "is_bot": bool(row.get("is_bot", False)),
         "created_at": row["date_joined"].isoformat(),
         "last_login": row["last_login"].isoformat() if row["last_login"] else None,
         "deactivated_at": row["deactivated_at"].isoformat() if row["deactivated_at"] else None,
@@ -310,11 +312,11 @@ def _admin_user_response(row):
     }
 
 
-def _public_user_response(row):
+def _public_user_response(row, *, display_name=None):
     return {
         "id": row["id"],
         "handle": _handle_seed(row["username"]),
-        "display_name": row["first_name"] or _handle_seed(row["username"]),
+        "display_name": display_name or row["first_name"] or _handle_seed(row["username"]),
     }
 
 
@@ -716,7 +718,7 @@ def _profile_response(cursor, user):
     positions = _ranking_positions(cursor)
     cursor.execute(
         """
-        SELECT p.id AS profile_id, p.bio, p.strong_category AS profile_category,
+        SELECT p.id AS profile_id, p.display_name, p.bio, p.strong_category AS profile_category,
                p.birth_date, p.sex, p.is_public, p.created_at AS profile_created_at,
                p.updated_at AS profile_updated_at,
                r.reputation_score, r.resolved_predictions_count, r.accuracy_indicator,
@@ -729,10 +731,10 @@ def _profile_response(cursor, user):
     )
     profile = cursor.fetchone()
     return {
-        "user": _user_response(user),
+        "user": _user_response(user, display_name=profile["display_name"]),
         "profile_id": profile["profile_id"],
         "bio": profile["bio"],
-        "strong_category": profile["profile_category"] or profile["reputation_category"],
+        "strong_category": profile["profile_category"] or profile["reputation_category"] or "",
         "birth_date": profile["birth_date"].isoformat() if profile["birth_date"] else None,
         "sex": profile["sex"] or "",
         "profile_created_at": profile["profile_created_at"].isoformat(),
@@ -752,7 +754,7 @@ def _profile_response(cursor, user):
 
 def _public_profile_response(cursor, user):
     profile = _profile_response(cursor, user)
-    profile["user"] = _public_user_response(user)
+    profile["user"] = _public_user_response(user, display_name=profile["user"]["display_name"])
     profile.pop("birth_date", None)
     profile.pop("sex", None)
     profile.pop("profile_id", None)
@@ -1092,7 +1094,14 @@ def get_public_stats():
                 SELECT
                     (SELECT COUNT(*) FROM orynth_markets WHERE status = 'open') AS open_markets,
                     (SELECT COUNT(*) FROM orynth_predictions) AS total_predictions,
-                    (SELECT COALESCE(SUM(amount), 0) FROM orynth_wallet_ledger WHERE direction = 'credit') AS distributed_oc,
+                    (
+                        SELECT COALESCE(SUM(l.amount), 0)
+                        FROM orynth_wallet_ledger l
+                        INNER JOIN orynth_users u ON u.id = l.user_id
+                        WHERE l.direction = 'credit'
+                          AND u.is_staff = false
+                          AND u.is_superuser = false
+                    ) AS distributed_oc,
                     (SELECT COALESCE(SUM(stake_amount), 0) FROM orynth_predictions) AS moved_oc
                 """
             )
@@ -1292,11 +1301,13 @@ def _admin_user_row(cursor, user_id):
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
                u.date_joined, u.last_login, u.account_status, u.is_active,
-               u.is_staff, u.is_superuser, u.deactivated_at,
+               u.is_staff, u.is_superuser, u.is_bot, u.deactivated_at,
+               p.display_name AS profile_display_name,
                COALESCE(w.available_oc, 0) AS available_oc,
                COALESCE(w.locked_oc, 0) AS locked_oc,
                COALESCE(r.reputation_score, 0) AS reputation_score
         FROM orynth_users u
+        LEFT JOIN orynth_user_profiles p ON p.user_id = u.id
         LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
         LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
         WHERE u.id = %s
@@ -1311,11 +1322,13 @@ def _admin_user_row(cursor, user_id):
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
                u.date_joined, u.last_login, u.account_status, u.is_active,
-               u.is_staff, u.is_superuser, u.deactivated_at,
+               u.is_staff, u.is_superuser, u.is_bot, u.deactivated_at,
+               p.display_name AS profile_display_name,
                COALESCE(w.available_oc, 0) AS available_oc,
                COALESCE(w.locked_oc, 0) AS locked_oc,
                COALESCE(r.reputation_score, 0) AS reputation_score
         FROM orynth_users u
+        LEFT JOIN orynth_user_profiles p ON p.user_id = u.id
         LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
         LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
         WHERE u.id = %s
@@ -1325,8 +1338,8 @@ def _admin_user_row(cursor, user_id):
     return cursor.fetchone()
 
 
-def _require_admin_target(staff, target, *, allow_superuser=False):
-    if int(staff["id"]) == int(target["id"]):
+def _require_admin_target(staff, target, *, allow_superuser=False, allow_self=False):
+    if int(staff["id"]) == int(target["id"]) and not allow_self:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Operador não pode executar esta ação sobre a própria conta.")
     if target["is_superuser"] and not allow_superuser:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ação não permitida para superusuário.")
@@ -3034,6 +3047,7 @@ def admin_list_users(
     q: str = Query(default=""),
     status_filter: str = Query(default="", alias="status"),
     role: str = Query(default=""),
+    bot: str = Query(default=""),
     order: str = Query(default="created_desc"),
     authorization: str = Header(default=""),
 ):
@@ -3049,9 +3063,9 @@ def admin_list_users(
     params = []
     search = (q or "").strip()
     if search:
-        where.append("(lower(u.email) LIKE lower(%s) OR lower(u.username) LIKE lower(%s) OR lower(u.first_name) LIKE lower(%s))")
+        where.append("(lower(u.email) LIKE lower(%s) OR lower(u.username) LIKE lower(%s) OR lower(u.first_name) LIKE lower(%s) OR lower(p.display_name) LIKE lower(%s))")
         like = f"%{search}%"
-        params.extend([like, like, like])
+        params.extend([like, like, like, like])
     if status_filter in {"active", "deactivated"}:
         where.append("u.account_status = %s")
         params.append(status_filter)
@@ -3061,6 +3075,10 @@ def admin_list_users(
         where.append("u.is_superuser = true")
     elif role == "user":
         where.append("u.is_staff = false AND u.is_superuser = false")
+    if bot == "yes":
+        where.append("u.is_bot = true")
+    elif bot == "no":
+        where.append("u.is_bot = false")
     where_sql = f"WHERE {' AND '.join(where)}" if where else ""
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -3069,11 +3087,13 @@ def admin_list_users(
                 f"""
                 SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
                        u.date_joined, u.last_login, u.account_status, u.is_active,
-                       u.is_staff, u.is_superuser, u.deactivated_at,
+                       u.is_staff, u.is_superuser, u.is_bot, u.deactivated_at,
+                       p.display_name AS profile_display_name,
                        COALESCE(w.available_oc, 0) AS available_oc,
                        COALESCE(w.locked_oc, 0) AS locked_oc,
                        COALESCE(r.reputation_score, 0) AS reputation_score
                 FROM orynth_users u
+                LEFT JOIN orynth_user_profiles p ON p.user_id = u.id
                 LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
                 LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
                 {where_sql}
@@ -3091,6 +3111,7 @@ def admin_list_users(
                     COALESCE(SUM(CASE WHEN account_status = 'deactivated' THEN 1 ELSE 0 END), 0) AS deactivated,
                     COALESCE(SUM(CASE WHEN is_staff = true AND is_superuser = false THEN 1 ELSE 0 END), 0) AS staff,
                     COALESCE(SUM(CASE WHEN is_superuser = true THEN 1 ELSE 0 END), 0) AS superuser,
+                    COALESCE(SUM(CASE WHEN is_bot = true THEN 1 ELSE 0 END), 0) AS bots,
                     COALESCE(SUM(CASE WHEN is_staff = false AND is_superuser = false THEN 1 ELSE 0 END), 0) AS users
                 FROM orynth_users
                 """
@@ -3104,6 +3125,7 @@ def admin_list_users(
                     "deactivated": int(counts["deactivated"] or 0),
                     "staff": int(counts["staff"] or 0),
                     "superuser": int(counts["superuser"] or 0),
+                    "bots": int(counts["bots"] or 0),
                     "users": int(counts["users"] or 0),
                 },
             }
@@ -3207,7 +3229,7 @@ def admin_adjust_user_wallet(user_id: int, payload: AdminUserWalletAdjustmentPay
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             target = _admin_user_row(cursor, user_id)
-            _require_admin_target(staff, target, allow_superuser=True)
+            _require_admin_target(staff, target, allow_superuser=True, allow_self=True)
             wallet = _wallet_summary(cursor, user_id)
             if payload.direction == "debit" and wallet["available_oc"] < payload.amount_oc:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo disponível insuficiente para débito manual.")
@@ -3264,6 +3286,22 @@ def admin_update_user_roles(user_id: int, payload: AdminUserRolePayload, authori
             )
             role_label = "superuser" if is_superuser else "staff" if is_staff else "user"
             _record_admin_event(cursor, staff["id"], "user.roles_update", "user", str(user_id), f"{note} | role={role_label}")
+            return _admin_user_detail(cursor, user_id)
+
+
+@app.post("/admin/users/{user_id}/bot", response_model=AdminUserDetailResponse)
+def admin_update_user_bot(user_id: int, payload: AdminUserBotPayload, authorization: str = Header(default="")):
+    note = payload.note.strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target, allow_superuser=True)
+            cursor.execute("UPDATE orynth_users SET is_bot = %s WHERE id = %s", (bool(payload.is_bot), user_id))
+            label = "bot" if payload.is_bot else "human"
+            _record_admin_event(cursor, staff["id"], "user.bot_update", "user", str(user_id), f"{note} | bot={label}")
             return _admin_user_detail(cursor, user_id)
 
 
@@ -4463,9 +4501,9 @@ def register(payload: RegisterPayload, request: Request):
                 INSERT INTO orynth_users
                     (password, last_login, is_superuser, username, first_name, last_name, is_staff, is_active,
                      date_joined, email, preferred_language, external_provider, external_subject,
-                     terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at)
+                     terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at, is_bot)
                 VALUES (%s, NULL, false, %s, %s, '', false, true, %s, %s, %s, '', '',
-                        %s, %s, 'active', NULL, NULL)
+                        %s, %s, 'active', NULL, NULL, false)
                 RETURNING id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff
                 """,
                 (

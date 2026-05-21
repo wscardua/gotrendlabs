@@ -40,6 +40,7 @@
 - Listas web simples do produto e browses principais do Admin Ops devem usar o padrão `Carregar mais` em blocos cumulativos de 10 itens; paginação por offset fica reservada para auditorias ou telas com necessidade explícita de navegação posicional.
 - Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`viewer_has_favorite`, `viewer_has_prediction`, `viewer_has_like`, `is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
 - Métricas públicas da home devem consumir labels e totais prontos do backend/fallback local (`open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`); a UI não calcula totais de ledger, stakes, wallet ou previsão.
+- O label `distributed_oc` já deve chegar sem créditos de operadores; a UI não aplica filtro por papel em métricas públicas.
 - A moeda educativa deve ser exibida como `O₵` em textos visíveis; identificadores técnicos, campos e nomes internos continuam usando `_oc`.
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
 - Favoritos no feed da home representam mercados salvos pelo usuário autenticado; `is_featured` permanece como curadoria editorial para destaques visuais.
@@ -52,11 +53,15 @@
 - A tela de ranking deve consumir `GET /rankings`; se a FastAPI estiver indisponível, a UI exibe erro/estado vazio sem recalcular reputação em Django ou no navegador.
 - O ranking público deve renderizar `handle` como identificação do usuário e nunca exibir recorte pessoal fictício para visitantes.
 - A tela autenticada de perfil deve manter a edição básica inline na própria `/profile/`, evitando rota separada para alteração de dados pessoais.
+- A tela autenticada de perfil deve preencher campos com dados reais retornados por `/users/me`, priorizando `orynth_user_profiles.display_name` para o nome editável.
 - A UI de perfil não deve exibir dados privados em blocos públicos/resumo; email, data de nascimento, sexo e bio aparecem somente como campos editáveis do usuário autenticado.
+- O ticket de previsão deve iniciar sem opção marcada, orientar a seleção explícita e usar controle nativo obrigatório para impedir confirmação ambígua.
+- Usuário autenticado sem saldo disponível deve ver o ticket em estado de leitura, com indicação de saldo indisponível e CTA para wallet.
 - A página pública de badges renderiza o catálogo vindo da API; quando houver sessão, exibe estado pessoal retornado pelo domínio sem calcular elegibilidade no template.
 - Cards de badge usam `image_url` como imagem padrão/tema claro e trocam para `image_dark_url` quando o tema escuro estiver ativo; se a imagem escura não existir, a imagem padrão permanece como fallback.
 - A ação de compartilhar badge só aparece para usuário autenticado em badge com `status=earned`; a rota `/share/badge/{code}/` valida a conquista via contrato de badges antes de renderizar.
 - Compartilhamento social no frontend é apresentação de estado persistido: pergunta de mercado, resultado e badge podem expor links por rede, metadados Open Graph/Twitter e imagem social dinâmica, mas não disparam concessão, reputação, ranking, wallet ou ledger.
+- Compartilhamento social de mercado deve mostrar opções/probabilidades e CTA clicável para o detalhe, usando texto editorial de incentivo sem criar ação de domínio.
 - Cards sociais usam URL pública configurável para que crawlers de redes consigam ler `og:image`; em host local a UI deve indicar que o preview externo não é rastreável.
 - Compartilhamento de badge conquistada pode gerar URL pública com token opaco de conquista, sem expor id, email ou handle no query string.
 - Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.

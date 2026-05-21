@@ -241,6 +241,15 @@ def admin_update_user_roles(token, user_id, is_staff, is_superuser, note):
     )
 
 
+def admin_update_user_bot(token, user_id, is_bot, note):
+    return _request(
+        "POST",
+        f"/admin/users/{user_id}/bot",
+        {"is_bot": is_bot, "note": note},
+        token=token,
+    )
+
+
 def admin_create_market(token, data):
     return _normalize_market_payload(_request("POST", "/admin/markets", data, token=token))
 

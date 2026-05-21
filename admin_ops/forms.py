@@ -321,6 +321,11 @@ class AdminUserRoleForm(forms.Form):
         }
 
 
+class AdminUserBotForm(forms.Form):
+    is_bot = forms.BooleanField(label="Conta controlada por robôs", required=False)
+    note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
+
+
 RESOLUTION_TIMEZONE_CHOICES = (
     ("America/Sao_Paulo", "America/Sao_Paulo"),
     ("UTC", "UTC"),

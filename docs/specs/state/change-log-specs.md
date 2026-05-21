@@ -94,3 +94,9 @@
 - registrado que operadores (`staff`/`superuser`) não recebem bootstrap público de reputação, wallet inicial, badges ou atividade social
 - registrado que thumbnails de mercado com `image_url` devem ser imagens puras do evento, sem título/texto embutido, mantendo HTML/API como fonte de verdade de metadados
 - documentado o lote editorial seed de 27 mercados em `docs/specs/state/editorial-seed-markets-20260521.md`
+- registrado que `/profile/` usa dados reais de `orynth_user_profiles`, com `display_name` como fonte principal do nome editável
+- registrado marcador administrativo `is_bot` restrito a Admin Ops, com filtro, badge, edição auditada e sem exposição pública
+- registrado que ajuste manual de wallet da própria conta é permitido para operadores, mantendo auditoria, enquanto outras autoações sensíveis seguem bloqueadas
+- registrado que `O₵ distribuídas` exclui créditos de `staff` e `superuser`
+- registrado que ticket de previsão não pré-seleciona opção, orienta escolha explícita, usa radio obrigatório e apresenta estado sem saldo disponível
+- registrado que card social de mercado exibe opções/probabilidades e CTA editorial para o detalhe do mercado

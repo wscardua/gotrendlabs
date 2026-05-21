@@ -20,6 +20,7 @@
       <div><span>Desativados</span><strong>{{ user_data.counts.deactivated|default:0 }}</strong></div>
       <div><span>Staff</span><strong>{{ user_data.counts.staff|default:0 }}</strong></div>
       <div><span>Superuser</span><strong>{{ user_data.counts.superuser|default:0 }}</strong></div>
+      <div><span>Bots</span><strong>{{ user_data.counts.bots|default:0 }}</strong></div>
     </div>
 
     <form class="user-filter-panel" method="get">
@@ -42,6 +43,14 @@
           <option value="user" {% if active_role == "user" %}selected{% endif %}>Usuários</option>
           <option value="staff" {% if active_role == "staff" %}selected{% endif %}>Staff</option>
           <option value="superuser" {% if active_role == "superuser" %}selected{% endif %}>Superuser</option>
+        </select>
+      </label>
+      <label>
+        <span>Bot</span>
+        <select name="bot">
+          <option value="">Todos</option>
+          <option value="yes" {% if active_bot == "yes" %}selected{% endif %}>Bots</option>
+          <option value="no" {% if active_bot == "no" %}selected{% endif %}>Não bots</option>
         </select>
       </label>
       <label>
@@ -78,6 +87,7 @@
           <div class="user-row-state">
             {% if user.account_status == "active" %}<span class="tag safe">Ativo</span>{% else %}<span class="tag risk">Desativado</span>{% endif %}
             <span class="tag">{% if user.is_superuser %}Superuser{% elif user.is_staff %}Staff{% else %}Usuário{% endif %}</span>
+            {% if user.is_bot %}<span class="tag">Bot</span>{% endif %}
           </div>
           <div class="user-row-metrics">
             <div><span>Saldo</span><strong>{{ user.available_oc }} O₵</strong><small>{{ user.locked_oc }} bloqueado</small></div>

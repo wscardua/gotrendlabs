@@ -68,6 +68,7 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 
 - O `stake_amount` deve respeitar saldo disponível e limites definidos.
 - O contrato deve devolver erros claros para saldo insuficiente, mercado fechado, opção inválida, sessão inválida e previsão duplicada no mesmo mercado.
+- O frontend não deve enviar previsão sem `option_id`; a UI deve iniciar sem seleção padrão e usar validação nativa obrigatória para escolha explícita.
 - O snapshot retornado precisa ser compatível com o frontend, mas a fonte de verdade permanece no backend.
 - A prévia de retorno deve vir do `backend-api`; cálculos no navegador são apenas estado visual temporário e não autoritativo.
 - `probability` é inteiro de display; cálculos, barras e gráficos devem usar `probability_exact`.

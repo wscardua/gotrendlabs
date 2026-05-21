@@ -37,9 +37,12 @@
 - Catálogo, regra executável e concessão de badges são autoridade do backend; Admin Ops e frontend apenas consomem contratos.
 - `GET /admin/markets` deve suportar ordenações operacionais por popularidade (`views_desc` e `shares_desc`) usando os contadores persistidos do mercado.
 - `GET /admin/users` deve suportar busca por email/handle/nome, filtros por status/papel e ordenações operacionais por criação, último login, saldo e reputação.
+- `GET /admin/users` deve suportar filtro `bot=yes|no` e retornar `is_bot` apenas em contratos administrativos.
 - `GET /admin/users/{user_id}` deve expor detalhe operacional amplo para staff, incluindo perfil privado, wallet, ledger recente, reputação, previsões, comentários, sugestões, feedback, sessões, eventos de auth, eventos administrativos e badges adquiridas.
 - Ações staff em `/admin/users/{user_id}` devem cobrir desativação, reativação, revogação de sessões e ajuste manual de wallet, sempre com nota operacional e auditoria.
 - `POST /admin/users/{user_id}/roles` deve exigir operador superuser, nota operacional, bloquear autoalteração, tratar `is_superuser` como implicando `is_staff` e registrar `user.roles_update`.
+- `POST /admin/users/{user_id}/bot` deve marcar/desmarcar conta controlada por robôs internos, exigir nota operacional, bloquear autoalteração e registrar `user.bot_update`.
+- Ajuste manual de wallet pode ser aplicado à própria conta do operador staff/superuser; as demais autoações sensíveis continuam bloqueadas.
 - Recuperação de senha deve expor `POST /auth/password-reset/request` e `POST /auth/password-reset/confirm`, armazenando apenas hash do token, expiração e uso único; confirmação revoga sessões ativas.
 - Concessão automática de badge deve ser idempotente e não pode alterar reputação, ranking, wallet ou ledger.
 - A `BadgeAwardEngine` é o ponto único para avaliar regras e persistir conquistas em `orynth_user_badge_awards`; handlers HTTP e ações administrativas devem apenas disparar eventos de domínio.
@@ -52,5 +55,5 @@
 - O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `orynth_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
 - Status do daemon deve usar `orynth_site_config.daemon_stale_after_minutes` para `Atrasado` e `orynth_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.
 - `GET /stats` deve expor métricas públicas de leitura para a home, incluindo mercados abertos, previsões totais, `O₵` distribuídas e `O₵` movimentadas, sem efeitos colaterais.
-- `distributed_oc` em `/stats` é agregado a partir de créditos do ledger de wallet; `moved_oc` é agregado a partir de stakes de previsões registradas.
+- `distributed_oc` em `/stats` é agregado a partir de créditos do ledger de wallet de usuários comuns, excluindo `staff` e `superuser`; `moved_oc` é agregado a partir de stakes de previsões registradas.
 - Respostas públicas de moeda podem entregar labels prontos para apresentação com `O₵`, preservando nomes técnicos `_oc` nos contratos.

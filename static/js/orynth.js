@@ -333,17 +333,27 @@ $$("[data-taxonomy-filter]").forEach((button) => {
   });
 });
 
-$$("[data-choice]").forEach((choice) => {
-  choice.addEventListener("click", () => {
-    const group = choice.closest(".option-grid");
+document.addEventListener("click", (event) => {
+  const choice = event.target.closest("[data-choice]");
+  if (!choice) return;
+  const group = choice.closest(".option-grid");
+  const form = choice.closest("form");
+  if (group) {
     $$(".choice", group).forEach((item) => item.classList.remove("active"));
-    choice.classList.add("active");
-    const target = $("[data-selected-choice]");
-    if (target) target.textContent = choice.dataset.choice;
-    const optionInput = $("[data-selected-option-id]");
-    if (optionInput && choice.dataset.optionId) optionInput.value = choice.dataset.optionId;
-    updatePredictionPreview();
-  });
+  }
+  choice.classList.add("active");
+  const radio = $("input[name='option_id']", choice);
+  if (radio) radio.checked = true;
+  const target = form ? $("[data-selected-choice]", form) : $("[data-selected-choice]");
+  if (target) target.textContent = choice.dataset.choice;
+  const optionInput = form ? $("[data-selected-option-id]:checked", form) || $("[data-selected-option-id]", form) : $("[data-selected-option-id]:checked") || $("[data-selected-option-id]");
+  if (optionInput && choice.dataset.optionId && optionInput.type === "hidden") optionInput.value = choice.dataset.optionId;
+  const submit = form ? $("[data-requires-choice]", form) : null;
+  if (submit) {
+    submit.disabled = false;
+    submit.removeAttribute("disabled");
+  }
+  updatePredictionPreview();
 });
 
 function updatePredictionPreview() {
@@ -357,6 +367,8 @@ function updatePredictionPreview() {
   const form = $("[data-prediction-preview-url]");
   const preview = $("#prediction-preview");
   if (!form || !preview) return;
+  const optionInput = $("[data-selected-option-id]:checked", form) || $("[data-selected-option-id][type='hidden']", form);
+  if (!optionInput?.value) return;
   const body = new FormData(form);
   fetch(form.dataset.predictionPreviewUrl, {
     method: "POST",
@@ -394,6 +406,8 @@ function runConfirmedAction(trigger) {
 $$("[data-confirm]").forEach((trigger) => {
   trigger.addEventListener("click", (event) => {
     event.preventDefault();
+    const form = trigger.closest("form");
+    if (form && trigger.type === "submit" && !form.reportValidity()) return;
     const modal = $("#confirm-modal");
     if (!modal) return;
     pendingConfirmTrigger = trigger;

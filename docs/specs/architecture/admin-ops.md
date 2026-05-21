@@ -73,12 +73,14 @@
 - Browses principais de usuários, mercados, resolução, filas e logs usam `Carregar mais` em blocos cumulativos de 10 itens, preservando filtros aplicados.
 - Browse de mercados administrativos deve degradar para leitura local em Postgres quando a FastAPI administrativa estiver indisponível ou retornar erro transitório, evitando bloquear a operação de visualização.
 - Browse de mercados administrativos deve manter a ação primária focada em `Editar/visualizar`; acesso à página pública fica no editor do mercado, não na tabela de listagem.
-- Gestão administrativa de usuários usa contratos staff da FastAPI para listagem, busca, detalhe operacional, desativação/reativação, revogação de sessões e ajuste manual de wallet.
-- Browse administrativo de usuários permite filtrar por status/papel, buscar por email/handle/nome e ordenar por criação, último login, saldo ou reputação.
+- Gestão administrativa de usuários usa contratos staff da FastAPI para listagem, busca, detalhe operacional, desativação/reativação, revogação de sessões, marcação `bot` e ajuste manual de wallet.
+- Browse administrativo de usuários permite filtrar por status/papel/bot, buscar por email/handle/nome e ordenar por criação, último login, saldo ou reputação.
 - Detalhe administrativo de usuário pode exibir dados privados para staff, incluindo perfil, wallet, ledger recente, reputação, previsões, comentários, filas, badges adquiridas, sessões e eventos.
-- Ações administrativas de usuário exigem nota operacional, não podem ser executadas sobre a própria conta do operador e registram `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust`.
+- Ações administrativas de usuário exigem nota operacional e registram `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust` ou `user.bot_update`.
+- Ações de desativação, revogação de sessões, papéis e marcação bot não podem ser executadas sobre a própria conta do operador; ajuste manual de wallet da própria conta é permitido para staff/superuser com auditoria.
 - Alteração de papel administrativo no detalhe do usuário usa contrato FastAPI, exige operador superuser, nota operacional, bloqueia alteração da própria conta e registra `user.roles_update`.
 - Ajuste manual de wallet deve iniciar sem direção pré-selecionada, usar ledger/projeção na FastAPI e não pode alterar reputação.
+- Marcação `bot` deve identificar contas controladas por robôs internos, aparecer somente no Admin Ops e não vazar em contratos públicos/autenticados comuns.
 - Browse de taxonomia administrativa usa tabela objetiva, filtros client-side por uso/bloqueio e card lateral com política de bloqueio.
 - Filas operacionais possuem primeira fatia real para Mercado e Feedback, com dados persistidos e listagem no Admin Ops.
 - Browse de filas operacionais exibe fila, item, tipo, data de criação, severidade interna, status e ação.

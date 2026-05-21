@@ -117,11 +117,12 @@ def badge_share_context(request, badge, viewer):
 
 
 def render_market_card(market, share):
+    option_summary = _market_option_summary(market)
     return _render_card(
         eyebrow=f"Orynth Trends · {market.get('category', 'Mercado')}",
         title=str(market.get("title", "Mercado Orynth Trends")),
         lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {currency_label(market.get('volume_oc', 0))} previstos",
-        body=f"{MARKET_CTA} Fonte: {market.get('source', 'verificavel')}",
+        body=option_summary or f"{MARKET_CTA} Fonte: {market.get('source', 'verificavel')}",
         url=share["display_url"],
         image_url=market.get("image_url"),
         fallback_mark=market.get("thumb") or "OR",
@@ -176,6 +177,17 @@ def _platform_links(url, text):
 
 def _display_url(url):
     return url.replace("https://", "").replace("http://", "").rstrip("/")
+
+
+def _market_option_summary(market):
+    options = market.get("options") or []
+    labels = []
+    for option in options[:4]:
+        label = "NÃO" if option.get("label") == "NAO" else str(option.get("label") or "")
+        probability = option.get("probability", 0)
+        if label:
+            labels.append(f"{label} {probability}%")
+    return "Opções: " + " · ".join(labels) if labels else ""
 
 
 def _is_publicly_crawlable(url):

@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.8
+versao: 0.9
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-20
+ultima_atualizacao: 2026-05-21
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -76,6 +76,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - visitante não vê o filtro `Minhas previsões`
 - o card principal do feed exibe os dois mercados publicados não cancelados mais visualizados por `view_count`, excluindo `draft` e `canceled`, com mercado mais novo como desempate
 - a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, total de `O₵` distribuídas e total de `O₵` movimentadas em previsões, sem filtrar por mês
+- a métrica `O₵ distribuídas` exclui créditos destinados a `staff` e `superuser`, evitando inflar economia pública com saldos operacionais internos
 - métricas públicas de moeda devem usar o símbolo de apresentação `O₵`; campos e identificadores técnicos permanecem com sufixo `_oc`
 - o texto da home deve preservar o contexto educativo e evitar termos que sugiram dinheiro real, trading ou saque
 - prévias públicas fora do feed, como o ticket de onboarding no cadastro, podem reutilizar mercados serializados pelo domínio como sinal social; para cadastro, usa maior `view_count` entre publicados não cancelados, exclui `draft` e `canceled`, e usa o mais recente por `created_at` como desempate/fallback
@@ -121,7 +122,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - controle `Carregar mais` do feed atua sobre a lista filtrada/ordenada no cliente, sem chamada adicional ao backend
 - `GET /stats` expõe métricas públicas da home: `open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`, `resolution_sla` e `real_money`
 - a métrica pública `previsões totais` é calculada a partir de `orynth_predictions` persistidas, sem janela mensal
-- a métrica pública `O₵ distribuídas` soma créditos positivos registrados no ledger de wallet e é enviada como label pronto para apresentação
+- a métrica pública `O₵ distribuídas` soma créditos positivos registrados no ledger de wallet de usuários comuns, excluindo operadores (`staff`/`superuser`), e é enviada como label pronto para apresentação
 - a métrica pública `O₵ movimentadas` soma stakes de previsões registradas e é enviada como label pronto para apresentação
 - browse administrativo de mercados usa fallback local em Postgres quando a API administrativa falha, mantendo a visualização de ativos/rascunhos disponível em desenvolvimento
 - browse administrativo de mercados exibe popularidade em indicadores compactos e permite alternar entre ordem padrão, mais visualizados e mais compartilhados
@@ -167,7 +168,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - renderização dos modos de ordenação rápida e do recorte `Resolvidos` no feed web
 - regressão para o modo `Mais curtidas` ordenando por curtidas reais do mercado
 - regressão para métrica de previsões totais baseada em previsões persistidas reais
-- regressão para métricas públicas de `O₵ distribuídas` e `O₵ movimentadas` na home e no contrato `/stats`
+- regressão para métricas públicas de `O₵ distribuídas` e `O₵ movimentadas` na home e no contrato `/stats`, garantindo exclusão de créditos de operadores na distribuição
 - renderização de `data-*` de ordenação e contador de curtidas no card
 - regressão para título do card como link para o detalhe do mercado
 - regressão para contadores operacionais de visualizações/compartilhamentos expostos no contrato e ocultos do feed público
@@ -202,6 +203,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
 - destaque principal exibe até dois mercados publicados não cancelados mais visualizados, excluindo `draft` e `canceled`, incluindo resolvidos quando liderarem por popularidade
 - home exibe métricas públicas de economia educativa com `O₵ distribuídas` e `O₵ movimentadas em previsões`, sem sugerir dinheiro real
+- créditos de `staff`/`superuser` não entram no número público de `O₵ distribuídas`
 
 ## Impacto de mudança
 

@@ -1,10 +1,10 @@
 ---
 id: FEAT-PRED-001
 titulo: "Previsão e stake"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-18
+ultima_atualizacao: 2026-05-21
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -59,6 +59,9 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - prévia calcula retorno estimado no backend sem persistir previsão, ledger ou probabilidade
 - usuário visitante visualiza opções e consenso, mas não vê controle de stake nem confirma previsão
 - usuário com previsão já registrada vê aviso destacado e controles de previsão desabilitados
+- mercado aberto não deve iniciar com opção pré-selecionada; o usuário precisa escolher explicitamente uma opção antes do envio ser válido
+- o ticket deve orientar a seleção da opção com chamada visual discreta e alinhada ao design system
+- usuário autenticado sem saldo disponível vê estado de leitura com indicação clara de saldo indisponível e CTA para wallet
 
 ## Regras de domínio
 
@@ -71,6 +74,7 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - a fonte de verdade da probabilidade é decimal (`probability_exact`); percentuais inteiros são apenas apresentação truncada
 - `probability_at_entry` e `potential_payout` devem usar a probabilidade decimal vigente antes da entrada
 - Django não deve executar fallback local mutável para previsão/stake quando a FastAPI estiver indisponível
+- o formulário web deve usar seleção nativa obrigatória (`radio`) para preservar validação mesmo quando JavaScript falhar
 
 ## Responsabilidades por camada
 
@@ -106,12 +110,16 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - unitários para validação de stake
 - integração de previsão com ledger
 - fluxo completo de confirmação
+- regressão para ticket iniciar sem opção marcada, exigir escolha explícita e não induzir o usuário pela primeira opção
+- regressão para estado sem saldo disponível no detalhe de mercado
 - regressão de hidratação local quando a FastAPI não entrega campos visuais novos
 
 ## Critérios de aceite
 
 - previsão válida gera registro e efeito financeiro coerente
 - previsões inválidas retornam erro previsível
+- usuário entende que precisa escolher uma opção antes de confirmar a previsão
+- usuário sem saldo entende que o ticket está somente para leitura até recarregar a wallet
 
 ## Impacto de mudança
 

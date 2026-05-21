@@ -56,6 +56,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-AUTH-001
 
+### 2026-05-21 - v0.14
+- perfil autenticado passou a priorizar `orynth_user_profiles.display_name` como fonte real do nome editável, preservando `orynth_users.first_name` como compatibilidade
+- Admin Ops passou a marcar contas controladas por robôs internos via `is_bot`, com filtro, badge e auditoria `user.bot_update`, sem exposição em contratos públicos/autenticados comuns
+- ajuste manual de wallet da própria conta passou a ser permitido para `staff`/`superuser`, mantendo nota, ledger e auditoria, enquanto demais autoações sensíveis continuam bloqueadas
+- status de implementação: `parcial`
+
 ### 2026-05-21 - v0.13
 - bootstrap de núcleo de usuário passou a diferenciar usuário comum de operador: contas `staff`/`superuser` não recebem `grant_initial`, reputação pública, badges nem atividade social
 - contexto web deixou de exibir reputação/acerto de operadores no chip, perfil, carteira e resumo da home
@@ -137,6 +143,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-MARKET-001
+
+### 2026-05-21 - v0.22
+- métrica pública `O₵ distribuídas` passou a excluir créditos de `staff` e `superuser` no contrato `/stats` e no fallback local da home
+- espaçamento visual do bloco `AO VIVO`/destaques da home foi ajustado para reduzir colisão entre rótulo e título
+- status de implementação: `parcial`
 
 ### 2026-05-21 - v0.21
 - adicionadas 27 thumbnails autorais de mercado como imagens puras, quadradas e específicas por evento, usadas via `image_url`
@@ -271,6 +282,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-002
 
+### 2026-05-21 - v0.9
+- card social de mercado passou a exibir opções/probabilidades com barras discretas de consenso
+- CTA editorial `Dispute previsões, construa reputação e ganhe destaque.` passou a direcionar para o detalhe do mercado
+- imagem social dinâmica de mercado passou a incluir resumo das opções principais
+- status de implementação: `parcial`
+
 ### 2026-05-19 - v0.8
 - abertura do detalhe público incrementa `view_count` do mercado com fallback local quando a API está indisponível
 - controles de compartilhamento de pergunta/resultado incrementam `share_count` via rota leve de tracking, sem bloquear navegação/cópia
@@ -320,6 +337,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-PRED-001
+
+### 2026-05-21 - v0.6
+- ticket de previsão em mercado aberto passou a iniciar sem opção pré-selecionada e usa radio obrigatório nativo para evitar confirmação ambígua
+- UI do ticket passou a orientar seleção explícita com chamada visual discreta antes das opções
+- usuário autenticado sem saldo disponível vê estado somente leitura com indicação de saldo indisponível e CTA para wallet
+- status de implementação: `parcial`
 
 ### 2026-05-19 - v0.5
 - prévia de retorno da previsão passou a ter contrato FastAPI sem efeito colateral
@@ -469,6 +492,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-WALLET-001
+
+### 2026-05-21 - v1.2
+- agregado público `O₵ distribuídas` passou a considerar apenas créditos de usuários comuns, excluindo operadores `staff` e `superuser`
+- ajuste manual de wallet permite autoajuste por operador com nota e auditoria, preservando bloqueio das demais autoações sensíveis
+- status de implementação: `parcial`
 
 ### 2026-05-20 - v1.1
 - ledger passou a alimentar o agregado público `O₵ distribuídas` usado nas métricas da home
