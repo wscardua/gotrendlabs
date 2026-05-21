@@ -1,4 +1,4 @@
-{$ORYNTH_DOMAIN} {
+(orynth_reverse_proxy) {
   encode gzip
 
   handle_path /static/* {
@@ -12,4 +12,13 @@
   }
 
   reverse_proxy django:8000
+}
+
+{$ORYNTH_HTTP_SITE:http://localhost} {
+  import orynth_reverse_proxy
+}
+
+{$ORYNTH_HTTPS_SITE:https://localhost} {
+  tls internal
+  import orynth_reverse_proxy
 }

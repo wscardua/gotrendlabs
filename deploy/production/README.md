@@ -132,6 +132,12 @@ O Caddy emite e renova o certificado automaticamente quando:
 - portas `80` e `443` estao liberadas no security group;
 - nenhum outro processo esta usando `80` ou `443` na EC2.
 
+Sem dominio registrado, use acesso temporario por IP:
+
+- `ORYNTH_HTTP_SITE=http://32.199.120.235`
+- `ORYNTH_HTTPS_SITE=https://32.199.120.235`
+- o HTTPS por IP usa certificado interno temporario e pode exigir aceitar o aviso do navegador.
+
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.
