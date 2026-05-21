@@ -922,3 +922,23 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-20
 - Retomada: configurar tokens opcionais de redes sociais quando a operação quiser consultar APIs externas diretamente
 - Reversão lógica: remover a skill e o guia, mantendo apenas o histórico documental desta decisão
+
+## WFLOW-20260521-001
+
+- Tipo: `docs-tooling`
+- Status: `concluido`
+- Feature alvo: `sistema-documental`, `curadoria-de-mercados`
+- Objetivo: reforçar a skill `orynth-prediction-markets` para validar que a fonte de resolução consegue fundamentar e certificar o resultado antes de sugerir mercados
+- Etapa atual: concluído; `python3 /Users/williamsca/.codex/skills/.system/skill-creator/scripts/quick_validate.py tools/skills/orynth/orynth-prediction-markets` e `git diff --check` executados com sucesso em 2026-05-21
+- Artefatos afetados:
+  - `tools/skills/orynth/orynth-prediction-markets/SKILL.md`
+  - `tools/skills/orynth/orynth-prediction-markets/references/fontes-sociais-e-verificacao.md`
+  - `tools/skills/orynth/orynth-prediction-markets/references/framework-de-mercados.md`
+  - `docs/guides/orynth-prediction-markets-skill.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-21
+- Atualizado em: 2026-05-21
+- Encerrado em: 2026-05-21
+- Retomada: integrar checagens automatizadas por API/navegador quando credenciais sociais oficiais estiverem configuradas
+- Reversão lógica: remover a etapa obrigatória de validação da fonte e voltar ao requisito anterior de link exato com fallback

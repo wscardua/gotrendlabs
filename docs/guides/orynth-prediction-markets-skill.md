@@ -28,8 +28,25 @@ Priorize dados internos da plataforma, evite repetir mercados existentes, manten
 3. Levantar categorias dominantes e subexploradas.
 4. Buscar trends externas em YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB ou fontes oficiais.
 5. Exigir link exato de verificacao para cada mercado.
-6. Aplicar anti-repeticao contra banco local e `references/mercados-anteriores.md`.
-7. Gerar lote com diversidade editorial.
+6. Validar se a fonte de resolucao consegue fundamentar e certificar o resultado.
+7. Aplicar anti-repeticao contra banco local e `references/mercados-anteriores.md`.
+8. Gerar lote com diversidade editorial.
+
+## Validacao Da Fonte De Resolucao
+
+A skill deve garantir que a fonte de resolucao seja valida antes de entregar um mercado.
+
+Ela pode usar qualquer recurso autorizado e disponivel:
+
+- navegador local do usuario
+- browser automation
+- APIs oficiais
+- web search
+- ORM, banco ou APIs internas da Orynth
+
+A fonte precisa permitir conferir objetivamente o resultado por meio de dado como data de publicacao, ranking, contagem, score, status, resultado oficial ou resposta de API.
+
+Se a fonte nao puder fundamentar a resolucao, a skill deve substituir o mercado ou perguntar objetivamente qual fonte autorizada usar.
 
 ## Quando Faltar Informacao
 
@@ -91,6 +108,7 @@ Cada mercado deve conter:
 - Prazo de resolucao
 - Fonte de resolucao
 - Link exato de verificacao
+- Status de validacao da fonte
 - Momento da checagem
 - Criterio objetivo de resolucao
 - Regra de empate/ambiguidade/indisponibilidade
@@ -126,6 +144,7 @@ Opcoes: Counter-Strike 2 / Dota 2 / Forza Horizon 6 / Subnautica 2 / Outro
 Prazo de resolucao: 27 de maio de 2026, 23:59 BRT
 Fonte de resolucao: SteamDB
 Link exato de verificacao: https://steamdb.info/charts/
+Status de validacao da fonte: validavel; ranking publico e objetivo, conferir acesso antes de finalizar e no prazo de resolucao.
 Momento da checagem: 27 de maio de 2026, 23:59 BRT
 Criterio objetivo de resolucao: vence o jogo melhor posicionado em "Most played games".
 Regra de empate/ambiguidade/indisponibilidade: se SteamDB falhar por 24h, usar ranking oficial da Steam.

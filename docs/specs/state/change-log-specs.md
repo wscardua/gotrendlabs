@@ -85,3 +85,9 @@
 - registrada rodada QA hard com 100 usuários simulados em `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`
 - adicionada skill `orynth-prediction-markets` para curadoria assistida de mercados de previsão com dados internos, trends sociais, diversidade, links exatos de verificação e anti-repetição
 - adicionado guia `docs/guides/orynth-prediction-markets-skill.md` para uso da skill de curadoria de mercados
+
+## 2026-05-21
+
+- reforçada a skill `orynth-prediction-markets` para exigir validação da fonte de resolução antes de aceitar mercados sugeridos
+- documentado que a validação pode usar navegador local, browser automation, APIs, web search, ORM, banco ou APIs internas quando necessário
+- adicionado `Status de validacao da fonte` ao formato esperado de mercados sugeridos
