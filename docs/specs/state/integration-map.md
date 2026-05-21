@@ -36,6 +36,7 @@
 - Recarga educativa de wallet usa `orynth_site_config.wallet_recharge_min_balance_oc` como piso operacional configurado no Admin Ops; Django e FastAPI bloqueiam solicitação quando `available_oc` está acima desse valor.
 - Status do daemon no Dashboard usa `orynth_site_config.daemon_stale_after_minutes` e `orynth_site_config.daemon_missing_after_minutes` como limites operacionais configurados no Admin Ops.
 - Ranking web consome `GET /rankings` como fonte autoritativa e usa `Carregar mais` em blocos cumulativos de 10 linhas sem recalcular reputação no Django.
+- Deploy MVP usa EC2 com Docker Compose para `proxy`, `django`, `fastapi` e `daemon`; PostgreSQL de producao fica em RDS/servico gerenciado fora do Compose.
 
 ## Skills técnicas por stack
 
