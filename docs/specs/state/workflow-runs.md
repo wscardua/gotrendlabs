@@ -84,6 +84,26 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Retomada: configurar EC2/RDS reais, preencher `.env.prod` fora do Git, apontar DNS e executar `deploy/production/deploy.sh`
 - Reversão lógica: remover artefatos de deploy de producao e voltar settings para defaults locais, preservando specs/ADR como decisão substituída
 
+## WFLOW-20260521-001
+
+- Tipo: `change-infra`
+- Status: `concluido`
+- Feature alvo: `infra-deploy-mvp`, `FEAT-OPSLOG-001`
+- Objetivo: provisionar a base AWS real do MVP com EC2 ARM, RDS PostgreSQL privado, SSM, CloudWatch minimo, segredos/configuracao e role OIDC para GitHub Actions
+- Etapa atual: concluido
+- Artefatos afetados:
+  - `deploy/production/README.md`
+  - `deploy/production/deploy.sh`
+  - `.github/workflows/deploy.yml`
+  - `docs/specs/decisions/ADR-0003-ec2-compose-rds-mvp.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum para a infra base; deploy da aplicacao depende de `.env.prod` criado fora do Git na EC2
+- Iniciado em: 2026-05-21
+- Atualizado em: 2026-05-21
+- Encerrado em: 2026-05-21
+- Retomada: criar `.env.prod` na EC2, configurar secrets/variables do GitHub, executar primeiro deploy e apontar DNS quando houver dominio
+- Reversão lógica: remover recursos AWS provisionados em `us-east-1` usando tags `Project=orynth`, `Environment=prod`, `ManagedBy=codex-mcp`, preservando ADR como decisão substituída se a estratégia mudar
+
 ## WFLOW-20260520-002
 
 - Tipo: `change-feature`

@@ -1,0 +1,109 @@
+name: CI and Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run test suite
+        run: python manage.py test
+
+  deploy:
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACTIONS_ROLE_ARN }}
+
+      - name: Trigger deploy over SSM
+        id: ssm
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+          APP_DIR: ${{ vars.APP_DIR || '/opt/orynth' }}
+          BRANCH: ${{ vars.DEPLOY_BRANCH || 'main' }}
+          REPO_URL: ${{ vars.REPO_URL || format('https://github.com/{0}.git', github.repository) }}
+          INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --region "$AWS_REGION" \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name "AWS-RunShellScript" \
+            --comment "Deploy Orynth from GitHub Actions" \
+            --parameters commands="[
+              \"set -euo pipefail\",
+              \"export APP_DIR='$APP_DIR'\",
+              \"export BRANCH='$BRANCH'\",
+              \"export REPO_URL='$REPO_URL'\",
+              \"if [ ! -d '$APP_DIR/.git' ]; then mkdir -p '$APP_DIR'; git clone --branch '$BRANCH' '$REPO_URL' '$APP_DIR'; fi\",
+              \"cd '$APP_DIR'\",
+              \"bash deploy/production/deploy.sh\"
+            ]" \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "command_id=$COMMAND_ID" >> "$GITHUB_OUTPUT"
+
+      - name: Wait for deploy to finish
+        env:
+          AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+          INSTANCE_ID: ${{ secrets.AWS_EC2_INSTANCE_ID }}
+          COMMAND_ID: ${{ steps.ssm.outputs.command_id }}
+        run: |
+          for _ in $(seq 1 60); do
+            STATUS=$(aws ssm get-command-invocation \
+              --region "$AWS_REGION" \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query "Status" \
+              --output text)
+
+            echo "Current status: $STATUS"
+
+            if [[ "$STATUS" == "Success" ]]; then
+              exit 0
+            fi
+
+            if [[ "$STATUS" == "Failed" || "$STATUS" == "Cancelled" || "$STATUS" == "TimedOut" ]]; then
+              aws ssm get-command-invocation \
+                --region "$AWS_REGION" \
+                --command-id "$COMMAND_ID" \
+                --instance-id "$INSTANCE_ID"
+              exit 1
+            fi
+
+            sleep 10
+          done
+
+          echo "Timed out waiting for deployment to finish."
+          exit 1

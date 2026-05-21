@@ -112,6 +112,8 @@ Os testes cobrem contratos de API, renderizacao web, fallback local de desenvolv
 
 O deploy de producao fica em `deploy/production/` e usa Docker Compose na EC2 para subir Caddy, Django, FastAPI e o daemon operacional. O PostgreSQL de producao deve ser gerenciado fora do Compose, por exemplo em Amazon RDS.
 
+A base AWS de producao foi provisionada em `us-east-1` com EC2 ARM gerenciada por SSM, RDS PostgreSQL privado, CloudWatch minimo, Secrets Manager/Parameter Store e role OIDC para GitHub Actions. O deploy automatico ainda depende da criacao segura de `.env.prod` fora do Git na EC2.
+
 Arquivos principais:
 
 - `Dockerfile`: imagem da aplicacao.
@@ -119,6 +121,7 @@ Arquivos principais:
 - `deploy/production/docker-compose.yml`: servicos de producao.
 - `deploy/production/Caddyfile`: HTTPS automatico e proxy reverso.
 - `deploy/production/deploy.sh`: fluxo de deploy na EC2.
+- `.github/workflows/deploy.yml`: testes em `main` e deploy futuro via SSM.
 
 Consulte `deploy/production/README.md` para a instalacao inicial e os comandos de deploy.
 
