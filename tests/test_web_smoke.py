@@ -24,6 +24,7 @@ from backend_api.db import database_config
 from backend_api.daemon_services import AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_system_logs
 from backend_api.daemon_services import _locked_markets_message
 from backend_api.main import app
+from backend_api.main import _ensure_user_core
 from backend_api.main import _record_wallet_entry
 from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
@@ -906,6 +907,7 @@ class BackendAuthAPITests(TestCase):
         ledger = client.get("/users/me/ledger", headers=headers)
         self.assertEqual(ledger.status_code, 200)
         self.assertEqual(ledger.json()["entries"][0]["entry_type"], "grant_initial")
+        self.assertEqual(WalletLedgerEntry.objects.filter(user__username="@usercore", entry_type="grant_initial").count(), 1)
 
         badges = client.get("/users/me/badges", headers=headers)
         self.assertEqual(badges.status_code, 200)
@@ -923,8 +925,47 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(ranking.status_code, 200)
         self.assertIn("@usercore", [row["handle"] for row in ranking.json()["rows"]])
 
+        repeat_me = client.get("/users/me", headers=headers)
+        self.assertEqual(repeat_me.status_code, 200)
+        self.assertEqual(UserReputation.objects.filter(user__username="@usercore").count(), 1)
+        self.assertEqual(WalletLedgerEntry.objects.filter(user__username="@usercore", entry_type="grant_initial").count(), 1)
+        self.assertEqual(WalletBalance.objects.get(user__username="@usercore").available_oc, 2000)
+
         invalid = client.get("/users/me", headers={"Authorization": "Bearer invalid"})
         self.assertEqual(invalid.status_code, 401)
+
+    def test_operator_core_bootstrap_does_not_create_public_reputation_or_initial_grant(self):
+        User = get_user_model()
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_users (
+                        password, last_login, is_superuser, username, first_name, last_name, email,
+                        is_staff, is_active, date_joined, preferred_language, external_provider,
+                        external_subject, terms_accepted_at, terms_version, account_status,
+                        deletion_requested_at, deactivated_at
+                    )
+                    VALUES (
+                        '', NULL, true, '@operator', 'Operator', '', 'operator@example.com',
+                        true, true, NOW(), 'pt-br', '', '', NULL, '', 'active', NULL, NULL
+                    )
+                    RETURNING id
+                    """
+                )
+                operator_id = cursor.fetchone()["id"]
+                _ensure_user_core(cursor, operator_id)
+                _ensure_user_core(cursor, operator_id)
+
+        operator = User.objects.get(id=operator_id)
+
+        self.assertFalse(UserReputation.objects.filter(user=operator).exists())
+        self.assertFalse(WalletLedgerEntry.objects.filter(user=operator).exists())
+        self.assertFalse(WalletLedgerEntry.objects.filter(user=operator, entry_type="grant_initial").exists())
+        self.assertEqual(WalletBalance.objects.get(user=operator).available_oc, 0)
+        self.assertFalse(operator.badges.exists())
+        self.assertFalse(operator.activities.exists())
 
     def test_badge_catalog_public_personalized_and_admin_contracts(self):
         client = TestClient(app)

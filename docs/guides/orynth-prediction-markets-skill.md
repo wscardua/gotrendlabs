@@ -31,6 +31,8 @@ Priorize dados internos da plataforma, evite repetir mercados existentes, manten
 6. Validar se a fonte de resolucao consegue fundamentar e certificar o resultado.
 7. Aplicar anti-repeticao contra banco local e `references/mercados-anteriores.md`.
 8. Gerar lote com diversidade editorial.
+9. Quando o usuario aprovar inclusao no banco, criar categorias/subcategorias necessarias de forma idempotente e manter os mercados como `draft` ate revisao/publicacao operacional.
+10. Thumbnails de mercado, quando geradas, devem ser imagens puras e autorais do evento/tema, sem texto ou titulo embutido. Titulo, categoria, subcategoria e fonte pertencem ao HTML/API, nao ao bitmap.
 
 ## Validacao Da Fonte De Resolucao
 

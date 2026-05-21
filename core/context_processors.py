@@ -18,20 +18,26 @@ def session_context(request):
         viewer["handle"] = _display_handle(user["handle"])
         viewer["initials"] = "".join(part[0] for part in viewer["name"].split()[:2]).upper() or "U"
         viewer["language"] = user["preferred_language"].upper()
+        is_operator = bool(user.get("is_staff") or user.get("is_superuser"))
         try:
             wallet = get_wallet(auth_token(request))
         except AuthAPIError:
             wallet = _local_wallet(user.get("id"))
         viewer["balance_oc"] = wallet.get("available_oc", viewer["balance_oc"])
         viewer["locked_oc"] = wallet.get("locked_oc", viewer["locked_oc"])
-        try:
-            profile = get_me(auth_token(request))
-            reputation = profile.get("reputation", {})
-        except AuthAPIError:
-            reputation = _local_reputation(user.get("id"))
-        viewer["reputation"] = reputation.get("reputation_score", viewer["reputation"])
-        viewer["accuracy"] = reputation.get("accuracy_indicator", viewer.get("accuracy", "0%"))
-        viewer["streak"] = reputation.get("streak", viewer.get("streak", 0))
+        if is_operator:
+            viewer["reputation"] = ""
+            viewer["accuracy"] = ""
+            viewer["streak"] = ""
+        else:
+            try:
+                profile = get_me(auth_token(request))
+                reputation = profile.get("reputation", {})
+            except AuthAPIError:
+                reputation = _local_reputation(user.get("id"))
+            viewer["reputation"] = reputation.get("reputation_score", viewer["reputation"])
+            viewer["accuracy"] = reputation.get("accuracy_indicator", viewer.get("accuracy", "0%"))
+            viewer["streak"] = reputation.get("streak", viewer.get("streak", 0))
     operator_maintenance_notice = bool(
         user
         and (user.get("is_staff") or user.get("is_superuser"))

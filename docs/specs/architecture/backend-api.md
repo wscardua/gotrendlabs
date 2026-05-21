@@ -33,6 +33,7 @@
 - `GET /admin/markets/{slug}/resolution-audit` deve expor auditoria staff read-only para mercados `resolved`, agregando previsões, ledger e badges sem mutação e retornando `422` para demais estados.
 - Ranking público deve excluir usuários administrativos (`is_staff` e `is_superuser`).
 - Ranking global usa reputação persistida; ranking por categoria/subcategoria pode ser calculado em leitura a partir de previsões resolvidas enquanto não houver materialização dedicada.
+- Bootstrap de núcleo de usuário deve diferenciar usuário comum de operador. Usuário comum recebe perfil, reputação inicial, wallet inicial, badges e atividade pública de cadastro de forma idempotente; `staff`/`superuser` recebe apenas o mínimo operacional necessário para navegar, sem `grant_initial`, reputação pública, badges ou atividade social.
 - Catálogo, regra executável e concessão de badges são autoridade do backend; Admin Ops e frontend apenas consomem contratos.
 - `GET /admin/markets` deve suportar ordenações operacionais por popularidade (`views_desc` e `shares_desc`) usando os contadores persistidos do mercado.
 - `GET /admin/users` deve suportar busca por email/handle/nome, filtros por status/papel e ordenações operacionais por criação, último login, saldo e reputação.

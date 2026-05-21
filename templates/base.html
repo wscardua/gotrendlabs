@@ -29,7 +29,7 @@
           <div class="user-chip">
             <button class="user-button" type="button">
               <span class="avatar">{{ viewer.initials }}</span>
-              <span class="chip-meta"><strong>{{ viewer.handle }}</strong><span>{{ viewer.name }} · {{ viewer.balance_oc }} O₵ · Rep {{ viewer.reputation }}</span></span>
+              <span class="chip-meta"><strong>{{ viewer.handle }}</strong><span>{{ viewer.name }} · {{ viewer.balance_oc }} O₵{% if not can_access_admin_ops %} · Rep {{ viewer.reputation }}{% endif %}</span></span>
             </button>
             <div class="user-menu">
               <a href="{% url 'profile' %}">Perfil e badges</a>

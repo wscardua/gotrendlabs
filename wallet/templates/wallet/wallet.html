@@ -9,7 +9,7 @@
       <div class="metric"><strong>{{ wallet.available_oc }} O₵</strong><span>saldo disponível</span></div>
       <div class="metric"><strong>{{ wallet.locked_oc }} O₵</strong><span>saldo bloqueado</span></div>
       <div class="metric"><strong>{{ wallet.total_earned_oc }} O₵</strong><span>ganhos por acerto</span></div>
-      <div class="metric"><strong>{{ reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação</span></div>
+      {% if not can_access_admin_ops %}<div class="metric"><strong>{{ reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação</span></div>{% endif %}
     </div>
     {% if messages %}{% for message in messages %}<div class="tag {% if message.tags == 'error' %}risk{% else %}safe{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
     {% if recharge_error %}<div class="tag risk">{{ recharge_error }}</div>{% endif %}

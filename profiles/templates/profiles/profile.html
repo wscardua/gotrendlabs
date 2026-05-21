@@ -5,12 +5,14 @@
   <section class="panel">
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Perfil público</span></div>
     <h1 class="large-title">{{ profile.user.display_name|default:viewer.name }}</h1>
-    <div class="metrics">
-      <div class="metric"><strong>{{ profile.reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação geral</span></div>
-      <div class="metric"><strong>{{ profile.reputation.accuracy_indicator|default:viewer.accuracy }}</strong><span>taxa de acerto</span></div>
-      <div class="metric"><strong>{{ profile.reputation.streak|default:viewer.streak }}</strong><span>sequência atual</span></div>
-      <div class="metric"><strong>#{{ profile.reputation.ranking_position|default:"-" }}</strong><span>ranking global</span></div>
-    </div>
+    {% if not can_access_admin_ops %}
+      <div class="metrics">
+        <div class="metric"><strong>{{ profile.reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação geral</span></div>
+        <div class="metric"><strong>{{ profile.reputation.accuracy_indicator|default:viewer.accuracy }}</strong><span>taxa de acerto</span></div>
+        <div class="metric"><strong>{{ profile.reputation.streak|default:viewer.streak }}</strong><span>sequência atual</span></div>
+        <div class="metric"><strong>#{{ profile.reputation.ranking_position|default:"-" }}</strong><span>ranking global</span></div>
+      </div>
+    {% endif %}
     {% if profile_error %}<div class="tag risk">{{ profile_error }}</div>{% endif %}
     {% if profile_success %}<div class="tag safe">{{ profile_success }}</div>{% endif %}
     <section class="profile-edit-section" id="editar-dados">
@@ -63,7 +65,7 @@
     </div>
   </section>
   <aside class="side-stack">
-    <div class="side-card"><h3>Histórico recente</h3>{% for item in activity %}<p>{{ item.title }}</p>{% empty %}<p>Nenhuma atividade recente.</p>{% endfor %}<a class="btn primary" href="{% url 'share-result' 'tiktok-resolvido-2026' %}">Compartilhar reputação</a></div>
+    <div class="side-card"><h3>Histórico recente</h3>{% for item in activity %}<p>{{ item.title }}</p>{% empty %}<p>Nenhuma atividade recente.</p>{% endfor %}{% if not can_access_admin_ops %}<a class="btn primary" href="{% url 'share-result' 'tiktok-resolvido-2026' %}">Compartilhar reputação</a>{% endif %}</div>
     <div class="side-card account-delete-card"><h3>Excluir conta</h3><p>A exclusão é lógica: o histórico é preservado para auditoria, mas login e uso normal ficam bloqueados.</p><form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_account"><label><input type="checkbox" name="confirm_delete"> Confirma a exclusão da minha conta</label><button class="btn danger" type="submit">Excluir conta</button></form></div>
   </aside>
 </main>
