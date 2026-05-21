@@ -1038,7 +1038,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-MARKET-001`, `FEAT-AUTH-001`, `FEAT-WALLET-001`
 - Objetivo: criar fluxo one-off idempotente para popular PRD com dados editoriais bons de DEV, admin inicial, wallet conciliada, badges com mídia e site config
-- Etapa atual: concluído; PRD populado com `@admin`, wallet conciliada, 10 badges com mídia, site config, 27 mercados editoriais, 65 opções e 47 arquivos de mídia; snapshot RDS pré-import `orynth-prod-before-bootstrap-20260521215807`
+- Etapa atual: concluído; PRD populado com `@admin`, wallet conciliada, 10 badges com mídia, site config, 27 mercados editoriais, 65 opções e 47 arquivos de mídia; snapshot RDS pré-import `orynth-prod-before-bootstrap-20260521215807`; senha de `admin@orynth.local` resetada e validada, parâmetros temporários de senha removidos do SSM
 - Artefatos afetados:
   - `scripts/ops/export_dev_bootstrap.py`
   - `scripts/ops/import_prod_bootstrap.py`
@@ -1047,5 +1047,5 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-05-21
 - Atualizado em: 2026-05-21
 - Encerrado em: 2026-05-21
-- Retomada: rotacionar/remover `/orynth/prod/bootstrap-admin-password` após o primeiro login administrativo e seguir criando novos conteúdos diretamente em PRD
+- Retomada: seguir criando novos conteúdos diretamente em PRD; se novo reset administrativo for necessário, usar `SecureString` temporário e removê-lo após validação
 - Reversão lógica: restaurar snapshot RDS pré-import e remover mídia copiada do volume `mediafiles`
