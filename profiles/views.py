@@ -22,14 +22,15 @@ def _load_more_limit(raw_limit, total, step=LOAD_MORE_STEP):
 
 
 def _profile_form_initial(profile_data):
+    user = profile_data.get("user") or {}
     return {
-        "display_name": profile_data["user"]["display_name"],
-        "handle": profile_data["user"]["handle"],
-        "email": profile_data["user"]["email"],
-        "preferred_language": profile_data["user"]["preferred_language"],
+        "display_name": user.get("display_name", ""),
+        "handle": user.get("handle", ""),
+        "email": user.get("email", ""),
+        "preferred_language": user.get("preferred_language", "pt-br"),
         "birth_date": profile_data.get("birth_date") or "",
         "sex": profile_data.get("sex") or "",
-        "bio": profile_data["bio"],
+        "bio": profile_data.get("bio", ""),
     }
 
 

@@ -19,6 +19,7 @@ class User(AbstractUser):
     account_status = models.CharField(max_length=32, choices=ACCOUNT_STATUS_CHOICES, default="active")
     deletion_requested_at = models.DateTimeField(null=True, blank=True)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    is_bot = models.BooleanField(default=False)
 
     class Meta:
         db_table = "orynth_users"

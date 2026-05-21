@@ -942,3 +942,32 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-21
 - Retomada: integrar checagens automatizadas por API/navegador quando credenciais sociais oficiais estiverem configuradas
 - Reversão lógica: remover a etapa obrigatória de validação da fonte e voltar ao requisito anterior de link exato com fallback
+
+## WFLOW-20260521-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AUTH-001`, `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-PRED-001`, `FEAT-WALLET-001`
+- Objetivo: corrigir perfil autenticado com dados reais do banco, adicionar marcação administrativa de bots, remover indução de escolha no ticket, ajustar métricas públicas de wallet, melhorar share de mercado e estados de saldo
+- Etapa atual: concluído; `.venv/bin/python manage.py check`, testes focados de perfil/ticket/share/admin e `.venv/bin/python manage.py test` executados com sucesso durante a implementação em 2026-05-21
+- Artefatos afetados:
+  - `accounts/`
+  - `admin_ops/`
+  - `backend_api/`
+  - `core/`
+  - `markets/templates/markets/detail.html`
+  - `profiles/views.py`
+  - `static/css/orynth.css`
+  - `static/js/orynth.js`
+  - `templates/`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/features/`
+  - `docs/specs/contracts/`
+  - `docs/specs/architecture/`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-21
+- Atualizado em: 2026-05-21
+- Encerrado em: 2026-05-21
+- Retomada: avaliar cache-busting centralizado para assets estáticos e teste visual automatizado quando o navegador MCP estiver disponível
+- Reversão lógica: remover `is_bot`, restaurar ticket com botão desabilitado até escolha, voltar métrica `distributed_oc` para todos os créditos e retirar opções/CTA do share de mercado

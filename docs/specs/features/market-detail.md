@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-002
 titulo: "Detalhe do mercado"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-18
+ultima_atualizacao: 2026-05-21
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -58,6 +58,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - usuário com previsão existente vê estado bloqueado e não pode reenviar
 - múltipla escolha exibe linha de evolução por opção
 - consenso exibe inteiro truncado, mas barras, gráficos e retorno estimado usam `probability_exact`
+- card de compartilhamento de mercado deve exibir opções/probabilidades do mercado e CTA principal para abrir o mercado usando texto editorial de incentivo
 
 ## Regras de domínio
 
@@ -79,6 +80,8 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - `GET /markets/{slug}` expõe `market_like_count` e `viewer_has_like` para curtidas reais do mercado, separadas de reações em comentários
 - abertura da página pública de detalhe incrementa `view_count` do mercado para popularidade operacional, sem deduplicação nesta v1
 - ações em controles de compartilhamento de pergunta/resultado incrementam `share_count` do mercado, sem bloquear navegação quando o tracking falha
+- página social de mercado mostra opções com barras discretas de consenso e CTA clicável `Dispute previsões, construa reputação e ganhe destaque.` direcionando ao detalhe do mercado
+- imagem social dinâmica de mercado inclui resumo das opções principais quando disponível
 - contrato expõe `sparkline_series` e paths SVG derivados de `orynth_predictions`
 - gráficos de evolução devem preservar histórico após resolução, considerando previsões `resolved` além das `open`
 - Django usa fallback local em Postgres para IDs de opções e campos visuais quando a FastAPI está indisponível ou com payload antigo
@@ -119,11 +122,13 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - regressão para mercado resolvido não zerar gráfico de consenso
 - regressão para ticket renderizar ciclo do mercado e destaque de resultado em mercado resolvido
 - regressão para tracking de visualização e compartilhamento não interferir na renderização do detalhe ou das páginas sociais
+- regressão para card social de mercado renderizar opções/probabilidades e CTA para o detalhe
 
 ## Critérios de aceite
 
 - usuário entende estado, opções e ação disponível sem ambiguidade
 - usuário reconhece rapidamente em que etapa do ciclo o mercado está e qual foi o resultado quando resolvido
+- usuário que recebe link de compartilhamento consegue ir ao mercado pelo CTA do próprio card social
 
 ## Impacto de mudança
 

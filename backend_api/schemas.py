@@ -163,6 +163,7 @@ class AdminUserResponse(BaseModel):
     is_active: bool
     is_staff: bool
     is_superuser: bool
+    is_bot: bool = False
     created_at: str
     last_login: Optional[str] = None
     deactivated_at: Optional[str] = None
@@ -203,6 +204,11 @@ class AdminUserWalletAdjustmentPayload(BaseModel):
 class AdminUserRolePayload(BaseModel):
     is_staff: bool = False
     is_superuser: bool = False
+    note: str = Field(min_length=1, max_length=2000)
+
+
+class AdminUserBotPayload(BaseModel):
+    is_bot: bool = False
     note: str = Field(min_length=1, max_length=2000)
 
 

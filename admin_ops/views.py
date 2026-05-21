@@ -49,6 +49,7 @@ from accounts.api_client import (
     admin_unblock_category,
     admin_unblock_subcategory,
     admin_update_user_roles,
+    admin_update_user_bot,
     admin_update_badge,
     admin_update_category,
     admin_update_market,
@@ -62,6 +63,7 @@ from admin_ops.forms import (
     AdminSubcategoryForm,
     AdminUserNoteForm,
     AdminUserRoleForm,
+    AdminUserBotForm,
     AdminUserWalletAdjustmentForm,
     DaemonConfigForm,
     EconomyConfigForm,
@@ -481,6 +483,7 @@ def users(request):
         "q": request.GET.get("q") or "",
         "status": request.GET.get("status") or "",
         "role": request.GET.get("role") or "",
+        "bot": request.GET.get("bot") or "",
         "order": request.GET.get("order") or "created_desc",
     }
     try:
@@ -502,6 +505,7 @@ def users(request):
             "active_q": filters["q"],
             "active_status": filters["status"],
             "active_role": filters["role"],
+            "active_bot": filters["bot"],
             "active_order": filters["order"],
         },
     )
@@ -601,6 +605,7 @@ def user_detail(request, user_id):
     note_form = AdminUserNoteForm()
     wallet_form = AdminUserWalletAdjustmentForm()
     role_form = AdminUserRoleForm()
+    bot_form = AdminUserBotForm()
     if request.method == "POST":
         action = request.POST.get("action", "")
         try:
@@ -652,6 +657,18 @@ def user_detail(request, user_id):
                     messages.success(request, "Papel administrativo atualizado.")
                     return redirect("admin-ops-user-detail", user_id=user_id)
                 error = "Revise o papel administrativo."
+            elif action == "bot_update":
+                bot_form = AdminUserBotForm(request.POST)
+                if bot_form.is_valid():
+                    admin_update_user_bot(
+                        token,
+                        user_id,
+                        bot_form.cleaned_data["is_bot"],
+                        bot_form.cleaned_data["note"],
+                    )
+                    messages.success(request, "Classificação de robô atualizada.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Informe a nota operacional."
         except AuthAPIError as exc:
             error = str(exc)
     try:
@@ -661,6 +678,7 @@ def user_detail(request, user_id):
     if detail and not request.method == "POST":
         role = "superuser" if detail["user"].get("is_superuser") else "staff" if detail["user"].get("is_staff") else "user"
         role_form = AdminUserRoleForm(initial={"role": role})
+        bot_form = AdminUserBotForm(initial={"is_bot": detail["user"].get("is_bot")})
     return render(
         request,
         "admin_ops/user_detail.html",
@@ -669,6 +687,7 @@ def user_detail(request, user_id):
             "note_form": note_form,
             "wallet_form": wallet_form,
             "role_form": role_form,
+            "bot_form": bot_form,
             "admin_error": error,
         },
     )

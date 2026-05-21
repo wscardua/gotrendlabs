@@ -331,6 +331,7 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(target.status_code, 201)
         staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
         target_headers = {"Authorization": f"Bearer {target.json()['session']['token']}"}
+        staff_id = staff.json()["user"]["id"]
         target_id = target.json()["user"]["id"]
         with get_connection() as connection:
             with connection.cursor() as cursor:
@@ -348,9 +349,22 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(detail.status_code, 200)
         payload = detail.json()
         self.assertEqual(payload["user"]["handle"], "@manageduser")
+        self.assertFalse(payload["user"]["is_bot"])
         self.assertEqual(payload["wallet"]["available_oc"], 2000)
         self.assertIn("sessions", payload)
         self.assertIn("auth_events", payload)
+
+        marked_bot = client.post(
+            f"/admin/users/{target_id}/bot",
+            headers=staff_headers,
+            json={"is_bot": True, "note": "Conta controlada por robô interno"},
+        )
+        self.assertEqual(marked_bot.status_code, 200)
+        self.assertTrue(marked_bot.json()["user"]["is_bot"])
+        self.assertTrue(AdminEvent.objects.filter(action="user.bot_update", entity_identifier=str(target_id)).exists())
+        bot_listing = client.get("/admin/users", headers=staff_headers, params={"bot": "yes"})
+        self.assertEqual(bot_listing.status_code, 200)
+        self.assertIn("managed-user@example.com", [user["email"] for user in bot_listing.json()["users"]])
 
         credit = client.post(
             f"/admin/users/{target_id}/wallet/adjust",
@@ -378,8 +392,17 @@ class BackendAuthAPITests(TestCase):
         )
         self.assertEqual(excessive_debit.status_code, 422)
 
+        self_credit = client.post(
+            f"/admin/users/{staff_id}/wallet/adjust",
+            headers=staff_headers,
+            json={"direction": "credit", "amount_oc": 25, "note": "Ajuste operacional próprio"},
+        )
+        self.assertEqual(self_credit.status_code, 200)
+        self.assertEqual(self_credit.json()["wallet"]["available_oc"], 2025)
+        self.assertTrue(AdminEvent.objects.filter(action="user.wallet_adjust", entity_identifier=str(staff_id)).exists())
+
         self_action = client.post(
-            f"/admin/users/{staff.json()['user']['id']}/sessions/revoke",
+            f"/admin/users/{staff_id}/sessions/revoke",
             headers=staff_headers,
             json={"note": "self"},
         )
@@ -891,6 +914,7 @@ class BackendAuthAPITests(TestCase):
 
         me = client.get("/users/me", headers=headers)
         self.assertEqual(me.status_code, 200)
+        self.assertEqual(me.json()["user"]["display_name"], "User Core")
         self.assertEqual(me.json()["reputation"]["reputation_score"], 100)
         self.assertIn("profile_id", me.json())
         self.assertIn("profile_created_at", me.json())
@@ -920,6 +944,18 @@ class BackendAuthAPITests(TestCase):
         public_profile = client.get("/users/usercore")
         self.assertEqual(public_profile.status_code, 200)
         self.assertEqual(public_profile.json()["user"]["handle"], "@usercore")
+        self.assertEqual(public_profile.json()["user"]["display_name"], "User Core")
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id FROM orynth_users WHERE username = %s", ("@usercore",))
+                user_id = cursor.fetchone()["id"]
+                cursor.execute("UPDATE orynth_users SET first_name = '' WHERE id = %s", (user_id,))
+                cursor.execute("UPDATE orynth_user_profiles SET display_name = %s WHERE user_id = %s", ("Nome vindo do perfil", user_id))
+        profile_backed_me = client.get("/users/me", headers=headers)
+        self.assertEqual(profile_backed_me.status_code, 200)
+        self.assertEqual(profile_backed_me.json()["user"]["display_name"], "Nome vindo do perfil")
+        self.assertEqual(profile_backed_me.json()["strong_category"], "")
 
         ranking = client.get("/rankings")
         self.assertEqual(ranking.status_code, 200)
@@ -945,11 +981,11 @@ class BackendAuthAPITests(TestCase):
                         password, last_login, is_superuser, username, first_name, last_name, email,
                         is_staff, is_active, date_joined, preferred_language, external_provider,
                         external_subject, terms_accepted_at, terms_version, account_status,
-                        deletion_requested_at, deactivated_at
+                        deletion_requested_at, deactivated_at, is_bot
                     )
                     VALUES (
                         '', NULL, true, '@operator', 'Operator', '', 'operator@example.com',
-                        true, true, NOW(), 'pt-br', '', '', NULL, '', 'active', NULL, NULL
+                        true, true, NOW(), 'pt-br', '', '', NULL, '', 'active', NULL, NULL, false
                     )
                     RETURNING id
                     """
@@ -1269,9 +1305,13 @@ class BackendAuthAPITests(TestCase):
         self.assertEqual(updated.json()["user"]["handle"], "@policyupdated")
         self.assertEqual(updated.json()["user"]["email"], "policy-updated@example.com")
         self.assertEqual(updated.json()["user"]["preferred_language"], "en")
+        self.assertEqual(updated.json()["user"]["display_name"], "Policy Updated")
         self.assertEqual(updated.json()["birth_date"], "1990-04-23")
         self.assertEqual(updated.json()["sex"], "prefer_not_to_say")
         user.profile.refresh_from_db()
+        user.refresh_from_db()
+        self.assertEqual(user.profile.display_name, "Policy Updated")
+        self.assertEqual(user.first_name, "Policy Updated")
         self.assertEqual(user.profile.birth_date.isoformat(), "1990-04-23")
         self.assertEqual(user.profile.sex, "prefer_not_to_say")
 
@@ -2918,9 +2958,56 @@ class WebSmokeTests(TestCase):
                 if route == reverse("feedback"):
                     self.assertContains(response, "Enviar feedback/Suporte")
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
+                    self.assertContains(response, "Ticket de previsão")
                     self.assertContains(response, "detail-market-actions")
                     self.assertContains(response, "detail-like-button readonly")
                     self.assertNotContains(response, '<form class="market-like-form"')
+
+    def test_prediction_ticket_starts_without_selected_option_for_authenticated_user(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": 31,
+            "handle": "@ticketuser",
+            "email": "ticket-user@example.com",
+            "display_name": "Ticket User",
+            "preferred_language": "pt-br",
+        }
+        session.save()
+
+        response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+        content = response.content.decode()
+        self.assertIn('data-selected-option-id type="radio" name="option_id"', content)
+        self.assertIn("required", content)
+        self.assertIn("data-requires-choice", content)
+        self.assertIn("Primeiro passo", content)
+        self.assertIn("Selecione uma opção para registrar sua previsão.", content)
+        ticket = content.split('data-prediction-preview-url="', 1)[1].split("</form>", 1)[0]
+        self.assertNotIn("choice active", ticket)
+        self.assertNotIn("checked", ticket)
+        self.assertNotIn("disabled data-requires-choice", ticket)
+
+    def test_prediction_ticket_shows_no_balance_state(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="emptywallet", email="empty-wallet@example.com", password="testpass123", first_name="Empty Wallet")
+        WalletBalance.objects.update_or_create(user=user, defaults={"available_oc": 0, "locked_oc": 0, "total_earned_oc": 0})
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.first_name,
+            "preferred_language": "pt-br",
+        }
+        session.save()
+
+        response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+
+        self.assertContains(response, "Saldo indisponível")
+        self.assertContains(response, "Você não tem O₵ disponível para entrar neste mercado.")
+        self.assertContains(response, "Sem saldo disponível, o ticket fica somente para leitura.")
+        self.assertNotContains(response, 'data-prediction-preview-url="')
 
     def test_django_system_log_uses_orynth_session_user(self):
         User = get_user_model()
@@ -3089,7 +3176,8 @@ class WebSmokeTests(TestCase):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label=api_market["options"][0]["label"])
-        self.assertContains(response, f'value="{option.id}"')
+        self.assertContains(response, f'data-option-id="{option.id}"')
+        self.assertContains(response, f'data-selected-option-id type="radio" name="option_id" value="{option.id}" required')
 
     def test_resolved_market_detail_shows_resolution_time_and_personal_outcome(self):
         User = get_user_model()
@@ -3663,6 +3751,12 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "testserver/share/market/openai-gpt6-2026")
             self.assertContains(response, "Rede social de previsões educativas com reputação pública e resolução auditável")
             self.assertContains(response, "Dispute previsões, construa reputação e ganhe destaque.")
+            self.assertContains(response, "Opções do mercado")
+            self.assertContains(response, "SIM")
+            self.assertContains(response, 'class="share-cta"')
+            self.assertContains(response, reverse("market-detail", args=["openai-gpt6-2026"]))
+            self.assertNotContains(response, "Abrir mercado")
+            self.assertNotContains(response, "Entrar na previsão")
             self.assertContains(response, 'property="og:image"')
             self.assertContains(response, 'name="twitter:image"')
             self.assertContains(response, "https://wa.me/")
@@ -3671,7 +3765,6 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "https://www.facebook.com/sharer/sharer.php")
             self.assertContains(response, "https://www.linkedin.com/sharing/share-offsite/")
             self.assertContains(response, reverse("share-market-track", args=["openai-gpt6-2026"]))
-            self.assertNotContains(response, "Voltar ao mercado")
 
         empty_thumb_market = {
             **market,
@@ -4246,6 +4339,7 @@ class WebSmokeTests(TestCase):
                     "is_active": True,
                     "is_staff": False,
                     "is_superuser": False,
+                    "is_bot": True,
                     "created_at": "2026-05-19T00:00:00+00:00",
                     "last_login": "2026-05-19T01:00:00+00:00",
                     "deactivated_at": None,
@@ -4254,7 +4348,7 @@ class WebSmokeTests(TestCase):
                     "reputation_score": 120,
                 }
             ],
-            "counts": {"total": 1, "active": 1, "deactivated": 0, "staff": 0, "superuser": 0, "users": 1},
+            "counts": {"total": 1, "active": 1, "deactivated": 0, "staff": 0, "superuser": 0, "bots": 1, "users": 1},
         }
         user_detail = {
             "user": user_data["users"][0],
@@ -4281,13 +4375,15 @@ class WebSmokeTests(TestCase):
             self.assertContains(response, "2100 O₵")
             response = self.client.get(f"{reverse('admin-ops-users')}?q=operated&status=active&role=user&order=wallet_desc")
             self.assertContains(response, "Operated User")
-            users_mock.assert_any_call("staff-token", q="operated", status="active", role="user", order="wallet_desc")
+            self.assertContains(response, "Bot")
+            users_mock.assert_any_call("staff-token", q="operated", status="active", role="user", bot="", order="wallet_desc")
             response = self.client.get(reverse("admin-ops-user-detail", args=[55]))
             self.assertContains(response, "Conta e perfil")
             self.assertContains(response, "Dados privados")
             self.assertContains(response, "Badges adquiridas")
             self.assertContains(response, "Membro fundador")
             self.assertContains(response, "Ajuste de wallet")
+            self.assertContains(response, "Conta controlada por robôs")
             self.assertContains(response, '<option value="" selected>Selecione</option>', html=True)
             self.assertContains(response, "Revogar sessões")
 
@@ -4588,7 +4684,7 @@ class WebSmokeTests(TestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "orynth.js?v=20260520-orynth-cent")
+            self.assertContains(response, "orynth.js?v=20260521-choice-polish")
 
         posted_market = {
             **api_market,
@@ -5561,6 +5657,8 @@ class WebSmokeTests(TestCase):
     def test_home_stats_show_real_total_predictions(self):
         User = get_user_model()
         user = User.objects.create_user(username="totalpredictions", email="total-predictions@example.com", password="testpass123")
+        staff_user = User.objects.create_user(username="staffstats", email="staff-stats@example.com", password="testpass123", is_staff=True)
+        super_user = User.objects.create_user(username="superstats", email="super-stats@example.com", password="testpass123", is_superuser=True)
         market = Market.objects.get(slug="openai-gpt6-2026")
         option = MarketOption.objects.filter(market=market).first()
         WalletLedgerEntry.objects.create(
@@ -5570,6 +5668,8 @@ class WebSmokeTests(TestCase):
             direction="credit",
             description="Recompensa pública para métrica da home",
         )
+        WalletLedgerEntry.objects.create(user=staff_user, entry_type="manual_adjustment", amount=900, direction="credit", description="Crédito interno staff")
+        WalletLedgerEntry.objects.create(user=super_user, entry_type="manual_adjustment", amount=800, direction="credit", description="Crédito interno superuser")
         prediction = Prediction.objects.create(
             user=user,
             market=market,
@@ -5583,7 +5683,9 @@ class WebSmokeTests(TestCase):
         )
         Prediction.objects.filter(id=prediction.id).update(created_at=timezone.now() - timedelta(days=45))
         total_predictions = Prediction.objects.count()
-        distributed_oc = sum(WalletLedgerEntry.objects.filter(direction="credit").values_list("amount", flat=True))
+        distributed_oc = sum(
+            WalletLedgerEntry.objects.filter(direction="credit", user__is_staff=False, user__is_superuser=False).values_list("amount", flat=True)
+        )
         moved_oc = sum(Prediction.objects.values_list("stake_amount", flat=True))
         distributed_label = f"{distributed_oc:,}".replace(",", ".")
         moved_label = f"{moved_oc:,}".replace(",", ".")

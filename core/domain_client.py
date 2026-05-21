@@ -238,7 +238,13 @@ def local_stats():
     from markets.models import Market, Prediction
 
     total_predictions = Prediction.objects.count()
-    distributed_oc = WalletLedgerEntry.objects.filter(direction="credit").aggregate(total=Sum("amount"))["total"] or 0
+    distributed_oc = (
+        WalletLedgerEntry.objects.filter(direction="credit")
+        .exclude(user__is_staff=True)
+        .exclude(user__is_superuser=True)
+        .aggregate(total=Sum("amount"))["total"]
+        or 0
+    )
     moved_oc = Prediction.objects.aggregate(total=Sum("stake_amount"))["total"] or 0
     return {
         "open_markets": Market.objects.filter(status="open").count(),

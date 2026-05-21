@@ -20,7 +20,18 @@
         </div>
         <h1 class="large-title">{{ market.title }}</h1>
         <p class="lead">Consenso atual: {{ market.primary_probability }}% {{ market.primary_outcome }} · {{ market.volume_oc }} previstos.</p>
-        <p class="share-cta">Dispute previsões, construa reputação e ganhe destaque.</p>
+        <div class="share-option-list" aria-label="Opções do mercado">
+          {% for option in market.options %}
+            <div class="share-option-row">
+              <div class="share-option-copy">
+                <span>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</span>
+                <strong>{{ option.probability }}%</strong>
+              </div>
+              <div class="share-option-track" aria-hidden="true"><span style="width: {{ option.probability }}%;"></span></div>
+            </div>
+          {% endfor %}
+        </div>
+        <a class="share-cta" href="{% url 'market-detail' market.slug %}">Dispute previsões, construa reputação e ganhe destaque.</a>
         <p>Fonte esperada: {{ market.source }}</p>
         <p class="share-canonical">{{ share.display_url }}</p>
       </div>

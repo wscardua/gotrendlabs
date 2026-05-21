@@ -16,6 +16,7 @@
         <div class="user-admin-status">
           {% if detail.user.account_status == "active" %}<span class="tag safe">Ativo</span>{% else %}<span class="tag risk">Desativado</span>{% endif %}
           <span class="tag">{% if detail.user.is_superuser %}Superuser{% elif detail.user.is_staff %}Staff{% else %}Usuário{% endif %}</span>
+          {% if detail.user.is_bot %}<span class="tag">Bot</span>{% endif %}
         </div>
       {% endif %}
     </div>
@@ -55,6 +56,7 @@
             </div>
             <div class="kv-grid">
               <div><span>Status</span><strong>{{ detail.user.account_status }}</strong></div>
+              <div><span>Bot</span><strong>{% if detail.user.is_bot %}Sim{% else %}Não{% endif %}</strong></div>
               <div><span>Idioma</span><strong>{{ detail.user.preferred_language }}</strong></div>
               <div><span>Criado em</span><strong>{{ detail.user.created_at }}</strong></div>
               <div><span>Último login</span><strong>{{ detail.user.last_login|default:"-" }}</strong></div>
@@ -211,6 +213,17 @@
           <div class="support-panel">
             <h2>Ações de suporte</h2>
             <p class="muted">Ações críticas exigem nota operacional e são auditadas pela FastAPI.</p>
+            <form class="support-form" method="post">
+              {% csrf_token %}
+              <label>
+                {{ bot_form.is_bot }}
+                <span>Conta controlada por robôs</span>
+              </label>
+              <label for="{{ bot_form.note.id_for_label }}">Justificativa</label>
+              {{ bot_form.note }}
+              <input type="hidden" name="action" value="bot_update">
+              <button class="btn small primary" type="submit">Atualizar bot</button>
+            </form>
             <form class="support-form" method="post">
               {% csrf_token %}
               <label for="{{ role_form.role.id_for_label }}">Papel administrativo</label>

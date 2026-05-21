@@ -242,28 +242,50 @@
         </div>
         <div class="field disabled-field"><label>Valor da previsão</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} O₵</strong></div></div>
         <button class="btn primary" type="button" disabled>Previsão já registrada</button>
+      {% elif viewer.balance_oc|default:0 <= 0 %}
+        <div class="balance-empty-callout">
+          <span>Saldo indisponível</span>
+          <strong>Você não tem O₵ disponível para entrar neste mercado.</strong>
+          <p>As opções continuam visíveis para acompanhar o consenso. Recarregue a wallet para registrar uma previsão.</p>
+        </div>
+        <div class="binary-ticket">
+          <div class="binary-grid option-grid">
+            {% for option in market.options %}
+              <div class="choice readonly">
+                <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
+                <span>{{ option.probability }}%</span>
+              </div>
+            {% endfor %}
+          </div>
+          <div class="ticket-note">Sem saldo disponível, o ticket fica somente para leitura.</div>
+        </div>
+        <a class="btn primary" href="{% url 'wallet' %}">Ver wallet</a>
       {% else %}
         <form method="post" action="{% url 'prediction-confirm' market.slug %}" data-prediction-preview-url="{% url 'prediction-preview' market.slug %}">
           {% csrf_token %}
-          <input data-selected-option-id type="hidden" name="option_id" value="{{ market.options.0.id }}">
           <div class="binary-ticket">
+            <div class="prediction-choice-prompt">
+              <span>Primeiro passo</span>
+              <strong>Selecione uma opção para registrar sua previsão.</strong>
+            </div>
             <div class="binary-grid option-grid">
               {% for option in market.options %}
-                <button class="choice {% if forloop.first %}active{% endif %}" data-option-id="{{ option.id }}" data-probability="{{ option.probability_exact }}" data-choice="{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}" type="button">
+                <label class="choice" data-option-id="{{ option.id }}" data-probability="{{ option.probability_exact }}" data-choice="{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}">
+                  <input class="choice-radio" data-selected-option-id type="radio" name="option_id" value="{{ option.id }}" required>
                   <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
                   <span>{{ option.probability }}%</span>
-                </button>
+                </label>
               {% endfor %}
             </div>
             <div class="ticket-note">Escolha uma opção e defina quantas O₵ educativas deseja comprometer. A porcentagem é consenso atual, não promessa de resultado.</div>
           </div>
           <div class="field"><label>Valor da previsão</label><div class="range-row"><input name="stake_amount" data-amount="open" type="range" min="1" max="500" value="80"><strong data-amount-output="open">80 O₵</strong></div></div>
           <div id="prediction-preview" class="calc">
-            <div><span>Opção escolhida</span><strong data-selected-choice>{{ market.options.0.label }}</strong></div>
-            <div><span>Retorno estimado se acertar</span><strong data-return-output="open">130 O₵</strong></div>
+            <div><span>Opção escolhida</span><strong data-selected-choice>Selecione</strong></div>
+            <div><span>Retorno estimado se acertar</span><strong data-return-output="open">-</strong></div>
             <div><span>Saldo bloqueado</span><strong data-locked-output="open">80 O₵</strong></div>
           </div>
-          <button class="btn primary trade-action" type="submit" data-confirm="Confirmar previsão" data-confirm-desc="Esta ação bloqueará o stake informado na sua carteira e ficará registrada na trilha auditável.">Confirmar previsão</button>
+          <button class="btn primary trade-action" type="submit" data-confirm="Confirmar previsão" data-confirm-desc="Esta ação bloqueará o stake informado na sua carteira e ficará registrada na trilha auditável." data-requires-choice>Confirmar previsão</button>
         </form>
       {% endif %}
       <a class="btn ghost" href="{% url 'share-market' market.slug %}">Compartilhar</a>
