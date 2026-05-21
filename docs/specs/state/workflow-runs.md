@@ -1031,3 +1031,21 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-21
 - Retomada: criar mercados reais via Admin Ops/curadoria antes de liberar tráfego editorial de produção
 - Reversão lógica: reintroduzir seed apenas em ambiente não-produtivo, nunca via migration aplicada em PRD
+
+## WFLOW-20260521-004
+
+- Tipo: `infra-data`
+- Status: `em-andamento`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-AUTH-001`, `FEAT-WALLET-001`
+- Objetivo: criar fluxo one-off idempotente para popular PRD com dados editoriais bons de DEV, admin inicial, wallet conciliada, badges com mídia e site config
+- Etapa atual: scripts operacionais criados; pacote exportado de DEV deve conter apenas o lote editorial versionado, excluindo mercados/contas/badges de teste
+- Artefatos afetados:
+  - `scripts/ops/export_dev_bootstrap.py`
+  - `scripts/ops/import_prod_bootstrap.py`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-21
+- Atualizado em: 2026-05-21
+- Encerrado em:
+- Retomada: executar export, snapshot RDS, import em PRD via SSM/S3 staging e validar login/admin/mídia/home pública
+- Reversão lógica: restaurar snapshot RDS pré-import e remover mídia copiada do volume `mediafiles`
