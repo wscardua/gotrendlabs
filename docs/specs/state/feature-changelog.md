@@ -15,6 +15,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-OPSLOG-001
 
+### 2026-05-21 - v0.7
+- infra AWS base passou a ter EC2 ARM gerenciada por SSM, CloudWatch Agent para métricas/logs mínimos de host e alarmes mínimos de EC2/RDS
+- RDS PostgreSQL 16 foi provisionado privado, com acesso administrativo via túnel SSM e sem exposição pública de `5432`
+- GitHub Actions OIDC foi preparado para deploy via SSM no branch `main`, mantendo `.env.prod` e segredos fora do Git
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.6
 - daemon operacional passou a ter empacotamento de produção como serviço dedicado no Docker Compose da EC2
 - deploy MVP documenta que apenas um container `daemon` deve rodar por ambiente
