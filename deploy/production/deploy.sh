@@ -48,6 +48,9 @@ if [[ -n "$HTTPS_SITE" && ! -f "$CERT_DIR/ip.crt" ]]; then
   HTTPS_HOST="${HTTPS_SITE#https://}"
   HTTPS_HOST="${HTTPS_HOST%%/*}"
   HTTPS_HOST="${HTTPS_HOST%%:*}"
+  if [[ -z "$HTTPS_HOST" ]]; then
+    HTTPS_HOST="$(grep -E "^ORYNTH_ALLOWED_HOSTS=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- | cut -d, -f1 || true)"
+  fi
 
   mkdir -p "$CERT_DIR"
   if [[ "$HTTPS_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
