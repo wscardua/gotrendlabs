@@ -128,7 +128,7 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --comment "Deploy Orynth from GitHub Actions" \
             --parameters commands="[
-              \"set -euo pipefail\",
+              \"set -eu\",
               \"export APP_DIR='$APP_DIR'\",
               \"export BRANCH='$BRANCH'\",
               \"export REPO_URL='$REPO_URL'\",

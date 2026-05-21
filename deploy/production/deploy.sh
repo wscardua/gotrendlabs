@@ -14,7 +14,16 @@ if [[ ! -d "$APP_DIR/.git" ]]; then
   fi
 
   mkdir -p "$APP_DIR"
-  git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
+
+  if [[ -n "$(find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name "$ENV_FILE" ! -name ".git" -print -quit)" ]]; then
+    echo "$APP_DIR contains unexpected files and cannot be bootstrapped safely." >&2
+    exit 1
+  fi
+
+  git -C "$APP_DIR" init
+  git -C "$APP_DIR" remote add origin "$REPO_URL"
+  git -C "$APP_DIR" fetch --depth 1 origin "$BRANCH"
+  git -C "$APP_DIR" checkout -B "$BRANCH" FETCH_HEAD
 fi
 
 cd "$APP_DIR"
