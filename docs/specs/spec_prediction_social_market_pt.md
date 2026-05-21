@@ -281,52 +281,44 @@ A infraestrutura inicial deve priorizar:
 
 | Componente | Papel |
 |---|---|
-| VM 1 pública | Receber tráfego HTTPS e hospedar `Nginx` + `Django` |
-| VM 2 privada | Hospedar `FastAPI` + scheduler/daemon |
-| PostgreSQL gerenciado | Banco principal do produto |
+| EC2 pública | Receber tráfego HTTPS e hospedar `Caddy`, `Django`, `FastAPI` e scheduler/daemon em containers separados |
+| PostgreSQL gerenciado | Banco principal do produto, fora da EC2 |
 
 ### Topologia inicial
 
 ```text
 Internet
 ↓
-Nginx + Django (VM 1 pública)
-↓
-FastAPI + Scheduler (VM 2 privada)
+Caddy HTTPS + Docker Compose (EC2 pública)
+├─ Django web
+├─ FastAPI domínio
+└─ daemon operacional
 ↓
 PostgreSQL gerenciado
 ```
 
-### Responsabilidade de cada máquina
+### Responsabilidade da EC2
 
-#### VM 1
-
-- expor a aplicação web para internet;
-- terminar TLS/SSL no `Nginx`;
-- fazer proxy reverso e roteamento web;
-- hospedar a aplicação Django com templates, HTMX, Alpine.js, painel administrativo customizado e Django Admin de suporte;
-- encaminhar chamadas internas ao FastAPI.
-
-#### VM 2
-
-- hospedar o FastAPI;
-- hospedar o scheduler/daemon de automação;
-- concentrar autenticação principal e regras de negócio;
-- acessar o banco principal;
-- aceitar tráfego apenas da VM 1 e da infraestrutura estritamente necessária.
+- expor apenas `80/443` para internet;
+- terminar TLS/SSL no `Caddy`, com certificado automatico;
+- fazer proxy reverso para o container Django;
+- hospedar Django, FastAPI e daemon em containers separados no Docker Compose;
+- manter `BACKEND_API_URL` apontando para a rede interna do Compose;
+- rodar apenas um container do daemon por ambiente.
 
 ### Banco de dados
 
 - usar `PostgreSQL gerenciado`;
-- evitar banco dentro das VMs no MVP;
+- evitar banco dentro da EC2 no MVP;
 - habilitar backup automático desde o início;
-- restringir acesso do banco à VM 2 sempre que possível.
+- restringir acesso do banco ao security group da EC2.
 
 ### Segurança mínima de infraestrutura
 
-- restringir exposição pública apenas à VM 1;
-- manter a VM 2 acessível somente por rede privada ou regras estritas de firewall;
+- restringir exposição pública da EC2 a `80/443` e SSH apenas para IPs autorizados;
 - usar TLS/SSL no ponto de entrada público;
+- não expor portas internas de Django/FastAPI para internet;
+- não versionar `.env.prod` nem segredos;
 - limitar acesso administrativo ao menor conjunto possível de pessoas;
 - habilitar backups automáticos e política clara de recuperação.
 
@@ -346,8 +338,9 @@ PostgreSQL gerenciado
 
 - usar deploy simples, preferencialmente com `Docker Compose`;
 - manter apenas o ambiente `local` e um ambiente `produção` enxuto;
-- centralizar o ponto de entrada público na VM 1;
-- manter a VM 2 sem exposição pública direta, quando o provedor permitir;
+- centralizar o ponto de entrada público no Caddy;
+- construir a imagem na EC2 a partir de `git pull` da branch publicada;
+- executar migrations e `collectstatic` antes de reiniciar os serviços;
 - priorizar configuração simples e auditável.
 
 ### Racional da escolha
@@ -355,9 +348,13 @@ PostgreSQL gerenciado
 Essa estrutura entrega:
 
 - custo menor que um ambiente orquestrado;
-- separação básica entre camada web e camada de domínio;
-- menos risco operacional que colocar tudo em uma única máquina;
+- separação lógica entre camada web, domínio e daemon por containers;
+- menor custo e menor fricção operacional do que duas VMs no MVP;
 - menor complexidade do que Kubernetes para o estágio atual do produto.
+
+### Evolução prevista
+
+Quando houver necessidade operacional, FastAPI e daemon podem migrar para uma EC2 privada ou serviço gerenciado, mantendo Django/Caddy como ponto público e preservando o PostgreSQL gerenciado.
 
 ---
 

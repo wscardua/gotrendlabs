@@ -18,3 +18,4 @@
 - FEAT-REP-001 possui badges administráveis, concessão automática MVP e compartilhamento social com card Open Graph/Twitter; ainda faltam raridade pública, temporadas e reprocessamento administrativo em lote.
 - FEAT-SUGGEST-001 cobre a primeira fatia real de filas para sugestões de mercado e feedback recompensável, com reCAPTCHA opcional para visitantes; ainda faltam event bus assíncrono, histórico público de feedback do usuário e comunicações transacionais.
 - FEAT-OPSLOG-001 cobre logs técnicos persistidos, redaction, retenção com prune backend reutilizável, consulta staff com `Carregar mais` e heartbeat/status do daemon no Dashboard; ainda faltam alertas, integração externa de observabilidade e métricas operacionais temporais mais ricas.
+- Infra MVP possui Docker Compose para EC2 unica com RDS gerenciado; ainda faltam IaC/Terraform, CI/CD com registry, observabilidade externa e separação física de FastAPI/daemon quando o tráfego justificar.

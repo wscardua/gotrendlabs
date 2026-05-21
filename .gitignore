@@ -5,6 +5,8 @@ db.sqlite3
 .pytest_cache/
 .coverage
 .env
+.env.prod
 .DS_Store
 docker/postgres/data/
 .runtime/
+staticfiles/

@@ -15,6 +15,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-OPSLOG-001
 
+### 2026-05-20 - v0.6
+- daemon operacional passou a ter empacotamento de produção como serviço dedicado no Docker Compose da EC2
+- deploy MVP documenta que apenas um container `daemon` deve rodar por ambiente
+- status de implementação: `parcial`
+
 ### 2026-05-20 - v0.5
 - Admin Ops Config passou a persistir limites de heartbeat do daemon em `orynth_site_config`
 - Dashboard Summary passou a calcular `Ativo`, `Atrasado` e `Sem sinal` com base em `daemon_stale_after_minutes` e `daemon_missing_after_minutes`

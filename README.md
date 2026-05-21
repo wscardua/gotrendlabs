@@ -108,6 +108,20 @@ python manage.py test
 
 Os testes cobrem contratos de API, renderizacao web, fallback local de desenvolvimento, Admin Ops, wallet, comentarios, previsoes e fluxos autenticados.
 
+## Deploy MVP em EC2
+
+O deploy de producao fica em `deploy/production/` e usa Docker Compose na EC2 para subir Caddy, Django, FastAPI e o daemon operacional. O PostgreSQL de producao deve ser gerenciado fora do Compose, por exemplo em Amazon RDS.
+
+Arquivos principais:
+
+- `Dockerfile`: imagem da aplicacao.
+- `.env.prod.example`: modelo de variaveis de producao sem segredos reais.
+- `deploy/production/docker-compose.yml`: servicos de producao.
+- `deploy/production/Caddyfile`: HTTPS automatico e proxy reverso.
+- `deploy/production/deploy.sh`: fluxo de deploy na EC2.
+
+Consulte `deploy/production/README.md` para a instalacao inicial e os comandos de deploy.
+
 ## Specs e skills
 
 Antes de alterar comportamento, consulte:

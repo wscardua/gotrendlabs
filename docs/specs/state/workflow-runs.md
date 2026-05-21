@@ -57,8 +57,32 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-05-20
 - Atualizado em: 2026-05-20
 - Encerrado em: 2026-05-20
-- Retomada: evoluir operação do daemon para supervisor/container e alertas externos quando houver decisão de deploy
+- Retomada: daemon ja possui container de producao no deploy EC2; proxima evolucao e alertas externos/observabilidade
 - Reversão lógica: desativar execução do comando `run_orynth_daemon` preservando serviços backend e eventos já registrados
+
+## WFLOW-20260520-018
+
+- Tipo: `change-infra`
+- Status: `concluido`
+- Feature alvo: `infra-deploy-mvp`, `FEAT-OPSLOG-001`
+- Objetivo: preparar deploy MVP em AWS EC2 com Docker Compose, RDS gerenciado, Caddy HTTPS e daemon em container dedicado
+- Etapa atual: concluído
+- Artefatos afetados:
+  - `Dockerfile`
+  - `.dockerignore`
+  - `.env.prod.example`
+  - `deploy/production/`
+  - `config/settings.py`
+  - `README.md`
+  - `docs/specs/spec_prediction_social_market_pt.md`
+  - `docs/specs/decisions/ADR-0003-ec2-compose-rds-mvp.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-20
+- Atualizado em: 2026-05-20
+- Encerrado em: 2026-05-20
+- Retomada: configurar EC2/RDS reais, preencher `.env.prod` fora do Git, apontar DNS e executar `deploy/production/deploy.sh`
+- Reversão lógica: remover artefatos de deploy de producao e voltar settings para defaults locais, preservando specs/ADR como decisão substituída
 
 ## WFLOW-20260520-002
 
