@@ -109,8 +109,9 @@ Configure estes valores no GitHub antes de habilitar o deploy automatico:
 - variable `APP_DIR` opcional, default `/opt/orynth`
 - variable `DEPLOY_BRANCH` opcional, default `main`
 - variable `REPO_URL` opcional, default `https://github.com/<owner>/<repo>.git`
+- variable `ENABLE_PROD_DEPLOY`: use `1` apenas depois que `.env.prod` existir na EC2 e os secrets acima estiverem configurados
 
-O workflow esta preparado, mas nao substitui a criacao segura de `.env.prod` na EC2. O deploy automatico so deve ser habilitado depois que esse arquivo existir e o primeiro deploy manual/SSM for validado.
+O workflow esta preparado, mas nao substitui a criacao segura de `.env.prod` na EC2. O deploy automatico fica desabilitado ate `ENABLE_PROD_DEPLOY=1` para manter a `main` verde enquanto a aplicacao ainda nao foi implantada.
 
 ## DNS e HTTPS
 

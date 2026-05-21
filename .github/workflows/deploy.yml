@@ -53,7 +53,7 @@ jobs:
 
   deploy:
     needs: test
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/main' && vars.ENABLE_PROD_DEPLOY == '1'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
