@@ -36,7 +36,14 @@ Leia as referencias conforme a necessidade:
    - preferir links exatos de pagina, canal, video, endpoint, ranking ou post
    - usar fonte social sem link exato apenas como inspiracao, nunca como juiz final
 
-4. Gerar mercados:
+4. Validar a fonte de resolucao antes de aceitar o mercado:
+   - abrir ou consultar o link exato quando for viavel
+   - usar navegador local, browser automation, API, web search, ORM, banco ou outra ferramenta disponivel para confirmar que a fonte existe e e acessivel
+   - confirmar que a fonte mostra o dado necessario para resolver o mercado
+   - confirmar que o dado pode fundamentar e certificar a resolucao sem interpretacao subjetiva
+   - registrar fallback verificavel quando a fonte principal depender de login, token, geografia, disponibilidade temporaria ou conteudo que possa ser apagado
+
+5. Gerar mercados:
    - tipo `binario` ou `multiplo`
    - pergunta objetiva
    - prazo definido
@@ -46,12 +53,36 @@ Leia as referencias conforme a necessidade:
    - nota de diversidade
    - checagem anti-repeticao
 
-5. Rejeitar sugestoes invalidas:
+6. Rejeitar sugestoes invalidas:
    - sem link exato de verificacao
    - sem prazo
    - sem criterio objetivo
+   - com fonte que nao foi validada ou nao consegue certificar o resultado
+   - com fonte que exige interpretacao subjetiva para decidir o vencedor
    - repetidas ou quase repetidas
    - baseadas em acusacoes, vida privada sensivel, assedio, difamacao ou especulacao toxica
+
+## Garantia Da Fonte De Resolucao
+
+Antes de entregar qualquer sugestao, verifique se a fonte de resolucao e valida o bastante para sustentar a decisao final.
+
+Use qualquer recurso disponivel e autorizado para essa verificacao:
+
+- navegador local do usuario quando a checagem depender de sessao, login, cookies ou interface visual
+- browser automation quando precisar abrir pagina, clicar, pesquisar, capturar evidencias ou conferir ranking visivel
+- APIs oficiais quando houver credenciais ou endpoints publicos
+- web search quando precisar confirmar a existencia de uma fonte publica
+- ORM, banco ou APIs internas quando a resolucao depender de dados da Orynth
+
+Uma fonte so e valida quando:
+
+- o link exato abre ou o endpoint pode ser consultado
+- o dado necessario aparece na fonte ou na resposta da API
+- o dado e suficientemente objetivo para resolver `Sim/Nao` ou escolher uma opcao
+- o momento da checagem esta definido
+- existe fallback verificavel para indisponibilidade, remocao, empate ou ambiguidade
+
+Se nao conseguir validar a fonte, nao apresente o mercado como sugestao final. Substitua por outro mercado com fonte validavel ou pergunte objetivamente qual fonte autorizada deve ser usada.
 
 ## Quando Faltar Informacao
 
@@ -89,6 +120,7 @@ Cada sugestao deve incluir:
 - Prazo de resolucao
 - Fonte de resolucao
 - Link exato de verificacao
+- Status de validacao da fonte
 - Momento da checagem
 - Criterio objetivo de resolucao
 - Regra de empate/ambiguidade/indisponibilidade
