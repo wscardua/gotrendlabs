@@ -4792,7 +4792,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "orynth.js?v=20260521-choice-polish")
+            self.assertContains(response, "orynth.js?v=20260522-guest-favorite")
 
         posted_market = {
             **api_market,
