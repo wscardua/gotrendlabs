@@ -285,6 +285,7 @@ class AdminBadgePayload(BaseModel):
     threshold_value: float = Field(default=1, ge=0)
     category: str = Field(default="", max_length=80)
     subcategory: str = Field(default="", max_length=80)
+    event: str = Field(default="", max_length=80)
 
 
 class AdminBadgeResponse(BaseModel):
@@ -300,6 +301,7 @@ class AdminBadgeResponse(BaseModel):
     threshold_value: float
     category: str
     subcategory: str
+    event: str
     rule_active: bool
     awards_count: int = 0
     created_at: str
@@ -354,7 +356,11 @@ class MarketResponse(BaseModel):
     slug: str
     title: str
     category: str
+    category_notice: str = ""
     subcategory: str
+    subcategory_notice: str = ""
+    event: str
+    event_notice: str = ""
     kind: str
     status: str
     status_label: str
@@ -449,6 +455,7 @@ class AdminMarketPayload(BaseModel):
     kind: str = "binary"
     category: str = Field(min_length=1, max_length=80)
     subcategory: str = Field(min_length=1, max_length=80)
+    event: str = Field(default="Geral", max_length=80)
     status_label: str = ""
     primary_outcome: str = ""
     primary_probability_exact: float = Field(default=0, ge=0, le=100)
@@ -624,18 +631,31 @@ class AdminMarketListResponse(BaseModel):
     counts: dict
 
 
-class AdminSubcategoryResponse(BaseModel):
+class AdminEventResponse(BaseModel):
     name: str
     slug: str
+    notice: str = ""
     markets_count: int
     is_blocked: bool = False
     blocked_reason: str = ""
     blocked_at: Optional[str] = None
 
 
+class AdminSubcategoryResponse(BaseModel):
+    name: str
+    slug: str
+    notice: str = ""
+    markets_count: int
+    is_blocked: bool = False
+    blocked_reason: str = ""
+    blocked_at: Optional[str] = None
+    events: List[AdminEventResponse] = Field(default_factory=list)
+
+
 class AdminCategoryResponse(BaseModel):
     name: str
     slug: str
+    notice: str = ""
     markets_count: int
     is_blocked: bool = False
     blocked_reason: str = ""
@@ -650,11 +670,19 @@ class AdminTaxonomyResponse(BaseModel):
 class AdminCategoryPayload(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     slug: Optional[str] = Field(default=None, max_length=100)
+    notice: str = Field(default="", max_length=500)
 
 
 class AdminSubcategoryPayload(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     slug: Optional[str] = Field(default=None, max_length=100)
+    notice: str = Field(default="", max_length=500)
+
+
+class AdminEventPayload(BaseModel):
+    name: str = Field(min_length=1, max_length=80)
+    slug: Optional[str] = Field(default=None, max_length=100)
+    notice: str = Field(default="", max_length=500)
 
 
 class RankingRowResponse(BaseModel):

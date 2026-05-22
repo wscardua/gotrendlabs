@@ -12,7 +12,10 @@
 - Wallet deve usar razão de transações (`ledger`) em vez de depender apenas de saldo derivado.
 - Resolução de mercado deve registrar origem, operador, evidência, data efetiva e timezone usado para apresentação/auditoria.
 - Sempre que possível, usar identificadores estáveis independentes de textos traduzidos.
-- Categorias e subcategorias de mercado devem usar bloqueio lógico (`is_blocked`, motivo e data) em vez de exclusão física operacional.
+- Categorias, subcategorias e eventos vinculados a mercados devem usar bloqueio lógico (`is_blocked`, motivo e data) em vez de exclusão física operacional; eventos sem mercados vinculados podem ser excluídos para limpeza de cadastros criados por engano.
+- Eventos ficam em `orynth_market_events`, pertencem a uma subcategoria e formam a terceira camada da taxonomia `categoria -> subcategoria -> evento`.
+- `orynth_market_categories.notice`, `orynth_market_subcategories.notice` e `orynth_market_events.notice` guardam avisos opcionais, vazios por padrão, para exibição contextual no detalhe/ticket de mercados sensíveis vinculados.
+- `orynth_markets.event_id` referencia `orynth_market_events`; mercados migrados sem evento explícito devem apontar para o evento ativo `Geral` da subcategoria.
 - Mercados existentes devem manter vínculo com taxonomia bloqueada para preservar histórico e auditoria.
 - Probabilidades de mercado/opção devem preservar precisão decimal (`*_probability_exact`/`probability_exact`); inteiros de exibição são derivados na serialização/UI, não persistidos.
 - Métricas operacionais simples de popularidade de mercado ficam denormalizadas em `orynth_markets.view_count` e `orynth_markets.share_count` para leitura rápida no Admin Ops; nesta etapa cada evento incrementa o contador sem deduplicação.

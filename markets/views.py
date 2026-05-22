@@ -84,7 +84,8 @@ def _with_option_ids(slug, market):
     needs_ids = not all(option.get("id") for option in market.get("options", []))
     needs_exact = not all("probability_exact" in option for option in market.get("options", []))
     needs_sparkline = not market.get("sparkline_path") or not market.get("sparkline_series")
-    if not needs_ids and not needs_exact and not needs_sparkline:
+    needs_notices = not all(key in market for key in ("category_notice", "subcategory_notice", "event_notice"))
+    if not needs_ids and not needs_exact and not needs_sparkline and not needs_notices:
         return market
     local_payload = local_market(slug)
     if needs_sparkline and not needs_ids and not needs_exact:
@@ -92,6 +93,9 @@ def _with_option_ids(slug, market):
         hydrated["sparkline_path"] = local_payload.get("sparkline_path", "")
         hydrated["sparkline_area_path"] = local_payload.get("sparkline_area_path", "")
         hydrated["sparkline_series"] = local_payload.get("sparkline_series", [])
+        hydrated["category_notice"] = hydrated.get("category_notice", local_payload.get("category_notice", ""))
+        hydrated["subcategory_notice"] = hydrated.get("subcategory_notice", local_payload.get("subcategory_notice", ""))
+        hydrated["event_notice"] = hydrated.get("event_notice", local_payload.get("event_notice", ""))
         return hydrated
     option_ids = {
         option.label: option.id
@@ -101,6 +105,9 @@ def _with_option_ids(slug, market):
     hydrated["sparkline_path"] = local_payload.get("sparkline_path", "")
     hydrated["sparkline_area_path"] = local_payload.get("sparkline_area_path", "")
     hydrated["sparkline_series"] = local_payload.get("sparkline_series", [])
+    hydrated["category_notice"] = hydrated.get("category_notice", local_payload.get("category_notice", ""))
+    hydrated["subcategory_notice"] = hydrated.get("subcategory_notice", local_payload.get("subcategory_notice", ""))
+    hydrated["event_notice"] = hydrated.get("event_notice", local_payload.get("event_notice", ""))
     local_options = {option.get("label"): option for option in local_payload.get("options", [])}
     hydrated["options"] = []
     for option in market.get("options", []):
@@ -172,6 +179,10 @@ def _detail_context(request, slug, market, **extra):
     resolution_timezone = market.get("resolution_timezone") or market.get("close_timezone") or "UTC"
     market = {
         **market,
+        "event": market.get("event") or "Geral",
+        "category_notice": market.get("category_notice") or "",
+        "subcategory_notice": market.get("subcategory_notice") or "",
+        "event_notice": market.get("event_notice") or "",
         "resolution_timezone": resolution_timezone,
         "resolved_at_label": market.get("resolved_at_label") or _datetime_label(market.get("resolved_at"), resolution_timezone),
     }

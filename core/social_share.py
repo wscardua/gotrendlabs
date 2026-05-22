@@ -119,7 +119,7 @@ def badge_share_context(request, badge, viewer):
 def render_market_card(market, share):
     option_summary = _market_option_summary(market)
     return _render_card(
-        eyebrow=f"Orynth Trends · {market.get('category', 'Mercado')}",
+        eyebrow=f"Orynth Trends · {market.get('category', 'Mercado')} · {market.get('event') or market.get('subcategory', 'Evento')}",
         title=str(market.get("title", "Mercado Orynth Trends")),
         lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {currency_label(market.get('volume_oc', 0))} previstos",
         body=option_summary or f"{MARKET_CTA} Fonte: {market.get('source', 'verificavel')}",

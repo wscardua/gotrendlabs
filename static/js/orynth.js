@@ -127,6 +127,50 @@ $$("[data-market-card]").forEach((card, index) => {
   card.dataset.originalOrder = String(index);
 });
 
+function clampPercent(value) {
+  if (!Number.isFinite(value)) return 100;
+  return Math.max(0, Math.min(100, value));
+}
+
+function deadlineState(timeLeft, status) {
+  if (timeLeft <= 0 || ["locked", "resolved", "canceled"].includes(status)) return "closed";
+  if (timeLeft <= 12) return "urgent";
+  if (timeLeft <= 32) return "soon";
+  return "open";
+}
+
+const deadlineAccent = {
+  open: "#136f4a",
+  soon: "#d89422",
+  urgent: "#b7493d",
+  closed: "#b7493d",
+};
+
+function hydrateDeadlineRail(card) {
+  const rail = $("[data-deadline-rail]", card);
+  if (!rail) return;
+  const createdAt = parseDateScore(card.dataset.marketCreatedAt);
+  const closeAt = parseDateScore(card.dataset.marketCloseAt);
+  const status = card.dataset.marketStatus || "";
+  let timeLeft = 0;
+  if (closeAt && !["resolved", "canceled"].includes(status)) {
+    const startAt = createdAt && createdAt < closeAt ? createdAt : Date.now();
+    const total = Math.max(1, closeAt - startAt);
+    const remaining = closeAt - Date.now();
+    timeLeft = clampPercent((remaining / total) * 100);
+  }
+  const state = deadlineState(timeLeft, status);
+  ["open", "soon", "urgent", "closed"].forEach((name) => rail.classList.toggle(name, state === name));
+  rail.dataset.deadlineState = state;
+  rail.style.setProperty("--time-left", `${timeLeft}%`);
+  rail.style.setProperty("--deadline-accent", deadlineAccent[state] || deadlineAccent.open);
+}
+
+$$("[data-market-card]").forEach(hydrateDeadlineRail);
+if ($("[data-deadline-rail]")) {
+  window.setInterval(() => $$("[data-market-card]").forEach(hydrateDeadlineRail), 60000);
+}
+
 $$("[data-filter]").forEach((button) => {
   button.addEventListener("click", () => {
     const group = button.closest("[data-filter-group]");
@@ -317,29 +361,75 @@ $$("[data-ranking-filters]").forEach((form) => {
   syncRankingSubcategories(form);
 });
 
-$$("[data-taxonomy-filter]").forEach((button) => {
-  button.addEventListener("click", () => {
-    const mode = button.dataset.taxonomyFilter;
-    let visibleCount = 0;
-    $$("[data-taxonomy-category]").forEach((row) => {
-      const markets = Number(row.dataset.marketsCount || 0);
-      const subcategories = Number(row.dataset.subcategoriesCount || 0);
-      const blocked = row.dataset.blocked === "true";
-      const subRow = row.nextElementSibling?.matches("[data-taxonomy-subcategory-row]") ? row.nextElementSibling : null;
-      const visible =
-        mode === "all" ||
-        (mode === "with-markets" && markets > 0) ||
-        (mode === "without-markets" && markets === 0) ||
-        (mode === "without-subcategories" && subcategories === 0) ||
-        (mode === "blocked" && blocked);
-      row.hidden = !visible;
-      if (subRow) subRow.hidden = !visible;
-      if (visible) visibleCount += 1;
+function initTaxonomyBrowser(browser) {
+  const triggers = $$("[data-taxonomy-category-trigger]", browser);
+  const panels = $$("[data-taxonomy-panel]", browser);
+  const empty = $("[data-taxonomy-empty]", browser);
+  const search = $("[data-taxonomy-search]", browser);
+  const filters = $$("[data-taxonomy-filter]", browser);
+  let activeSlug = triggers.find((trigger) => trigger.classList.contains("active"))?.dataset.taxonomyCategoryTrigger || triggers[0]?.dataset.taxonomyCategoryTrigger || "";
+  let mode = filters.find((filter) => filter.classList.contains("active"))?.dataset.taxonomyFilter || "all";
+
+  function showPanel(slug) {
+    activeSlug = slug;
+    triggers.forEach((trigger) => {
+      const isActive = trigger.dataset.taxonomyCategoryTrigger === slug;
+      trigger.classList.toggle("active", isActive);
+      trigger.setAttribute("aria-selected", isActive ? "true" : "false");
     });
-    const empty = $("[data-taxonomy-empty]");
-    if (empty) empty.hidden = visibleCount !== 0;
+    panels.forEach((panel) => {
+      panel.hidden = panel.dataset.taxonomyPanel !== slug;
+    });
+  }
+
+  function matchesFilter(trigger) {
+    const markets = Number(trigger.dataset.marketsCount || 0);
+    const blocked = trigger.dataset.blocked === "true";
+    const query = (search?.value || "").trim().toLowerCase();
+    const text = trigger.dataset.taxonomyName || "";
+    const matchesQuery = !query || text.includes(query);
+    const matchesMode =
+      mode === "all" ||
+      (mode === "with-markets" && markets > 0) ||
+      (mode === "without-markets" && markets === 0) ||
+      (mode === "blocked" && blocked);
+    return matchesQuery && matchesMode;
+  }
+
+  function applyFilters() {
+    let firstVisible = "";
+    triggers.forEach((trigger) => {
+      const visible = matchesFilter(trigger);
+      trigger.hidden = !visible;
+      if (visible && !firstVisible) firstVisible = trigger.dataset.taxonomyCategoryTrigger;
+    });
+    if (empty) empty.hidden = Boolean(firstVisible);
+    if (!firstVisible) {
+      panels.forEach((panel) => {
+        panel.hidden = true;
+      });
+      return;
+    }
+    const activeStillVisible = triggers.some((trigger) => trigger.dataset.taxonomyCategoryTrigger === activeSlug && !trigger.hidden);
+    showPanel(activeStillVisible ? activeSlug : firstVisible);
+  }
+
+  triggers.forEach((trigger) => {
+    trigger.addEventListener("click", () => showPanel(trigger.dataset.taxonomyCategoryTrigger));
   });
-});
+  filters.forEach((filter) => {
+    filter.addEventListener("click", () => {
+      mode = filter.dataset.taxonomyFilter || "all";
+      filters.forEach((item) => item.classList.remove("active"));
+      filter.classList.add("active");
+      applyFilters();
+    });
+  });
+  search?.addEventListener("input", applyFilters);
+  applyFilters();
+}
+
+$$("[data-taxonomy-browser]").forEach(initTaxonomyBrowser);
 
 document.addEventListener("click", (event) => {
   const choice = event.target.closest("[data-choice]");
@@ -585,6 +675,7 @@ function updateMarketPreview(form) {
   const title = fieldValue(form, "title", "Novo mercado");
   const category = fieldValue(form, "category", "Categoria");
   const subcategory = fieldValue(form, "subcategory", "Subcategoria");
+  const eventName = fieldValue(form, "event", "Evento");
   const summary = fieldValue(form, "summary", "Resumo do mercado aparece aqui conforme você preenche.");
 
   const thumbBox = $("[data-preview-thumb]", preview);
@@ -594,6 +685,8 @@ function updateMarketPreview(form) {
   $("[data-preview-title]", preview).textContent = title;
   $("[data-preview-category]", preview).textContent = category;
   $("[data-preview-subcategory]", preview).textContent = subcategory;
+  const eventPreview = $("[data-preview-event]", preview);
+  if (eventPreview) eventPreview.textContent = eventName;
   $("[data-preview-kind]", preview).textContent = kind === "multiple" ? "Múltipla escolha" : "Sim/Não";
   $("[data-preview-summary]", preview).textContent = summary;
   const bar = $("[data-preview-bar]", preview);
@@ -665,8 +758,10 @@ function updateAutoCloseHelp(form) {
 function syncMarketTaxonomy(form) {
   const categorySelect = $("[data-category-select]", form);
   const subcategorySelect = $("[data-subcategory-select]", form);
+  const eventSelect = $("[data-event-select]", form);
   if (!categorySelect || !subcategorySelect) return;
   const category = categorySelect.value;
+  const subcategory = subcategorySelect.value;
   let selectedStillVisible = false;
   $$("option", subcategorySelect).forEach((option) => {
     const isPlaceholder = !option.value;
@@ -677,6 +772,18 @@ function syncMarketTaxonomy(form) {
   });
   if (!selectedStillVisible) {
     subcategorySelect.value = "";
+  }
+  if (!eventSelect) return;
+  let selectedEventStillVisible = false;
+  $$("option", eventSelect).forEach((option) => {
+    const isPlaceholder = !option.value;
+    const matches = isPlaceholder || (category && subcategorySelect.value && option.dataset.category === category && option.dataset.subcategory === subcategorySelect.value);
+    option.hidden = !matches;
+    option.disabled = !matches;
+    if (matches && option.selected && !isPlaceholder) selectedEventStillVisible = true;
+  });
+  if (!selectedEventStillVisible) {
+    eventSelect.value = "";
   }
 }
 
@@ -698,6 +805,10 @@ $$("[data-market-form]").forEach((form) => {
 
   kind?.addEventListener("change", () => updateAdminMarketOptions(form));
   $("[data-category-select]", form)?.addEventListener("change", () => {
+    syncMarketTaxonomy(form);
+    updateMarketPreview(form);
+  });
+  $("[data-subcategory-select]", form)?.addEventListener("change", () => {
     syncMarketTaxonomy(form);
     updateMarketPreview(form);
   });
@@ -750,6 +861,7 @@ $$("[data-market-form]").forEach((form) => {
 $$("[data-taxonomy-form]").forEach((form) => {
   syncMarketTaxonomy(form);
   $("[data-category-select]", form)?.addEventListener("change", () => syncMarketTaxonomy(form));
+  $("[data-subcategory-select]", form)?.addEventListener("change", () => syncMarketTaxonomy(form));
 });
 
 $$("[data-badge-form]").forEach((form) => {

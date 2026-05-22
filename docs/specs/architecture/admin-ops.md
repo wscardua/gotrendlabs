@@ -41,10 +41,14 @@
 - Dashboard deve manter contraste legível em modo escuro para KPIs, blocos de saúde, linhas métricas, tabelas e alertas.
 - Mercado e taxonomia possuem primeira fatia real via FastAPI/Postgres.
 - Endpoints administrativos cobrem listagem, criação, edição, publicação e cancelamento lógico de mercados.
-- Categorias e subcategorias podem ser criadas, alteradas, bloqueadas e desbloqueadas pelo painel customizado.
-- Taxonomia não possui exclusão física operacional; bloqueio lógico preserva histórico, mostra indicador visual no Admin Ops e impede uso em novos mercados.
-- Criação/edição de mercado deve selecionar categoria e subcategoria a partir da taxonomia persistida; a subcategoria escolhida precisa pertencer à categoria selecionada.
-- Na criação de mercado, categoria e subcategoria iniciam sem seleção para evitar publicação acidental em taxonomia errada.
+- Categorias, subcategorias e eventos podem ser criados, alterados, bloqueados e desbloqueados pelo painel customizado; eventos sem mercados vinculados também podem ser excluídos, com a FastAPI recusando exclusão quando houver vínculo.
+- Browse de taxonomia usa fluxo master-detail: categorias em lista lateral com busca/filtros rápidos e painel principal com subcategorias e eventos agrupados da categoria selecionada.
+- Browse de badges deve exibir miniatura da imagem cadastrada, ou fallback textual compacto, ao lado do nome/código para facilitar reconhecimento visual do catálogo.
+- Categoria, subcategoria e evento possuem campos opcionais de aviso, textuais, com limite de 500 caracteres; cada aviso afeta dinamicamente todos os mercados vinculados ao respectivo recorte.
+- Taxonomia vinculada a mercados não possui exclusão física operacional; bloqueio lógico preserva histórico, mostra indicador visual no Admin Ops e impede uso em novos mercados. Eventos ainda sem mercados vinculados podem ser excluídos para limpeza operacional.
+- Criação/edição de mercado deve selecionar categoria, subcategoria e evento a partir da taxonomia persistida; a subcategoria escolhida precisa pertencer à categoria selecionada e o evento escolhido precisa pertencer à subcategoria.
+- Na criação de mercado, categoria, subcategoria e evento iniciam sem seleção para evitar publicação acidental em taxonomia errada.
+- O formulário/listagem de badges deve permitir recorte opcional por evento depois de categoria/subcategoria; vazio permanece significando todos os eventos.
 - Eventos administrativos são registrados em `orynth_admin_events`.
 - Mercados criados pelo admin nascem como `draft`; publicação válida muda para `open`; cancelamento muda para `canceled`.
 - Mercados `binary` possuem opções fixas `SIM`/`NAO` com snapshot inicial `50%`/`50%`.
@@ -82,7 +86,7 @@
 - Alteração de papel administrativo no detalhe do usuário usa contrato FastAPI, exige operador superuser, nota operacional, bloqueia alteração da própria conta e registra `user.roles_update`.
 - Ajuste manual de wallet deve iniciar sem direção pré-selecionada, usar ledger/projeção na FastAPI e não pode alterar reputação.
 - Marcação `bot` deve identificar contas controladas por robôs internos, aparecer somente no Admin Ops e não vazar em contratos públicos/autenticados comuns.
-- Browse de taxonomia administrativa usa tabela objetiva, filtros client-side por uso/bloqueio e card lateral com política de bloqueio.
+- Browse de taxonomia administrativa usa master-detail com filtros client-side por uso/bloqueio; regras de bloqueio aparecem como nota compacta contextual, não como card lateral fixo.
 - Filas operacionais possuem primeira fatia real para Mercado e Feedback, com dados persistidos e listagem no Admin Ops.
 - Browse de filas operacionais exibe fila, item, tipo, data de criação, severidade interna, status e ação.
 - Browse de filas operacionais permite filtrar por fila/status e ordenar por data de criação.

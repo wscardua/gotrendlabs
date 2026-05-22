@@ -4,7 +4,7 @@ titulo: "Reputação e ranking"
 versao: 0.7
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-20
+ultima_atualizacao: 2026-05-22
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -62,7 +62,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - usuários autenticados podem compartilhar somente badges já conquistadas, por página própria, links de redes, imagem social e cópia do link
 - links públicos de badge conquistada usam token opaco e não expõem identificador direto do usuário
 - Admin Ops pode criar, editar e desativar badges, incluindo imagem para tema claro, imagem opcional para tema escuro e descrição da regra
-- browse inicial do Admin Ops para badges exibe o recorte de categoria/subcategoria de cada regra
+- browse inicial do Admin Ops para badges exibe o recorte de categoria/subcategoria/evento de cada regra
 - formulário administrativo de badge marca visualmente os campos obrigatórios e mantém opcionais sem marcador
 - formulário administrativo de badge exibe prévia do card público antes de salvar, respeitando a imagem do tema claro/escuro quando existir
 - badges são concedidas automaticamente por regras predefinidas no backend, sem DSL livre
@@ -90,8 +90,10 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - endpoints e ações administrativas devem disparar eventos de domínio para a engine, como `user_registered`, `comment_created`, `suggestion_approved`, `suggestion_rewarded`, `feedback_rewarded` e `market_resolved`
 - resolução de mercado deve avaliar badges dos participantes após persistir resultado, reputação, sequência e ranking derivado
 - regras MVP suportadas: `founding_member`, `resolved_predictions_count`, `correct_predictions_count`, `streak_count`, `ranking_position`, `comments_count`, `approved_suggestions_count` e `rewarded_feedback_count`
-- regras que aceitam recorte temático devem escolher categoria/subcategoria a partir da taxonomia dinâmica cadastrada no Admin Ops, não por texto livre
-- `resolved_predictions_count`, `correct_predictions_count`, `comments_count` e `approved_suggestions_count` podem ser aplicadas a todas as categorias, a uma categoria específica ou a uma subcategoria da categoria escolhida
+- regras que aceitam recorte temático devem escolher categoria/subcategoria/evento a partir da taxonomia dinâmica cadastrada no Admin Ops, não por texto livre
+- os avisos opcionais de categoria/subcategoria/evento são apenas conteúdo contextual de mercado e não participam das regras de concessão de badge
+- `resolved_predictions_count`, `correct_predictions_count` e `comments_count` podem ser aplicadas a todas as categorias, a uma categoria específica, a uma subcategoria da categoria escolhida ou a um evento da subcategoria
+- `approved_suggestions_count` permanece por categoria/subcategoria enquanto o fluxo de sugestão não capturar evento; regras por evento não contam sugestões antigas sem evento
 
 ## Responsabilidades por camada
 
@@ -108,7 +110,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - taxonomia para filtro de ranking
 - recortes temáticos são projeções de leitura no MVP, sem nova tabela dedicada
 - definições de badge com código, nome, descrição, tipo, imagem padrão/clara, imagem escura opcional, status e descrição pública da regra
-- regras de badge vinculadas à definição, com tipo controlado, threshold e recorte opcional de categoria/subcategoria
+- regras de badge vinculadas à definição, com tipo controlado, threshold e recorte opcional de categoria/subcategoria/evento
 - conquistas de badge por usuário com data e snapshot do motivo, persistidas em `orynth_user_badge_awards`
 
 ## Contratos afetados

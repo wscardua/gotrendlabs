@@ -38,12 +38,16 @@
 - A tela de login deve oferecer recuperação de senha; o Django renderiza os formulários, preserva navegação pública e alternância de tema nas telas de recuperação, mas a solicitação e confirmação da senha passam pela FastAPI.
 - Usuários autenticados veem ações iconizadas de `like`/`dislike`; a UI só representa a reação retornada pelo domínio.
 - Listas web simples do produto e browses principais do Admin Ops devem usar o padrão `Carregar mais` em blocos cumulativos de 10 itens; paginação por offset fica reservada para auditorias ou telas com necessidade explícita de navegação posicional.
-- Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`viewer_has_favorite`, `viewer_has_prediction`, `viewer_has_like`, `is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status e volume).
+- Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`viewer_has_favorite`, `viewer_has_prediction`, `viewer_has_like`, `is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status, volume, categoria, subcategoria e evento).
 - Métricas públicas da home devem consumir labels e totais prontos do backend/fallback local (`open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`); a UI não calcula totais de ledger, stakes, wallet ou previsão.
 - O label `distributed_oc` já deve chegar sem créditos de operadores; a UI não aplica filtro por papel em métricas públicas.
 - A moeda educativa deve ser exibida como `O₵` em textos visíveis; identificadores técnicos, campos e nomes internos continuam usando `_oc`.
+- O indicador visual de prazo em cards deve ser derivado de `created_at`/`close_at` e acompanhar o texto `closes_in`; probabilidade permanece representada apenas pelos campos de consenso/probabilidade.
+- Esse indicador deve mudar de cor por estado de prazo (`open`, `soon`, `urgent`, `closed`) e recalcular enquanto a página estiver aberta, preservando leitura textual para acessibilidade.
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
 - Favoritos no feed da home representam mercados salvos pelo usuário autenticado; visitantes podem ver affordance readonly de favorito, mas a mutação e o recorte `Favoritos` permanecem autenticados. `is_featured` permanece como curadoria editorial para destaques visuais.
+- Cards da home/feed e detalhe público do mercado devem exibir `event` junto de categoria e subcategoria; a UI não infere evento localmente quando o domínio não serializa o campo.
+- `category_notice`, `subcategory_notice` e `event_notice` devem ser exibidos como alerta informativo abaixo de `Critério de resolução` no detalhe/ticket de previsão quando preenchidos, preservando quebras de linha e escapando HTML; cards da home/feed não exibem esses avisos.
 - Curtidas no card representam engajamento público do mercado e são separadas de favoritos pessoais e de likes/dislikes em comentários.
 - Páginas públicas fora da home devem expor retorno compacto para o feed dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags, evitando barra global solta entre header e conteúdo.
 - O rodapé público deve priorizar Institucional, Produto, Confiança e Suporte; links de conta, mercados recorrentes e Admin Ops pertencem à navegação principal ou ao chip autenticado.
@@ -65,5 +69,6 @@
 - Compartilhamento social de mercado deve mostrar opções/probabilidades e CTA clicável para o detalhe, usando texto editorial de incentivo sem criar ação de domínio.
 - Cards sociais usam URL pública configurável para que crawlers de redes consigam ler `og:image`; em host local a UI deve indicar que o preview externo não é rastreável.
 - Compartilhamento de badge conquistada pode gerar URL pública com token opaco de conquista, sem expor id, email ou handle no query string.
-- Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.
-- Cards de mercado sem imagem devem exibir fallback visual legível com iniciais derivadas de categoria/subcategoria/título no feed e nas imagens sociais.
+- Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags, evento e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.
+- Cards de mercado sem imagem devem exibir fallback visual legível com iniciais derivadas de categoria/subcategoria/evento/título no feed e nas imagens sociais.
+- O detalhe público do mercado deve exibir a mesma thumbnail/fallback visual junto do título, mantendo o texto do mercado renderizado separadamente em HTML.

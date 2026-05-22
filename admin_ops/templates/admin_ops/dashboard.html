@@ -182,7 +182,7 @@
             <tr>
               <td><strong>{{ market.title }}</strong></td>
               <td>{{ market.status_label|default:market.status }}</td>
-              <td>{{ market.category }}{% if market.subcategory %} / {{ market.subcategory }}{% endif %}</td>
+              <td>{{ market.category }}{% if market.subcategory %} / {{ market.subcategory }}{% endif %}{% if market.event %} / {{ market.event }}{% endif %}</td>
               <td>{{ market.view_count|default:0 }}</td>
               <td>{{ market.share_count|default:0 }}</td>
               <td><a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar</a></td>

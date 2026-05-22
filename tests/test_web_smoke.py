@@ -35,7 +35,7 @@ from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
 from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
-from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback
+from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback
 from system_logs.models import SystemLog
 from system_logs.services import log_system_event
 
@@ -173,6 +173,7 @@ class BackendAuthAPITests(TransactionTestCase):
 
     def test_market_api_seed_filters_and_detail_contract(self):
         self.assertEqual(Market.objects.filter(slug="openai-gpt6-2026").count(), 1)
+        self.assertTrue(MarketEvent.objects.filter(name="Geral", subcategory__name="Modelos").exists())
         self.assertGreaterEqual(MarketOption.objects.filter(market__slug="openai-gpt6-2026").count(), 2)
         Market.objects.filter(slug="tiktok-ban-eua-2026").update(status="canceled", status_label="Cancelado")
 
@@ -184,6 +185,10 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertNotIn("draft", [market["status"] for market in markets])
         self.assertNotIn("canceled", [market["status"] for market in markets])
         self.assertIn("created_at", markets[0])
+        self.assertEqual(markets[0]["event"], "Geral")
+        self.assertEqual(markets[0]["category_notice"], "")
+        self.assertEqual(markets[0]["subcategory_notice"], "")
+        self.assertEqual(markets[0]["event_notice"], "")
 
         open_markets = client.get("/markets", params={"status": "open"})
         self.assertEqual(open_markets.status_code, 200)
@@ -198,6 +203,10 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(detail.status_code, 200)
         payload = detail.json()
         self.assertEqual(payload["slug"], "openai-gpt6-2026")
+        self.assertEqual(payload["event"], "Geral")
+        self.assertEqual(payload["category_notice"], "")
+        self.assertEqual(payload["subcategory_notice"], "")
+        self.assertEqual(payload["event_notice"], "")
         self.assertIn("resolution_criteria", payload)
         self.assertIn("view_count", payload)
         self.assertIn("share_count", payload)
@@ -1200,7 +1209,42 @@ class BackendAuthAPITests(TransactionTestCase):
                     """,
                     (badge_id,),
                 )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_badge_definitions
+                        (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
+                    VALUES ('auto-comment-event', 'Comentou em Geral', 'Fez um comentário no evento Geral.', 'Publique 1 comentário visível em IA/Modelos/Geral.', 'engagement', '', '', true, now(), now())
+                    RETURNING id
+                    """
+                )
+                event_badge_id = cursor.fetchone()["id"]
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_badge_rules
+                        (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
+                    VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', 'Geral', true, now(), now())
+                    """,
+                    (event_badge_id,),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_badge_definitions
+                        (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
+                    VALUES ('auto-comment-wrong-event', 'Comentou Bitcoin', 'Fez um comentário no evento Bitcoin.', 'Publique 1 comentário visível em IA/Modelos/Bitcoin.', 'engagement', '', '', true, now(), now())
+                    RETURNING id
+                    """
+                )
+                wrong_event_badge_id = cursor.fetchone()["id"]
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_badge_rules
+                        (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
+                    VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', 'Bitcoin', true, now(), now())
+                    """,
+                    (wrong_event_badge_id,),
+                )
         market = Market.objects.get(slug="openai-gpt6-2026")
+        self.assertEqual(market.event.name, "Geral")
         first = client.post(f"/markets/{market.slug}/comments", headers=headers, json={"body": "Comentário que libera badge."})
         second = client.post(f"/markets/{market.slug}/comments", headers=headers, json={"body": "Outro comentário."})
         self.assertEqual(first.status_code, 201)
@@ -1218,6 +1262,20 @@ class BackendAuthAPITests(TransactionTestCase):
                     """
                 )
                 self.assertEqual(cursor.fetchone()["total"], 1)
+                cursor.execute(
+                    """
+                    SELECT b.code, COUNT(a.id) AS total
+                    FROM orynth_badge_definitions b
+                    LEFT JOIN orynth_user_badge_awards a ON a.badge_id = b.id
+                    LEFT JOIN orynth_users u ON u.id = a.user_id AND u.email = 'badge-auto@example.com'
+                    WHERE b.code IN ('auto-comment-event', 'auto-comment-wrong-event')
+                    GROUP BY b.code
+                    ORDER BY b.code
+                    """
+                )
+                awarded_by_code = {row["code"]: row["total"] for row in cursor.fetchall()}
+                self.assertEqual(awarded_by_code["auto-comment-event"], 1)
+                self.assertEqual(awarded_by_code["auto-comment-wrong-event"], 0)
 
     def test_rankings_filter_category_subcategory_recalculates_theme(self):
         client = TestClient(app)
@@ -2470,15 +2528,43 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(staff_session.status_code, 200)
         self.assertTrue(staff_session.json()["user"]["is_staff"])
 
-        taxonomy = client.post("/admin/categories", headers=headers, json={"name": "Energia", "slug": "energia"})
+        taxonomy = client.post(
+            "/admin/categories",
+            headers=headers,
+            json={"name": "Energia", "slug": "energia", "notice": "Aviso geral da categoria Energia."},
+        )
         self.assertEqual(taxonomy.status_code, 201)
         subcategory = client.post(
             "/admin/categories/energia/subcategories",
             headers=headers,
-            json={"name": "Renováveis", "slug": "renovaveis"},
+            json={"name": "Renováveis", "slug": "renovaveis", "notice": "Aviso da subcategoria Renováveis."},
         )
         self.assertEqual(subcategory.status_code, 201)
         self.assertIn("Energia", [category["name"] for category in subcategory.json()["categories"]])
+        energia_payload = next(category for category in subcategory.json()["categories"] if category["slug"] == "energia")
+        renovaveis_payload = next(subcategory for subcategory in energia_payload["subcategories"] if subcategory["slug"] == "renovaveis")
+        self.assertEqual(energia_payload["notice"], "Aviso geral da categoria Energia.")
+        self.assertEqual(renovaveis_payload["notice"], "Aviso da subcategoria Renováveis.")
+        event = client.post(
+            "/admin/categories/energia/subcategories/renovaveis/events",
+            headers=headers,
+            json={"name": "Solar", "slug": "solar", "notice": "Não caracteriza recomendação de investimento."},
+        )
+        self.assertEqual(event.status_code, 201)
+        energia_payload = next(category for category in event.json()["categories"] if category["slug"] == "energia")
+        renovaveis_payload = next(subcategory for subcategory in energia_payload["subcategories"] if subcategory["slug"] == "renovaveis")
+        self.assertIn("Solar", [event["name"] for event in renovaveis_payload["events"]])
+        empty_event = client.post(
+            "/admin/categories/energia/subcategories/renovaveis/events",
+            headers=headers,
+            json={"name": "Eólica", "slug": "eolica", "notice": ""},
+        )
+        self.assertEqual(empty_event.status_code, 201)
+        delete_empty_event = client.delete("/admin/categories/energia/subcategories/renovaveis/events/eolica", headers=headers)
+        self.assertEqual(delete_empty_event.status_code, 200)
+        energia_payload = next(category for category in delete_empty_event.json()["categories"] if category["slug"] == "energia")
+        renovaveis_payload = next(subcategory for subcategory in energia_payload["subcategories"] if subcategory["slug"] == "renovaveis")
+        self.assertNotIn("eolica", [event["slug"] for event in renovaveis_payload["events"]])
 
         block_category = client.post("/admin/categories/energia/block", headers=headers, json={"note": "Congelar categoria"})
         self.assertEqual(block_category.status_code, 200)
@@ -2532,6 +2618,45 @@ class BackendAuthAPITests(TransactionTestCase):
         unblock_subcategory = client.post("/admin/categories/energia/subcategories/renovaveis/unblock", headers=headers, json={"note": "Reativar subcategoria"})
         self.assertEqual(unblock_subcategory.status_code, 200)
 
+        block_event = client.post("/admin/categories/energia/subcategories/renovaveis/events/solar/block", headers=headers, json={"note": "Congelar evento"})
+        self.assertEqual(block_event.status_code, 200)
+        energia_payload = next(category for category in block_event.json()["categories"] if category["slug"] == "energia")
+        renovaveis_payload = next(subcategory for subcategory in energia_payload["subcategories"] if subcategory["slug"] == "renovaveis")
+        solar_payload = next(event for event in renovaveis_payload["events"] if event["slug"] == "solar")
+        self.assertEqual(solar_payload["notice"], "Não caracteriza recomendação de investimento.")
+        update_event_notice = client.patch(
+            "/admin/categories/energia/subcategories/renovaveis/events/solar",
+            headers=headers,
+            json={"name": "Solar", "slug": "solar", "notice": "Aviso operacional atualizado."},
+        )
+        self.assertEqual(update_event_notice.status_code, 200)
+        energia_payload = next(category for category in update_event_notice.json()["categories"] if category["slug"] == "energia")
+        renovaveis_payload = next(subcategory for subcategory in energia_payload["subcategories"] if subcategory["slug"] == "renovaveis")
+        solar_payload = next(event for event in renovaveis_payload["events"] if event["slug"] == "solar")
+        self.assertEqual(solar_payload["notice"], "Aviso operacional atualizado.")
+        self.assertTrue(solar_payload["is_blocked"])
+        blocked_event_market = client.post(
+            "/admin/markets",
+            headers=headers,
+            json={
+                "title": "Mercado com evento bloqueado",
+                "slug": "mercado-evento-bloqueado",
+                "summary": "Nao deve salvar.",
+                "kind": "binary",
+                "category": "Energia",
+                "subcategory": "Renováveis",
+                "event": "Solar",
+                "source": "Fonte",
+                "resolution_criteria": "Critério",
+                "close_at": "2026-12-31T23:59:00-03:00",
+                "close_timezone": "America/Sao_Paulo",
+                "thumb_color": "#d8ece2",
+            },
+        )
+        self.assertEqual(blocked_event_market.status_code, 422)
+        unblock_event = client.post("/admin/categories/energia/subcategories/renovaveis/events/solar/unblock", headers=headers, json={"note": "Reativar evento"})
+        self.assertEqual(unblock_event.status_code, 200)
+
         required_market_fields = {
             "source": "Fonte",
             "resolution_criteria": "Critério",
@@ -2564,6 +2689,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 "kind": "binary",
                 "category": "Energia",
                 "subcategory": "Renováveis",
+                "event": "Solar",
                 "source": "Agência Internacional de Energia",
                 "resolution_criteria": "Será resolvido com relatório público consolidado.",
                 "close_at": "2026-12-31T23:59:00-03:00",
@@ -2576,12 +2702,15 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(valid_market.status_code, 201)
         self.assertEqual(valid_market.json()["status"], "draft")
+        self.assertEqual(valid_market.json()["event"], "Solar")
         self.assertEqual([option["label"] for option in valid_market.json()["options"]], ["SIM", "NAO"])
         self.assertEqual([option["probability"] for option in valid_market.json()["options"]], [50, 50])
         self.assertEqual(valid_market.json()["close_timezone"], "America/Sao_Paulo")
         self.assertTrue(valid_market.json()["auto_close_enabled"])
         self.assertEqual(valid_market.json()["image_url"], "/media/market_thumbnails/teste.png")
         self.assertTrue(valid_market.json()["closes_in"].endswith("d") or valid_market.json()["closes_in"].endswith("h") or valid_market.json()["closes_in"] == "fim")
+        delete_linked_event = client.delete("/admin/categories/energia/subcategories/renovaveis/events/solar", headers=headers)
+        self.assertEqual(delete_linked_event.status_code, 422)
 
         featured_market = client.post(
             "/admin/markets",
@@ -2791,6 +2920,10 @@ class BackendAuthAPITests(TransactionTestCase):
         public_detail = client.get("/markets/energia-solar-maioria-2030")
         self.assertEqual(public_detail.status_code, 200)
         self.assertEqual(public_detail.json()["subcategory"], "Renováveis")
+        self.assertEqual(public_detail.json()["event"], "Solar")
+        self.assertEqual(public_detail.json()["category_notice"], "Aviso geral da categoria Energia.")
+        self.assertEqual(public_detail.json()["subcategory_notice"], "Aviso da subcategoria Renováveis.")
+        self.assertEqual(public_detail.json()["event_notice"], "Aviso operacional atualizado.")
 
         cancel = client.post("/admin/markets/energia-solar-maioria-2030/cancel", headers=headers, json={"note": "cancelar"})
         self.assertEqual(cancel.status_code, 200)
@@ -3036,6 +3169,17 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(User._meta.db_table, "orynth_users")
 
     def test_main_pages_render(self):
+        category_notice = "Aviso amplo da categoria."
+        subcategory_notice = "Aviso específico da subcategoria."
+        event_notice = "Este mercado não caracteriza recomendação de investimento."
+        market = Market.objects.select_related("category", "subcategory", "event").get(slug="openai-gpt6-2026")
+        market.category.notice = category_notice
+        market.category.save(update_fields=["notice"])
+        market.subcategory.notice = subcategory_notice
+        market.subcategory.save(update_fields=["notice"])
+        event = market.event
+        event.notice = event_notice
+        event.save(update_fields=["notice"])
         public_routes = [
             reverse("home"),
             reverse("market-detail", args=["openai-gpt6-2026"]),
@@ -3057,8 +3201,21 @@ class WebSmokeTests(TransactionTestCase):
                 self.assertEqual(response.status_code, 200)
                 if route == reverse("feedback"):
                     self.assertContains(response, "Enviar feedback/Suporte")
+                if route == reverse("home"):
+                    self.assertNotContains(response, category_notice)
+                    self.assertNotContains(response, subcategory_notice)
+                    self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
                     self.assertContains(response, "Ticket de previsão")
+                    self.assertContains(response, "detail-title-block")
+                    self.assertContains(response, "detail-title-row")
+                    self.assertContains(response, "detail-market-thumb")
+                    self.assertContains(response, "Avisos da negociação")
+                    self.assertContains(response, category_notice)
+                    self.assertContains(response, subcategory_notice)
+                    self.assertContains(response, event_notice)
+                    content = response.content.decode()
+                    self.assertLess(content.index("Critério de resolução"), content.index("Avisos da negociação"))
                     self.assertContains(response, "detail-market-actions")
                     self.assertContains(response, "detail-like-button readonly")
                     self.assertContains(response, "detail-favorite-button readonly")
@@ -3445,6 +3602,9 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(guest_response, '<form class="market-like-form"')
         self.assertContains(guest_response, "market-like-button readonly")
         self.assertContains(guest_response, "market-favorite-button readonly")
+        self.assertContains(guest_response, "deadline-rail")
+        self.assertContains(guest_response, "data-deadline-rail")
+        self.assertContains(guest_response, "Tempo restante:")
         self.assertContains(guest_response, "data-guest-like-button")
         self.assertContains(guest_response, "data-guest-favorite-button")
         self.assertContains(guest_response, 'data-filter="likes"')
@@ -3541,6 +3701,13 @@ class WebSmokeTests(TransactionTestCase):
         self.assertIn('favorited: "Nenhum mercado favorito ainda."', script)
         self.assertIn("return right.views - left.views || tieBreak;", script)
         self.assertIn("Number(list.dataset.marketPageSize || 18)", script)
+        self.assertIn("hydrateDeadlineRail", script)
+        self.assertIn("card.dataset.marketCloseAt", script)
+        self.assertIn("--time-left", script)
+        self.assertIn("deadlineState", script)
+        self.assertIn("deadlineAccent", script)
+        self.assertIn("window.setInterval", script)
+        self.assertIn("rail.dataset.deadlineState = state", script)
         self.assertIn("renderMarketChunk(list, mode, visibleCount)", script)
         self.assertIn("data-market-load-more-button", script)
         self.assertIn("[data-market-favorite-form]", script)
@@ -3557,6 +3724,11 @@ class WebSmokeTests(TransactionTestCase):
         self.assertIn('[data-market-list][data-market-filter-mode="favorited"] [data-market-card][data-market-favorited="false"]', styles)
         self.assertIn(".market-favorite-button", styles)
         self.assertIn(".market-favorite-button.readonly", styles)
+        self.assertIn(".deadline-rail", styles)
+        self.assertIn(".deadline-rail-fill", styles)
+        self.assertIn("width: var(--time-left)", styles)
+        self.assertIn(".detail-market-thumb", styles)
+        self.assertIn(".detail-title-row", styles)
         self.assertIn(".like-chip-button", styles)
         self.assertIn(".market-like-button.readonly", styles)
         self.assertIn(".market-auth-toast", styles)
@@ -4351,8 +4523,32 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "name": "IA",
                     "slug": "ia",
+                    "notice": "Aviso geral de IA.",
                     "markets_count": 1,
-                    "subcategories": [{"name": "Modelos", "slug": "modelos", "markets_count": 1}],
+                    "subcategories": [
+                        {
+                            "name": "Modelos",
+                            "slug": "modelos",
+                            "notice": "Aviso de modelos.",
+                            "markets_count": 1,
+                            "events": [
+                                {
+                                    "name": "Geral",
+                                    "slug": "geral",
+                                    "markets_count": 1,
+                                    "is_blocked": False,
+                                    "notice": "Aviso operacional de IA.",
+                                },
+                                {
+                                    "name": "Sem mercado",
+                                    "slug": "sem-mercado",
+                                    "markets_count": 0,
+                                    "is_blocked": False,
+                                    "notice": "",
+                                }
+                            ],
+                        }
+                    ],
                 }
             ]
         }
@@ -4587,7 +4783,7 @@ class WebSmokeTests(TransactionTestCase):
                     "description": "Entrou cedo.",
                     "rule_description": "Criar conta.",
                     "badge_type": "global",
-                    "image_url": "",
+                    "image_url": "/media/badge_images/founding.png",
                     "image_dark_url": "",
                     "is_active": True,
                     "rule_type": "founding_member",
@@ -4604,6 +4800,8 @@ class WebSmokeTests(TransactionTestCase):
         with patch("admin_ops.views.admin_get_badges", return_value=badge_data), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-badges"))
             self.assertContains(response, "Membro fundador")
+            self.assertContains(response, "badge-browse-thumb")
+            self.assertContains(response, "/media/badge_images/founding.png")
             self.assertContains(response, "Criar badge")
             self.assertContains(response, "Categoria")
             self.assertContains(response, "IA / Modelos")
@@ -4776,15 +4974,26 @@ class WebSmokeTests(TransactionTestCase):
         with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-taxonomy"))
             self.assertContains(response, "Categorias e subcategorias")
+            self.assertContains(response, "data-taxonomy-browser")
+            self.assertContains(response, 'data-taxonomy-category-trigger="ia"')
+            self.assertContains(response, "taxonomy-detail-panel")
             self.assertContains(response, "Modelos")
             self.assertContains(response, "Mercados vinculados")
             self.assertContains(response, "Editar categoria")
             self.assertContains(response, "Adicionar subcategoria")
             self.assertContains(response, "Regras de bloqueio")
+            self.assertContains(response, "Aviso da categoria")
+            self.assertContains(response, "Aviso da subcategoria")
+            self.assertContains(response, "Aviso do evento")
+            self.assertContains(response, "Aviso geral de IA.")
+            self.assertContains(response, "Aviso de modelos.")
+            self.assertContains(response, "Aviso operacional de IA.")
             self.assertContains(response, "Bloquear")
-            self.assertNotContains(response, ">Excluir<")
+            self.assertContains(response, "delete_event")
+            self.assertContains(response, "Excluir evento")
             self.assertContains(response, "update_category")
             self.assertContains(response, "update_subcategory")
+            self.assertContains(response, "update_event")
 
         with patch("admin_ops.views.admin_get_market", return_value=api_market), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-market-edit", args=["openai-gpt6-2026"]))
@@ -5181,32 +5390,68 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "name": "IA",
                     "slug": "ia",
+                    "notice": "",
                     "markets_count": 1,
-                    "subcategories": [{"name": "Modelos", "slug": "modelos", "markets_count": 1}],
+                    "subcategories": [
+                        {
+                            "name": "Modelos",
+                            "slug": "modelos",
+                            "notice": "",
+                            "markets_count": 1,
+                            "events": [
+                                {
+                                    "name": "Geral",
+                                    "slug": "geral",
+                                    "markets_count": 1,
+                                    "is_blocked": False,
+                                    "notice": "",
+                                }
+                            ],
+                        }
+                    ],
                 }
             ]
         }
 
         with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_create_category", return_value=taxonomy_data) as create_category:
-            response = self.client.post(reverse("admin-ops-taxonomy"), {"action": "create_category", "name": "Ciência", "slug": "ciencia"})
+            response = self.client.post(
+                reverse("admin-ops-taxonomy"),
+                {"action": "create_category", "name": "Ciência", "slug": "ciencia", "notice": "Aviso de ciência"},
+            )
             self.assertEqual(response.status_code, 200)
-            create_category.assert_called_once_with("staff-token", {"name": "Ciência", "slug": "ciencia"})
+            create_category.assert_called_once_with("staff-token", {"name": "Ciência", "slug": "ciencia", "notice": "Aviso de ciência"})
 
         with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_update_category", return_value=taxonomy_data) as update_category:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
-                {"action": "update_category", "category_slug": "ia", "name": "Inteligência Artificial", "slug": "ia"},
+                {
+                    "action": "update_category",
+                    "category_slug": "ia",
+                    "name": "Inteligência Artificial",
+                    "slug": "ia",
+                    "notice": "Aviso atualizado de IA",
+                },
             )
             self.assertEqual(response.status_code, 200)
-            update_category.assert_called_once_with("staff-token", "ia", {"name": "Inteligência Artificial", "slug": "ia"})
+            update_category.assert_called_once_with(
+                "staff-token",
+                "ia",
+                {"name": "Inteligência Artificial", "slug": "ia", "notice": "Aviso atualizado de IA"},
+            )
 
         with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_create_subcategory", return_value=taxonomy_data) as create_subcategory:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
-                {"action": "create_subcategory", "category_slug": "ia", "name": "Agentes", "slug": "agentes"},
+                {
+                    "action": "create_subcategory",
+                    "category_slug": "ia",
+                    "name": "Agentes",
+                    "slug": "agentes",
+                    "notice": "Aviso de agentes",
+                },
             )
             self.assertEqual(response.status_code, 200)
-            create_subcategory.assert_called_once_with("staff-token", "ia", {"name": "Agentes", "slug": "agentes"})
+            create_subcategory.assert_called_once_with("staff-token", "ia", {"name": "Agentes", "slug": "agentes", "notice": "Aviso de agentes"})
 
         with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_update_subcategory", return_value=taxonomy_data) as update_subcategory:
             response = self.client.post(
@@ -5217,6 +5462,7 @@ class WebSmokeTests(TransactionTestCase):
                     "subcategory_slug": "modelos",
                     "name": "Modelos fundacionais",
                     "slug": "modelos-fundacionais",
+                    "notice": "Aviso atualizado de modelos",
                 },
             )
             self.assertEqual(response.status_code, 200)
@@ -5224,7 +5470,7 @@ class WebSmokeTests(TransactionTestCase):
                 "staff-token",
                 "ia",
                 "modelos",
-                {"name": "Modelos fundacionais", "slug": "modelos-fundacionais"},
+                {"name": "Modelos fundacionais", "slug": "modelos-fundacionais", "notice": "Aviso atualizado de modelos"},
             )
 
         with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_block_category", return_value=taxonomy_data) as block_category:
@@ -5252,6 +5498,67 @@ class WebSmokeTests(TransactionTestCase):
             )
             self.assertEqual(response.status_code, 200)
             unblock_subcategory.assert_called_once_with("staff-token", "ia", "modelos", "Desbloquear sub")
+
+        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_create_event", return_value=taxonomy_data) as create_event:
+            response = self.client.post(
+                reverse("admin-ops-taxonomy"),
+                {
+                    "action": "create_event",
+                    "category_slug": "ia",
+                    "subcategory_slug": "modelos",
+                    "name": "GPT-6",
+                    "slug": "gpt-6",
+                    "notice": "Aviso do GPT-6",
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            create_event.assert_called_once_with("staff-token", "ia", "modelos", {"name": "GPT-6", "slug": "gpt-6", "notice": "Aviso do GPT-6"})
+
+        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_update_event", return_value=taxonomy_data) as update_event:
+            response = self.client.post(
+                reverse("admin-ops-taxonomy"),
+                {
+                    "action": "update_event",
+                    "category_slug": "ia",
+                    "subcategory_slug": "modelos",
+                    "event_slug": "geral",
+                    "name": "Geral IA",
+                    "slug": "geral-ia",
+                    "notice": "Aviso atualizado",
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            update_event.assert_called_once_with(
+                "staff-token",
+                "ia",
+                "modelos",
+                "geral",
+                {"name": "Geral IA", "slug": "geral-ia", "notice": "Aviso atualizado"},
+            )
+
+        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_block_event", return_value=taxonomy_data) as block_event:
+            response = self.client.post(
+                reverse("admin-ops-taxonomy"),
+                {"action": "block_event", "category_slug": "ia", "subcategory_slug": "modelos", "event_slug": "geral", "block_note": "Bloquear evento"},
+            )
+            self.assertEqual(response.status_code, 200)
+            block_event.assert_called_once_with("staff-token", "ia", "modelos", "geral", "Bloquear evento")
+
+        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_unblock_event", return_value=taxonomy_data) as unblock_event:
+            response = self.client.post(
+                reverse("admin-ops-taxonomy"),
+                {"action": "unblock_event", "category_slug": "ia", "subcategory_slug": "modelos", "event_slug": "geral", "block_note": "Desbloquear evento"},
+            )
+            self.assertEqual(response.status_code, 200)
+            unblock_event.assert_called_once_with("staff-token", "ia", "modelos", "geral", "Desbloquear evento")
+
+        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_delete_event", return_value=taxonomy_data) as delete_event:
+            response = self.client.post(
+                reverse("admin-ops-taxonomy"),
+                {"action": "delete_event", "category_slug": "ia", "subcategory_slug": "modelos", "event_slug": "geral"},
+            )
+            self.assertEqual(response.status_code, 200)
+            delete_event.assert_called_once_with("staff-token", "ia", "modelos", "geral")
 
     def test_admin_comment_moderation_uses_api_client(self):
         session = self.client.session

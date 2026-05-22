@@ -112,7 +112,7 @@ class BadgeAwardEngine:
             params.extend(sorted(rule_types))
         cursor.execute(
             f"""
-            SELECT b.id, b.code, b.name, r.rule_type, r.threshold_value, r.category, r.subcategory
+            SELECT b.id, b.code, b.name, r.rule_type, r.threshold_value, r.category, r.subcategory, r.event
             FROM orynth_badge_definitions b
             JOIN orynth_badge_rules r ON r.badge_id = b.id
             WHERE b.is_active = true
@@ -142,7 +142,7 @@ class BadgeAwardEngine:
         return bool(cursor.fetchone())
 
     @classmethod
-    def _prediction_rule_count(cls, cursor, user_id, rule_type, category="", subcategory=""):
+    def _prediction_rule_count(cls, cursor, user_id, rule_type, category="", subcategory="", event=""):
         predicates = ["p.user_id = %s", "p.status = 'resolved'"]
         params = [user_id]
         if rule_type == "correct_predictions_count":
@@ -153,6 +153,9 @@ class BadgeAwardEngine:
         if subcategory:
             predicates.append("(lower(sc.name) = lower(%s) OR lower(sc.slug) = lower(%s))")
             params.extend([subcategory, subcategory])
+        if event:
+            predicates.append("(lower(ev.name) = lower(%s) OR lower(ev.slug) = lower(%s))")
+            params.extend([event, event])
         cursor.execute(
             f"""
             SELECT COUNT(*) AS total
@@ -160,6 +163,7 @@ class BadgeAwardEngine:
             JOIN orynth_markets m ON m.id = p.market_id
             JOIN orynth_market_categories c ON c.id = m.category_id
             JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
+            JOIN orynth_market_events ev ON ev.id = m.event_id
             WHERE {' AND '.join(predicates)}
             """,
             params,
@@ -188,7 +192,7 @@ class BadgeAwardEngine:
             cursor.execute("SELECT date_joined FROM orynth_users WHERE id = %s", (user_id,))
             return 1 if cursor.fetchone() else 0
         if rule_type in {"resolved_predictions_count", "correct_predictions_count"}:
-            return cls._prediction_rule_count(cursor, user_id, rule_type, rule["category"], rule["subcategory"])
+            return cls._prediction_rule_count(cursor, user_id, rule_type, rule["category"], rule["subcategory"], rule["event"])
         if rule_type == "streak_count":
             cursor.execute("SELECT streak FROM orynth_user_reputations WHERE user_id = %s", (user_id,))
             row = cursor.fetchone()
@@ -217,11 +221,12 @@ class BadgeAwardEngine:
         predicates = ["mc.author_id = %s", "mc.status = 'visible'"]
         params = [user_id]
         joins = ""
-        if rule["category"] or rule["subcategory"]:
+        if rule["category"] or rule["subcategory"] or rule["event"]:
             joins = """
             JOIN orynth_markets m ON m.id = mc.market_id
             JOIN orynth_market_categories c ON c.id = m.category_id
             JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
+            JOIN orynth_market_events ev ON ev.id = m.event_id
             """
         if rule["category"]:
             predicates.append("(lower(c.name) = lower(%s) OR lower(c.slug) = lower(%s))")
@@ -229,6 +234,9 @@ class BadgeAwardEngine:
         if rule["subcategory"]:
             predicates.append("(lower(sc.name) = lower(%s) OR lower(sc.slug) = lower(%s))")
             params.extend([rule["subcategory"], rule["subcategory"]])
+        if rule["event"]:
+            predicates.append("(lower(ev.name) = lower(%s) OR lower(ev.slug) = lower(%s))")
+            params.extend([rule["event"], rule["event"]])
         cursor.execute(
             f"""
             SELECT COUNT(*) AS total
@@ -250,6 +258,8 @@ class BadgeAwardEngine:
         if rule["subcategory"]:
             predicates.append("lower(subcategory) = lower(%s)")
             params.append(rule["subcategory"])
+        if rule["event"]:
+            return 0
         cursor.execute(
             f"""
             SELECT COUNT(*) AS total
