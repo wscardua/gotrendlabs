@@ -1,6 +1,6 @@
 # Lote Editorial Seed de Mercados - 2026-05-21
 
-Este documento registra a memoria versionada do lote editorial criado para povoar a base local de testes da Orynth Trends em 21 de maio de 2026.
+Este documento registra a memoria versionada do lote editorial criado para povoar a base local de testes da Orynth Trends em 21 de maio de 2026, com adicoes editoriais posteriores quando aprovadas.
 
 ## Decisoes Operacionais
 
@@ -65,3 +65,22 @@ Este documento registra a memoria versionada do lote editorial criado para povoa
 - O banco local foi populado por operacao aprovada pelo usuario; bancos remotos devem ser populados por fluxo operacional controlado, nao por assumir que `db.sqlite3` ou volumes locais serao versionados.
 - As thumbnails estao versionadas como arquivos de midia locais para preservar a experiencia visual do lote.
 - Se o lote for reaplicado, usar `slug` como chave natural para evitar duplicatas.
+
+## Adicao DEV - Cripto - 2026-05-22
+
+Em 22 de maio de 2026, foram adicionados 3 mercados cripto no banco DEV local, todos com status inicial `draft`, categoria/subcategoria criadas de forma idempotente e thumbnails autorais locais.
+
+Regras especificas da adicao:
+
+- Categoria: `Cripto`.
+- Subcategorias: `Preço`, `DeFi / On-chain`, `Meme coins`.
+- Aviso obrigatorio em `resolution_criteria`: `Não caracteriza recomendação de investimento.`
+- Fonte de resolucao: cada mercado usa link publico verificavel em `source` e fallback no criterio.
+- Thumbnails: imagens locais autorais em `media/market_thumbnails/generated-<slug>.png`, sem texto, logos ou marcas oficiais embutidas.
+- Publicacao: nenhum mercado foi publicado automaticamente; operador revisa odds, fonte, horario e criterio antes de publicar.
+
+| # | Slug | Categoria > Subcategoria | Tipo | Fonte principal | Thumbnail |
+| ---: | --- | --- | --- | --- | --- |
+| 28 | `bitcoin-acima-80000-30-junho-2026` | Cripto > Preço | binary | CoinGecko Bitcoin | `media/market_thumbnails/generated-bitcoin-acima-80000-30-junho-2026.png` |
+| 29 | `solana-acima-bsc-tvl-31-maio-2026` | Cripto > DeFi / On-chain | binary | DefiLlama Chains | `media/market_thumbnails/generated-solana-acima-bsc-tvl-31-maio-2026.png` |
+| 30 | `pepe-acima-shiba-meme-coins-15-junho-2026` | Cripto > Meme coins | binary | CoinGecko Meme Token | `media/market_thumbnails/generated-pepe-acima-shiba-meme-coins-15-junho-2026.png` |

@@ -100,3 +100,8 @@
 - registrado que `O₵ distribuídas` exclui créditos de `staff` e `superuser`
 - registrado que ticket de previsão não pré-seleciona opção, orienta escolha explícita, usa radio obrigatório e apresenta estado sem saldo disponível
 - registrado que card social de mercado exibe opções/probabilidades e CTA editorial para o detalhe do mercado
+
+## 2026-05-22
+
+- ampliada a skill `orynth-prediction-markets` para suportar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório de que mercados cripto não caracterizam recomendação de investimento
+- documentado seed DEV de 3 mercados cripto em `docs/specs/state/editorial-seed-markets-20260521.md`, mantendo status `draft`, taxonomia idempotente e thumbs locais autorais

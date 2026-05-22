@@ -27,7 +27,7 @@ Fonte canônica das skills do Orynth. Essas skills orientam agentes de IA a trab
 
 | Skill | Quando usar | Saída esperada |
 |---|---|---|
-| `orynth-prediction-markets` | sugerir mercados de previsão com dados internos, trends sociais, diversidade e links exatos de verificação | mercados binários/múltiplos com prazo, fonte, critério objetivo e anti-repetição |
+| `orynth-prediction-markets` | sugerir mercados de previsão com dados internos, trends sociais/cripto, diversidade e links exatos de verificação | mercados binários/múltiplos com prazo, fonte, critério objetivo, aviso de risco para cripto e anti-repetição |
 
 ## Ordem recomendada
 
