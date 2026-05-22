@@ -72,7 +72,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `Favoritos` é um recorte pessoal autenticado de mercados salvos pelo usuário
 - usuário autenticado pode acionar `Minhas previsões` para ver apenas cards de mercados onde já registrou previsão
 - usuário autenticado pode favoritar/desfavoritar mercados públicos diretamente no card
-- visitante não vê o filtro `Favoritos` nem ação de favoritar
+- visitante não vê o filtro `Favoritos`, mas vê a ação de favoritar em estado apagado/readonly e recebe aviso de login ao tentar usar
 - visitante não vê o filtro `Minhas previsões`
 - o card principal do feed exibe os dois mercados publicados não cancelados mais visualizados por `view_count`, excluindo `draft` e `canceled`, com mercado mais novo como desempate
 - a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, total de `O₵` distribuídas e total de `O₵` movimentadas em previsões, sem filtrar por mês
@@ -180,6 +180,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - regressão para favoritos pessoais autenticados no contrato de listagem e endpoints idempotentes
 - regressão para curtidas reais autenticadas no contrato de listagem e endpoints idempotentes, garantindo uma curtida por usuário/mercado
 - renderização do filtro `Favoritos` apenas para usuário logado, com estado vazio quando não houver favoritos
+- renderização da ação de favoritar para visitante em estado readonly, sem formulário de mutação e com aviso de login ao clicar
 - renderização do filtro `Minhas previsões` apenas para usuário logado, com estado vazio quando não houver cards previstos
 - regressão para carregamento incremental do feed em blocos de 18 cards e reset do recorte ao trocar filtros
 - integração para bloqueio/desbloqueio de categoria e subcategoria

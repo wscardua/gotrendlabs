@@ -43,7 +43,7 @@
 - O label `distributed_oc` já deve chegar sem créditos de operadores; a UI não aplica filtro por papel em métricas públicas.
 - A moeda educativa deve ser exibida como `O₵` em textos visíveis; identificadores técnicos, campos e nomes internos continuam usando `_oc`.
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
-- Favoritos no feed da home representam mercados salvos pelo usuário autenticado; `is_featured` permanece como curadoria editorial para destaques visuais.
+- Favoritos no feed da home representam mercados salvos pelo usuário autenticado; visitantes podem ver affordance readonly de favorito, mas a mutação e o recorte `Favoritos` permanecem autenticados. `is_featured` permanece como curadoria editorial para destaques visuais.
 - Curtidas no card representam engajamento público do mercado e são separadas de favoritos pessoais e de likes/dislikes em comentários.
 - Páginas públicas fora da home devem expor retorno compacto para o feed dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags, evitando barra global solta entre header e conteúdo.
 - O rodapé público deve priorizar Institucional, Produto, Confiança e Suporte; links de conta, mercados recorrentes e Admin Ops pertencem à navegação principal ou ao chip autenticado.

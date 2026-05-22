@@ -29,6 +29,10 @@
             <span aria-hidden="true">♥</span>
           </button>
         </form>
+      {% else %}
+        <button class="market-favorite-button detail-favorite-button readonly" type="button" aria-label="Entre para favoritar mercados." title="Entre para favoritar mercados" data-guest-favorite-button>
+          <span aria-hidden="true">♥</span>
+        </button>
       {% endif %}
     </div>
     <div class="tags page-kicker-row">

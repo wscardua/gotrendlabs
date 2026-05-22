@@ -1049,3 +1049,26 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-21
 - Retomada: seguir criando novos conteúdos diretamente em PRD; se novo reset administrativo for necessário, usar `SecureString` temporário e removê-lo após validação
 - Reversão lógica: restaurar snapshot RDS pré-import e remover mídia copiada do volume `mediafiles`
+
+## WFLOW-20260522-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`
+- Objetivo: tornar a ação de favorito visível para visitantes na home e no detalhe, em estado readonly com aviso de login, mantendo mutação e recorte `Favoritos` autenticados
+- Etapa atual: concluído; `.venv/bin/python manage.py test tests.test_web_smoke`, `.venv/bin/python manage.py check`, `git diff --check` e validação local da home/detalhe no `runserver` executados com sucesso em 2026-05-22
+- Artefatos afetados:
+  - `templates/components/market_card.html`
+  - `markets/templates/markets/detail.html`
+  - `static/js/orynth.js`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/features/`
+  - `docs/specs/architecture/frontend-web.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: avaliar CTA direto para login caso métricas mostrem muitos cliques de visitante sem conversão
+- Reversão lógica: ocultar novamente affordance de favorito para visitantes e remover handler `data-guest-favorite-button`

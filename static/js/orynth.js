@@ -236,30 +236,38 @@ $$("[data-market-like-form]").forEach((form) => {
   });
 });
 
-let guestLikeNoticeTimeout = null;
+let guestAuthNoticeTimeout = null;
 
-function showGuestLikeNotice() {
-  let notice = $("[data-guest-like-notice]");
+function showGuestAuthNotice(message) {
+  let notice = $("[data-guest-auth-notice]");
   if (!notice) {
     notice = document.createElement("div");
     notice.className = "market-auth-toast";
-    notice.dataset.guestLikeNotice = "true";
+    notice.dataset.guestAuthNotice = "true";
     notice.setAttribute("role", "status");
     notice.setAttribute("aria-live", "polite");
     document.body.appendChild(notice);
   }
-  notice.textContent = "Curtir mercados é permitido apenas para usuários logados.";
+  notice.textContent = message;
   notice.hidden = false;
   notice.classList.add("visible");
-  window.clearTimeout(guestLikeNoticeTimeout);
-  guestLikeNoticeTimeout = window.setTimeout(() => {
+  window.clearTimeout(guestAuthNoticeTimeout);
+  guestAuthNoticeTimeout = window.setTimeout(() => {
     notice.classList.remove("visible");
     notice.hidden = true;
   }, 3600);
 }
 
 $$("[data-guest-like-button]").forEach((button) => {
-  button.addEventListener("click", showGuestLikeNotice);
+  button.addEventListener("click", () => {
+    showGuestAuthNotice("Curtir mercados é permitido apenas para usuários logados.");
+  });
+});
+
+$$("[data-guest-favorite-button]").forEach((button) => {
+  button.addEventListener("click", () => {
+    showGuestAuthNotice("Favoritar mercados é permitido apenas para usuários logados.");
+  });
 });
 
 $$("[data-market-favorite-form]").forEach((form) => {
