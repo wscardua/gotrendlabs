@@ -4139,6 +4139,15 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Admin")
         self.assertContains(response, reverse("admin-ops-dashboard"))
 
+    def test_public_top_nav_links_to_suggestion_for_all_visitors(self):
+        home_response = self.client.get(reverse("home"))
+        self.assertContains(home_response, "Sugerir mercado")
+        self.assertContains(home_response, f'href="{reverse("suggestion")}"')
+
+        suggestion_response = self.client.get(reverse("suggestion"))
+        self.assertContains(suggestion_response, "Sugerir mercado")
+        self.assertContains(suggestion_response, f'class="nav-link active" href="{reverse("suggestion")}"')
+
     def test_database_config_prefers_fastapi_postgres_environment(self):
         with patch.dict(
             os.environ,
@@ -4406,11 +4415,17 @@ class WebSmokeTests(TransactionTestCase):
             ],
         }
 
-        with patch("admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary) as dashboard_mock, patch("admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock:
+        with (
+            patch("admin_ops.views.get_backend_health", return_value={"status": "ok"}) as health_mock,
+            patch("admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary) as dashboard_mock,
+            patch("admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock,
+        ):
             response = self.client.get(reverse("admin-ops-dashboard"))
             self.assertContains(response, "Mercado admin API")
             self.assertContains(response, "Ação necessária")
             self.assertContains(response, "Saúde técnica")
+            self.assertContains(response, "Backend API")
+            self.assertContains(response, "Online")
             self.assertContains(response, "Top mercados")
             self.assertContains(response, "Eventos administrativos recentes")
             self.assertContains(response, "Pendente")
@@ -4420,6 +4435,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, reverse("admin-ops-resolution"))
             self.assertContains(response, reverse("admin-ops-users"))
             self.assertNotContains(response, 'class="panel admin-menu"')
+            health_mock.assert_called_once_with()
             dashboard_mock.assert_called_once_with("staff-token")
             response = self.client.get(reverse("admin-ops-markets"))
             self.assertContains(response, "Mercado admin API")
@@ -5039,6 +5055,41 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertNotContains(response, "OpenAI anuncia GPT-6")
         self.assertContains(response, "Serviço da API retornou erro interno.")
+
+    def test_admin_dashboard_backend_health_offline_does_not_block_summary(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "staffuser",
+            "email": "staff-user@example.com",
+            "display_name": "Staff User",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        dashboard_summary = {
+            "markets": {},
+            "queues": {},
+            "users": {},
+            "engagement": {},
+            "wallet": {},
+            "badges": {},
+            "system": {},
+            "top_markets": [],
+            "recent_admin_events": [],
+        }
+
+        with (
+            patch("admin_ops.views.get_backend_health", side_effect=AuthAPIError("Health indisponível.", None)),
+            patch("admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary),
+        ):
+            response = self.client.get(reverse("admin-ops-dashboard"))
+
+        self.assertContains(response, "Backend API")
+        self.assertContains(response, "Offline")
+        self.assertContains(response, "Health indisponível.")
+        self.assertNotContains(response, "Resumo operacional indisponível")
 
     def test_public_suggestion_and_feedback_post_to_api_client(self):
         session = self.client.session

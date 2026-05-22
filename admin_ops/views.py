@@ -34,6 +34,7 @@ from accounts.api_client import (
     admin_get_taxonomy,
     admin_get_user,
     admin_get_users,
+    get_backend_health,
     admin_lock_market,
     admin_moderate_comment,
     admin_publish_market,
@@ -351,9 +352,20 @@ def _audit_pagination(audit_data):
     return audit_data
 
 
+def _backend_health_context():
+    try:
+        payload = get_backend_health()
+    except AuthAPIError as exc:
+        return {"status": "offline", "label": "Offline", "detail": str(exc)}
+    if payload.get("status") == "ok":
+        return {"status": "online", "label": "Online", "detail": "/health ok"}
+    return {"status": "offline", "label": "Offline", "detail": "Resposta inesperada do /health."}
+
+
 @admin_api_required
 def dashboard(request):
     token = auth_token(request)
+    backend_health = _backend_health_context()
     try:
         dashboard_summary = admin_get_dashboard_summary(token)
     except AuthAPIError as exc:
@@ -374,7 +386,7 @@ def dashboard(request):
     return render(
         request,
         "admin_ops/dashboard.html",
-        {"dashboard_summary": dashboard_summary, "admin_error": error},
+        {"dashboard_summary": dashboard_summary, "admin_error": error, "backend_health": backend_health},
     )
 
 

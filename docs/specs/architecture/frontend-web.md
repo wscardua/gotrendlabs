@@ -47,6 +47,7 @@
 - Curtidas no card representam engajamento público do mercado e são separadas de favoritos pessoais e de likes/dislikes em comentários.
 - Páginas públicas fora da home devem expor retorno compacto para o feed dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags, evitando barra global solta entre header e conteúdo.
 - O rodapé público deve priorizar Institucional, Produto, Confiança e Suporte; links de conta, mercados recorrentes e Admin Ops pertencem à navegação principal ou ao chip autenticado.
+- A navegação pública principal deve expor `Sugerir mercado` para visitantes e usuários autenticados, apontando para o fluxo de sugestão existente com suporte a envio guest.
 - A entrada de Admin Ops no chip do usuário só pode renderizar quando o contexto autenticado indicar `is_staff` ou `is_superuser`.
 - Em desenvolvimento local, a camada Django pode degradar para leitura local quando a FastAPI ainda não foi reiniciada após mudança de rota, mas não deve criar, moderar, reagir, creditar, converter, resolver ou executar qualquer mutação crítica localmente.
 - Em fallback local de sugestão/feedback guest, o Django deve validar reCAPTCHA server-side antes de persistir localmente.

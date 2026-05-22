@@ -36,6 +36,7 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - retenção padrão de 90 dias com comando de limpeza
 - limpeza de logs expirada centralizada em serviço backend reutilizável, consumido pelo daemon e pelo comando operacional
 - heartbeat e resultado de ciclos do daemon operacional para troubleshooting
+- indicador de disponibilidade da Backend API no Dashboard Admin Ops a partir de `GET /health`
 - consulta administrativa paginada com filtros, identificador amigável de usuário e detalhe completo do log
 
 ## Escopo excluído
@@ -78,3 +79,4 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - dados sensíveis aparecem mascarados
 - comando de prune e daemon usam a mesma rotina backend de retenção, sem duplicar regra em camada Django
 - Admin Ops Config permite ajustar os limites de heartbeat do daemon, validando que `Sem sinal` seja maior que `Atrasado`
+- Dashboard Admin Ops exibe `Backend API` como online quando `GET /health` retorna `status=ok` e offline quando a consulta falha ou retorna payload inesperado
