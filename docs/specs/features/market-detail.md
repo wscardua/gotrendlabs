@@ -50,6 +50,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - estado do mercado governa disponibilidade de ação
 - resolução final fica visível quando existir
 - contrato do detalhe expõe curtidas reais do mercado e `viewer_has_like` quando há sessão autenticada
+- detalhe exibe ação de favorito para usuário autenticado e affordance apagada/readonly para visitante, com aviso de login ao tentar usar
 - ticket de previsão exibe ciclo compacto do mercado: criação, fechamento, resolução e distribuição
 - mercado resolvido destaca o resultado oficial dentro do ticket
 - mercado resolvido exibe data/hora/timezone da resolução
@@ -122,6 +123,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - regressão para mercado resolvido não zerar gráfico de consenso
 - regressão para ticket renderizar ciclo do mercado e destaque de resultado em mercado resolvido
 - regressão para tracking de visualização e compartilhamento não interferir na renderização do detalhe ou das páginas sociais
+- regressão para visitante ver ação de favorito readonly no detalhe sem formulário de mutação
 - regressão para card social de mercado renderizar opções/probabilidades e CTA para o detalhe
 
 ## Critérios de aceite

@@ -1125,6 +1125,18 @@ h3 {
   color: var(--red);
 }
 
+.market-favorite-button.readonly {
+  color: rgba(183, 73, 61, 0.34);
+  cursor: pointer;
+}
+
+.market-favorite-button.readonly:hover {
+  background: rgba(255, 253, 247, 0.72);
+  border-color: rgba(25, 29, 30, 0.14);
+  color: rgba(183, 73, 61, 0.48);
+  transform: none;
+}
+
 .detail-hero {
   position: relative;
 }
@@ -5741,6 +5753,16 @@ body[data-theme="dark"] .market-favorite-button.active {
   background: rgba(255, 137, 123, 0.16);
   border-color: rgba(255, 137, 123, 0.34);
   color: #ffc0b8;
+}
+
+body[data-theme="dark"] .market-favorite-button.readonly {
+  color: rgba(255, 157, 143, 0.36);
+}
+
+body[data-theme="dark"] .market-favorite-button.readonly:hover {
+  background: rgba(18, 25, 22, 0.72);
+  border-color: rgba(255, 137, 123, 0.22);
+  color: rgba(255, 157, 143, 0.52);
 }
 
 body[data-theme="dark"] .config-switch-row,

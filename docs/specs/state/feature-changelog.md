@@ -156,6 +156,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-001
 
+### 2026-05-22 - v0.24
+- visitantes passaram a ver a affordance de favorito nos cards da home em estado apagado/readonly
+- filtro `Favoritos` e mutação de favoritar/desfavoritar permanecem exclusivos para usuários autenticados
+- clique de visitante na affordance mostra aviso de login, sem enviar formulário de mutação
+- status de implementação: `parcial`
+
 ### 2026-05-21 - v0.23
 - migration inicial de mercados deixou de executar seed automático a partir de `data/fixtures/domain.json`
 - produção foi alinhada para não manter mercados fixture criados pelo primeiro deploy
@@ -298,6 +304,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-MARKET-002
+
+### 2026-05-22 - v0.10
+- detalhe de mercado passou a exibir favorito readonly para visitantes e favorito funcional para autenticados
+- estado visitante usa o mesmo aviso de login da affordance pública da home, sem formulário de mutação
+- status de implementação: `parcial`
 
 ### 2026-05-21 - v0.9
 - card social de mercado passou a exibir opções/probabilidades com barras discretas de consenso
