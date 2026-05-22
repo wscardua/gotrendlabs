@@ -161,6 +161,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-001
 
+### 2026-05-22 - v0.31
+- adicionado comando idempotente `seed_crypto_markets_20260522` para aplicar o lote aprovado `Mercado > Cripto` com aviso de subcategoria e eventos Ethereum, Dogecoin e Solana
+- adicionadas 3 thumbnails autorais 512x512 para o lote mainstream cripto, mantendo imagens sem texto/logos embutidos
+- contratos relacionados: `market-feed.md`
+- status de implementação: `parcial`
+
 ### 2026-05-22 - v0.30
 - cards da home/feed trocaram o indicador circular por uma barra horizontal compacta de prazo, calculada com `created_at` e `close_at`
 - detalhe do mercado passou a exibir a thumbnail/ícone encaixada à esquerda do título, preservando os metadados textuais em HTML

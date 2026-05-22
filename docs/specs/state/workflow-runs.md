@@ -1230,3 +1230,23 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-22
 - Retomada: validar visualmente em browser se a rail horizontal economiza espaço nos cards de 3 colunas sem perder legibilidade
 - Reversão lógica: restaurar o indicador circular textual mantendo a regra de não usar probabilidade como progresso de tempo
+
+## WFLOW-20260522-009
+
+- Tipo: `change-content`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`
+- Objetivo: aplicar lote cripto mainstream com taxonomia `Mercado > Cripto > moeda`, aviso de subcategoria e thumbnails autorais
+- Etapa atual: concluído; comando idempotente `seed_crypto_markets_20260522`, memória editorial, changelogs e 3 thumbs 512x512 adicionados; lote aplicado em PRD via SSM/container Django em 2026-05-22, com 3 mercados `open`, aviso de subcategoria e imagens no volume `production_mediafiles`
+- Artefatos afetados:
+  - `markets/management/commands/seed_crypto_markets_20260522.py`
+  - `media/market_thumbnails/generated-ethereum-acima-3000-30-junho-2026.png`
+  - `media/market_thumbnails/generated-dogecoin-top10-30-junho-2026.png`
+  - `media/market_thumbnails/generated-solana-acima-xrp-ranking-30-junho-2026.png`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: revisar odds/fechamento no Admin Ops e publicar ajustes editoriais caso a curadoria queira destacar algum card no feed
+- Reversão lógica: cancelar/arquivar os três mercados e limpar ou alterar o aviso da subcategoria `Cripto` se a taxonomia for revista
