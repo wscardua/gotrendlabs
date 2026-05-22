@@ -1,4 +1,4 @@
 interface:
   display_name: "Orynth Prediction Markets"
   short_description: "Sugere mercados de previsão por trends"
-  default_prompt: "Use $orynth-prediction-markets para sugerir mercados de previsão diversificados para Orynth com dados internos, trends sociais, links exatos de verificação e critérios objetivos de resolução."
+  default_prompt: "Use $orynth-prediction-markets para sugerir mercados de previsão diversificados para Orynth com dados internos, trends sociais/cripto, links exatos de verificação, critérios objetivos de resolução e aviso de risco quando aplicável."

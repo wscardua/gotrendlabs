@@ -20,6 +20,7 @@ Priorize sugestoes usando:
 - potencial de participacao
 - novidade
 - contribuicao para diversidade
+- para cripto, fonte objetiva e aviso de risco explicito
 
 Penalize:
 
@@ -30,6 +31,7 @@ Penalize:
 - especulacao sensivel
 - quase duplicata de mercados existentes
 - falta de fallback
+- em cripto, linguagem de compra, venda, lucro, rendimento ou recomendacao financeira
 
 ## Template Binario
 
@@ -45,6 +47,7 @@ Status de validacao da fonte:
 Momento da checagem:
 Criterio objetivo de resolucao:
 Regra de empate/ambiguidade/indisponibilidade:
+Aviso de risco: obrigatorio para categoria `cripto`; omitir nas demais categorias.
 Sinal interno usado:
 Sinal externo usado:
 Por que deve performar bem:
@@ -66,11 +69,52 @@ Status de validacao da fonte:
 Momento da checagem:
 Criterio objetivo de resolucao:
 Regra de empate/ambiguidade/indisponibilidade:
+Aviso de risco: obrigatorio para categoria `cripto`; omitir nas demais categorias.
 Sinal interno usado:
 Sinal externo usado:
 Por que deve performar bem:
 Nota de diversidade:
 Checagem anti-repeticao:
+```
+
+```markdown
+Tipo: binario
+Categoria: cripto
+Pergunta: O Bitcoin estara acima de US$ 100.000 em 30 de junho de 2026?
+Opcoes: Sim / Nao
+Prazo de resolucao: 30 de junho de 2026, 23:59 BRT
+Fonte de resolucao: CoinGecko
+Link exato de verificacao: https://www.coingecko.com/en/coins/bitcoin
+Status de validacao da fonte: validavel; pagina publica mostra preco em USD, conferir acesso antes de finalizar e novamente no prazo de resolucao.
+Momento da checagem: 30 de junho de 2026, 23:59 BRT
+Criterio objetivo de resolucao: vence Sim se o preco em USD exibido pela CoinGecko para Bitcoin estiver acima de US$ 100.000 no momento da checagem; caso contrario, vence Nao.
+Regra de empate/ambiguidade/indisponibilidade: se CoinGecko estiver indisponivel por mais de 24h, usar CoinMarketCap para Bitcoin no mesmo horario e criterio.
+Aviso de risco: Nao caracteriza recomendacao de investimento.
+Sinal interno usado: cripto adiciona diversidade quando tecnologia/financas estiverem subexploradas ou houver interesse recente.
+Sinal externo usado: preco publico em agregador conhecido e verificavel.
+Por que deve performar bem: pergunta simples, amplamente compreensivel e com resolucao numerica objetiva.
+Nota de diversidade: adiciona cripto sem depender de opiniao ou conselho financeiro.
+Checagem anti-repeticao: nao usar se ja existir mercado sobre preco do Bitcoin no mesmo periodo.
+```
+
+```markdown
+Tipo: multiplo
+Categoria: cripto
+Pergunta: Qual rede tera maior TVL na DefiLlama em 31 de julho de 2026?
+Opcoes: Ethereum / Solana / Tron / BNB Chain / Outro
+Prazo de resolucao: 31 de julho de 2026, 23:59 BRT
+Fonte de resolucao: DefiLlama
+Link exato de verificacao: https://defillama.com/chains
+Status de validacao da fonte: validavel; ranking publico mostra TVL por rede, conferir acesso antes de finalizar e novamente no prazo de resolucao.
+Momento da checagem: 31 de julho de 2026, 23:59 BRT
+Criterio objetivo de resolucao: vence a opcao melhor posicionada por TVL total na pagina de chains da DefiLlama no momento da checagem.
+Regra de empate/ambiguidade/indisponibilidade: se DefiLlama estiver indisponivel por mais de 24h, usar snapshot publico ou API publica da DefiLlama quando disponivel; se ainda nao houver dado verificavel, cancelar o mercado.
+Aviso de risco: Nao caracteriza recomendacao de investimento.
+Sinal interno usado: cripto pode ampliar diversidade de tecnologia com metrica publica.
+Sinal externo usado: ranking TVL publico e comparavel entre redes.
+Por que deve performar bem: disputa clara entre ecossistemas conhecidos, sem pedir compra ou venda.
+Nota de diversidade: usa infraestrutura cripto em vez de preco de token.
+Checagem anti-repeticao: nao repetir mercado recente sobre TVL ou ranking das mesmas redes no mesmo periodo.
 ```
 
 ## Bons Exemplos
@@ -123,6 +167,7 @@ Toda resolucao deve responder:
 - como a fonte foi validada
 - qual dado decidiu
 - o que fazer se a fonte falhar
+- em cripto, qual aviso de risco foi exibido
 
 Evite:
 
@@ -130,6 +175,9 @@ Evite:
 - "sera bem recebido?"
 - "ficara famoso?"
 - "causara polemica?"
+- "e hora de comprar?"
+- "vai dar lucro?"
+- "qual moeda vai valorizar mais para investir?"
 
 Prefira:
 
@@ -138,3 +186,5 @@ Prefira:
 - "sera publicado no canal oficial?"
 - "tera mais posts que outro termo pela API?"
 - "liderara ranking publico em data/hora definida?"
+- "estara acima/abaixo de X em fonte publica definida?"
+- "tera maior TVL, volume, transacoes ou ranking em fonte on-chain/publica definida?"

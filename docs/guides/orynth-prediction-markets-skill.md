@@ -7,7 +7,7 @@ Use a skill `orynth-prediction-markets` para gerar sugestoes de mercados de prev
 Use quando quiser:
 
 - sugerir novos mercados binarios ou multiplos
-- criar mercados sobre games, tecnologia, espaco, filmes, series, fofocas publicas ou influencers
+- criar mercados sobre games, tecnologia, espaco, filmes, series, fofocas publicas, influencers ou cripto
 - usar os mercados mais visualizados/curtidos/participados da Orynth como sinal
 - evitar repeticao de mercados ja publicados
 - trazer links exatos para verificacao de resolucao
@@ -26,13 +26,14 @@ Priorize dados internos da plataforma, evite repetir mercados existentes, manten
 1. Ler `references/seguranca-e-env.md` antes de qualquer credencial.
 2. Consultar dados internos read-only pelo ORM/API local.
 3. Levantar categorias dominantes e subexploradas.
-4. Buscar trends externas em YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB ou fontes oficiais.
+4. Buscar trends externas em YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB, fontes cripto/on-chain ou fontes oficiais.
 5. Exigir link exato de verificacao para cada mercado.
 6. Validar se a fonte de resolucao consegue fundamentar e certificar o resultado.
 7. Aplicar anti-repeticao contra banco local e `references/mercados-anteriores.md`.
 8. Gerar lote com diversidade editorial.
-9. Quando o usuario aprovar inclusao no banco, criar categorias/subcategorias necessarias de forma idempotente e manter os mercados como `draft` ate revisao/publicacao operacional.
-10. Thumbnails de mercado, quando geradas, devem ser imagens puras e autorais do evento/tema, sem texto ou titulo embutido. Titulo, categoria, subcategoria e fonte pertencem ao HTML/API, nao ao bitmap.
+9. Para mercados de cripto, incluir `Aviso de risco: Nao caracteriza recomendacao de investimento.`
+10. Quando o usuario aprovar inclusao no banco, criar categorias/subcategorias necessarias de forma idempotente e manter os mercados como `draft` ate revisao/publicacao operacional.
+11. Thumbnails de mercado, quando geradas, devem ser imagens puras e autorais do evento/tema, sem texto ou titulo embutido. Titulo, categoria, subcategoria e fonte pertencem ao HTML/API, nao ao bitmap.
 
 ## Validacao Da Fonte De Resolucao
 
@@ -96,8 +97,11 @@ Fontes recomendadas:
 - Twitch: categorias e streams por espectadores via API.
 - Google Trends: tendencia ampla de busca.
 - SteamDB/Steam Charts: rankings objetivos de games.
+- Cripto/on-chain: CoinGecko, CoinMarketCap, DefiLlama, explorers publicos, GitHub releases, blogs oficiais, status pages e anuncios oficiais.
 
 Regra central: sem link exato, a fonte so pode inspirar mercado; nao pode resolver mercado sozinha.
+
+Para cripto, a regra adicional e: sem dado publico objetivo e aviso de risco, o mercado nao deve ser entregue como sugestao final.
 
 ## Formato De Saida Esperado
 
@@ -114,6 +118,7 @@ Cada mercado deve conter:
 - Momento da checagem
 - Criterio objetivo de resolucao
 - Regra de empate/ambiguidade/indisponibilidade
+- Aviso de risco: obrigatorio para categoria `cripto`; usar "Nao caracteriza recomendacao de investimento."
 - Sinal interno usado
 - Sinal externo usado
 - Por que deve performar bem
@@ -135,6 +140,16 @@ Se precisar usar APIs externas, configure variaveis de ambiente localmente, por 
 - `REDDIT_CLIENT_SECRET`
 
 A skill deve mencionar somente nomes de variaveis, nunca valores.
+
+## Cripto
+
+Mercados de cripto devem ser sobre eventos verificaveis, como preco em fonte definida, ranking, TVL, volume, transacoes on-chain, status de rede, listagem oficial, release publico ou anuncio oficial.
+
+Evite linguagem de compra, venda, lucro, promessa de rendimento, recomendacao financeira, rumor de insider ou acusacao sem fonte objetiva. Inclua sempre:
+
+```text
+Aviso de risco: Nao caracteriza recomendacao de investimento.
+```
 
 ## Exemplo Curto
 

@@ -1094,3 +1094,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-22
 - Retomada: avaliar se o healthcheck deve expor versão/build quando houver necessidade operacional
 - Reversão lógica: remover o link público de sugestão no topo e ocultar o card `Backend API`, mantendo `/health` disponível para infraestrutura
+
+## WFLOW-20260522-003
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`
+- Objetivo: ampliar a curadoria assistida para mercados cripto com fontes objetivas, aviso de risco e seed DEV inicial com thumbnails autorais
+- Etapa atual: concluído; skill `orynth-prediction-markets` atualizada para cripto, 3 mercados DEV criados como `draft`, thumbs 512x512 geradas em `media/market_thumbnails/`, `quick_validate.py` e `git diff --check` executados com sucesso em 2026-05-22
+- Artefatos afetados:
+  - `tools/skills/orynth/orynth-prediction-markets/`
+  - `tools/skills/orynth/README.md`
+  - `docs/guides/orynth-prediction-markets-skill.md`
+  - `docs/specs/state/`
+  - `media/market_thumbnails/generated-bitcoin-acima-80000-30-junho-2026.png`
+  - `media/market_thumbnails/generated-solana-acima-bsc-tvl-31-maio-2026.png`
+  - `media/market_thumbnails/generated-pepe-acima-shiba-meme-coins-15-junho-2026.png`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: revisar odds/fontes no Admin Ops antes de publicar os mercados cripto; em PRD, aplicar via fluxo operacional controlado, não por migration automática
+- Reversão lógica: remover/arquivar os mercados cripto em DEV/PRD e retirar `cripto` da skill se a categoria for descontinuada

@@ -1,6 +1,6 @@
 ---
 name: orynth-prediction-markets
-description: Criar sugestoes diversificadas de mercados de previsao para Orynth usando dados internos da plataforma, ORM/API local em modo somente leitura, specs do projeto, credenciais locais em .env quando autorizadas, e trends verificaveis de YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB e outras fontes publicas. Use quando Codex precisar sugerir mercados binarios ou multiplos sobre games, tecnologia, espaco, filmes, series, fofocas publicas ou influencers, com prazos definidos, links exatos de verificacao, criterios objetivos de resolucao, diversidade editorial e checagem anti-repeticao contra mercados existentes.
+description: Criar sugestoes diversificadas de mercados de previsao para Orynth usando dados internos da plataforma, ORM/API local em modo somente leitura, specs do projeto, credenciais locais em .env quando autorizadas, e trends verificaveis de YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB, fontes cripto/on-chain e outras fontes publicas. Use quando Codex precisar sugerir mercados binarios ou multiplos sobre games, tecnologia, espaco, filmes, series, fofocas publicas, influencers ou cripto, com prazos definidos, links exatos de verificacao, criterios objetivos de resolucao, diversidade editorial, aviso obrigatorio para cripto e checagem anti-repeticao contra mercados existentes.
 ---
 
 # Orynth Prediction Markets
@@ -13,7 +13,7 @@ Leia as referencias conforme a necessidade:
 
 - `references/seguranca-e-env.md` antes de ler `.env`, autenticar ou usar qualquer credencial.
 - `references/acesso-dados-internos.md` antes de consultar ORM, banco, APIs internas, specs ou tabelas.
-- `references/fontes-sociais-e-verificacao.md` antes de usar YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB ou fontes similares.
+- `references/fontes-sociais-e-verificacao.md` antes de usar YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB, fontes cripto/on-chain ou fontes similares.
 - `references/framework-de-mercados.md` antes de gerar o lote final.
 - `references/mercados-anteriores.md` antes de finalizar sugestoes, para evitar repeticao.
 
@@ -29,10 +29,10 @@ Leia as referencias conforme a necessidade:
    - categorias dominantes
    - categorias subexploradas
    - temas repetidos
-   - oportunidades novas dentro de games, tecnologia, espaco, filmes, series, fofocas publicas e influencers
+   - oportunidades novas dentro de games, tecnologia, espaco, filmes, series, fofocas publicas, influencers e cripto
 
 3. Buscar trends externas apenas para enriquecer:
-   - YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB e fontes oficiais
+   - YouTube, TikTok, X, Facebook, Instagram, Reddit, Twitch, Google Trends, SteamDB, fontes cripto/on-chain e fontes oficiais
    - preferir links exatos de pagina, canal, video, endpoint, ranking ou post
    - usar fonte social sem link exato apenas como inspiracao, nunca como juiz final
 
@@ -50,6 +50,7 @@ Leia as referencias conforme a necessidade:
    - link exato de verificacao
    - criterio objetivo de resolucao
    - fallback para link indisponivel, empate, exclusao ou ambiguidade
+   - aviso de risco quando a categoria for `cripto`
    - nota de diversidade
    - checagem anti-repeticao
 
@@ -61,6 +62,7 @@ Leia as referencias conforme a necessidade:
    - com fonte que exige interpretacao subjetiva para decidir o vencedor
    - repetidas ou quase repetidas
    - baseadas em acusacoes, vida privada sensivel, assedio, difamacao ou especulacao toxica
+   - mercados de cripto com linguagem de compra, venda, lucro, promessa de rendimento ou recomendacao financeira
 
 ## Garantia Da Fonte De Resolucao
 
@@ -124,6 +126,7 @@ Cada sugestao deve incluir:
 - Momento da checagem
 - Criterio objetivo de resolucao
 - Regra de empate/ambiguidade/indisponibilidade
+- Aviso de risco: obrigatorio para categoria `cripto`; usar "Nao caracteriza recomendacao de investimento."
 - Sinal interno usado
 - Sinal externo usado
 - Por que deve performar bem

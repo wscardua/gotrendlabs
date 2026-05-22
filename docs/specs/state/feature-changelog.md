@@ -161,6 +161,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-001
 
+### 2026-05-22 - v0.25
+- skill `orynth-prediction-markets` passou a aceitar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório `Não caracteriza recomendação de investimento`
+- DEV recebeu 3 mercados cripto em `draft` com taxonomia `Cripto`, subcategorias `Preço`, `DeFi / On-chain` e `Meme coins`
+- adicionadas 3 thumbnails autorais para os mercados cripto, mantendo imagens sem texto/logos embutidos
+- status de implementação: `parcial`
+
 ### 2026-05-22 - v0.24
 - visitantes passaram a ver a affordance de favorito nos cards da home em estado apagado/readonly
 - filtro `Favoritos` e mutação de favoritar/desfavoritar permanecem exclusivos para usuários autenticados

@@ -7,6 +7,7 @@ Ruim:
 - Fonte: YouTube
 - Fonte: TikTok
 - Fonte: SteamDB
+- Fonte: CoinGecko
 
 Bom:
 
@@ -14,6 +15,8 @@ Bom:
 - Link exato: `https://ads.tiktok.com/business/creativecenter/`
 - Link exato: `https://api.x.com/2/tweets/counts/recent`
 - Link exato: `https://steamdb.info/charts/`
+- Link exato: `https://www.coingecko.com/en/coins/bitcoin`
+- Link exato: `https://defillama.com/chains`
 
 ## Validacao Obrigatoria Da Fonte
 
@@ -203,6 +206,37 @@ Regras:
 - Registrar fallback entre SteamDB, Steam Charts e ranking oficial Steam.
 - Validar que o ranking escolhido exibe a metrica usada no criterio.
 
+### Cripto E On-Chain
+
+Uso: cripto, redes blockchain, tokens, rankings, precos, TVL, transacoes, status de rede e releases oficiais.
+
+Confiabilidade: alta quando a fonte e publica, objetiva e historicamente conferivel; media quando depende de UI temporaria, API sem snapshot ou anuncio de terceiro.
+
+Links uteis:
+
+- CoinGecko Bitcoin: `https://www.coingecko.com/en/coins/bitcoin`
+- CoinMarketCap Bitcoin: `https://coinmarketcap.com/currencies/bitcoin/`
+- DefiLlama chains: `https://defillama.com/chains`
+- Etherscan charts: `https://etherscan.io/charts`
+- Solscan analytics: `https://solscan.io/analytics`
+- GitHub releases: `https://github.com/<org>/<repo>/releases`
+- Status pages oficiais quando existirem.
+
+Regras:
+
+- Incluir sempre: `Aviso de risco: Nao caracteriza recomendacao de investimento.`
+- Formular mercados como eventos verificaveis, nao como conselho financeiro.
+- Usar preco, ranking, TVL, volume, transacoes, bloco, status, listagem oficial, release ou anuncio oficial como dado resolutivo.
+- Definir moeda, unidade, data, horario, timezone e fonte exata.
+- Para preco, definir se a fonte usa valor spot, fechamento, media ou valor exibido no momento da checagem.
+- Para listagens, usar pagina/anuncio oficial da exchange ou projeto; evitar rumor, "insider" ou agregador sem fonte primaria.
+- Para on-chain, preferir explorers publicos, APIs oficiais ou dashboards publicos com metrica claramente descrita.
+- Registrar fallback verificavel, como outro agregador publico, explorer equivalente, API oficial ou cancelamento se nenhum dado confiavel existir.
+- Evitar linguagem de compra, venda, lucro, promessa de rendimento, recomendacao financeira ou incentivo de investimento.
+- Evitar acusacoes de fraude, insolvencia ou irregularidade sem fonte oficial, decisao publica ou dado objetivo verificavel.
+
 ## Regra Dura
 
 Fonte social sem link exato, endpoint exato, credencial disponivel ou validacao de acesso pode inspirar mercado, mas nao pode ser fonte final de resolucao.
+
+Para cripto, fonte sem dado publico objetivo e aviso de risco nao pode ser fonte final de resolucao.

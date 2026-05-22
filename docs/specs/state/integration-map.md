@@ -50,7 +50,7 @@
 
 ## Skills de produto e curadoria
 
-- `orynth-prediction-markets`: sugere mercados de previsão binários ou múltiplos usando dados internos da Orynth, trends sociais, links exatos de verificação, diversidade editorial e checagem anti-repetição
+- `orynth-prediction-markets`: sugere mercados de previsão binários ou múltiplos usando dados internos da Orynth, trends sociais/cripto, links exatos de verificação, diversidade editorial, aviso de risco para cripto e checagem anti-repetição
 
 ## Skill de governança de processo
 
