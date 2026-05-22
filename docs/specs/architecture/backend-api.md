@@ -51,6 +51,7 @@
 - Logs técnicos de troubleshooting devem ser expostos por contratos staff em `/admin/system-logs`, preservando redaction de segredos e sem substituir eventos administrativos de domínio.
 - Rotinas temporizadas operacionais, incluindo fechamento automático de mercado, prune de logs e cálculo de status do daemon, devem viver em serviços backend reutilizáveis; comandos/processos externos não duplicam SQL ou regra.
 - `GET /admin/dashboard-summary` deve expor resumo agregado para staff com blocos `markets`, `queues`, `users`, `engagement`, `wallet`, `badges`, `system`, `top_markets` e `recent_admin_events`.
+- `GET /health` deve permanecer disponível como healthcheck público read-only e pode ser consumido pelo Admin Ops para indicar se a Backend API está online, sem autenticação e sem efeitos colaterais.
 - O resumo do Dashboard deve usar somente agregações SQL/contagens e janela fixa de 7 dias para métricas recentes, sem recalcular reputação, payout, probabilidade ou regras de domínio.
 - O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `orynth_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
 - Status do daemon deve usar `orynth_site_config.daemon_stale_after_minutes` para `Atrasado` e `orynth_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.

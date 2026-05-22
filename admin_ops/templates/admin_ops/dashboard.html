@@ -94,6 +94,11 @@
             <a class="btn small ghost" href="{% url 'admin-ops-system-logs' %}">Logs</a>
           </div>
           <div class="dashboard-health-grid">
+            <div class="dashboard-health-item {% if backend_health.status == 'online' %}is-safe{% else %}is-risk{% endif %}">
+              <span>Backend API</span>
+              <strong>{{ backend_health.label|default:"Offline" }}</strong>
+              <small>{{ backend_health.detail|default:"Health indisponível" }}</small>
+            </div>
             <a class="dashboard-health-item {% if system.maintenance_enabled %}is-risk{% endif %}" href="{% url 'admin-ops-config' %}">
               <span>Manutenção</span>
               <strong>{% if system.maintenance_enabled %}Ativa{% else %}Inativa{% endif %}</strong>

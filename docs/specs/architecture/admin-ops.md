@@ -33,6 +33,7 @@
 
 - Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Usuários, Categorias, Badge, Mercado, Resolução e Filas; menus secundários duplicados não devem ser renderizados nas telas internas.
 - Dashboard consome o contrato staff `GET /admin/dashboard-summary` da FastAPI e exibe saúde operacional da plataforma em blocos de KPIs, ação necessária, saúde técnica, engajamento, economia/reputação, top mercados e eventos administrativos recentes.
+- Dashboard exibe indicador `Backend API` em Saúde técnica a partir de uma consulta Django read-only ao `GET /health`, independente do resumo staff, para evidenciar se a API de domínio está online.
 - Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.
 - Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP, reCAPTCHA e status do daemon; não recalculam reputação, payout, probabilidade ou regra de domínio.
 - Dashboard exibe o daemon como `Ativo`, `Atrasado` ou `Sem sinal` a partir do heartbeat calculado pela FastAPI, sem consultar processos locais no Django.

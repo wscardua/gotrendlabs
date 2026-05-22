@@ -15,6 +15,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-OPSLOG-001
 
+### 2026-05-22 - v0.9
+- Dashboard Admin Ops passou a exibir o indicador `Backend API` em Saúde técnica, validado por chamada read-only ao `GET /health`
+- o healthcheck é consultado independentemente de `/admin/dashboard-summary`, preservando renderização do resumo quando apenas o health falha
+- status de implementação: `parcial`
+
 ### 2026-05-21 - v0.8
 - workflow `.github/workflows/deploy.yml` passou a validar `ENABLE_PROD_DEPLOY`, `AWS_GITHUB_ACTIONS_ROLE_ARN`, `AWS_EC2_INSTANCE_ID` e `AWS_REGION` antes de tentar assumir a role AWS
 - deploy GitHub Actions passou a priorizar repository variables para ARN da role e instance id, mantendo fallback temporario para secrets legados
@@ -615,6 +620,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-SUGGEST-001
+
+### 2026-05-22 - v0.6
+- navegação pública principal passou a exibir `Sugerir mercado` para visitantes e usuários autenticados
+- o link usa o fluxo de sugestão existente, preservando envio guest e atalho autenticado no menu do usuário
+- status de implementação: `parcial`
 
 ### 2026-05-19 - v0.5
 - Admin Ops deixou de executar fallbacks locais mutáveis para filas, comentários, conversão de sugestão e créditos operacionais

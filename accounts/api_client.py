@@ -13,7 +13,7 @@ class AuthAPIError(Exception):
         self.status_code = status_code
 
 
-def _request(method, path, payload=None, token=None):
+def _request(method, path, payload=None, token=None, timeout=5):
     body = json.dumps(payload).encode() if payload is not None else None
     headers = {"Content-Type": "application/json"}
     if token:
@@ -25,7 +25,7 @@ def _request(method, path, payload=None, token=None):
         method=method,
     )
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
             raw = response.read()
             return json.loads(raw.decode()) if raw else {}
     except json.decoder.JSONDecodeError as exc:
@@ -52,6 +52,10 @@ def _normalize_market_payload(market):
     if isinstance(market, dict) and "volume_oc" in market:
         return {**market, "volume_oc": _currency_label(market.get("volume_oc"))}
     return market
+
+
+def get_backend_health():
+    return _request("GET", "/health", timeout=2)
 
 
 def register_user(data):

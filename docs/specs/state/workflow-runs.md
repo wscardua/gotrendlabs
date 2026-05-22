@@ -1072,3 +1072,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-22
 - Retomada: avaliar CTA direto para login caso métricas mostrem muitos cliques de visitante sem conversão
 - Reversão lógica: ocultar novamente affordance de favorito para visitantes e remover handler `data-guest-favorite-button`
+
+## WFLOW-20260522-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-SUGGEST-001`, `FEAT-OPSLOG-001`
+- Objetivo: expor `Sugerir mercado` no topo público e incluir indicador `Backend API` no Dashboard Admin Ops consultando `GET /health`
+- Etapa atual: concluído; testes de navegação pública, health online/offline do dashboard, `manage.py check` e `git diff --check` executados em 2026-05-22
+- Artefatos afetados:
+  - `templates/base.html`
+  - `admin_ops/`
+  - `accounts/api_client.py`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/features/`
+  - `docs/specs/architecture/`
+  - `docs/specs/state/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: avaliar se o healthcheck deve expor versão/build quando houver necessidade operacional
+- Reversão lógica: remover o link público de sugestão no topo e ocultar o card `Backend API`, mantendo `/health` disponível para infraestrutura

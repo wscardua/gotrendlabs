@@ -18,6 +18,7 @@
         <a class="nav-link {% if request.resolver_match.url_name == 'home' or request.resolver_match.url_name == 'market-detail' %}active{% endif %}" href="{% url 'home' %}">Mercados</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'badges' %}active{% endif %}" href="{% url 'badges' %}">Badges</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'rankings' %}active{% endif %}" href="{% url 'rankings' %}">Ranking</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'suggestion' %}active{% endif %}" href="{% url 'suggestion' %}">Sugerir mercado</a>
       </div>
       <div class="nav-actions">
         <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button>
