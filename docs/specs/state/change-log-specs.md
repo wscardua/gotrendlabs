@@ -105,3 +105,4 @@
 
 - ampliada a skill `orynth-prediction-markets` para suportar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório de que mercados cripto não caracterizam recomendação de investimento
 - documentado seed DEV de 3 mercados cripto em `docs/specs/state/editorial-seed-markets-20260521.md`, mantendo status `draft`, taxonomia idempotente e thumbs locais autorais
+- documentado lote aprovado `Mercado > Cripto` com aviso no nível da subcategoria, eventos por moeda e comando idempotente `seed_crypto_markets_20260522`

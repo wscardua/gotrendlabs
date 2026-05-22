@@ -12,7 +12,7 @@ Este documento registra a memoria versionada do lote editorial criado para povoa
 - Fonte de resolucao: cada mercado deve manter fonte publica verificavel em `source` e criterio/fallback em `resolution_criteria`.
 - Publicacao: nenhum mercado seed deve ser publicado automaticamente; operador revisa odds, horario, fonte e criterio antes de publicar.
 
-## Categorias e Subcategorias
+## Categorias e Subcategorias Do Lote Inicial
 
 | Categoria | Subcategorias | Mercados |
 | --- | --- | ---: |
@@ -84,3 +84,24 @@ Regras especificas da adicao:
 | 28 | `bitcoin-acima-80000-30-junho-2026` | Cripto > Preço | binary | CoinGecko Bitcoin | `media/market_thumbnails/generated-bitcoin-acima-80000-30-junho-2026.png` |
 | 29 | `solana-acima-bsc-tvl-31-maio-2026` | Cripto > DeFi / On-chain | binary | DefiLlama Chains | `media/market_thumbnails/generated-solana-acima-bsc-tvl-31-maio-2026.png` |
 | 30 | `pepe-acima-shiba-meme-coins-15-junho-2026` | Cripto > Meme coins | binary | CoinGecko Meme Token | `media/market_thumbnails/generated-pepe-acima-shiba-meme-coins-15-junho-2026.png` |
+
+## Adicao Aprovada - Mercado / Cripto - 2026-05-22
+
+Em 22 de maio de 2026, foi aprovado um segundo lote cripto mais acessivel para publicacao operacional, com uma taxonomia unica para reduzir fragmentacao no feed e permitir aviso de risco no nivel de subcategoria.
+
+Regras especificas da adicao:
+
+- Categoria: `Mercado`.
+- Subcategoria: `Cripto`.
+- Aviso de subcategoria: `Mercados de criptoativos envolvem alta volatilidade. Nao caracteriza recomendacao de investimento.`
+- Eventos: `Ethereum`, `Dogecoin`, `Solana`.
+- Status inicial operacional: `open` quando aplicado pelo comando aprovado; usar `--status draft` apenas se a curadoria quiser revisar antes de publicar.
+- Fonte de resolucao: cada mercado usa link publico verificavel em `source` e fallback no criterio.
+- Thumbnails: imagens locais autorais em `media/market_thumbnails/generated-<slug>.png`, sem texto, logos ou marcas oficiais embutidas.
+- Aplicacao: usar o comando idempotente `python manage.py seed_crypto_markets_20260522`.
+
+| # | Slug | Categoria > Subcategoria > Evento | Tipo | Fonte principal | Thumbnail |
+| ---: | --- | --- | --- | --- | --- |
+| 31 | `ethereum-acima-3000-30-junho-2026` | Mercado > Cripto > Ethereum | binary | CoinGecko Ethereum | `media/market_thumbnails/generated-ethereum-acima-3000-30-junho-2026.png` |
+| 32 | `dogecoin-top10-30-junho-2026` | Mercado > Cripto > Dogecoin | binary | CoinGecko ranking geral | `media/market_thumbnails/generated-dogecoin-top10-30-junho-2026.png` |
+| 33 | `solana-acima-xrp-ranking-30-junho-2026` | Mercado > Cripto > Solana | binary | CoinGecko ranking geral | `media/market_thumbnails/generated-solana-acima-xrp-ranking-30-junho-2026.png` |
