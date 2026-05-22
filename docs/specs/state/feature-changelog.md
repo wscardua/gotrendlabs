@@ -161,6 +161,37 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-001
 
+### 2026-05-22 - v0.30
+- cards da home/feed trocaram o indicador circular por uma barra horizontal compacta de prazo, calculada com `created_at` e `close_at`
+- detalhe do mercado passou a exibir a thumbnail/ícone encaixada à esquerda do título, preservando os metadados textuais em HTML
+- a probabilidade deixou de alimentar visualmente o indicador de tempo; ela permanece nos textos e gráficos próprios de consenso
+- contratos relacionados: `market-feed.md`, `frontend-web.md`
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.29
+- eventos sem mercados vinculados podem ser excluídos pelo Admin Ops e por `DELETE /admin/categories/{category_slug}/subcategories/{subcategory_slug}/events/{event_slug}`; eventos vinculados continuam protegidos e devem ser bloqueados para preservar histórico
+- contratos relacionados: `database.md`, `backend-api.md`, `admin-ops.md`
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.28
+- categorias e subcategorias passaram a aceitar `notice` opcional de até 500 caracteres no Admin Ops e em `/admin/taxonomy`
+- layout master-detail da taxonomia foi ajustado para abrir formulários como painéis contextuais estáticos, evitando sobreposição visual na gestão
+- contratos relacionados: `market-feed.md`, `database.md`, `backend-api.md`, `admin-ops.md`, `frontend-web.md`
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.27
+- Admin Ops de taxonomia passou para layout master-detail com categorias na lateral e subcategorias/eventos agrupados no painel principal
+- eventos passaram a aceitar `notice` opcional de até 500 caracteres, retornado por `/admin/taxonomy`
+- contratos relacionados: `market-feed.md`, `database.md`, `backend-api.md`, `admin-ops.md`, `frontend-web.md`
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.26
+- taxonomia de mercado passou a ter terceira camada `evento`, vinculada à subcategoria e gerenciada no Admin Ops
+- criação/edição administrativa de mercado seleciona evento ativo da subcategoria; mercados existentes são migrados para evento `Geral`
+- `MarketResponse` e cards da home/feed passam a exibir categoria, subcategoria e evento
+- contratos relacionados: `market-feed.md`, `market-lifecycle.md`, `database.md`, `backend-api.md`, `admin-ops.md`, `frontend-web.md`
+- status de implementação: `parcial`
+
 ### 2026-05-22 - v0.25
 - skill `orynth-prediction-markets` passou a aceitar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório `Não caracteriza recomendação de investimento`
 - DEV recebeu 3 mercados cripto em `draft` com taxonomia `Cripto`, subcategorias `Preço`, `DeFi / On-chain` e `Meme coins`
@@ -316,6 +347,26 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## FEAT-MARKET-002
 
+### 2026-05-22 - v0.14
+- avisos de categoria/subcategoria/evento continuam agrupados em alerta informativo, mas passam a renderizar abaixo de `Critério de resolução` no detalhe/ticket do mercado
+- contratos relacionados: `market-feed.md`, `frontend-web.md`
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.13
+- `MarketResponse` passou a expor `category_notice` e `subcategory_notice`
+- detalhe público e ticket de previsão renderizam avisos informativos de categoria/subcategoria/evento quando preenchidos, sem exibir avisos nos cards da home/feed
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.12
+- `MarketResponse` passou a expor `event_notice`
+- detalhe público e ticket de previsão renderizam aviso informativo do evento quando preenchido, sem exibir aviso nos cards da home/feed
+- status de implementação: `parcial`
+
+### 2026-05-22 - v0.11
+- detalhe/previsão pública do mercado passou a exibir o evento junto de categoria e subcategoria
+- compartilhamento social/fallback visual passa a considerar o evento quando disponível
+- status de implementação: `parcial`
+
 ### 2026-05-22 - v0.10
 - detalhe de mercado passou a exibir favorito readonly para visitantes e favorito funcional para autenticados
 - estado visitante usa o mesmo aviso de login da affordance pública da home, sem formulário de mutação
@@ -454,6 +505,19 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `nao_iniciada`
 
 ## FEAT-REP-001
+
+### 2026-05-22 - v1.2
+- browse Admin Ops de badges passou a exibir miniatura da imagem cadastrada, com fallback textual compacto para badges sem imagem
+- contratos relacionados: `admin-ops.md`, `frontend-web.md`
+- status de implementação: `parcial`
+
+### 2026-05-22 - v1.1
+- regras administrativas de badge passaram a aceitar recorte opcional por evento, depois de categoria/subcategoria
+- `BadgeAwardEngine` passou a aplicar `category/subcategory/event` para previsões resolvidas e comentários
+- regras por evento não contam sugestões aprovadas antigas enquanto sugestão ainda não captura evento
+- browse/formulário de badges exibem e validam o recorte de evento usando a taxonomia dinâmica
+- contratos relacionados: `reputation-ranking.md`, `reputation-and-ranking.md`, `backend-api.md`, `admin-ops.md`
+- status de implementação: `parcial`
 
 ### 2026-05-20 - v1.0
 - padrão web de listas simples passou a usar `Carregar mais` em blocos cumulativos de 10 itens

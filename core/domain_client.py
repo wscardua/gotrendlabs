@@ -160,7 +160,11 @@ def _local_market_response(market):
         "slug": market.slug,
         "title": market.title,
         "category": market.category.name,
+        "category_notice": market.category.notice,
         "subcategory": market.subcategory.name,
+        "subcategory_notice": market.subcategory.notice,
+        "event": market.event.name if market.event_id else "Geral",
+        "event_notice": market.event.notice if market.event_id else "",
         "kind": market.kind,
         "status": market.status,
         "status_label": _market_status_label(market.status),
@@ -210,7 +214,7 @@ def local_markets(include_canceled=False):
     excluded_statuses = ["draft"] if include_canceled else ["draft", "canceled"]
     markets = (
         Market.objects.exclude(status__in=excluded_statuses)
-        .select_related("category", "subcategory")
+        .select_related("category", "subcategory", "event")
         .prefetch_related("options")
         .order_by("display_order", "id")
     )
@@ -223,7 +227,7 @@ def local_market(slug):
     try:
         market = (
             Market.objects.exclude(status="draft")
-            .select_related("category", "subcategory")
+            .select_related("category", "subcategory", "event")
             .prefetch_related("options")
             .get(slug=slug)
         )

@@ -33,8 +33,12 @@
 - `GET /admin/markets/{slug}/resolution-audit` deve expor auditoria staff read-only para mercados `resolved`, agregando previsões, ledger e badges sem mutação e retornando `422` para demais estados.
 - Ranking público deve excluir usuários administrativos (`is_staff` e `is_superuser`).
 - Ranking global usa reputação persistida; ranking por categoria/subcategoria pode ser calculado em leitura a partir de previsões resolvidas enquanto não houver materialização dedicada.
+- Contratos de mercado devem serializar `category_notice`, `subcategory_notice`, `event` e `event_notice` junto de `category` e `subcategory`; criação/edição administrativa valida que o evento ativo pertence à subcategoria selecionada.
+- `GET /admin/taxonomy` deve retornar categorias, subcategorias e eventos com estado de bloqueio, contagem de mercados e `notice`.
+- Staff pode criar, editar, bloquear e desbloquear eventos por `/admin/categories/{category_slug}/subcategories/{subcategory_slug}/events...`, incluindo `notice` opcional de até 500 caracteres; eventos sem mercados vinculados podem ser removidos por `DELETE /admin/categories/{category_slug}/subcategories/{subcategory_slug}/events/{event_slug}`, enquanto eventos vinculados continuam preservados por bloqueio lógico.
 - Bootstrap de núcleo de usuário deve diferenciar usuário comum de operador. Usuário comum recebe perfil, reputação inicial, wallet inicial, badges e atividade pública de cadastro de forma idempotente; `staff`/`superuser` recebe apenas o mínimo operacional necessário para navegar, sem `grant_initial`, reputação pública, badges ou atividade social.
 - Catálogo, regra executável e concessão de badges são autoridade do backend; Admin Ops e frontend apenas consomem contratos.
+- A `BadgeAwardEngine` deve aplicar recorte `category/subcategory/event` em previsões resolvidas e comentários; sugestões aprovadas só entram em regras por evento quando o fluxo passar a registrar evento.
 - `GET /admin/markets` deve suportar ordenações operacionais por popularidade (`views_desc` e `shares_desc`) usando os contadores persistidos do mercado.
 - `GET /admin/users` deve suportar busca por email/handle/nome, filtros por status/papel e ordenações operacionais por criação, último login, saldo e reputação.
 - `GET /admin/users` deve suportar filtro `bot=yes|no` e retornar `is_bot` apenas em contratos administrativos.

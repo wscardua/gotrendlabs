@@ -5,6 +5,7 @@ from django.db import models
 class MarketCategory(models.Model):
     name = models.CharField(max_length=80, unique=True)
     slug = models.SlugField(max_length=100, unique=True)
+    notice = models.TextField(blank=True, default="")
     is_blocked = models.BooleanField(default=False)
     blocked_at = models.DateTimeField(null=True, blank=True)
     blocked_reason = models.TextField(blank=True)
@@ -19,6 +20,7 @@ class MarketSubcategory(models.Model):
     category = models.ForeignKey(MarketCategory, on_delete=models.CASCADE, related_name="subcategories")
     name = models.CharField(max_length=80)
     slug = models.SlugField(max_length=100)
+    notice = models.TextField(blank=True, default="")
     is_blocked = models.BooleanField(default=False)
     blocked_at = models.DateTimeField(null=True, blank=True)
     blocked_reason = models.TextField(blank=True)
@@ -29,6 +31,24 @@ class MarketSubcategory(models.Model):
         ordering = ["category__name", "name"]
         constraints = [
             models.UniqueConstraint(fields=["category", "slug"], name="uniq_market_subcategory_category_slug"),
+        ]
+
+
+class MarketEvent(models.Model):
+    subcategory = models.ForeignKey(MarketSubcategory, on_delete=models.CASCADE, related_name="events")
+    name = models.CharField(max_length=80)
+    slug = models.SlugField(max_length=100)
+    notice = models.TextField(blank=True, default="")
+    is_blocked = models.BooleanField(default=False)
+    blocked_at = models.DateTimeField(null=True, blank=True)
+    blocked_reason = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "orynth_market_events"
+        ordering = ["subcategory__category__name", "subcategory__name", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["subcategory", "slug"], name="uniq_market_event_subcategory_slug"),
         ]
 
 
@@ -45,6 +65,7 @@ class Market(models.Model):
 
     category = models.ForeignKey(MarketCategory, on_delete=models.PROTECT, related_name="markets")
     subcategory = models.ForeignKey(MarketSubcategory, on_delete=models.PROTECT, related_name="markets")
+    event = models.ForeignKey(MarketEvent, on_delete=models.PROTECT, null=True, blank=True, related_name="markets")
     slug = models.SlugField(max_length=160, unique=True)
     title = models.CharField(max_length=240)
     summary = models.TextField(blank=True)
@@ -107,7 +128,17 @@ class Market(models.Model):
             models.Index(fields=["status", "display_order"]),
             models.Index(fields=["category", "status"]),
             models.Index(fields=["subcategory", "status"]),
+            models.Index(fields=["event", "status"]),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.event_id and self.subcategory_id:
+            self.event, _ = MarketEvent.objects.get_or_create(
+                subcategory_id=self.subcategory_id,
+                slug="geral",
+                defaults={"name": "Geral", "is_blocked": False, "blocked_reason": ""},
+            )
+        super().save(*args, **kwargs)
 
 
 class MarketOption(models.Model):

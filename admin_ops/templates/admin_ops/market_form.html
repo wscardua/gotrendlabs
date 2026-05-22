@@ -43,6 +43,18 @@
               </select>
               {% if form.subcategory.errors %}<small>{{ form.subcategory.errors|join:", " }}</small>{% endif %}
             </div>
+            <div class="field">
+              <label for="{{ form.event.id_for_label }}">Evento <span class="required-marker">Obrigatório</span></label>
+              <select id="{{ form.event.id_for_label }}" name="{{ form.event.html_name }}" data-event-select required>
+                <option value="" {% if not form.event.value %}selected{% endif %}>Selecione o evento</option>
+                {% for event in taxonomy_options.events %}
+                  <option value="{{ event.name }}" data-category="{{ event.category }}" data-subcategory="{{ event.subcategory }}" {% if event.name == form.event.value %}selected{% endif %}>{{ event.name }}</option>
+                {% empty %}
+                  <option value="">Cadastre um evento primeiro</option>
+                {% endfor %}
+              </select>
+              {% if form.event.errors %}<small>{{ form.event.errors|join:", " }}</small>{% endif %}
+            </div>
             <div class="field full"><label for="{{ form.summary.id_for_label }}">Resumo <span class="required-marker">Obrigatório</span></label>{{ form.summary }}</div>
           </div>
         </div>
@@ -142,7 +154,7 @@
         <div class="thumb" data-preview-thumb style="width:76px;--thumb:{{ preview.thumb_color|default:'#d8ece2' }}">{% if preview.image_url %}<img src="{{ preview.image_url }}" alt="">{% else %}<span data-preview-thumb-text>{{ preview.thumb|default:"MK" }}</span>{% endif %}</div>
         <div>
           <strong data-preview-title>{{ preview.title|default:"Novo mercado" }}</strong>
-          <div class="mini-stats"><span data-preview-category>{{ preview.category|default:"Categoria" }}</span><span data-preview-subcategory>{{ preview.subcategory|default:"Subcategoria" }}</span><span data-preview-kind>{% if preview.kind == "multiple" %}Múltipla escolha{% else %}Sim/Não{% endif %}</span></div>
+          <div class="mini-stats"><span data-preview-category>{{ preview.category|default:"Categoria" }}</span><span data-preview-subcategory>{{ preview.subcategory|default:"Subcategoria" }}</span><span data-preview-event>{{ preview.event|default:"Evento" }}</span><span data-preview-kind>{% if preview.kind == "multiple" %}Múltipla escolha{% else %}Sim/Não{% endif %}</span></div>
           <div class="bar" style="margin-top:8px"><span data-preview-bar style="width:{{ preview.primary_probability_exact|default:50 }}%"></span></div>
           <p data-preview-summary>{{ preview.summary|default:"Resumo do mercado aparece aqui conforme você preenche." }}</p>
         </div>
@@ -159,7 +171,7 @@
         <h3>Guia rápido</h3>
         <dl>
           <div><dt>Tipos</dt><dd>Sim/Não cria duas opções fixas; múltipla escolha exige pelo menos duas alternativas.</dd></div>
-          <div><dt>Obrigatórios</dt><dd>Pergunta, categoria, subcategoria, resumo, fechamento, fonte, critério e cor do card.</dd></div>
+          <div><dt>Obrigatórios</dt><dd>Pergunta, categoria, subcategoria, evento, resumo, fechamento, fonte, critério e cor do card.</dd></div>
           <div><dt>Fechamento</dt><dd>Automático fica para o daemon; manual libera ação operacional quando o mercado estiver aberto.</dd></div>
           <div><dt>Card público</dt><dd>Thumbnail, sigla e cor alimentam a prévia exibida no feed.</dd></div>
         </dl>

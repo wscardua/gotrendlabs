@@ -57,7 +57,7 @@ def _market_thumb_fallback(market):
     value = (market.get("thumb") or "").strip()
     if value:
         return value[:4].upper()
-    for source in (market.get("category"), market.get("subcategory"), market.get("title")):
+    for source in (market.get("event"), market.get("category"), market.get("subcategory"), market.get("title")):
         words = [word for word in str(source or "").replace("-", " ").split() if word]
         if not words:
             continue
@@ -104,6 +104,10 @@ def _hydrate_market_visuals(markets):
             **market,
             "thumb": _market_thumb_fallback(market),
             "thumb_color": market.get("thumb_color") or "#d8ece2",
+            "event": market.get("event") or "Geral",
+            "category_notice": market.get("category_notice") or local.get("category_notice", ""),
+            "subcategory_notice": market.get("subcategory_notice") or local.get("subcategory_notice", ""),
+            "event_notice": market.get("event_notice") or local.get("event_notice", ""),
             "viewer_has_prediction": bool(market.get("viewer_has_prediction")),
             "viewer_has_favorite": bool(market.get("viewer_has_favorite")),
             "viewer_has_like": bool(market.get("viewer_has_like")),

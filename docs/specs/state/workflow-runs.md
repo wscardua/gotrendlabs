@@ -1116,3 +1116,117 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-22
 - Retomada: revisar odds/fontes no Admin Ops antes de publicar os mercados cripto; em PRD, aplicar via fluxo operacional controlado, não por migration automática
 - Reversão lógica: remover/arquivar os mercados cripto em DEV/PRD e retirar `cripto` da skill se a categoria for descontinuada
+
+## WFLOW-20260522-004
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-REP-001`
+- Objetivo: implementar `evento` como terceira camada da taxonomia de mercado e aplicar o recorte em mercado público/Admin Ops/badges
+- Etapa atual: concluído; migrations, contratos FastAPI, Admin Ops, renderização pública e testes focados de evento executados em 2026-05-22; suíte smoke completa fica registrada na validação da branch
+- Artefatos afetados:
+  - `markets/`
+  - `accounts/`
+  - `backend_api/`
+  - `admin_ops/`
+  - `templates/components/market_card.html`
+  - `markets/templates/markets/detail.html`
+  - `static/js/orynth.js`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: decidir se ranking público e sugestão de mercado também passam a capturar/filtrar evento em uma próxima fatia
+- Reversão lógica: ocultar seleção/exibição de evento na UI e tratar regras de badge com `event` preenchido como inativas, preservando tabelas para nova migração corretiva
+
+## WFLOW-20260522-005
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`
+- Objetivo: redesenhar Admin Ops Taxonomia em master-detail e adicionar aviso opcional por evento para mercados sensíveis
+- Etapa atual: concluído; migration `MarketEvent.notice`, contratos FastAPI/Django, UI pública de detalhe/ticket, Admin Ops master-detail, testes e specs atualizados em 2026-05-22
+- Artefatos afetados:
+  - `markets/`
+  - `backend_api/`
+  - `core/`
+  - `admin_ops/`
+  - `markets/templates/markets/detail.html`
+  - `static/js/orynth.js`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: avaliar templates de aviso pré-cadastrados por categoria sensível se operadores repetirem o mesmo texto
+- Reversão lógica: manter `notice` vazio e ocultar o alerta público, preservando o layout master-detail e a coluna para compatibilidade
+
+## WFLOW-20260522-006
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`
+- Objetivo: adicionar avisos opcionais em categoria/subcategoria e corrigir a operação visual da tela Admin Ops Taxonomia
+- Etapa atual: concluído; migration para `MarketCategory.notice` e `MarketSubcategory.notice`, contratos FastAPI/Django, Admin Ops, detalhe/ticket público, testes e specs atualizados em 2026-05-22
+- Artefatos afetados:
+  - `markets/`
+  - `backend_api/`
+  - `core/`
+  - `admin_ops/`
+  - `markets/templates/markets/detail.html`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: avaliar previews consolidados de avisos quando categoria/subcategoria/evento possuírem textos longos simultaneamente
+- Reversão lógica: manter avisos de categoria/subcategoria vazios e ocultar seus campos na UI, preservando colunas para compatibilidade
+
+## WFLOW-20260522-007
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-REP-001`
+- Objetivo: reposicionar avisos no detalhe de mercado, permitir exclusão segura de eventos sem mercado e exibir miniatura no browse Admin Ops de badges
+- Etapa atual: concluído; template público, API FastAPI, proxy Django, Admin Ops, testes e specs atualizados em 2026-05-22
+- Artefatos afetados:
+  - `backend_api/`
+  - `accounts/`
+  - `admin_ops/`
+  - `markets/templates/markets/detail.html`
+  - `static/css/orynth.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: avaliar se categorias/subcategorias sem mercados também devem ter limpeza controlada ou seguir somente bloqueio lógico
+- Reversão lógica: ocultar ação `delete_event`, manter validação 422 para eventos vinculados e voltar avisos para posição anterior se a UI de negociação pedir destaque maior
+
+## WFLOW-20260522-008
+
+- Tipo: `change-ui`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`
+- Objetivo: substituir o indicador circular dos cards por indicador horizontal de prazo tecnicamente baseado em tempo restante e exibir thumbnail no detalhe de negociação
+- Etapa atual: concluído; card, detalhe de mercado, CSS, JS de hidratação, testes e specs atualizados em 2026-05-22
+- Artefatos afetados:
+  - `templates/components/market_card.html`
+  - `markets/templates/markets/detail.html`
+  - `static/css/orynth.css`
+  - `static/js/orynth.js`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-22
+- Encerrado em: 2026-05-22
+- Retomada: validar visualmente em browser se a rail horizontal economiza espaço nos cards de 3 colunas sem perder legibilidade
+- Reversão lógica: restaurar o indicador circular textual mantendo a regra de não usar probabilidade como progresso de tempo

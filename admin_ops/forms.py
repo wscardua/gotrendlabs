@@ -97,6 +97,7 @@ class AdminMarketForm(forms.Form):
     kind = forms.ChoiceField(label="Tipo", choices=(("binary", "Sim/Não"), ("multiple", "Múltipla escolha")))
     category = forms.CharField(label="Categoria", max_length=80)
     subcategory = forms.CharField(label="Subcategoria", max_length=80)
+    event = forms.CharField(label="Evento", max_length=80)
     source = forms.CharField(label="Fonte esperada", max_length=180)
     close_label = forms.CharField(label="Mensagem pública de fechamento", max_length=120, required=False)
     close_at = forms.DateTimeField(
@@ -133,6 +134,7 @@ class AdminMarketForm(forms.Form):
         self.taxonomy = taxonomy or {"categories": []}
         category_choices = [("", "Selecione a categoria")]
         subcategory_choices = [("", "Selecione a subcategoria")]
+        event_choices = [("", "Selecione o evento")]
         for category in self.taxonomy.get("categories", []):
             if category.get("is_blocked"):
                 continue
@@ -141,17 +143,24 @@ class AdminMarketForm(forms.Form):
                 if subcategory.get("is_blocked"):
                     continue
                 subcategory_choices.append((subcategory.get("name", ""), subcategory.get("name", "")))
+                for event in subcategory.get("events", []):
+                    if event.get("is_blocked"):
+                        continue
+                    event_choices.append((event.get("name", ""), event.get("name", "")))
         if len(category_choices) > 1:
             self.fields["category"] = forms.ChoiceField(label="Categoria", choices=category_choices)
         if len(subcategory_choices) > 1:
             self.fields["subcategory"] = forms.ChoiceField(label="Subcategoria", choices=subcategory_choices)
+        if len(event_choices) > 1:
+            self.fields["event"] = forms.ChoiceField(label="Evento", choices=event_choices)
 
     def clean(self):
         cleaned_data = super().clean()
         category_name = cleaned_data.get("category")
         subcategory_name = cleaned_data.get("subcategory")
+        event_name = cleaned_data.get("event")
         categories = self.taxonomy.get("categories", [])
-        if not categories or not category_name or not subcategory_name:
+        if not categories or not category_name or not subcategory_name or not event_name:
             return cleaned_data
         category = next((item for item in categories if item.get("name") == category_name), None)
         if not category:
@@ -165,8 +174,16 @@ class AdminMarketForm(forms.Form):
         )
         if not subcategory:
             self.add_error("subcategory", "Escolha uma subcategoria da categoria selecionada.")
-        elif subcategory.get("is_blocked"):
+            return cleaned_data
+        if subcategory.get("is_blocked"):
             self.add_error("subcategory", "Subcategoria bloqueada para novos mercados.")
+        if "events" not in subcategory:
+            return cleaned_data
+        event = next((item for item in subcategory.get("events", []) if item.get("name") == event_name), None)
+        if not event:
+            self.add_error("event", "Escolha um evento da subcategoria selecionada.")
+        elif event.get("is_blocked"):
+            self.add_error("event", "Evento bloqueado para novos mercados.")
         return cleaned_data
 
     def _posted_option_rows(self):
@@ -231,6 +248,7 @@ class AdminMarketForm(forms.Form):
             "kind": self.cleaned_data["kind"],
             "category": self.cleaned_data["category"],
             "subcategory": self.cleaned_data["subcategory"],
+            "event": self.cleaned_data["event"],
             "status_label": self.initial.get("status_label") or "Rascunho",
             "primary_outcome": self.initial.get("primary_outcome") or primary["label"],
             "primary_probability_exact": self.initial.get("primary_probability_exact", primary.get("probability_exact", primary["probability"])),
@@ -258,12 +276,22 @@ class AdminMarketForm(forms.Form):
 class AdminCategoryForm(forms.Form):
     name = forms.CharField(label="Categoria", max_length=80)
     slug = forms.SlugField(label="Slug", max_length=100, required=False)
+    notice = forms.CharField(label="Aviso da categoria", max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 3}))
 
 
 class AdminSubcategoryForm(forms.Form):
     category_slug = forms.SlugField(widget=forms.HiddenInput)
     name = forms.CharField(label="Subcategoria", max_length=80)
     slug = forms.SlugField(label="Slug", max_length=100, required=False)
+    notice = forms.CharField(label="Aviso da subcategoria", max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 3}))
+
+
+class AdminEventForm(forms.Form):
+    category_slug = forms.SlugField(widget=forms.HiddenInput)
+    subcategory_slug = forms.SlugField(widget=forms.HiddenInput)
+    name = forms.CharField(label="Evento", max_length=80)
+    slug = forms.SlugField(label="Slug", max_length=100, required=False)
+    notice = forms.CharField(label="Aviso do evento", max_length=500, required=False, widget=forms.Textarea(attrs={"rows": 3}))
 
 
 class QueueReviewForm(forms.Form):
@@ -370,12 +398,14 @@ class AdminBadgeForm(forms.Form):
     threshold_value = forms.DecimalField(label="Valor mínimo/posição", min_value=Decimal("0"), max_digits=12, decimal_places=4, initial=1)
     category = forms.CharField(label="Categoria", max_length=80, required=False)
     subcategory = forms.CharField(label="Subcategoria", max_length=80, required=False)
+    event = forms.CharField(label="Evento", max_length=80, required=False)
 
     def __init__(self, *args, taxonomy=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.taxonomy = taxonomy or {"categories": []}
         category_choices = [("", "Todas as categorias")]
         subcategory_choices = [("", "Todas as subcategorias")]
+        event_choices = [("", "Todos os eventos")]
         for category in self.taxonomy.get("categories", []):
             if category.get("is_blocked"):
                 continue
@@ -385,14 +415,23 @@ class AdminBadgeForm(forms.Form):
                 if subcategory.get("is_blocked"):
                     continue
                 subcategory_choices.append((subcategory.get("name", ""), subcategory.get("name", "")))
+                for event in subcategory.get("events", []):
+                    if event.get("is_blocked"):
+                        continue
+                    event_choices.append((event.get("name", ""), event.get("name", "")))
         self.fields["category"] = forms.ChoiceField(label="Categoria", choices=category_choices, required=False)
         self.fields["subcategory"] = forms.ChoiceField(label="Subcategoria", choices=subcategory_choices, required=False)
+        self.fields["event"] = forms.ChoiceField(label="Evento", choices=event_choices, required=False)
 
     def clean(self):
         cleaned_data = super().clean()
         category_name = cleaned_data.get("category")
         subcategory_name = cleaned_data.get("subcategory")
+        event_name = cleaned_data.get("event")
         categories = self.taxonomy.get("categories", [])
+        if event_name and not subcategory_name:
+            self.add_error("event", "Escolha uma subcategoria antes do evento.")
+            return cleaned_data
         if not subcategory_name:
             return cleaned_data
         if not category_name:
@@ -405,6 +444,11 @@ class AdminBadgeForm(forms.Form):
         subcategory = next((item for item in category.get("subcategories", []) if item.get("name") == subcategory_name), None)
         if not subcategory:
             self.add_error("subcategory", "Escolha uma subcategoria da categoria selecionada.")
+            return cleaned_data
+        if event_name:
+            event = next((item for item in subcategory.get("events", []) if item.get("name") == event_name), None)
+            if not event:
+                self.add_error("event", "Escolha um evento da subcategoria selecionada.")
         return cleaned_data
 
     def to_payload(self):
@@ -421,6 +465,7 @@ class AdminBadgeForm(forms.Form):
             "threshold_value": float(self.cleaned_data.get("threshold_value") or 0),
             "category": self.cleaned_data.get("category") or "",
             "subcategory": self.cleaned_data.get("subcategory") or "",
+            "event": self.cleaned_data.get("event") or "",
         }
 
 

@@ -84,6 +84,16 @@
             {% if form.subcategory.errors %}<small>{{ form.subcategory.errors|join:", " }}</small>{% endif %}
           </div>
         </div>
+        <div class="field full">
+          <label for="{{ form.event.id_for_label }}">Evento opcional</label>
+          <select id="{{ form.event.id_for_label }}" name="{{ form.event.html_name }}" data-event-select>
+            <option value="" {% if not form.event.value %}selected{% endif %}>Todos os eventos</option>
+            {% for event in taxonomy_options.events %}
+              <option value="{{ event.name }}" data-category="{{ event.category }}" data-subcategory="{{ event.subcategory }}" {% if event.name == form.event.value %}selected{% endif %}>{{ event.name }}</option>
+            {% endfor %}
+          </select>
+          {% if form.event.errors %}<small>{{ form.event.errors|join:", " }}</small>{% endif %}
+        </div>
         <label class="toggle-row full">{{ form.is_active }} <span>Badge ativa para exibição e concessão</span></label>
         <div class="actions full">
           <button class="btn primary" type="submit" name="action" value="save">Salvar badge</button>
@@ -136,7 +146,7 @@
           <li><strong>Sugestões aprovadas:</strong> conta sugestões revisadas, convertidas ou recompensadas.</li>
           <li><strong>Feedback recompensado:</strong> conta feedbacks com recompensa operacional.</li>
         </ul>
-        <p>Categoria/subcategoria vazias aplicam a regra no contexto geral.</p>
+        <p>Categoria/subcategoria/evento vazios aplicam a regra no contexto geral.</p>
       </div>
     </aside>
   </section>

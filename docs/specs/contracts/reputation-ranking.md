@@ -83,9 +83,10 @@ Conquistas de usuário são persistidas em `orynth_user_badge_awards`. A exibiç
 - `threshold_value`
 - `category`
 - `subcategory`
+- `event`
 - `is_active`
 
-`category` e `subcategory` devem usar valores da taxonomia dinâmica exposta em `GET /admin/taxonomy` quando preenchidos pelo Admin Ops. Subcategoria só é válida junto de sua categoria.
+`category`, `subcategory` e `event` devem usar valores da taxonomia dinâmica exposta em `GET /admin/taxonomy` quando preenchidos pelo Admin Ops. Subcategoria só é válida junto de sua categoria; evento só é válido junto da subcategoria da mesma categoria. Os `notice` de categoria/subcategoria/evento são metadados de apresentação do mercado e não alteram elegibilidade de badges.
 
 `UserBadgeAward`:
 
@@ -160,8 +161,9 @@ Payload administrativo mínimo:
 - `is_active`: opcional com default ativo no formulário administrativo
 - `category`: opcional; vazio significa todas as categorias
 - `subcategory`: opcional; vazio significa todas as subcategorias da categoria escolhida ou todas as subcategorias quando categoria também estiver vazia
+- `event`: opcional; vazio significa todos os eventos da subcategoria escolhida ou todos os eventos quando categoria/subcategoria também estiverem vazios
 
-O Admin Ops deve marcar visualmente os campos obrigatórios do formulário de badge e manter `code`, `rule_description`, `image_url`, `image_dark_url`, `category` e `subcategory` sem marcador de obrigatoriedade. A UI pública e o Admin Ops devem usar `image_url` como fallback quando `image_dark_url` não estiver preenchida.
+O Admin Ops deve marcar visualmente os campos obrigatórios do formulário de badge e manter `code`, `rule_description`, `image_url`, `image_dark_url`, `category`, `subcategory` e `event` sem marcador de obrigatoriedade. A UI pública e o Admin Ops devem usar `image_url` como fallback quando `image_dark_url` não estiver preenchida.
 
 ### Regras de concessão MVP
 
@@ -191,8 +193,10 @@ Eventos MVP:
 
 `market_resolved` deve ser disparado após resolução/reputação dos participantes, para que métricas de acerto, sequência e ranking usem o estado final persistido.
 
-Recorte por categoria/subcategoria:
+Recorte por categoria/subcategoria/evento:
 
-- `resolved_predictions_count`, `correct_predictions_count`, `comments_count` e `approved_suggestions_count` respeitam `category` e `subcategory` quando preenchidos.
+- `resolved_predictions_count`, `correct_predictions_count` e `comments_count` respeitam `category`, `subcategory` e `event` quando preenchidos.
+- `approved_suggestions_count` respeita `category` e `subcategory`; regras com `event` preenchido não contam sugestões antigas enquanto o fluxo de sugestão não capturar evento.
 - Campos vazios significam regra global para todas as categorias.
+- O recorte por evento só deve ser aplicado quando a regra também possuir categoria e subcategoria preenchidas.
 - `ranking_position`, `streak_count`, `founding_member` e `rewarded_feedback_count` são globais nesta fatia MVP.

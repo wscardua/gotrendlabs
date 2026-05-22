@@ -13,17 +13,28 @@
     {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     <table class="table">
-      <tr><th>Badge</th><th>Status</th><th>Tipo</th><th>Regra</th><th>Categoria</th><th>Conquistas</th><th>Ações</th></tr>
+      <tr><th>Badge</th><th>Status</th><th>Tipo</th><th>Regra</th><th>Recorte</th><th>Conquistas</th><th>Ações</th></tr>
       {% for badge in badge_data.badges %}
         <tr>
           <td>
-            <strong>{{ badge.name }}</strong>
-            <span class="muted">{{ badge.code }}</span>
+            <div class="badge-browse-cell">
+              <span class="badge-browse-thumb" aria-hidden="true">
+                {% if badge.image_url %}
+                  <img src="{{ badge.image_url }}" alt="" loading="lazy">
+                {% else %}
+                  <span>{{ badge.name|slice:":2"|upper }}</span>
+                {% endif %}
+              </span>
+              <span class="badge-browse-title">
+                <strong>{{ badge.name }}</strong>
+                <span class="muted">{{ badge.code }}</span>
+              </span>
+            </div>
           </td>
           <td>{% if badge.is_active %}<span class="tag safe">Ativa</span>{% else %}<span class="tag">Inativa</span>{% endif %}</td>
           <td>{{ badge.badge_type }}</td>
           <td>{{ badge.rule_type }} · {{ badge.threshold_value }}</td>
-          <td>{% if badge.category %}{{ badge.category }}{% else %}Todas{% endif %} / {% if badge.subcategory %}{{ badge.subcategory }}{% else %}Todas{% endif %}</td>
+          <td>{% if badge.category %}{{ badge.category }}{% else %}Todas{% endif %} / {% if badge.subcategory %}{{ badge.subcategory }}{% else %}Todas{% endif %} / {% if badge.event %}{{ badge.event }}{% else %}Todos{% endif %}</td>
           <td>{{ badge.awards_count }}</td>
           <td><a class="btn small" href="{% url 'admin-ops-badge-edit' badge.code %}">Editar</a></td>
         </tr>

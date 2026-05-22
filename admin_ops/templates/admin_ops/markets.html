@@ -32,7 +32,7 @@
           <td>{{ market.status_label }}</td>
           <td>{% if market.is_featured %}<span class="tag hot">Destaque</span>{% else %}<span class="tag">Não</span>{% endif %}</td>
           <td>{% if market.kind == "binary" %}Sim/Não{% else %}Múltipla escolha{% endif %}</td>
-          <td>{{ market.category }} / {{ market.subcategory }}</td>
+          <td>{{ market.category }} / {{ market.subcategory }} / {{ market.event }}</td>
           <td>
             <div class="popularity-metrics" aria-label="{{ market.view_count|default:0 }} visualizações e {{ market.share_count|default:0 }} compartilhamentos">
               <span class="popularity-chip views"><small>Views</small><strong>{{ market.view_count|default:0 }}</strong></span>

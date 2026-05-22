@@ -15,7 +15,7 @@
       </div>
       <div>
         <div class="share-brand-block">
-          <p class="share-brand">Orynth Trends · {{ market.category }}</p>
+          <p class="share-brand">Orynth Trends · {{ market.category }}{% if market.event %} · {{ market.event }}{% endif %}</p>
           <p class="share-context">Previsões educativas com reputação pública e resolução auditável.</p>
         </div>
         <h1 class="large-title">{{ market.title }}</h1>

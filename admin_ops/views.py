@@ -14,15 +14,18 @@ from accounts.api_client import (
     AuthAPIError,
     admin_adjust_user_wallet,
     admin_block_category,
+    admin_block_event,
     admin_block_subcategory,
     admin_cancel_market,
     admin_create_badge,
     admin_create_category,
+    admin_create_event,
     admin_create_market,
     admin_create_subcategory,
     admin_convert_suggestion,
     admin_get_dashboard_summary,
     admin_deactivate_badge,
+    admin_delete_event,
     admin_get_badges,
     admin_get_market,
     admin_get_market_resolution_audit,
@@ -48,11 +51,13 @@ from accounts.api_client import (
     admin_approve_wallet_recharge,
     admin_reject_wallet_recharge,
     admin_unblock_category,
+    admin_unblock_event,
     admin_unblock_subcategory,
     admin_update_user_roles,
     admin_update_user_bot,
     admin_update_badge,
     admin_update_category,
+    admin_update_event,
     admin_update_market,
     admin_update_subcategory,
 )
@@ -60,6 +65,7 @@ from accounts.session import USER_KEY, admin_api_required, auth_token
 from admin_ops.forms import (
     AdminBadgeForm,
     AdminCategoryForm,
+    AdminEventForm,
     AdminMarketForm,
     AdminSubcategoryForm,
     AdminUserNoteForm,
@@ -189,6 +195,7 @@ def _market_initial(market):
         "participants": market.get("participants", ""),
         "category": market.get("category", ""),
         "subcategory": market.get("subcategory", ""),
+        "event": market.get("event") or "Geral",
         "source": market.get("source", ""),
         "close_label": market.get("close_label", ""),
         "thumb": market.get("thumb", ""),
@@ -225,6 +232,7 @@ def _default_market_initial():
         "kind": "binary",
         "category": "",
         "subcategory": "",
+        "event": "",
         "thumb": "AI",
         "thumb_color": "#d8ece2",
         "close_timezone": "America/Sao_Paulo",
@@ -244,6 +252,7 @@ def _default_market_initial():
 def _market_taxonomy_options(taxonomy_data):
     categories = []
     subcategories = []
+    events = []
     for category in taxonomy_data.get("categories", []):
         if category.get("is_blocked"):
             continue
@@ -259,7 +268,18 @@ def _market_taxonomy_options(taxonomy_data):
                     "category": category_name,
                 }
             )
-    return {"categories": categories, "subcategories": subcategories}
+            for event in subcategory.get("events", []):
+                if event.get("is_blocked"):
+                    continue
+                events.append(
+                    {
+                        "name": event.get("name", ""),
+                        "slug": event.get("slug", ""),
+                        "category": category_name,
+                        "subcategory": subcategory.get("name", ""),
+                    }
+                )
+    return {"categories": categories, "subcategories": subcategories, "events": events}
 
 
 def _default_market_initial_for_taxonomy(taxonomy_data):
@@ -719,6 +739,7 @@ def _badge_initial(badge):
         "threshold_value": badge.get("threshold_value", 1),
         "category": badge.get("category", ""),
         "subcategory": badge.get("subcategory", ""),
+        "event": badge.get("event", ""),
     }
 
 
@@ -910,7 +931,11 @@ def taxonomy(request):
                     admin_create_subcategory(
                         token,
                         form.cleaned_data["category_slug"],
-                        {"name": form.cleaned_data["name"], "slug": form.cleaned_data.get("slug") or None},
+                        {
+                            "name": form.cleaned_data["name"],
+                            "slug": form.cleaned_data.get("slug") or None,
+                            "notice": form.cleaned_data.get("notice") or "",
+                        },
                     )
                     message = "Subcategoria criada."
                 except AuthAPIError as exc:
@@ -927,13 +952,59 @@ def taxonomy(request):
                         token,
                         category_slug,
                         subcategory_slug,
-                        {"name": form.cleaned_data["name"], "slug": form.cleaned_data.get("slug") or None},
+                        {
+                            "name": form.cleaned_data["name"],
+                            "slug": form.cleaned_data.get("slug") or None,
+                            "notice": form.cleaned_data.get("notice") or "",
+                        },
                     )
                     message = "Subcategoria atualizada."
                 except AuthAPIError as exc:
                     error = str(exc)
             else:
                 error = "Revise a subcategoria."
+        elif request.POST.get("action") == "create_event":
+            form = AdminEventForm(request.POST)
+            if form.is_valid():
+                try:
+                    admin_create_event(
+                        token,
+                        form.cleaned_data["category_slug"],
+                        form.cleaned_data["subcategory_slug"],
+                        {
+                            "name": form.cleaned_data["name"],
+                            "slug": form.cleaned_data.get("slug") or None,
+                            "notice": form.cleaned_data.get("notice") or "",
+                        },
+                    )
+                    message = "Evento criado."
+                except AuthAPIError as exc:
+                    error = str(exc)
+            else:
+                error = "Revise o evento."
+        elif request.POST.get("action") == "update_event":
+            form = AdminEventForm(request.POST)
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            event_slug = request.POST.get("event_slug", "")
+            if form.is_valid() and category_slug and subcategory_slug and event_slug:
+                try:
+                    admin_update_event(
+                        token,
+                        category_slug,
+                        subcategory_slug,
+                        event_slug,
+                        {
+                            "name": form.cleaned_data["name"],
+                            "slug": form.cleaned_data.get("slug") or None,
+                            "notice": form.cleaned_data.get("notice") or "",
+                        },
+                    )
+                    message = "Evento atualizado."
+                except AuthAPIError as exc:
+                    error = str(exc)
+            else:
+                error = "Revise o evento."
         elif request.POST.get("action") == "block_category":
             category_slug = request.POST.get("category_slug", "")
             try:
@@ -964,6 +1035,33 @@ def taxonomy(request):
                 message = "Subcategoria desbloqueada."
             except AuthAPIError as exc:
                 error = str(exc)
+        elif request.POST.get("action") == "block_event":
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            event_slug = request.POST.get("event_slug", "")
+            try:
+                admin_block_event(token, category_slug, subcategory_slug, event_slug, request.POST.get("block_note") or "Bloqueado pelo Admin Ops.")
+                message = "Evento bloqueado."
+            except AuthAPIError as exc:
+                error = str(exc)
+        elif request.POST.get("action") == "unblock_event":
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            event_slug = request.POST.get("event_slug", "")
+            try:
+                admin_unblock_event(token, category_slug, subcategory_slug, event_slug, request.POST.get("block_note") or "Reativado pelo Admin Ops.")
+                message = "Evento desbloqueado."
+            except AuthAPIError as exc:
+                error = str(exc)
+        elif request.POST.get("action") == "delete_event":
+            category_slug = request.POST.get("category_slug", "")
+            subcategory_slug = request.POST.get("subcategory_slug", "")
+            event_slug = request.POST.get("event_slug", "")
+            try:
+                admin_delete_event(token, category_slug, subcategory_slug, event_slug)
+                message = "Evento excluído."
+            except AuthAPIError as exc:
+                error = str(exc)
     try:
         taxonomy_data = admin_get_taxonomy(token)
     except AuthAPIError as exc:
@@ -971,16 +1069,20 @@ def taxonomy(request):
         error = error or str(exc)
     categories = taxonomy_data.get("categories", [])
     for category in categories:
+        category["events_count"] = sum(len(subcategory.get("events", [])) for subcategory in category.get("subcategories", []))
         category["has_blocked_item"] = bool(category.get("is_blocked")) or any(
-            subcategory.get("is_blocked") for subcategory in category.get("subcategories", [])
+            subcategory.get("is_blocked") or any(event.get("is_blocked") for event in subcategory.get("events", []))
+            for subcategory in category.get("subcategories", [])
         )
     taxonomy_summary = {
         "categories_count": len(categories),
         "subcategories_count": sum(len(category.get("subcategories", [])) for category in categories),
+        "events_count": sum(len(subcategory.get("events", [])) for category in categories for subcategory in category.get("subcategories", [])),
         "markets_count": sum(int(category.get("markets_count") or 0) for category in categories),
         "blocked_count": sum(
             (1 if category.get("is_blocked") else 0)
             + sum(1 for subcategory in category.get("subcategories", []) if subcategory.get("is_blocked"))
+            + sum(1 for subcategory in category.get("subcategories", []) for event in subcategory.get("events", []) if event.get("is_blocked"))
             for category in categories
         ),
     }
@@ -992,6 +1094,7 @@ def taxonomy(request):
             "taxonomy_summary": taxonomy_summary,
             "category_form": AdminCategoryForm(),
             "subcategory_form": AdminSubcategoryForm(),
+            "event_form": AdminEventForm(),
             "admin_message": message,
             "admin_error": error,
         },
@@ -1028,6 +1131,8 @@ def market_form(request, mode="new", slug=None):
             saved_name = _save_thumbnail(request.FILES["thumbnail_file"])
             post_data["image_url"] = THUMB_STORAGE.url(saved_name)
     initial = _market_initial(market) if market else _default_market_initial_for_taxonomy(taxonomy_data)
+    if post_data is not None and mode != "new" and not post_data.get("event"):
+        post_data["event"] = initial.get("event") or "Geral"
     form = AdminMarketForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
     is_readonly = bool(market and market.get("status") == "resolved")
     if is_readonly:

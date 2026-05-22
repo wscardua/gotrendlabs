@@ -35,14 +35,26 @@
         </button>
       {% endif %}
     </div>
-    <div class="tags page-kicker-row">
-      {% include "components/context_back.html" %}
-      <span class="tag hot">{{ market.category }}</span>
-      <span class="tag">{{ market.subcategory }}</span>
-      <span class="tag safe">Critério auditável</span>
-      <span class="tag">{{ market.close_label|default:market.status_label }}</span>
+    <div class="detail-title-block">
+      <div class="tags page-kicker-row">
+        {% include "components/context_back.html" %}
+        <span class="tag hot">{{ market.category }}</span>
+        <span class="tag">{{ market.subcategory }}</span>
+        <span class="tag">{{ market.event }}</span>
+        <span class="tag safe">Critério auditável</span>
+        <span class="tag">{{ market.close_label|default:market.status_label }}</span>
+      </div>
+      <div class="detail-title-row">
+        <div class="detail-market-thumb" style="--thumb:{{ market.thumb_color }}" aria-hidden="true">
+          {% if market.image_url %}
+            <img src="{{ market.image_url }}" alt="">
+          {% else %}
+            {{ market.thumb|default:"OR" }}
+          {% endif %}
+        </div>
+        <h1 class="large-title">{{ market.title }}</h1>
+      </div>
     </div>
-    <h1 class="large-title">{{ market.title }}</h1>
     <p class="lead">{{ market.summary }}</p>
     <div class="chart-box">
       <div class="chart-legend"><span><i style="--dot:#136f4a"></i>Evolução das opções</span><span class="muted">Linhas recalculadas a partir das previsões reais</span></div>
@@ -82,6 +94,14 @@
         <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
       {% endif %}
     </section>
+    {% if market.category_notice or market.subcategory_notice or market.event_notice %}
+      <div class="event-warning detail-notice-after-criteria">
+        <strong>Avisos da negociação</strong>
+        {% if market.category_notice %}<span><b>Categoria:</b> {{ market.category_notice|linebreaksbr }}</span>{% endif %}
+        {% if market.subcategory_notice %}<span><b>Subcategoria:</b> {{ market.subcategory_notice|linebreaksbr }}</span>{% endif %}
+        {% if market.event_notice %}<span><b>Evento:</b> {{ market.event_notice|linebreaksbr }}</span>{% endif %}
+      </div>
+    {% endif %}
     <section class="panel" id="comments" style="margin-top:16px">
       <h3>Comentários</h3>
       {% if comment_error %}

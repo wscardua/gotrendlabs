@@ -90,8 +90,8 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - mercados cancelados não podem permanecer marcados como destaque editorial
 - no máximo dois mercados podem ficar marcados como destaque editorial ao mesmo tempo
 - mercados de múltipla escolha iniciam com probabilidades decimais iguais para todas as opções, sem vantagem artificial por sobra de arredondamento
-- categorias e subcategorias não possuem exclusão física operacional; itens retirados do uso devem ser bloqueados logicamente
-- categorias/subcategorias bloqueadas permanecem preservadas para histórico, mas não podem ser usadas em novos mercados ou reclassificações administrativas
+- categorias, subcategorias e eventos vinculados a mercados não possuem exclusão física operacional; itens retirados do uso devem ser bloqueados logicamente, enquanto eventos sem mercados vinculados podem ser excluídos como limpeza de cadastro
+- categorias/subcategorias/eventos bloqueados permanecem preservados para histórico, mas não podem ser usados em novos mercados ou reclassificações administrativas
 
 ## Responsabilidades por camada
 
@@ -109,7 +109,10 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `GET /markets` marca `viewer_has_like=true` quando recebe sessão válida e o usuário curtiu o mercado
 - `POST /markets/{slug}/favorite` e `DELETE /markets/{slug}/favorite` permitem favoritar/desfavoritar de forma idempotente
 - `POST /markets/{slug}/like` e `DELETE /markets/{slug}/like` permitem curtir/descurtir de forma idempotente
+- `MarketResponse` expõe `category`, `subcategory`, `event`, `category_notice`, `subcategory_notice` e `event_notice`; cards e detalhe público devem apresentar a trilha `categoria / subcategoria / evento`, enquanto avisos de categoria/subcategoria/evento aparecem apenas no detalhe/ticket, abaixo do critério de resolução, quando preenchidos
 - `MarketResponse` expõe `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para seleção visual, destaque e ordenação client-side
+- Cards da home/feed devem comunicar prazo restante por texto (`closes_in`) e por indicador visual derivado de `created_at`/`close_at`, sem reutilizar probabilidade como progresso de tempo.
+- O indicador de prazo deve hidratar estados visuais `open`, `soon`, `urgent` e `closed`, atualizar periodicamente enquanto a página estiver aberta e manter texto legível para não depender só de cor.
 - `MarketResponse` expõe `view_count` e `share_count` como métricas de popularidade usadas no Admin Ops e na seleção pública de destaques/onboarding
 - `GET /admin/markets` aceita ordenação operacional por `order=views_desc` e `order=shares_desc` para apoiar curadoria por popularidade
 - Django renderiza atributos `data-*` nos cards para ordenar e filtrar sem reload: destaque, favoritos pessoais, curtidas, visualizações, volume, datas e status
@@ -126,7 +129,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - a métrica pública `O₵ movimentadas` soma stakes de previsões registradas e é enviada como label pronto para apresentação
 - browse administrativo de mercados usa fallback local em Postgres quando a API administrativa falha, mantendo a visualização de ativos/rascunhos disponível em desenvolvimento
 - browse administrativo de mercados exibe popularidade em indicadores compactos e permite alternar entre ordem padrão, mais visualizados e mais compartilhados
-- Admin Ops gerencia categorias/subcategorias em tela de browse operacional com criação, edição, bloqueio/desbloqueio e indicação visual de estado
+- Admin Ops gerencia categorias/subcategorias/eventos em tela de browse operacional com criação, edição, bloqueio/desbloqueio e indicação visual de estado
 - bloqueio de taxonomia é persistido em PostgreSQL e validado pela FastAPI antes de criar/editar mercados
 - Django consome a FastAPI e usa Postgres local como fallback de desenvolvimento para mercado, opções, consenso, wallet e ranking
 
@@ -135,6 +138,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - mercado
 - categoria com estado de bloqueio lógico
 - subcategoria com estado de bloqueio lógico
+- categoria/subcategoria/evento com estado de bloqueio lógico e aviso opcional de até 500 caracteres; evento é vinculado à subcategoria e obrigatório para mercados novos no Admin Ops/API
 - snapshot resumido de probabilidade
 - `is_featured` no mercado para curadoria editorial do feed
 - `orynth_market_favorites` guarda favoritos pessoais com unicidade por usuário e mercado
@@ -187,6 +191,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - criação/edição administrativa de mercado deve rejeitar taxonomia bloqueada
 - fluxo de navegação feed -> detalhe
 - regressão para cards com payload antigo sem sparkline
+- regressão para notices vazios não renderizarem alerta e notices preenchidos de categoria/subcategoria/evento renderizarem apenas no detalhe/ticket, não nos cards da home/feed
 
 ## Critérios de aceite
 

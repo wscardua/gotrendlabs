@@ -33,6 +33,7 @@ from backend_api.schemas import (
     AdminMarketPayload,
     AdminMarketResolutionAuditResponse,
     AdminMarketResolvePayload,
+    AdminEventPayload,
     AdminSubcategoryPayload,
     AdminTaxonomyResponse,
     AuthResponse,
@@ -470,6 +471,7 @@ def _admin_badge_response(row):
         "threshold_value": float(row["threshold_value"] or 0),
         "category": row["category"] or "",
         "subcategory": row["subcategory"] or "",
+        "event": row["event"] or "",
         "rule_active": bool(row["rule_active"]),
         "awards_count": int(row["awards_count"] or 0),
         "created_at": row["created_at"].isoformat(),
@@ -482,7 +484,7 @@ def _admin_badge_rows(cursor, where_sql="", params=None):
         f"""
         SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
                b.is_active, b.created_at, b.updated_at,
-               r.rule_type, r.threshold_value, r.category, r.subcategory, r.is_active AS rule_active,
+               r.rule_type, r.threshold_value, r.category, r.subcategory, r.event, r.is_active AS rule_active,
                COUNT(a.id) AS awards_count
         FROM orynth_badge_definitions b
         JOIN orynth_badge_rules r ON r.badge_id = b.id
@@ -502,6 +504,52 @@ def _validate_badge_payload(payload):
     if rule_type not in BADGE_RULE_TYPES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de regra de badge inválido.")
     return badge_type, rule_type
+
+
+def _validate_badge_taxonomy(cursor, payload):
+    category = payload.category.strip()
+    subcategory = payload.subcategory.strip()
+    event = payload.event.strip()
+    if event and not subcategory:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Escolha uma subcategoria antes do evento da badge.")
+    if subcategory and not category:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Escolha uma categoria antes da subcategoria da badge.")
+    if not category:
+        return
+    cursor.execute(
+        "SELECT id FROM orynth_market_categories WHERE lower(name) = lower(%s) OR lower(slug) = lower(%s)",
+        (category, category),
+    )
+    category_row = cursor.fetchone()
+    if not category_row:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Categoria de badge não encontrada.")
+    if not subcategory:
+        return
+    cursor.execute(
+        """
+        SELECT id
+        FROM orynth_market_subcategories
+        WHERE category_id = %s
+          AND (lower(name) = lower(%s) OR lower(slug) = lower(%s))
+        """,
+        (category_row["id"], subcategory, subcategory),
+    )
+    subcategory_row = cursor.fetchone()
+    if not subcategory_row:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Subcategoria de badge não pertence à categoria.")
+    if not event:
+        return
+    cursor.execute(
+        """
+        SELECT id
+        FROM orynth_market_events
+        WHERE subcategory_id = %s
+          AND (lower(name) = lower(%s) OR lower(slug) = lower(%s))
+        """,
+        (subcategory_row["id"], event, event),
+    )
+    if not cursor.fetchone():
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Evento de badge não pertence à subcategoria.")
 
 
 def _ledger_wallet_totals(cursor, user_id):
@@ -791,13 +839,16 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
                COALESCE(COUNT(ml.id), 0) AS market_like_count,
-               c.name AS category, sc.name AS subcategory
+               c.name AS category, c.notice AS category_notice,
+               sc.name AS subcategory, sc.notice AS subcategory_notice,
+               ev.name AS event, ev.notice AS event_notice
         FROM orynth_markets m
         JOIN orynth_market_categories c ON c.id = m.category_id
         JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
+        LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
         LEFT JOIN orynth_market_likes ml ON ml.market_id = m.id
         {where_sql}
-        GROUP BY m.id, c.name, sc.name
+        GROUP BY m.id, c.name, c.notice, sc.name, sc.notice, ev.name, ev.notice
         ORDER BY {order_sql}
         """,
         params or [],
@@ -1023,7 +1074,11 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "slug": row["slug"],
         "title": row["title"],
         "category": row["category"],
+        "category_notice": row["category_notice"] or "",
         "subcategory": row["subcategory"],
+        "subcategory_notice": row["subcategory_notice"] or "",
+        "event": row["event"] or "Geral",
+        "event_notice": row["event_notice"] or "",
         "kind": row["kind"],
         "status": row["status"],
         "status_label": _market_status_label(row["status"]),
@@ -1781,39 +1836,67 @@ def _get_feedback(cursor, feedback_id):
     return row
 
 
-def _upsert_category(cursor, name, slug=None):
+def _upsert_category(cursor, name, slug=None, notice=None):
     cleaned_slug = _slug_seed(slug or name, max_length=100)
+    notice_value = (notice or "").strip() if notice is not None else ""
+    should_update_notice = notice is not None
     cursor.execute(
         """
-        INSERT INTO orynth_market_categories (name, slug, is_blocked, blocked_reason, created_at)
-        VALUES (%s, %s, false, '', %s)
-        ON CONFLICT (slug) DO UPDATE SET name = EXCLUDED.name
-        RETURNING id, name, slug, is_blocked
-        """,
-        (name.strip(), cleaned_slug, datetime.now(timezone.utc)),
-    )
-    return cursor.fetchone()
-
-
-def _upsert_subcategory(cursor, category_id, name, slug=None):
-    cleaned_slug = _slug_seed(slug or name, max_length=100)
-    cursor.execute(
-        """
-        INSERT INTO orynth_market_subcategories (category_id, name, slug, is_blocked, blocked_reason, created_at)
+        INSERT INTO orynth_market_categories (name, slug, notice, is_blocked, blocked_reason, created_at)
         VALUES (%s, %s, %s, false, '', %s)
-        ON CONFLICT (category_id, slug) DO UPDATE SET name = EXCLUDED.name
-        RETURNING id, name, slug, is_blocked
+        ON CONFLICT (slug) DO UPDATE
+        SET name = EXCLUDED.name,
+            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE orynth_market_categories.notice END
+        RETURNING id, name, slug, notice, is_blocked
         """,
-        (category_id, name.strip(), cleaned_slug, datetime.now(timezone.utc)),
+        (name.strip(), cleaned_slug, notice_value, datetime.now(timezone.utc), should_update_notice),
     )
     return cursor.fetchone()
 
 
-def _ensure_taxonomy_available(category, subcategory):
+def _upsert_subcategory(cursor, category_id, name, slug=None, notice=None):
+    cleaned_slug = _slug_seed(slug or name, max_length=100)
+    notice_value = (notice or "").strip() if notice is not None else ""
+    should_update_notice = notice is not None
+    cursor.execute(
+        """
+        INSERT INTO orynth_market_subcategories (category_id, name, slug, notice, is_blocked, blocked_reason, created_at)
+        VALUES (%s, %s, %s, %s, false, '', %s)
+        ON CONFLICT (category_id, slug) DO UPDATE
+        SET name = EXCLUDED.name,
+            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE orynth_market_subcategories.notice END
+        RETURNING id, name, slug, notice, is_blocked
+        """,
+        (category_id, name.strip(), cleaned_slug, notice_value, datetime.now(timezone.utc), should_update_notice),
+    )
+    return cursor.fetchone()
+
+
+def _upsert_event(cursor, subcategory_id, name, slug=None, notice=None):
+    cleaned_slug = _slug_seed(slug or name, max_length=100)
+    notice_value = (notice or "").strip() if notice is not None else ""
+    should_update_notice = notice is not None
+    cursor.execute(
+        """
+        INSERT INTO orynth_market_events (subcategory_id, name, slug, notice, is_blocked, blocked_reason, created_at)
+        VALUES (%s, %s, %s, %s, false, '', %s)
+        ON CONFLICT (subcategory_id, slug) DO UPDATE
+        SET name = EXCLUDED.name,
+            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE orynth_market_events.notice END
+        RETURNING id, name, slug, notice, is_blocked
+        """,
+        (subcategory_id, name.strip(), cleaned_slug, notice_value, datetime.now(timezone.utc), should_update_notice),
+    )
+    return cursor.fetchone()
+
+
+def _ensure_taxonomy_available(category, subcategory, event=None):
     if category["is_blocked"]:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Categoria bloqueada para novos mercados.")
     if subcategory["is_blocked"]:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Subcategoria bloqueada para novos mercados.")
+    if event and event["is_blocked"]:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Evento bloqueado para novos mercados.")
 
 
 def _admin_market_by_slug(cursor, slug):
@@ -1974,7 +2057,7 @@ def _validate_publishable(cursor, market_id):
     cursor.execute(
         """
         SELECT title, summary, source, resolution_criteria, close_at, close_timezone, thumb_color,
-               kind, category_id, subcategory_id
+               kind, category_id, subcategory_id, event_id
         FROM orynth_markets
         WHERE id = %s
         """,
@@ -1982,7 +2065,7 @@ def _validate_publishable(cursor, market_id):
     )
     market = cursor.fetchone()
     missing = []
-    for field in ("title", "summary", "source", "resolution_criteria", "close_at", "close_timezone", "thumb_color"):
+    for field in ("title", "summary", "source", "resolution_criteria", "close_at", "close_timezone", "thumb_color", "event_id"):
         if not market[field]:
             missing.append(field)
     cursor.execute(
@@ -2015,10 +2098,10 @@ def _validate_publishable(cursor, market_id):
 def _taxonomy_response(cursor):
     cursor.execute(
         """
-        SELECT c.id, c.name, c.slug, c.is_blocked, c.blocked_reason, c.blocked_at, COUNT(m.id) AS markets_count
+        SELECT c.id, c.name, c.slug, c.notice, c.is_blocked, c.blocked_reason, c.blocked_at, COUNT(m.id) AS markets_count
         FROM orynth_market_categories c
         LEFT JOIN orynth_markets m ON m.category_id = c.id
-        GROUP BY c.id, c.name, c.slug, c.is_blocked, c.blocked_reason, c.blocked_at
+        GROUP BY c.id, c.name, c.slug, c.notice, c.is_blocked, c.blocked_reason, c.blocked_at
         ORDER BY c.name ASC
         """
     )
@@ -2026,34 +2109,61 @@ def _taxonomy_response(cursor):
     for category in cursor.fetchall():
         cursor.execute(
             """
-            SELECT sc.name, sc.slug, sc.is_blocked, sc.blocked_reason, sc.blocked_at, COUNT(m.id) AS markets_count
+            SELECT sc.id, sc.name, sc.slug, sc.notice, sc.is_blocked, sc.blocked_reason, sc.blocked_at, COUNT(m.id) AS markets_count
             FROM orynth_market_subcategories sc
             LEFT JOIN orynth_markets m ON m.subcategory_id = sc.id
             WHERE sc.category_id = %s
-            GROUP BY sc.id, sc.name, sc.slug, sc.is_blocked, sc.blocked_reason, sc.blocked_at
+            GROUP BY sc.id, sc.name, sc.slug, sc.notice, sc.is_blocked, sc.blocked_reason, sc.blocked_at
             ORDER BY sc.name ASC
             """,
             (category["id"],),
         )
+        subcategories = []
+        for subcategory in cursor.fetchall():
+            cursor.execute(
+                """
+                SELECT ev.name, ev.slug, ev.notice, ev.is_blocked, ev.blocked_reason, ev.blocked_at, COUNT(m.id) AS markets_count
+                FROM orynth_market_events ev
+                LEFT JOIN orynth_markets m ON m.event_id = ev.id
+                WHERE ev.subcategory_id = %s
+                GROUP BY ev.id, ev.name, ev.slug, ev.notice, ev.is_blocked, ev.blocked_reason, ev.blocked_at
+                ORDER BY ev.name ASC
+                """,
+                (subcategory["id"],),
+            )
+            subcategories.append(
+                {
+                    "name": subcategory["name"],
+                    "slug": subcategory["slug"],
+                    "notice": subcategory["notice"] or "",
+                    "markets_count": subcategory["markets_count"],
+                    "is_blocked": subcategory["is_blocked"],
+                    "blocked_reason": subcategory["blocked_reason"] or "",
+                    "blocked_at": subcategory["blocked_at"].isoformat() if subcategory["blocked_at"] else None,
+                    "events": [
+                        {
+                            "name": row["name"],
+                            "slug": row["slug"],
+                            "notice": row["notice"] or "",
+                            "markets_count": row["markets_count"],
+                            "is_blocked": row["is_blocked"],
+                            "blocked_reason": row["blocked_reason"] or "",
+                            "blocked_at": row["blocked_at"].isoformat() if row["blocked_at"] else None,
+                        }
+                        for row in cursor.fetchall()
+                    ],
+                }
+            )
         categories.append(
             {
                 "name": category["name"],
                 "slug": category["slug"],
+                "notice": category["notice"] or "",
                 "markets_count": category["markets_count"],
                 "is_blocked": category["is_blocked"],
                 "blocked_reason": category["blocked_reason"] or "",
                 "blocked_at": category["blocked_at"].isoformat() if category["blocked_at"] else None,
-                "subcategories": [
-                    {
-                        "name": row["name"],
-                        "slug": row["slug"],
-                        "markets_count": row["markets_count"],
-                        "is_blocked": row["is_blocked"],
-                        "blocked_reason": row["blocked_reason"] or "",
-                        "blocked_at": row["blocked_at"].isoformat() if row["blocked_at"] else None,
-                    }
-                    for row in cursor.fetchall()
-                ],
+                "subcategories": subcategories,
             }
         )
     return {"categories": categories}
@@ -2836,10 +2946,11 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             cursor.execute(
                 """
                 SELECT m.slug, m.title, m.status, m.status_label, c.name AS category,
-                       s.name AS subcategory, m.view_count, m.share_count
+                       s.name AS subcategory, ev.name AS event, m.view_count, m.share_count
                 FROM orynth_markets m
                 LEFT JOIN orynth_market_categories c ON c.id = m.category_id
                 LEFT JOIN orynth_market_subcategories s ON s.id = m.subcategory_id
+                LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
                 ORDER BY m.view_count DESC, m.share_count DESC, m.created_at DESC
                 LIMIT 5
                 """
@@ -2852,6 +2963,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "status_label": row["status_label"],
                     "category": row["category"] or "",
                     "subcategory": row["subcategory"] or "",
+                    "event": row["event"] or "",
                     "view_count": int(row["view_count"] or 0),
                     "share_count": int(row["share_count"] or 0),
                 }
@@ -3404,7 +3516,8 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             staff = _current_staff_user(cursor, authorization)
             category = _upsert_category(cursor, payload.category)
             subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
-            _ensure_taxonomy_available(category, subcategory)
+            event = _upsert_event(cursor, subcategory["id"], payload.event)
+            _ensure_taxonomy_available(category, subcategory, event)
             slug = _slug_seed(payload.slug or payload.title)
             cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s", (slug,))
             if cursor.fetchone():
@@ -3419,19 +3532,20 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             cursor.execute(
                 """
                 INSERT INTO orynth_markets
-                    (category_id, subcategory_id, slug, title, summary, kind, status, status_label,
+                    (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
                      primary_outcome, primary_probability_exact, secondary_probability_exact, volume_oc, participants,
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
                 RETURNING id
                 """,
                 (
                     category["id"],
                     subcategory["id"],
+                    event["id"],
                     slug,
                     payload.title.strip(),
                     payload.summary.strip(),
@@ -3487,7 +3601,8 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar.")
             category = _upsert_category(cursor, payload.category)
             subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
-            _ensure_taxonomy_available(category, subcategory)
+            event = _upsert_event(cursor, subcategory["id"], payload.event)
+            _ensure_taxonomy_available(category, subcategory, event)
             new_slug = _slug_seed(payload.slug or slug)
             if new_slug != slug:
                 cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s AND id <> %s", (new_slug, row["id"]))
@@ -3523,6 +3638,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 UPDATE orynth_markets
                 SET category_id = %s,
                     subcategory_id = %s,
+                    event_id = %s,
                     slug = %s,
                     title = %s,
                     summary = %s,
@@ -3554,6 +3670,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 (
                     category["id"],
                     subcategory["id"],
+                    event["id"],
                     new_slug,
                     payload.title.strip(),
                     payload.summary.strip(),
@@ -3927,7 +4044,8 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sugestão já convertida.")
             category = _upsert_category(cursor, suggestion["category"])
             subcategory = _upsert_subcategory(cursor, category["id"], suggestion["subcategory"] or "Geral")
-            _ensure_taxonomy_available(category, subcategory)
+            event = _upsert_event(cursor, subcategory["id"], "Geral")
+            _ensure_taxonomy_available(category, subcategory, event)
             now = datetime.now(timezone.utc)
             close_at = now + timedelta(days=30)
             slug = _unique_slug(cursor, "orynth_markets", suggestion["question"])
@@ -3937,6 +4055,7 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                     kind=suggestion["kind"],
                     category=suggestion["category"],
                     subcategory=suggestion["subcategory"] or "Geral",
+                    event="Geral",
                     summary=suggestion["rationale"] or "Sugestão enviada por usuário para curadoria editorial.",
                     source=suggestion["suggested_source"],
                     resolution_criteria="A definir pela curadoria antes da publicação.",
@@ -3952,13 +4071,13 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
             cursor.execute(
                 """
                 INSERT INTO orynth_markets
-                    (category_id, subcategory_id, slug, title, summary, kind, status, status_label,
+                    (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
                      primary_outcome, primary_probability_exact, secondary_probability_exact, volume_oc, participants,
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 O₵', '0 usuários',
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 O₵', '0 usuários',
                         %s, %s, '', '', '#d8ece2', '', 'A definir pela curadoria antes da publicação.',
                         %s, 'America/Sao_Paulo', true, false, '', '', '', %s, %s, %s,
                         0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
@@ -3967,6 +4086,7 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                 (
                     category["id"],
                     subcategory["id"],
+                    event["id"],
                     slug,
                     suggestion["question"],
                     suggestion["rationale"] or "Sugestão enviada por usuário para curadoria editorial.",
@@ -4166,6 +4286,7 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             badge_type, rule_type = _validate_badge_payload(payload)
+            _validate_badge_taxonomy(cursor, payload)
             code = _slug_seed(payload.code or payload.name, max_length=80)
             cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
             if cursor.fetchone():
@@ -4195,8 +4316,8 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
             cursor.execute(
                 """
                 INSERT INTO orynth_badge_rules
-                    (badge_id, rule_type, threshold_value, category, subcategory, is_active, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, true, %s, %s)
+                    (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, true, %s, %s)
                 """,
                 (
                     badge_id,
@@ -4204,6 +4325,7 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
                     _decimal_probability(payload.threshold_value),
                     payload.category.strip(),
                     payload.subcategory.strip(),
+                    payload.event.strip(),
                     now,
                     now,
                 ),
@@ -4218,6 +4340,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             badge_type, rule_type = _validate_badge_payload(payload)
+            _validate_badge_taxonomy(cursor, payload)
             cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
             badge = cursor.fetchone()
             if not badge:
@@ -4255,6 +4378,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
                     threshold_value = %s,
                     category = %s,
                     subcategory = %s,
+                    event = %s,
                     is_active = true,
                     updated_at = %s
                 WHERE badge_id = %s
@@ -4264,6 +4388,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
                     _decimal_probability(payload.threshold_value),
                     payload.category.strip(),
                     payload.subcategory.strip(),
+                    payload.event.strip(),
                     now,
                     badge["id"],
                 ),
@@ -4301,7 +4426,7 @@ def admin_create_category(payload: AdminCategoryPayload, authorization: str = He
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            category = _upsert_category(cursor, payload.name, payload.slug)
+            category = _upsert_category(cursor, payload.name, payload.slug, payload.notice)
             _record_admin_event(cursor, staff["id"], "category.create", "category", category["slug"])
             return _taxonomy_response(cursor)
 
@@ -4320,8 +4445,8 @@ def admin_update_category(slug: str, payload: AdminCategoryPayload, authorizatio
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de categoria já está em uso.")
             cursor.execute(
-                "UPDATE orynth_market_categories SET name = %s, slug = %s WHERE id = %s",
-                (payload.name.strip(), new_slug, category["id"]),
+                "UPDATE orynth_market_categories SET name = %s, slug = %s, notice = %s WHERE id = %s",
+                (payload.name.strip(), new_slug, payload.notice.strip(), category["id"]),
             )
             _record_admin_event(cursor, staff["id"], "category.update", "category", new_slug)
             return _taxonomy_response(cursor)
@@ -4379,7 +4504,7 @@ def admin_create_subcategory(slug: str, payload: AdminSubcategoryPayload, author
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
-            subcategory = _upsert_subcategory(cursor, category["id"], payload.name, payload.slug)
+            subcategory = _upsert_subcategory(cursor, category["id"], payload.name, payload.slug, payload.notice)
             _record_admin_event(cursor, staff["id"], "subcategory.create", "subcategory", subcategory["slug"])
             return _taxonomy_response(cursor)
 
@@ -4411,8 +4536,8 @@ def admin_update_subcategory(slug: str, subcategory_slug: str, payload: AdminSub
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de subcategoria já está em uso.")
             cursor.execute(
-                "UPDATE orynth_market_subcategories SET name = %s, slug = %s WHERE id = %s",
-                (payload.name.strip(), new_slug, subcategory["id"]),
+                "UPDATE orynth_market_subcategories SET name = %s, slug = %s, notice = %s WHERE id = %s",
+                (payload.name.strip(), new_slug, payload.notice.strip(), subcategory["id"]),
             )
             _record_admin_event(cursor, staff["id"], "subcategory.update", "subcategory", new_slug)
             return _taxonomy_response(cursor)
@@ -4472,6 +4597,136 @@ def admin_unblock_subcategory(slug: str, subcategory_slug: str, payload: AdminMa
                 (subcategory["id"],),
             )
             _record_admin_event(cursor, staff["id"], "subcategory.unblock", "subcategory", subcategory_slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+def _taxonomy_category_and_subcategory(cursor, category_slug, subcategory_slug):
+    cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (category_slug,))
+    category = cursor.fetchone()
+    if not category:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
+    cursor.execute(
+        "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+        (category["id"], subcategory_slug),
+    )
+    subcategory = cursor.fetchone()
+    if not subcategory:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subcategoria não encontrada.")
+    return category, subcategory
+
+
+@app.post("/admin/categories/{slug}/subcategories/{subcategory_slug}/events", response_model=AdminTaxonomyResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_event(slug: str, subcategory_slug: str, payload: AdminEventPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
+            event = _upsert_event(cursor, subcategory["id"], payload.name, payload.slug, payload.notice)
+            _record_admin_event(cursor, staff["id"], "event.create", "event", event["slug"])
+            return _taxonomy_response(cursor)
+
+
+@app.patch("/admin/categories/{slug}/subcategories/{subcategory_slug}/events/{event_slug}", response_model=AdminTaxonomyResponse)
+def admin_update_event(slug: str, subcategory_slug: str, event_slug: str, payload: AdminEventPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
+            cursor.execute(
+                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                (subcategory["id"], event_slug),
+            )
+            event = cursor.fetchone()
+            if not event:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+            new_slug = _slug_seed(payload.slug or payload.name, max_length=100)
+            cursor.execute(
+                """
+                SELECT id FROM orynth_market_events
+                WHERE subcategory_id = %s AND slug = %s AND id <> %s
+                """,
+                (subcategory["id"], new_slug, event["id"]),
+            )
+            if cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de evento já está em uso.")
+            cursor.execute(
+                "UPDATE orynth_market_events SET name = %s, slug = %s, notice = %s WHERE id = %s",
+                (payload.name.strip(), new_slug, payload.notice.strip(), event["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "event.update", "event", new_slug)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/subcategories/{subcategory_slug}/events/{event_slug}/block", response_model=AdminTaxonomyResponse)
+def admin_block_event(slug: str, subcategory_slug: str, event_slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
+            cursor.execute(
+                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                (subcategory["id"], event_slug),
+            )
+            event = cursor.fetchone()
+            if not event:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_market_events
+                SET is_blocked = true, blocked_at = %s, blocked_reason = %s
+                WHERE id = %s
+                """,
+                (now, payload.note or "Bloqueado pelo Admin Ops.", event["id"]),
+            )
+            _record_admin_event(cursor, staff["id"], "event.block", "event", event_slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+@app.post("/admin/categories/{slug}/subcategories/{subcategory_slug}/events/{event_slug}/unblock", response_model=AdminTaxonomyResponse)
+def admin_unblock_event(slug: str, subcategory_slug: str, event_slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
+            cursor.execute(
+                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                (subcategory["id"], event_slug),
+            )
+            event = cursor.fetchone()
+            if not event:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+            cursor.execute(
+                """
+                UPDATE orynth_market_events
+                SET is_blocked = false, blocked_at = NULL, blocked_reason = ''
+                WHERE id = %s
+                """,
+                (event["id"],),
+            )
+            _record_admin_event(cursor, staff["id"], "event.unblock", "event", event_slug, payload.note)
+            return _taxonomy_response(cursor)
+
+
+@app.delete("/admin/categories/{slug}/subcategories/{subcategory_slug}/events/{event_slug}", response_model=AdminTaxonomyResponse)
+def admin_delete_event(slug: str, subcategory_slug: str, event_slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
+            cursor.execute(
+                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                (subcategory["id"], event_slug),
+            )
+            event = cursor.fetchone()
+            if not event:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
+            cursor.execute("SELECT COUNT(*) AS total FROM orynth_markets WHERE event_id = %s", (event["id"],))
+            linked_markets = cursor.fetchone()["total"]
+            if linked_markets:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Evento possui mercados vinculados.")
+            cursor.execute("DELETE FROM orynth_market_events WHERE id = %s", (event["id"],))
+            _record_admin_event(cursor, staff["id"], "event.delete", "event", event_slug)
             return _taxonomy_response(cursor)
 
 

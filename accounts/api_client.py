@@ -398,6 +398,26 @@ def admin_unblock_subcategory(token, category_slug, subcategory_slug, note=""):
     return _request("POST", f"/admin/categories/{category_slug}/subcategories/{subcategory_slug}/unblock", {"note": note}, token=token)
 
 
+def admin_create_event(token, category_slug, subcategory_slug, data):
+    return _request("POST", f"/admin/categories/{category_slug}/subcategories/{subcategory_slug}/events", data, token=token)
+
+
+def admin_update_event(token, category_slug, subcategory_slug, event_slug, data):
+    return _request("PATCH", f"/admin/categories/{category_slug}/subcategories/{subcategory_slug}/events/{event_slug}", data, token=token)
+
+
+def admin_block_event(token, category_slug, subcategory_slug, event_slug, note=""):
+    return _request("POST", f"/admin/categories/{category_slug}/subcategories/{subcategory_slug}/events/{event_slug}/block", {"note": note}, token=token)
+
+
+def admin_unblock_event(token, category_slug, subcategory_slug, event_slug, note=""):
+    return _request("POST", f"/admin/categories/{category_slug}/subcategories/{subcategory_slug}/events/{event_slug}/unblock", {"note": note}, token=token)
+
+
+def admin_delete_event(token, category_slug, subcategory_slug, event_slug):
+    return _request("DELETE", f"/admin/categories/{category_slug}/subcategories/{subcategory_slug}/events/{event_slug}", token=token)
+
+
 def update_me(token, data):
     return _request("PATCH", "/users/me", data, token=token)
 

@@ -27,6 +27,8 @@
 
 - `FEAT-COMMENT-001` usa `FEAT-AUTH-001` para autor/reação autenticada e staff em moderação.
 - `FEAT-COMMENT-001` usa `FEAT-MARKET-002` para vínculo com mercado e exposição em `MarketResponse.comments`.
+- `FEAT-MARKET-001` fornece taxonomia `categoria -> subcategoria -> evento` para criação/edição de mercados, cards públicos e filtros administrativos; avisos opcionais de categoria/subcategoria/evento alimentam somente detalhe/ticket público abaixo do critério de resolução, e eventos sem mercados vinculados podem ser excluídos no Admin Ops.
+- `FEAT-REP-001` consome a mesma taxonomia para recorte opcional de badges por categoria/subcategoria/evento; regras por evento só contam dados de domínio que carregam evento persistido.
 - Admin Ops consome comentários via FastAPI e pode degradar para Postgres local em desenvolvimento quando a API estiver desatualizada.
 - `FEAT-AUTH-001` e `FEAT-SUGGEST-001` compartilham validação reCAPTCHA server-side configurável por ambiente.
 - Django renderiza o widget v2 e encaminha `recaptcha_token`; FastAPI é a autoridade de validação para cadastro e envios guest.

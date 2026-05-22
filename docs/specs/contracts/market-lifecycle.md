@@ -26,9 +26,11 @@
 - Fechamento automático só é permitido para mercados `open` ou `scheduled`, com `auto_close_enabled=true`, `close_at` preenchido e vencido.
 - Fechamento automático deve registrar `market.lock` com ator nulo/sistema e nota operacional `Fechamento automático pelo daemon.`
 - Mercado sem campos operacionais mínimos não deve ser salvo pelo admin customizado.
-- Mercado novo ou editado não pode usar categoria/subcategoria bloqueada.
-- Categorias e subcategorias são preservadas fisicamente; bloqueio/desbloqueio administrativo é a forma operacional de retirar ou devolver uso.
-- Bloqueio de categoria/subcategoria deve registrar evento administrativo e manter motivo/data do bloqueio.
+- Mercado novo ou editado não pode usar categoria/subcategoria/evento bloqueado.
+- O evento pertence à subcategoria e é a terceira camada da taxonomia do mercado (`categoria -> subcategoria -> evento`).
+- Categoria, subcategoria e evento podem possuir aviso opcional (`notice`) para mercados sensíveis; os avisos são herdados por mercados vinculados e expostos como `category_notice`, `subcategory_notice` e `event_notice` no contrato público.
+- Categorias, subcategorias e eventos são preservados fisicamente; bloqueio/desbloqueio administrativo é a forma operacional de retirar ou devolver uso.
+- Bloqueio de categoria/subcategoria/evento deve registrar evento administrativo e manter motivo/data do bloqueio.
 - Apenas `open` aceita novas previsões.
 - A transição `open -> locked` pode ser manual ou automática conforme `auto_close_enabled`.
 - A transição `locked -> resolved` exige operador ou processo autorizado, evidência, justificativa, opção vencedora, data/hora efetiva e timezone de resolução.
@@ -57,5 +59,9 @@
 - `winning_option_id`
 - `resolution_note`
 - `category_id`
+- `category_notice`
 - `subcategory_id`
+- `subcategory_notice`
+- `event_id`
+- `event_notice`
 - estado de bloqueio da taxonomia no contrato administrativo
