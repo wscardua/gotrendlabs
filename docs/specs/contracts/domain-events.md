@@ -14,6 +14,9 @@ Definir eventos produzidos pelo domínio e consumidos por subsistemas como comun
 - `market.resolution_undone`
 - `feedback.submitted`
 - `suggestion.submitted`
+- `wallet.credited`
+- `badge.awarded`
+- `notification.created`
 
 ## Eventos administrativos persistidos
 
@@ -42,4 +45,6 @@ Esses eventos são registrados em `orynth_admin_events` nas primeiras fatias de 
 - Eventos devem ser estáveis o suficiente para consumo assíncrono.
 - Mudanças de shape exigem versionamento do payload ou compatibilidade explícita.
 - A primeira fatia de filas operacionais persiste sugestões e feedbacks, mas a emissão assíncrona dedicada destes eventos ainda é pendente.
-- A primeira fatia de comentários persiste moderação administrativa, mas `comment.created`, `comment.reacted` e eventos assíncronos equivalentes seguem pendentes até existir event bus dedicado.
+- A primeira fatia de comentários persiste moderação administrativa; ações sociais persistem notificações in-app em `orynth_user_notifications`, mas `comment.created`, `comment.reacted` e eventos assíncronos equivalentes seguem pendentes até existir event bus dedicado.
+- `market.locked`, `market.resolved`, `wallet.credited` e `badge.awarded` podem persistir notificações in-app para destinatários humanos diretamente afetados antes do event bus dedicado.
+- `notification.created` representa persistência de inbox in-app e usa `source_key` idempotente por destinatário, sem envio externo obrigatório.

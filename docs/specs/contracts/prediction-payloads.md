@@ -60,6 +60,8 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - `viewer_has_prediction`
 - `viewer_has_favorite`
 - `viewer_has_like`
+- `market_like_count`
+- `comment_count`
 - `sparkline_series`
 - `sparkline_path`
 - `sparkline_area_path`

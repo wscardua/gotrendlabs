@@ -40,7 +40,7 @@ from config.recaptcha import RecaptchaError
 from core.domain_client import get_domain_client
 from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
-from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback
+from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback, UserNotification
 from system_logs.models import SystemLog
 from system_logs.services import log_system_event
 
@@ -351,6 +351,94 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(second_unlike.status_code, 200)
         self.assertEqual(second_unlike.json()["market_like_count"], 1)
 
+    def test_market_comment_count_and_notifications_contract(self):
+        client = TestClient(app)
+        first = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Notification First",
+                "email": "notification-first@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        second = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Notification Second",
+                "email": "notification-second@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 201)
+        first_headers = {"Authorization": f"Bearer {first.json()['session']['token']}"}
+        second_headers = {"Authorization": f"Bearer {second.json()['session']['token']}"}
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = MarketOption.objects.get(market=market, label="SIM")
+        hidden_comment = MarketComment.objects.create(market=market, author_id=first.json()["user"]["id"], body="Oculto", status="hidden")
+        visible_comment = MarketComment.objects.create(market=market, author_id=first.json()["user"]["id"], body="Visível")
+
+        detail = client.get("/markets/openai-gpt6-2026")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["comment_count"], 1)
+        listing_market = next(item for item in client.get("/markets").json()["markets"] if item["slug"] == "openai-gpt6-2026")
+        self.assertEqual(listing_market["comment_count"], 1)
+        self.assertNotIn(hidden_comment.id, [item["id"] for item in detail.json()["comments"]])
+        self.assertIn(visible_comment.id, [item["id"] for item in detail.json()["comments"]])
+
+        first_prediction = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=first_headers,
+            json={"option_id": option.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(first_prediction.status_code, 201)
+        second_prediction = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=second_headers,
+            json={"option_id": option.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(second_prediction.status_code, 201)
+        self.assertTrue(UserNotification.objects.filter(recipient_id=first.json()["user"]["id"], event_type="market_prediction").exists())
+
+        liked = client.post("/markets/openai-gpt6-2026/like", headers=second_headers)
+        self.assertEqual(liked.status_code, 200)
+        liked_again = client.post("/markets/openai-gpt6-2026/like", headers=second_headers)
+        self.assertEqual(liked_again.status_code, 200)
+        self.assertEqual(
+            UserNotification.objects.filter(recipient_id=first.json()["user"]["id"], event_type="market_like").count(),
+            1,
+        )
+
+        comment = client.post(
+            "/markets/openai-gpt6-2026/comments",
+            headers=second_headers,
+            json={"body": "Comentário que notifica participantes."},
+        )
+        self.assertEqual(comment.status_code, 201)
+        self.assertTrue(UserNotification.objects.filter(recipient_id=first.json()["user"]["id"], event_type="market_comment").exists())
+
+        comment_like = client.post(f"/comments/{visible_comment.id}/like", headers=second_headers)
+        self.assertEqual(comment_like.status_code, 200)
+        self.assertEqual(
+            UserNotification.objects.filter(recipient_id=first.json()["user"]["id"], event_type="comment_like").count(),
+            1,
+        )
+        self.assertFalse(UserNotification.objects.filter(recipient_id=second.json()["user"]["id"], actor_id=second.json()["user"]["id"]).exists())
+
+        inbox = client.get("/users/me/notifications", headers=first_headers)
+        self.assertEqual(inbox.status_code, 200)
+        self.assertGreaterEqual(inbox.json()["unread_count"], 4)
+        self.assertGreaterEqual(len(inbox.json()["notifications"]), 4)
+
+        read_all = client.post("/users/me/notifications/read-all", headers=first_headers)
+        self.assertEqual(read_all.status_code, 200)
+        self.assertEqual(read_all.json()["unread_count"], 0)
+        self.assertFalse(UserNotification.objects.filter(recipient_id=first.json()["user"]["id"], is_read=False).exists())
+
     def test_market_popularity_api_tracks_views_and_shares(self):
         client = TestClient(app)
         initial = client.get("/markets/openai-gpt6-2026").json()
@@ -509,6 +597,15 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(self_credit.status_code, 200)
         self.assertEqual(self_credit.json()["wallet"]["available_oc"], 2025)
+        self.assertTrue(
+            UserNotification.objects.filter(
+                recipient_id=staff_id,
+                actor_id=staff_id,
+                event_type="wallet_credit",
+                metadata__entry_type="manual_adjustment",
+                metadata__amount=25,
+            ).exists()
+        )
         self.assertTrue(AdminEvent.objects.filter(action="user.wallet_adjust", entity_identifier=str(staff_id)).exists())
 
         self_action = client.post(
@@ -1995,6 +2092,9 @@ class BackendAuthAPITests(TransactionTestCase):
         loser_prediction = Prediction.objects.get(id=loser_prediction_response.json()["prediction_id"])
         lock_response = client.post("/admin/markets/resolucao-mvp-teste/lock", headers=staff_headers, json={"note": "fechar"})
         self.assertEqual(lock_response.status_code, 200)
+        lifecycle_market_id = Market.objects.get(slug="resolucao-mvp-teste").id
+        self.assertTrue(UserNotification.objects.filter(recipient_id=winner_register.json()["user"]["id"], event_type="market_locked", source_key=f"market_locked:{lifecycle_market_id}").exists())
+        self.assertTrue(UserNotification.objects.filter(recipient_id=loser_register.json()["user"]["id"], event_type="market_locked", source_key=f"market_locked:{lifecycle_market_id}").exists())
         audit_locked = client.get("/admin/markets/resolucao-mvp-teste/resolution-audit", headers=staff_headers)
         self.assertEqual(audit_locked.status_code, 422)
 
@@ -2029,6 +2129,8 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertIn("Fonte:", resolved.json()["resolution_note"])
         self.assertEqual(resolved.json()["resolution_timezone"], "America/Sao_Paulo")
         self.assertEqual(resolved.json()["resolved_at_label"], "18/05/2026 20:03 America/Sao_Paulo")
+        self.assertTrue(UserNotification.objects.filter(recipient_id=winner_register.json()["user"]["id"], event_type="market_resolved", source_key=f"market_resolved:{lifecycle_market_id}").exists())
+        self.assertTrue(UserNotification.objects.filter(recipient_id=loser_register.json()["user"]["id"], event_type="market_resolved", source_key=f"market_resolved:{lifecycle_market_id}").exists())
 
         winner_prediction.refresh_from_db()
         loser_prediction.refresh_from_db()
@@ -2039,6 +2141,14 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", direction="release", reference_id=str(winner_prediction.id), amount=100).exists())
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_payout", direction="credit", reference_id=str(winner_prediction.id), amount=winner_prediction.potential_payout - 100).exists())
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_loss", direction="settle", reference_id=str(loser_prediction.id), amount=100).exists())
+        self.assertTrue(
+            UserNotification.objects.filter(
+                recipient_id=winner_register.json()["user"]["id"],
+                event_type="wallet_credit",
+                metadata__entry_type="prediction_payout",
+                metadata__reference_id=str(winner_prediction.id),
+            ).exists()
+        )
 
         winner_balance = WalletBalance.objects.get(user__username="@resolutionwinner")
         loser_balance = WalletBalance.objects.get(user__username="@resolutionloser")
@@ -2057,6 +2167,8 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(UserReputation.objects.get(user__username="@resolutionloser").accuracy_indicator, "0%")
         self.assertTrue(UserBadgeAward.objects.filter(user__username="@resolutionwinner", badge__code="first_resolution").exists())
         self.assertTrue(UserBadgeAward.objects.filter(user__username="@resolutionloser", badge__code="first_resolution").exists())
+        self.assertTrue(UserNotification.objects.filter(recipient_id=winner_register.json()["user"]["id"], event_type="badge_awarded", source_key="badge_awarded:first_resolution").exists())
+        self.assertTrue(UserNotification.objects.filter(recipient_id=loser_register.json()["user"]["id"], event_type="badge_awarded", source_key="badge_awarded:first_resolution").exists())
         self.assertTrue(AdminEvent.objects.filter(action="market.resolve", entity_identifier="resolucao-mvp-teste").exists())
         audit_non_staff = client.get("/admin/markets/resolucao-mvp-teste/resolution-audit", headers=winner_headers)
         self.assertEqual(audit_non_staff.status_code, 403)
@@ -3465,6 +3577,7 @@ class WebSmokeTests(TransactionTestCase):
                     content = response.content.decode()
                     self.assertLess(content.index("Critério de resolução"), content.index("Avisos da negociação"))
                     self.assertContains(response, "detail-market-actions")
+                    self.assertContains(response, "detail-comment-count")
                     self.assertContains(response, "detail-like-button readonly")
                     self.assertContains(response, "detail-favorite-button readonly")
                     self.assertContains(response, "data-guest-favorite-button")
@@ -3731,6 +3844,7 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertContains(response, "Resultado oficial")
         self.assertContains(response, "detail-market-actions")
+        self.assertContains(response, "detail-comment-count")
         self.assertContains(response, "detail-like-button")
         self.assertContains(response, "detail-favorite-button")
         self.assertContains(response, "Criação")
@@ -3777,6 +3891,8 @@ class WebSmokeTests(TransactionTestCase):
         with patch("markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
         self.assertContains(response, "Comentário vindo da API.")
+        self.assertContains(response, "detail-comment-count")
+        self.assertContains(response, 'aria-label="1 comentário"')
         self.assertContains(response, "@analista")
         self.assertContains(response, 'aria-label="Curtir comentário"')
         self.assertContains(response, 'aria-label="Discordar do comentário"')
@@ -3893,6 +4009,77 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(auth_response, "market-like-button active")
         self.assertContains(auth_response, "Nenhum mercado com previsão sua ainda.")
 
+    def test_home_renders_comment_count_and_notification_bell(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="@notifyweb", email="notify-web@example.com", password="testpass123", first_name="Notify Web")
+        market_model = Market.objects.get(slug="openai-gpt6-2026")
+        UserNotification.objects.create(
+            recipient=user,
+            actor=user,
+            market=market_model,
+            event_type="market_comment",
+            source_key="web-notification",
+            title="Novo comentário em um mercado seu",
+            body="Alguém comentou em um mercado em que você fez previsão.",
+        )
+        UserNotification.objects.create(
+            recipient=user,
+            event_type="wallet_credit",
+            source_key="web-wallet-credit",
+            title="Créditos recebidos",
+            body="Você recebeu 250 créditos.",
+        )
+        UserNotification.objects.create(
+            recipient=user,
+            event_type="badge_awarded",
+            source_key="web-badge-awarded",
+            title="Badge recebida",
+            body="Você recebeu uma badge.",
+        )
+        market = {**get_domain_client().market("openai-gpt6-2026"), "comment_count": 3}
+
+        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+            guest_response = self.client.get(reverse("home"))
+        self.assertContains(guest_response, 'data-market-comments="3"')
+        self.assertContains(guest_response, "market-comment-count")
+        self.assertContains(guest_response, ">3</span>")
+        self.assertContains(guest_response, "guest-notification-button")
+        self.assertContains(guest_response, "Notificações disponíveis para usuários logados")
+        self.assertContains(guest_response, "disabled")
+        self.assertNotContains(guest_response, "notification-menu")
+
+        session = self.client.session
+        session[TOKEN_KEY] = "notify-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        with (
+            patch("core.views.get_markets", return_value=[market]),
+            patch("core.views.get_rankings", side_effect=AuthAPIError("off")),
+            patch("core.views.get_me", side_effect=AuthAPIError("off")),
+            patch("core.views.get_badges", side_effect=AuthAPIError("off")),
+            patch("core.context_processors.get_notifications", side_effect=AuthAPIError("off")),
+        ):
+            auth_response = self.client.get(reverse("home"))
+        self.assertContains(auth_response, "notification-button")
+        self.assertContains(auth_response, "notification-menu")
+        self.assertContains(auth_response, "Novo comentário em um mercado seu")
+        self.assertContains(auth_response, 'href="/wallet/"')
+        self.assertContains(auth_response, 'href="/badges/"')
+        self.assertContains(auth_response, "Marcar lidas")
+        self.assertContains(auth_response, "3 notificações não lidas")
+
+        with patch("core.views.mark_notifications_read", side_effect=AuthAPIError("off")):
+            response = self.client.post(reverse("notifications-read-all"), {"next": reverse("home")})
+        self.assertRedirects(response, reverse("home"))
+        self.assertFalse(UserNotification.objects.filter(recipient=user, is_read=False).exists())
+
     def test_home_prediction_filter_uses_local_prediction_flag_when_api_payload_is_stale(self):
         User = get_user_model()
         user = User.objects.create_user(username="@feedlocal", email="feed-local@example.com", password="testpass123")
@@ -3982,6 +4169,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertIn(".market-auth-toast", styles)
         self.assertIn("color: var(--red)", styles)
         self.assertIn(".detail-market-actions", styles)
+        self.assertIn(".detail-comment-count", styles)
         self.assertIn(".detail-like-button", styles)
         self.assertIn(".market-load-more", styles)
         self.assertIn(".market-load-more[hidden]", styles)
@@ -5649,7 +5837,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "orynth.js?v=20260522-guest-favorite")
+            self.assertContains(response, "orynth.js?v=20260523-social-notifications")
 
         posted_market = {
             **api_market,

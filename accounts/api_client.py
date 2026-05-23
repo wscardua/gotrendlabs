@@ -114,6 +114,14 @@ def get_activity(token):
     return _request("GET", "/users/me/activity", token=token)
 
 
+def get_notifications(token):
+    return _request("GET", "/users/me/notifications", token=token)
+
+
+def mark_notifications_read(token):
+    return _request("POST", "/users/me/notifications/read-all", token=token)
+
+
 def get_rankings(**filters):
     query = urlencode({key: value for key, value in filters.items() if value})
     path = f"/rankings?{query}" if query else "/rankings"

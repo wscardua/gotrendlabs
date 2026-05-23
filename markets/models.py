@@ -270,6 +270,39 @@ class CommentReaction(models.Model):
         ]
 
 
+class UserNotification(models.Model):
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="notifications")
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="triggered_notifications",
+    )
+    market = models.ForeignKey(Market, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")
+    comment = models.ForeignKey(MarketComment, on_delete=models.CASCADE, null=True, blank=True, related_name="notifications")
+    event_type = models.CharField(max_length=40)
+    source_key = models.CharField(max_length=160)
+    title = models.CharField(max_length=160)
+    body = models.TextField(blank=True)
+    is_read = models.BooleanField(default=False, db_index=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "orynth_user_notifications"
+        ordering = ["-created_at", "-id"]
+        indexes = [
+            models.Index(fields=["recipient", "is_read", "-created_at"], name="orynth_notif_rec_7f17_idx"),
+            models.Index(fields=["market", "-created_at"], name="orynth_notif_mkt_74d6_idx"),
+            models.Index(fields=["comment", "-created_at"], name="orynth_notif_cmt_6c58_idx"),
+        ]
+        constraints = [
+            models.UniqueConstraint(fields=["recipient", "source_key"], name="uniq_notification_recipient_source"),
+        ]
+
+
 class AdminEvent(models.Model):
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="admin_events")
     action = models.CharField(max_length=80)

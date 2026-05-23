@@ -23,6 +23,17 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação resultante
 ```
 
+## FEAT-NOTIFY-001
+
+### 2026-05-23 - v0.2
+- `orynth_user_notifications` passou a persistir inbox in-app com idempotência por destinatário e `source_key`
+- FastAPI passou a expor `GET /users/me/notifications` e `POST /users/me/notifications/read-all`
+- ações sociais notificam participantes humanos de mercados em que fizeram previsão: nova previsão, curtida de mercado, comentário em mercado e curtida em comentário próprio
+- eventos sistêmicos notificam o beneficiário direto: crédito recebido, mercado participado fechado/resolvido e badge recebida
+- home/feed e detalhe do mercado passaram a exibir `comment_count` público de comentários `visible`
+- Django renderiza sino com contador/dropdown, botão desabilitado para visitantes, fallback local read-only em desenvolvimento e links contextuais para mercado, comentários, wallet e badges
+- status de implementação: `parcial`
+
 ## FEAT-OPSLOG-001
 
 ### 2026-05-22 - v0.9

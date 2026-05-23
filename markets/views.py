@@ -214,6 +214,8 @@ def _detail_context(request, slug, market, **extra):
         if not comments:
             comments = _local_comments(slug, user.get("id"))
         market = {**market, "comments": comments}
+    if "comment_count" not in market or market.get("comment_count") is None:
+        market = {**market, "comment_count": len(market.get("comments", []))}
     context = {
         "market": market,
         "is_guest": not is_authenticated(request),

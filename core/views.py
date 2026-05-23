@@ -7,19 +7,20 @@ from django.http import HttpResponse, JsonResponse
 from django.db import DatabaseError
 from django.db.models import F
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, get_rankings, track_market_share
+from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, get_rankings, mark_notifications_read, track_market_share
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, is_authenticated
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from core.domain_client import get_domain_client, local_market, local_markets, local_stats
 from core.platform_config import load_platform_config
 from core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
-from markets.models import Market, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback
+from markets.models import Market, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
 from accounts.models import UserBadgeAward, UserProfile, UserReputation
 
 
@@ -111,6 +112,7 @@ def _hydrate_market_visuals(markets):
             "viewer_has_prediction": bool(market.get("viewer_has_prediction")),
             "viewer_has_favorite": bool(market.get("viewer_has_favorite")),
             "viewer_has_like": bool(market.get("viewer_has_like")),
+            "comment_count": int(market.get("comment_count") or 0),
         }
         for market in hydrated
     ]
@@ -337,6 +339,21 @@ def home(request):
             "user_badges": user_badges,
         },
     )
+
+
+@require_POST
+@api_login_required
+def notifications_read_all(request):
+    try:
+        mark_notifications_read(auth_token(request))
+    except AuthAPIError:
+        try:
+            UserNotification.objects.filter(recipient_id=(auth_user(request) or {}).get("id"), is_read=False).update(is_read=True, read_at=timezone.now())
+        except DatabaseError:
+            pass
+    if request.headers.get("x-requested-with") == "XMLHttpRequest":
+        return JsonResponse({"ok": True})
+    return redirect(request.POST.get("next") or reverse("home"))
 
 
 def concepts(request):

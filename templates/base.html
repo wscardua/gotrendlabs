@@ -5,10 +5,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Orynth Trends{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260522-guest-favorite">
+  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260523-social-notifications">
   {% block extra_head %}{% endblock %}
   <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
-  <script src="{% static 'js/orynth.js' %}?v=20260522-guest-favorite" defer></script>
+  <script src="{% static 'js/orynth.js' %}?v=20260523-social-notifications" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -23,10 +23,41 @@
       <div class="nav-actions">
         <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button>
         {% if is_guest %}
+          <button class="notification-button guest-notification-button" type="button" disabled aria-label="Notificações disponíveis para usuários logados" title="Notificações disponíveis para usuários logados">
+            <span aria-hidden="true">🔔</span>
+          </button>
           <a class="btn small ghost" href="{% url 'login' %}">Entrar</a>
           <a class="btn small primary" href="{% url 'register' %}">Criar conta</a>
         {% else %}
           <span class="language">{{ viewer.language }}</span>
+          <div class="notification-chip">
+            <button class="notification-button" type="button" aria-label="{% if notifications.unread_count %}{{ notifications.unread_count }} notificações não lidas{% else %}Notificações{% endif %}" title="Notificações">
+              <span aria-hidden="true">🔔</span>
+              {% if notifications.unread_count %}<strong>{{ notifications.unread_count }}</strong>{% endif %}
+            </button>
+            <div class="notification-menu" aria-label="Notificações recentes">
+              <div class="notification-menu-head">
+                <strong>Notificações</strong>
+                {% if notifications.unread_count %}
+                  <form method="post" action="{% url 'notifications-read-all' %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                    <button type="submit">Marcar lidas</button>
+                  </form>
+                {% endif %}
+              </div>
+              <div class="notification-list">
+                {% for notification in notifications.notifications %}
+                  <a class="notification-item{% if not notification.is_read %} unread{% endif %}" href="{% if notification.event_type == 'badge_awarded' %}{% url 'badges' %}{% elif notification.event_type == 'wallet_credit' %}{% url 'wallet' %}{% elif notification.market_slug %}{% url 'market-detail' notification.market_slug %}{% if notification.comment_id %}#comments{% endif %}{% else %}{% url 'home' %}{% endif %}">
+                    <span class="notification-dot" aria-hidden="true"></span>
+                    <span><strong>{{ notification.title }}</strong><small>{{ notification.body }}</small></span>
+                  </a>
+                {% empty %}
+                  <p class="notification-empty">Sem novidades por enquanto.</p>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
           <div class="user-chip">
             <button class="user-button" type="button">
               <span class="avatar">{{ viewer.initials }}</span>

@@ -2,7 +2,7 @@
 
 ## Responsabilidades
 
-- Persistir usuários, perfis, mercados, opções, previsões, ledger da wallet, comentários, sugestões, decisões de moderação e histórico operacional.
+- Persistir usuários, perfis, mercados, opções, previsões, ledger da wallet, comentários, notificações in-app, sugestões, decisões de moderação e histórico operacional.
 - Garantir integridade relacional e rastreabilidade temporal.
 - Suportar consultas transacionais e relatórios administrativos.
 
@@ -32,6 +32,8 @@
 - `orynth_ai_agents` liga um agente oficial a um usuário `is_bot=true` e guarda persona/estilo editáveis sem substituir o template seguro de código.
 - `orynth_ai_agent_actions` guarda auditoria de ações IA com status, motivo, payload resumido, referência a mercado/comentário/previsão e hash/versão do prompt.
 - Métricas públicas devem conseguir distinguir participantes/volume humanos e bots; rótulos legados preservam leitura humana.
+- Notificações in-app ficam em `orynth_user_notifications`, com destinatário obrigatório, ator/mercado/comentário opcionais, `event_type`, `source_key`, título, corpo, `metadata`, estado de leitura e constraint única por `(recipient_id, source_key)`.
+- `source_key` deve representar a origem idempotente do evento por destinatário, permitindo uma notificação por usuário afetado sem duplicar ações repetidas.
 
 ## Não Responsabilidades
 

@@ -180,6 +180,149 @@ textarea {
   position: relative;
 }
 
+.notification-chip {
+  position: relative;
+}
+
+.notification-button {
+  width: 38px;
+  height: 38px;
+  display: inline-grid;
+  place-items: center;
+  position: relative;
+  border: 1px solid rgba(25, 29, 30, 0.12);
+  border-radius: 50%;
+  background: var(--panel);
+  color: var(--ink);
+  cursor: pointer;
+  box-shadow: 0 8px 22px rgba(25, 29, 30, 0.08);
+}
+
+.guest-notification-button {
+  opacity: 0.45;
+  filter: grayscale(1);
+  cursor: not-allowed;
+}
+
+.guest-notification-button:hover,
+.guest-notification-button:disabled {
+  opacity: 0.45;
+}
+
+.notification-button strong {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  border-radius: 999px;
+  background: #b7493d;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+.notification-menu {
+  position: absolute;
+  right: 0;
+  top: 48px;
+  width: min(340px, calc(100vw - 24px));
+  display: none;
+  padding: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 253, 247, 0.98);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  z-index: 35;
+}
+
+.notification-chip:hover .notification-menu,
+.notification-chip:focus-within .notification-menu {
+  display: block;
+}
+
+.notification-menu-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 4px 8px;
+}
+
+.notification-menu-head strong {
+  font-size: 14px;
+}
+
+.notification-menu-head form {
+  margin: 0;
+}
+
+.notification-menu-head button {
+  border: 0;
+  background: transparent;
+  color: var(--blue);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.notification-list {
+  display: grid;
+  gap: 4px;
+}
+
+.notification-item {
+  display: grid;
+  grid-template-columns: 10px 1fr;
+  gap: 9px;
+  padding: 10px;
+  border-radius: 12px;
+  color: #313839;
+}
+
+.notification-item:hover {
+  background: #f0eadc;
+}
+
+.notification-item strong,
+.notification-item small {
+  display: block;
+}
+
+.notification-item strong {
+  font-size: 13px;
+}
+
+.notification-item small {
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.notification-item.unread .notification-dot {
+  background: var(--blue);
+}
+
+.notification-empty {
+  margin: 0;
+  padding: 12px 10px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .user-button {
   border: 1px solid rgba(25, 29, 30, 0.12);
   background: var(--panel);
@@ -847,6 +990,31 @@ h3 {
   margin: 0;
 }
 
+.market-comment-count {
+  min-width: 44px;
+  height: 34px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px solid rgba(25, 29, 30, 0.14);
+  border-radius: 999px;
+  background: rgba(255, 253, 247, 0.72);
+  color: #465052;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1;
+  transition: border-color 160ms ease, color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.market-comment-count:hover {
+  border-color: rgba(43, 110, 160, 0.28);
+  color: #174f7a;
+  background: rgba(232, 242, 250, 0.76);
+  transform: translateY(-1px);
+}
+
 .market-card-actions {
   display: inline-flex;
   align-items: center;
@@ -1190,6 +1358,7 @@ h3 {
   gap: 8px;
 }
 
+.detail-comment-count,
 .detail-like-button,
 .detail-favorite-button {
   width: 42px;
@@ -1198,6 +1367,7 @@ h3 {
   box-shadow: 0 12px 28px rgba(25, 29, 30, 0.08);
 }
 
+.detail-comment-count,
 .detail-like-button {
   min-width: 54px;
 }
@@ -6413,6 +6583,32 @@ body[data-theme="dark"] .market-like-button.readonly:hover {
   background: rgba(89, 164, 220, 0.16);
   border-color: rgba(155, 199, 238, 0.34);
   color: #eff8ff;
+}
+
+body[data-theme="dark"] .market-comment-count,
+body[data-theme="dark"] .notification-button {
+  background: rgba(18, 25, 22, 0.72);
+  border-color: rgba(155, 199, 238, 0.22);
+  color: #d9efff;
+}
+
+body[data-theme="dark"] .market-comment-count:hover {
+  background: rgba(89, 164, 220, 0.16);
+  border-color: rgba(155, 199, 238, 0.34);
+  color: #eff8ff;
+}
+
+body[data-theme="dark"] .notification-menu {
+  background: rgba(18, 25, 22, 0.98);
+  border-color: rgba(218, 230, 219, 0.20);
+}
+
+body[data-theme="dark"] .notification-item {
+  color: #ecf4ee;
+}
+
+body[data-theme="dark"] .notification-item:hover {
+  background: rgba(218, 230, 219, 0.08);
 }
 
 body[data-theme="dark"] .market-auth-toast {

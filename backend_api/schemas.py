@@ -389,6 +389,27 @@ class ActivityResponse(BaseModel):
     occurred_at: str
 
 
+class NotificationResponse(BaseModel):
+    id: int
+    event_type: str
+    title: str
+    body: str = ""
+    is_read: bool = False
+    actor_handle: str = ""
+    actor_display_name: str = ""
+    market_slug: str = ""
+    market_title: str = ""
+    comment_id: Optional[int] = None
+    metadata: dict = Field(default_factory=dict)
+    created_at: str
+    created_at_label: str = ""
+
+
+class NotificationListResponse(BaseModel):
+    unread_count: int = 0
+    notifications: List[NotificationResponse] = Field(default_factory=list)
+
+
 class MarketOptionResponse(BaseModel):
     id: int
     label: str
@@ -465,6 +486,7 @@ class MarketResponse(BaseModel):
     resolution_note: str = ""
     resolution_type: str = ""
     market_like_count: int = 0
+    comment_count: int = 0
     view_count: int = 0
     share_count: int = 0
     viewer_has_prediction: bool = False

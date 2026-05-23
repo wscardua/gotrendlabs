@@ -38,6 +38,7 @@ Exibir mercados relevantes com filtros e informações suficientes para descober
 - destaque de probabilidade agregada
 - mini gráfico de evolução do consenso por opção
 - contador compacto de curtidas no card do mercado
+- contador compacto de comentários visíveis no card do mercado
 - navegação para detalhe
 - métricas públicas de economia educativa na home
 
@@ -58,6 +59,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - cards exibem CTA `Prever` para mercados abertos, incluindo múltipla escolha
 - títulos dos cards de mercado também navegam para o detalhe, reduzindo atrito além do CTA principal
 - cards exibem curtidas reais do mercado como sinal social discreto
+- cards exibem comentários visíveis como sinal social discreto para visitantes e usuários autenticados
 - usuário autenticado pode curtir/descurtir cada mercado uma única vez; a ação atualiza o contador sem recarregar a página
 - visitante vê o contador de curtidas no mesmo slot visual, mas ao tentar curtir recebe aviso de que a ação exige login
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
@@ -111,6 +113,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `POST /markets/{slug}/like` e `DELETE /markets/{slug}/like` permitem curtir/descurtir de forma idempotente
 - `MarketResponse` expõe `category`, `subcategory`, `event`, `category_notice`, `subcategory_notice` e `event_notice`; cards e detalhe público devem apresentar a trilha `categoria / subcategoria / evento`, enquanto avisos de categoria/subcategoria/evento aparecem apenas no detalhe/ticket, abaixo do critério de resolução, quando preenchidos
 - `MarketResponse` expõe `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para seleção visual, destaque e ordenação client-side
+- `MarketResponse` expõe `comment_count` com a contagem de comentários `visible` para leitura pública nos cards
 - Cards da home/feed devem comunicar prazo restante por texto (`closes_in`) e por indicador visual derivado de `created_at`/`close_at`, sem reutilizar probabilidade como progresso de tempo.
 - O indicador de prazo deve hidratar estados visuais `open`, `soon`, `urgent` e `closed`, atualizar periodicamente enquanto a página estiver aberta e manter texto legível para não depender só de cor.
 - `MarketResponse` expõe `view_count` e `share_count` como métricas de popularidade usadas no Admin Ops e na seleção pública de destaques/onboarding
@@ -144,6 +147,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `orynth_market_favorites` guarda favoritos pessoais com unicidade por usuário e mercado
 - `orynth_market_likes` guarda curtidas reais do mercado com unicidade por usuário e mercado
 - `market_like_count` derivado de curtidas reais em `orynth_market_likes`; likes em comentários não alimentam esse contador
+- `comment_count` derivado de comentários com `status=visible`; comentários ocultos por moderação não alimentam esse contador
 - `created_at` e `close_at` para ordenações rápidas
 - `view_count` e `share_count` para ordenações operacionais no Admin Ops
 - série visual derivada de previsões para mini gráfico do card
@@ -174,6 +178,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - regressão para métrica de previsões totais baseada em previsões persistidas reais
 - regressão para métricas públicas de `O₵ distribuídas` e `O₵ movimentadas` na home e no contrato `/stats`, garantindo exclusão de créditos de operadores na distribuição
 - renderização de `data-*` de ordenação e contador de curtidas no card
+- renderização do contador de comentários visíveis no card para visitante e usuário autenticado
 - regressão para título do card como link para o detalhe do mercado
 - regressão para contadores operacionais de visualizações/compartilhamentos expostos no contrato e ocultos do feed público
 - regressão para ordenação administrativa por mercados mais visualizados e mais compartilhados

@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+import json
 
 
 class BadgeAwardEngine:
@@ -145,7 +146,36 @@ class BadgeAwardEngine:
             """,
             (user_id, badge["id"], datetime.now(timezone.utc), reason_snapshot or f"Conquista: {badge['name']}"),
         )
-        return bool(cursor.fetchone())
+        award = cursor.fetchone()
+        if not award:
+            return False
+        cls._notify_badge_awarded(cursor, user_id, code, badge["name"], award["id"])
+        return True
+
+    @classmethod
+    def _notify_badge_awarded(cls, cursor, user_id, code, badge_name, award_id):
+        cursor.execute("SELECT is_bot FROM orynth_users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        user_is_bot = user["is_bot"] if isinstance(user, dict) else user[0] if user else False
+        if not user or user_is_bot:
+            return
+        cursor.execute(
+            """
+            INSERT INTO orynth_user_notifications
+                (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
+            VALUES (%s, NULL, NULL, NULL, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
+            ON CONFLICT (recipient_id, source_key) DO NOTHING
+            """,
+            (
+                user_id,
+                "badge_awarded",
+                f"badge_awarded:{code}",
+                "Badge recebida",
+                f"Você recebeu a badge {badge_name}.",
+                json.dumps({"badge_code": code, "badge_name": badge_name, "award_id": award_id}),
+                datetime.now(timezone.utc),
+            ),
+        )
 
     @classmethod
     def _prediction_rule_count(cls, cursor, user_id, rule_type, category="", subcategory="", event=""):
