@@ -1,5 +1,15 @@
 # Feature Changelog
 
+## 2026-05-23 — FEAT-AIAGENT-001 agentes IA oficiais
+
+- Criado app `agents` com agentes oficiais vinculados a usuários `is_bot=true` e auditoria de ações IA.
+- Configuração operacional de IA foi adicionada a `orynth_site_config`, mantendo `OPENAI_API_KEY` fora do banco.
+- Daemon passou a executar ciclo IA isolado e a registrar resumo de comentários, previsões, skips e erros.
+- Comentários de bot expõem selo `IA oficial`; rankings, badges e reputação pública excluem bots.
+- Mercado sem participação humana passa a ser cancelado no fechamento automático, com refund de previsões abertas.
+- Admin Ops passou a oferecer gestão visual de agentes, edição de parâmetros IA, saúde técnica, auditoria paginada com filtro por motivo e detalhe operacional das ações.
+- Browse administrativo de mercados passou a permitir busca textual, exibir participantes e o editor passou a mostrar participantes humanos/bots/total operacional em seção própria.
+
 Use este arquivo para registrar mudanças relevantes por feature, com foco em impacto técnico e rastreabilidade para a IA.
 
 ## Modelo de entrada

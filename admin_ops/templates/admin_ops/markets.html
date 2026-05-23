@@ -11,21 +11,31 @@
       <a class="btn primary" href="{% url 'admin-ops-market-new' %}">Criar mercado</a>
     </div>
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+    <form class="admin-filter-form market-search-form" method="get" role="search">
+      {% if active_status %}<input type="hidden" name="status" value="{{ active_status }}">{% endif %}
+      <input type="hidden" name="order" value="{{ active_order }}">
+      <label class="field">
+        <span>Buscar mercado</span>
+        <input type="search" name="q" value="{{ search_query }}" placeholder="Digite parte do nome, slug ou resumo">
+      </label>
+      <button class="btn small" type="submit">Filtrar</button>
+      {% if search_query %}<a class="btn small ghost" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order={{ active_order }}">Limpar</a>{% endif %}
+    </form>
     <div class="filters">
-      <a class="filter {% if not active_status %}active{% endif %}" href="{% url 'admin-ops-markets' %}?order={{ active_order }}">Todos</a>
-      <a class="filter {% if active_status == 'open' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=open&order={{ active_order }}">Abertos {{ market_data.counts.open|default:0 }}</a>
-      <a class="filter {% if active_status == 'draft' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=draft&order={{ active_order }}">Rascunhos {{ market_data.counts.draft|default:0 }}</a>
-      <a class="filter {% if active_status == 'locked' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=locked&order={{ active_order }}">Fechados {{ market_data.counts.locked|default:0 }}</a>
-      <a class="filter {% if active_status == 'canceled' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=canceled&order={{ active_order }}">Cancelados {{ market_data.counts.canceled|default:0 }}</a>
+      <a class="filter {% if not active_status %}active{% endif %}" href="{% url 'admin-ops-markets' %}?order={{ active_order }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Todos</a>
+      <a class="filter {% if active_status == 'open' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=open&order={{ active_order }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Abertos {{ market_data.counts.open|default:0 }}</a>
+      <a class="filter {% if active_status == 'draft' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=draft&order={{ active_order }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Rascunhos {{ market_data.counts.draft|default:0 }}</a>
+      <a class="filter {% if active_status == 'locked' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=locked&order={{ active_order }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Fechados {{ market_data.counts.locked|default:0 }}</a>
+      <a class="filter {% if active_status == 'canceled' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?status=canceled&order={{ active_order }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Cancelados {{ market_data.counts.canceled|default:0 }}</a>
     </div>
     <div class="filters metric-filters" aria-label="Ordenar por popularidade">
       <span class="filter-label">Ordenar</span>
-      <a class="filter {% if active_order == 'display' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=display">Padrão</a>
-      <a class="filter {% if active_order == 'views_desc' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=views_desc">Mais visualizados</a>
-      <a class="filter {% if active_order == 'shares_desc' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=shares_desc">Mais compartilhados</a>
+      <a class="filter {% if active_order == 'display' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=display{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Padrão</a>
+      <a class="filter {% if active_order == 'views_desc' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=views_desc{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Mais visualizados</a>
+      <a class="filter {% if active_order == 'shares_desc' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=shares_desc{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Mais compartilhados</a>
     </div>
     <table class="table">
-      <tr><th>Mercado</th><th>Status</th><th>Destaque</th><th>Tipo</th><th>Categoria</th><th>Popularidade</th><th>Ações</th></tr>
+      <tr><th>Mercado</th><th>Status</th><th>Destaque</th><th>Tipo</th><th>Categoria</th><th>Participantes</th><th>Popularidade</th><th>Ações</th></tr>
       {% for market in market_data.markets %}
         <tr>
           <td>{{ market.title }}</td>
@@ -33,6 +43,10 @@
           <td>{% if market.is_featured %}<span class="tag hot">Destaque</span>{% else %}<span class="tag">Não</span>{% endif %}</td>
           <td>{% if market.kind == "binary" %}Sim/Não{% else %}Múltipla escolha{% endif %}</td>
           <td>{{ market.category }} / {{ market.subcategory }} / {{ market.event }}</td>
+          <td>
+            <strong>{{ market.participants|default:"0 participantes" }}</strong>
+            {% if market.bot_participants %}<br><small class="muted">{{ market.bot_participants }} bot oficial</small>{% endif %}
+          </td>
           <td>
             <div class="popularity-metrics" aria-label="{{ market.view_count|default:0 }} visualizações e {{ market.share_count|default:0 }} compartilhamentos">
               <span class="popularity-chip views"><small>Views</small><strong>{{ market.view_count|default:0 }}</strong></span>
@@ -42,7 +56,7 @@
           <td><a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a></td>
         </tr>
       {% empty %}
-        <tr><td colspan="7">Nenhum mercado cadastrado.</td></tr>
+        <tr><td colspan="8">Nenhum mercado cadastrado.</td></tr>
       {% endfor %}
     </table>
     {% include "admin_ops/partials/load_more.html" with pagination=market_pagination label="Mais mercados" %}

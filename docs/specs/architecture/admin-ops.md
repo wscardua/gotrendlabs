@@ -75,9 +75,11 @@
 - Campos obrigatórios devem ser marcados visualmente no formulário e ações concluídas devem gerar feedback de sucesso para o operador.
 - Browse de mercados administrativos filtra por status via query string e mantém contadores globais por status.
 - Browse de mercados administrativos exibe `view_count` e `share_count` como indicadores compactos de popularidade operacional e permite ordenar por padrão, mais visualizados ou mais compartilhados.
+- Browse de mercados administrativos permite busca textual por parte do título/slug/resumo, exibe participantes humanos/bots/total operacional e preserva filtros ao carregar mais resultados.
 - Browses principais de usuários, mercados, resolução, filas e logs usam `Carregar mais` em blocos cumulativos de 10 itens, preservando filtros aplicados.
 - Browse de mercados administrativos deve degradar para leitura local em Postgres quando a FastAPI administrativa estiver indisponível ou retornar erro transitório, evitando bloquear a operação de visualização.
 - Browse de mercados administrativos deve manter a ação primária focada em `Editar/visualizar`; acesso à página pública fica no editor do mercado, não na tabela de listagem.
+- Editor administrativo de mercado exibe seção read-only de participantes com previsões reais registradas, separando humanos, bots oficiais e total operacional, sem recalcular regras econômicas na camada Django.
 - Gestão administrativa de usuários usa contratos staff da FastAPI para listagem, busca, detalhe operacional, desativação/reativação, revogação de sessões, marcação `bot` e ajuste manual de wallet.
 - Browse administrativo de usuários permite filtrar por status/papel/bot, buscar por email/handle/nome e ordenar por criação, último login, saldo ou reputação.
 - Detalhe administrativo de usuário pode exibir dados privados para staff, incluindo perfil, wallet, ledger recente, reputação, previsões, comentários, filas, badges adquiridas, sessões e eventos.
@@ -110,4 +112,8 @@
 - Config operacional fica disponível no Admin Ops logo após Dashboard e permite controlar modo manutenção e parâmetros SMTP.
 - Modo manutenção é persistido em arquivo runtime fora do banco para desviar acesso público para página estática de manutenção mesmo quando a conexão com PostgreSQL/FastAPI estiver indisponível.
 - Config SMTP persiste parâmetros não sensíveis no banco; senha/API key ficam exclusivamente em variáveis de ambiente ou secret manager.
+- Admin Ops possui área de Agentes IA para listar, criar/editar agentes oficiais, revisar auditoria de ações e acompanhar saúde técnica.
+- Config operacional permite editar flags, provider/base URL/modelos, limites, cooldowns, timeout/retries, pausa global e motivo dos agentes IA; `OPENAI_API_KEY` é exibida apenas como presente/ausente.
+- Dashboard exibe saúde dos agentes IA com último ciclo, último sucesso, erro recente, ações 24h e estado das flags principais.
+- Auditoria de agentes IA usa blocos de 10 ações com `Carregar mais`, filtros por agente, mercado, tipo, status, período e motivo, além de tela de detalhe focada em contexto, payload resumido, hash/versão de prompt e vínculos com comentário/previsão.
 - Denúncias por usuários, moderação avançada, comunicações assíncronas de resolução, gestão de operadores e ajuste manual de reputação permanecem fora desta fatia.

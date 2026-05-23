@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "wallet",
     "profiles",
     "admin_ops",
+    "agents",
     "system_logs",
 ]
 
@@ -122,6 +123,7 @@ SYSTEM_LOG_RETENTION_DAYS = int(os.environ.get("SYSTEM_LOG_RETENTION_DAYS", "90"
 ORYNTH_RUNTIME_CONFIG_PATH = os.environ.get("ORYNTH_RUNTIME_CONFIG_PATH", str(BASE_DIR / ".runtime" / "platform_config.json"))
 ORYNTH_SMTP_PASSWORD = os.environ.get("ORYNTH_SMTP_PASSWORD", "")
 ORYNTH_SMTP_API_KEY = os.environ.get("ORYNTH_SMTP_API_KEY", "")
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 LOGGING = {
     "version": 1,

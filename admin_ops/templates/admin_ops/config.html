@@ -30,6 +30,14 @@
           <span>Daemon</span>
           <strong>{{ site_config.daemon_stale_after_minutes }}/{{ site_config.daemon_missing_after_minutes }} min</strong>
         </div>
+        <div>
+          <span>Agentes IA</span>
+          <strong>{% if site_config.ai_agents_enabled %}Ativos{% else %}Inativos{% endif %}</strong>
+        </div>
+        <div>
+          <span>OpenAI</span>
+          <strong>{% if openai_secret_configured %}Configurada{% else %}Ausente{% endif %}</strong>
+        </div>
       </div>
     </div>
 
@@ -40,6 +48,7 @@
     {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if economy_form.non_field_errors %}<div class="notice red">{{ economy_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if daemon_form.non_field_errors %}<div class="notice red">{{ daemon_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if ai_form.non_field_errors %}<div class="notice red">{{ ai_form.non_field_errors|join:", " }}</div>{% endif %}
 
     <form class="admin-config-surface" method="post">
       {% csrf_token %}
@@ -191,6 +200,68 @@
               {{ email_form.default_reply_to_email }}
               {% if email_form.default_reply_to_email.errors %}<small>{{ email_form.default_reply_to_email.errors|join:", " }}</small>{% endif %}
             </label>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Agentes IA oficiais</span>
+            <h2>LLM, limites e kill switch</h2>
+            <p>Parâmetros editáveis ficam no banco. A chave OpenAI permanece exclusivamente no ambiente.</p>
+          </div>
+          <span class="config-status {% if site_config.ai_agents_enabled %}is-on{% endif %}">
+            {% if site_config.ai_agents_enabled %}Ativo{% else %}Inativo{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <div class="config-secret-card">
+            <span>Como funciona</span>
+            <strong>Agentes IA oficiais nunca simulam pessoas.</strong>
+            <small>“Agentes” liga o ciclo no daemon. “Comentários” permite análises públicas com selo IA oficial, inclusive em mercados sem humanos. “Previsões bot” permite stakes reais apenas por usuários is_bot=true, nunca com 0 humanos e sempre respeitando limites, saldo e auditoria.</small>
+          </div>
+          <div class="config-rules-card">
+            <span>Regras dos agentes</span>
+            <ul>
+              <li>Todo agente usa usuário oficial com <code>is_bot=true</code> e deve aparecer com selo IA oficial.</li>
+              <li>Comentários IA podem ocorrer com 0 humanos, mas não alteram probabilidade, participantes, wallet, ranking, reputação ou badges.</li>
+              <li>Previsão bot só roda se Agentes e Previsões bot estiverem ligados, nunca com 0 humanos e sempre com humanos mínimos configurados.</li>
+              <li>Stake bot respeita saldo, stake máximo, limites por ciclo/dia e a regra de uma previsão por usuário/mercado.</li>
+              <li>Bots ficam fora de rankings, badges, streaks, recompensas e reputação pública.</li>
+              <li>Falhas da LLM/OpenAI são auditadas e não derrubam o daemon.</li>
+            </ul>
+          </div>
+          <div class="config-secret-card">
+            <span>OPENAI_API_KEY</span>
+            <strong>{% if openai_secret_configured %}Configurada por ambiente{% else %}Não configurada{% endif %}</strong>
+            <small>O valor não é exibido nem salvo no banco.</small>
+          </div>
+          <div class="config-inline-options">
+            <label class="config-check-option">{{ ai_form.ai_agents_enabled }}<span><strong>Agentes</strong><small>Kill switch geral.</small></span></label>
+            <label class="config-check-option">{{ ai_form.ai_commenting_enabled }}<span><strong>Comentários</strong><small>Análises públicas oficiais.</small></span></label>
+            <label class="config-check-option">{{ ai_form.ai_predictions_enabled }}<span><strong>Previsões bot</strong><small>Liquidez econômica controlada.</small></span></label>
+            <label class="config-check-option">{{ ai_form.ai_skip_if_human_comments_recent }}<span><strong>Pular debate recente</strong><small>Evita ruído em discussões humanas.</small></span></label>
+          </div>
+          <div class="config-form-grid">
+            <label class="field"><span>Provedor</span>{{ ai_form.ai_llm_provider }}<small>Identifica qual integração LLM será usada pelo backend.</small>{% if ai_form.ai_llm_provider.errors %}<small class="field-error">{{ ai_form.ai_llm_provider.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field"><span>Base URL</span>{{ ai_form.ai_llm_base_url }}<small>URL base da API; Responses API usa <code>/responses</code>.</small>{% if ai_form.ai_llm_base_url.errors %}<small class="field-error">{{ ai_form.ai_llm_base_url.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field"><span>Modelo</span>{{ ai_form.ai_model }}<small>Modelo padrão para comentários curtos e estruturados.</small>{% if ai_form.ai_model.errors %}<small class="field-error">{{ ai_form.ai_model.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field"><span>Modelo alto raciocínio</span>{{ ai_form.ai_high_reasoning_model }}<small>Reservado para análises futuras mais caras ou profundas.</small>{% if ai_form.ai_high_reasoning_model.errors %}<small class="field-error">{{ ai_form.ai_high_reasoning_model.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Cooldown mercado</span>{{ ai_form.ai_market_cooldown_hours }}<small>Horas mínimas antes de voltar ao mesmo mercado.</small>{% if ai_form.ai_market_cooldown_hours.errors %}<small class="field-error">{{ ai_form.ai_market_cooldown_hours.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Comentário/mercado/dia</span>{{ ai_form.ai_max_comments_per_market_per_day }}<small>Limite diário por mercado; começa em 1.</small>{% if ai_form.ai_max_comments_per_market_per_day.errors %}<small class="field-error">{{ ai_form.ai_max_comments_per_market_per_day.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Comentários/ciclo</span>{{ ai_form.ai_max_comments_per_cycle }}<small>Quantos comentários o daemon pode criar por execução.</small>{% if ai_form.ai_max_comments_per_cycle.errors %}<small class="field-error">{{ ai_form.ai_max_comments_per_cycle.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Comentários/dia</span>{{ ai_form.ai_max_comments_per_day }}<small>Teto global diário para todos os agentes.</small>{% if ai_form.ai_max_comments_per_day.errors %}<small class="field-error">{{ ai_form.ai_max_comments_per_day.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Máx. chars comentário</span>{{ ai_form.ai_comment_max_chars }}<small>Tamanho máximo do texto publicado pela IA.</small>{% if ai_form.ai_comment_max_chars.errors %}<small class="field-error">{{ ai_form.ai_comment_max_chars.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Mín. humanos previsão</span>{{ ai_form.ai_min_humans_for_prediction }}<small>Bot só prevê após atingir este número de humanos.</small>{% if ai_form.ai_min_humans_for_prediction.errors %}<small class="field-error">{{ ai_form.ai_min_humans_for_prediction.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Stake máximo bot</span>{{ ai_form.ai_max_stake_oc }}<small>Maior stake permitido por previsão oficial bot.</small>{% if ai_form.ai_max_stake_oc.errors %}<small class="field-error">{{ ai_form.ai_max_stake_oc.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Previsões/ciclo</span>{{ ai_form.ai_max_predictions_per_cycle }}<small>Quantas previsões bot podem ocorrer por ciclo daemon.</small>{% if ai_form.ai_max_predictions_per_cycle.errors %}<small class="field-error">{{ ai_form.ai_max_predictions_per_cycle.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Previsões/dia</span>{{ ai_form.ai_max_predictions_per_day }}<small>Teto global diário para stakes oficiais bot.</small>{% if ai_form.ai_max_predictions_per_day.errors %}<small class="field-error">{{ ai_form.ai_max_predictions_per_day.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Janela comentário humano</span>{{ ai_form.ai_recent_human_comment_window_hours }}<small>Horas usadas para detectar debate humano recente.</small>{% if ai_form.ai_recent_human_comment_window_hours.errors %}<small class="field-error">{{ ai_form.ai_recent_human_comment_window_hours.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Timeout OpenAI</span>{{ ai_form.ai_openai_timeout_seconds }}<small>Tempo máximo de espera por chamada LLM.</small>{% if ai_form.ai_openai_timeout_seconds.errors %}<small class="field-error">{{ ai_form.ai_openai_timeout_seconds.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Retries OpenAI</span>{{ ai_form.ai_openai_max_retries }}<small>Tentativas extras antes de auditar falha LLM.</small>{% if ai_form.ai_openai_max_retries.errors %}<small class="field-error">{{ ai_form.ai_openai_max_retries.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field"><span>Pausado até</span>{{ ai_form.ai_paused_until }}<small>Pausa temporária que impede comentários e previsões.</small>{% if ai_form.ai_paused_until.errors %}<small class="field-error">{{ ai_form.ai_paused_until.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field full"><span>Motivo da pausa</span>{{ ai_form.ai_pause_reason }}<small>Texto operacional exibido para auditoria/admin.</small>{% if ai_form.ai_pause_reason.errors %}<small class="field-error">{{ ai_form.ai_pause_reason.errors|join:", " }}</small>{% endif %}</label>
           </div>
         </div>
       </section>

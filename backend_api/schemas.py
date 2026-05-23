@@ -255,6 +255,74 @@ class AdminDashboardSummaryResponse(BaseModel):
     recent_admin_events: List[dict]
 
 
+class AdminAiAgentPayload(BaseModel):
+    name: str = Field(min_length=1, max_length=120)
+    agent_type: str = Field(default="analyst", max_length=32)
+    user_id: int
+    is_active: bool = False
+    personality_prompt: str = Field(default="", max_length=5000)
+    comment_style: str = Field(default="", max_length=120)
+    max_comments_per_day: Optional[int] = Field(default=None, ge=0, le=10000)
+    max_predictions_per_day: Optional[int] = Field(default=None, ge=0, le=10000)
+    max_stake_oc: Optional[int] = Field(default=None, ge=0, le=1000000)
+    cooldown_hours: Optional[int] = Field(default=None, ge=0, le=10000)
+    min_humans_for_prediction: Optional[int] = Field(default=None, ge=0, le=10000)
+
+
+class AdminAiAgentResponse(BaseModel):
+    id: int
+    name: str
+    agent_type: str
+    is_active: bool
+    user_id: int
+    user_handle: str
+    user_display_name: str
+    user_is_bot: bool
+    personality_prompt: str = ""
+    comment_style: str = ""
+    max_comments_per_day: Optional[int] = None
+    max_predictions_per_day: Optional[int] = None
+    max_stake_oc: Optional[int] = None
+    cooldown_hours: Optional[int] = None
+    min_humans_for_prediction: Optional[int] = None
+    last_action_at: Optional[str] = None
+    last_error: str = ""
+    actions_24h: int = 0
+    comments_24h: int = 0
+    predictions_24h: int = 0
+    skipped_24h: int = 0
+    created_at: str
+    updated_at: str
+
+
+class AdminAiAgentListResponse(BaseModel):
+    agents: List[AdminAiAgentResponse]
+    health: dict
+
+
+class AdminAiAgentActionResponse(BaseModel):
+    id: int
+    agent_id: Optional[int] = None
+    agent_name: str = ""
+    market_id: Optional[int] = None
+    market_slug: str = ""
+    market_title: str = ""
+    action_type: str
+    status: str
+    reason: str
+    payload_summary: dict
+    prompt_template_version: str = ""
+    prompt_hash: str = ""
+    comment_id: Optional[int] = None
+    prediction_id: Optional[int] = None
+    created_at: str
+
+
+class AdminAiAgentActionListResponse(BaseModel):
+    actions: List[AdminAiAgentActionResponse]
+    health: dict
+
+
 class BadgeResponse(BaseModel):
     code: str
     name: str
@@ -336,6 +404,8 @@ class CommentResponse(BaseModel):
     author_id: int
     author_handle: str
     author_display_name: str
+    author_is_bot: bool = False
+    author_badge_label: str = ""
     body: str
     status: str
     like_count: int = 0
@@ -371,6 +441,11 @@ class MarketResponse(BaseModel):
     secondary_probability_exact: float = 0
     volume_oc: str
     participants: str
+    human_participants: int = 0
+    bot_participants: int = 0
+    human_volume_oc: int = 0
+    bot_volume_oc: int = 0
+    total_volume_oc: int = 0
     source: str
     closes_in: str
     close_label: str
@@ -629,6 +704,28 @@ class QueueListResponse(BaseModel):
 class AdminMarketListResponse(BaseModel):
     markets: List[MarketResponse]
     counts: dict
+
+
+class AdminMarketParticipantResponse(BaseModel):
+    prediction_id: int
+    user_id: int
+    handle: str
+    display_name: str
+    is_bot: bool = False
+    badge_label: str = ""
+    option_label: str
+    stake_amount: int
+    probability_at_entry: float
+    potential_payout: int
+    status: str
+    won: Optional[bool] = None
+    created_at: str
+
+
+class AdminMarketParticipantListResponse(BaseModel):
+    market: dict
+    summary: dict
+    participants: List[AdminMarketParticipantResponse]
 
 
 class AdminEventResponse(BaseModel):

@@ -149,6 +149,8 @@ def _local_comments(slug, user_id=None):
                 "author_id": comment.author_id,
                 "author_handle": _display_handle(comment.author.username),
                 "author_display_name": comment.author.first_name or _display_handle(comment.author.username),
+                "author_is_bot": bool(getattr(comment.author, "is_bot", False)),
+                "author_badge_label": "IA oficial" if getattr(comment.author, "is_bot", False) else "",
                 "body": comment.body,
                 "status": comment.status,
                 "like_count": like_count,
@@ -167,6 +169,8 @@ def _normalized_comments(comments):
         item["id"] = item.get("id") or ""
         item["author_display_name"] = item.get("author_display_name") or item.get("author") or item.get("author_handle", "")
         item["author_handle"] = _display_handle(item.get("author_handle") or item.get("author") or item["author_display_name"])
+        item["author_is_bot"] = bool(item.get("author_is_bot", False))
+        item["author_badge_label"] = item.get("author_badge_label") or ("IA oficial" if item["author_is_bot"] else "")
         item["like_count"] = item.get("like_count", item.get("up", 0))
         item["dislike_count"] = item.get("dislike_count", item.get("down", 0))
         item["viewer_reaction"] = item.get("viewer_reaction") or ""

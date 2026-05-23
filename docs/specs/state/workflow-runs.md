@@ -126,6 +126,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Retomada: executar o workflow na `main` com `ENABLE_PROD_DEPLOY=1` e validar a etapa `Verify assumed AWS identity` antes do primeiro deploy automatico real
 - Reversão lógica: voltar o workflow para a leitura exclusiva de secrets e remover o preflight, preservando esta entrada como histórico de endurecimento operacional
 
+## WFLOW-20260522-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AIAGENT-001`
+- Objetivo: implementar agentes IA oficiais para comentários, previsão bot controlada, Admin Ops, saúde técnica e auditoria
+- Etapa atual: concluído; app `agents`, ciclo IA, Admin Ops, auditoria, saúde técnica, métricas humano/bot, exclusão de bots, simulações Bedrock e ajustes UX finais validados localmente em 2026-05-23
+- Artefatos afetados:
+  - `agents/`
+  - `backend_api/`
+  - `admin_ops/`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-22
+- Atualizado em: 2026-05-23
+- Encerrado em: 2026-05-23
+- Retomada: acompanhar deploy em `main`, validar migrations em produção e observar primeiro ciclo daemon com IA desligada por padrão
+- Reversão lógica: desativar `ai_agents_enabled` em `orynth_site_config`, manter auditoria histórica e remover integração do ciclo IA por workflow substituto
+
 ## WFLOW-20260520-002
 
 - Tipo: `change-feature`

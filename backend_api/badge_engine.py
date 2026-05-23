@@ -59,11 +59,13 @@ class BadgeAwardEngine:
     def on_market_resolved(cls, cursor, market_id):
         cursor.execute(
             """
-            SELECT DISTINCT user_id
-            FROM orynth_predictions
-            WHERE market_id = %s
-              AND status = 'resolved'
-            ORDER BY user_id ASC
+            SELECT DISTINCT p.user_id
+            FROM orynth_predictions p
+            JOIN orynth_users u ON u.id = p.user_id
+            WHERE p.market_id = %s
+              AND p.status = 'resolved'
+              AND u.is_bot = false
+            ORDER BY p.user_id ASC
             """,
             (market_id,),
         )
@@ -87,6 +89,10 @@ class BadgeAwardEngine:
 
     @classmethod
     def evaluate_user(cls, cursor, user_id, *, rule_types=None, reason_prefix="badge_engine"):
+        cursor.execute("SELECT is_bot FROM orynth_users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        if user and user["is_bot"]:
+            return []
         rules = cls._active_rules(cursor, rule_types=rule_types)
         awarded = []
         for rule in rules:
@@ -180,6 +186,7 @@ class BadgeAwardEngine:
             WHERE u.is_active = true
               AND u.is_staff = false
               AND u.is_superuser = false
+              AND u.is_bot = false
             ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
             """
         )

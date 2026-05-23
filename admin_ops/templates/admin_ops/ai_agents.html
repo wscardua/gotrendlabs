@@ -1,0 +1,120 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Trends Admin | Agentes IA{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section>
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Automação oficial</span>
+        <h1 class="large-title">Agentes IA</h1>
+        <p>Gestão de bots oficiais, auditoria de ações e saúde técnica do ciclo IA.</p>
+      </div>
+      <a class="btn primary" href="{% url 'admin-ops-ai-agent-new' %}">Novo agente</a>
+    </div>
+    {% if admin_error %}<div class="admin-alert risk">{{ admin_error }}</div>{% endif %}
+    {% with health=agent_data.health %}
+      <div class="admin-dashboard-kpis">
+        <div class="admin-card dashboard-kpi {% if health.status == 'error' %}is-risk{% elif health.status == 'paused' %}is-warn{% endif %}">
+          <span>Status IA</span>
+          <strong>{{ health.status_label|default:"Sem sinal" }}</strong>
+          <small>{{ health.active_agents|default:0 }} agentes ativos</small>
+        </div>
+        <div class="admin-card dashboard-kpi">
+          <span>Comentários 24h</span>
+          <strong>{{ health.comments_created_24h|default:0 }}</strong>
+          <small>Último ciclo {{ health.last_cycle_at|slice:":16"|default:"-" }}</small>
+        </div>
+        <div class="admin-card dashboard-kpi">
+          <span>Previsões bot 24h</span>
+          <strong>{{ health.predictions_created_24h|default:0 }}</strong>
+          <small>Skips {{ health.skipped_24h|default:0 }}</small>
+        </div>
+        <div class="admin-card dashboard-kpi {% if not health.openai_key_configured %}is-risk{% endif %}">
+          <span>OPENAI_API_KEY</span>
+          <strong>{% if health.openai_key_configured %}Configurada{% else %}Ausente{% endif %}</strong>
+          <small>{{ health.config.ai_model|default:"-" }}</small>
+        </div>
+      </div>
+    {% endwith %}
+
+    <section class="panel admin-dashboard-panel">
+      <div class="section-head compact">
+        <div>
+          <h3>Agentes cadastrados</h3>
+          <p>Todos devem estar vinculados a usuários marcados como bot oficial.</p>
+        </div>
+      </div>
+      <table class="table dashboard-table">
+        <tr><th>Agente</th><th>Tipo</th><th>Usuário</th><th>Status</th><th>24h</th><th>Último erro</th><th>Ação</th></tr>
+        {% for agent in agent_data.agents %}
+          <tr>
+            <td><strong>{{ agent.name }}</strong></td>
+            <td>{{ agent.agent_type }}</td>
+            <td>{{ agent.user_handle }}{% if agent.user_is_bot %} · bot oficial{% endif %}</td>
+            <td>{% if agent.is_active %}Ativo{% else %}Inativo{% endif %}</td>
+            <td>{{ agent.comments_24h }} comentários · {{ agent.predictions_24h }} previsões · {{ agent.skipped_24h }} skips</td>
+            <td>{{ agent.last_error|default:"-"|truncatechars:80 }}</td>
+            <td><a class="btn small" href="{% url 'admin-ops-ai-agent-edit' agent.id %}">Editar</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">Nenhum agente IA cadastrado.</td></tr>
+        {% endfor %}
+      </table>
+    </section>
+
+    <section class="panel admin-dashboard-panel">
+      <div class="section-head compact">
+        <div>
+          <h3>Auditoria recente</h3>
+          <p>Comentários criados, previsões bot, skips e falhas sem prompts completos nem segredos.</p>
+        </div>
+      </div>
+      <form class="ranking-filters" method="get">
+        <input name="agent_id" placeholder="ID agente" value="{{ filters.agent_id }}">
+        <input name="market" placeholder="slug mercado" value="{{ filters.market }}">
+        <input name="reason" placeholder="motivo" value="{{ filters.reason }}">
+        <select name="action_type">
+          <option value="">Tipo</option>
+          <option value="comment" {% if filters.action_type == "comment" %}selected{% endif %}>comment</option>
+          <option value="prediction" {% if filters.action_type == "prediction" %}selected{% endif %}>prediction</option>
+          <option value="cycle" {% if filters.action_type == "cycle" %}selected{% endif %}>cycle</option>
+        </select>
+        <select name="status">
+          <option value="">Status</option>
+          <option value="created" {% if filters.status == "created" %}selected{% endif %}>created</option>
+          <option value="skipped" {% if filters.status == "skipped" %}selected{% endif %}>skipped</option>
+          <option value="failed" {% if filters.status == "failed" %}selected{% endif %}>failed</option>
+        </select>
+        <button class="btn small" type="submit">Filtrar</button>
+      </form>
+      {% if action_pagination.show %}
+        <div class="wallet-pagination">
+          <span>{{ action_pagination.visible_count }} de {{ action_pagination.total }} ações</span>
+        </div>
+      {% endif %}
+      <table class="table dashboard-table">
+        <tr><th>Quando</th><th>Agente</th><th>Mercado</th><th>Tipo</th><th>Status</th><th>Motivo</th><th>Ação</th></tr>
+        {% for action in action_data.actions %}
+          <tr>
+            <td>{{ action.created_at|slice:":16" }}</td>
+            <td>{{ action.agent_name|default:"sistema" }}</td>
+            <td>{{ action.market_slug|default:"-" }}</td>
+            <td>{{ action.action_type }}</td>
+            <td>{{ action.status }}</td>
+            <td>{{ action.reason|default:"-" }}</td>
+            <td><a class="btn small ghost" href="{% url 'admin-ops-ai-agent-action-detail' action.id %}">Detalhe</a></td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="7">Nenhuma ação IA encontrada.</td></tr>
+        {% endfor %}
+      </table>
+      {% if action_pagination.has_more %}
+        <div class="wallet-pagination bottom">
+          <span>{{ action_pagination.visible_count }} de {{ action_pagination.total }} ações</span>
+          <a class="btn small ghost" href="{{ action_pagination.next_url }}">Carregar mais</a>
+        </div>
+      {% endif %}
+    </section>
+  </section>
+</main>
+{% endblock %}

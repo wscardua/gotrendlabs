@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from fastapi import FastAPI, Header, HTTPException, Query, Request, status
 
 from backend_api.admin_events import record_admin_event
+from backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
 from backend_api.badge_engine import BadgeAwardEngine
 from backend_api.db import get_connection
 from backend_api.daemon_services import daemon_dashboard_status
@@ -22,6 +23,11 @@ from backend_api.schemas import (
     AdminBadgePayload,
     AdminBadgeResponse,
     AdminDashboardSummaryResponse,
+    AdminAiAgentActionListResponse,
+    AdminAiAgentActionResponse,
+    AdminAiAgentListResponse,
+    AdminAiAgentPayload,
+    AdminAiAgentResponse,
     AdminUserDetailResponse,
     AdminUserBotPayload,
     AdminUserListResponse,
@@ -30,6 +36,7 @@ from backend_api.schemas import (
     FeedbackRewardPayload,
     AdminMarketActionPayload,
     AdminMarketListResponse,
+    AdminMarketParticipantListResponse,
     AdminMarketPayload,
     AdminMarketResolutionAuditResponse,
     AdminMarketResolvePayload,
@@ -323,12 +330,12 @@ def _public_user_response(row, *, display_name=None):
 
 def _ensure_user_core(cursor, user_id, *, display_name=None):
     now = datetime.now(timezone.utc)
-    cursor.execute("SELECT id, username, first_name, is_staff, is_superuser FROM orynth_users WHERE id = %s", (user_id,))
+    cursor.execute("SELECT id, username, first_name, is_staff, is_superuser, is_bot FROM orynth_users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
 
-    is_operator = user["is_staff"] or user["is_superuser"]
+    is_operator = user["is_staff"] or user["is_superuser"] or user["is_bot"]
     profile_name = display_name or user["first_name"] or user["username"]
     cursor.execute(
         """
@@ -405,6 +412,9 @@ def _ranking_positions(cursor):
         FROM orynth_user_reputations r
         JOIN orynth_users u ON u.id = r.user_id
         WHERE u.is_active = true
+          AND u.is_staff = false
+          AND u.is_superuser = false
+          AND u.is_bot = false
         ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
         """
     )
@@ -693,7 +703,7 @@ def _current_user(cursor, authorization):
     cursor.execute(
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
-               u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser
+               u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.is_bot
         FROM orynth_auth_sessions s
         JOIN orynth_users u ON u.id = s.user_id
         WHERE s.token_hash = %s
@@ -953,6 +963,8 @@ def _comment_response(row):
         "author_id": row["author_id"],
         "author_handle": _handle_seed(row["author_handle"]),
         "author_display_name": row["author_display_name"] or _handle_seed(row["author_handle"]),
+        "author_is_bot": bool(row.get("author_is_bot", False)),
+        "author_badge_label": "IA oficial" if row.get("author_is_bot", False) else "",
         "body": row["body"],
         "status": row["status"],
         "like_count": int(row["like_count"] or 0),
@@ -992,6 +1004,7 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
                mc.moderated_at, mc.created_at, mc.updated_at,
                m.slug AS market_slug,
                u.id AS author_id, u.username AS author_handle, u.first_name AS author_display_name,
+               u.is_bot AS author_is_bot,
                COALESCE(SUM(CASE WHEN cr.reaction = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
                COALESCE(SUM(CASE WHEN cr.reaction = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
                {viewer_select}
@@ -1003,7 +1016,7 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
         {where_sql}
         GROUP BY mc.id, mc.body, mc.status, mc.moderation_note, mc.moderated_by_id,
                  mc.moderated_at, mc.created_at, mc.updated_at,
-                 m.slug, u.id, u.username, u.first_name{viewer_group}
+                 m.slug, u.id, u.username, u.first_name, u.is_bot{viewer_group}
         ORDER BY mc.created_at DESC, mc.id DESC
         """,
         params,
@@ -1070,6 +1083,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
             (row["id"], viewer_id),
         )
         viewer_has_like = bool(cursor.fetchone())
+    public_metrics = market_public_metrics(cursor, row["id"])
     return {
         "slug": row["slug"],
         "title": row["title"],
@@ -1087,8 +1101,13 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "primary_probability_exact": float(_decimal_probability(row["primary_probability_exact"])),
         "secondary_probability": _display_probability(row["secondary_probability_exact"]),
         "secondary_probability_exact": float(_decimal_probability(row["secondary_probability_exact"])),
-        "volume_oc": _currency_label(row["volume_oc"]),
-        "participants": row["participants"],
+        "volume_oc": _currency_label(public_metrics["volume_oc"]),
+        "participants": public_metrics["participants"],
+        "human_participants": public_metrics["human_participants"],
+        "bot_participants": public_metrics["bot_participants"],
+        "human_volume_oc": public_metrics["human_volume_oc"],
+        "bot_volume_oc": public_metrics["bot_volume_oc"],
+        "total_volume_oc": public_metrics["total_volume_oc"],
         "source": row["source"],
         "closes_in": _short_close_label(row["close_at"]) or row["closes_in"],
         "close_label": row["close_label"] or _market_status_label(row["status"]),
@@ -1148,7 +1167,12 @@ def get_public_stats():
                 """
                 SELECT
                     (SELECT COUNT(*) FROM orynth_markets WHERE status = 'open') AS open_markets,
-                    (SELECT COUNT(*) FROM orynth_predictions) AS total_predictions,
+                    (
+                        SELECT COUNT(*)
+                        FROM orynth_predictions p
+                        JOIN orynth_users u ON u.id = p.user_id
+                        WHERE u.is_bot = false
+                    ) AS total_predictions,
                     (
                         SELECT COALESCE(SUM(l.amount), 0)
                         FROM orynth_wallet_ledger l
@@ -1157,7 +1181,12 @@ def get_public_stats():
                           AND u.is_staff = false
                           AND u.is_superuser = false
                     ) AS distributed_oc,
-                    (SELECT COALESCE(SUM(stake_amount), 0) FROM orynth_predictions) AS moved_oc
+                    (
+                        SELECT COALESCE(SUM(p.stake_amount), 0)
+                        FROM orynth_predictions p
+                        JOIN orynth_users u ON u.id = p.user_id
+                        WHERE u.is_bot = false
+                    ) AS moved_oc
                 """
             )
             row = cursor.fetchone()
@@ -1208,18 +1237,7 @@ def _market_probability_snapshot(cursor, market_id):
 
     primary_probability_exact = _decimal_probability(snapshot[0]["probability_exact"]) if snapshot else Decimal("0")
     secondary_probability_exact = _decimal_probability(snapshot[1]["probability_exact"]) if len(snapshot) > 1 else Decimal("0")
-    cursor.execute(
-        """
-        SELECT COALESCE(SUM(stake_amount), 0) AS volume_oc,
-               COUNT(DISTINCT user_id) AS participants
-        FROM orynth_predictions
-        WHERE market_id = %s AND status = 'open'
-        """,
-        (market_id,),
-    )
-    totals = cursor.fetchone()
-    volume_oc = int(totals["volume_oc"] or 0)
-    participants = int(totals["participants"] or 0)
+    public_metrics = market_public_metrics(cursor, market_id)
     cursor.execute(
         """
         UPDATE orynth_markets
@@ -1233,8 +1251,8 @@ def _market_probability_snapshot(cursor, market_id):
         (
             primary_probability_exact,
             secondary_probability_exact,
-            _volume_label(volume_oc),
-            _participants_label(participants),
+            public_metrics["volume_oc"],
+            public_metrics["participants"],
             datetime.now(timezone.utc),
             market_id,
         ),
@@ -2199,7 +2217,7 @@ def _ranking_categories(cursor):
 
 
 def _ranking_theme_rows(cursor, category, subcategory, limit=50):
-    where = ["u.is_active = true", "u.is_staff = false", "u.is_superuser = false", "p.status = 'resolved'", "c.slug = %s"]
+    where = ["u.is_active = true", "u.is_staff = false", "u.is_superuser = false", "u.is_bot = false", "p.status = 'resolved'", "c.slug = %s"]
     params = [category]
     if subcategory:
         where.append("sc.slug = %s")
@@ -2490,7 +2508,8 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
                 (market["id"], user["id"], body, datetime.now(timezone.utc), datetime.now(timezone.utc)),
             )
             comment_id = cursor.fetchone()["id"]
-            BadgeAwardEngine.on_comment_created(cursor, user["id"], market_id=market["id"])
+            if not user.get("is_bot"):
+                BadgeAwardEngine.on_comment_created(cursor, user["id"], market_id=market["id"])
             return next(comment for comment in _market_comments(cursor, market["id"], viewer_id=user["id"]) if comment["id"] == comment_id)
 
 
@@ -3072,7 +3091,10 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             cursor.execute(
                 """
                 SELECT email_enabled, smtp_host, smtp_port, default_from_email,
-                       daemon_stale_after_minutes, daemon_missing_after_minutes
+                       daemon_stale_after_minutes, daemon_missing_after_minutes,
+                       ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled,
+                       ai_llm_provider, ai_llm_base_url, ai_model, ai_max_comments_per_cycle,
+                       ai_max_predictions_per_cycle, ai_min_humans_for_prediction, ai_max_stake_oc
                 FROM orynth_site_config
                 WHERE singleton_key = 1
                 """
@@ -3094,6 +3116,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                 stale_after_minutes=int(site_config["daemon_stale_after_minutes"] or 5) if site_config else 5,
                 missing_after_minutes=int(site_config["daemon_missing_after_minutes"] or 15) if site_config else 15,
             )
+            ai_health = ai_health_summary(cursor, now=now)
             return {
                 "markets": {
                     **market_counts,
@@ -3148,10 +3171,295 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "smtp_status": smtp_status,
                     "recaptcha_enabled": os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
                     **daemon_status,
+                    "ai": ai_health,
                 },
                 "top_markets": top_markets,
                 "recent_admin_events": recent_admin_events,
             }
+
+
+def _admin_ai_agent_response(cursor, row, now=None):
+    now = now or datetime.now(timezone.utc)
+    since = now - timedelta(hours=24)
+    cursor.execute(
+        """
+        SELECT action_type, status, COUNT(*) AS total
+        FROM orynth_ai_agent_actions
+        WHERE agent_id = %s
+          AND created_at >= %s
+        GROUP BY action_type, status
+        """,
+        (row["id"], since),
+    )
+    counts = {(item["action_type"], item["status"]): int(item["total"] or 0) for item in cursor.fetchall()}
+    return {
+        "id": row["id"],
+        "name": row["name"],
+        "agent_type": row["agent_type"],
+        "is_active": bool(row["is_active"]),
+        "user_id": row["user_id"],
+        "user_handle": _handle_seed(row["username"]),
+        "user_display_name": row["first_name"] or _handle_seed(row["username"]),
+        "user_is_bot": bool(row["is_bot"]),
+        "personality_prompt": row["personality_prompt"] or "",
+        "comment_style": row["comment_style"] or "",
+        "max_comments_per_day": row["max_comments_per_day"],
+        "max_predictions_per_day": row["max_predictions_per_day"],
+        "max_stake_oc": row["max_stake_oc"],
+        "cooldown_hours": row["cooldown_hours"],
+        "min_humans_for_prediction": row["min_humans_for_prediction"],
+        "last_action_at": row["last_action_at"].isoformat() if row["last_action_at"] else None,
+        "last_error": row["last_error"] or "",
+        "actions_24h": sum(counts.values()),
+        "comments_24h": counts.get(("comment", "created"), 0),
+        "predictions_24h": counts.get(("prediction", "created"), 0),
+        "skipped_24h": counts.get(("comment", "skipped"), 0) + counts.get(("prediction", "skipped"), 0) + counts.get(("cycle", "skipped"), 0),
+        "created_at": row["created_at"].isoformat(),
+        "updated_at": row["updated_at"].isoformat(),
+    }
+
+
+def _admin_ai_agent_rows(cursor):
+    cursor.execute(
+        """
+        SELECT a.*, u.username, u.first_name, u.is_bot
+        FROM orynth_ai_agents a
+        JOIN orynth_users u ON u.id = a.user_id
+        ORDER BY a.agent_type ASC, a.name ASC, a.id ASC
+        """
+    )
+    return [_admin_ai_agent_response(cursor, row) for row in cursor.fetchall()]
+
+
+def _validate_ai_agent_payload(cursor, payload, agent_id=None):
+    if payload.agent_type not in {"analyst", "liquidity", "contrarian"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de agente inválido.")
+    cursor.execute("SELECT id, is_bot FROM orynth_users WHERE id = %s AND is_active = true", (payload.user_id,))
+    user = cursor.fetchone()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Usuário bot não encontrado.")
+    if not user["is_bot"]:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Agente IA deve usar usuário marcado como bot.")
+    cursor.execute("SELECT id FROM orynth_ai_agents WHERE user_id = %s", (payload.user_id,))
+    existing = cursor.fetchone()
+    if existing and existing["id"] != agent_id:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este usuário bot já está vinculado a outro agente IA.")
+
+
+@app.get("/admin/ai-agents", response_model=AdminAiAgentListResponse)
+def admin_list_ai_agents(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            return {"agents": _admin_ai_agent_rows(cursor), "health": ai_health_summary(cursor)}
+
+
+@app.post("/admin/ai-agents", response_model=AdminAiAgentResponse, status_code=status.HTTP_201_CREATED)
+def admin_create_ai_agent(payload: AdminAiAgentPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _validate_ai_agent_payload(cursor, payload)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                INSERT INTO orynth_ai_agents
+                    (name, agent_type, user_id, is_active, personality_prompt, comment_style,
+                     max_comments_per_day, max_predictions_per_day, max_stake_oc, cooldown_hours,
+                     min_humans_for_prediction, last_error, created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '', %s, %s)
+                RETURNING id
+                """,
+                (
+                    payload.name.strip(),
+                    payload.agent_type,
+                    payload.user_id,
+                    payload.is_active,
+                    payload.personality_prompt.strip(),
+                    payload.comment_style.strip(),
+                    payload.max_comments_per_day,
+                    payload.max_predictions_per_day,
+                    payload.max_stake_oc,
+                    payload.cooldown_hours,
+                    payload.min_humans_for_prediction,
+                    now,
+                    now,
+                ),
+            )
+            agent_id = cursor.fetchone()["id"]
+            _record_admin_event(cursor, staff["id"], "ai_agent.create", "ai_agent", str(agent_id), f"Agente IA criado: {payload.name.strip()}")
+            cursor.execute(
+                """
+                SELECT a.*, u.username, u.first_name, u.is_bot
+                FROM orynth_ai_agents a
+                JOIN orynth_users u ON u.id = a.user_id
+                WHERE a.id = %s
+                """,
+                (agent_id,),
+            )
+            return _admin_ai_agent_response(cursor, cursor.fetchone())
+
+
+@app.get("/admin/ai-agents/{agent_id}", response_model=AdminAiAgentResponse)
+def admin_get_ai_agent(agent_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT a.*, u.username, u.first_name, u.is_bot
+                FROM orynth_ai_agents a
+                JOIN orynth_users u ON u.id = a.user_id
+                WHERE a.id = %s
+                """,
+                (agent_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agente IA não encontrado.")
+            return _admin_ai_agent_response(cursor, row)
+
+
+@app.patch("/admin/ai-agents/{agent_id}", response_model=AdminAiAgentResponse)
+def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            _validate_ai_agent_payload(cursor, payload, agent_id=agent_id)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE orynth_ai_agents
+                SET name = %s,
+                    agent_type = %s,
+                    user_id = %s,
+                    is_active = %s,
+                    personality_prompt = %s,
+                    comment_style = %s,
+                    max_comments_per_day = %s,
+                    max_predictions_per_day = %s,
+                    max_stake_oc = %s,
+                    cooldown_hours = %s,
+                    min_humans_for_prediction = %s,
+                    updated_at = %s
+                WHERE id = %s
+                RETURNING id
+                """,
+                (
+                    payload.name.strip(),
+                    payload.agent_type,
+                    payload.user_id,
+                    payload.is_active,
+                    payload.personality_prompt.strip(),
+                    payload.comment_style.strip(),
+                    payload.max_comments_per_day,
+                    payload.max_predictions_per_day,
+                    payload.max_stake_oc,
+                    payload.cooldown_hours,
+                    payload.min_humans_for_prediction,
+                    now,
+                    agent_id,
+                ),
+            )
+            if not cursor.fetchone():
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agente IA não encontrado.")
+            _record_admin_event(cursor, staff["id"], "ai_agent.update", "ai_agent", str(agent_id), f"Agente IA atualizado: {payload.name.strip()}")
+            cursor.execute(
+                """
+                SELECT a.*, u.username, u.first_name, u.is_bot
+                FROM orynth_ai_agents a
+                JOIN orynth_users u ON u.id = a.user_id
+                WHERE a.id = %s
+                """,
+                (agent_id,),
+            )
+            return _admin_ai_agent_response(cursor, cursor.fetchone())
+
+
+def _admin_ai_action_response(row):
+    return {
+        "id": row["id"],
+        "agent_id": row["agent_id"],
+        "agent_name": row["agent_name"] or "",
+        "market_id": row["market_id"],
+        "market_slug": row["market_slug"] or "",
+        "market_title": row["market_title"] or "",
+        "action_type": row["action_type"],
+        "status": row["status"],
+        "reason": row["reason"] or "",
+        "payload_summary": row["payload_summary"] or {},
+        "prompt_template_version": row["prompt_template_version"] or "",
+        "prompt_hash": row["prompt_hash"] or "",
+        "comment_id": row["comment_id"],
+        "prediction_id": row["prediction_id"],
+        "created_at": row["created_at"].isoformat(),
+    }
+
+
+@app.get("/admin/ai-agent-actions", response_model=AdminAiAgentActionListResponse)
+def admin_list_ai_agent_actions(
+    agent_id: Optional[int] = Query(default=None),
+    market_slug: str = Query(default=""),
+    action_type: str = Query(default=""),
+    action_status: str = Query(default="", alias="status"),
+    reason: str = Query(default=""),
+    authorization: str = Header(default=""),
+):
+    where = []
+    params = []
+    if agent_id:
+        where.append("act.agent_id = %s")
+        params.append(agent_id)
+    if market_slug:
+        where.append("m.slug = %s")
+        params.append(market_slug)
+    if action_type:
+        where.append("act.action_type = %s")
+        params.append(action_type)
+    if action_status:
+        where.append("act.status = %s")
+        params.append(action_status)
+    if reason:
+        where.append("act.reason ILIKE %s")
+        params.append(f"%{reason}%")
+    where_sql = f"WHERE {' AND '.join(where)}" if where else ""
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                f"""
+                SELECT act.*, a.name AS agent_name, m.slug AS market_slug, m.title AS market_title
+                FROM orynth_ai_agent_actions act
+                LEFT JOIN orynth_ai_agents a ON a.id = act.agent_id
+                LEFT JOIN orynth_markets m ON m.id = act.market_id
+                {where_sql}
+                ORDER BY act.created_at DESC, act.id DESC
+                LIMIT 100
+                """,
+                params,
+            )
+            return {"actions": [_admin_ai_action_response(row) for row in cursor.fetchall()], "health": ai_health_summary(cursor)}
+
+
+@app.get("/admin/ai-agent-actions/{action_id}", response_model=AdminAiAgentActionResponse)
+def admin_get_ai_agent_action(action_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute(
+                """
+                SELECT act.*, a.name AS agent_name, m.slug AS market_slug, m.title AS market_title
+                FROM orynth_ai_agent_actions act
+                LEFT JOIN orynth_ai_agents a ON a.id = act.agent_id
+                LEFT JOIN orynth_markets m ON m.id = act.market_id
+                WHERE act.id = %s
+                """,
+                (action_id,),
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ação IA não encontrada.")
+            return _admin_ai_action_response(row)
 
 
 @app.get("/admin/users", response_model=AdminUserListResponse)
@@ -3484,6 +3792,7 @@ def admin_moderate_comment(comment_id: int, payload: CommentModerationPayload, a
 @app.get("/admin/markets", response_model=AdminMarketListResponse)
 def admin_list_markets(
     status_filter: Optional[str] = Query(default=None, alias="status"),
+    q: str = Query(default=""),
     order: str = "display",
     authorization: str = Header(default=""),
 ):
@@ -3491,10 +3800,15 @@ def admin_list_markets(
         with connection.cursor() as cursor:
             _current_staff_user(cursor, authorization)
             params = []
-            where_sql = ""
+            where = []
             if status_filter:
-                where_sql = "WHERE lower(m.status) = lower(%s)"
+                where.append("lower(m.status) = lower(%s)")
                 params.append(status_filter)
+            if q:
+                where.append("(m.title ILIKE %s OR m.slug ILIKE %s OR m.summary ILIKE %s)")
+                pattern = f"%{q.strip()}%"
+                params.extend([pattern, pattern, pattern])
+            where_sql = f"WHERE {' AND '.join(where)}" if where else ""
             order_sql = {
                 "resolution_asc": "m.resolved_at ASC NULLS LAST, m.display_order ASC, m.id ASC",
                 "resolution_desc": "m.resolved_at DESC NULLS LAST, m.display_order ASC, m.id ASC",
@@ -3507,6 +3821,56 @@ def admin_list_markets(
             cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_markets GROUP BY status")
             counts = {row["status"]: row["total"] for row in cursor.fetchall()}
             return {"markets": [_market_response(cursor, row, include_comments=False) for row in rows], "counts": counts}
+
+
+@app.get("/admin/markets/{slug}/participants", response_model=AdminMarketParticipantListResponse)
+def admin_get_market_participants(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            market = _admin_market_by_slug(cursor, slug)
+            public_metrics = market_public_metrics(cursor, market["id"])
+            cursor.execute(
+                """
+                SELECT p.id AS prediction_id, p.user_id, u.username AS handle, u.first_name AS display_name,
+                       u.is_bot, o.label AS option_label, p.stake_amount, p.probability_at_entry,
+                       p.potential_payout, p.status, p.won, p.created_at
+                FROM orynth_predictions p
+                JOIN orynth_users u ON u.id = p.user_id
+                JOIN orynth_market_options o ON o.id = p.market_option_id
+                WHERE p.market_id = %s
+                ORDER BY u.is_bot ASC, p.created_at ASC, p.id ASC
+                """,
+                (market["id"],),
+            )
+            participants = [
+                {
+                    "prediction_id": row["prediction_id"],
+                    "user_id": row["user_id"],
+                    "handle": _handle_seed(row["handle"]),
+                    "display_name": row["display_name"] or _handle_seed(row["handle"]),
+                    "is_bot": bool(row["is_bot"]),
+                    "badge_label": "IA oficial" if row["is_bot"] else "",
+                    "option_label": row["option_label"],
+                    "stake_amount": int(row["stake_amount"] or 0),
+                    "probability_at_entry": float(row["probability_at_entry"] or 0),
+                    "potential_payout": int(row["potential_payout"] or 0),
+                    "status": row["status"],
+                    "won": row["won"],
+                    "created_at": row["created_at"].isoformat(),
+                }
+                for row in cursor.fetchall()
+            ]
+            return {
+                "market": {"slug": market["slug"], "title": market["title"], "status": market["status"]},
+                "summary": {
+                    **public_metrics,
+                    "participants_total": len(participants),
+                    "human_predictions": sum(1 for row in participants if not row["is_bot"]),
+                    "bot_predictions": sum(1 for row in participants if row["is_bot"]),
+                },
+                "participants": participants,
+            }
 
 
 @app.post("/admin/markets", response_model=MarketResponse, status_code=status.HTTP_201_CREATED)
@@ -5210,6 +5574,7 @@ def get_rankings(category: Optional[str] = Query(default=None), subcategory: Opt
                 WHERE u.is_active = true
                   AND u.is_staff = false
                   AND u.is_superuser = false
+                  AND u.is_bot = false
                 ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
                 LIMIT 50
                 """

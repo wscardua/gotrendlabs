@@ -1,12 +1,14 @@
 from datetime import datetime, timedelta, timezone
 
 from backend_api.admin_events import record_admin_event
+from backend_api.agent_services import run_ai_agent_cycle
 from backend_api.db import get_connection
 from backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from system_logs.services import log_system_event
 
 
 AUTO_CLOSE_NOTE = "Fechamento automático pelo daemon."
+AUTO_CANCEL_NO_HUMANS_NOTE = "Cancelamento automático pelo daemon: mercado sem participação humana."
 DAEMON_LOGGER = "orynth.daemon"
 DAEMON_HEARTBEAT_EVENT = "daemon.heartbeat"
 DEFAULT_STALE_AFTER_MINUTES = 5
@@ -18,11 +20,43 @@ def _noop(*args, **kwargs):
     return None
 
 
+def _record_wallet_entry(cursor, user_id, *, entry_type, amount, direction, description, reference_type="", reference_id="", created_by_id=None):
+    now = datetime.now(timezone.utc)
+    cursor.execute(
+        """
+        INSERT INTO orynth_wallet_ledger
+            (user_id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        RETURNING id
+        """,
+        (user_id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, now),
+    )
+    cursor.execute(
+        """
+        INSERT INTO orynth_wallet_balances (user_id, available_oc, locked_oc, total_earned_oc, updated_at)
+        VALUES (%s, 0, 0, 0, %s)
+        ON CONFLICT (user_id) DO NOTHING
+        """,
+        (user_id, now),
+    )
+    if direction == "release":
+        cursor.execute(
+            """
+            UPDATE orynth_wallet_balances
+            SET available_oc = available_oc + %s,
+                locked_oc = GREATEST(locked_oc - %s, 0),
+                updated_at = %s
+            WHERE user_id = %s
+            """,
+            (amount, amount, now, user_id),
+        )
+
+
 def _daemon_lifecycle_engine(cursor):
     return MarketLifecycleEngine(
         cursor,
         staff_id=None,
-        record_wallet_entry=_noop,
+        record_wallet_entry=_record_wallet_entry,
         record_admin_event=record_admin_event,
         ensure_user_core=_noop,
         validate_publishable=_noop,
@@ -50,6 +84,21 @@ def close_due_auto_markets(now=None):
             markets = cursor.fetchall()
             engine = _daemon_lifecycle_engine(cursor)
             for market in markets:
+                cursor.execute(
+                    """
+                    SELECT COUNT(DISTINCT p.user_id) AS total
+                    FROM orynth_predictions p
+                    JOIN orynth_users u ON u.id = p.user_id
+                    WHERE p.market_id = %s
+                      AND p.status = 'open'
+                      AND u.is_bot = false
+                    """,
+                    (market["id"],),
+                )
+                human_predictions = int(cursor.fetchone()["total"] or 0)
+                if human_predictions == 0:
+                    engine.cancel_market(market, market["slug"], AUTO_CANCEL_NO_HUMANS_NOTE)
+                    continue
                 engine.lock_market_automatically(market, market["slug"], AUTO_CLOSE_NOTE, now=now)
                 locked.append({"id": market["id"], "slug": market["slug"], "close_at": market["close_at"].isoformat() if market["close_at"] else ""})
     return locked
@@ -87,6 +136,14 @@ def _locked_markets_message(locked_markets):
 def run_daemon_cycle(now=None):
     now = now or datetime.now(timezone.utc)
     log_daemon_event("daemon.run_started", "Daemon operacional iniciou ciclo.", context={"started_at": now.isoformat()}, created_at=now)
+    ai_summary = {
+        "enabled": False,
+        "comments_created": 0,
+        "predictions_created": 0,
+        "skipped": 0,
+        "errors": 0,
+        "reason": "not_run",
+    }
     try:
         locked_markets = close_due_auto_markets(now=now)
         pruned_logs = prune_expired_system_logs(now=now)
@@ -98,11 +155,30 @@ def run_daemon_cycle(now=None):
             context={"error": str(exc), "error_type": exc.__class__.__name__},
         )
         raise
+    try:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                ai_summary = run_ai_agent_cycle(cursor, now=now)
+    except Exception as exc:
+        ai_summary = {
+            "enabled": True,
+            "comments_created": 0,
+            "predictions_created": 0,
+            "skipped": 0,
+            "errors": 1,
+            "reason": "cycle_exception",
+        }
+        log_daemon_event(
+            "daemon.ai_cycle_failed",
+            f"Ciclo IA falhou sem interromper daemon: {exc.__class__.__name__}",
+            level="ERROR",
+            context={"error": str(exc), "error_type": exc.__class__.__name__},
+        )
 
     log_daemon_event(
         DAEMON_HEARTBEAT_EVENT,
         "Daemon operacional ativo.",
-        context={"locked_markets": len(locked_markets), "pruned_logs": pruned_logs},
+        context={"locked_markets": len(locked_markets), "pruned_logs": pruned_logs, "ai": ai_summary},
     )
     if locked_markets:
         log_daemon_event(
@@ -111,7 +187,7 @@ def run_daemon_cycle(now=None):
             context={"markets": locked_markets},
         )
     log_daemon_event("daemon.logs_pruned", f"Daemon removeu {pruned_logs} log(s) expirado(s).", context={"pruned_logs": pruned_logs})
-    return {"locked_markets": locked_markets, "pruned_logs": pruned_logs}
+    return {"locked_markets": locked_markets, "pruned_logs": pruned_logs, "ai": ai_summary}
 
 
 def daemon_dashboard_status(

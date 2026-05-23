@@ -316,11 +316,13 @@ class MarketLifecycleEngine:
     def _resolve_market_predictions(self, market_id, winning_option_id, slug, now):
         self.cursor.execute(
             """
-            SELECT id, user_id, market_option_id, stake_amount, probability_at_entry, potential_payout
-            FROM orynth_predictions
-            WHERE market_id = %s
-              AND status = 'open'
-            ORDER BY id ASC
+            SELECT p.id, p.user_id, p.market_option_id, p.stake_amount, p.probability_at_entry,
+                   p.potential_payout, u.is_bot
+            FROM orynth_predictions p
+            JOIN orynth_users u ON u.id = p.user_id
+            WHERE p.market_id = %s
+              AND p.status = 'open'
+            ORDER BY p.id ASC
             FOR UPDATE
             """,
             (market_id,),
@@ -376,7 +378,8 @@ class MarketLifecycleEngine:
                     reference_id=str(prediction["id"]),
                     created_by_id=self.staff_id,
                 )
-            self._apply_reputation_delta(prediction["user_id"], prediction["probability_at_entry"], won, now)
+            if not prediction["is_bot"]:
+                self._apply_reputation_delta(prediction["user_id"], prediction["probability_at_entry"], won, now)
         BadgeAwardEngine.on_market_resolved(self.cursor, market_id)
 
     def _refund_market_predictions(self, market_id, slug, now):

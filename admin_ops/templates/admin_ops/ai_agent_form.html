@@ -1,0 +1,301 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Trends Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout ai-agent-editor-page">
+  <section>
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Agente IA oficial</span>
+        <h1 class="large-title">{{ title }}</h1>
+        <p>Crie agentes vinculados apenas a usuários oficiais com <code>is_bot=true</code>. A persona editável complementa, mas nunca substitui, o template seguro do backend.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-ai-agents' %}">Voltar</a>
+    </div>
+
+    {% if messages %}{% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}{% endif %}
+    {% if admin_error %}<div class="notice red">{{ admin_error }}</div>{% endif %}
+
+    <div class="agent-type-guide" aria-label="Tipos de agente IA">
+      <article class="agent-type-card">
+        <span>Analyst</span>
+        <strong>Comenta mercados</strong>
+        <p>Gera análises públicas curtas com tese SIM, tese NÃO e sinais para acompanhar. Pode comentar mesmo com 0 humanos e nunca altera probabilidade.</p>
+      </article>
+      <article class="agent-type-card">
+        <span>Liquidity</span>
+        <strong>Testa previsão bot</strong>
+        <p>Cria stake real com usuário bot somente quando previsões estão ligadas, há humanos mínimos, saldo e limites disponíveis.</p>
+      </article>
+      <article class="agent-type-card">
+        <span>Contrarian</span>
+        <strong>Experimental, sem ciclo ativo</strong>
+        <p>Hoje funciona como cadastro reservado: não comenta nem prevê sozinho. Só use depois de existir uma política operacional aprovada e uma rotina backend específica.</p>
+      </article>
+    </div>
+
+    <form method="post" class="ai-agent-form">
+      {% csrf_token %}
+      <div class="ai-agent-form-stack">
+      <section class="agent-form-card">
+        <div>
+          <span class="eyebrow">Identidade</span>
+          <h2>Agente e usuário bot</h2>
+          <p>O usuário escolhido deve existir no cadastro de usuários, estar ativo e estar marcado como bot oficial.</p>
+        </div>
+        <div class="agent-form-grid">
+          <label class="field">
+            <span>{{ form.name.label }}</span>
+            {{ form.name }}
+            <small>Nome operacional exibido no Admin Ops.</small>
+            {% if form.name.errors %}<small class="field-error">{{ form.name.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field">
+            <span>{{ form.agent_type.label }}</span>
+            {{ form.agent_type }}
+            <small>Define quais rotinas do daemon podem usar este agente.</small>
+            {% if form.agent_type.errors %}<small class="field-error">{{ form.agent_type.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field full">
+            <span>{{ form.user_id.label }}</span>
+            {{ form.user_id }}
+            <small>Lista apenas usuários ativos com <code>is_bot=true</code>. Marque usuários em Usuários antes de criar agentes.</small>
+            {% if form.user_id.errors %}<small class="field-error">{{ form.user_id.errors|join:", " }}</small>{% endif %}
+            {% if form.user_id.help_text %}<small class="field-error">{{ form.user_id.help_text }}</small>{% endif %}
+          </label>
+          <label class="config-switch-row full">
+            {{ form.is_active }}
+            <span>
+              <strong>{{ form.is_active.label }}</strong>
+              <small>Agente inativo permanece cadastrado, mas não participa dos ciclos IA.</small>
+            </span>
+          </label>
+        </div>
+      </section>
+
+      <section class="agent-form-card">
+        <div>
+          <span class="eyebrow">Persona</span>
+          <h2>Instruções editáveis</h2>
+          <p>Use para tom, foco e estilo. Regras obrigatórias ficam no código e não podem ser sobrescritas pela persona.</p>
+        </div>
+        <div class="agent-form-grid">
+          <label class="field full" data-agent-field="comment">
+            <span>{{ form.personality_prompt.label }}</span>
+            {{ form.personality_prompt }}
+            <small>Não inclua segredos nem tente remover regras de segurança do agente.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.personality_prompt.errors %}<small class="field-error">{{ form.personality_prompt.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field full" data-agent-field="comment">
+            <span>{{ form.comment_style.label }}</span>
+            {{ form.comment_style }}
+            <small>Exemplo: “direto e equilibrado”, “didático”, “foco em riscos”.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.comment_style.errors %}<small class="field-error">{{ form.comment_style.errors|join:", " }}</small>{% endif %}
+          </label>
+        </div>
+      </section>
+
+      <section class="agent-form-card">
+        <div>
+          <span class="eyebrow">Limites opcionais</span>
+          <h2>Overrides por agente</h2>
+          <p>Deixe em branco para usar os limites globais definidos em Config. Valores preenchidos estreitam a operação deste agente.</p>
+        </div>
+        <div class="agent-form-grid">
+          <label class="field" data-agent-field="comment">
+            <span>{{ form.max_comments_per_day.label }}</span>
+            {{ form.max_comments_per_day }}
+            <small>Teto diário específico para comentários deste agente.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.max_comments_per_day.errors %}<small class="field-error">{{ form.max_comments_per_day.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field" data-agent-field="prediction">
+            <span>{{ form.max_predictions_per_day.label }}</span>
+            {{ form.max_predictions_per_day }}
+            <small>Teto diário específico para previsões bot deste agente.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.max_predictions_per_day.errors %}<small class="field-error">{{ form.max_predictions_per_day.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field" data-agent-field="prediction">
+            <span>{{ form.max_stake_oc.label }}</span>
+            {{ form.max_stake_oc }}
+            <small>Stake máximo por previsão deste agente.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.max_stake_oc.errors %}<small class="field-error">{{ form.max_stake_oc.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field" data-agent-field="comment">
+            <span>{{ form.cooldown_hours.label }}</span>
+            {{ form.cooldown_hours }}
+            <small>Cooldown próprio antes de voltar ao mesmo mercado.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.cooldown_hours.errors %}<small class="field-error">{{ form.cooldown_hours.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field" data-agent-field="prediction">
+            <span>{{ form.min_humans_for_prediction.label }}</span>
+            {{ form.min_humans_for_prediction }}
+            <small>Mínimo específico de participantes humanos para previsão bot.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.min_humans_for_prediction.errors %}<small class="field-error">{{ form.min_humans_for_prediction.errors|join:", " }}</small>{% endif %}
+          </label>
+        </div>
+      </section>
+
+      <div class="form-actions agent-form-actions">
+        <button class="btn primary" type="submit">Salvar agente</button>
+      </div>
+      </div>
+
+      <aside
+        class="agent-preview-card"
+        data-agent-preview
+        data-agents-enabled="{{ site_config.ai_agents_enabled|yesno:'true,false' }}"
+        data-commenting-enabled="{{ site_config.ai_commenting_enabled|yesno:'true,false' }}"
+        data-predictions-enabled="{{ site_config.ai_predictions_enabled|yesno:'true,false' }}"
+        data-global-comments-day="{{ site_config.ai_max_comments_per_day }}"
+        data-global-predictions-day="{{ site_config.ai_max_predictions_per_day }}"
+        data-global-stake="{{ site_config.ai_max_stake_oc }}"
+        data-global-cooldown="{{ site_config.ai_market_cooldown_hours }}"
+        data-global-min-humans="{{ site_config.ai_min_humans_for_prediction }}"
+      >
+        <span class="eyebrow">Prévia operacional</span>
+        <h2 id="agent-preview-title">Selecione o tipo</h2>
+        <p id="agent-preview-summary">A prévia combina o cadastro do agente com os parâmetros globais da tela Config.</p>
+        <dl>
+          <div>
+            <dt>Estado efetivo</dt>
+            <dd id="agent-preview-state">Aguardando preenchimento.</dd>
+          </div>
+          <div>
+            <dt>Usuário bot</dt>
+            <dd id="agent-preview-user">Selecione um usuário oficial.</dd>
+          </div>
+          <div>
+            <dt>Comentários</dt>
+            <dd id="agent-preview-comments">Usa limites globais se o campo do agente ficar vazio.</dd>
+          </div>
+          <div>
+            <dt>Previsões bot</dt>
+            <dd id="agent-preview-predictions">Dependem de flag global, humanos mínimos, saldo e auditoria.</dd>
+          </div>
+          <div>
+            <dt>Parâmetros globais atuais</dt>
+            <dd id="agent-preview-globals">Carregando.</dd>
+          </div>
+        </dl>
+      </aside>
+    </form>
+  </section>
+</main>
+<script>
+  (() => {
+    const preview = document.querySelector("[data-agent-preview]");
+    const form = document.querySelector(".ai-agent-form");
+    if (!preview || !form) return;
+
+    const byId = (id) => document.getElementById(id);
+    const field = (name) => form.querySelector(`[name="${name}"]`);
+    const setText = (id, value) => {
+      const node = byId(id);
+      if (node) node.textContent = value;
+    };
+    const enabledLabel = (value) => value === "true" ? "ligado" : "desligado";
+    const numberOr = (value, fallback) => {
+      const parsed = parseInt(value, 10);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+    const fieldValue = (name) => (field(name)?.value || "").trim();
+    const checked = (name) => Boolean(field(name)?.checked);
+    const selectedText = (name) => {
+      const node = field(name);
+      return node && node.selectedIndex >= 0 ? node.options[node.selectedIndex].text : "";
+    };
+    const fieldUsage = {
+      analyst: {
+        enabled: new Set(["comment"]),
+        disabledReason: "Não usado por Analyst; este tipo só comenta mercados.",
+      },
+      liquidity: {
+        enabled: new Set(["prediction"]),
+        disabledReason: "Não usado por Liquidity; este tipo só cria previsão/stake bot.",
+      },
+      contrarian: {
+        enabled: new Set(),
+        disabledReason: "Contrarian não tem rotina backend ativa nesta entrega.",
+      },
+    };
+
+    const globals = {
+      agents: preview.dataset.agentsEnabled,
+      comments: preview.dataset.commentingEnabled,
+      predictions: preview.dataset.predictionsEnabled,
+      commentsDay: numberOr(preview.dataset.globalCommentsDay, 20),
+      predictionsDay: numberOr(preview.dataset.globalPredictionsDay, 10),
+      stake: numberOr(preview.dataset.globalStake, 25),
+      cooldown: numberOr(preview.dataset.globalCooldown, 24),
+      minHumans: numberOr(preview.dataset.globalMinHumans, 1),
+    };
+
+    const updatePreview = () => {
+      const type = fieldValue("agent_type") || "analyst";
+      const active = checked("is_active");
+      const botUser = selectedText("user_id") || "Selecione um usuário oficial.";
+      const commentsDay = numberOr(fieldValue("max_comments_per_day"), globals.commentsDay);
+      const predictionsDay = numberOr(fieldValue("max_predictions_per_day"), globals.predictionsDay);
+      const cooldown = numberOr(fieldValue("cooldown_hours"), globals.cooldown);
+      const minHumans = numberOr(fieldValue("min_humans_for_prediction"), globals.minHumans);
+      const stakeRaw = fieldValue("max_stake_oc");
+      const stake = stakeRaw ? Math.min(numberOr(stakeRaw, globals.stake), globals.stake) : globals.stake;
+
+      const typeTitle = {
+        analyst: "Analyst: comentário oficial",
+        liquidity: "Liquidity: previsão bot controlada",
+        contrarian: "Contrarian: experimental sem ciclo ativo",
+      }[type] || "Tipo de agente";
+
+      const typeSummary = {
+        analyst: "Quando agentes e comentários globais estiverem ligados, o daemon pode usar este agente para publicar análises IA oficiais.",
+        liquidity: "Quando agentes e previsões globais estiverem ligados, o daemon pode usar este agente para criar stake bot com política conservadora.",
+        contrarian: "Este tipo está reservado. No backend atual ele não executa rotina autônoma de comentário ou previsão.",
+      }[type] || "A prévia combina o cadastro do agente com os parâmetros globais da tela Config.";
+
+      const blockers = [];
+      if (!active) blockers.push("agente inativo");
+      if (globals.agents !== "true") blockers.push("kill switch global desligado");
+      if (type === "analyst" && globals.comments !== "true") blockers.push("comentários globais desligados");
+      if (type === "liquidity" && globals.predictions !== "true") blockers.push("previsões bot globais desligadas");
+      if (type === "contrarian") blockers.push("sem rotina backend ativa");
+
+      setText("agent-preview-title", typeTitle);
+      setText("agent-preview-summary", typeSummary);
+      setText("agent-preview-state", blockers.length ? `Bloqueado agora: ${blockers.join(", ")}.` : "Elegível quando o daemon encontrar mercado compatível.");
+      setText("agent-preview-user", botUser);
+      setText("agent-preview-comments", type === "liquidity" ? "Este tipo não cria comentários; use Analyst para análises públicas." : `Até ${commentsDay} comentário(s)/dia para este agente, com cooldown efetivo de ${cooldown}h por mercado.`);
+      setText("agent-preview-predictions", type === "liquidity" ? `Até ${predictionsDay} previsão(ões)/dia, stake efetivo máximo de ${stake} O₵ e mínimo de ${minHumans} humano(s).` : "Este tipo não cria previsão bot nesta entrega.");
+      setText("agent-preview-globals", `Agentes ${enabledLabel(globals.agents)}, comentários ${enabledLabel(globals.comments)}, previsões bot ${enabledLabel(globals.predictions)}. Globais: ${globals.commentsDay} comentários/dia, ${globals.predictionsDay} previsões/dia, stake ${globals.stake} O₵, ${globals.minHumans} humano(s).`);
+    };
+
+    const updateFieldAvailability = () => {
+      const type = fieldValue("agent_type") || "analyst";
+      const usage = fieldUsage[type] || fieldUsage.analyst;
+      form.querySelectorAll("[data-agent-field]").forEach((wrapper) => {
+        const role = wrapper.dataset.agentField;
+        const enabled = usage.enabled.has(role);
+        const control = wrapper.querySelector("input, select, textarea");
+        const status = wrapper.querySelector("[data-agent-field-status]");
+        wrapper.classList.toggle("is-disabled-by-type", !enabled);
+        if (control) control.disabled = !enabled;
+        if (status) status.textContent = enabled ? "" : usage.disabledReason;
+      });
+    };
+
+    form.addEventListener("input", updatePreview);
+    form.addEventListener("change", () => {
+      updateFieldAvailability();
+      updatePreview();
+    });
+    updateFieldAvailability();
+    updatePreview();
+  })();
+</script>
+{% endblock %}
