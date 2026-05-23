@@ -26,7 +26,12 @@ from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
 from backend_api.db import database_config
-from backend_api.daemon_services import AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_system_logs
+from agents.models import AiAgent, AiAgentAction
+from backend_api.agent_prompts import build_comment_prompt
+from backend_api.agent_services import run_ai_agent_cycle
+from backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
+from backend_api.badge_engine import BadgeAwardEngine
+from backend_api.daemon_services import AUTO_CANCEL_NO_HUMANS_NOTE, AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_system_logs
 from backend_api.daemon_services import _locked_markets_message
 from backend_api.main import app
 from backend_api.main import _ensure_user_core
@@ -802,8 +807,22 @@ class BackendAuthAPITests(TransactionTestCase):
                 cursor.execute(
                     """
                     INSERT INTO orynth_site_config
-                        (singleton_key, wallet_recharge_min_balance_oc, daemon_stale_after_minutes, daemon_missing_after_minutes, email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds, default_from_email, default_reply_to_email, updated_by_id, updated_at)
-                    VALUES (1, 100, 5, 15, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '', %s, %s)
+                        (
+                            singleton_key, wallet_recharge_min_balance_oc, daemon_stale_after_minutes, daemon_missing_after_minutes,
+                            email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
+                            default_from_email, default_reply_to_email,
+                            ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled, ai_llm_provider, ai_llm_base_url,
+                            ai_model, ai_high_reasoning_model, ai_market_cooldown_hours, ai_max_comments_per_market_per_day,
+                            ai_max_comments_per_cycle, ai_max_comments_per_day, ai_comment_max_chars, ai_min_humans_for_prediction,
+                            ai_max_stake_oc, ai_max_predictions_per_cycle, ai_max_predictions_per_day, ai_skip_if_human_comments_recent,
+                            ai_recent_human_comment_window_hours, ai_openai_timeout_seconds, ai_openai_max_retries, ai_pause_reason,
+                            updated_by_id, updated_at
+                        )
+                    VALUES (
+                        1, 100, 5, 15, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
+                        false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
+                        1, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
+                    )
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
                         smtp_host = EXCLUDED.smtp_host,
@@ -914,12 +933,12 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
 
         locked = close_due_auto_markets(now=now)
-        self.assertEqual([market["slug"] for market in locked], ["daemon-auto-vencido"])
-        self.assertEqual(Market.objects.get(slug="daemon-auto-vencido").status, "locked")
+        self.assertEqual(locked, [])
+        self.assertEqual(Market.objects.get(slug="daemon-auto-vencido").status, "canceled")
         self.assertEqual(Market.objects.get(slug="daemon-manual-vencido").status, "open")
         self.assertEqual(Market.objects.get(slug="daemon-auto-futuro").status, "open")
         self.assertEqual(Market.objects.get(slug="daemon-auto-resolvido").status, "resolved")
-        self.assertTrue(AdminEvent.objects.filter(action="market.lock", actor__isnull=True, entity_identifier="daemon-auto-vencido", note=AUTO_CLOSE_NOTE).exists())
+        self.assertTrue(AdminEvent.objects.filter(action="market.cancel", actor__isnull=True, entity_identifier="daemon-auto-vencido", note=AUTO_CANCEL_NO_HUMANS_NOTE).exists())
 
         removed = prune_expired_system_logs(now=now)
         self.assertGreaterEqual(removed, 1)
@@ -959,6 +978,189 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertIn("Daemon fechou 12 mercado(s) automaticamente.", message)
         self.assertIn("mercado-0, mercado-1", message)
         self.assertIn("Mais 2 no detalhe do log.", message)
+
+    def test_ai_agent_cycle_noops_when_disabled(self):
+        SiteConfig.get_solo()
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                summary = run_ai_agent_cycle(cursor, now=timezone.now())
+
+        self.assertFalse(summary["enabled"])
+        self.assertEqual(summary["reason"], "ai_agents_disabled")
+        self.assertTrue(AiAgentAction.objects.filter(action_type="cycle", status="skipped", reason="ai_agents_disabled").exists())
+
+    def test_ai_comment_llm_failure_is_audited_without_breaking_cycle(self):
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_test", email="orynth-ai-test@example.com", password="x", is_bot=True, first_name="Orynth AI Test")
+        AiAgent.objects.create(name="Orynth AI Test", agent_type="analyst", user=bot, is_active=True)
+
+        with patch("backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("llm down")):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    summary = run_ai_agent_cycle(cursor, now=timezone.now())
+
+        self.assertGreaterEqual(summary["errors"], 1)
+        self.assertTrue(AiAgentAction.objects.filter(action_type="comment", status="failed").exists())
+
+    def test_ai_comment_contract_marks_official_bot_author(self):
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_comment", email="orynth-ai-comment@example.com", password="x", is_bot=True, first_name="Orynth AI Comment")
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        MarketComment.objects.create(market=market, author=bot, body="Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.")
+
+        response = TestClient(app).get(f"/markets/{market.slug}/comments")
+
+        self.assertEqual(response.status_code, 200)
+        comment = response.json()["comments"][0]
+        self.assertTrue(comment["author_is_bot"])
+        self.assertEqual(comment["author_badge_label"], "IA oficial")
+
+    def test_ai_comment_prompt_uses_multiple_choice_structure(self):
+        prompt = build_comment_prompt(
+            agent={"personality_prompt": "", "comment_style": ""},
+            market={
+                "kind": "multiple",
+                "title": "Quem vencerá o torneio?",
+                "options": [
+                    {"label": "Time A", "probability_exact": 42.0, "hint": ""},
+                    {"label": "Time B", "probability_exact": 31.0, "hint": ""},
+                    {"label": "Time C", "probability_exact": 27.0, "hint": ""},
+                ],
+            },
+            comments=[],
+            config={"ai_comment_max_chars": 700},
+        )
+
+        self.assertIn("Mercado de multipla escolha", prompt)
+        self.assertIn("nao use tese SIM/NAO", prompt)
+        self.assertIn('"kind": "multiple"', prompt)
+
+    def test_agent_llm_allows_bedrock_openai_compatible_provider(self):
+        class FakeResponse:
+            status_code = 200
+            text = ""
+
+            def json(self):
+                return {
+                    "output_text": json.dumps(
+                        {
+                            "comment": "Comentário seguro.",
+                            "should_publish": True,
+                            "confidence": 0.7,
+                            "risk_flags": [],
+                        }
+                    )
+                }
+
+        config = {
+            "ai_llm_provider": "bedrock",
+            "ai_llm_base_url": "https://bedrock-mantle.us-west-2.api.aws/v1",
+            "ai_model": "openai.gpt-oss-20b",
+            "ai_openai_timeout_seconds": 20,
+            "ai_openai_max_retries": 0,
+        }
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "bedrock-test-key"}), patch("backend_api.agent_llm.httpx.post", return_value=FakeResponse()) as post:
+            result = request_market_comment(config=config, prompt="teste")
+
+        self.assertTrue(result["should_publish"])
+        self.assertEqual(post.call_args.args[0], "https://bedrock-mantle.us-west-2.api.aws/v1/responses")
+        self.assertFalse(post.call_args.kwargs["json"]["store"])
+        self.assertNotIn("text", post.call_args.kwargs["json"])
+
+    def test_agent_llm_extracts_bedrock_output_without_reasoning_text(self):
+        payload = {
+            "output": [
+                {"type": "reasoning", "content": [{"type": "reasoning_text", "text": "internal reasoning"}]},
+                {"type": "message", "role": "assistant", "content": [{"type": "output_text", "text": "{\"ok\": true}"}]},
+            ]
+        }
+
+        self.assertEqual(_extract_output_text(payload), "{\"ok\": true}")
+
+    def test_ranking_and_badges_ignore_bots(self):
+        User = get_user_model()
+        human = User.objects.create_user(username="@ranking_human", email="ranking-human@example.com", password="x")
+        bot = User.objects.create_user(username="@ranking_bot", email="ranking-bot@example.com", password="x", is_bot=True, first_name="Orynth AI Ranking")
+        UserReputation.objects.create(user=human, reputation_score=120, accuracy_indicator="0%")
+        UserReputation.objects.create(user=bot, reputation_score=999, accuracy_indicator="0%")
+        BadgeDefinition.objects.update_or_create(
+            code="bot_comment_guard",
+            defaults={"name": "Guard", "description": "Guard", "rule_description": "Guard", "badge_type": "engagement", "is_active": True},
+        )
+        badge = BadgeDefinition.objects.get(code="bot_comment_guard")
+        BadgeRule.objects.update_or_create(badge=badge, defaults={"rule_type": "comments_count", "threshold_value": 1, "is_active": True})
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        MarketComment.objects.create(market=market, author=bot, body="Comentário bot oficial.")
+
+        response = TestClient(app).get("/rankings")
+        handles = [row["handle"] for row in response.json()["rows"]]
+        self.assertIn("@rankinghuman", handles)
+        self.assertNotIn("@rankingbot", handles)
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                BadgeAwardEngine.on_comment_created(cursor, bot.id, market_id=market.id)
+        self.assertFalse(UserBadgeAward.objects.filter(user=bot, badge=badge).exists())
+
+    def test_ai_prediction_bot_is_blocked_without_human_participants(self):
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = False
+        site_config.ai_predictions_enabled = True
+        site_config.ai_min_humans_for_prediction = 1
+        site_config.ai_max_stake_oc = 25
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_liquidity_bot", email="orynth-liquidity@example.com", password="x", is_bot=True, first_name="Orynth Liquidity Bot")
+        AiAgent.objects.create(name="Orynth Liquidity Bot", agent_type="liquidity", user=bot, is_active=True)
+        WalletBalance.objects.create(user=bot, available_oc=100, locked_oc=0, total_earned_oc=0)
+        market = Market.objects.get(slug="openai-gpt6-2026")
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                summary = run_ai_agent_cycle(cursor, now=timezone.now())
+
+        self.assertEqual(summary["predictions_created"], 0)
+        self.assertFalse(Prediction.objects.filter(user=bot, market=market).exists())
+        self.assertTrue(AiAgentAction.objects.filter(action_type="prediction", status="skipped", reason="no_eligible_market").exists())
+
+    def test_ai_prediction_cycle_skips_markets_already_predicted_by_bot(self):
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = False
+        site_config.ai_predictions_enabled = True
+        site_config.ai_min_humans_for_prediction = 1
+        site_config.ai_max_stake_oc = 5
+        site_config.save()
+        User = get_user_model()
+        human = User.objects.create_user(username="@skip_human", email="skip-human@example.com", password="x")
+        bot = User.objects.create_user(username="@skip_liquidity_bot", email="skip-liquidity@example.com", password="x", is_bot=True, first_name="Orynth Liquidity")
+        AiAgent.objects.create(name="Orynth Liquidity Skip", agent_type="liquidity", user=bot, is_active=True)
+        WalletBalance.objects.create(user=bot, available_oc=100, locked_oc=0, total_earned_oc=0)
+        markets = list(Market.objects.filter(status="open").order_by("id")[:2])
+        first = markets[0]
+        second = markets[1]
+        first.view_count = 1000
+        second.view_count = 900
+        first.save(update_fields=["view_count"])
+        second.save(update_fields=["view_count"])
+        first_option = first.options.first()
+        second_option = second.options.first()
+        Prediction.objects.create(user=human, market=first, market_option=first_option, stake_amount=10, probability_at_entry=50, weight_at_entry=1000, potential_payout=20, status="open")
+        Prediction.objects.create(user=human, market=second, market_option=second_option, stake_amount=10, probability_at_entry=50, weight_at_entry=1000, potential_payout=20, status="open")
+        Prediction.objects.create(user=bot, market=first, market_option=first_option, stake_amount=5, probability_at_entry=50, weight_at_entry=500, potential_payout=10, status="open")
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                summary = run_ai_agent_cycle(cursor, now=timezone.now())
+
+        self.assertEqual(summary["predictions_created"], 1)
+        self.assertTrue(Prediction.objects.filter(user=bot, market=second).exists())
+        self.assertEqual(Prediction.objects.filter(user=bot, market=first).count(), 1)
 
     def test_system_log_capture_and_python_logging_handler(self):
         client = TestClient(app)
@@ -2709,6 +2911,12 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertTrue(valid_market.json()["auto_close_enabled"])
         self.assertEqual(valid_market.json()["image_url"], "/media/market_thumbnails/teste.png")
         self.assertTrue(valid_market.json()["closes_in"].endswith("d") or valid_market.json()["closes_in"].endswith("h") or valid_market.json()["closes_in"] == "fim")
+        filtered_markets = client.get("/admin/markets?q=solar", headers=headers)
+        self.assertEqual(filtered_markets.status_code, 200)
+        self.assertIn("energia-solar-maioria-2030", [market["slug"] for market in filtered_markets.json()["markets"]])
+        filtered_empty = client.get("/admin/markets?q=nao-existe-mercado", headers=headers)
+        self.assertEqual(filtered_empty.status_code, 200)
+        self.assertEqual(filtered_empty.json()["markets"], [])
         delete_linked_event = client.delete("/admin/categories/energia/subcategories/renovaveis/events/solar", headers=headers)
         self.assertEqual(delete_linked_event.status_code, 422)
 
@@ -2779,6 +2987,12 @@ class BackendAuthAPITests(TransactionTestCase):
             json={"option_id": predicted_option.id, "stake_amount": 20, "client_locale": "pt-br"},
         )
         self.assertEqual(prediction.status_code, 201)
+        participants_response = client.get("/admin/markets/energia-solar-maioria-2030/participants", headers=headers)
+        self.assertEqual(participants_response.status_code, 200)
+        self.assertEqual(participants_response.json()["summary"]["human_participants"], 1)
+        self.assertEqual(participants_response.json()["summary"]["bot_participants"], 0)
+        self.assertEqual(participants_response.json()["participants"][0]["handle"], "@admineditpredictor")
+        self.assertEqual(participants_response.json()["participants"][0]["stake_amount"], 20)
         predicted_option.refresh_from_db()
         probability_after_prediction = predicted_option.probability_exact
         edited_market_payload = {
@@ -3001,9 +3215,34 @@ class BackendAuthAPITests(TransactionTestCase):
                         smtp_timeout_seconds,
                         default_from_email,
                         default_reply_to_email,
+                        ai_agents_enabled,
+                        ai_commenting_enabled,
+                        ai_predictions_enabled,
+                        ai_llm_provider,
+                        ai_llm_base_url,
+                        ai_model,
+                        ai_high_reasoning_model,
+                        ai_market_cooldown_hours,
+                        ai_max_comments_per_market_per_day,
+                        ai_max_comments_per_cycle,
+                        ai_max_comments_per_day,
+                        ai_comment_max_chars,
+                        ai_min_humans_for_prediction,
+                        ai_max_stake_oc,
+                        ai_max_predictions_per_cycle,
+                        ai_max_predictions_per_day,
+                        ai_skip_if_human_comments_recent,
+                        ai_recent_human_comment_window_hours,
+                        ai_openai_timeout_seconds,
+                        ai_openai_max_retries,
+                        ai_pause_reason,
                         updated_at
                     )
-                    VALUES (1, 10000, 5, 15, false, '', 587, '', true, false, 10, '', '', NOW())
+                    VALUES (
+                        1, 10000, 5, 15, false, '', 587, '', true, false, 10, '', '',
+                        false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
+                        1, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
+                    )
                     ON CONFLICT (singleton_key)
                     DO UPDATE SET wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc, updated_at = NOW()
                     """
@@ -3203,6 +3442,15 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertContains(response, "Enviar feedback/Suporte")
                 if route == reverse("home"):
                     self.assertNotContains(response, category_notice)
+                if route == reverse("concepts"):
+                    self.assertContains(response, "Agentes IA oficiais são automações identificadas")
+                    self.assertContains(response, "Analyst")
+                    self.assertContains(response, "Liquidity")
+                if route == reverse("use-policy"):
+                    self.assertContains(response, "Agentes oficiais devem ser identificados e auditáveis")
+                    self.assertContains(response, "não podem fingir ser humanos")
+                    self.assertContains(response, "contas oficiais automatizadas")
+                    self.assertContains(response, "Segredos de integração")
                     self.assertNotContains(response, subcategory_notice)
                     self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
@@ -4140,6 +4388,17 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Segredo SMTP")
             self.assertContains(response, "Configurado por ambiente")
             self.assertContains(response, "Saldo máximo para solicitar")
+            self.assertContains(response, "Agentes IA oficiais nunca simulam pessoas.")
+            self.assertContains(response, "Regras dos agentes")
+            self.assertContains(response, "Comentários IA podem ocorrer com 0 humanos")
+            self.assertContains(response, "Previsão bot só roda")
+            self.assertContains(response, "Falhas da LLM/OpenAI são auditadas")
+            self.assertContains(response, "Horas mínimas antes de voltar ao mesmo mercado.")
+            self.assertContains(response, "Bot só prevê após atingir este número de humanos.")
+            self.assertContains(response, "Tempo máximo de espera por chamada LLM.")
+            self.assertContains(response, 'name="ai-ai_llm_provider"')
+            self.assertContains(response, 'name="ai-ai_max_stake_oc"')
+            self.assertContains(response, 'name="ai-ai_predictions_enabled"')
             self.assertNotContains(response, "super-secret-smtp")
 
             response = self.client.post(
@@ -4181,6 +4440,88 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.daemon_missing_after_minutes, 21)
             self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
 
+    def test_admin_config_persists_ai_agent_parameters(self):
+        staff = get_user_model().objects.create_user(
+            username="aiconfigstaff",
+            email="ai-config-staff@example.com",
+            password="test",
+            is_staff=True,
+            first_name="AI Config Staff",
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        with TemporaryDirectory() as tmpdir, override_settings(
+            ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
+            OPENAI_API_KEY="test-openai-key",
+        ):
+            response = self.client.post(
+                reverse("admin-ops-config"),
+                {
+                    "maintenance-maintenance_message": "",
+                    "economy-wallet_recharge_min_balance_oc": "100",
+                    "daemon-daemon_stale_after_minutes": "6",
+                    "daemon-daemon_missing_after_minutes": "18",
+                    "email-smtp_host": "",
+                    "email-smtp_port": "587",
+                    "email-smtp_username": "",
+                    "email-smtp_timeout_seconds": "10",
+                    "email-default_from_email": "",
+                    "email-default_reply_to_email": "",
+                    "ai-ai_agents_enabled": "on",
+                    "ai-ai_commenting_enabled": "on",
+                    "ai-ai_predictions_enabled": "on",
+                    "ai-ai_llm_provider": "openai",
+                    "ai-ai_llm_base_url": "https://api.openai.com/v1",
+                    "ai-ai_model": "gpt-5.4-mini",
+                    "ai-ai_high_reasoning_model": "gpt-5.5",
+                    "ai-ai_market_cooldown_hours": "12",
+                    "ai-ai_max_comments_per_market_per_day": "1",
+                    "ai-ai_max_comments_per_cycle": "2",
+                    "ai-ai_max_comments_per_day": "15",
+                    "ai-ai_comment_max_chars": "650",
+                    "ai-ai_min_humans_for_prediction": "2",
+                    "ai-ai_max_stake_oc": "30",
+                    "ai-ai_max_predictions_per_cycle": "2",
+                    "ai-ai_max_predictions_per_day": "8",
+                    "ai-ai_skip_if_human_comments_recent": "on",
+                    "ai-ai_recent_human_comment_window_hours": "4",
+                    "ai-ai_openai_timeout_seconds": "25",
+                    "ai-ai_openai_max_retries": "2",
+                    "ai-ai_pause_reason": "janela operacional",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+
+            site_config = SiteConfig.get_solo()
+            self.assertTrue(site_config.ai_agents_enabled)
+            self.assertTrue(site_config.ai_commenting_enabled)
+            self.assertTrue(site_config.ai_predictions_enabled)
+            self.assertEqual(site_config.ai_model, "gpt-5.4-mini")
+            self.assertEqual(site_config.ai_high_reasoning_model, "gpt-5.5")
+            self.assertEqual(site_config.ai_market_cooldown_hours, 12)
+            self.assertEqual(site_config.ai_max_comments_per_cycle, 2)
+            self.assertEqual(site_config.ai_max_comments_per_day, 15)
+            self.assertEqual(site_config.ai_comment_max_chars, 650)
+            self.assertEqual(site_config.ai_min_humans_for_prediction, 2)
+            self.assertEqual(site_config.ai_max_stake_oc, 30)
+            self.assertEqual(site_config.ai_max_predictions_per_cycle, 2)
+            self.assertEqual(site_config.ai_max_predictions_per_day, 8)
+            self.assertEqual(site_config.ai_recent_human_comment_window_hours, 4)
+            self.assertEqual(site_config.ai_openai_timeout_seconds, 25)
+            self.assertEqual(site_config.ai_openai_max_retries, 2)
+            self.assertEqual(site_config.ai_pause_reason, "janela operacional")
+            self.assertNotIn("test-openai-key", str(site_config.__dict__))
+
     def test_admin_config_rejects_tls_and_ssl_together(self):
         session = self.client.session
         session[TOKEN_KEY] = "staff-token"
@@ -4212,6 +4553,238 @@ class WebSmokeTests(TransactionTestCase):
             )
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "TLS e SSL não podem ficar ativos ao mesmo tempo.")
+
+    def test_admin_ai_agent_form_explains_types_and_uses_active_bot_users(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 404,
+            "handle": "@staff",
+            "email": "staff@example.com",
+            "display_name": "Staff",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        user_payload = {
+            "users": [
+                {
+                    "id": 91,
+                    "handle": "@orynth_ai_analyst",
+                    "email": "ai@example.com",
+                    "display_name": "Orynth AI Analyst",
+                    "preferred_language": "pt-br",
+                    "account_status": "active",
+                    "is_active": True,
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_bot": True,
+                    "created_at": "2026-05-22T00:00:00+00:00",
+                    "last_login": None,
+                    "deactivated_at": None,
+                    "available_oc": 500,
+                    "locked_oc": 0,
+                    "reputation_score": 0,
+                },
+                {
+                    "id": 92,
+                    "handle": "@human",
+                    "email": "human@example.com",
+                    "display_name": "Human User",
+                    "preferred_language": "pt-br",
+                    "account_status": "active",
+                    "is_active": True,
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_bot": False,
+                    "created_at": "2026-05-22T00:00:00+00:00",
+                    "last_login": None,
+                    "deactivated_at": None,
+                    "available_oc": 100,
+                    "locked_oc": 0,
+                    "reputation_score": 0,
+                },
+                {
+                    "id": 93,
+                    "handle": "@inactivebot",
+                    "email": "inactive@example.com",
+                    "display_name": "Inactive Bot",
+                    "preferred_language": "pt-br",
+                    "account_status": "deactivated",
+                    "is_active": False,
+                    "is_staff": False,
+                    "is_superuser": False,
+                    "is_bot": True,
+                    "created_at": "2026-05-22T00:00:00+00:00",
+                    "last_login": None,
+                    "deactivated_at": "2026-05-22T01:00:00+00:00",
+                    "available_oc": 300,
+                    "locked_oc": 0,
+                    "reputation_score": 0,
+                },
+            ],
+            "counts": {"total": 3, "bots": 2},
+        }
+        created_agent = {
+            "id": 7,
+            "name": "Orynth Analyst",
+            "agent_type": "analyst",
+            "is_active": True,
+            "user_id": 91,
+            "user_handle": "@orynth_ai_analyst",
+            "user_display_name": "Orynth AI Analyst",
+            "user_is_bot": True,
+            "personality_prompt": "",
+            "comment_style": "",
+        }
+        with patch("admin_ops.views.admin_get_users", return_value=user_payload) as users_mock, patch("admin_ops.views.admin_create_ai_agent", return_value=created_agent) as create_mock:
+            response = self.client.get(reverse("admin-ops-ai-agent-new"))
+            self.assertContains(response, "Comenta mercados")
+            self.assertContains(response, "Testa previsão bot")
+            self.assertContains(response, "Experimental, sem ciclo ativo")
+            self.assertContains(response, "Prévia operacional")
+            self.assertContains(response, "Parâmetros globais atuais")
+            self.assertContains(response, "sem rotina backend ativa")
+            self.assertContains(response, "Não usado por Analyst")
+            self.assertContains(response, "Não usado por Liquidity")
+            self.assertContains(response, "Orynth AI Analyst (@orynth_ai_analyst) · ID 91 · 500 O₵")
+            self.assertNotContains(response, "Human User")
+            self.assertNotContains(response, "Inactive Bot")
+            users_mock.assert_called_with("staff-token", bot="yes", status="active", order="created_desc")
+
+            response = self.client.post(
+                reverse("admin-ops-ai-agent-new"),
+                {
+                    "name": "Orynth Analyst",
+                    "agent_type": "analyst",
+                    "user_id": "91",
+                    "is_active": "on",
+                    "personality_prompt": "Comente de forma equilibrada.",
+                    "comment_style": "direto",
+                    "max_comments_per_day": "",
+                    "max_predictions_per_day": "",
+                    "max_stake_oc": "",
+                    "cooldown_hours": "",
+                    "min_humans_for_prediction": "",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            create_mock.assert_called_once()
+            self.assertEqual(create_mock.call_args.args[1]["user_id"], 91)
+            self.assertIsNone(create_mock.call_args.args[1]["max_predictions_per_day"])
+            self.assertIsNone(create_mock.call_args.args[1]["max_stake_oc"])
+            self.assertIsNone(create_mock.call_args.args[1]["min_humans_for_prediction"])
+
+            create_mock.reset_mock()
+            response = self.client.post(
+                reverse("admin-ops-ai-agent-new"),
+                {
+                    "name": "Orynth Liquidity",
+                    "agent_type": "liquidity",
+                    "user_id": "91",
+                    "is_active": "on",
+                    "personality_prompt": "Este texto deve ser limpo para liquidity.",
+                    "comment_style": "este estilo deve ser limpo",
+                    "max_comments_per_day": "7",
+                    "max_predictions_per_day": "3",
+                    "max_stake_oc": "25",
+                    "cooldown_hours": "12",
+                    "min_humans_for_prediction": "2",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            payload = create_mock.call_args.args[1]
+            self.assertEqual(payload["personality_prompt"], "")
+            self.assertEqual(payload["comment_style"], "")
+            self.assertIsNone(payload["max_comments_per_day"])
+            self.assertIsNone(payload["cooldown_hours"])
+            self.assertEqual(payload["max_predictions_per_day"], 3)
+            self.assertEqual(payload["max_stake_oc"], 25)
+            self.assertEqual(payload["min_humans_for_prediction"], 2)
+
+    def test_admin_ai_agent_audit_filters_reason_and_loads_more_in_blocks(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 404,
+            "handle": "@staff",
+            "email": "staff@example.com",
+            "display_name": "Staff",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        actions = [
+            {
+                "id": index,
+                "agent_id": 2,
+                "agent_name": "Orynth AI Analyst",
+                "market_id": 43,
+                "market_slug": "vencedor-grupo-c-copa-2026",
+                "market_title": "Quem vencerá o Grupo C da Copa 2026?",
+                "action_type": "comment",
+                "status": "skipped" if index % 2 else "failed",
+                "reason": "llm_error_timeout",
+                "payload_summary": {},
+                "prompt_template_version": "orynth-ai-agent-v2",
+                "prompt_hash": "abc123",
+                "comment_id": None,
+                "prediction_id": None,
+                "created_at": f"2026-05-23T10:{index:02d}:00+00:00",
+            }
+            for index in range(1, 13)
+        ]
+        with patch("admin_ops.views.admin_get_ai_agents", return_value={"agents": [], "health": {}}), patch("admin_ops.views.admin_get_ai_agent_actions", return_value={"actions": actions, "health": {}}) as actions_mock:
+            response = self.client.get(reverse("admin-ops-ai-agent-actions") + "?reason=llm_error")
+
+        self.assertEqual(response.status_code, 200)
+        actions_mock.assert_called_with("staff-token", agent_id="", market_slug="", action_type="", status="", reason="llm_error")
+        self.assertContains(response, 'name="reason"')
+        self.assertContains(response, "10 de 12 ações")
+        self.assertContains(response, "Carregar mais")
+        self.assertContains(response, "reason=llm_error")
+        self.assertContains(response, "Detalhe", count=10)
+
+    def test_admin_ai_agent_action_detail_has_context_and_pretty_payload(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 404,
+            "handle": "@staff",
+            "email": "staff@example.com",
+            "display_name": "Staff",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        action = {
+            "id": 7,
+            "agent_id": 2,
+            "agent_name": "Orynth AI Analyst",
+            "market_id": 43,
+            "market_slug": "vencedor-grupo-c-copa-2026",
+            "market_title": "Quem vencerá o Grupo C da Copa 2026?",
+            "action_type": "comment",
+            "status": "created",
+            "reason": "comment_created",
+            "payload_summary": {"confidence": 0.68, "risk_flags": []},
+            "prompt_template_version": "orynth-ai-agent-v2",
+            "prompt_hash": "abc123def456abc123def456",
+            "comment_id": 163,
+            "prediction_id": None,
+            "created_at": "2026-05-23T10:00:00+00:00",
+        }
+        with patch("admin_ops.views.admin_get_ai_agent_action", return_value=action):
+            response = self.client.get(reverse("admin-ops-ai-agent-action-detail", args=[7]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ação #7")
+        self.assertContains(response, "Agentes oficiais")
+        self.assertContains(response, "Contexto")
+        self.assertContains(response, "Prompt")
+        self.assertContains(response, "Payload resumido")
+        self.assertContains(response, "&quot;confidence&quot;: 0.68")
+        self.assertContains(response, "vencedor-grupo-c-copa-2026")
 
     def test_maintenance_mode_redirects_public_pages_without_blocking_admin_or_assets(self):
         with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
@@ -4516,7 +5089,7 @@ class WebSmokeTests(TransactionTestCase):
             "is_staff": True,
         }
         session.save()
-        api_market = {**get_domain_client().market("openai-gpt6-2026"), "title": "Mercado admin API", "auto_close_enabled": False}
+        api_market = {**get_domain_client().market("openai-gpt6-2026"), "title": "Mercado admin API", "auto_close_enabled": False, "participants": "3 participantes", "bot_participants": 1}
         market_data = {"markets": [api_market], "counts": {"open": 1, "draft": 0, "locked": 0, "canceled": 0}}
         taxonomy_data = {
             "categories": [
@@ -4635,17 +5208,24 @@ class WebSmokeTests(TransactionTestCase):
             dashboard_mock.assert_called_once_with("staff-token")
             response = self.client.get(reverse("admin-ops-markets"))
             self.assertContains(response, "Mercado admin API")
+            self.assertContains(response, "Participantes")
+            self.assertContains(response, "3 participantes")
+            self.assertContains(response, "1 bot oficial")
             self.assertContains(response, "Destaque")
             self.assertNotContains(response, 'class="panel admin-menu"')
             self.assertNotContains(response, "Ver público")
             self.assertContains(response, "Gerencie contratos publicados, rascunhos e cancelamentos usados no feed público.")
             self.assertContains(response, "Fechados 0")
+            response = self.client.get(f"{reverse('admin-ops-markets')}?q=admin%20api&status=open&order=views_desc")
+            self.assertContains(response, "Buscar mercado")
+            self.assertContains(response, 'value="admin api"', html=False)
+            markets_mock.assert_any_call("staff-token", status="open", q="admin api", order="views_desc")
             response = self.client.get(f"{reverse('admin-ops-markets')}?status=draft")
             self.assertContains(response, "Rascunhos")
-            markets_mock.assert_any_call("staff-token", status="draft", order="display")
+            markets_mock.assert_any_call("staff-token", status="draft", q="", order="display")
             response = self.client.get(f"{reverse('admin-ops-markets')}?status=locked")
             self.assertContains(response, "Fechados")
-            markets_mock.assert_any_call("staff-token", status="locked", order="display")
+            markets_mock.assert_any_call("staff-token", status="locked", q="", order="display")
 
         user_data = {
             "users": [
@@ -4995,9 +5575,61 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "update_subcategory")
             self.assertContains(response, "update_event")
 
-        with patch("admin_ops.views.admin_get_market", return_value=api_market), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
+        participant_payload = {
+            "market": {"slug": "openai-gpt6-2026", "title": "Mercado admin API", "status": "open"},
+            "summary": {
+                "participants": "1 participante",
+                "human_participants": 1,
+                "bot_participants": 1,
+                "human_volume_oc": 10,
+                "bot_volume_oc": 25,
+                "total_volume_oc": 35,
+                "participants_total": 2,
+                "human_predictions": 1,
+                "bot_predictions": 1,
+            },
+            "participants": [
+                {
+                    "prediction_id": 1,
+                    "user_id": 10,
+                    "handle": "@human",
+                    "display_name": "Humano Admin",
+                    "is_bot": False,
+                    "badge_label": "",
+                    "option_label": "SIM",
+                    "stake_amount": 10,
+                    "probability_at_entry": 50.0,
+                    "potential_payout": 20,
+                    "status": "open",
+                    "won": None,
+                    "created_at": "2026-05-23T12:00:00+00:00",
+                },
+                {
+                    "prediction_id": 2,
+                    "user_id": 11,
+                    "handle": "@orynth_ai_liquidity",
+                    "display_name": "Orynth AI Liquidity",
+                    "is_bot": True,
+                    "badge_label": "IA oficial",
+                    "option_label": "NAO",
+                    "stake_amount": 25,
+                    "probability_at_entry": 50.0,
+                    "potential_payout": 50,
+                    "status": "open",
+                    "won": None,
+                    "created_at": "2026-05-23T12:01:00+00:00",
+                },
+            ],
+        }
+        with patch("admin_ops.views.admin_get_market", return_value=api_market), patch("admin_ops.views.admin_get_market_participants", return_value=participant_payload), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-market-edit", args=["openai-gpt6-2026"]))
             self.assertContains(response, "Mercado admin API")
+            self.assertContains(response, "Participantes do mercado")
+            self.assertContains(response, "Humanos")
+            self.assertContains(response, "Bots oficiais")
+            self.assertContains(response, "Humano Admin")
+            self.assertContains(response, "Orynth AI Liquidity")
+            self.assertContains(response, "IA oficial")
             self.assertContains(response, "data-market-form")
             self.assertContains(response, "data-add-option")
             self.assertContains(response, "data-multiple-options")

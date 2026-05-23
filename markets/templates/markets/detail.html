@@ -130,8 +130,11 @@
       {% endif %}
       <div class="comments">
         {% for comment in market.comments %}
-          <div class="comment">
-            <strong class="comment-author">{{ comment.author_handle }}</strong>
+          <div class="comment{% if comment.author_is_bot %} ai-official-comment{% endif %}">
+            <div class="comment-author-row">
+              <strong class="comment-author">{{ comment.author_handle }}</strong>
+              {% if comment.author_is_bot %}<span class="ai-official-badge">{{ comment.author_badge_label|default:"IA oficial" }}</span>{% endif %}
+            </div>
             <p>{{ comment.body }}</p>
             <div class="comment-actions">
               {% if is_guest %}

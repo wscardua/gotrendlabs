@@ -262,6 +262,10 @@ def admin_get_market(token, slug):
     return _normalize_market_payload(_request("GET", f"/admin/markets/{slug}", token=token))
 
 
+def admin_get_market_participants(token, slug):
+    return _request("GET", f"/admin/markets/{slug}/participants", token=token)
+
+
 def admin_update_market(token, slug, data):
     return _normalize_market_payload(_request("PATCH", f"/admin/markets/{slug}", data, token=token))
 
@@ -316,6 +320,32 @@ def admin_get_system_log(token, log_id):
 
 def admin_get_dashboard_summary(token):
     return _request("GET", "/admin/dashboard-summary", token=token)
+
+
+def admin_get_ai_agents(token):
+    return _request("GET", "/admin/ai-agents", token=token)
+
+
+def admin_get_ai_agent(token, agent_id):
+    return _request("GET", f"/admin/ai-agents/{agent_id}", token=token)
+
+
+def admin_create_ai_agent(token, data):
+    return _request("POST", "/admin/ai-agents", data, token=token)
+
+
+def admin_update_ai_agent(token, agent_id, data):
+    return _request("PATCH", f"/admin/ai-agents/{agent_id}", data, token=token)
+
+
+def admin_get_ai_agent_actions(token, **filters):
+    query = urlencode({key: value for key, value in filters.items() if value})
+    path = f"/admin/ai-agent-actions?{query}" if query else "/admin/ai-agent-actions"
+    return _request("GET", path, token=token)
+
+
+def admin_get_ai_agent_action(token, action_id):
+    return _request("GET", f"/admin/ai-agent-actions/{action_id}", token=token)
 
 
 def admin_moderate_comment(token, comment_id, status, note=""):

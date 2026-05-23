@@ -15,6 +15,8 @@
 - Toda automação crítica deve registrar execução, sucesso, falha e tentativas.
 - O daemon operacional registra heartbeat em logs técnicos para que o Admin Ops detecte processo ativo, atrasado ou sem sinal.
 - Reconciliação de mercado cancelado com previsões abertas não é necessária no fluxo normal; quando automatizada no futuro, deve iniciar em modo de auditoria/alerta e só aplicar correção com política operacional explícita.
+- O daemon chama o ciclo de agentes IA como automação isolada: configs desligadas geram no-op, falhas LLM não interrompem rotinas principais e o heartbeat inclui resumo de comentários, previsões, skips e erros.
+- Fechamento automático deve cancelar mercados sem participantes humanos, liberando previsões abertas existentes, inclusive stakes bot criados por falha/configuração.
 
 ## Dependências
 

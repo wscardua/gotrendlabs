@@ -10,7 +10,7 @@
       {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
       {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
       {% if is_readonly %}<div class="notice red market-readonly-notice">Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar.</div>{% endif %}
-      <form class="form-grid" method="post" enctype="multipart/form-data" data-market-form>
+      <form id="market-editor" class="form-grid" method="post" enctype="multipart/form-data" data-market-form>
         {% csrf_token %}
         <fieldset class="form-grid full" {% if is_readonly %}disabled{% endif %}>
         <div class="editor-section full">
@@ -144,9 +144,41 @@
           <a class="btn ghost" href="{% url 'admin-ops-markets' %}">Voltar</a>
         </div>
         {% if mode != "new" and not is_readonly %}
-          <div class="ticket-note full">Cancelar um mercado com previsões aplica refund total automaticamente: todos os stakes bloqueados voltam ao saldo disponível e nenhuma reputação é alterada.</div>
+          <div class="ticket-note full market-cancel-note">Cancelar um mercado com previsões aplica refund total automaticamente: todos os stakes bloqueados voltam ao saldo disponível e nenhuma reputação é alterada.</div>
         {% endif %}
       </form>
+      {% if market %}
+        <section id="market-participants" class="editor-section full market-participants-panel">
+          <div class="section-head compact">
+            <div>
+              <h3>Participantes do mercado</h3>
+              <p>Previsões reais registradas, separando humanos e bots oficiais.</p>
+            </div>
+          </div>
+          <div class="admin-dashboard-kpis compact">
+            <div class="admin-card dashboard-kpi"><span>Humanos</span><strong>{{ market_participants.summary.human_participants|default:0 }}</strong><small>{{ market_participants.summary.human_volume_oc|default:0 }} O₵</small></div>
+            <div class="admin-card dashboard-kpi"><span>Bots oficiais</span><strong>{{ market_participants.summary.bot_participants|default:0 }}</strong><small>{{ market_participants.summary.bot_volume_oc|default:0 }} O₵</small></div>
+            <div class="admin-card dashboard-kpi"><span>Total operacional</span><strong>{{ market_participants.summary.participants_total|default:0 }}</strong><small>{{ market_participants.summary.total_volume_oc|default:0 }} O₵</small></div>
+          </div>
+          <table class="table market-participants-table">
+            <tr><th>Usuário</th><th>Tipo</th><th>Opção</th><th>Stake</th><th>Prob. entrada</th><th>Payout potencial</th><th>Status</th><th>Quando</th></tr>
+            {% for participant in market_participants.participants %}
+              <tr>
+                <td><strong>{{ participant.display_name }}</strong><br><small>{{ participant.handle }} · #{{ participant.prediction_id }}</small></td>
+                <td>{% if participant.is_bot %}<span class="tag">IA oficial</span>{% else %}<span class="tag safe">Humano</span>{% endif %}</td>
+                <td>{{ participant.option_label }}</td>
+                <td>{{ participant.stake_amount }} O₵</td>
+                <td>{{ participant.probability_at_entry }}%</td>
+                <td>{{ participant.potential_payout }} O₵</td>
+                <td>{{ participant.status }}</td>
+                <td>{{ participant.created_at|slice:":16" }}</td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="8">Nenhuma previsão registrada neste mercado.</td></tr>
+            {% endfor %}
+          </table>
+        </section>
+      {% endif %}
     </div>
     <aside class="panel trade-box">
       <h3>Prévia pública</h3>

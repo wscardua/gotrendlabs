@@ -118,6 +118,11 @@
               <strong>{{ system.daemon_status_label|default:"Sem sinal" }}</strong>
               <small>{{ system.daemon_locked_markets_24h|default:0 }} fechamentos 24h</small>
             </a>
+            <a class="dashboard-health-item {% if system.ai.status == 'active' %}is-safe{% elif system.ai.status == 'paused' or system.ai.status == 'inactive' %}is-warn{% elif system.ai.status == 'error' %}is-risk{% endif %}" href="{% url 'admin-ops-ai-agents' %}">
+              <span>Agentes IA</span>
+              <strong>{{ system.ai.status_label|default:"Sem sinal" }}</strong>
+              <small>{{ system.ai.comments_created_24h|default:0 }} comentários · {{ system.ai.predictions_created_24h|default:0 }} previsões</small>
+            </a>
             <a class="dashboard-health-item {% if system.logs_critical_7d %}is-risk{% endif %}" href="{% url 'admin-ops-system-logs' %}?level=CRITICAL">
               <span>Críticos 7d</span>
               <strong>{{ system.logs_critical_7d|default:0 }}</strong>

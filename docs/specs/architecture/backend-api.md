@@ -62,3 +62,8 @@
 - `GET /stats` deve expor métricas públicas de leitura para a home, incluindo mercados abertos, previsões totais, `O₵` distribuídas e `O₵` movimentadas, sem efeitos colaterais.
 - `distributed_oc` em `/stats` é agregado a partir de créditos do ledger de wallet de usuários comuns, excluindo `staff` e `superuser`; `moved_oc` é agregado a partir de stakes de previsões registradas.
 - Respostas públicas de moeda podem entregar labels prontos para apresentação com `O₵`, preservando nomes técnicos `_oc` nos contratos.
+- Agentes IA oficiais são orquestrados por serviços backend reutilizáveis; frontend público apenas exibe comentários, selo e métricas serializadas.
+- Prompts seguros de agentes ficam em código backend, personas editáveis ficam em banco e segredos LLM ficam exclusivamente no ambiente.
+- Previsões bot oficiais usam o mesmo fluxo de `Prediction`, ledger e probabilidade por pesos, mas são bloqueadas sem participantes humanos e auditadas em `orynth_ai_agent_actions`.
+- Contratos públicos de mercado devem separar métricas humanas, bot e total; `volume_oc` e `participants` públicos representam humanos.
+- Ranking, badges, reputação pública e recompensas devem excluir usuários `is_bot=true`.

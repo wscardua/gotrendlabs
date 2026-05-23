@@ -15,6 +15,7 @@
       <div class="nav-links">
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>
+        <a class="nav-link {% if 'ai-agent' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-ai-agents' %}">Agentes IA</a>
         <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-users' %}">Usuários</a>
         <a class="nav-link {% if 'taxonomy' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>
         <a class="nav-link {% if 'badge' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-badges' %}">Badge</a>

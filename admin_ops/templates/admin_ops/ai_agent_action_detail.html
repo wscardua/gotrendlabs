@@ -1,0 +1,120 @@
+{% extends "admin_base.html" %}
+{% block title %}Orynth Trends Admin | Ação IA{% endblock %}
+{% block content %}
+<main class="shell admin-layout system-log-detail-page ai-action-detail-page">
+  <section class="panel system-log-detail-shell">
+    {% if admin_error %}<div class="admin-alert risk">{{ admin_error }}</div>{% endif %}
+    {% if action %}
+      <div class="system-log-hero {% if action.status == 'failed' %}is-risk{% elif action.status == 'skipped' %}is-warn{% else %}is-safe{% endif %}">
+        <div class="system-log-hero-main">
+          <a class="context-back" href="{% url 'admin-ops-ai-agents' %}">← Auditoria IA</a>
+          <span class="eyebrow">Agentes oficiais</span>
+          <h1 class="large-title">Ação #{{ action.id }}</h1>
+          <p>{{ action.reason|default:"Registro operacional de uma decisão do ciclo IA." }}</p>
+        </div>
+        <div class="system-log-hero-aside">
+          <span class="system-log-level">{{ action.status }}</span>
+          <span>{{ action.action_type }}</span>
+          {% if action.agent_name %}<span>{{ action.agent_name }}</span>{% endif %}
+        </div>
+      </div>
+
+      <div class="system-log-summary-grid">
+        <article>
+          <span>Status</span>
+          <strong>{{ action.status }}</strong>
+          <small>{{ action.created_at|slice:":16" }}</small>
+        </article>
+        <article>
+          <span>Tipo</span>
+          <strong>{{ action.action_type }}</strong>
+          <small>ação do ciclo IA</small>
+        </article>
+        <article>
+          <span>Agente</span>
+          <strong>{{ action.agent_name|default:"sistema" }}</strong>
+          <small>{% if action.agent_id %}#{{ action.agent_id }}{% else %}ação global{% endif %}</small>
+        </article>
+        <article>
+          <span>Mercado</span>
+          <strong>{% if action.market_slug %}{{ action.market_slug }}{% else %}-{% endif %}</strong>
+          <small>{% if action.market_id %}#{{ action.market_id }}{% else %}sem mercado{% endif %}</small>
+        </article>
+      </div>
+
+      <div class="system-log-detail-grid">
+        <div class="system-log-primary">
+          <section class="system-log-panel">
+            <div class="system-log-panel-head">
+              <div>
+                <span class="eyebrow">Motivo</span>
+                <h2>Resultado da ação</h2>
+              </div>
+              <span class="tag {% if action.status == 'created' %}safe{% elif action.status == 'failed' %}risk{% else %}warn{% endif %}">{{ action.status }}</span>
+            </div>
+            <p class="system-log-message">{{ action.reason|default:"Sem motivo registrado." }}</p>
+          </section>
+
+          <section class="system-log-panel">
+            <div class="system-log-panel-head">
+              <div>
+                <span class="eyebrow">Payload resumido</span>
+                <h2>Contexto operacional</h2>
+              </div>
+            </div>
+            <pre class="system-log-code">{{ payload_pretty }}</pre>
+          </section>
+        </div>
+
+        <aside class="system-log-sidebar">
+          <section class="system-log-panel compact">
+            <span class="eyebrow">Relações</span>
+            <dl class="system-log-facts">
+              <div>
+                <dt>Agente</dt>
+                <dd>
+                  {% if action.agent_id %}
+                    <a href="{% url 'admin-ops-ai-agent-edit' action.agent_id %}">{{ action.agent_name|default:"Agente" }} · #{{ action.agent_id }}</a>
+                  {% else %}
+                    sistema
+                  {% endif %}
+                </dd>
+              </div>
+              <div>
+                <dt>Mercado</dt>
+                <dd>
+                  {% if action.market_slug %}
+                    <a href="{% url 'market-detail' action.market_slug %}">{{ action.market_slug }}</a>
+                    {% if action.market_title %}<small>{{ action.market_title }}</small>{% endif %}
+                  {% else %}
+                    -
+                  {% endif %}
+                </dd>
+              </div>
+              <div><dt>Comentário</dt><dd>{% if action.comment_id %}#{{ action.comment_id }}{% else %}-{% endif %}</dd></div>
+              <div><dt>Previsão</dt><dd>{% if action.prediction_id %}#{{ action.prediction_id }}{% else %}-{% endif %}</dd></div>
+            </dl>
+          </section>
+
+          <section class="system-log-panel compact">
+            <span class="eyebrow">Prompt</span>
+            <dl class="system-log-facts">
+              <div><dt>Template</dt><dd>{{ action.prompt_template_version|default:"-" }}</dd></div>
+              <div><dt>Hash curto</dt><dd><code>{{ action.prompt_hash|slice:":12"|default:"-" }}</code></dd></div>
+              <div><dt>Hash completo</dt><dd><code>{{ action.prompt_hash|default:"-" }}</code></dd></div>
+            </dl>
+          </section>
+
+          <section class="system-log-panel compact">
+            <span class="eyebrow">Registro</span>
+            <dl class="system-log-facts">
+              <div><dt>ID</dt><dd>#{{ action.id }}</dd></div>
+              <div><dt>Criado em</dt><dd>{{ action.created_at }}</dd></div>
+            </dl>
+          </section>
+        </aside>
+      </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

@@ -16,9 +16,16 @@ class Command(BaseCommand):
         interval_seconds = max(1, int(options["interval_seconds"]))
         while True:
             result = run_daemon_cycle()
+            ai = result.get("ai", {})
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Daemon cycle complete: locked {len(result['locked_markets'])} market(s), pruned {result['pruned_logs']} log(s)."
+                    "Daemon cycle complete: "
+                    f"locked {len(result['locked_markets'])} market(s), "
+                    f"pruned {result['pruned_logs']} log(s), "
+                    f"AI comments {ai.get('comments_created', 0)}, "
+                    f"AI predictions {ai.get('predictions_created', 0)}, "
+                    f"AI skips {ai.get('skipped', 0)}, "
+                    f"AI errors {ai.get('errors', 0)}."
                 )
             )
             if options["once"]:

@@ -80,6 +80,115 @@ class DaemonConfigForm(forms.Form):
         return cleaned_data
 
 
+class AiConfigForm(forms.Form):
+    ai_agents_enabled = forms.BooleanField(label="Agentes IA ativos", required=False)
+    ai_commenting_enabled = forms.BooleanField(label="Comentários IA ativos", required=False)
+    ai_predictions_enabled = forms.BooleanField(label="Previsões bot ativas", required=False)
+    ai_llm_provider = forms.CharField(label="Provedor LLM", max_length=40, initial="openai")
+    ai_llm_base_url = forms.URLField(label="Base URL LLM", max_length=255, initial="https://api.openai.com/v1")
+    ai_model = forms.CharField(label="Modelo comentário", max_length=120, initial="gpt-5.4-mini")
+    ai_high_reasoning_model = forms.CharField(label="Modelo alto raciocínio", max_length=120, initial="gpt-5.5")
+    ai_market_cooldown_hours = forms.IntegerField(label="Cooldown por mercado (h)", min_value=1, max_value=720, initial=24)
+    ai_max_comments_per_market_per_day = forms.IntegerField(label="Comentários por mercado/dia", min_value=1, max_value=10, initial=1)
+    ai_max_comments_per_cycle = forms.IntegerField(label="Comentários por ciclo", min_value=0, max_value=100, initial=1)
+    ai_max_comments_per_day = forms.IntegerField(label="Comentários por dia", min_value=0, max_value=10000, initial=20)
+    ai_comment_max_chars = forms.IntegerField(label="Máximo de caracteres", min_value=120, max_value=1000, initial=700)
+    ai_min_humans_for_prediction = forms.IntegerField(label="Mínimo de humanos para previsão", min_value=0, max_value=10000, initial=1)
+    ai_max_stake_oc = forms.IntegerField(label="Stake máximo bot", min_value=1, max_value=1000000, initial=25)
+    ai_max_predictions_per_cycle = forms.IntegerField(label="Previsões por ciclo", min_value=0, max_value=100, initial=1)
+    ai_max_predictions_per_day = forms.IntegerField(label="Previsões por dia", min_value=0, max_value=10000, initial=10)
+    ai_skip_if_human_comments_recent = forms.BooleanField(label="Pular se houver comentário humano recente", required=False)
+    ai_recent_human_comment_window_hours = forms.IntegerField(label="Janela comentário humano (h)", min_value=1, max_value=720, initial=6)
+    ai_openai_timeout_seconds = forms.IntegerField(label="Timeout OpenAI", min_value=1, max_value=120, initial=20)
+    ai_openai_max_retries = forms.IntegerField(label="Retries OpenAI", min_value=0, max_value=5, initial=1)
+    ai_paused_until = forms.DateTimeField(
+        label="Pausado até",
+        required=False,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+    )
+    ai_pause_reason = forms.CharField(label="Motivo da pausa", required=False, widget=forms.Textarea(attrs={"rows": 2}), max_length=2000)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        control_style = (
+            "display:block!important;visibility:visible!important;opacity:1!important;"
+            "width:100%;min-height:44px;border:1px solid #ded7c8;border-radius:14px;"
+            "padding:11px 12px;background:#fffaf0;color:#111315;"
+        )
+        checkbox_style = (
+            "display:inline-block!important;visibility:visible!important;opacity:1!important;"
+            "width:18px;height:18px;margin-top:2px;accent-color:#136f4a;"
+        )
+        for field in self.fields.values():
+            if isinstance(field, forms.BooleanField):
+                field.widget.attrs["style"] = checkbox_style
+            else:
+                existing_style = field.widget.attrs.get("style", "")
+                field.widget.attrs["style"] = f"{existing_style}{control_style}"
+
+
+class AiAgentForm(forms.Form):
+    AGENT_TYPE_CHOICES = (("analyst", "Analyst"), ("liquidity", "Liquidity"), ("contrarian", "Contrarian"))
+
+    name = forms.CharField(label="Nome", max_length=120)
+    agent_type = forms.ChoiceField(label="Tipo", choices=AGENT_TYPE_CHOICES)
+    user_id = forms.ChoiceField(label="Usuário bot oficial")
+    is_active = forms.BooleanField(label="Ativo", required=False)
+    personality_prompt = forms.CharField(label="Persona editável", required=False, widget=forms.Textarea(attrs={"rows": 5}), max_length=5000)
+    comment_style = forms.CharField(label="Estilo de comentário", required=False, max_length=120)
+    max_comments_per_day = forms.IntegerField(label="Comentários/dia do agente", required=False, min_value=0, max_value=10000)
+    max_predictions_per_day = forms.IntegerField(label="Previsões/dia do agente", required=False, min_value=0, max_value=10000)
+    max_stake_oc = forms.IntegerField(label="Stake máximo do agente", required=False, min_value=0, max_value=1000000)
+    cooldown_hours = forms.IntegerField(label="Cooldown do agente (h)", required=False, min_value=0, max_value=10000)
+    min_humans_for_prediction = forms.IntegerField(label="Mínimo de humanos do agente", required=False, min_value=0, max_value=10000)
+
+    def __init__(self, *args, bot_user_choices=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        choices = [("", "Selecione um usuário bot ativo")]
+        choices.extend(bot_user_choices or [])
+        self.fields["user_id"].choices = choices
+        if not bot_user_choices:
+            self.fields["user_id"].help_text = "Nenhum usuário ativo com is_bot=true foi encontrado."
+
+    def clean_user_id(self):
+        value = self.cleaned_data.get("user_id")
+        if not value:
+            raise forms.ValidationError("Escolha um usuário bot ativo.")
+        try:
+            return int(value)
+        except (TypeError, ValueError) as exc:
+            raise forms.ValidationError("Usuário bot inválido.") from exc
+
+    def clean(self):
+        cleaned_data = super().clean()
+        agent_type = cleaned_data.get("agent_type")
+        if agent_type == "analyst":
+            cleaned_data["max_predictions_per_day"] = None
+            cleaned_data["max_stake_oc"] = None
+            cleaned_data["min_humans_for_prediction"] = None
+        elif agent_type == "liquidity":
+            cleaned_data["personality_prompt"] = ""
+            cleaned_data["comment_style"] = ""
+            cleaned_data["max_comments_per_day"] = None
+            cleaned_data["cooldown_hours"] = None
+        elif agent_type == "contrarian":
+            cleaned_data["personality_prompt"] = ""
+            cleaned_data["comment_style"] = ""
+            cleaned_data["max_comments_per_day"] = None
+            cleaned_data["max_predictions_per_day"] = None
+            cleaned_data["max_stake_oc"] = None
+            cleaned_data["cooldown_hours"] = None
+            cleaned_data["min_humans_for_prediction"] = None
+        return cleaned_data
+
+    def to_payload(self):
+        data = {}
+        for field, value in self.cleaned_data.items():
+            data[field] = "" if value is None and field in {"personality_prompt", "comment_style"} else value
+        return data
+
+
 def _display_probability(value):
     return int(Decimal(str(value or 0)).quantize(PROBABILITY_QUANT).to_integral_value(rounding=ROUND_DOWN))
 

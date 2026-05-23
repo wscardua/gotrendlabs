@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import os
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -13,6 +14,7 @@ from django.utils import timezone
 from accounts.api_client import (
     AuthAPIError,
     admin_adjust_user_wallet,
+    admin_create_ai_agent,
     admin_block_category,
     admin_block_event,
     admin_block_subcategory,
@@ -24,10 +26,15 @@ from accounts.api_client import (
     admin_create_subcategory,
     admin_convert_suggestion,
     admin_get_dashboard_summary,
+    admin_get_ai_agent,
+    admin_get_ai_agent_action,
+    admin_get_ai_agent_actions,
+    admin_get_ai_agents,
     admin_deactivate_badge,
     admin_delete_event,
     admin_get_badges,
     admin_get_market,
+    admin_get_market_participants,
     admin_get_market_resolution_audit,
     admin_get_markets,
     admin_get_comments,
@@ -55,6 +62,7 @@ from accounts.api_client import (
     admin_unblock_subcategory,
     admin_update_user_roles,
     admin_update_user_bot,
+    admin_update_ai_agent,
     admin_update_badge,
     admin_update_category,
     admin_update_event,
@@ -67,6 +75,8 @@ from admin_ops.forms import (
     AdminCategoryForm,
     AdminEventForm,
     AdminMarketForm,
+    AiAgentForm,
+    AiConfigForm,
     AdminSubcategoryForm,
     AdminUserNoteForm,
     AdminUserRoleForm,
@@ -247,6 +257,33 @@ def _default_market_initial():
             {"label": "NAO", "hint": "Opção negativa"},
         ],
     }
+
+
+def _empty_market_participants():
+    return {
+        "market": {},
+        "summary": {
+            "participants": "0 participantes",
+            "human_participants": 0,
+            "bot_participants": 0,
+            "human_volume_oc": 0,
+            "bot_volume_oc": 0,
+            "total_volume_oc": 0,
+            "participants_total": 0,
+            "human_predictions": 0,
+            "bot_predictions": 0,
+        },
+        "participants": [],
+    }
+
+
+def _market_participants_context(token, slug):
+    if not slug:
+        return _empty_market_participants()
+    try:
+        return admin_get_market_participants(token, slug)
+    except AuthAPIError:
+        return _empty_market_participants()
 
 
 def _market_taxonomy_options(taxonomy_data):
@@ -450,7 +487,18 @@ def config(request):
         },
         prefix="daemon",
     )
-    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid() and economy_form.is_valid() and daemon_form.is_valid():
+    ai_post_data = request.POST if request.method == "POST" and any(key.startswith("ai-") for key in request.POST) else None
+    ai_form = AiConfigForm(
+        ai_post_data,
+        initial={
+            field: getattr(site_config, field)
+            for field in AiConfigForm.base_fields
+            if hasattr(site_config, field)
+        },
+        prefix="ai",
+    )
+    ai_form_valid = ai_post_data is None or ai_form.is_valid()
+    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid() and economy_form.is_valid() and daemon_form.is_valid() and ai_form_valid:
         save_platform_config(
             {
                 "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
@@ -463,11 +511,15 @@ def config(request):
         site_config.wallet_recharge_min_balance_oc = economy_form.cleaned_data["wallet_recharge_min_balance_oc"]
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
+        if ai_post_data is not None:
+            for field, value in ai_form.cleaned_data.items():
+                setattr(site_config, field, value)
         site_config.updated_by = _admin_model_user(request)
         site_config.save()
         messages.success(request, "Configurações atualizadas.")
         return redirect("admin-ops-config")
     smtp_secret_configured = bool(settings.ORYNTH_SMTP_PASSWORD or settings.ORYNTH_SMTP_API_KEY)
+    openai_secret_configured = bool(getattr(settings, "OPENAI_API_KEY", "") or os.environ.get("OPENAI_API_KEY"))
     return render(
         request,
         "admin_ops/config.html",
@@ -476,19 +528,154 @@ def config(request):
             "email_form": email_form,
             "economy_form": economy_form,
             "daemon_form": daemon_form,
+            "ai_form": ai_form,
             "platform_config": platform_config,
             "site_config": site_config,
             "smtp_secret_configured": smtp_secret_configured,
+            "openai_secret_configured": openai_secret_configured,
         },
     )
+
+
+@admin_api_required
+def ai_agents(request):
+    token = auth_token(request)
+    try:
+        agent_data = admin_get_ai_agents(token)
+        action_data = admin_get_ai_agent_actions(
+            token,
+            agent_id=request.GET.get("agent_id") or "",
+            market_slug=request.GET.get("market") or "",
+            action_type=request.GET.get("action_type") or "",
+            status=request.GET.get("status") or "",
+            reason=request.GET.get("reason") or "",
+        )
+    except AuthAPIError as exc:
+        agent_data = {"agents": [], "health": {}}
+        action_data = {"actions": [], "health": {}}
+        error = str(exc)
+    else:
+        error = ""
+    visible_actions, action_pagination = _slice_load_more(request, action_data.get("actions", []))
+    action_data = {**action_data, "actions": visible_actions}
+    return render(
+        request,
+        "admin_ops/ai_agents.html",
+        {
+            "agent_data": agent_data,
+            "action_data": action_data,
+            "action_pagination": action_pagination,
+            "filters": {
+                "agent_id": request.GET.get("agent_id") or "",
+                "market": request.GET.get("market") or "",
+                "action_type": request.GET.get("action_type") or "",
+                "status": request.GET.get("status") or "",
+                "reason": request.GET.get("reason") or "",
+            },
+            "admin_error": error,
+        },
+    )
+
+
+def _ai_agent_initial(agent):
+    return {
+        "name": agent.get("name", ""),
+        "agent_type": agent.get("agent_type", "analyst"),
+        "user_id": agent.get("user_id", ""),
+        "is_active": agent.get("is_active", False),
+        "personality_prompt": agent.get("personality_prompt", ""),
+        "comment_style": agent.get("comment_style", ""),
+        "max_comments_per_day": agent.get("max_comments_per_day"),
+        "max_predictions_per_day": agent.get("max_predictions_per_day"),
+        "max_stake_oc": agent.get("max_stake_oc"),
+        "cooldown_hours": agent.get("cooldown_hours"),
+        "min_humans_for_prediction": agent.get("min_humans_for_prediction"),
+    }
+
+
+def _ai_agent_bot_choices(token, current_agent=None):
+    choices = []
+    try:
+        payload = admin_get_users(token, bot="yes", status="active", order="created_desc")
+    except AuthAPIError:
+        payload = {"users": []}
+    seen_ids = set()
+    for user in payload.get("users", []):
+        if not user.get("is_bot") or not user.get("is_active"):
+            continue
+        user_id = user.get("id")
+        seen_ids.add(user_id)
+        handle = user.get("handle") or f"@user-{user_id}"
+        display_name = user.get("display_name") or handle
+        balance = user.get("available_oc", 0)
+        choices.append((str(user_id), f"{display_name} ({handle}) · ID {user_id} · {balance} O₵"))
+    if current_agent and current_agent.get("user_id") and current_agent.get("user_id") not in seen_ids and current_agent.get("user_is_bot"):
+        user_id = current_agent["user_id"]
+        handle = current_agent.get("user_handle") or f"@user-{user_id}"
+        display_name = current_agent.get("user_display_name") or handle
+        choices.insert(0, (str(user_id), f"{display_name} ({handle}) · ID {user_id} · agente atual"))
+    return choices
+
+
+@admin_api_required
+def ai_agent_form(request, agent_id=None):
+    token = auth_token(request)
+    agent = None
+    error = ""
+    if agent_id:
+        try:
+            agent = admin_get_ai_agent(token, agent_id)
+        except AuthAPIError as exc:
+            error = str(exc)
+    bot_user_choices = _ai_agent_bot_choices(token, agent)
+    form = AiAgentForm(request.POST or None, initial=_ai_agent_initial(agent or {}), bot_user_choices=bot_user_choices)
+    if request.method == "POST" and form.is_valid():
+        try:
+            if agent_id:
+                agent = admin_update_ai_agent(token, agent_id, form.to_payload())
+                messages.success(request, "Agente IA atualizado.")
+            else:
+                agent = admin_create_ai_agent(token, form.to_payload())
+                messages.success(request, "Agente IA criado.")
+            return redirect("admin-ops-ai-agent-edit", agent_id=agent["id"])
+        except AuthAPIError as exc:
+            error = str(exc)
+    return render(
+        request,
+        "admin_ops/ai_agent_form.html",
+        {
+            "form": form,
+            "agent": agent,
+            "admin_error": error,
+            "title": "Editar agente IA" if agent_id else "Criar agente IA",
+            "bot_user_choices": bot_user_choices,
+            "site_config": SiteConfig.get_solo(),
+        },
+    )
+
+
+@admin_api_required
+def ai_agent_action_detail(request, action_id):
+    try:
+        action = admin_get_ai_agent_action(auth_token(request), action_id)
+    except AuthAPIError as exc:
+        action = None
+        error = str(exc)
+    else:
+        error = ""
+    payload_pretty = ""
+    if action:
+        payload_pretty = json.dumps(action.get("payload_summary") or {}, ensure_ascii=False, indent=2)
+    return render(request, "admin_ops/ai_agent_action_detail.html", {"action": action, "payload_pretty": payload_pretty, "admin_error": error})
 
 
 @admin_api_required
 def markets(request):
     status_filter = request.GET.get("status") or ""
     active_order = request.GET.get("order") or "display"
+    search_query = request.GET.get("q") or ""
     try:
-        market_data = admin_get_markets(auth_token(request), status=status_filter, order=active_order)
+        market_data = admin_get_markets(auth_token(request), status=status_filter, q=search_query, order=active_order)
     except AuthAPIError as exc:
         market_data = {"markets": [], "counts": {}}
         error = str(exc)
@@ -505,6 +692,7 @@ def markets(request):
             "admin_error": error,
             "active_status": status_filter,
             "active_order": active_order,
+            "search_query": search_query,
         },
     )
 
@@ -1156,6 +1344,7 @@ def market_form(request, mode="new", slug=None):
                     "can_manual_close": False,
                     "can_publish": False,
                     "is_readonly": is_readonly,
+                    "market_participants": _market_participants_context(token, market.get("slug") if market else slug),
                     "admin_error": error,
                     "admin_message": message,
                 },
@@ -1188,6 +1377,7 @@ def market_form(request, mode="new", slug=None):
     can_manual_close = bool(market and market.get("status") in {"open", "scheduled"} and market.get("auto_close_enabled") is False)
     can_publish = bool(mode == "new" or not market or market.get("status") in {"draft", "scheduled"})
     taxonomy_options = _market_taxonomy_options(taxonomy_data)
+    market_participants = _market_participants_context(token, market.get("slug") if market else slug)
     return render(
         request,
         "admin_ops/market_form.html",
@@ -1203,6 +1393,7 @@ def market_form(request, mode="new", slug=None):
             "can_manual_close": can_manual_close,
             "can_publish": can_publish,
             "is_readonly": is_readonly,
+            "market_participants": market_participants,
             "admin_error": error,
             "admin_message": message,
         },

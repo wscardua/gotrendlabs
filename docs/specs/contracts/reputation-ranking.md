@@ -51,6 +51,7 @@ Campos mínimos de cada linha em `rows`:
 - O ranking global usa a reputação persistida em `orynth_user_reputations`.
 - Ranking filtrado por categoria/subcategoria é uma projeção de leitura recalculada a partir de previsões resolvidas daquele recorte, usando a mesma fórmula MVP.
 - Usuários administrativos (`is_staff` ou `is_superuser`) não participam do ranking público.
+- Usuários bot (`is_bot=true`) não participam do ranking público global ou temático.
 - A UI pública deve exibir o identificador (`handle`) como identificação do usuário no ranking.
 - A UI pública deve apresentar o ranking em blocos cumulativos de 10 linhas com `Carregar mais`, preservando filtros de categoria/subcategoria.
 - Conteúdo personalizado do quadro "Seu recorte" deve depender de sessão/dados reais; visitantes não devem ver posição estimada ou percentual fictício.
@@ -177,6 +178,7 @@ O Admin Ops deve marcar visualmente os campos obrigatórios do formulário de ba
 - `rewarded_feedback_count`
 
 Concessões são idempotentes por usuário e badge. Badges não alteram reputação, ranking, ledger nem saldo.
+Usuários `is_bot=true` não recebem badges, streaks, recompensas ou reputação pública; eventos de comentários e previsões bot são ignorados pela engine de concessão.
 
 ### Engine de concessão
 
