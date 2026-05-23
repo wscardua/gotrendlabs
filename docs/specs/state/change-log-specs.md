@@ -78,6 +78,14 @@
 - registrada separação operacional de credenciais PostgreSQL por serviço Django/FastAPI com fallback local `POSTGRES_*`
 - registrado `GET /admin/dashboard-summary` como contrato staff agregado para Dashboard Admin Ops
 - registrado que o Dashboard Admin Ops usa métricas de saúde operacional sem consultas locais espalhadas no Django
+
+## 2026-05-23
+
+- registrada implementação parcial de `FEAT-NOTIFY-001` com inbox in-app persistida, sino no topo, contador de não lidas, dropdown e marcação de leitura
+- registrado `comment_count` público em `MarketResponse`, cards da home/feed e detalhe do mercado, derivado apenas de comentários `visible`
+- registrada regra de notificações sociais para mercados participados por previsão: nova previsão, curtida de mercado, comentário e curtida em comentário
+- registrada regra de notificações sistêmicas para crédito recebido, mercado participado fechado/resolvido e badge recebida
+- registrado roteamento contextual do dropdown: badges para `/badges/`, créditos para `/wallet/`, eventos de mercado para o detalhe do mercado e comentários para `#comments`
 - atualizado mapa de integração para refletir JSON runtime de manutenção, `orynth_site_config`, SMTP via ambiente e resumo operacional centralizado na FastAPI
 - registrada `MarketLifecycleEngine` como ponto central do ciclo operacional de mercado no backend
 - registrado `GET /admin/markets/{slug}/resolution-audit` como contrato staff read-only para auditoria de resolução

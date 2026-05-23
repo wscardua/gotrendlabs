@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
+import json
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException, status
@@ -153,6 +154,19 @@ class MarketLifecycleEngine:
             (winning_option["label"], resolved_at, resolution_timezone, winning_option["id"], resolution_note, self.staff_id, now, row["id"]),
         )
         self._resolve_market_predictions(row["id"], winning_option["id"], slug, now)
+        self._notify_market_participants(
+            row["id"],
+            event_type="market_resolved",
+            source_key=f"market_resolved:{row['id']}",
+            title="Mercado resolvido",
+            body=f"O mercado {self._market_title(row['id'], slug)} foi resolvido.",
+            metadata={
+                "winning_option_id": winning_option["id"],
+                "winning_option": winning_option["label"],
+                "resolved_at": resolved_at.isoformat(),
+            },
+            actor_id=self.staff_id,
+        )
         self.record_admin_event(self.cursor, self.staff_id, "market.resolve", "market", slug, resolution_note)
 
     def lock_market(self, row, slug, note=""):
@@ -178,6 +192,14 @@ class MarketLifecycleEngine:
             WHERE id = %s
             """,
             (note, self.staff_id, now, row["id"]),
+        )
+        self._notify_market_participants(
+            row["id"],
+            event_type="market_locked",
+            source_key=f"market_locked:{row['id']}",
+            title="Mercado fechado",
+            body=f"O mercado {self._market_title(row['id'], slug)} foi fechado para novas previsões.",
+            actor_id=self.staff_id,
         )
         self.record_admin_event(self.cursor, self.staff_id, "market.lock", "market", slug, note)
 
@@ -205,10 +227,58 @@ class MarketLifecycleEngine:
             """,
             (note, now, row["id"]),
         )
+        self._notify_market_participants(
+            row["id"],
+            event_type="market_locked",
+            source_key=f"market_locked:{row['id']}",
+            title="Mercado fechado",
+            body=f"O mercado {self._market_title(row['id'], slug)} foi fechado para novas previsões.",
+        )
         self.record_admin_event(self.cursor, None, "market.lock", "market", slug, note)
 
     def reconcile_canceled_market_refunds(self, market_id, slug, now):
         return self._refund_market_predictions(market_id, slug, now)
+
+    def _market_title(self, market_id, fallback):
+        self.cursor.execute("SELECT title FROM orynth_markets WHERE id = %s", (market_id,))
+        market = self.cursor.fetchone()
+        return (market and market["title"]) or fallback
+
+    def _participant_user_ids(self, market_id):
+        self.cursor.execute(
+            """
+            SELECT DISTINCT p.user_id
+            FROM orynth_predictions p
+            JOIN orynth_users u ON u.id = p.user_id
+            WHERE p.market_id = %s
+              AND u.is_bot = false
+            ORDER BY p.user_id ASC
+            """,
+            (market_id,),
+        )
+        return [row["user_id"] for row in self.cursor.fetchall()]
+
+    def _notify_market_participants(self, market_id, *, event_type, source_key, title, body, metadata=None, actor_id=None):
+        for recipient_id in self._participant_user_ids(market_id):
+            self.cursor.execute(
+                """
+                INSERT INTO orynth_user_notifications
+                    (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
+                VALUES (%s, %s, %s, NULL, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
+                ON CONFLICT (recipient_id, source_key) DO NOTHING
+                """,
+                (
+                    recipient_id,
+                    actor_id,
+                    market_id,
+                    event_type,
+                    source_key,
+                    title,
+                    body,
+                    json.dumps(metadata or {}),
+                    datetime.now(timezone.utc),
+                ),
+            )
 
     def _accuracy_indicator(self, user_id):
         self.cursor.execute(

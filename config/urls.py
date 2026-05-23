@@ -19,6 +19,7 @@ urlpatterns = [
     path("use-policy/", core_views.use_policy, name="use-policy"),
     path("suggestion/", core_views.suggestion, name="suggestion"),
     path("feedback/", core_views.feedback, name="feedback"),
+    path("notifications/read-all/", core_views.notifications_read_all, name="notifications-read-all"),
     path("badges/", core_views.badges, name="badges"),
     path("share/badge/<slug:code>/image/", core_views.share_badge_image, name="share-badge-image"),
     path("share/badge/<slug:code>/", core_views.share_badge, name="share-badge"),

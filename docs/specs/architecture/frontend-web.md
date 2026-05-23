@@ -72,3 +72,6 @@
 - Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags, evento e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.
 - Cards de mercado sem imagem devem exibir fallback visual legível com iniciais derivadas de categoria/subcategoria/evento/título no feed e nas imagens sociais.
 - O detalhe público do mercado deve exibir a mesma thumbnail/fallback visual junto do título, mantendo o texto do mercado renderizado separadamente em HTML.
+- Usuários autenticados veem sino de notificações com contador de não lidas, dropdown das últimas notificações e ação para marcar todas como lidas; visitantes podem ver affordance desabilitada, sem navegação para login.
+- Itens do dropdown devem navegar para o contexto persistido: `badge_awarded` para `/badges/`, `wallet_credit` para `/wallet/`, eventos de mercado para o detalhe do mercado e notificações com comentário para `#comments`.
+- Cards da home/feed e o detalhe do mercado devem exibir contador público de comentários com base em `comment_count`, sem inferir contagem no template.

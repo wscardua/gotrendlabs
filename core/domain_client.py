@@ -188,6 +188,7 @@ def _local_market_response(market):
         "auto_close_enabled": market.auto_close_enabled,
         "is_featured": market.is_featured,
         "market_like_count": market.likes.count(),
+        "comment_count": market.comments.filter(status="visible").count(),
         "view_count": market.view_count,
         "share_count": market.share_count,
         "viewer_has_like": False,

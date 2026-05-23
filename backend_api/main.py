@@ -55,6 +55,7 @@ from backend_api.schemas import (
     MarketListResponse,
     MarketResponse,
     MarketSuggestionPayload,
+    NotificationListResponse,
     PasswordResetConfirmPayload,
     PasswordResetConfirmResponse,
     PasswordResetRequestPayload,
@@ -695,6 +696,25 @@ def _record_wallet_entry(
         """,
         (available_delta, locked_delta, earned_delta, datetime.now(timezone.utc), user_id),
     )
+    if direction == "credit":
+        _create_notification(
+            cursor,
+            recipient_id=user_id,
+            actor_id=created_by_id,
+            event_type="wallet_credit",
+            source_key=f"wallet_credit:{entry_id}",
+            title="Créditos recebidos",
+            body=f"Você recebeu {int(amount)} créditos.",
+            metadata={
+                "ledger_entry_id": entry_id,
+                "entry_type": entry_type,
+                "amount": int(amount),
+                "direction": direction,
+                "reference_type": reference_type,
+                "reference_id": reference_id,
+            },
+            suppress_self=False,
+        )
     return entry_id
 
 
@@ -848,7 +868,8 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
                m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
-               COALESCE(COUNT(ml.id), 0) AS market_like_count,
+               COALESCE(COUNT(DISTINCT ml.id), 0) AS market_like_count,
+               COALESCE(COUNT(DISTINCT visible_comments.id), 0) AS comment_count,
                c.name AS category, c.notice AS category_notice,
                sc.name AS subcategory, sc.notice AS subcategory_notice,
                ev.name AS event, ev.notice AS event_notice
@@ -857,6 +878,7 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
         JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
         LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
         LEFT JOIN orynth_market_likes ml ON ml.market_id = m.id
+        LEFT JOIN orynth_market_comments visible_comments ON visible_comments.market_id = m.id AND visible_comments.status = 'visible'
         {where_sql}
         GROUP BY m.id, c.name, c.notice, sc.name, sc.notice, ev.name, ev.notice
         ORDER BY {order_sql}
@@ -1127,6 +1149,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "resolution_note": (row["resolution_note"] or "") if "resolution_note" in row else "",
         "resolution_type": (row["resolution_type"] or "") if "resolution_type" in row else "",
         "market_like_count": int(row["market_like_count"] or 0) if "market_like_count" in row else 0,
+        "comment_count": int(row["comment_count"] or 0) if "comment_count" in row else 0,
         "view_count": int(row["view_count"] or 0) if "view_count" in row else 0,
         "share_count": int(row["share_count"] or 0) if "share_count" in row else 0,
         "viewer_has_prediction": viewer_has_prediction,
@@ -1680,6 +1703,168 @@ def _age_label(created_at):
     if hours < 24:
         return f"{hours}h"
     return f"{hours // 24}d"
+
+
+def _actor_display_name(row):
+    if not row:
+        return ""
+    return row.get("actor_display_name") or _handle_seed(row.get("actor_handle") or "")
+
+
+def _notification_response(row):
+    metadata = row["metadata"] or {}
+    if isinstance(metadata, str):
+        try:
+            metadata = json.loads(metadata)
+        except json.JSONDecodeError:
+            metadata = {}
+    return {
+        "id": row["id"],
+        "event_type": row["event_type"],
+        "title": row["title"],
+        "body": row["body"] or "",
+        "is_read": bool(row["is_read"]),
+        "actor_handle": _handle_seed(row["actor_handle"]) if row.get("actor_handle") else "",
+        "actor_display_name": _actor_display_name(row),
+        "market_slug": row["market_slug"] or "",
+        "market_title": row["market_title"] or "",
+        "comment_id": row["comment_id"],
+        "metadata": metadata,
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _age_label(row["created_at"]),
+    }
+
+
+def _notification_rows(cursor, recipient_id, *, limit=10):
+    cursor.execute(
+        """
+        SELECT n.id, n.event_type, n.title, n.body, n.is_read, n.metadata, n.created_at,
+               n.comment_id,
+               actor.username AS actor_handle, actor.first_name AS actor_display_name,
+               m.slug AS market_slug, m.title AS market_title
+        FROM orynth_user_notifications n
+        LEFT JOIN orynth_users actor ON actor.id = n.actor_id
+        LEFT JOIN orynth_markets m ON m.id = n.market_id
+        WHERE n.recipient_id = %s
+        ORDER BY n.created_at DESC, n.id DESC
+        LIMIT %s
+        """,
+        (recipient_id, limit),
+    )
+    notifications = [_notification_response(row) for row in cursor.fetchall()]
+    cursor.execute(
+        "SELECT COUNT(*) AS total FROM orynth_user_notifications WHERE recipient_id = %s AND is_read = false",
+        (recipient_id,),
+    )
+    unread = cursor.fetchone()
+    return {"unread_count": int(unread["total"] or 0), "notifications": notifications}
+
+
+def _market_participant_recipient_ids(cursor, market_id, actor_id):
+    cursor.execute(
+        """
+        SELECT DISTINCT p.user_id
+        FROM orynth_predictions p
+        JOIN orynth_users u ON u.id = p.user_id
+        WHERE p.market_id = %s
+          AND p.user_id <> %s
+          AND u.is_bot = false
+        """,
+        (market_id, actor_id),
+    )
+    return [row["user_id"] for row in cursor.fetchall()]
+
+
+def _create_notification(
+    cursor,
+    *,
+    recipient_id,
+    actor=None,
+    actor_id=None,
+    market_id=None,
+    comment_id=None,
+    event_type,
+    source_key,
+    title,
+    body,
+    metadata=None,
+    suppress_self=True,
+):
+    actor = actor or {}
+    notification_actor_id = actor.get("id") or actor_id
+    if actor.get("is_bot") or (suppress_self and notification_actor_id and recipient_id == notification_actor_id):
+        return
+    cursor.execute("SELECT is_bot FROM orynth_users WHERE id = %s", (recipient_id,))
+    recipient = cursor.fetchone()
+    recipient_is_bot = recipient["is_bot"] if isinstance(recipient, dict) else recipient[0] if recipient else False
+    if not recipient or recipient_is_bot:
+        return
+    cursor.execute(
+        """
+        INSERT INTO orynth_user_notifications
+            (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
+        ON CONFLICT (recipient_id, source_key) DO NOTHING
+        """,
+        (
+            recipient_id,
+            notification_actor_id,
+            market_id,
+            comment_id,
+            event_type,
+            source_key,
+            title,
+            body,
+            json.dumps(metadata or {}),
+            datetime.now(timezone.utc),
+        ),
+    )
+
+
+def _notify_market_participants(cursor, *, actor, market_id, comment_id=None, event_type, source_key, title, body, metadata=None):
+    if actor.get("is_bot"):
+        return
+    for recipient_id in _market_participant_recipient_ids(cursor, market_id, actor["id"]):
+        _create_notification(
+            cursor,
+            recipient_id=recipient_id,
+            actor=actor,
+            market_id=market_id,
+            comment_id=comment_id,
+            event_type=event_type,
+            source_key=source_key,
+            title=title,
+            body=body,
+            metadata=metadata,
+        )
+
+
+def _notify_comment_author(cursor, *, actor, comment_id, event_type, source_key, title, body, metadata=None):
+    if actor.get("is_bot"):
+        return
+    cursor.execute(
+        """
+        SELECT mc.author_id, mc.market_id
+        FROM orynth_market_comments mc
+        WHERE mc.id = %s AND mc.status = 'visible'
+        """,
+        (comment_id,),
+    )
+    comment = cursor.fetchone()
+    if not comment:
+        return
+    _create_notification(
+        cursor,
+        recipient_id=comment["author_id"],
+        actor=actor,
+        market_id=comment["market_id"],
+        comment_id=comment_id,
+        event_type=event_type,
+        source_key=source_key,
+        title=title,
+        body=body,
+        metadata=metadata,
+    )
 
 
 def _queue_status_label(value):
@@ -2408,9 +2593,21 @@ def like_market(slug: str, authorization: str = Header(default="")):
                 INSERT INTO orynth_market_likes (user_id, market_id, created_at)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (user_id, market_id) DO NOTHING
+                RETURNING id
                 """,
                 (user["id"], row["id"], datetime.now(timezone.utc)),
             )
+            created_like = bool(cursor.fetchone())
+            if created_like:
+                _notify_market_participants(
+                    cursor,
+                    actor=user,
+                    market_id=row["id"],
+                    event_type="market_like",
+                    source_key=f"market_like:{row['id']}:{user['id']}",
+                    title="Seu mercado recebeu uma curtida",
+                    body=f"{_handle_seed(user['username'])} curtiu um mercado em que você fez previsão.",
+                )
             rows = _market_rows(cursor, "WHERE m.slug = %s AND m.status NOT IN ('draft', 'canceled')", [slug])
             return _market_response(cursor, rows[0], viewer_id=user["id"], include_comments=False)
 
@@ -2510,10 +2707,21 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
             comment_id = cursor.fetchone()["id"]
             if not user.get("is_bot"):
                 BadgeAwardEngine.on_comment_created(cursor, user["id"], market_id=market["id"])
+                _notify_market_participants(
+                    cursor,
+                    actor=user,
+                    market_id=market["id"],
+                    comment_id=comment_id,
+                    event_type="market_comment",
+                    source_key=f"market_comment:{comment_id}",
+                    title="Novo comentário em um mercado seu",
+                    body=f"{_handle_seed(user['username'])} comentou em um mercado em que você fez previsão.",
+                )
             return next(comment for comment in _market_comments(cursor, market["id"], viewer_id=user["id"]) if comment["id"] == comment_id)
 
 
-def _set_comment_reaction(cursor, comment_id, user_id, reaction):
+def _set_comment_reaction(cursor, comment_id, user, reaction):
+    user_id = user["id"]
     cursor.execute("SELECT mc.id FROM orynth_market_comments mc WHERE mc.id = %s AND mc.status = 'visible'", (comment_id,))
     if not cursor.fetchone():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comentário não encontrado.")
@@ -2523,9 +2731,21 @@ def _set_comment_reaction(cursor, comment_id, user_id, reaction):
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (comment_id, user_id)
         DO UPDATE SET reaction = EXCLUDED.reaction, updated_at = EXCLUDED.updated_at
+        RETURNING (xmax = 0) AS inserted
         """,
         (comment_id, user_id, reaction, datetime.now(timezone.utc), datetime.now(timezone.utc)),
     )
+    reaction_row = cursor.fetchone()
+    if reaction == "like" and reaction_row:
+        _notify_comment_author(
+            cursor,
+            actor=user,
+            comment_id=comment_id,
+            event_type="comment_like",
+            source_key=f"comment_like:{comment_id}:{user_id}",
+            title="Seu comentário recebeu uma curtida",
+            body=f"{_handle_seed(user['username'])} curtiu seu comentário.",
+        )
     cursor.execute("SELECT market_id FROM orynth_market_comments WHERE id = %s", (comment_id,))
     market_id = cursor.fetchone()["market_id"]
     return next(comment for comment in _market_comments(cursor, market_id, viewer_id=user_id) if comment["id"] == comment_id)
@@ -2548,7 +2768,7 @@ def like_comment(comment_id: int, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
-            return _set_comment_reaction(cursor, comment_id, user["id"], "like")
+            return _set_comment_reaction(cursor, comment_id, user, "like")
 
 
 @app.delete("/comments/{comment_id}/like", response_model=CommentResponse)
@@ -2564,7 +2784,7 @@ def dislike_comment(comment_id: int, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
-            return _set_comment_reaction(cursor, comment_id, user["id"], "dislike")
+            return _set_comment_reaction(cursor, comment_id, user, "dislike")
 
 
 @app.delete("/comments/{comment_id}/dislike", response_model=CommentResponse)
@@ -2694,6 +2914,16 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
                 description=f"Stake bloqueado em previsão: {slug}",
                 reference_type="prediction",
                 reference_id=str(prediction["id"]),
+            )
+            _notify_market_participants(
+                cursor,
+                actor=user,
+                market_id=market["id"],
+                event_type="market_prediction",
+                source_key=f"market_prediction:{prediction['id']}",
+                title="Nova previsão em um mercado seu",
+                body=f"{_handle_seed(user['username'])} fez uma previsão em um mercado em que você também participou.",
+                metadata={"prediction_id": prediction["id"], "stake_amount": payload.stake_amount},
             )
             snapshot = _market_probability_snapshot(cursor, market["id"])
             wallet_after = _wallet_summary(cursor, user["id"])
@@ -5295,6 +5525,30 @@ def get_me(authorization: str = Header(default="")):
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
             return _profile_response(cursor, user)
+
+
+@app.get("/users/me/notifications", response_model=NotificationListResponse)
+def get_my_notifications(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _notification_rows(cursor, user["id"])
+
+
+@app.post("/users/me/notifications/read-all", response_model=NotificationListResponse)
+def mark_my_notifications_read(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            cursor.execute(
+                """
+                UPDATE orynth_user_notifications
+                SET is_read = true, read_at = %s
+                WHERE recipient_id = %s AND is_read = false
+                """,
+                (datetime.now(timezone.utc), user["id"]),
+            )
+            return _notification_rows(cursor, user["id"])
 
 
 @app.patch("/users/me", response_model=UserProfileResponse)

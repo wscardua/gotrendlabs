@@ -4,6 +4,7 @@
   data-market-slug="{{ market.slug }}"
   data-market-featured="{{ market.is_featured|yesno:'true,false' }}"
   data-market-likes="{{ market.market_like_count|default:0 }}"
+  data-market-comments="{{ market.comment_count|default:0 }}"
   data-market-views="{{ market.view_count|default:0 }}"
   data-market-volume="{{ market.volume_oc }}"
   data-market-created-at="{{ market.created_at }}"
@@ -66,6 +67,10 @@
       <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% else %}Prever{% endif %}</a>
       <a class="btn small ghost" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}">Compartilhar</a>
       <div class="market-card-actions">
+        <a class="market-comment-count" href="{% url 'market-detail' market.slug %}#comments" aria-label="{% if market.comment_count == 1 %}1 comentário{% else %}{{ market.comment_count|default:0 }} comentários{% endif %}" title="Ver comentários">
+          <span aria-hidden="true">💬</span>
+          <span>{{ market.comment_count|default:0 }}</span>
+        </a>
         {% if not is_guest %}
           <form class="market-like-form" method="post" action="{% url 'market-like-toggle' market.slug %}" data-market-like-form data-market-slug="{{ market.slug }}">
             {% csrf_token %}

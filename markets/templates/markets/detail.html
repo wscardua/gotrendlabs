@@ -4,6 +4,10 @@
 <main class="shell layout-detail">
   <section class="panel detail-hero">
     <div class="detail-market-actions">
+      <a class="market-comment-count detail-comment-count" href="#comments" aria-label="{% if market.comment_count == 1 %}1 comentário{% else %}{{ market.comment_count|default:0 }} comentários{% endif %}" title="Ver comentários">
+        <span aria-hidden="true">💬</span>
+        <span>{{ market.comment_count|default:0 }}</span>
+      </a>
       {% if not is_guest %}
         <form class="market-like-form" method="post" action="{% url 'market-like-toggle' market.slug %}" data-market-like-form data-market-slug="{{ market.slug }}">
           {% csrf_token %}
