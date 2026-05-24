@@ -1290,3 +1290,24 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-24
 - Retomada: avaliar visualmente em produção se o limite `3 +N` preserva legibilidade em usuários com muitos reconhecimentos
 - Reversão lógica: ocultar badges no template do ranking e ignorar `event` no filtro web, mantendo campos adicionais do contrato como compatibilidade não disruptiva
+
+## WFLOW-20260524-003
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AUTH-001`
+- Objetivo: exibir progressão neutra para operadores autenticados e permitir geração administrativa auditada de link de reset de senha
+- Etapa atual: concluído; FastAPI, Django Admin Ops, home autenticada, testes e specs atualizados em 2026-05-24
+- Artefatos afetados:
+  - `backend_api/`
+  - `accounts/`
+  - `admin_ops/`
+  - `core/templates/core/home.html`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-24
+- Atualizado em: 2026-05-24
+- Encerrado em: 2026-05-24
+- Retomada: se reset por email real for priorizado, integrar communications/SMTP em vez de expor apenas link operacional
+- Reversão lógica: ocultar a ação `password_reset` no detalhe de usuário e voltar o filtro da home para não carregar `user_summary` de operadores

@@ -465,6 +465,10 @@ class AdminUserBotForm(forms.Form):
     note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
 
 
+class AdminUserPasswordResetForm(forms.Form):
+    note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
+
+
 RESOLUTION_TIMEZONE_CHOICES = (
     ("America/Sao_Paulo", "America/Sao_Paulo"),
     ("UTC", "UTC"),

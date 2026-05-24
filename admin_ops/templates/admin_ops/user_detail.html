@@ -215,6 +215,20 @@
             <p class="muted">Ações críticas exigem nota operacional e são auditadas pela FastAPI.</p>
             <form class="support-form" method="post">
               {% csrf_token %}
+              <label for="{{ password_reset_form.note.id_for_label }}">Motivo do reset de senha</label>
+              {{ password_reset_form.note }}
+              <input type="hidden" name="action" value="password_reset">
+              <button class="btn small primary" type="submit">Gerar link de reset</button>
+            </form>
+            {% if password_reset_url %}
+              <div class="support-form">
+                <label>Link de reset gerado</label>
+                <p class="muted">Envie este link ao usuário. Se aberto por um operador já logado, a tela de reset redireciona para a home.</p>
+                <input type="text" value="{{ password_reset_url }}" readonly>
+              </div>
+            {% endif %}
+            <form class="support-form" method="post">
+              {% csrf_token %}
               <label>
                 {{ bot_form.is_bot }}
                 <span>Conta controlada por robôs</span>

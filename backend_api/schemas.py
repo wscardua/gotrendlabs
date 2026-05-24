@@ -212,6 +212,15 @@ class AdminUserBotPayload(BaseModel):
     note: str = Field(min_length=1, max_length=2000)
 
 
+class AdminUserPasswordResetPayload(BaseModel):
+    note: str = Field(min_length=1, max_length=2000)
+
+
+class AdminUserPasswordResetResponse(BaseModel):
+    message: str
+    reset_url: str
+
+
 class SystemLogResponse(BaseModel):
     id: int
     created_at: str

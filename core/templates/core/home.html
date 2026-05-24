@@ -83,7 +83,7 @@
           <div class="summary-stats">
             <span><strong>{{ user_summary.reputation.accuracy_indicator }}</strong><small>acerto</small></span>
             <span><strong>{{ user_summary.reputation.streak }}</strong><small>sequência</small></span>
-            <span><strong>#{{ user_summary.reputation.ranking_position }}</strong><small>ranking</small></span>
+            <span><strong>{% if user_summary.reputation.ranking_position %}#{{ user_summary.reputation.ranking_position }}{% else %}-{% endif %}</strong><small>ranking</small></span>
           </div>
           <div class="summary-badges" aria-label="Badges recentes">
             {% for badge in user_badges|slice:":5" %}
@@ -136,7 +136,7 @@
           <div>
             <span class="eyebrow">Sua progressão</span>
             <h3>Reputação inicial ativa. As próximas previsões vão alimentar sua evolução.</h3>
-            <p>#{{ user_summary.reputation.ranking_position }} no ranking · sequência {{ user_summary.reputation.streak }} · reputação {{ user_summary.reputation.reputation_score }}.</p>
+            <p>{% if user_summary.reputation.ranking_position %}#{{ user_summary.reputation.ranking_position }} no ranking{% else %}sem posição pública{% endif %} · sequência {{ user_summary.reputation.streak }} · reputação {{ user_summary.reputation.reputation_score }}.</p>
           </div>
           <div class="progress-track"><span style="width:24%"></span></div>
           <a class="btn small ghost" href="{% url 'profile' %}">Ver progresso</a>

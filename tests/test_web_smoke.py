@@ -21,7 +21,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from accounts.models import BadgeDefinition, BadgeRule, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from accounts.models import AuthEvent, BadgeDefinition, BadgeRule, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
@@ -733,6 +733,91 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertFalse(demoted_target.json()["user"]["is_superuser"])
 
         self.assertTrue(AdminEvent.objects.filter(action="user.roles_update", entity_identifier=str(target_id)).exists())
+
+    def test_admin_user_password_reset_contracts_permissions_and_audit(self):
+        client = TestClient(app)
+        staff = client.post(
+            "/auth/register",
+            json={"display_name": "Reset Staff", "email": "reset-staff@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        superuser = client.post(
+            "/auth/register",
+            json={"display_name": "Reset Super", "email": "reset-super@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        target = client.post(
+            "/auth/register",
+            json={"display_name": "Reset Target", "email": "reset-target@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        admin_target = client.post(
+            "/auth/register",
+            json={"display_name": "Reset Admin Target", "email": "reset-admin-target@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        disabled = client.post(
+            "/auth/register",
+            json={"display_name": "Reset Disabled", "email": "reset-disabled@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        self.assertEqual(staff.status_code, 201)
+        self.assertEqual(superuser.status_code, 201)
+        self.assertEqual(target.status_code, 201)
+        self.assertEqual(admin_target.status_code, 201)
+        self.assertEqual(disabled.status_code, 201)
+        staff_id = staff.json()["user"]["id"]
+        superuser_id = superuser.json()["user"]["id"]
+        target_id = target.json()["user"]["id"]
+        admin_target_id = admin_target.json()["user"]["id"]
+        disabled_id = disabled.json()["user"]["id"]
+        staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
+        superuser_headers = {"Authorization": f"Bearer {superuser.json()['session']['token']}"}
+        target_headers = {"Authorization": f"Bearer {target.json()['session']['token']}"}
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE id = %s", (staff_id,))
+                cursor.execute("UPDATE orynth_users SET is_staff = true, is_superuser = true WHERE id = %s", (superuser_id,))
+                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE id = %s", (admin_target_id,))
+                cursor.execute("UPDATE orynth_users SET account_status = 'deactivated', is_active = false WHERE id = %s", (disabled_id,))
+
+        reset = client.post(
+            f"/admin/users/{target_id}/password-reset",
+            headers=staff_headers,
+            json={"note": "Atendimento solicitado pelo usuário"},
+        )
+        self.assertEqual(reset.status_code, 200)
+        self.assertIn("/password-reset/confirm/", reset.json()["reset_url"])
+        self.assertTrue(PasswordResetToken.objects.filter(user_id=target_id, used_at__isnull=True).exists())
+        self.assertTrue(AuthEvent.objects.filter(user_id=target_id, event_type="password_reset_requested").exists())
+        self.assertTrue(AdminEvent.objects.filter(action="user.password_reset_request", entity_identifier=str(target_id)).exists())
+        self.assertEqual(client.get("/auth/session", headers=target_headers).status_code, 200)
+
+        self_reset = client.post(
+            f"/admin/users/{staff_id}/password-reset",
+            headers=staff_headers,
+            json={"note": "self"},
+        )
+        self.assertEqual(self_reset.status_code, 422)
+
+        staff_to_admin = client.post(
+            f"/admin/users/{admin_target_id}/password-reset",
+            headers=staff_headers,
+            json={"note": "Reset de conta administrativa"},
+        )
+        self.assertEqual(staff_to_admin.status_code, 403)
+
+        super_to_admin = client.post(
+            f"/admin/users/{admin_target_id}/password-reset",
+            headers=superuser_headers,
+            json={"note": "Reset aprovado por superuser"},
+        )
+        self.assertEqual(super_to_admin.status_code, 200)
+        self.assertTrue(PasswordResetToken.objects.filter(user_id=admin_target_id, used_at__isnull=True).exists())
+
+        disabled_count = PasswordResetToken.objects.filter(user_id=disabled_id).count()
+        disabled_reset = client.post(
+            f"/admin/users/{disabled_id}/password-reset",
+            headers=superuser_headers,
+            json={"note": "Conta desativada"},
+        )
+        self.assertEqual(disabled_reset.status_code, 422)
+        self.assertEqual(PasswordResetToken.objects.filter(user_id=disabled_id).count(), disabled_count)
 
     def test_password_reset_request_confirm_revokes_sessions_and_rejects_reuse(self):
         client = TestClient(app)
@@ -5734,7 +5819,10 @@ class WebSmokeTests(TransactionTestCase):
             "auth_events": [{"event_type": "login_success", "email": "operated@example.com", "provider": "", "ip_address": "127.0.0.1", "user_agent": "test", "created_at": "2026-05-19T00:00:00+00:00"}],
             "admin_events": [],
         }
-        with patch("admin_ops.views.admin_get_users", return_value=user_data) as users_mock, patch("admin_ops.views.admin_get_user", return_value=user_detail):
+        with patch("admin_ops.views.admin_get_users", return_value=user_data) as users_mock, patch("admin_ops.views.admin_get_user", return_value=user_detail), patch(
+            "admin_ops.views.admin_request_user_password_reset",
+            return_value={"message": "Se o email existir, enviaremos instruções.", "reset_url": "http://testserver/password-reset/confirm/admin-token/"},
+        ) as reset_mock:
             response = self.client.get(reverse("admin-ops-users"))
             self.assertContains(response, "Suporte operacional")
             self.assertContains(response, "Usuários")
@@ -5752,7 +5840,13 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Ajuste de wallet")
             self.assertContains(response, "Conta controlada por robôs")
             self.assertContains(response, '<option value="" selected>Selecione</option>', html=True)
+            self.assertContains(response, "Gerar link de reset")
             self.assertContains(response, "Revogar sessões")
+            response = self.client.post(reverse("admin-ops-user-detail", args=[55]), {"action": "password_reset", "note": "Usuário solicitou reset"})
+            self.assertContains(response, "Link de reset de senha gerado.")
+            self.assertContains(response, "Envie este link ao usuário.")
+            self.assertContains(response, "http://testserver/password-reset/confirm/admin-token/")
+            reset_mock.assert_called_once_with("staff-token", 55, "Usuário solicitou reset")
 
         log_payload = {
             "logs": [
@@ -7257,6 +7351,24 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("home"))
             self.assertContains(response, "Seu resumo")
             self.assertContains(response, "Sem badges")
+
+        session = self.client.session
+        session[USER_KEY] = {**session[USER_KEY], "is_staff": True}
+        session.save()
+        staff_summary_payload = {
+            **summary_payload,
+            "reputation": {
+                **summary_payload["reputation"],
+                "reputation_score": 0,
+                "ranking_position": 0,
+                "streak": 0,
+            },
+        }
+        with patch("core.views.get_me", return_value=staff_summary_payload) as me_mock, patch("core.views.get_badges", return_value=[]):
+            response = self.client.get(reverse("home"))
+            self.assertContains(response, "Sua progressão")
+            self.assertContains(response, "sem posição pública")
+            me_mock.assert_called_once_with("api-token")
 
     def test_home_stats_show_real_total_predictions(self):
         User = get_user_model()

@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-05-24 — FEAT-AUTH-001 progressão de operadores e reset administrativo
+
+- Home autenticada passou a exibir `Sua progressão` também para `staff`/`superuser`, preservando exclusão do ranking público e exibindo estado neutro quando `ranking_position=0`.
+- FastAPI passou a expor `POST /admin/users/{user_id}/password-reset`, gerando link de recuperação para conta ativa com nota operacional, auth event e auditoria `user.password_reset_request`.
+- Reset administrativo bloqueia autoação, permite `staff` apenas para usuários comuns e exige `superuser` para alvos `staff`/`superuser`.
+- Admin Ops passou a renderizar ação de geração de link no detalhe do usuário e exibir o link como campo read-only para envio ao usuário, evitando clique do operador logado.
+- Testes cobrem contrato backend, permissões, auditoria, sessão preservada até confirmação, renderização Admin Ops e progressão de operador na home.
+- Status de implementação: `parcial`.
+
 ## 2026-05-24 — FEAT-REP-001 badges no ranking e filtro por evento
 
 - `GET /rankings` passou a retornar resumo público de badges ativas conquistadas por usuário ranqueado, limitado a 3 itens visíveis e `badges_total` para overflow visual.
