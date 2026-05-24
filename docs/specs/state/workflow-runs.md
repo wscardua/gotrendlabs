@@ -1269,3 +1269,24 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-22
 - Retomada: revisar odds/fechamento no Admin Ops e publicar ajustes editoriais caso a curadoria queira destacar algum card no feed
 - Reversão lógica: cancelar/arquivar os três mercados e limpar ou alterar o aviso da subcategoria `Cripto` se a taxonomia for revista
+
+## WFLOW-20260524-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-REP-001`
+- Objetivo: exibir badges conquistadas no ranking e ampliar filtros públicos para evento
+- Etapa atual: concluído; FastAPI, Django, CSS/JS, testes e specs atualizados em 2026-05-24
+- Artefatos afetados:
+  - `backend_api/`
+  - `profiles/`
+  - `static/css/orynth.css`
+  - `static/js/orynth.js`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-24
+- Atualizado em: 2026-05-24
+- Encerrado em: 2026-05-24
+- Retomada: avaliar visualmente em produção se o limite `3 +N` preserva legibilidade em usuários com muitos reconhecimentos
+- Reversão lógica: ocultar badges no template do ranking e ignorar `event` no filtro web, mantendo campos adicionais do contrato como compatibilidade não disruptiva

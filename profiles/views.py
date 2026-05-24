@@ -7,6 +7,7 @@ from accounts.session import auth_token, auth_user, clear_auth_session, is_authe
 
 
 LOAD_MORE_STEP = 10
+RANKING_BADGE_LIMIT = 3
 
 
 def _load_more_limit(raw_limit, total, step=LOAD_MORE_STEP):
@@ -31,6 +32,22 @@ def _profile_form_initial(profile_data):
         "birth_date": profile_data.get("birth_date") or "",
         "sex": profile_data.get("sex") or "",
         "bio": profile_data.get("bio", ""),
+    }
+
+
+def _normalize_ranking_row(row):
+    badges = list(row.get("badges") or [])
+    try:
+        badges_total = int(row.get("badges_total", len(badges)) or 0)
+    except (TypeError, ValueError):
+        badges_total = len(badges)
+    visible_badges = badges[:RANKING_BADGE_LIMIT]
+    return {
+        **row,
+        "badges": badges,
+        "badges_total": badges_total,
+        "visible_badges": visible_badges,
+        "badge_overflow_count": max(badges_total - len(visible_badges), 0),
     }
 
 
@@ -88,9 +105,10 @@ def profile(request):
 def rankings(request):
     selected_category = request.GET.get("category", "").strip()
     selected_subcategory = request.GET.get("subcategory", "").strip() if selected_category else ""
+    selected_event = request.GET.get("event", "").strip() if selected_category and selected_subcategory else ""
     ranking_error = ""
     try:
-        ranking_payload = get_rankings(category=selected_category, subcategory=selected_subcategory)
+        ranking_payload = get_rankings(category=selected_category, subcategory=selected_subcategory, event=selected_event)
     except AuthAPIError as exc:
         ranking_error = str(exc)
         ranking_payload = {
@@ -98,10 +116,12 @@ def rankings(request):
             "categories": [],
             "selected_category": selected_category,
             "selected_subcategory": selected_subcategory,
+            "selected_event": selected_event,
         }
     ranking_payload.setdefault("selected_category", selected_category)
     ranking_payload.setdefault("selected_subcategory", selected_subcategory)
-    ranking_rows = ranking_payload.get("rows", [])
+    ranking_payload.setdefault("selected_event", selected_event)
+    ranking_rows = [_normalize_ranking_row(row) for row in ranking_payload.get("rows", [])]
     viewer_handle = ""
     if is_authenticated(request):
         viewer_handle = (auth_user(request) or {}).get("handle", "")
@@ -122,6 +142,7 @@ def rankings(request):
             "ranking_categories": ranking_payload.get("categories", []),
             "selected_category": ranking_payload.get("selected_category", selected_category),
             "selected_subcategory": ranking_payload.get("selected_subcategory", selected_subcategory),
+            "selected_event": ranking_payload.get("selected_event", selected_event),
             "viewer_ranking": viewer_ranking,
             "ranking_error": ranking_error,
         },

@@ -30,8 +30,8 @@ Exibir desempenho acumulado do usuário e ranking social de forma compreensível
 - posição no ranking
 - histórico resumido de desempenho
 - ranking global por reputação persistida
-- ranking por categoria/subcategoria recalculado a partir de previsões resolvidas
-- filtros públicos de categoria/subcategoria
+- ranking por categoria/subcategoria/evento recalculado a partir de previsões resolvidas
+- filtros públicos de categoria/subcategoria/evento
 - catálogo público de badges
 - compartilhamento de badges conquistadas por usuário autenticado, com página pública por token opaco e card social com metadados Open Graph/Twitter
 - gestão administrativa de badges com imagem e regra controlada
@@ -57,6 +57,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - usuários autenticados veem seu recorte somente quando houver dados reais no ranking filtrado/global exibido
 - administradores e superusuários não aparecem no ranking público
 - a tabela pública identifica participantes por handle
+- a tabela pública pode mostrar badges conquistadas antes do handle, em resumo compacto vindo da API
 - visitantes podem consultar o catálogo de badges ativas
 - usuários autenticados veem no catálogo e no perfil quais badges já conquistaram
 - usuários autenticados podem compartilhar somente badges já conquistadas, por página própria, links de redes, imagem social e cópia do link
@@ -78,7 +79,9 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - desfazer resolução remove os efeitos reputacionais daquele mercado ao recalcular previsões ainda resolvidas do usuário
 - ranking global usa a reputação persistida do usuário
 - ranking temático por categoria/subcategoria é recalculado em leitura usando apenas previsões resolvidas do recorte
+- ranking por evento é recalculado em leitura usando apenas previsões resolvidas do evento escolhido dentro de categoria/subcategoria
 - tela pública de ranking usa `Carregar mais` em lotes cumulativos de 10 linhas, preservando filtros aplicados
+- linhas do ranking podem expor até 3 badges ativas conquistadas e `badges_total`; a UI resume excedentes como `+N`
 - usuários `is_staff` ou `is_superuser` são excluídos do ranking público
 - mudanças futuras de fórmula exigem decisão técnica registrada
 - badges não alteram reputação, ranking nem wallet
@@ -97,8 +100,8 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 
 ## Responsabilidades por camada
 
-- `frontend-web`: ranking com `Carregar mais` de 10 em 10, filtros de categoria/subcategoria, perfil, catálogo de badges, rota autenticada de compartilhamento de badge conquistada, rota pública por token opaco e card social com metadados; não calcula reputação nem elegibilidade de badges no navegador; alterna imagem clara/escura da badge conforme tema ativo
-- `backend-api`: cálculo e exposição do score global/temático, catálogo de badges, validação administrativa e concessão automática centralizada na `BadgeAwardEngine`
+- `frontend-web`: ranking com `Carregar mais` de 10 em 10, filtros de categoria/subcategoria/evento, badges conquistadas compactas no ranking, perfil, catálogo de badges, rota autenticada de compartilhamento de badge conquistada, rota pública por token opaco e card social com metadados; não calcula reputação nem elegibilidade de badges no navegador; alterna imagem clara/escura da badge conforme tema ativo
+- `backend-api`: cálculo e exposição do score global/temático, resumo de badges conquistadas no ranking, catálogo de badges, validação administrativa e concessão automática centralizada na `BadgeAwardEngine`
 - `admin-ops`: cadastro operacional de badges consumindo contratos staff do backend, incluindo upload local de imagem para tema claro e tema escuro
 - `database`: persistência de definições, regras e conquistas; materialização auxiliar quando necessário
 
@@ -144,6 +147,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 
 - usuário consegue ver posição e evolução coerente com resultados resolvidos
 - usuário consegue filtrar ranking por categoria/subcategoria
+- usuário consegue filtrar ranking por evento após escolher categoria e subcategoria
 - visitante não vê recorte pessoal inventado
 - administradores não aparecem no ranking público
 - visitante consegue ver badges ativas e suas regras resumidas

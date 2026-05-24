@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-05-24 — FEAT-REP-001 badges no ranking e filtro por evento
+
+- `GET /rankings` passou a retornar resumo público de badges ativas conquistadas por usuário ranqueado, limitado a 3 itens visíveis e `badges_total` para overflow visual.
+- Ranking web passou a renderizar badges após o handle do usuário, preservando o handle como identificação principal da linha e resumindo excedentes como `+N`.
+- Ranking público passou a aceitar filtro `event` quando `category` e `subcategory` estão selecionados; taxonomia do ranking agora inclui eventos por subcategoria.
+- Django continua consumindo `GET /rankings` como fonte autoritativa e apenas normaliza dados de apresentação, sem calcular reputação ou elegibilidade de badges.
+- Testes cobrem ranking global/temático/evento, badges ativas/inativas, payload legado sem badges, renderização web e preservação de filtros no `Carregar mais`.
+- Status de implementação: `parcial`.
+
 ## 2026-05-24 — FEAT-AIAGENT-001 cobertura do ciclo IA
 
 - Ciclo de comentários IA passou a avaliar lista configurável de mercados candidatos por ciclo, com default de 200 candidatos.

@@ -855,7 +855,7 @@ h3 {
 
 .ranking-filters {
   display: grid;
-  grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto auto;
+  grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr) minmax(150px, 1fr) auto auto;
   gap: 12px;
   align-items: end;
   margin-top: 18px;
@@ -863,6 +863,65 @@ h3 {
 
 .ranking-filters + .table {
   margin-top: 16px;
+}
+
+.ranking-table th:first-child,
+.ranking-table td:first-child {
+  width: 48px;
+}
+
+.ranking-user-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.ranking-user-badges {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.ranking-badge {
+  width: 32px;
+  height: 32px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 10px;
+  background: rgba(255, 253, 247, 0.92);
+  border: 1px solid rgba(19, 111, 74, 0.18);
+  box-shadow: 0 8px 18px rgba(25, 29, 30, 0.10);
+  overflow: hidden;
+}
+
+.ranking-badge + .ranking-badge {
+  margin-left: -8px;
+}
+
+.ranking-badge-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 3px;
+}
+
+.ranking-badge-fallback,
+.ranking-badge-overflow {
+  color: var(--green-2);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.ranking-badge-overflow {
+  background: #ecf2e8;
+}
+
+.ranking-user-handle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 700;
 }
 
 .market-list {
@@ -7093,6 +7152,21 @@ body[data-theme="dark"] .badge-card.locked .badge-icon {
   border-color: rgba(218, 230, 219, 0.18);
 }
 
+body[data-theme="dark"] .ranking-badge {
+  background: rgba(21, 31, 28, 0.92);
+  border-color: rgba(129, 236, 160, 0.24);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
+}
+
+body[data-theme="dark"] .ranking-badge-fallback,
+body[data-theme="dark"] .ranking-badge-overflow {
+  color: #8df3ad;
+}
+
+body[data-theme="dark"] .ranking-badge-overflow {
+  background: rgba(85, 212, 139, 0.14);
+}
+
 body[data-theme="dark"] .badge-help-card {
   background: rgba(21, 31, 28, 0.74);
   border-color: rgba(218, 230, 219, 0.18);
@@ -7709,6 +7783,17 @@ body[data-theme="dark"] .footer {
 
   .ranking-filters {
     grid-template-columns: 1fr;
+  }
+
+  .ranking-user-cell {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .ranking-badge {
+    width: 30px;
+    height: 30px;
   }
 
   .share-badge-card {

@@ -340,6 +340,7 @@ $$("[data-market-favorite-form]").forEach((form) => {
 function syncRankingSubcategories(form) {
   const categorySelect = $("[data-ranking-category]", form);
   const subcategorySelect = $("[data-ranking-subcategory]", form);
+  const eventSelect = $("[data-ranking-event]", form);
   if (!categorySelect || !subcategorySelect) return;
   const category = categorySelect.value;
   let selectedStillVisible = false;
@@ -354,10 +355,33 @@ function syncRankingSubcategories(form) {
   if (!selectedStillVisible) {
     subcategorySelect.value = "";
   }
+  syncRankingEvents(form);
+}
+
+function syncRankingEvents(form) {
+  const categorySelect = $("[data-ranking-category]", form);
+  const subcategorySelect = $("[data-ranking-subcategory]", form);
+  const eventSelect = $("[data-ranking-event]", form);
+  if (!categorySelect || !subcategorySelect || !eventSelect) return;
+  const category = categorySelect.value;
+  const subcategory = subcategorySelect.value;
+  let selectedStillVisible = false;
+  $$("option", eventSelect).forEach((option) => {
+    const isPlaceholder = !option.value;
+    const matches = isPlaceholder || (category && subcategory && option.dataset.category === category && option.dataset.subcategory === subcategory);
+    option.hidden = !matches;
+    option.disabled = !matches;
+    if (matches && option.selected && !isPlaceholder) selectedStillVisible = true;
+  });
+  eventSelect.disabled = !category || !subcategory;
+  if (!selectedStillVisible) {
+    eventSelect.value = "";
+  }
 }
 
 $$("[data-ranking-filters]").forEach((form) => {
   $("[data-ranking-category]", form)?.addEventListener("change", () => syncRankingSubcategories(form));
+  $("[data-ranking-subcategory]", form)?.addEventListener("change", () => syncRankingEvents(form));
   syncRankingSubcategories(form);
 });
 
