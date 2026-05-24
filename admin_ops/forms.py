@@ -91,6 +91,8 @@ class AiConfigForm(forms.Form):
     ai_market_cooldown_hours = forms.IntegerField(label="Cooldown por mercado (h)", min_value=1, max_value=720, initial=24)
     ai_max_comments_per_market_per_day = forms.IntegerField(label="Comentários por mercado/dia", min_value=1, max_value=10, initial=1)
     ai_max_comments_per_cycle = forms.IntegerField(label="Comentários por ciclo", min_value=0, max_value=100, initial=1)
+    ai_max_comment_attempts_per_cycle = forms.IntegerField(label="Tentativas LLM por ciclo", min_value=1, max_value=100, initial=3)
+    ai_comment_candidate_limit = forms.IntegerField(label="Mercados candidatos por ciclo", min_value=1, max_value=10000, initial=200)
     ai_max_comments_per_day = forms.IntegerField(label="Comentários por dia", min_value=0, max_value=10000, initial=20)
     ai_comment_max_chars = forms.IntegerField(label="Máximo de caracteres", min_value=120, max_value=1000, initial=700)
     ai_min_humans_for_prediction = forms.IntegerField(label="Mínimo de humanos para previsão", min_value=0, max_value=10000, initial=1)

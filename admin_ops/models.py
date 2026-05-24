@@ -17,6 +17,8 @@ class SiteConfig(models.Model):
     ai_market_cooldown_hours = models.PositiveIntegerField(default=24)
     ai_max_comments_per_market_per_day = models.PositiveIntegerField(default=1)
     ai_max_comments_per_cycle = models.PositiveIntegerField(default=1)
+    ai_max_comment_attempts_per_cycle = models.PositiveIntegerField(default=3)
+    ai_comment_candidate_limit = models.PositiveIntegerField(default=200)
     ai_max_comments_per_day = models.PositiveIntegerField(default=20)
     ai_comment_max_chars = models.PositiveIntegerField(default=700)
     ai_min_humans_for_prediction = models.PositiveIntegerField(default=1)

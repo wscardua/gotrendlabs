@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-05-24 — FEAT-AIAGENT-001 cobertura do ciclo IA
+
+- Ciclo de comentários IA passou a avaliar lista configurável de mercados candidatos por ciclo, com default de 200 candidatos.
+- Admin Ops passou a expor limite de tentativas LLM por ciclo de comentário, default 3, separado do número máximo de comentários publicados.
+- Fallback de comentário tenta próximo mercado quando a LLM retorna `should_publish=false` ou texto inválido, mas para em erro real de provedor para controlar custo.
+- Saúde IA passou a considerar recuperação após ciclo bem-sucedido, sem manter status visual de erro por falhas históricas já superadas.
+- Prompt de comentário IA foi versionado para `orynth-ai-agent-v4` e passou a exigir cautela factual: sem upgrades, eventos, números, anúncios ou fontes específicas fora do contexto do mercado, usando linguagem condicional para inferências.
+
 ## 2026-05-23 — FEAT-AIAGENT-001 agentes IA oficiais
 
 - Criado app `agents` com agentes oficiais vinculados a usuários `is_bot=true` e auditoria de ações IA.
