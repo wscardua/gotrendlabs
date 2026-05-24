@@ -40,6 +40,7 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - exclusão lógica de conta
 - gestão administrativa de usuários cadastrados para suporte operacional
 - marcação administrativa de contas controladas por robôs internos
+- geração administrativa auditada de link de recuperação de senha
 
 ## Escopo excluído
 
@@ -73,6 +74,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - exclusão lógica desativa login e sessões sem apagar dados físicos
 - Admin Ops lista usuários, abre detalhe operacional amplo e exibe badges adquiridas para suporte
 - Admin Ops pode marcar/desmarcar usuário como `bot` quando a conta for controlada por robôs internos; essa informação é visível apenas em contratos administrativos
+- Admin Ops pode gerar link de reset de senha para conta ativa, com nota operacional e auditoria; staff atua sobre usuários comuns e apenas superuser atua sobre contas staff/superuser
 - ações administrativas de usuário usam contratos staff da FastAPI; o Django apenas renderiza estado e envia formulários
 
 ## Regras de domínio
@@ -85,6 +87,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - exclusão lógica deve preservar histórico e bloquear uso normal
 - ações administrativas sobre conta exigem usuário staff, nota operacional e auditoria
 - operador não pode desativar nem revogar sessões da própria conta; ajuste manual de wallet da própria conta é permitido para `staff`/`superuser`, desde que tenha nota e auditoria
+- operador não pode gerar reset administrativo da própria conta
 - alteração de `is_staff` e `is_superuser` exige operador `is_superuser=true`, nota operacional e auditoria
 - operador não pode alterar privilégios da própria conta; `is_superuser=true` implica `is_staff=true`
 - sistema não permite remover o último superusuário ativo
@@ -126,8 +129,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte
 - Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação, revogação de sessões, gestão controlada de papéis e marcação `is_bot` via contratos staff
-- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust`, `user.roles_update` ou `user.bot_update` em `orynth_admin_events`
-- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`, `POST /admin/users/{user_id}/roles`, `POST /admin/users/{user_id}/bot`
+- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust`, `user.roles_update`, `user.bot_update` ou `user.password_reset_request` em `orynth_admin_events`
+- contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`, `POST /admin/users/{user_id}/roles`, `POST /admin/users/{user_id}/bot`, `POST /admin/users/{user_id}/password-reset`
 
 ## Testes esperados
 
@@ -152,6 +155,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo staff de desativação, reativação e revogação de sessões com auditoria
 - fluxo superuser de promoção/rebaixamento de papéis administrativos com auditoria
 - fluxo staff de marcação/desmarcação `is_bot` com filtro administrativo e auditoria, sem exposição pública
+- fluxo staff/superuser de geração administrativa de link de reset com auditoria, bloqueio de autoação, bloqueio de alvo administrativo para staff comum e rejeição de conta desativada
 - bloqueio de ações administrativas perigosas sobre a própria conta do operador
 - permissão explícita de ajuste manual de wallet sobre a própria conta de operador com auditoria
 
@@ -176,6 +180,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - ajuste manual de wallet no detalhe administrativo exige escolha explícita de direção, sem valor pré-selecionado
 - staff/superuser consegue ajustar a própria wallet com justificativa auditada; demais ações sensíveis sobre a própria conta continuam bloqueadas
 - marcador `bot` aparece e filtra apenas em Admin Ops
+- staff consegue gerar link de reset para usuário comum ativo; superuser consegue gerar link para conta administrativa ativa; a confirmação do reset segue o fluxo público existente e revoga sessões somente ao definir a nova senha
 
 ## Impacto de mudança
 

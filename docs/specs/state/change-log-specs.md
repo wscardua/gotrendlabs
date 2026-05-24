@@ -2,6 +2,8 @@
 
 ## 2026-05-24
 
+- registrada evolução de `FEAT-AUTH-001` para reset administrativo auditado por Admin Ops e exibição de `Sua progressão` para operadores sem participação no ranking público
+- atualizado contrato `backend-api.md` com `POST /admin/users/{user_id}/password-reset`, nota obrigatória, bloqueios de autoação/conta desativada e permissão restrita para alvos administrativos
 - registrada evolução de `FEAT-REP-001` para expor badges conquistadas resumidas no ranking e filtro público por evento
 - atualizado contrato `reputation-ranking.md` para aceitar `event`, retornar `selected_event` e serializar eventos na taxonomia de filtros
 - registrada decisão de UI de manter o handle como identificação principal da linha e renderizar badges após o nome/handle, com excedentes resumidos como `+N`

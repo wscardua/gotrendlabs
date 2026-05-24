@@ -262,6 +262,10 @@ def admin_update_user_bot(token, user_id, is_bot, note):
     )
 
 
+def admin_request_user_password_reset(token, user_id, note):
+    return _request("POST", f"/admin/users/{user_id}/password-reset", {"note": note}, token=token)
+
+
 def admin_create_market(token, data):
     return _normalize_market_payload(_request("POST", "/admin/markets", data, token=token))
 

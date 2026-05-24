@@ -315,9 +315,7 @@ def home(request):
         ranking = []
     user_summary = None
     user_badges = []
-    session_user = auth_user(request) or {}
-    is_operator = bool(session_user.get("is_staff") or session_user.get("is_superuser"))
-    if is_authenticated(request) and not is_operator:
+    if is_authenticated(request):
         try:
             user_summary = get_me(auth_token(request))
         except AuthAPIError:

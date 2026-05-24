@@ -46,6 +46,7 @@
 - Ações staff em `/admin/users/{user_id}` devem cobrir desativação, reativação, revogação de sessões e ajuste manual de wallet, sempre com nota operacional e auditoria.
 - `POST /admin/users/{user_id}/roles` deve exigir operador superuser, nota operacional, bloquear autoalteração, tratar `is_superuser` como implicando `is_staff` e registrar `user.roles_update`.
 - `POST /admin/users/{user_id}/bot` deve marcar/desmarcar conta controlada por robôs internos, exigir nota operacional, bloquear autoalteração e registrar `user.bot_update`.
+- `POST /admin/users/{user_id}/password-reset` deve gerar link de recuperação para conta ativa, exigir nota operacional, bloquear autoalteração, permitir staff apenas para usuários comuns, exigir superuser para alvo staff/superuser e registrar `user.password_reset_request`.
 - Ajuste manual de wallet pode ser aplicado à própria conta do operador staff/superuser; as demais autoações sensíveis continuam bloqueadas.
 - Recuperação de senha deve expor `POST /auth/password-reset/request` e `POST /auth/password-reset/confirm`, armazenando apenas hash do token, expiração e uso único; confirmação revoga sessões ativas.
 - Concessão automática de badge deve ser idempotente e não pode alterar reputação, ranking, wallet ou ledger.

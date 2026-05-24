@@ -31,6 +31,8 @@ from backend_api.schemas import (
     AdminUserDetailResponse,
     AdminUserBotPayload,
     AdminUserListResponse,
+    AdminUserPasswordResetPayload,
+    AdminUserPasswordResetResponse,
     AdminUserRolePayload,
     AdminUserWalletAdjustmentPayload,
     FeedbackRewardPayload,
@@ -1444,6 +1446,20 @@ def _require_admin_target(staff, target, *, allow_superuser=False, allow_self=Fa
 def _require_superuser(staff):
     if not staff["is_superuser"]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Apenas superusuários podem alterar privilégios administrativos.")
+
+
+def _issue_password_reset(cursor, user, *, ip_address=None, user_agent=""):
+    token = issue_token()
+    now = datetime.now(timezone.utc)
+    cursor.execute(
+        """
+        INSERT INTO orynth_password_reset_tokens
+            (user_id, token_hash, created_at, expires_at, used_at, ip_address, user_agent)
+        VALUES (%s, %s, %s, %s, NULL, %s, %s)
+        """,
+        (user["id"], hash_token(token), now, now + PASSWORD_RESET_TTL, ip_address, user_agent),
+    )
+    return f"{PUBLIC_WEB_BASE_URL}/password-reset/confirm/{token}/"
 
 
 def _ledger_entries(cursor, user_id, limit=10):
@@ -4029,6 +4045,27 @@ def admin_update_user_bot(user_id: int, payload: AdminUserBotPayload, authorizat
             return _admin_user_detail(cursor, user_id)
 
 
+@app.post("/admin/users/{user_id}/password-reset", response_model=AdminUserPasswordResetResponse)
+def admin_request_user_password_reset(user_id: int, payload: AdminUserPasswordResetPayload, request: Request, authorization: str = Header(default="")):
+    note = payload.note.strip()
+    if not note:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
+    ip_address, user_agent = _client_meta(request)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(staff, target, allow_superuser=True)
+            if (target["is_staff"] or target["is_superuser"]) and not staff["is_superuser"]:
+                _require_superuser(staff)
+            if not target["is_active"] or target["account_status"] != "active":
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Reset de senha exige conta ativa.")
+            reset_url = _issue_password_reset(cursor, target, ip_address=ip_address, user_agent=user_agent)
+            _record_event(cursor, "password_reset_requested", user_id=target["id"], email=target["email"], ip_address=ip_address, user_agent=user_agent)
+            _record_admin_event(cursor, staff["id"], "user.password_reset_request", "user", str(user_id), note)
+            return {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
+
+
 @app.get("/admin/comments", response_model=CommentListResponse)
 def admin_list_comments(
     status_filter: Optional[str] = Query(default=None, alias="status"),
@@ -5492,18 +5529,8 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
             )
             user = cursor.fetchone()
             if user:
-                token = issue_token()
-                now = datetime.now(timezone.utc)
-                cursor.execute(
-                    """
-                    INSERT INTO orynth_password_reset_tokens
-                        (user_id, token_hash, created_at, expires_at, used_at, ip_address, user_agent)
-                    VALUES (%s, %s, %s, %s, NULL, %s, %s)
-                    """,
-                    (user["id"], hash_token(token), now, now + PASSWORD_RESET_TTL, ip_address, user_agent),
-                )
+                reset_url = _issue_password_reset(cursor, user, ip_address=ip_address, user_agent=user_agent)
                 _record_event(cursor, "password_reset_requested", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
-                reset_url = f"{PUBLIC_WEB_BASE_URL}/password-reset/confirm/{token}/"
     return {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
 
 

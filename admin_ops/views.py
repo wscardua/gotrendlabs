@@ -44,6 +44,7 @@ from accounts.api_client import (
     admin_get_taxonomy,
     admin_get_user,
     admin_get_users,
+    admin_request_user_password_reset,
     get_backend_health,
     admin_lock_market,
     admin_moderate_comment,
@@ -79,6 +80,7 @@ from admin_ops.forms import (
     AiConfigForm,
     AdminSubcategoryForm,
     AdminUserNoteForm,
+    AdminUserPasswordResetForm,
     AdminUserRoleForm,
     AdminUserBotForm,
     AdminUserWalletAdjustmentForm,
@@ -826,6 +828,8 @@ def user_detail(request, user_id):
     wallet_form = AdminUserWalletAdjustmentForm()
     role_form = AdminUserRoleForm()
     bot_form = AdminUserBotForm()
+    password_reset_form = AdminUserPasswordResetForm()
+    password_reset_url = ""
     if request.method == "POST":
         action = request.POST.get("action", "")
         try:
@@ -889,6 +893,14 @@ def user_detail(request, user_id):
                     messages.success(request, "Classificação de robô atualizada.")
                     return redirect("admin-ops-user-detail", user_id=user_id)
                 error = "Informe a nota operacional."
+            elif action == "password_reset":
+                password_reset_form = AdminUserPasswordResetForm(request.POST)
+                if password_reset_form.is_valid():
+                    reset_payload = admin_request_user_password_reset(token, user_id, password_reset_form.cleaned_data["note"])
+                    password_reset_url = reset_payload.get("reset_url", "")
+                    messages.success(request, "Link de reset de senha gerado.")
+                else:
+                    error = "Informe a nota operacional."
         except AuthAPIError as exc:
             error = str(exc)
     try:
@@ -908,6 +920,8 @@ def user_detail(request, user_id):
             "wallet_form": wallet_form,
             "role_form": role_form,
             "bot_form": bot_form,
+            "password_reset_form": password_reset_form,
+            "password_reset_url": password_reset_url,
             "admin_error": error,
         },
     )
