@@ -804,6 +804,15 @@ class AdminEventPayload(BaseModel):
     notice: str = Field(default="", max_length=500)
 
 
+class RankingBadgeResponse(BaseModel):
+    code: str
+    name: str
+    image_url: str = ""
+    image_dark_url: str = ""
+    badge_type: str = "global"
+    awarded_at: str
+
+
 class RankingRowResponse(BaseModel):
     position: int
     user_id: int
@@ -812,11 +821,19 @@ class RankingRowResponse(BaseModel):
     reputation_score: int
     accuracy_indicator: str
     strong_category: str
+    badges: List[RankingBadgeResponse] = Field(default_factory=list)
+    badges_total: int = 0
+
+
+class RankingEventResponse(BaseModel):
+    name: str
+    slug: str
 
 
 class RankingSubcategoryResponse(BaseModel):
     name: str
     slug: str
+    events: List[RankingEventResponse] = Field(default_factory=list)
 
 
 class RankingCategoryResponse(BaseModel):
@@ -830,3 +847,4 @@ class RankingResponse(BaseModel):
     categories: List[RankingCategoryResponse] = Field(default_factory=list)
     selected_category: str = ""
     selected_subcategory: str = ""
+    selected_event: str = ""

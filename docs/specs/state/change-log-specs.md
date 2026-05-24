@@ -2,6 +2,9 @@
 
 ## 2026-05-24
 
+- registrada evolução de `FEAT-REP-001` para expor badges conquistadas resumidas no ranking e filtro público por evento
+- atualizado contrato `reputation-ranking.md` para aceitar `event`, retornar `selected_event` e serializar eventos na taxonomia de filtros
+- registrada decisão de UI de manter o handle como identificação principal da linha e renderizar badges após o nome/handle, com excedentes resumidos como `+N`
 - registrada evolução de `FEAT-AIAGENT-001` para cobertura maior do ciclo de comentários IA, com candidatos configuráveis, tentativas LLM limitadas e fallback em respostas não publicáveis/validação segura
 - registrado que erro real de provedor LLM interrompe tentativas do ciclo para evitar cascata de custo durante instabilidade
 - registrada atualização de `scheduler-jobs.md` para explicitar avaliação local de múltiplos mercados e limite de chamadas LLM por ciclo

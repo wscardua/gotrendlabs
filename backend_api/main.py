@@ -2384,39 +2384,113 @@ def _ranking_categories(cursor):
     for category in cursor.fetchall():
         cursor.execute(
             """
-            SELECT name, slug
+            SELECT id, name, slug
             FROM orynth_market_subcategories
             WHERE category_id = %s
             ORDER BY name ASC
             """,
             (category["id"],),
         )
+        subcategories = []
+        for subcategory in cursor.fetchall():
+            cursor.execute(
+                """
+                SELECT name, slug
+                FROM orynth_market_events
+                WHERE subcategory_id = %s
+                ORDER BY name ASC
+                """,
+                (subcategory["id"],),
+            )
+            subcategories.append(
+                {
+                    "name": subcategory["name"],
+                    "slug": subcategory["slug"],
+                    "events": [{"name": row["name"], "slug": row["slug"]} for row in cursor.fetchall()],
+                }
+            )
         categories.append(
             {
                 "name": category["name"],
                 "slug": category["slug"],
-                "subcategories": [{"name": row["name"], "slug": row["slug"]} for row in cursor.fetchall()],
+                "subcategories": subcategories,
             }
         )
     return categories
 
 
-def _ranking_theme_rows(cursor, category, subcategory, limit=50):
+def _ranking_badges_by_user(cursor, user_ids, visible_limit=3):
+    badges_by_user = {user_id: {"badges": [], "badges_total": 0} for user_id in user_ids}
+    if not user_ids:
+        return badges_by_user
+    cursor.execute(
+        """
+        SELECT user_id, code, name, badge_type, image_url, image_dark_url, awarded_at, badge_rank, badges_total
+        FROM (
+            SELECT a.user_id, b.code, b.name, b.badge_type, b.image_url, b.image_dark_url, a.awarded_at,
+                   ROW_NUMBER() OVER (PARTITION BY a.user_id ORDER BY a.awarded_at DESC, b.code ASC) AS badge_rank,
+                   COUNT(*) OVER (PARTITION BY a.user_id) AS badges_total
+            FROM orynth_user_badge_awards a
+            JOIN orynth_badge_definitions b ON b.id = a.badge_id
+            WHERE b.is_active = true
+              AND a.user_id = ANY(%s)
+        ) ranked_badges
+        WHERE badge_rank <= %s
+        ORDER BY user_id ASC, badge_rank ASC
+        """,
+        (user_ids, visible_limit),
+    )
+    for badge in cursor.fetchall():
+        user_badges = badges_by_user.setdefault(badge["user_id"], {"badges": [], "badges_total": 0})
+        user_badges["badges_total"] = int(badge["badges_total"] or 0)
+        user_badges["badges"].append(
+            {
+                "code": badge["code"],
+                "name": badge["name"],
+                "image_url": badge["image_url"] or "",
+                "image_dark_url": badge["image_dark_url"] or "",
+                "badge_type": badge["badge_type"] or "global",
+                "awarded_at": badge["awarded_at"].isoformat(),
+            }
+        )
+    return badges_by_user
+
+
+def _attach_ranking_badges(cursor, rows):
+    badges_by_user = _ranking_badges_by_user(cursor, [row["user_id"] for row in rows])
+    enriched_rows = []
+    for row in rows:
+        badge_summary = badges_by_user.get(row["user_id"], {"badges": [], "badges_total": 0})
+        enriched_rows.append(
+            {
+                **row,
+                "badges": badge_summary["badges"],
+                "badges_total": badge_summary["badges_total"],
+            }
+        )
+    return enriched_rows
+
+
+def _ranking_theme_rows(cursor, category, subcategory, event, limit=50):
     where = ["u.is_active = true", "u.is_staff = false", "u.is_superuser = false", "u.is_bot = false", "p.status = 'resolved'", "c.slug = %s"]
     params = [category]
     if subcategory:
         where.append("sc.slug = %s")
         params.append(subcategory)
+    if event:
+        where.append("ev.slug = %s")
+        params.append(event)
     cursor.execute(
         f"""
         SELECT u.id, u.username, u.first_name, u.date_joined,
                p.probability_at_entry, p.won, p.updated_at, p.id AS prediction_id,
-               c.name AS category_name, sc.name AS subcategory_name
+               c.name AS category_name, sc.name AS subcategory_name, ev.name AS event_name
         FROM orynth_predictions p
         JOIN orynth_users u ON u.id = p.user_id
         JOIN orynth_markets m ON m.id = p.market_id
         JOIN orynth_market_categories c ON c.id = m.category_id
         JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
+        LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
         WHERE {" AND ".join(where)}
         ORDER BY u.id ASC, p.updated_at ASC, p.id ASC
         """,
@@ -2434,7 +2508,7 @@ def _ranking_theme_rows(cursor, category, subcategory, limit=50):
                 "score": INITIAL_REPUTATION,
                 "total": 0,
                 "wins": 0,
-                "strong_category": row["subcategory_name"] if subcategory else row["category_name"],
+                "strong_category": row["event_name"] if event else row["subcategory_name"] if subcategory else row["category_name"],
             },
         )
         probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(row["probability_at_entry"]) / Decimal("100")))
@@ -2461,7 +2535,7 @@ def _ranking_theme_rows(cursor, category, subcategory, limit=50):
                 "strong_category": row["strong_category"] or "Geral",
             }
         )
-    return rows
+    return _attach_ranking_badges(cursor, rows)
 
 
 def _record_event(cursor, event_type, *, user_id=None, email="", provider="", ip_address=None, user_agent=""):
@@ -5804,9 +5878,14 @@ def get_public_profile(handle: str):
 
 
 @app.get("/rankings", response_model=RankingResponse)
-def get_rankings(category: Optional[str] = Query(default=None), subcategory: Optional[str] = Query(default=None)):
+def get_rankings(
+    category: Optional[str] = Query(default=None),
+    subcategory: Optional[str] = Query(default=None),
+    event: Optional[str] = Query(default=None),
+):
     selected_category = (category or "").strip()
     selected_subcategory = (subcategory or "").strip() if selected_category else ""
+    selected_event = (event or "").strip() if selected_category and selected_subcategory else ""
     with get_connection() as connection:
         with connection.cursor() as cursor:
             categories = _ranking_categories(cursor)
@@ -5815,10 +5894,11 @@ def get_rankings(category: Optional[str] = Query(default=None), subcategory: Opt
                 _ensure_user_core(cursor, row["id"])
             if selected_category:
                 return {
-                    "rows": _ranking_theme_rows(cursor, selected_category, selected_subcategory),
+                    "rows": _ranking_theme_rows(cursor, selected_category, selected_subcategory, selected_event),
                     "categories": categories,
                     "selected_category": selected_category,
                     "selected_subcategory": selected_subcategory,
+                    "selected_event": selected_event,
                 }
             cursor.execute(
                 """
@@ -5846,9 +5926,11 @@ def get_rankings(category: Optional[str] = Query(default=None), subcategory: Opt
                         "strong_category": row["strong_category"] or "Geral",
                     }
                 )
+            rows = _attach_ranking_badges(cursor, rows)
             return {
                 "rows": rows,
                 "categories": categories,
                 "selected_category": selected_category,
                 "selected_subcategory": selected_subcategory,
+                "selected_event": selected_event,
             }

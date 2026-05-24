@@ -27,13 +27,53 @@
           {% endfor %}
         </select>
       </div>
+      <div class="field">
+        <label for="ranking-event">Evento</label>
+        <select id="ranking-event" name="event" data-ranking-event>
+          <option value="">Todos</option>
+          {% for category in ranking_categories %}
+            {% for subcategory in category.subcategories %}
+              {% for event in subcategory.events %}
+                <option value="{{ event.slug }}" data-category="{{ category.slug }}" data-subcategory="{{ subcategory.slug }}" {% if selected_category == category.slug and selected_subcategory == subcategory.slug and selected_event == event.slug %}selected{% endif %}>{{ event.name }}</option>
+              {% endfor %}
+            {% endfor %}
+          {% endfor %}
+        </select>
+      </div>
       <button class="btn primary" type="submit">Aplicar</button>
       <a class="btn ghost" href="{% url 'rankings' %}">Global</a>
     </form>
-    <table class="table">
+    <table class="table ranking-table">
       <tr><th>#</th><th>Usuário</th><th>Reputação</th><th>Acerto</th><th>Categoria forte</th></tr>
       {% for row in ranking %}
-        <tr><td>{{ row.position }}</td><td>{{ row.handle }}</td><td>{{ row.reputation_score }}</td><td>{{ row.accuracy_indicator }}</td><td>{{ row.strong_category }}</td></tr>
+        <tr>
+          <td>{{ row.position }}</td>
+          <td>
+            <div class="ranking-user-cell">
+              <span class="ranking-user-handle">{{ row.handle }}</span>
+              {% if row.visible_badges %}
+                <span class="ranking-user-badges" aria-label="{{ row.badges_total }} badge{% if row.badges_total != 1 %}s{% endif %} conquistada{% if row.badges_total != 1 %}s{% endif %}">
+                  {% for badge in row.visible_badges %}
+                    <span class="ranking-badge" title="{{ badge.name }}">
+                      {% if badge.image_url %}
+                        <img class="ranking-badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="{{ badge.name }}">
+                        {% if badge.image_dark_url %}<img class="ranking-badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="{{ badge.name }}">{% endif %}
+                      {% else %}
+                        <span class="ranking-badge-fallback" aria-hidden="true">{{ badge.name|first|upper }}</span>
+                      {% endif %}
+                    </span>
+                  {% endfor %}
+                  {% if row.badge_overflow_count %}
+                    <span class="ranking-badge ranking-badge-overflow" title="{{ row.badge_overflow_count }} badge{% if row.badge_overflow_count != 1 %}s{% endif %} extra">+{{ row.badge_overflow_count }}</span>
+                  {% endif %}
+                </span>
+              {% endif %}
+            </div>
+          </td>
+          <td>{{ row.reputation_score }}</td>
+          <td>{{ row.accuracy_indicator }}</td>
+          <td>{{ row.strong_category }}</td>
+        </tr>
       {% empty %}
         <tr><td colspan="5">Ainda não há previsões resolvidas para este recorte.</td></tr>
       {% endfor %}
@@ -43,7 +83,7 @@
         <span>mostrando {{ ranking_visible_count }} de {{ ranking_total }}</span>
         <div class="wallet-pagination-actions">
           {% if ranking_has_more %}
-            <a class="btn small ghost" href="?{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if selected_subcategory %}subcategory={{ selected_subcategory|urlencode }}&{% endif %}limit={{ ranking_next_limit }}">Carregar mais</a>
+            <a class="btn small ghost" href="?{% if selected_category %}category={{ selected_category|urlencode }}&{% endif %}{% if selected_subcategory %}subcategory={{ selected_subcategory|urlencode }}&{% endif %}{% if selected_event %}event={{ selected_event|urlencode }}&{% endif %}limit={{ ranking_next_limit }}">Carregar mais</a>
           {% endif %}
         </div>
       </div>

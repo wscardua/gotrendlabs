@@ -21,6 +21,7 @@ Query params opcionais:
 
 - `category`: slug da categoria.
 - `subcategory`: slug da subcategoria; só é aplicado quando `category` também está presente.
+- `event`: slug do evento; só é aplicado quando `category` e `subcategory` também estão presentes.
 
 Resposta mínima:
 
@@ -28,6 +29,7 @@ Resposta mínima:
 - `categories`: taxonomia disponível para filtros, com `name`, `slug` e `subcategories`.
 - `selected_category`: slug de categoria aplicado ou string vazia.
 - `selected_subcategory`: slug de subcategoria aplicado ou string vazia.
+- `selected_event`: slug de evento aplicado ou string vazia.
 
 Campos mínimos de cada linha em `rows`:
 
@@ -38,6 +40,17 @@ Campos mínimos de cada linha em `rows`:
 - `reputation_score`
 - `accuracy_indicator`
 - `strong_category`
+- `badges`: lista resumida de até 3 badges ativas conquistadas pelo usuário, ordenadas por conquista mais recente.
+- `badges_total`: total de badges ativas conquistadas pelo usuário, para a UI exibir resumo como `+N`.
+
+Campos mínimos de cada item em `badges`:
+
+- `code`
+- `name`
+- `image_url`
+- `image_dark_url`
+- `badge_type`
+- `awarded_at`
 
 ## Regras
 
@@ -50,10 +63,13 @@ Campos mínimos de cada linha em `rows`:
 - O histórico público não pode depender apenas de posição agregada; deve haver lastro em previsões resolvidas.
 - O ranking global usa a reputação persistida em `orynth_user_reputations`.
 - Ranking filtrado por categoria/subcategoria é uma projeção de leitura recalculada a partir de previsões resolvidas daquele recorte, usando a mesma fórmula MVP.
+- Ranking filtrado por evento é uma projeção de leitura recalculada a partir de previsões resolvidas daquele evento, sempre dentro de uma categoria e subcategoria selecionadas.
 - Usuários administrativos (`is_staff` ou `is_superuser`) não participam do ranking público.
 - Usuários bot (`is_bot=true`) não participam do ranking público global ou temático.
 - A UI pública deve exibir o identificador (`handle`) como identificação do usuário no ranking.
+- A UI pública pode exibir badges conquistadas junto ao handle, usando apenas o resumo persistido retornado por `GET /rankings`.
 - A UI pública deve apresentar o ranking em blocos cumulativos de 10 linhas com `Carregar mais`, preservando filtros de categoria/subcategoria.
+- O `Carregar mais` deve preservar também o filtro de evento quando aplicado.
 - Conteúdo personalizado do quadro "Seu recorte" deve depender de sessão/dados reais; visitantes não devem ver posição estimada ou percentual fictício.
 
 ## Contrato de badges

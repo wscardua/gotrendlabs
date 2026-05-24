@@ -1418,6 +1418,42 @@ class BackendAuthAPITests(TransactionTestCase):
                 BadgeAwardEngine.on_comment_created(cursor, bot.id, market_id=market.id)
         self.assertFalse(UserBadgeAward.objects.filter(user=bot, badge=badge).exists())
 
+    def test_rankings_include_recent_active_badges(self):
+        User = get_user_model()
+        BadgeDefinition.objects.update(is_active=False)
+        user = User.objects.create_user(username="@ranking_badge_user", email="ranking-badge-user@example.com", password="x")
+        UserReputation.objects.create(user=user, reputation_score=130, accuracy_indicator="75%")
+        base_time = timezone.now()
+        for index in range(1, 5):
+            badge = BadgeDefinition.objects.create(
+                code=f"ranking_active_{index}",
+                name=f"Ranking ativa {index}",
+                description="Badge ativa no ranking.",
+                rule_description="Regra pública.",
+                badge_type="performance",
+                image_url=f"/media/badge_images/ranking-active-{index}.png",
+                image_dark_url=f"/media/badge_images/ranking-active-{index}-dark.png",
+                is_active=True,
+            )
+            UserBadgeAward.objects.create(user=user, badge=badge, awarded_at=base_time + timedelta(minutes=index), reason_snapshot="ranking:test")
+        inactive_badge = BadgeDefinition.objects.create(
+            code="ranking_inactive",
+            name="Ranking inativa",
+            description="Badge inativa.",
+            is_active=False,
+            image_url="/media/badge_images/inactive.png",
+        )
+        UserBadgeAward.objects.create(user=user, badge=inactive_badge, awarded_at=base_time + timedelta(minutes=10), reason_snapshot="ranking:test")
+
+        response = TestClient(app).get("/rankings")
+        self.assertEqual(response.status_code, 200)
+        row = next(item for item in response.json()["rows"] if item["handle"] == "@rankingbadgeuser")
+        self.assertEqual(row["badges_total"], 4)
+        self.assertEqual([badge["code"] for badge in row["badges"]], ["ranking_active_4", "ranking_active_3", "ranking_active_2"])
+        self.assertEqual(row["badges"][0]["image_url"], "/media/badge_images/ranking-active-4.png")
+        self.assertEqual(row["badges"][0]["image_dark_url"], "/media/badge_images/ranking-active-4-dark.png")
+        self.assertNotIn("ranking_inactive", [badge["code"] for badge in row["badges"]])
+
     def test_ai_prediction_bot_is_blocked_without_human_participants(self):
         site_config = SiteConfig.get_solo()
         site_config.ai_agents_enabled = True
@@ -1852,6 +1888,14 @@ class BackendAuthAPITests(TransactionTestCase):
             json={"winning_option_id": ia_option.id, "source_url": "https://example.com/ranking", "note": "resolver"},
         )
         self.assertEqual(resolved.status_code, 200)
+        theme_badge = BadgeDefinition.objects.create(
+            code="theme_ranking_badge",
+            name="Badge temática",
+            description="Conquista temática.",
+            image_url="/media/badge_images/theme.png",
+            is_active=True,
+        )
+        UserBadgeAward.objects.create(user=get_user_model().objects.get(username="@themealpha"), badge=theme_badge, awarded_at=timezone.now(), reason_snapshot="ranking:theme")
 
         global_ranking = client.get("/rankings")
         self.assertEqual(global_ranking.status_code, 200)
@@ -1870,6 +1914,7 @@ class BackendAuthAPITests(TransactionTestCase):
         beta_row = next(row for row in payload["rows"] if row["handle"] == "@themebeta")
         self.assertEqual(alpha_row["reputation_score"], 105)
         self.assertEqual(alpha_row["accuracy_indicator"], "100%")
+        self.assertEqual(alpha_row["badges"][0]["code"], "theme_ranking_badge")
         self.assertEqual(beta_row["reputation_score"], 95)
 
         subcategory = client.get("/rankings", params={"category": "ia", "subcategory": "modelos"})
@@ -1878,6 +1923,17 @@ class BackendAuthAPITests(TransactionTestCase):
         subcategory_handles = [row["handle"] for row in subcategory.json()["rows"]]
         self.assertIn("@themealpha", subcategory_handles)
         self.assertIn("@themebeta", subcategory_handles)
+        event = client.get("/rankings", params={"category": "ia", "subcategory": "modelos", "event": "geral"})
+        self.assertEqual(event.status_code, 200)
+        self.assertEqual(event.json()["selected_event"], "geral")
+        event_handles = [row["handle"] for row in event.json()["rows"]]
+        self.assertIn("@themealpha", event_handles)
+        self.assertIn("@themebeta", event_handles)
+        event_alpha_row = next(row for row in event.json()["rows"] if row["handle"] == "@themealpha")
+        self.assertEqual(event_alpha_row["strong_category"], "Geral")
+        ia_category = next(item for item in event.json()["categories"] if item["slug"] == "ia")
+        modelos_subcategory = next(item for item in ia_category["subcategories"] if item["slug"] == "modelos")
+        self.assertIn("geral", [item["slug"] for item in modelos_subcategory["events"]])
 
         empty = client.get("/rankings", params={"category": "politica", "subcategory": "regulacao"})
         self.assertEqual(empty.status_code, 200)
@@ -6860,6 +6916,42 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "@apirow")
             self.assertContains(response, "IA")
             self.assertContains(response, "Modelos")
+            self.assertContains(response, "ranking-event")
+
+    def test_ranking_page_renders_badges_from_api_payload(self):
+        payload = {
+            "rows": [
+                {
+                    "position": 1,
+                    "user_id": 10,
+                    "handle": "@badgerow",
+                    "display_name": "Badge Row",
+                    "reputation_score": 140,
+                    "accuracy_indicator": "80%",
+                    "strong_category": "Geral",
+                    "badges_total": 5,
+                    "badges": [
+                        {"code": "first", "name": "Primeira", "image_url": "/media/badge_images/first.png", "image_dark_url": "/media/badge_images/first-dark.png", "badge_type": "global", "awarded_at": "2026-05-19T00:00:00+00:00"},
+                        {"code": "second", "name": "Segunda", "image_url": "/media/badge_images/second.png", "image_dark_url": "", "badge_type": "performance", "awarded_at": "2026-05-18T00:00:00+00:00"},
+                        {"code": "third", "name": "Terceira", "image_url": "", "image_dark_url": "", "badge_type": "engagement", "awarded_at": "2026-05-17T00:00:00+00:00"},
+                    ],
+                },
+            ],
+            "categories": [],
+            "selected_category": "",
+            "selected_subcategory": "",
+        }
+
+        with patch("profiles.views.get_rankings", return_value=payload):
+            response = self.client.get(reverse("rankings"))
+            self.assertContains(response, "@badgerow")
+            self.assertContains(response, 'class="ranking-user-badges"')
+            self.assertContains(response, "/media/badge_images/first.png")
+            self.assertContains(response, "/media/badge_images/first-dark.png")
+            self.assertContains(response, "Terceira")
+            self.assertContains(response, "+2")
+            content = response.content.decode()
+            self.assertLess(content.index("@badgerow"), content.index('class="ranking-user-badges"'))
 
     def test_ranking_page_uses_load_more_rows_by_ten(self):
         payload = {
@@ -6875,21 +6967,22 @@ class WebSmokeTests(TransactionTestCase):
                 }
                 for index in range(1, 13)
             ],
-            "categories": [{"name": "IA", "slug": "ia", "subcategories": [{"name": "Modelos", "slug": "modelos"}]}],
+            "categories": [{"name": "IA", "slug": "ia", "subcategories": [{"name": "Modelos", "slug": "modelos", "events": [{"name": "Geral", "slug": "geral"}]}]}],
             "selected_category": "ia",
             "selected_subcategory": "modelos",
+            "selected_event": "geral",
         }
 
         with patch("profiles.views.get_rankings", return_value=payload):
-            first_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos")
+            first_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&event=geral")
             self.assertContains(first_page, "@rank1")
             self.assertContains(first_page, "@rank10")
             self.assertNotContains(first_page, "@rank11")
             self.assertContains(first_page, "mostrando 10 de 12")
             self.assertContains(first_page, "Carregar mais")
-            self.assertContains(first_page, "category=ia&subcategory=modelos&limit=20")
+            self.assertContains(first_page, "category=ia&subcategory=modelos&event=geral&limit=20")
 
-            second_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&limit=20")
+            second_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&event=geral&limit=20")
             self.assertContains(second_page, "@rank10")
             self.assertContains(second_page, "@rank11")
             self.assertContains(second_page, "@rank12")
@@ -7013,17 +7106,19 @@ class WebSmokeTests(TransactionTestCase):
                         "strong_category": "Geral",
                     }
                 ],
-                "categories": [{"name": "IA", "slug": "ia", "subcategories": [{"name": "Modelos", "slug": "modelos"}]}],
+                "categories": [{"name": "IA", "slug": "ia", "subcategories": [{"name": "Modelos", "slug": "modelos", "events": [{"name": "Geral", "slug": "geral"}]}]}],
                 "selected_category": "ia",
                 "selected_subcategory": "modelos",
+                "selected_event": "geral",
             },
         ) as rankings_mock:
-            response = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos")
-            rankings_mock.assert_called_once_with(category="ia", subcategory="modelos")
+            response = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&event=geral")
+            rankings_mock.assert_called_once_with(category="ia", subcategory="modelos", event="geral")
             self.assertContains(response, "@apiviewer")
             self.assertContains(response, "Você está em #1 neste recorte")
             self.assertContains(response, "Reputação")
             self.assertContains(response, "ranking-category")
+            self.assertContains(response, "ranking-event")
             self.assertContains(response, "selected")
 
     def test_profile_update_and_logical_delete_use_api(self):
