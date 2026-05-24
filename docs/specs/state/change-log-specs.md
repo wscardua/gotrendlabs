@@ -1,5 +1,12 @@
 # Change Log de Specs
 
+## 2026-05-24
+
+- registrada evolução de `FEAT-AIAGENT-001` para cobertura maior do ciclo de comentários IA, com candidatos configuráveis, tentativas LLM limitadas e fallback em respostas não publicáveis/validação segura
+- registrado que erro real de provedor LLM interrompe tentativas do ciclo para evitar cascata de custo durante instabilidade
+- registrada atualização de `scheduler-jobs.md` para explicitar avaliação local de múltiplos mercados e limite de chamadas LLM por ciclo
+- registrada regra de cautela factual do prompt IA para evitar afirmações técnicas específicas, eventos, números, anúncios ou fontes ausentes do contexto do mercado
+
 ## 2026-05-17
 
 - criada a estrutura canônica de specs técnicas, contratos, decisões, testes e memória operacional

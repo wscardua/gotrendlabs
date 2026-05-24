@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 import json
 import os
+import re
 
 from backend_api.agent_llm import AgentLLMError, request_market_comment
 from backend_api.agent_prompts import PROMPT_TEMPLATE_VERSION, build_comment_prompt, template_hash
@@ -51,6 +52,8 @@ def _site_config(cursor):
         "ai_market_cooldown_hours": 24,
         "ai_max_comments_per_market_per_day": 1,
         "ai_max_comments_per_cycle": 1,
+        "ai_max_comment_attempts_per_cycle": 3,
+        "ai_comment_candidate_limit": 200,
         "ai_max_comments_per_day": 20,
         "ai_comment_max_chars": 700,
         "ai_min_humans_for_prediction": 1,
@@ -280,7 +283,8 @@ def _recent_ai_comment_exists(cursor, market_id, now, cooldown_hours):
     return bool(cursor.fetchone())
 
 
-def _candidate_comment_market(cursor, config, now, cooldown_hours=None):
+def _candidate_comment_markets(cursor, config, now, cooldown_hours=None):
+    candidate_limit = max(1, int(config.get("ai_comment_candidate_limit") or 200))
     cursor.execute(
         """
         SELECT m.id, m.slug, m.title, m.summary, m.kind, m.resolution_criteria, m.source,
@@ -292,9 +296,11 @@ def _candidate_comment_market(cursor, config, now, cooldown_hours=None):
         LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
         WHERE m.status = 'open'
         ORDER BY m.is_featured DESC, m.view_count DESC, m.close_at ASC NULLS LAST, m.id ASC
-        LIMIT 50
-        """
+        LIMIT %s
+        """,
+        (candidate_limit,),
     )
+    candidates = []
     for market in cursor.fetchall():
         market_id = market["id"]
         if _comment_daily_count(cursor, market_id=market_id, now=now) >= int(config.get("ai_max_comments_per_market_per_day") or 1):
@@ -303,8 +309,8 @@ def _candidate_comment_market(cursor, config, now, cooldown_hours=None):
             continue
         if _recent_human_comment_exists(cursor, market_id, config, now):
             continue
-        return dict(market)
-    return None
+        candidates.append(dict(market))
+    return candidates
 
 
 def _recent_comments(cursor, market_id):
@@ -354,6 +360,7 @@ def _market_options_context(cursor, market_id):
 
 def _safe_comment_text(value, max_chars):
     text = " ".join(str(value or "").strip().split())
+    text = re.sub(r"^(?:agente\s+ia\s+oficial\s+da\s+orynth|ia\s+oficial(?:\s+da\s+orynth)?)\s*[:\-–—]\s*", "", text, flags=re.IGNORECASE).strip()
     forbidden = ["eu apostei", "minha aposta", "como humano", "minha experiencia", "minha experiência", "garantido", "certeza de lucro"]
     lowered = text.lower()
     if not text or any(term in lowered for term in forbidden):
@@ -374,6 +381,7 @@ def _run_comment_cycle(cursor, config, summary, now):
         _record_action(cursor, action_type="cycle", status="skipped", reason="no_active_analyst_agent")
         return
     max_cycle = int(config.get("ai_max_comments_per_cycle") or 1)
+    max_attempts = max(1, int(config.get("ai_max_comment_attempts_per_cycle") or 3))
     max_day = int(config.get("ai_max_comments_per_day") or 20)
     if _comment_daily_count(cursor, now=now) >= max_day:
         summary["skipped"] += 1
@@ -388,47 +396,61 @@ def _run_comment_cycle(cursor, config, summary, now):
             _record_action(cursor, agent_id=agent["id"], action_type="comment", status="skipped", reason="agent_daily_comment_limit")
             summary["skipped"] += 1
             continue
-        market = _candidate_comment_market(cursor, config, now, agent.get("cooldown_hours"))
-        if not market:
+        markets = _candidate_comment_markets(cursor, config, now, agent.get("cooldown_hours"))
+        if not markets:
             _record_action(cursor, agent_id=agent["id"], action_type="comment", status="skipped", reason="no_eligible_market")
             summary["skipped"] += 1
             continue
-        comments = _recent_comments(cursor, market["id"])
-        market_context = {
-            **market,
-            "options": _market_options_context(cursor, market["id"]),
-            **market_public_metrics(cursor, market["id"]),
-        }
-        prompt = build_comment_prompt(agent=agent, market=market_context, comments=comments, config=config)
-        try:
-            llm_result = request_market_comment(config=config, prompt=prompt)
-            if not bool(llm_result.get("should_publish")):
-                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="skipped", reason="llm_should_publish_false", payload={"confidence": llm_result.get("confidence"), "risk_flags": llm_result.get("risk_flags", [])})
+        attempts = 0
+        for index, market in enumerate(markets):
+            if created >= max_cycle:
+                break
+            if _comment_daily_count(cursor, now=now) >= max_day:
+                _record_action(cursor, agent_id=agent["id"], action_type="comment", status="skipped", reason="global_daily_comment_limit")
                 summary["skipped"] += 1
-                continue
-            body = _safe_comment_text(llm_result.get("comment"), int(config.get("ai_comment_max_chars") or 700))
-            if not body:
-                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="comment_validation_failed", payload={"risk_flags": llm_result.get("risk_flags", [])})
+                break
+            if attempts >= max_attempts:
+                _record_action(cursor, agent_id=agent["id"], action_type="comment", status="skipped", reason="comment_attempt_limit_reached", payload={"attempts": attempts, "attempt_limit": max_attempts, "candidate_count": len(markets), "remaining_candidates": len(markets) - index})
+                summary["skipped"] += 1
+                break
+            attempts += 1
+            comments = _recent_comments(cursor, market["id"])
+            market_context = {
+                **market,
+                "options": _market_options_context(cursor, market["id"]),
+                **market_public_metrics(cursor, market["id"]),
+            }
+            prompt = build_comment_prompt(agent=agent, market=market_context, comments=comments, config=config)
+            try:
+                llm_result = request_market_comment(config=config, prompt=prompt)
+                if not bool(llm_result.get("should_publish")):
+                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="skipped", reason="llm_should_publish_false", payload={"confidence": llm_result.get("confidence"), "risk_flags": llm_result.get("risk_flags", [])})
+                    summary["skipped"] += 1
+                    continue
+                body = _safe_comment_text(llm_result.get("comment"), int(config.get("ai_comment_max_chars") or 700))
+                if not body:
+                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="comment_validation_failed", payload={"risk_flags": llm_result.get("risk_flags", [])})
+                    summary["errors"] += 1
+                    continue
+                cursor.execute(
+                    """
+                    INSERT INTO orynth_market_comments
+                        (market_id, author_id, body, status, moderation_note, moderated_by_id, moderated_at, created_at, updated_at)
+                    VALUES (%s, %s, %s, 'visible', '', NULL, NULL, %s, %s)
+                    RETURNING id
+                    """,
+                    (market["id"], agent["user_id"], body, now, now),
+                )
+                comment_id = cursor.fetchone()["id"]
+                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="created", reason="comment_created", payload={"confidence": llm_result.get("confidence"), "risk_flags": llm_result.get("risk_flags", [])}, comment_id=comment_id)
+                cursor.execute("UPDATE orynth_ai_agents SET last_action_at = %s, last_error = '', updated_at = %s WHERE id = %s", (now, now, agent["id"]))
+                created += 1
+                summary["comments_created"] += 1
+            except AgentLLMError as exc:
+                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="llm_error", payload={"error": str(exc)[:300]})
+                cursor.execute("UPDATE orynth_ai_agents SET last_error = %s, updated_at = %s WHERE id = %s", (str(exc)[:1000], now, agent["id"]))
                 summary["errors"] += 1
-                continue
-            cursor.execute(
-                """
-                INSERT INTO orynth_market_comments
-                    (market_id, author_id, body, status, moderation_note, moderated_by_id, moderated_at, created_at, updated_at)
-                VALUES (%s, %s, %s, 'visible', '', NULL, NULL, %s, %s)
-                RETURNING id
-                """,
-                (market["id"], agent["user_id"], body, now, now),
-            )
-            comment_id = cursor.fetchone()["id"]
-            _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="created", reason="comment_created", payload={"confidence": llm_result.get("confidence"), "risk_flags": llm_result.get("risk_flags", [])}, comment_id=comment_id)
-            cursor.execute("UPDATE orynth_ai_agents SET last_action_at = %s, last_error = '', updated_at = %s WHERE id = %s", (now, now, agent["id"]))
-            created += 1
-            summary["comments_created"] += 1
-        except AgentLLMError as exc:
-            _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="llm_error", payload={"error": str(exc)[:300]})
-            cursor.execute("UPDATE orynth_ai_agents SET last_error = %s, updated_at = %s WHERE id = %s", (str(exc)[:1000], now, agent["id"]))
-            summary["errors"] += 1
+                return
 
 
 def _candidate_prediction_market(cursor, config, now, min_humans=None, user_id=None):
@@ -675,7 +697,7 @@ def ai_health_summary(cursor, *, now=None):
     elif paused:
         status = "paused"
         label = "Pausado"
-    elif counts.get(("cycle", "failed"), 0) or counts.get(("comment", "failed"), 0) or counts.get(("prediction", "failed"), 0):
+    elif last_error and (not last_success or last_error["created_at"] > last_success["created_at"]):
         status = "error"
         label = "Com erro"
     elif last_cycle:
@@ -705,6 +727,8 @@ def ai_health_summary(cursor, *, now=None):
             "ai_llm_base_url": config.get("ai_llm_base_url") or "https://api.openai.com/v1",
             "ai_model": config.get("ai_model") or "gpt-5.4-mini",
             "ai_max_comments_per_cycle": int(config.get("ai_max_comments_per_cycle") or 1),
+            "ai_max_comment_attempts_per_cycle": int(config.get("ai_max_comment_attempts_per_cycle") or 3),
+            "ai_comment_candidate_limit": int(config.get("ai_comment_candidate_limit") or 200),
             "ai_max_predictions_per_cycle": int(config.get("ai_max_predictions_per_cycle") or 1),
             "ai_min_humans_for_prediction": int(config.get("ai_min_humans_for_prediction") or 1),
             "ai_max_stake_oc": int(config.get("ai_max_stake_oc") or 25),

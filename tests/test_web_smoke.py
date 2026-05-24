@@ -28,7 +28,7 @@ from backend_api.db import get_connection
 from backend_api.db import database_config
 from agents.models import AiAgent, AiAgentAction
 from backend_api.agent_prompts import build_comment_prompt
-from backend_api.agent_services import run_ai_agent_cycle
+from backend_api.agent_services import _safe_comment_text, ai_health_summary, run_ai_agent_cycle
 from backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
 from backend_api.badge_engine import BadgeAwardEngine
 from backend_api.daemon_services import AUTO_CANCEL_NO_HUMANS_NOTE, AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_system_logs
@@ -154,6 +154,32 @@ class BackendAuthAPITests(TransactionTestCase):
     def setUp(self):
         _seed_test_badges()
         _seed_test_markets()
+
+    def _reset_ai_agent_state(self):
+        AiAgentAction.objects.all().delete()
+        AiAgent.objects.all().delete()
+        MarketComment.objects.filter(author__is_bot=True).delete()
+
+    def _fastapi_test_db_env(self):
+        return {
+            "FASTAPI_POSTGRES_DB": "",
+            "FASTAPI_POSTGRES_USER": "",
+            "FASTAPI_POSTGRES_PASSWORD": "",
+            "FASTAPI_POSTGRES_HOST": "",
+            "FASTAPI_POSTGRES_PORT": "",
+        }
+
+    def _run_ai_cycle_for_test(self, now=None):
+        with patch.dict(os.environ, self._fastapi_test_db_env()):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    return run_ai_agent_cycle(cursor, now=now or timezone.now())
+
+    def _ai_health_for_test(self, now=None):
+        with patch.dict(os.environ, self._fastapi_test_db_env()):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    return ai_health_summary(cursor, now=now or timezone.now())
 
     def test_social_auth_placeholder_supports_initial_providers(self):
         client = TestClient(app)
@@ -910,7 +936,8 @@ class BackendAuthAPITests(TransactionTestCase):
                             default_from_email, default_reply_to_email,
                             ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled, ai_llm_provider, ai_llm_base_url,
                             ai_model, ai_high_reasoning_model, ai_market_cooldown_hours, ai_max_comments_per_market_per_day,
-                            ai_max_comments_per_cycle, ai_max_comments_per_day, ai_comment_max_chars, ai_min_humans_for_prediction,
+                            ai_max_comments_per_cycle, ai_max_comment_attempts_per_cycle, ai_comment_candidate_limit,
+                            ai_max_comments_per_day, ai_comment_max_chars, ai_min_humans_for_prediction,
                             ai_max_stake_oc, ai_max_predictions_per_cycle, ai_max_predictions_per_day, ai_skip_if_human_comments_recent,
                             ai_recent_human_comment_window_hours, ai_openai_timeout_seconds, ai_openai_max_retries, ai_pause_reason,
                             updated_by_id, updated_at
@@ -918,7 +945,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     VALUES (
                         1, 100, 5, 15, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
-                        1, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
+                        1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
                     )
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
@@ -1104,6 +1131,22 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertGreaterEqual(summary["errors"], 1)
         self.assertTrue(AiAgentAction.objects.filter(action_type="comment", status="failed").exists())
 
+    def test_ai_health_recovers_after_successful_cycle(self):
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.save(update_fields=["ai_agents_enabled"])
+        now = timezone.now()
+        failed = AiAgentAction.objects.create(action_type="comment", status="failed", reason="llm_error")
+        success = AiAgentAction.objects.create(action_type="cycle", status="created", reason="cycle_completed")
+        AiAgentAction.objects.filter(id=failed.id).update(created_at=now - timedelta(minutes=10))
+        AiAgentAction.objects.filter(id=success.id).update(created_at=now)
+
+        health = self._ai_health_for_test(now=now)
+
+        self.assertEqual(health["status"], "active")
+        self.assertEqual(health["status_label"], "Ativo")
+        self.assertGreaterEqual(health["errors_24h"], 1)
+
     def test_ai_comment_contract_marks_official_bot_author(self):
         User = get_user_model()
         bot = User.objects.create_user(username="@orynth_ai_comment", email="orynth-ai-comment@example.com", password="x", is_bot=True, first_name="Orynth AI Comment")
@@ -1136,6 +1179,178 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertIn("Mercado de multipla escolha", prompt)
         self.assertIn("nao use tese SIM/NAO", prompt)
         self.assertIn('"kind": "multiple"', prompt)
+        self.assertIn("nao comece o comentario", prompt)
+        self.assertIn("Nao afirme upgrades tecnicos", prompt)
+        self.assertIn("linguagem condicional", prompt)
+        self.assertIn("fatos especificos nao confirmados", prompt)
+
+    def test_ai_comment_text_strips_official_prefix(self):
+        body = _safe_comment_text("Agente IA oficial da Orynth: Tese SIM: sinal. Tese NÃO: contraponto.", 700)
+
+        self.assertEqual(body, "Tese SIM: sinal. Tese NÃO: contraponto.")
+
+    def test_ai_comment_cycle_falls_back_when_llm_declines_first_market(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.ai_comment_candidate_limit = 200
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_fallback", email="orynth-ai-fallback@example.com", password="x", is_bot=True, first_name="Orynth AI Fallback")
+        AiAgent.objects.create(name="Orynth AI Fallback", agent_type="analyst", user=bot, is_active=True)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        first = Market.objects.get(slug="openai-gpt6-2026")
+        second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
+        first.view_count = 1000
+        second.view_count = 900
+        first.save(update_fields=["view_count"])
+        second.save(update_fields=["view_count"])
+
+        with patch(
+            "backend_api.agent_services.request_market_comment",
+            side_effect=[
+                {"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": ["thin_signal"]},
+                {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []},
+            ],
+        ) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 2)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertTrue(AiAgentAction.objects.filter(market_id=first.id, status="skipped", reason="llm_should_publish_false").exists())
+        self.assertTrue(MarketComment.objects.filter(market=second, author=bot).exists())
+
+    def test_ai_comment_cycle_falls_back_when_comment_validation_fails(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_validation", email="orynth-ai-validation@example.com", password="x", is_bot=True, first_name="Orynth AI Validation")
+        AiAgent.objects.create(name="Orynth AI Validation", agent_type="analyst", user=bot, is_active=True)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        first = Market.objects.get(slug="openai-gpt6-2026")
+        second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
+        first.view_count = 1000
+        second.view_count = 900
+        first.save(update_fields=["view_count"])
+        second.save(update_fields=["view_count"])
+
+        with patch(
+            "backend_api.agent_services.request_market_comment",
+            side_effect=[
+                {"comment": "eu apostei nesse mercado", "should_publish": True, "confidence": 0.5, "risk_flags": []},
+                {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.8, "risk_flags": []},
+            ],
+        ) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 2)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertTrue(AiAgentAction.objects.filter(market_id=first.id, status="failed", reason="comment_validation_failed").exists())
+        self.assertTrue(MarketComment.objects.filter(market=second, author=bot).exists())
+
+    def test_ai_comment_cycle_stops_on_llm_error_without_extra_attempt(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_timeout", email="orynth-ai-timeout@example.com", password="x", is_bot=True, first_name="Orynth AI Timeout")
+        AiAgent.objects.create(name="Orynth AI Timeout", agent_type="analyst", user=bot, is_active=True)
+
+        with patch("backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("timeout")) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 0)
+        self.assertGreaterEqual(summary["errors"], 1)
+        self.assertTrue(AiAgentAction.objects.filter(action_type="comment", status="failed", reason="llm_error").exists())
+
+    def test_ai_comment_attempt_limit_caps_llm_calls(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 1
+        site_config.ai_comment_candidate_limit = 200
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_attempt_limit", email="orynth-ai-attempt-limit@example.com", password="x", is_bot=True, first_name="Orynth AI Attempt Limit")
+        AiAgent.objects.create(name="Orynth AI Attempt Limit", agent_type="analyst", user=bot, is_active=True)
+
+        with patch("backend_api.agent_services.request_market_comment", return_value={"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 0)
+        self.assertTrue(AiAgentAction.objects.filter(action_type="comment", status="skipped", reason="comment_attempt_limit_reached").exists())
+
+    def test_ai_comment_candidate_limit_reaches_market_after_many_local_skips(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.ai_comment_candidate_limit = 200
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@orynth_ai_candidate_limit", email="orynth-ai-candidate-limit@example.com", password="x", is_bot=True, first_name="Orynth AI Candidate Limit")
+        AiAgent.objects.create(name="Orynth AI Candidate Limit", agent_type="analyst", user=bot, is_active=True)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        category = MarketCategory.objects.first()
+        subcategory = MarketSubcategory.objects.filter(category=category).first()
+        now = timezone.now()
+        for index in range(60):
+            market = Market.objects.create(
+                category=category,
+                subcategory=subcategory,
+                slug=f"ai-local-skip-{index}",
+                title=f"Mercado local skip {index}",
+                summary="Resumo",
+                kind="binary",
+                status="open",
+                status_label="Aberto",
+                primary_outcome="SIM",
+                view_count=1000 - index,
+            )
+            MarketComment.objects.create(market=market, author=bot, body="Comentario IA recente.", created_at=now)
+        eligible = Market.objects.create(
+            category=category,
+            subcategory=subcategory,
+            slug="ai-eligible-after-local-skips",
+            title="Mercado elegivel depois de skips",
+            summary="Resumo",
+            kind="binary",
+            status="open",
+            status_label="Aberto",
+            primary_outcome="SIM",
+            view_count=100,
+        )
+        MarketOption.objects.create(market=eligible, label="SIM", probability_exact=50, display_order=1)
+        MarketOption.objects.create(market=eligible, label="NAO", probability_exact=50, display_order=2)
+
+        with patch("backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test(now=now)
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertTrue(MarketComment.objects.filter(market=eligible, author=bot).exists())
 
     def test_agent_llm_allows_bedrock_openai_compatible_provider(self):
         class FakeResponse:
@@ -3337,6 +3552,8 @@ class BackendAuthAPITests(TransactionTestCase):
                         ai_market_cooldown_hours,
                         ai_max_comments_per_market_per_day,
                         ai_max_comments_per_cycle,
+                        ai_max_comment_attempts_per_cycle,
+                        ai_comment_candidate_limit,
                         ai_max_comments_per_day,
                         ai_comment_max_chars,
                         ai_min_humans_for_prediction,
@@ -3353,7 +3570,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     VALUES (
                         1, 10000, 5, 15, false, '', 587, '', true, false, 10, '', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
-                        1, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
+                        1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
                     )
                     ON CONFLICT (singleton_key)
                     DO UPDATE SET wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc, updated_at = NOW()
@@ -4587,6 +4804,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, 'name="ai-ai_llm_provider"')
             self.assertContains(response, 'name="ai-ai_max_stake_oc"')
             self.assertContains(response, 'name="ai-ai_predictions_enabled"')
+            self.assertContains(response, 'name="ai-ai_max_comment_attempts_per_cycle"')
+            self.assertContains(response, 'name="ai-ai_comment_candidate_limit"')
             self.assertNotContains(response, "super-secret-smtp")
 
             response = self.client.post(
@@ -4675,6 +4894,8 @@ class WebSmokeTests(TransactionTestCase):
                     "ai-ai_market_cooldown_hours": "12",
                     "ai-ai_max_comments_per_market_per_day": "1",
                     "ai-ai_max_comments_per_cycle": "2",
+                    "ai-ai_max_comment_attempts_per_cycle": "4",
+                    "ai-ai_comment_candidate_limit": "250",
                     "ai-ai_max_comments_per_day": "15",
                     "ai-ai_comment_max_chars": "650",
                     "ai-ai_min_humans_for_prediction": "2",
@@ -4698,6 +4919,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.ai_high_reasoning_model, "gpt-5.5")
             self.assertEqual(site_config.ai_market_cooldown_hours, 12)
             self.assertEqual(site_config.ai_max_comments_per_cycle, 2)
+            self.assertEqual(site_config.ai_max_comment_attempts_per_cycle, 4)
+            self.assertEqual(site_config.ai_comment_candidate_limit, 250)
             self.assertEqual(site_config.ai_max_comments_per_day, 15)
             self.assertEqual(site_config.ai_comment_max_chars, 650)
             self.assertEqual(site_config.ai_min_humans_for_prediction, 2)
