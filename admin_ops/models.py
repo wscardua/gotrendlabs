@@ -7,6 +7,8 @@ class SiteConfig(models.Model):
     wallet_recharge_min_balance_oc = models.PositiveIntegerField(default=100)
     daemon_stale_after_minutes = models.PositiveIntegerField(default=5)
     daemon_missing_after_minutes = models.PositiveIntegerField(default=15)
+    system_log_retention_days = models.PositiveIntegerField(default=90)
+    ai_audit_retention_days = models.PositiveIntegerField(default=90)
     ai_agents_enabled = models.BooleanField(default=False)
     ai_commenting_enabled = models.BooleanField(default=False)
     ai_predictions_enabled = models.BooleanField(default=False)

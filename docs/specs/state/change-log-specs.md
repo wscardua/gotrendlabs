@@ -11,6 +11,8 @@
 - registrado que erro real de provedor LLM interrompe tentativas do ciclo para evitar cascata de custo durante instabilidade
 - registrada atualização de `scheduler-jobs.md` para explicitar avaliação local de múltiplos mercados e limite de chamadas LLM por ciclo
 - registrada regra de cautela factual do prompt IA para evitar afirmações técnicas específicas, eventos, números, anúncios ou fontes ausentes do contexto do mercado
+- registrada evolução de `FEAT-OPSLOG-001` e `FEAT-AIAGENT-001` para retenção configurável separada de logs técnicos e auditoria IA no Admin Ops
+- registrado que o purge operacional passa a usar `created_at` e o prazo atual de `orynth_site_config`, afetando também registros antigos
 
 ## 2026-05-17
 

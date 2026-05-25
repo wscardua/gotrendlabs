@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-05-24 — FEAT-OPSLOG-001 / FEAT-AIAGENT-001 retenção configurável
+
+- Admin Ops Config passou a persistir retenção separada para logs técnicos e auditoria IA em `orynth_site_config`.
+- Prune do daemon passou a aplicar o prazo atual por `created_at` para `orynth_system_logs` e `orynth_ai_agent_actions`, afetando também registros antigos.
+- Comando operacional de prune passou a reportar logs técnicos e ações de auditoria IA removidos.
+- Status de implementação: `parcial`.
+
 ## 2026-05-24 — FEAT-AUTH-001 progressão de operadores e reset administrativo
 
 - Home autenticada passou a exibir `Sua progressão` também para `staff`/`superuser`, preservando exclusão do ranking público e exibindo estado neutro quando `ranking_position=0`.

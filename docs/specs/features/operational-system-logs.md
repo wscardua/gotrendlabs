@@ -4,7 +4,7 @@ titulo: "Logs técnicos de troubleshooting"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-20
+ultima_atualizacao: 2026-05-24
 origem:
   - solicitação operacional de troubleshooting
 contratos_afetados:
@@ -33,7 +33,7 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - inclusão de logs técnicos de segurança emitidos por frameworks/loggers, além de requests `401`, `403`, demais `4xx` e `5xx`
 - `request_id` propagado por header `X-Request-ID`
 - mascaramento de segredos antes de persistir contexto
-- retenção padrão de 90 dias com comando de limpeza
+- retenção padrão de 90 dias configurável no Admin Ops
 - limpeza de logs expirada centralizada em serviço backend reutilizável, consumido pelo daemon e pelo comando operacional
 - heartbeat e resultado de ciclos do daemon operacional para troubleshooting
 - indicador de disponibilidade da Backend API no Dashboard Admin Ops a partir de `GET /health`
@@ -57,6 +57,7 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - logs do daemon usam `logger_name=orynth.daemon` e eventos como `daemon.heartbeat`, `daemon.run_started`, `daemon.markets_locked`, `daemon.logs_pruned` e `daemon.run_failed`
 - ausência ou atraso de heartbeat deve aparecer no Dashboard Admin Ops como status operacional do daemon
 - status do daemon usa limites configuráveis em `orynth_site_config`: `daemon_stale_after_minutes` e `daemon_missing_after_minutes`
+- retenção de logs técnicos usa `orynth_site_config.system_log_retention_days`, default 90 dias, e o purge aplica o prazo atual por `created_at` também a registros antigos
 - logs associados a usuários devem expor identificador operacional amigável (`@handle`, nome e/ou email) no Admin Ops, sem exigir que o operador saiba o ID numérico
 - filtro administrativo de usuário deve aceitar `@handle`, nome, email ou ID e oferecer seleção pesquisável baseada nos usuários cadastrados, incluindo staff e superusers
 - listagem administrativa usa `Carregar mais` em blocos cumulativos de 10 registros e não renderiza uma página infinita
@@ -77,6 +78,7 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - filtros principais retornam registros esperados, incluindo usuário por `@handle`, nome, email ou valor completo selecionado no combo
 - listagem permite carregar mais registros em blocos de 10 preservando filtros
 - dados sensíveis aparecem mascarados
-- comando de prune e daemon usam a mesma rotina backend de retenção, sem duplicar regra em camada Django
+- comando de prune e daemon usam a mesma rotina backend de retenção, sem duplicar regra em camada Django, limpando logs técnicos e auditoria IA juntos
 - Admin Ops Config permite ajustar os limites de heartbeat do daemon, validando que `Sem sinal` seja maior que `Atrasado`
+- Admin Ops Config permite ajustar a retenção de logs técnicos e auditoria IA, com valores separados de 1 a 3650 dias
 - Dashboard Admin Ops exibe `Backend API` como online quando `GET /health` retorna `status=ok` e offline quando a consulta falha ou retorna payload inesperado

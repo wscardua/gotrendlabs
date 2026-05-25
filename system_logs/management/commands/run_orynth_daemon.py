@@ -17,11 +17,14 @@ class Command(BaseCommand):
         while True:
             result = run_daemon_cycle()
             ai = result.get("ai", {})
+            pruned = result.get("pruned_log_details", {})
             self.stdout.write(
                 self.style.SUCCESS(
                     "Daemon cycle complete: "
                     f"locked {len(result['locked_markets'])} market(s), "
-                    f"pruned {result['pruned_logs']} log(s), "
+                    f"pruned {result['pruned_logs']} operational record(s) "
+                    f"({pruned.get('system_logs', result['pruned_logs'])} system log(s), "
+                    f"{pruned.get('ai_agent_actions', 0)} AI audit action(s)), "
                     f"AI comments {ai.get('comments_created', 0)}, "
                     f"AI predictions {ai.get('predictions_created', 0)}, "
                     f"AI skips {ai.get('skipped', 0)}, "

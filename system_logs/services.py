@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import threading
 import traceback
@@ -11,7 +12,7 @@ from psycopg import errors
 from backend_api.db import get_connection
 
 
-RETENTION_DAYS = 90
+DEFAULT_RETENTION_DAYS = 90
 MAX_TEXT_LENGTH = 8000
 MAX_CONTEXT_LENGTH = 16000
 SENSITIVE_KEY_RE = re.compile(
@@ -19,6 +20,40 @@ SENSITIVE_KEY_RE = re.compile(
     re.IGNORECASE,
 )
 _state = threading.local()
+
+
+def _coerce_retention_days(value, default=DEFAULT_RETENTION_DAYS):
+    try:
+        days = int(value)
+    except (TypeError, ValueError):
+        return default
+    return days if days > 0 else default
+
+
+def _fallback_system_log_retention_days():
+    try:
+        from django.conf import settings
+
+        if settings.configured:
+            return _coerce_retention_days(getattr(settings, "SYSTEM_LOG_RETENTION_DAYS", DEFAULT_RETENTION_DAYS))
+    except Exception:
+        pass
+    return _coerce_retention_days(os.environ.get("SYSTEM_LOG_RETENTION_DAYS"), DEFAULT_RETENTION_DAYS)
+
+
+def get_system_log_retention_days():
+    try:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT system_log_retention_days FROM orynth_site_config WHERE singleton_key = 1")
+                row = cursor.fetchone()
+                if row:
+                    return _coerce_retention_days(row["system_log_retention_days"], _fallback_system_log_retention_days())
+    except (errors.UndefinedTable, errors.UndefinedColumn):
+        return _fallback_system_log_retention_days()
+    except Exception:
+        return _fallback_system_log_retention_days()
+    return _fallback_system_log_retention_days()
 
 
 def new_request_id():
@@ -116,7 +151,7 @@ def log_system_event(
     if getattr(_state, "writing", False):
         return None
     now = created_at or datetime.now(timezone.utc)
-    expires_at = now + timedelta(days=RETENTION_DAYS)
+    expires_at = now + timedelta(days=get_system_log_retention_days())
     payload = (
         expires_at,
         normalize_level(level),

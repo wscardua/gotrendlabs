@@ -4,7 +4,7 @@ from backend_api.admin_events import record_admin_event
 from backend_api.agent_services import run_ai_agent_cycle
 from backend_api.db import get_connection
 from backend_api.market_lifecycle_engine import MarketLifecycleEngine
-from system_logs.services import log_system_event
+from system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
 
 
 AUTO_CLOSE_NOTE = "Fechamento automático pelo daemon."
@@ -14,6 +14,14 @@ DAEMON_HEARTBEAT_EVENT = "daemon.heartbeat"
 DEFAULT_STALE_AFTER_MINUTES = 5
 DEFAULT_MISSING_AFTER_MINUTES = 15
 MAX_MARKET_SLUGS_IN_MESSAGE = 10
+
+
+def _coerce_retention_days(value, default=DEFAULT_RETENTION_DAYS):
+    try:
+        days = int(value)
+    except (TypeError, ValueError):
+        return default
+    return days if days > 0 else default
 
 
 def _noop(*args, **kwargs):
@@ -108,8 +116,53 @@ def prune_expired_system_logs(now=None):
     now = now or datetime.now(timezone.utc)
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM orynth_system_logs WHERE expires_at < %s", (now,))
+            retention = _retention_config(cursor)["system_log_retention_days"]
+            cursor.execute("DELETE FROM orynth_system_logs WHERE created_at < %s", (now - timedelta(days=retention),))
             return cursor.rowcount
+
+
+def _retention_config(cursor):
+    try:
+        cursor.execute(
+            """
+            SELECT system_log_retention_days, ai_audit_retention_days
+            FROM orynth_site_config
+            WHERE singleton_key = 1
+            """
+        )
+        row = cursor.fetchone()
+    except Exception:
+        row = None
+    return {
+        "system_log_retention_days": _coerce_retention_days(row["system_log_retention_days"] if row else None),
+        "ai_audit_retention_days": _coerce_retention_days(row["ai_audit_retention_days"] if row else None),
+    }
+
+
+def prune_expired_ai_agent_actions(now=None):
+    now = now or datetime.now(timezone.utc)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            retention = _retention_config(cursor)["ai_audit_retention_days"]
+            cursor.execute("DELETE FROM orynth_ai_agent_actions WHERE created_at < %s", (now - timedelta(days=retention),))
+            return cursor.rowcount
+
+
+def prune_expired_operational_records(now=None):
+    now = now or datetime.now(timezone.utc)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            retention = _retention_config(cursor)
+            cursor.execute("DELETE FROM orynth_system_logs WHERE created_at < %s", (now - timedelta(days=retention["system_log_retention_days"]),))
+            system_logs = cursor.rowcount
+            cursor.execute("DELETE FROM orynth_ai_agent_actions WHERE created_at < %s", (now - timedelta(days=retention["ai_audit_retention_days"]),))
+            ai_agent_actions = cursor.rowcount
+    return {
+        "system_logs": system_logs,
+        "ai_agent_actions": ai_agent_actions,
+        "total": system_logs + ai_agent_actions,
+        **retention,
+    }
 
 
 def log_daemon_event(event_type, message, *, level="INFO", context=None, created_at=None):
@@ -146,7 +199,8 @@ def run_daemon_cycle(now=None):
     }
     try:
         locked_markets = close_due_auto_markets(now=now)
-        pruned_logs = prune_expired_system_logs(now=now)
+        pruned_details = prune_expired_operational_records(now=now)
+        pruned_logs = pruned_details["total"]
     except Exception as exc:
         log_daemon_event(
             "daemon.run_failed",
@@ -178,7 +232,7 @@ def run_daemon_cycle(now=None):
     log_daemon_event(
         DAEMON_HEARTBEAT_EVENT,
         "Daemon operacional ativo.",
-        context={"locked_markets": len(locked_markets), "pruned_logs": pruned_logs, "ai": ai_summary},
+        context={"locked_markets": len(locked_markets), "pruned_logs": pruned_logs, "pruned_log_details": pruned_details, "ai": ai_summary},
     )
     if locked_markets:
         log_daemon_event(
@@ -186,8 +240,12 @@ def run_daemon_cycle(now=None):
             _locked_markets_message(locked_markets),
             context={"markets": locked_markets},
         )
-    log_daemon_event("daemon.logs_pruned", f"Daemon removeu {pruned_logs} log(s) expirado(s).", context={"pruned_logs": pruned_logs})
-    return {"locked_markets": locked_markets, "pruned_logs": pruned_logs, "ai": ai_summary}
+    log_daemon_event(
+        "daemon.logs_pruned",
+        f"Daemon removeu {pruned_logs} registro(s) operacional(is) expirado(s).",
+        context={"pruned_logs": pruned_logs, "pruned_log_details": pruned_details},
+    )
+    return {"locked_markets": locked_markets, "pruned_logs": pruned_logs, "pruned_log_details": pruned_details, "ai": ai_summary}
 
 
 def daemon_dashboard_status(

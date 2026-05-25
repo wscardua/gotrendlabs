@@ -80,6 +80,21 @@ class DaemonConfigForm(forms.Form):
         return cleaned_data
 
 
+class RetentionConfigForm(forms.Form):
+    system_log_retention_days = forms.IntegerField(
+        label="Retenção de logs técnicos",
+        min_value=1,
+        max_value=3650,
+        initial=90,
+    )
+    ai_audit_retention_days = forms.IntegerField(
+        label="Retenção da auditoria IA",
+        min_value=1,
+        max_value=3650,
+        initial=90,
+    )
+
+
 class AiConfigForm(forms.Form):
     ai_agents_enabled = forms.BooleanField(label="Agentes IA ativos", required=False)
     ai_commenting_enabled = forms.BooleanField(label="Comentários IA ativos", required=False)
