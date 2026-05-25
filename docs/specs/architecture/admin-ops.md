@@ -98,6 +98,7 @@
 - Recompensas de fila usam ledger/projeção da wallet e bloqueiam duplicidade por item.
 - Configuração geral de Admin Ops define `wallet_recharge_min_balance_oc`, o saldo máximo para usuário solicitar recarga educativa.
 - Configuração geral de Admin Ops define os limites de heartbeat do daemon para status `Atrasado` e `Sem sinal`.
+- Configuração geral de Admin Ops define retenção separada para logs técnicos e auditoria IA, em dias, aplicada pelo daemon e comando de prune.
 - Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor em O₵ ou rejeita com nota, mantendo uma solicitação pendente por usuário.
 - Aprovação de recarga educativa cria ledger `educational_recharge`, atualiza projeção de saldo e registra `wallet_recharge.approve`; rejeição registra `wallet_recharge.reject` sem alterar wallet.
 - Comentários entram na fila operacional de moderação com filtro próprio e status `visible`/`hidden`.

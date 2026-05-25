@@ -22,6 +22,26 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Reversão lógica: como cancelar ou substituir sem apagar histórico
 ```
 
+## WFLOW-20260524-RETENTION-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-OPSLOG-001`, `FEAT-AIAGENT-001`
+- Objetivo: tornar configurável no Admin Ops a retenção de logs técnicos e auditoria de agentes IA
+- Etapa atual: concluído
+- Artefatos afetados:
+  - `admin_ops/`
+  - `backend_api/daemon_services.py`
+  - `system_logs/`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-24
+- Atualizado em: 2026-05-24
+- Encerrado em: 2026-05-24
+- Retomada: acompanhar em produção o primeiro ciclo do daemon após deploy para validar contadores de prune
+- Reversão lógica: ocultar campos de retenção no Admin Ops e voltar defaults de 90 dias, preservando colunas em `orynth_site_config` para compatibilidade
+
 ## WFLOW-20260517-001
 
 - Tipo: `new-feature`

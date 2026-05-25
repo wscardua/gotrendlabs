@@ -31,6 +31,10 @@
           <strong>{{ site_config.daemon_stale_after_minutes }}/{{ site_config.daemon_missing_after_minutes }} min</strong>
         </div>
         <div>
+          <span>Retenção</span>
+          <strong>Logs {{ site_config.system_log_retention_days }}d / IA {{ site_config.ai_audit_retention_days }}d</strong>
+        </div>
+        <div>
           <span>Agentes IA</span>
           <strong>{% if site_config.ai_agents_enabled %}Ativos{% else %}Inativos{% endif %}</strong>
         </div>
@@ -48,6 +52,7 @@
     {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if economy_form.non_field_errors %}<div class="notice red">{{ economy_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if daemon_form.non_field_errors %}<div class="notice red">{{ daemon_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if retention_form.non_field_errors %}<div class="notice red">{{ retention_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if ai_form.non_field_errors %}<div class="notice red">{{ ai_form.non_field_errors|join:", " }}</div>{% endif %}
 
     <form class="admin-config-surface" method="post">
@@ -81,6 +86,37 @@
             <strong>{{ platform_config.updated_at|default:"Ainda não registrada" }}</strong>
             <span>Operador</span>
             <strong>{{ platform_config.updated_by|default:"-" }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Retenção operacional</span>
+            <h2>Purge de logs e auditoria IA</h2>
+            <p>Define quantos dias de histórico técnico e auditoria dos agentes IA são preservados antes da limpeza do daemon.</p>
+          </div>
+          <span class="config-status is-on">Logs {{ site_config.system_log_retention_days }}d / IA {{ site_config.ai_audit_retention_days }}d</span>
+        </div>
+        <div class="config-controls">
+          <div class="config-form-grid">
+            <label class="field compact-field">
+              <span>Logs técnicos</span>
+              {{ retention_form.system_log_retention_days }}
+              <small>Aplica a novos logs e ao próximo purge por data de criação.</small>
+              {% if retention_form.system_log_retention_days.errors %}<small>{{ retention_form.system_log_retention_days.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Auditoria IA</span>
+              {{ retention_form.ai_audit_retention_days }}
+              <small>Remove ações antigas de agentes IA pelo ciclo operacional.</small>
+              {% if retention_form.ai_audit_retention_days.errors %}<small>{{ retention_form.ai_audit_retention_days.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+          <div class="config-meta">
+            <span>Regra ativa</span>
+            <strong>O daemon preserva {{ site_config.system_log_retention_days }} dia(s) de logs técnicos e {{ site_config.ai_audit_retention_days }} dia(s) de auditoria IA.</strong>
           </div>
         </div>
       </section>

@@ -4,7 +4,7 @@ titulo: "Agentes IA oficiais"
 versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-23
+ultima_atualizacao: 2026-05-24
 origem:
   - solicitação de produto para comentários IA oficiais e liquidez bot controlada
 contratos_afetados:
@@ -62,6 +62,7 @@ Permitir que agentes IA oficiais da Orynth comentem mercados e que bots oficiais
 - `ai_comment_candidate_limit` define quantos mercados abertos são avaliados localmente por ciclo de comentário antes de chamar a LLM.
 - `ai_max_comment_attempts_per_cycle` define quantos mercados elegíveis podem consumir chamada LLM por ciclo, separado do limite de comentários publicados.
 - `OPENAI_API_KEY` permanece exclusivamente em ambiente.
+- `orynth_site_config.ai_audit_retention_days` define por quantos dias a auditoria IA é preservada antes do purge operacional; default 90 dias.
 
 ## Prompts e LLM
 
@@ -79,6 +80,7 @@ Permitir que agentes IA oficiais da Orynth comentem mercados e que bots oficiais
 - Falhas LLM/OpenAI geram auditoria/log e não derrubam o daemon.
 - Admin Ops gerencia agentes, configs, auditoria e saúde técnica.
 - Auditoria administrativa lista ações em blocos de 10, permite filtrar por motivo e mantém detalhe operacional com status, motivo, payload resumido, hash/versão de prompt, mercado, comentário ou previsão relacionada.
+- A auditoria IA é limpa pelo daemon junto com logs técnicos, usando `created_at` e o prazo configurado atual, inclusive para registros antigos.
 - Formulários administrativos de agentes devem explicar os tipos operacionais, limitar seleção de usuário a contas bot oficiais e orientar campos relevantes conforme o tipo selecionado.
 
 ## Testes esperados

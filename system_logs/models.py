@@ -6,7 +6,13 @@ from django.utils import timezone
 
 
 def default_expires_at():
-    return timezone.now() + timedelta(days=getattr(settings, "SYSTEM_LOG_RETENTION_DAYS", 90))
+    try:
+        from system_logs.services import get_system_log_retention_days
+
+        retention_days = get_system_log_retention_days()
+    except Exception:
+        retention_days = getattr(settings, "SYSTEM_LOG_RETENTION_DAYS", 90)
+    return timezone.now() + timedelta(days=retention_days)
 
 
 class SystemLog(models.Model):

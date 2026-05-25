@@ -25,12 +25,12 @@
 - Gestão administrativa de usuários reutiliza `orynth_users`, `orynth_user_profiles`, `orynth_auth_sessions`, `orynth_auth_events`, `orynth_wallet_ledger`, `orynth_wallet_balances` e `orynth_user_badge_awards` para suporte sem criar nova tabela.
 - Ações administrativas de usuário devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke` ou `user.wallet_adjust` em `orynth_admin_events`.
 - Ajuste manual de wallet deve ser persistido em `orynth_wallet_ledger` como `manual_adjustment` e atualizar `orynth_wallet_balances` na mesma transação.
-- Logs técnicos de troubleshooting ficam em `orynth_system_logs`, com retenção por `expires_at`, índices de consulta operacional e contexto JSON redigido/truncado.
-- Parâmetros operacionais persistentes ficam em `orynth_site_config`, uma configuração singleton expansível para novos ajustes do site; nesta fatia inclui SMTP não sensível, com host, porta, usuário, TLS/SSL, timeout, remetente, reply-to, operador e timestamp de alteração.
+- Logs técnicos de troubleshooting ficam em `orynth_system_logs`, com `expires_at`, purge por `created_at` conforme retenção configurável, índices de consulta operacional e contexto JSON redigido/truncado.
+- Parâmetros operacionais persistentes ficam em `orynth_site_config`, uma configuração singleton expansível para novos ajustes do site; nesta fatia inclui SMTP não sensível e retenção de logs/auditoria IA, com host, porta, usuário, TLS/SSL, timeout, remetente, reply-to, operador e timestamp de alteração.
 - Senhas, API keys e segredos SMTP não são persistidos no banco.
 - Configuração operacional de agentes IA fica em `orynth_site_config`; somente `OPENAI_API_KEY` permanece fora do banco.
 - `orynth_ai_agents` liga um agente oficial a um usuário `is_bot=true` e guarda persona/estilo editáveis sem substituir o template seguro de código.
-- `orynth_ai_agent_actions` guarda auditoria de ações IA com status, motivo, payload resumido, referência a mercado/comentário/previsão e hash/versão do prompt.
+- `orynth_ai_agent_actions` guarda auditoria de ações IA com status, motivo, payload resumido, referência a mercado/comentário/previsão e hash/versão do prompt; o purge operacional remove ações mais antigas que `orynth_site_config.ai_audit_retention_days`.
 - Métricas públicas devem conseguir distinguir participantes/volume humanos e bots; rótulos legados preservam leitura humana.
 - Notificações in-app ficam em `orynth_user_notifications`, com destinatário obrigatório, ator/mercado/comentário opcionais, `event_type`, `source_key`, título, corpo, `metadata`, estado de leitura e constraint única por `(recipient_id, source_key)`.
 - `source_key` deve representar a origem idempotente do evento por destinatário, permitindo uma notificação por usuário afetado sem duplicar ações repetidas.

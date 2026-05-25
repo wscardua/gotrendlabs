@@ -90,6 +90,7 @@ from admin_ops.forms import (
     MaintenanceConfigForm,
     MarketResolutionForm,
     QueueReviewForm,
+    RetentionConfigForm,
     SiteEmailConfigForm,
     WalletRechargeApprovalForm,
     WalletRechargeRejectForm,
@@ -489,6 +490,14 @@ def config(request):
         },
         prefix="daemon",
     )
+    retention_form = RetentionConfigForm(
+        request.POST or None,
+        initial={
+            "system_log_retention_days": site_config.system_log_retention_days,
+            "ai_audit_retention_days": site_config.ai_audit_retention_days,
+        },
+        prefix="retention",
+    )
     ai_post_data = request.POST if request.method == "POST" and any(key.startswith("ai-") for key in request.POST) else None
     ai_form = AiConfigForm(
         ai_post_data,
@@ -500,7 +509,15 @@ def config(request):
         prefix="ai",
     )
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
-    if request.method == "POST" and maintenance_form.is_valid() and email_form.is_valid() and economy_form.is_valid() and daemon_form.is_valid() and ai_form_valid:
+    if (
+        request.method == "POST"
+        and maintenance_form.is_valid()
+        and email_form.is_valid()
+        and economy_form.is_valid()
+        and daemon_form.is_valid()
+        and retention_form.is_valid()
+        and ai_form_valid
+    ):
         save_platform_config(
             {
                 "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
@@ -513,6 +530,8 @@ def config(request):
         site_config.wallet_recharge_min_balance_oc = economy_form.cleaned_data["wallet_recharge_min_balance_oc"]
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
+        site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
+        site_config.ai_audit_retention_days = retention_form.cleaned_data["ai_audit_retention_days"]
         if ai_post_data is not None:
             for field, value in ai_form.cleaned_data.items():
                 setattr(site_config, field, value)
@@ -530,6 +549,7 @@ def config(request):
             "email_form": email_form,
             "economy_form": economy_form,
             "daemon_form": daemon_form,
+            "retention_form": retention_form,
             "ai_form": ai_form,
             "platform_config": platform_config,
             "site_config": site_config,

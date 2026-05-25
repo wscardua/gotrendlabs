@@ -31,7 +31,7 @@ from backend_api.agent_prompts import build_comment_prompt
 from backend_api.agent_services import _safe_comment_text, ai_health_summary, run_ai_agent_cycle
 from backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
 from backend_api.badge_engine import BadgeAwardEngine
-from backend_api.daemon_services import AUTO_CANCEL_NO_HUMANS_NOTE, AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_system_logs
+from backend_api.daemon_services import AUTO_CANCEL_NO_HUMANS_NOTE, AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_operational_records, prune_expired_system_logs
 from backend_api.daemon_services import _locked_markets_message
 from backend_api.main import app
 from backend_api.main import _ensure_user_core
@@ -1017,6 +1017,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     INSERT INTO orynth_site_config
                         (
                             singleton_key, wallet_recharge_min_balance_oc, daemon_stale_after_minutes, daemon_missing_after_minutes,
+                            system_log_retention_days, ai_audit_retention_days,
                             email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
                             default_from_email, default_reply_to_email,
                             ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled, ai_llm_provider, ai_llm_base_url,
@@ -1028,7 +1029,7 @@ class BackendAuthAPITests(TransactionTestCase):
                             updated_by_id, updated_at
                         )
                     VALUES (
-                        1, 100, 5, 15, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
+                        1, 100, 5, 15, 90, 90, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
                         1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
                     )
@@ -1039,6 +1040,8 @@ class BackendAuthAPITests(TransactionTestCase):
                         default_from_email = EXCLUDED.default_from_email,
                         daemon_stale_after_minutes = EXCLUDED.daemon_stale_after_minutes,
                         daemon_missing_after_minutes = EXCLUDED.daemon_missing_after_minutes,
+                        system_log_retention_days = EXCLUDED.system_log_retention_days,
+                        ai_audit_retention_days = EXCLUDED.ai_audit_retention_days,
                         updated_at = EXCLUDED.updated_at
                     """,
                     (staff_id, now),
@@ -1081,10 +1084,18 @@ class BackendAuthAPITests(TransactionTestCase):
 
     def test_daemon_backend_services_auto_close_prune_and_status(self):
         now = timezone.now()
+        site_config = SiteConfig.get_solo()
+        site_config.system_log_retention_days = 1
+        site_config.ai_audit_retention_days = 1
+        site_config.save(update_fields=["system_log_retention_days", "ai_audit_retention_days"])
         due_close_at = now - timedelta(minutes=5)
         future_close_at = now + timedelta(hours=2)
-        expired_at = now - timedelta(days=1)
+        expired_at = now + timedelta(days=30)
         valid_expires_at = now + timedelta(days=10)
+        expired_action = AiAgentAction.objects.create(action_type="cycle", status="skipped", reason="old_retention")
+        valid_action = AiAgentAction.objects.create(action_type="cycle", status="skipped", reason="fresh_retention")
+        AiAgentAction.objects.filter(id=expired_action.id).update(created_at=now - timedelta(days=2))
+        AiAgentAction.objects.filter(id=valid_action.id).update(created_at=now)
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT id FROM orynth_users WHERE is_staff = true ORDER BY id LIMIT 1")
@@ -1153,6 +1164,14 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertGreaterEqual(removed, 1)
         self.assertFalse(SystemLog.objects.filter(logger_name="test.prune", event_type="expired").exists())
         self.assertTrue(SystemLog.objects.filter(logger_name="test.prune", event_type="valid").exists())
+        self.assertTrue(AiAgentAction.objects.filter(id=expired_action.id).exists())
+
+        pruned = prune_expired_operational_records(now=now)
+        self.assertGreaterEqual(pruned["ai_agent_actions"], 1)
+        self.assertFalse(AiAgentAction.objects.filter(id=expired_action.id).exists())
+        self.assertTrue(AiAgentAction.objects.filter(id=valid_action.id).exists())
+        self.assertIn("system_logs", pruned)
+        self.assertIn("ai_agent_actions", pruned)
 
         log_system_event(logger_name="orynth.daemon", event_type="daemon.heartbeat", message="Daemon operacional ativo.")
         with get_connection() as connection:
@@ -1166,16 +1185,24 @@ class BackendAuthAPITests(TransactionTestCase):
 
     def test_daemon_management_commands_use_backend_services(self):
         out = StringIO()
-        with patch("system_logs.management.commands.run_orynth_daemon.run_daemon_cycle", return_value={"locked_markets": [{"slug": "x"}], "pruned_logs": 2}) as cycle:
+        with patch(
+            "system_logs.management.commands.run_orynth_daemon.run_daemon_cycle",
+            return_value={"locked_markets": [{"slug": "x"}], "pruned_logs": 3, "pruned_log_details": {"system_logs": 2, "ai_agent_actions": 1}},
+        ) as cycle:
             call_command("run_orynth_daemon", "--once", stdout=out)
         cycle.assert_called_once()
         self.assertIn("locked 1 market", out.getvalue())
+        self.assertIn("2 system log", out.getvalue())
+        self.assertIn("1 AI audit action", out.getvalue())
 
         out = StringIO()
-        with patch("system_logs.management.commands.prune_system_logs.prune_expired_system_logs", return_value=3) as prune:
+        with patch(
+            "system_logs.management.commands.prune_system_logs.prune_expired_operational_records",
+            return_value={"system_logs": 3, "ai_agent_actions": 2, "total": 5},
+        ) as prune:
             call_command("prune_system_logs", stdout=out)
         prune.assert_called_once()
-        self.assertIn("Removed 3 expired system logs.", out.getvalue())
+        self.assertIn("Removed 3 expired system logs and 2 expired AI audit actions.", out.getvalue())
 
     def test_daemon_locked_markets_message_includes_market_slugs(self):
         self.assertEqual(
@@ -3674,6 +3701,8 @@ class BackendAuthAPITests(TransactionTestCase):
                         wallet_recharge_min_balance_oc,
                         daemon_stale_after_minutes,
                         daemon_missing_after_minutes,
+                        system_log_retention_days,
+                        ai_audit_retention_days,
                         email_enabled,
                         smtp_host,
                         smtp_port,
@@ -3709,12 +3738,16 @@ class BackendAuthAPITests(TransactionTestCase):
                         updated_at
                     )
                     VALUES (
-                        1, 10000, 5, 15, false, '', 587, '', true, false, 10, '', '',
+                        1, 10000, 5, 15, 90, 90, false, '', 587, '', true, false, 10, '', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
                         1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
                     )
                     ON CONFLICT (singleton_key)
-                    DO UPDATE SET wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc, updated_at = NOW()
+                    DO UPDATE SET
+                        wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc,
+                        system_log_retention_days = EXCLUDED.system_log_retention_days,
+                        ai_audit_retention_days = EXCLUDED.ai_audit_retention_days,
+                        updated_at = NOW()
                     """
                 )
 
@@ -4934,6 +4967,9 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Segredo SMTP")
             self.assertContains(response, "Configurado por ambiente")
             self.assertContains(response, "Saldo máximo para solicitar")
+            self.assertContains(response, "Purge de logs e auditoria IA")
+            self.assertContains(response, 'name="retention-system_log_retention_days"')
+            self.assertContains(response, 'name="retention-ai_audit_retention_days"')
             self.assertContains(response, "Agentes IA oficiais nunca simulam pessoas.")
             self.assertContains(response, "Regras dos agentes")
             self.assertContains(response, "Comentários IA podem ocorrer com 0 humanos")
@@ -4957,6 +4993,8 @@ class WebSmokeTests(TransactionTestCase):
                     "economy-wallet_recharge_min_balance_oc": "150",
                     "daemon-daemon_stale_after_minutes": "7",
                     "daemon-daemon_missing_after_minutes": "21",
+                    "retention-system_log_retention_days": "45",
+                    "retention-ai_audit_retention_days": "120",
                     "email-email_enabled": "on",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "587",
@@ -4986,7 +5024,29 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.wallet_recharge_min_balance_oc, 150)
             self.assertEqual(site_config.daemon_stale_after_minutes, 7)
             self.assertEqual(site_config.daemon_missing_after_minutes, 21)
+            self.assertEqual(site_config.system_log_retention_days, 45)
+            self.assertEqual(site_config.ai_audit_retention_days, 120)
             self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
+
+            response = self.client.post(
+                reverse("admin-ops-config"),
+                {
+                    "maintenance-maintenance_message": "",
+                    "economy-wallet_recharge_min_balance_oc": "150",
+                    "daemon-daemon_stale_after_minutes": "7",
+                    "daemon-daemon_missing_after_minutes": "21",
+                    "retention-system_log_retention_days": "0",
+                    "retention-ai_audit_retention_days": "3651",
+                    "email-smtp_port": "587",
+                    "email-smtp_timeout_seconds": "15",
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, 'name="retention-system_log_retention_days"')
+            self.assertContains(response, 'name="retention-ai_audit_retention_days"')
+            site_config.refresh_from_db()
+            self.assertEqual(site_config.system_log_retention_days, 45)
+            self.assertEqual(site_config.ai_audit_retention_days, 120)
 
     def test_admin_config_persists_ai_agent_parameters(self):
         staff = get_user_model().objects.create_user(
@@ -5019,6 +5079,8 @@ class WebSmokeTests(TransactionTestCase):
                     "economy-wallet_recharge_min_balance_oc": "100",
                     "daemon-daemon_stale_after_minutes": "6",
                     "daemon-daemon_missing_after_minutes": "18",
+                    "retention-system_log_retention_days": "90",
+                    "retention-ai_audit_retention_days": "90",
                     "email-smtp_host": "",
                     "email-smtp_port": "587",
                     "email-smtp_username": "",
@@ -5095,6 +5157,8 @@ class WebSmokeTests(TransactionTestCase):
                     "economy-wallet_recharge_min_balance_oc": "100",
                     "daemon-daemon_stale_after_minutes": "5",
                     "daemon-daemon_missing_after_minutes": "15",
+                    "retention-system_log_retention_days": "90",
+                    "retention-ai_audit_retention_days": "90",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "465",
                     "email-smtp_use_tls": "on",
