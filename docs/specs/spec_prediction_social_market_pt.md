@@ -93,6 +93,27 @@ O produto não deve ser apresentado como:
 
 ---
 
+## Diretrizes de Linguagem Pública
+
+A experiência voltada ao usuário final deve priorizar tom social, claro e confiável. A copy pública deve reforçar:
+
+- consenso público;
+- leitura própria antes do consenso mudar;
+- reputação construída por histórico resolvido;
+- O₵ como crédito educativo interno;
+- resolução auditável com fonte verificável.
+
+Na camada pública, termos com forte associação financeira ou de trading devem ser evitados quando houver equivalente mais claro:
+
+- usar `O₵ reservadas`, `crédito reservado` ou `crédito educativo` em vez de `stake`;
+- usar `crédito possível se acertar` em vez de `retorno estimado` ou `payout`;
+- usar `carteira educativa` em vez de `wallet`;
+- usar `registrar leitura` ou `registrar previsão` em vez de chamadas com tom de aposta.
+
+Identificadores técnicos, nomes de campos, eventos de domínio, contratos de API, ledger e documentação interna podem preservar termos como `stake`, `payout`, `wallet` e `refund` quando forem necessários para precisão técnica.
+
+---
+
 ## Público Inicial
 
 Segmentos mais promissores para o MVP:

@@ -31,7 +31,7 @@
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{{ market.status_label }}</span>
     </div>
     <div class="mini-stats">
-      <span>{{ market.volume_oc }} previstos</span>
+      <span>{{ market.volume_oc }} reservados</span>
       <span>{{ market.participants }}</span>
       <span>Fonte: {{ market.source }}</span>
     </div>
@@ -64,7 +64,7 @@
       {% endfor %}
     </div>
     <div class="market-foot">
-      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% else %}Prever{% endif %}</a>
+      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% else %}Registrar leitura{% endif %}</a>
       <a class="btn small ghost" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}">Compartilhar</a>
       <div class="market-card-actions">
         <a class="market-comment-count" href="{% url 'market-detail' market.slug %}#comments" aria-label="{% if market.comment_count == 1 %}1 comentário{% else %}{{ market.comment_count|default:0 }} comentários{% endif %}" title="Ver comentários">

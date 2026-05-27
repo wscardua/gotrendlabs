@@ -16,10 +16,10 @@
       <div>
         <div class="share-brand-block">
           <p class="share-brand">Orynth Trends · {{ market.category }}{% if market.event %} · {{ market.event }}{% endif %}</p>
-          <p class="share-context">Previsões educativas com reputação pública e resolução auditável.</p>
+          <p class="share-context">Consenso público, reputação e resolução auditável.</p>
         </div>
         <h1 class="large-title">{{ market.title }}</h1>
-        <p class="lead">Consenso atual: {{ market.primary_probability }}% {{ market.primary_outcome }} · {{ market.volume_oc }} previstos.</p>
+        <p class="lead">Consenso atual: {{ market.primary_probability }}% {{ market.primary_outcome }} · {{ market.volume_oc }} reservados pela comunidade.</p>
         <div class="share-option-list" aria-label="Opções do mercado">
           {% for option in market.options %}
             <div class="share-option-row">
@@ -31,7 +31,7 @@
             </div>
           {% endfor %}
         </div>
-        <a class="share-cta" href="{% url 'market-detail' market.slug %}">Dispute previsões, construa reputação e ganhe destaque.</a>
+        <a class="share-cta" href="{% url 'market-detail' market.slug %}">Registre sua leitura, acompanhe o consenso e construa reputação.</a>
         <p>Fonte esperada: {{ market.source }}</p>
         <p class="share-canonical">{{ share.display_url }}</p>
       </div>

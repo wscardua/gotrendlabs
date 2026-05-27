@@ -5,8 +5,8 @@
 <main class="shell hero">
   <section class="panel" style="max-width:860px;margin:auto">
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Feedback da plataforma</span></div>
-    <h1 class="large-title">Enviar feedback/Suporte</h1>
-    <p class="lead">Feedbacks úteis ajudam a melhorar regras, clareza e segurança. No MVP, feedback recompensável entra na fila operacional do admin.</p>
+    <h1 class="large-title">Ajude a deixar a Orynth mais clara.</h1>
+    <p class="lead">Feedbacks úteis melhoram regras, linguagem e confiança. No MVP, contribuições relevantes entram na fila operacional para revisão.</p>
     {% if form_error %}<div class="tag risk">{{ form_error }}</div>{% endif %}
     {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
     <form class="form-grid" method="post">
@@ -20,7 +20,7 @@
       <div class="field full"><label>Tipo <small>Obrigatório</small></label><select name="feedback_type" required><option value="">Selecione</option><option {% if form_data.feedback_type == "Bug de produto" %}selected{% endif %}>Bug de produto</option><option {% if form_data.feedback_type == "Mercado ambíguo" %}selected{% endif %}>Mercado ambíguo</option><option {% if form_data.feedback_type == "Risco de segurança" %}selected{% endif %}>Risco de segurança</option><option {% if form_data.feedback_type == "Ideia de melhoria" %}selected{% endif %}>Ideia de melhoria</option><option {% if form_data.feedback_type == "Dúvidas" %}selected{% endif %}>Dúvidas</option></select></div>
       <div class="field full"><label>Descrição <small>Obrigatório</small></label><textarea name="description" required minlength="10" placeholder="Descreva o problema, sugestão ou risco operacional com contexto suficiente para revisão.">{{ form_data.description|default:'' }}</textarea></div>
       {% if recaptcha_enabled and recaptcha_site_key %}<div class="field full recaptcha-field"><div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div></div>{% endif %}
-      <button class="btn primary" type="submit" data-confirm="Enviar feedback/Suporte?" data-confirm-desc="O feedback será encaminhado para a fila admin de produto.">Enviar feedback/Suporte</button>
+      <button class="btn primary" type="submit" data-confirm="Enviar feedback?" data-confirm-desc="O feedback será encaminhado para a fila de produto.">Enviar feedback</button>
       <a class="btn ghost" href="{% url 'home' %}">Cancelar</a>
     </form>
   </section>

@@ -61,7 +61,7 @@
     </div>
     <p class="lead">{{ market.summary }}</p>
     <div class="chart-box">
-      <div class="chart-legend"><span><i style="--dot:#136f4a"></i>Evolução das opções</span><span class="muted">Linhas recalculadas a partir das previsões reais</span></div>
+      <div class="chart-legend"><span><i style="--dot:#136f4a"></i>Evolução das opções</span><span class="muted">Linhas recalculadas a partir das leituras registradas</span></div>
       <svg class="market-trend" viewBox="0 0 220 44" preserveAspectRatio="none" role="img" aria-label="Evolução temporal da probabilidade principal">
         {% for series in market.sparkline_series %}
           <path class="sparkline-line series-{{ forloop.counter }}" d="{{ series.path }}"></path>
@@ -80,7 +80,7 @@
       </div>
     </div>
     <div class="admin-grid">
-      <div class="metric"><strong>{{ market.volume_oc }}</strong><span>volume educativo</span></div>
+      <div class="metric"><strong>{{ market.volume_oc }}</strong><span>O₵ reservadas</span></div>
       <div class="metric"><strong>{{ market.participants }}</strong><span>participação</span></div>
       <div class="metric"><strong>{{ market.closes_in }}</strong><span>até fechar previsões</span></div>
     </div>
@@ -91,7 +91,7 @@
         {% if market.resolution_note %}<p>{{ market.resolution_note|linebreaksbr }}</p>{% endif %}
         <div class="tags"><span class="tag">Resolvido em: {{ market.resolved_at_label|default:"data registrada" }}</span><span class="tag">Timezone: {{ market.resolution_timezone|default:"UTC" }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
       {% elif market.status == "canceled" %}
-        <p>Este mercado foi cancelado pela operação. Stakes bloqueados foram devolvidos integralmente e reputação não foi alterada.</p>
+        <p>Este mercado foi cancelado pela operação. O₵ reservadas foram devolvidas integralmente e reputação não foi alterada.</p>
         <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
       {% else %}
         <p>{{ market.resolution_criteria }}</p>
@@ -100,7 +100,7 @@
     </section>
     {% if market.category_notice or market.subcategory_notice or market.event_notice %}
       <div class="event-warning detail-notice-after-criteria">
-        <strong>Avisos da negociação</strong>
+        <strong>Avisos do mercado</strong>
         {% if market.category_notice %}<span><b>Categoria:</b> {{ market.category_notice|linebreaksbr }}</span>{% endif %}
         {% if market.subcategory_notice %}<span><b>Subcategoria:</b> {{ market.subcategory_notice|linebreaksbr }}</span>{% endif %}
         {% if market.event_notice %}<span><b>Evento:</b> {{ market.event_notice|linebreaksbr }}</span>{% endif %}
@@ -182,7 +182,7 @@
     </section>
   </section>
   <aside class="panel trade-box">
-    <span class="eyebrow">Ticket de previsão</span>
+    <span class="eyebrow">Sua previsão</span>
     <div class="market-lifecycle-card" aria-label="Ciclo deste mercado">
       <div class="lifecycle-step done">
         <span>1</span>
@@ -216,7 +216,7 @@
             {% if existing_prediction.won %}
               <div class="prediction-result-note success">
                 <strong>Você acertou esta previsão.</strong>
-                <p>Stake liberado, ganho líquido creditado e leitura registrada no histórico.</p>
+                <p>Crédito reservado liberado, acerto creditado e leitura registrada no histórico.</p>
               </div>
             {% else %}
               <div class="prediction-result-note miss">
@@ -229,7 +229,7 @@
           {% endif %}
         </div>
       {% elif market.status == "canceled" %}
-        <p>Mercado cancelado com refund total dos stakes bloqueados.</p>
+        <p>Mercado cancelado com devolução total das O₵ reservadas.</p>
       {% else %}
         <p>Este mercado não aceita novas previsões neste momento.</p>
       {% endif %}
@@ -237,7 +237,7 @@
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
       {% if prediction_result %}
-        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} O₵ bloqueados. Retorno estimado: {{ prediction_result.potential_payout }} O₵.</div>
+        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} O₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} O₵.</div>
       {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>
@@ -252,13 +252,13 @@
               </div>
             {% endfor %}
           </div>
-          <div class="ticket-note">Visitantes podem ver o consenso atual. Para escolher uma opção e comprometer O₵, entre na conta.</div>
+          <div class="ticket-note">Visitantes podem ver o consenso atual. Para escolher uma opção e reservar O₵, entre na conta.</div>
         </div>
         <a class="btn primary" href="{% url 'login' %}?next={{ request.path }}">Entrar para prever</a>
       {% elif existing_prediction %}
         <div class="prediction-locked">
           <strong>Você já registrou uma previsão neste mercado.</strong>
-          <p>Sua escolha foi <b>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</b> com {{ existing_prediction.stake_amount }} O₵ bloqueados. Probabilidade de entrada: {{ existing_prediction.probability_at_entry }}%.</p>
+          <p>Sua escolha foi <b>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</b> com {{ existing_prediction.stake_amount }} O₵ reservadas. Consenso na entrada: {{ existing_prediction.probability_at_entry }}%.</p>
         </div>
         <div class="binary-ticket">
           <div class="binary-grid option-grid">
@@ -271,13 +271,13 @@
           </div>
           <div class="ticket-note">A primeira previsão fica registrada para auditoria. Para esta etapa do MVP, não é possível alterar ou enviar outra previsão no mesmo mercado.</div>
         </div>
-        <div class="field disabled-field"><label>Valor da previsão</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} O₵</strong></div></div>
+        <div class="field disabled-field"><label>O₵ reservadas</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} O₵</strong></div></div>
         <button class="btn primary" type="button" disabled>Previsão já registrada</button>
       {% elif viewer.balance_oc|default:0 <= 0 %}
         <div class="balance-empty-callout">
           <span>Saldo indisponível</span>
           <strong>Você não tem O₵ disponível para entrar neste mercado.</strong>
-          <p>As opções continuam visíveis para acompanhar o consenso. Recarregue a wallet para registrar uma previsão.</p>
+          <p>As opções continuam visíveis para acompanhar o consenso. Solicite crédito educativo para registrar uma previsão.</p>
         </div>
         <div class="binary-ticket">
           <div class="binary-grid option-grid">
@@ -288,9 +288,9 @@
               </div>
             {% endfor %}
           </div>
-          <div class="ticket-note">Sem saldo disponível, o ticket fica somente para leitura.</div>
+          <div class="ticket-note">Sem saldo disponível, esta área fica somente para leitura.</div>
         </div>
-        <a class="btn primary" href="{% url 'wallet' %}">Ver wallet</a>
+        <a class="btn primary" href="{% url 'wallet' %}">Ver carteira educativa</a>
       {% else %}
         <form method="post" action="{% url 'prediction-confirm' market.slug %}" data-prediction-preview-url="{% url 'prediction-preview' market.slug %}">
           {% csrf_token %}
@@ -308,15 +308,15 @@
                 </label>
               {% endfor %}
             </div>
-            <div class="ticket-note">Escolha uma opção e defina quantas O₵ educativas deseja comprometer. A porcentagem é consenso atual, não promessa de resultado.</div>
+            <div class="ticket-note">Escolha uma opção e defina quantas O₵ educativas deseja reservar. A porcentagem é consenso atual, não promessa de resultado.</div>
           </div>
-          <div class="field"><label>Valor da previsão</label><div class="range-row"><input name="stake_amount" data-amount="open" type="range" min="1" max="500" value="80"><strong data-amount-output="open">80 O₵</strong></div></div>
+          <div class="field"><label>O₵ reservadas</label><div class="range-row"><input name="stake_amount" data-amount="open" type="range" min="1" max="500" value="80"><strong data-amount-output="open">80 O₵</strong></div></div>
           <div id="prediction-preview" class="calc">
             <div><span>Opção escolhida</span><strong data-selected-choice>Selecione</strong></div>
-            <div><span>Retorno estimado se acertar</span><strong data-return-output="open">-</strong></div>
-            <div><span>Saldo bloqueado</span><strong data-locked-output="open">80 O₵</strong></div>
+            <div><span>Crédito possível se acertar</span><strong data-return-output="open">-</strong></div>
+            <div><span>Crédito reservado</span><strong data-locked-output="open">80 O₵</strong></div>
           </div>
-          <button class="btn primary trade-action" type="submit" data-confirm="Confirmar previsão" data-confirm-desc="Esta ação bloqueará o stake informado na sua carteira e ficará registrada na trilha auditável." data-requires-choice>Confirmar previsão</button>
+          <button class="btn primary trade-action" type="submit" data-confirm="Confirmar previsão" data-confirm-desc="Esta ação reservará as O₵ informadas na sua carteira educativa e ficará registrada na trilha auditável." data-requires-choice>Confirmar previsão</button>
         </form>
       {% endif %}
       <a class="btn ghost" href="{% url 'share-market' market.slug %}">Compartilhar</a>
