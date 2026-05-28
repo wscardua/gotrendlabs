@@ -46,7 +46,7 @@
         <span class="tag">{{ market.subcategory }}</span>
         <span class="tag">{{ market.event }}</span>
         <span class="tag safe">Critério auditável</span>
-        <span class="tag">{{ market.close_label|default:market.status_label }}</span>
+        <span class="tag">{% if market.status == "locked" %}Em apuração{% else %}{{ market.close_label|default:market.status_label }}{% endif %}</span>
       </div>
       <div class="detail-title-row">
         <div class="detail-market-thumb" style="--thumb:{{ market.thumb_color }}" aria-hidden="true">
@@ -92,10 +92,10 @@
         <div class="tags"><span class="tag">Resolvido em: {{ market.resolved_at_label|default:"data registrada" }}</span><span class="tag">Timezone: {{ market.resolution_timezone|default:"UTC" }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
       {% elif market.status == "canceled" %}
         <p>Este mercado foi cancelado pela operação. O₵ reservadas foram devolvidas integralmente e reputação não foi alterada.</p>
-        <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+        <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span></div>
       {% else %}
         <p>{{ market.resolution_criteria }}</p>
-        <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+        <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span></div>
       {% endif %}
     </section>
     {% if market.category_notice or market.subcategory_notice or market.event_notice %}

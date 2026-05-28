@@ -30,8 +30,8 @@
           <a class="btn small primary" href="{% url 'register' %}">Criar conta</a>
         {% else %}
           <span class="language">{{ viewer.language }}</span>
-          <div class="notification-chip">
-            <button class="notification-button" type="button" aria-label="{% if notifications.unread_count %}{{ notifications.unread_count }} notificações não lidas{% else %}Notificações{% endif %}" title="Notificações">
+          <div class="notification-chip" data-menu-chip>
+            <button class="notification-button" type="button" aria-label="{% if notifications.unread_count %}{{ notifications.unread_count }} notificações não lidas{% else %}Notificações{% endif %}" title="Notificações" aria-haspopup="menu" aria-expanded="false" data-menu-button>
               <span aria-hidden="true">🔔</span>
               {% if notifications.unread_count %}<strong>{{ notifications.unread_count }}</strong>{% endif %}
             </button>
@@ -58,8 +58,8 @@
               </div>
             </div>
           </div>
-          <div class="user-chip">
-            <button class="user-button" type="button">
+          <div class="user-chip" data-menu-chip>
+            <button class="user-button" type="button" aria-haspopup="menu" aria-expanded="false" data-menu-button>
               <span class="avatar">{{ viewer.initials }}</span>
               <span class="chip-meta"><strong>{{ viewer.handle }}</strong><span>{{ viewer.name }} · {{ viewer.balance_oc }} O₵{% if not can_access_admin_ops %} · Rep {{ viewer.reputation }}{% endif %}</span></span>
             </button>

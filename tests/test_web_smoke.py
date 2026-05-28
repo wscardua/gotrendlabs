@@ -3942,7 +3942,7 @@ class WebSmokeTests(TransactionTestCase):
                 response = self.client.get(route)
                 self.assertEqual(response.status_code, 200)
                 if route == reverse("feedback"):
-                    self.assertContains(response, "Ajude a deixar a Orynth mais clara.")
+                    self.assertContains(response, "Ajude a deixar a Orynth Trends mais clara.")
                 if route == reverse("home"):
                     self.assertNotContains(response, category_notice)
                 if route == reverse("concepts"):
@@ -4336,7 +4336,11 @@ class WebSmokeTests(TransactionTestCase):
         with patch("core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
-        self.assertContains(response, '<img src="/media/market_thumbnails/test-thumb.jpg" alt="">', html=True)
+        self.assertContains(
+            response,
+            '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async">',
+            html=True,
+        )
 
     def test_market_card_title_links_to_market_detail(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -4854,7 +4858,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Orynth Trends")
             self.assertContains(response, "testserver/share/market/openai-gpt6-2026")
             self.assertContains(response, "Consenso público, reputação e resolução auditável")
-            self.assertContains(response, "Registre sua leitura, acompanhe o consenso e construa reputação.")
+            self.assertContains(response, "Registre previsões, compare com a comunidade e construa reputação.")
             self.assertContains(response, "Opções do mercado")
             self.assertContains(response, "SIM")
             self.assertContains(response, 'class="share-cta"')
@@ -7470,7 +7474,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual([filter_html.index(item) for item in expected_filter_order], sorted(filter_html.index(item) for item in expected_filter_order))
             self.assertNotIn('data-filter="featured"', filter_html)
             self.assertNotIn('data-filter="favorited"', filter_html)
-            self.assertIn("Encerrado", filter_html)
+            self.assertIn("Em alta", filter_html)
+            self.assertIn("Em apuração", filter_html)
             self.assertContains(response, "data-market-card")
             self.assertContains(response, 'data-market-likes="9"')
             self.assertContains(response, 'data-market-views="9"')

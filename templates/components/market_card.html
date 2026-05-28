@@ -17,7 +17,7 @@
 >
   <div class="thumb" style="--thumb:{{ market.thumb_color }}">
     {% if market.image_url %}
-      <img src="{{ market.image_url }}" alt="">
+      <img src="{{ market.image_url }}" alt="" loading="lazy" decoding="async">
     {% else %}
       {{ market.thumb|default:"OR" }}
     {% endif %}
@@ -28,7 +28,7 @@
       <span class="tag hot">{{ market.category }}</span>
       <span class="tag">{{ market.subcategory }}</span>
       <span class="tag">{{ market.event }}</span>
-      <span class="tag {% if market.status == 'open' %}safe{% endif %}">{{ market.status_label }}</span>
+      <span class="tag {% if market.status == 'open' %}safe{% endif %}">{% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span>
     </div>
     <div class="mini-stats">
       <span>{{ market.volume_oc }} reservados</span>
@@ -55,17 +55,17 @@
     </div>
     <div class="mini-consensus" aria-label="Distribuição atual das opções">
       {% for option in market.options %}
-        <span class="segment segment-{{ forloop.counter }}" style="width:{{ option.probability_exact }}%" title="{{ option.label }} {{ option.probability }}%"></span>
+        <span class="segment segment-{{ forloop.counter }}" style="width:{{ option.probability_exact }}%" title="{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %} {{ option.probability }}%"></span>
       {% endfor %}
     </div>
     <div class="mini-options">
       {% for option in market.options|slice:":3" %}
-        <span>{{ option.label }} {{ option.probability }}%</span>
+        <span>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %} {{ option.probability }}%</span>
       {% endfor %}
     </div>
     <div class="market-foot">
-      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% else %}Registrar leitura{% endif %}</a>
-      <a class="btn small ghost" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}">Compartilhar</a>
+      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% elif market.status == "locked" %}Em apuração{% else %}Prever{% endif %}</a>
+      <a class="btn small ghost share-card-button" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}" aria-label="Compartilhar mercado" title="Compartilhar mercado"><span class="share-label">Compartilhar</span><span class="share-symbol" aria-hidden="true">↗</span></a>
       <div class="market-card-actions">
         <a class="market-comment-count" href="{% url 'market-detail' market.slug %}#comments" aria-label="{% if market.comment_count == 1 %}1 comentário{% else %}{{ market.comment_count|default:0 }} comentários{% endif %}" title="Ver comentários">
           <span aria-hidden="true">💬</span>

@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-05-28 — FEAT-MARKET-001 linguagem pública e home simplificada
+
+- Home pública passou a priorizar o grid de mercados, removendo hero narrativo, blocos laterais e progressão da primeira dobra.
+- Copy pública foi alinhada para tom claro, social e confiável, incluindo `Prever`, `Em apuração`, `carteira educativa`, `crédito reservado`, `O₵ reservadas` e microcopy de segurança sem dinheiro real.
+- Cards do feed passaram a preservar ações na mesma linha em mobile, usar `NÃO` na camada pública e diferenciar `Prever`, `Em apuração` e `Ver resolução` por status.
+- Páginas públicas de login, cadastro, badges, compartilhamento, sugestões, feedback, conceitos, segurança e detalhe receberam ajustes de linguagem sem alterar models, migrations, seeds ou schema.
+- Status de implementação: `parcial`.
+
 ## 2026-05-24 — FEAT-OPSLOG-001 / FEAT-AIAGENT-001 retenção configurável
 
 - Admin Ops Config passou a persistir retenção separada para logs técnicos e auditoria IA em `orynth_site_config`.

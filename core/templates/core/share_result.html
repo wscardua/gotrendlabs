@@ -8,7 +8,7 @@
     <div class="share-badge-card share-card-preview">
       <div class="share-badge-art">
         {% if market.image_url %}
-          <img class="badge-image" src="{{ market.image_url }}" alt="">
+          <img class="badge-image" src="{{ market.image_url }}" alt="{{ market.title }}" loading="lazy" decoding="async">
         {% else %}
           <span class="badge-icon">{{ market.thumb|default:"OR" }}</span>
         {% endif %}

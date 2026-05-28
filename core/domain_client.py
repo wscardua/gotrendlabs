@@ -64,7 +64,7 @@ def _market_status_label(status_value):
         "draft": "Rascunho",
         "scheduled": "Agendado",
         "open": "Aberto",
-        "locked": "Fechado",
+        "locked": "Em apuração",
         "resolved": "Resolvido",
         "canceled": "Cancelado",
     }.get(status_value, status_value)

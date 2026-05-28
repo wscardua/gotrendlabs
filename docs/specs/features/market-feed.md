@@ -53,10 +53,11 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 ## Comportamento esperado
 
 - feed exibe mercados coerentes com o status
-- mercados fechados ou resolvidos permanecem legíveis
+- mercados em apuração (`status=locked`) ou resolvidos permanecem legíveis
 - mercados cancelados não aparecem na página inicial nem no feed público padrão
 - categorias ajudam recorrência e descoberta
 - cards exibem CTA `Prever` para mercados abertos, incluindo múltipla escolha
+- cards exibem CTA e chip `Em apuração` para mercados `locked`, deixando claro que previsões foram encerradas e a resolução ainda não foi publicada
 - títulos dos cards de mercado também navegam para o detalhe, reduzindo atrito além do CTA principal
 - cards exibem curtidas reais do mercado como sinal social discreto
 - cards exibem comentários visíveis como sinal social discreto para visitantes e usuários autenticados
@@ -65,10 +66,10 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
 - mini gráficos devem continuar refletindo histórico após resolução; previsões `resolved` permanecem na série visual e previsões `canceled` ficam fora
 - labels mostram percentuais inteiros, enquanto barras e mini gráficos usam `probability_exact`
-- botão `Trending` ordena por mercados mais visualizados, com mercado mais recente como desempate
-- botões `Novos`, `Aberto`, `Encerrado`, `Mais volume` e `Mais curtidas` reordenam ou filtram a lista no frontend sem recarregar a página
-- botão `Aberto` mostra apenas cards com `status=open`, usando os cards já renderizados e sem recarregar a página
-- botão `Encerrado` mostra apenas cards com `status=locked`, usando os cards já renderizados e sem recarregar a página
+- botão `Em alta` ordena por mercados mais visualizados, com mercado mais recente como desempate
+- botões `Novos`, `Abertos`, `Em apuração`, `Mais volume` e `Mais curtidas` reordenam ou filtram a lista no frontend sem recarregar a página
+- botão `Abertos` mostra apenas cards com `status=open`, usando os cards já renderizados e sem recarregar a página
+- botão `Em apuração` mostra apenas cards com `status=locked`, usando os cards já renderizados e sem recarregar a página
 - botão `Resolvidos` no feed público mostra apenas cards com `status=resolved`, usando os cards já renderizados e sem recarregar a página
 - feed mostra inicialmente até 18 cards por recorte e revela mais 18 a cada acionamento de `Carregar mais`
 - `Favoritos` é um recorte pessoal autenticado de mercados salvos pelo usuário

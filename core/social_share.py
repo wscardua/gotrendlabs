@@ -18,7 +18,7 @@ MUTED = (84, 95, 95)
 GREEN = (19, 111, 74)
 LINE = (205, 225, 211)
 ORYNTH_CONTEXT = "Rede social de previsões educativas com consenso público, reputação e resolução auditável."
-MARKET_CTA = "Registre sua leitura, acompanhe o consenso e construa reputação."
+MARKET_CTA = "Registre previsões, compare com a comunidade e construa reputação."
 
 
 def currency_label(value):

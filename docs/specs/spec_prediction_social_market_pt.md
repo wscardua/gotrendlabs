@@ -108,7 +108,8 @@ Na camada pública, termos com forte associação financeira ou de trading devem
 - usar `O₵ reservadas`, `crédito reservado` ou `crédito educativo` em vez de `stake`;
 - usar `crédito possível se acertar` em vez de `retorno estimado` ou `payout`;
 - usar `carteira educativa` em vez de `wallet`;
-- usar `registrar leitura` ou `registrar previsão` em vez de chamadas com tom de aposta.
+- usar `prever`, `registrar previsão` ou `registrar leitura` em vez de chamadas com tom de aposta;
+- usar `Em apuração` para mercados `locked`, evitando `fechado` na camada pública quando o mercado ainda aguarda resolução.
 
 Identificadores técnicos, nomes de campos, eventos de domínio, contratos de API, ledger e documentação interna podem preservar termos como `stake`, `payout`, `wallet` e `refund` quando forem necessários para precisão técnica.
 

@@ -21,6 +21,18 @@ $$("[data-theme-toggle]").forEach((button) => {
 
 syncThemeButtons();
 
+$$("[data-menu-chip]").forEach((chip) => {
+  const button = $("[data-menu-button]", chip);
+  if (!button) return;
+  const setExpanded = (expanded) => button.setAttribute("aria-expanded", expanded ? "true" : "false");
+  chip.addEventListener("focusin", () => setExpanded(true));
+  chip.addEventListener("focusout", (event) => {
+    if (!chip.contains(event.relatedTarget)) setExpanded(false);
+  });
+  chip.addEventListener("mouseenter", () => setExpanded(true));
+  chip.addEventListener("mouseleave", () => setExpanded(false));
+});
+
 function parseNumber(value) {
   const normalized = String(value || "0").replace(/\./g, "").replace(",", ".");
   const match = normalized.match(/-?\d+(\.\d+)?/);
@@ -171,11 +183,23 @@ if ($("[data-deadline-rail]")) {
   window.setInterval(() => $$("[data-market-card]").forEach(hydrateDeadlineRail), 60000);
 }
 
+function syncFilterPressedState(group, activeButton) {
+  $$("[data-filter]", group).forEach((item) => {
+    const isActive = item === activeButton;
+    item.classList.toggle("active", isActive);
+    item.setAttribute("aria-pressed", isActive ? "true" : "false");
+  });
+}
+
+$$("[data-filter-group]").forEach((group) => {
+  const active = $(".filter.active[data-filter]", group) || $("[data-filter]", group);
+  if (active) syncFilterPressedState(group, active);
+});
+
 $$("[data-filter]").forEach((button) => {
   button.addEventListener("click", () => {
     const group = button.closest("[data-filter-group]");
-    $$("[data-filter]", group).forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
+    syncFilterPressedState(group, button);
     sortMarketList(group, button.dataset.filter || "trending");
   });
 });
