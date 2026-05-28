@@ -8,8 +8,8 @@
     <div class="share-badge-card share-card-preview">
       <div class="share-badge-art">
         {% if badge.image_url %}
-          <img class="badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="">
-          {% if badge.image_dark_url %}<img class="badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="">{% endif %}
+          <img class="badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="{{ badge.name }}" loading="lazy" decoding="async">
+          {% if badge.image_dark_url %}<img class="badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="{{ badge.name }}" loading="lazy" decoding="async">{% endif %}
         {% else %}
           <span class="badge-icon">✓</span>
         {% endif %}
@@ -17,7 +17,7 @@
       <div>
         <div class="share-brand-block">
           <p class="share-brand">Orynth Trends</p>
-          <p class="share-context">Previsões educativas com reputação pública e resolução auditável.</p>
+          <p class="share-context">Conquistas públicas em previsões com resolução auditável.</p>
         </div>
         <h1 class="large-title">{{ share_viewer.name }} conquistou {{ badge.name }}.</h1>
         <p class="lead">{{ badge.description }}</p>

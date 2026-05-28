@@ -4,7 +4,7 @@
 <main class="shell page-grid">
   <section class="panel">
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Ranking social</span></div>
-    <h1 class="large-title">Quem prevê melhor?</h1>
+    <h1 class="large-title">Quem leu melhor o futuro?</h1>
     {% if ranking_error %}<div class="notice danger">{{ ranking_error }}</div>{% endif %}
     <form class="ranking-filters" method="get" data-ranking-filters>
       <div class="field">
@@ -75,7 +75,7 @@
           <td>{{ row.strong_category }}</td>
         </tr>
       {% empty %}
-        <tr><td colspan="5">Ainda não há previsões resolvidas para este recorte.</td></tr>
+        <tr><td colspan="5">Ainda não há leituras resolvidas para este recorte.</td></tr>
       {% endfor %}
     </table>
     {% if ranking_total > 10 %}
@@ -93,17 +93,17 @@
     <div class="side-card">
       <h3>Seu recorte</h3>
       {% if is_guest %}
-        <p>Entre para acompanhar sua posição real no ranking conforme suas previsões forem resolvidas.</p>
+        <p>Entre para acompanhar sua posição real no ranking conforme suas leituras forem resolvidas.</p>
         <a class="btn primary" href="{% url 'login' %}?next={{ request.get_full_path|urlencode }}">Entrar</a>
       {% elif viewer_ranking %}
         <p>Você está em #{{ viewer_ranking.position }} neste recorte, com reputação {{ viewer_ranking.reputation_score }} e acerto {{ viewer_ranking.accuracy_indicator }}.</p>
         <a class="btn primary" href="{% url 'profile' %}">Ver perfil</a>
       {% else %}
-        <p>Você ainda não aparece neste recorte. O ranking considera apenas previsões resolvidas.</p>
+        <p>Você ainda não aparece neste recorte. O ranking considera apenas previsões já resolvidas.</p>
         <a class="btn primary" href="{% url 'home' %}">Ver mercados</a>
       {% endif %}
     </div>
-    <div class="side-card"><h3>Como subir</h3><p>Acertos em mercados difíceis e previsões antecipadas pesam mais.</p></div>
+    <div class="side-card"><h3>Como subir</h3><p>Acertos em perguntas difíceis e leituras antecipadas pesam mais.</p></div>
   </aside>
 </main>
 {% endblock %}

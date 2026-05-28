@@ -13,135 +13,26 @@
       </div>
     </div>
   {% endif %}
-  <section class="hero">
-    <div class="hero-grid">
-      <div class="hero-card">
-        <span class="eyebrow">Inteligência coletiva sem dinheiro real</span>
-        <h1>Veja o consenso antes de formar sua previsão.</h1>
-        <p class="lead">A Orynth Trends transforma opinião em histórico público: escolha um mercado, comprometa Orynth Coins educativas e acompanhe reputação, consenso e resolução auditável.</p>
-        <div class="hero-actions">
-          <a class="btn primary" href="#mercados">Explorar mercados</a>
-          <a class="btn" href="{% url 'concepts' %}">Como funciona</a>
-          <a class="btn ghost" href="{% url 'security' %}">Segurança</a>
-        </div>
-        <div class="metrics">
-          <div class="metric"><strong>{{ stats.open_markets }}</strong><span>mercados abertos</span></div>
-          <div class="metric"><strong>{{ stats.total_predictions }}</strong><span>previsões totais</span></div>
-          <div class="metric"><strong>{{ stats.distributed_oc }} O₵</strong><span>distribuídas</span></div>
-          <div class="metric"><strong>{{ stats.moved_oc }} O₵</strong><span>movimentadas em previsões</span></div>
-        </div>
-      </div>
-      <aside class="watch-card">
-        <span class="eyebrow">Ao vivo</span>
-        {% if featured_markets %}
-          <h2>Destaques escolhidos pela curadoria.</h2>
-        {% else %}
-          <h2>Mercados ativos puxam o feed hoje.</h2>
-        {% endif %}
-        <p>Probabilidades refletem o consenso atual da comunidade, não garantia de resultado.</p>
-        <div class="book">
-          {% for market in featured_markets %}
-            <div class="book-row"><span>{{ market.title }}</span><strong>{{ market.primary_probability }}% {% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong></div>
-            <div class="bar {% if market.primary_outcome == 'NAO' %}no{% endif %}"><span style="width:{{ market.primary_probability_exact }}%"></span></div>
-          {% endfor %}
-        </div>
-        {% if featured_market %}
-          <a class="btn success" href="{% url 'market-detail' featured_market.slug %}">{% if featured_market.status == "open" %}Fazer previsão agora{% else %}Ver mercado{% endif %}</a>
-        {% else %}
-          <a class="btn success" href="{% url 'suggestion' %}">Sugerir primeiro mercado</a>
-        {% endif %}
-      </aside>
-    </div>
-  </section>
-
   <div class="page-grid home-grid" id="mercados">
-    <aside class="side-stack home-insight-strip">
-      {% if is_guest %}
-        <div class="side-card">
-          <span class="eyebrow">Modo visitante</span>
-          <h3>Explore antes de entrar</h3>
-          <p>Você pode ver mercados, consenso, critérios, ranking público e cards de compartilhamento. Para prever, comentar ou ver carteira, entre na conta.</p>
-          <a class="btn primary" href="{% url 'login' %}">Entrar para prever</a>
-        </div>
-      {% else %}
-        <div class="balance">
-          <span>Carteira educativa</span>
-          <strong>{{ viewer.balance_oc }} O₵</strong>
-          <p>{{ viewer.locked_oc }} O₵ bloqueados em previsões abertas. O₵ não é dinheiro real.</p>
-          <a class="btn" href="{% url 'wallet' %}">Ver extrato</a>
-        </div>
-      {% endif %}
-      {% if user_summary %}
-        <div class="side-card summary-card" aria-label="Seu resumo: Reputação {{ user_summary.reputation.reputation_score }}">
-          <div class="summary-head">
-            <div>
-              <span class="eyebrow">Seu resumo</span>
-              <h3>{{ user_summary.reputation.reputation_score }} reputação</h3>
-            </div>
-            <a class="btn small ghost" href="{% url 'profile' %}">Perfil</a>
-          </div>
-          <div class="summary-stats">
-            <span><strong>{{ user_summary.reputation.accuracy_indicator }}</strong><small>acerto</small></span>
-            <span><strong>{{ user_summary.reputation.streak }}</strong><small>sequência</small></span>
-            <span><strong>{% if user_summary.reputation.ranking_position %}#{{ user_summary.reputation.ranking_position }}{% else %}-{% endif %}</strong><small>ranking</small></span>
-          </div>
-          <div class="summary-badges" aria-label="Badges recentes">
-            {% for badge in user_badges|slice:":5" %}
-              <a class="summary-badge{% if badge.status != 'earned' %} locked{% endif %}" href="{% url 'profile' %}" title="{{ badge.name }}" aria-label="{{ badge.name }}: {% if badge.status == 'earned' %}Conquistada{% else %}Bloqueada{% endif %}">
-                {% if badge.image_url %}
-                  <img class="badge-image small badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="{{ badge.name }}">
-                  {% if badge.image_dark_url %}<img class="badge-image small badge-image-dark" src="{{ badge.image_dark_url }}" alt="{{ badge.name }}">{% endif %}
-                {% else %}<span class="badge-icon">{% if badge.status == 'earned' %}✓{% else %}–{% endif %}</span>{% endif %}
-              </a>
-            {% empty %}
-              <a class="summary-badge locked empty" href="{% url 'profile' %}" title="Sem badges">
-                <span class="badge-icon">–</span>
-              </a>
-            {% endfor %}
-          </div>
-          <div class="summary-foot">
-            <span>{% if user_badges %}Badges recentes{% else %}Sem badges por enquanto{% endif %}</span>
-            <a href="{% url 'badges' %}">Ver catálogo</a>
-          </div>
-        </div>
-      {% endif %}
-      <div class="side-card onboarding">
-        <h3>Como prever em 40 segundos</h3>
-        <div class="step"><b>1</b><span>Escolha uma opção do mercado.</span></div>
-        <div class="step"><b>2</b><span>Defina quantas O₵ educativas comprometer.</span></div>
-        <div class="step"><b>3</b><span>Aguarde fechamento e resolução auditável.</span></div>
-        <div class="step"><b>4</b><span>Ganhe crédito de acerto e reputação se acertar.</span></div>
-      </div>
-    </aside>
-    <section>
+    <section class="home-market-board">
       <div class="section-head">
         <div>
-          <h2>Mercados em destaque</h2>
-          <p>Ordene rapidamente por tendência, fechamento, volume, novidades e destaques da curadoria.</p>
+          <h1>Mercados em destaque</h1>
+          <p>Explore perguntas abertas, acompanhe o consenso e registre sua leitura quando estiver pronto.</p>
+          <p class="trust-line">Previsões educativas, sem dinheiro real e com resolução auditável.</p>
         </div>
       </div>
       <div class="filters" data-filter-group data-filter-target="[data-market-list]">
-        <button class="filter active" type="button" data-filter="trending">Trending</button>
-        <button class="filter" type="button" data-filter="new">Novos</button>
-        <button class="filter" type="button" data-filter="open">Aberto</button>
-        <button class="filter" type="button" data-filter="closing">Encerrado</button>
-        <button class="filter" type="button" data-filter="resolved">Resolvidos</button>
-        <button class="filter" type="button" data-filter="volume">Mais volume</button>
-        {% if not is_guest %}<button class="filter" type="button" data-filter="favorited">Favoritos</button>{% endif %}
-        <button class="filter" type="button" data-filter="likes">Mais curtidas</button>
-        {% if not is_guest %}<button class="filter personal-filter" type="button" data-filter="predicted">Minhas previsões</button>{% endif %}
+        <button class="filter active" type="button" data-filter="trending" aria-pressed="true">Em alta</button>
+        <button class="filter" type="button" data-filter="new" aria-pressed="false">Novos</button>
+        <button class="filter" type="button" data-filter="open" aria-pressed="false">Abertos</button>
+        <button class="filter" type="button" data-filter="closing" aria-pressed="false">Em apuração</button>
+        <button class="filter" type="button" data-filter="resolved" aria-pressed="false">Resolvidos</button>
+        <button class="filter" type="button" data-filter="volume" aria-pressed="false">Mais volume</button>
+        {% if not is_guest %}<button class="filter" type="button" data-filter="favorited" aria-pressed="false">Favoritos</button>{% endif %}
+        <button class="filter" type="button" data-filter="likes" aria-pressed="false">Mais curtidas</button>
+        {% if not is_guest %}<button class="filter personal-filter" type="button" data-filter="predicted" aria-pressed="false">Minhas previsões</button>{% endif %}
       </div>
-      {% if user_summary %}
-        <section class="progress-strip">
-          <div>
-            <span class="eyebrow">Sua progressão</span>
-            <h3>Reputação inicial ativa. As próximas previsões vão alimentar sua evolução.</h3>
-            <p>{% if user_summary.reputation.ranking_position %}#{{ user_summary.reputation.ranking_position }} no ranking{% else %}sem posição pública{% endif %} · sequência {{ user_summary.reputation.streak }} · reputação {{ user_summary.reputation.reputation_score }}.</p>
-          </div>
-          <div class="progress-track"><span style="width:24%"></span></div>
-          <a class="btn small ghost" href="{% url 'profile' %}">Ver progresso</a>
-        </section>
-      {% endif %}
       <div class="market-list" data-market-list data-market-page-size="18">
         {% for market in markets %}
           {% if forloop.counter > 18 %}
@@ -153,7 +44,7 @@
       </div>
       <p class="market-empty" data-market-empty hidden>Nenhum mercado com previsão sua ainda.</p>
       <div class="market-load-more" data-market-load-more {% if markets|length <= 18 %}hidden{% endif %}>
-        <span data-market-load-more-summary>Exibindo 18 de {{ markets|length }} mercados</span>
+        <span data-market-load-more-summary aria-live="polite">Exibindo 18 de {{ markets|length }} mercados</span>
         <button class="market-load-more-button" type="button" data-market-load-more-button>Carregar mais</button>
       </div>
     </section>

@@ -8,7 +8,7 @@
     <div class="share-badge-card share-card-preview">
       <div class="share-badge-art">
         {% if market.image_url %}
-          <img class="badge-image" src="{{ market.image_url }}" alt="">
+          <img class="badge-image" src="{{ market.image_url }}" alt="{{ market.title }}" loading="lazy" decoding="async">
         {% else %}
           <span class="badge-icon">{{ market.thumb|default:"OR" }}</span>
         {% endif %}
@@ -16,7 +16,7 @@
       <div>
         <div class="share-brand-block">
           <p class="share-brand">Orynth Trends · Resultado</p>
-          <p class="share-context">Previsões educativas com reputação pública e resolução auditável.</p>
+          <p class="share-context">Consenso público, reputação e resolução auditável.</p>
         </div>
         {% if share_viewer.is_authenticated %}
           <h1 class="large-title">{{ market.title }}</h1>

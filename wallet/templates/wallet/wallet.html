@@ -4,11 +4,11 @@
 <main class="shell page-grid">
   <section class="panel">
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Carteira educativa</span></div>
-    <h1 class="large-title">Orynth Coins não são dinheiro real.</h1>
+    <h1 class="large-title">Sua carteira educativa mostra participação, não dinheiro.</h1>
     <div class="metrics">
-      <div class="metric"><strong>{{ wallet.available_oc }} O₵</strong><span>saldo disponível</span></div>
-      <div class="metric"><strong>{{ wallet.locked_oc }} O₵</strong><span>saldo bloqueado</span></div>
-      <div class="metric"><strong>{{ wallet.total_earned_oc }} O₵</strong><span>ganhos por acerto</span></div>
+      <div class="metric"><strong>{{ wallet.available_oc }} O₵</strong><span>crédito disponível</span></div>
+      <div class="metric"><strong>{{ wallet.locked_oc }} O₵</strong><span>crédito reservado</span></div>
+      <div class="metric"><strong>{{ wallet.total_earned_oc }} O₵</strong><span>créditos por acerto</span></div>
       {% if not can_access_admin_ops %}<div class="metric"><strong>{{ reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação</span></div>{% endif %}
     </div>
     {% if messages %}{% for message in messages %}<div class="tag {% if message.tags == 'error' %}risk{% else %}safe{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
@@ -40,9 +40,9 @@
           <span class="recharge-label">Fila Admin Ops</span>
           <h3>Recarga controlada</h3>
         </div>
-        <div class="recharge-balance"><span>Saldo livre</span><strong>{{ wallet.available_oc }} O₵</strong></div>
+        <div class="recharge-balance"><span>Crédito livre</span><strong>{{ wallet.available_oc }} O₵</strong></div>
       </div>
-      <p class="recharge-copy">Crédito educativo sob revisão administrativa, disponível quando seu saldo livre estiver em até {{ recharge_min_balance }} O₵.</p>
+      <p class="recharge-copy">Crédito educativo sob revisão administrativa, disponível quando seu crédito livre estiver em até {{ recharge_min_balance }} O₵.</p>
       <div class="recharge-flow" aria-label="Fluxo da recarga educativa">
         <span><strong>1</strong> Solicitação</span>
         <span><strong>2</strong> Revisão</span>
@@ -56,7 +56,7 @@
         <button class="btn primary recharge-cta" type="button" disabled>Em análise</button>
       {% elif not recharge_eligible %}
         <div class="recharge-pending">
-          <div><span>Elegibilidade</span><strong>Saldo acima do limite</strong></div>
+          <div><span>Elegibilidade</span><strong>Crédito acima do limite</strong></div>
           <div><span>Limite atual</span><strong>{{ recharge_min_balance }} O₵</strong></div>
         </div>
         <button class="btn primary recharge-cta" type="button" disabled>Recarga indisponível</button>
@@ -79,7 +79,7 @@
         </div>
       {% endif %}
     </div>
-    <div class="side-card"><h3>Separando conceitos</h3><p>Saldo é uso disponível. Bloqueado está em previsões abertas. Ganhos vêm de acertos. Reputação mede histórico.</p></div>
+    <div class="side-card"><h3>Separando conceitos</h3><p>Crédito disponível pode ser usado em novos mercados. Crédito reservado está em previsões abertas. Créditos por acerto vêm de resoluções. Reputação mede histórico.</p></div>
   </aside>
 </main>
 <div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>

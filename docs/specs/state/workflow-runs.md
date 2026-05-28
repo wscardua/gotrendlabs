@@ -22,6 +22,30 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Reversão lógica: como cancelar ou substituir sem apagar histórico
 ```
 
+## WFLOW-20260528-PUBLIC-COPY-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-AUTH-001`, `FEAT-REP-001`, `FEAT-SUGGEST-001`
+- Objetivo: simplificar a home pública e alinhar a linguagem de produto para tom claro, social e confiável
+- Etapa atual: concluído
+- Artefatos afetados:
+  - `accounts/templates/accounts/`
+  - `core/templates/core/`
+  - `markets/templates/markets/detail.html`
+  - `templates/components/market_card.html`
+  - `static/css/orynth.css`
+  - `static/js/orynth.js`
+  - `docs/specs/`
+  - `PRODUCT.md`
+  - `DESIGN.md`
+- Bloqueios: nenhum
+- Iniciado em: 2026-05-28
+- Atualizado em: 2026-05-28
+- Encerrado em: 2026-05-28
+- Retomada: extrair strings públicas para `FEAT-I18N-001` quando a internacionalização for priorizada
+- Reversão lógica: reintroduzir blocos da home e labels anteriores por nova mudança de UI, preservando specs desta decisão como histórico
+
 ## WFLOW-20260524-RETENTION-001
 
 - Tipo: `change-feature`

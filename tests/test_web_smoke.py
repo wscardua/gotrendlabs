@@ -3942,7 +3942,7 @@ class WebSmokeTests(TransactionTestCase):
                 response = self.client.get(route)
                 self.assertEqual(response.status_code, 200)
                 if route == reverse("feedback"):
-                    self.assertContains(response, "Enviar feedback/Suporte")
+                    self.assertContains(response, "Ajude a deixar a Orynth Trends mais clara.")
                 if route == reverse("home"):
                     self.assertNotContains(response, category_notice)
                 if route == reverse("concepts"):
@@ -3957,16 +3957,16 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertNotContains(response, subcategory_notice)
                     self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
-                    self.assertContains(response, "Ticket de previsão")
+                    self.assertContains(response, "Sua previsão")
                     self.assertContains(response, "detail-title-block")
                     self.assertContains(response, "detail-title-row")
                     self.assertContains(response, "detail-market-thumb")
-                    self.assertContains(response, "Avisos da negociação")
+                    self.assertContains(response, "Avisos do mercado")
                     self.assertContains(response, category_notice)
                     self.assertContains(response, subcategory_notice)
                     self.assertContains(response, event_notice)
                     content = response.content.decode()
-                    self.assertLess(content.index("Critério de resolução"), content.index("Avisos da negociação"))
+                    self.assertLess(content.index("Critério de resolução"), content.index("Avisos do mercado"))
                     self.assertContains(response, "detail-market-actions")
                     self.assertContains(response, "detail-comment-count")
                     self.assertContains(response, "detail-like-button readonly")
@@ -4018,7 +4018,7 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertContains(response, "Saldo indisponível")
         self.assertContains(response, "Você não tem O₵ disponível para entrar neste mercado.")
-        self.assertContains(response, "Sem saldo disponível, o ticket fica somente para leitura.")
+        self.assertContains(response, "Sem saldo disponível, esta área fica somente para leitura.")
         self.assertNotContains(response, 'data-prediction-preview-url="')
 
     def test_django_system_log_uses_orynth_session_user(self):
@@ -4247,7 +4247,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Timezone: America/Sao_Paulo")
         self.assertNotContains(response, '<div class="resolution-meta"><span>18/05/2026 09:30 America/Sao_Paulo</span><span>America/Sao_Paulo</span></div>', html=True)
         self.assertContains(response, "Você acertou esta previsão.")
-        self.assertContains(response, "ganho líquido creditado")
+        self.assertContains(response, "acerto creditado")
 
     def test_market_detail_renders_comments_and_comment_actions_use_api(self):
         session = self.client.session
@@ -4323,7 +4323,7 @@ class WebSmokeTests(TransactionTestCase):
         api_market.pop("sparkline_series", None)
         api_market.pop("sparkline_path", None)
 
-        with patch("core.views.get_markets", return_value=[api_market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[api_market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, "sparkline-card")
@@ -4333,14 +4333,18 @@ class WebSmokeTests(TransactionTestCase):
     def test_market_card_renders_thumbnail_image_when_available(self):
         market = get_domain_client().market("openai-gpt6-2026")
         market["image_url"] = "/media/market_thumbnails/test-thumb.jpg"
-        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
-        self.assertContains(response, '<img src="/media/market_thumbnails/test-thumb.jpg" alt="">', html=True)
+        self.assertContains(
+            response,
+            '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async">',
+            html=True,
+        )
 
     def test_market_card_title_links_to_market_detail(self):
         market = get_domain_client().market("openai-gpt6-2026")
-        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
         expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
@@ -4349,7 +4353,7 @@ class WebSmokeTests(TransactionTestCase):
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
         market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}
 
-        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[market]):
             guest_response = self.client.get(reverse("home"))
         self.assertNotContains(guest_response, 'data-filter="predicted"')
         self.assertNotContains(guest_response, 'data-filter="favorited"')
@@ -4381,7 +4385,6 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
         with (
             patch("core.views.get_markets", return_value=[market]) as get_markets,
-            patch("core.views.get_rankings", side_effect=AuthAPIError("off")),
             patch("core.views.get_me", side_effect=AuthAPIError("off")),
             patch("core.views.get_badges", side_effect=AuthAPIError("off")),
         ):
@@ -4429,7 +4432,7 @@ class WebSmokeTests(TransactionTestCase):
         )
         market = {**get_domain_client().market("openai-gpt6-2026"), "comment_count": 3}
 
-        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[market]):
             guest_response = self.client.get(reverse("home"))
         self.assertContains(guest_response, 'data-market-comments="3"')
         self.assertContains(guest_response, "market-comment-count")
@@ -4452,7 +4455,6 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
         with (
             patch("core.views.get_markets", return_value=[market]),
-            patch("core.views.get_rankings", side_effect=AuthAPIError("off")),
             patch("core.views.get_me", side_effect=AuthAPIError("off")),
             patch("core.views.get_badges", side_effect=AuthAPIError("off")),
             patch("core.context_processors.get_notifications", side_effect=AuthAPIError("off")),
@@ -4505,7 +4507,6 @@ class WebSmokeTests(TransactionTestCase):
 
         with (
             patch("core.views.get_markets", return_value=[api_market]),
-            patch("core.views.get_rankings", side_effect=AuthAPIError("off")),
             patch("core.views.get_me", side_effect=AuthAPIError("off")),
             patch("core.views.get_badges", side_effect=AuthAPIError("off")),
         ):
@@ -4580,7 +4581,7 @@ class WebSmokeTests(TransactionTestCase):
             for index in range(1, 20)
         ]
 
-        with patch("core.views.get_markets", return_value=markets), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=markets):
             response = self.client.get(reverse("home"))
 
         html = response.content.decode()
@@ -4682,7 +4683,7 @@ class WebSmokeTests(TransactionTestCase):
             "thumb_color": "",
             "image_url": "",
         }
-        with patch("core.views.get_markets", return_value=[market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, 'style="--thumb:#d8ece2"')
@@ -4696,7 +4697,7 @@ class WebSmokeTests(TransactionTestCase):
             "status_label": "Cancelado",
         }
 
-        with patch("core.views.get_markets", return_value=[open_market, canceled_market]), patch("core.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("core.views.get_markets", return_value=[open_market, canceled_market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, open_market["title"])
@@ -4782,7 +4783,7 @@ class WebSmokeTests(TransactionTestCase):
         with patch("core.views.get_badges", return_value=earned_badges) as badges_mock:
             response = self.client.get(reverse("share-badge", args=["founding_member"]))
             self.assertContains(response, "Badge Viewer conquistou Membro fundador")
-            self.assertContains(response, "Rede social de previsões educativas com reputação pública e resolução auditável")
+            self.assertContains(response, "Conquistas públicas em previsões com resolução auditável")
             self.assertNotContains(response, "Compartilhar em")
             self.assertNotContains(response, "Compartilhar conquista")
             self.assertContains(response, 'aria-label="Copiar link"')
@@ -4856,8 +4857,8 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
             self.assertContains(response, "Orynth Trends")
             self.assertContains(response, "testserver/share/market/openai-gpt6-2026")
-            self.assertContains(response, "Rede social de previsões educativas com reputação pública e resolução auditável")
-            self.assertContains(response, "Dispute previsões, construa reputação e ganhe destaque.")
+            self.assertContains(response, "Consenso público, reputação e resolução auditável")
+            self.assertContains(response, "Registre previsões, compare com a comunidade e construa reputação.")
             self.assertContains(response, "Opções do mercado")
             self.assertContains(response, "SIM")
             self.assertContains(response, 'class="share-cta"')
@@ -4900,7 +4901,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertLess(response.content.decode().index("Resultado vindo da API"), response.content.decode().index("<span>Resultado</span>"))
             self.assertContains(response, "testserver/share/result/resolved-api")
             self.assertNotContains(response, "Resultado publicado no Orynth Trends.")
-            self.assertContains(response, "Rede social de previsões educativas com reputação pública e resolução auditável")
+            self.assertContains(response, "Consenso público, reputação e resolução auditável")
             self.assertNotContains(response, "Will Costa")
             self.assertNotContains(response, "compartilhou um resultado.")
             self.assertNotContains(response, "Reputação atual")
@@ -5422,7 +5423,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Manutenção de teste.")
             self.assertContains(response, "Orynth Trends está ficando mais estável.")
             self.assertContains(response, "Entrar como operador")
-            self.assertContains(response, "Previsões com reputação pública")
+            self.assertContains(response, "Leituras com reputação pública")
             response = self.client.get(reverse("login"))
             self.assertEqual(response.status_code, 200)
             response = self.client.get(reverse("admin-ops-config"))
@@ -5482,7 +5483,7 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
         response = self.client.get(reverse("home"))
         self.assertNotContains(response, reverse("admin-ops-dashboard"))
-        self.assertContains(response, "Carteira e extrato")
+        self.assertContains(response, "Carteira educativa")
 
         session = self.client.session
         session[TOKEN_KEY] = "staff-token"
@@ -7056,7 +7057,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "off")
             self.assertNotContains(response, "@localtheme")
-            self.assertContains(response, "Ainda não há previsões resolvidas para este recorte.")
+            self.assertContains(response, "Ainda não há leituras resolvidas para este recorte.")
 
     def test_ranking_page_uses_api_payload_as_authoritative(self):
         payload = {
@@ -7359,10 +7360,14 @@ class WebSmokeTests(TransactionTestCase):
             delete_mock.assert_called_once_with("api-token")
             self.assertNotIn(TOKEN_KEY, self.client.session)
 
-    def test_home_hides_user_summary_for_guest_and_renders_api_summary_for_user(self):
+    def test_home_stays_market_focused_for_guest_and_user(self):
         response = self.client.get(reverse("home"))
+        self.assertContains(response, "Mercados em destaque")
         self.assertNotContains(response, "Seu resumo")
         self.assertNotContains(response, "Sua progressão")
+        self.assertNotContains(response, "Modo visitante")
+        self.assertNotContains(response, "Como participar em 40 segundos")
+        self.assertNotContains(response, "Inteligência coletiva")
 
         session = self.client.session
         session[TOKEN_KEY] = "api-token"
@@ -7374,65 +7379,13 @@ class WebSmokeTests(TransactionTestCase):
             "preferred_language": "pt-br",
         }
         session.save()
-        summary_payload = {
-            "user": session[USER_KEY],
-            "bio": "",
-            "strong_category": "Geral",
-            "is_public": True,
-            "reputation": {
-                "reputation_score": 100,
-                "ranking_position": 1,
-                "resolved_predictions_count": 0,
-                "accuracy_indicator": "0%",
-                "streak": 0,
-                "strong_category": "",
-                "last_updated_at": "2026-05-17T00:00:00+00:00",
-            },
-        }
-        with patch("core.views.get_me", return_value=summary_payload), patch(
-            "core.views.get_badges",
-            return_value=[
-                {
-                    "code": "founding_member",
-                    "name": "Membro fundador",
-                    "description": "Entrou no Orynth Trends durante a fase inicial.",
-                    "status": "earned",
-                    "earned_at": "2026-05-17T00:00:00+00:00",
-                }
-            ],
-        ):
-            response = self.client.get(reverse("home"))
-            self.assertContains(response, "Seu resumo")
-            self.assertContains(response, "@homeviewer")
-            self.assertContains(response, "Reputação 100")
-            self.assertContains(response, "Membro fundador")
-            self.assertContains(response, "Conquistada")
-
-        with patch("core.views.get_me", return_value=summary_payload), patch(
-            "core.views.get_badges",
-            side_effect=AuthAPIError("badges indisponíveis"),
-        ):
-            response = self.client.get(reverse("home"))
-            self.assertContains(response, "Seu resumo")
-            self.assertContains(response, "Sem badges")
-
-        session = self.client.session
-        session[USER_KEY] = {**session[USER_KEY], "is_staff": True}
-        session.save()
-        staff_summary_payload = {
-            **summary_payload,
-            "reputation": {
-                **summary_payload["reputation"],
-                "reputation_score": 0,
-                "ranking_position": 0,
-                "streak": 0,
-            },
-        }
-        with patch("core.views.get_me", return_value=staff_summary_payload) as me_mock, patch("core.views.get_badges", return_value=[]):
-            response = self.client.get(reverse("home"))
-            self.assertContains(response, "Sua progressão")
-            self.assertContains(response, "sem posição pública")
-            me_mock.assert_called_once_with("api-token")
+        response = self.client.get(reverse("home"))
+        self.assertContains(response, "Mercados em destaque")
+        self.assertContains(response, 'data-filter="favorited"')
+        self.assertContains(response, 'data-filter="predicted"')
+        self.assertNotContains(response, "Seu resumo")
+        self.assertNotContains(response, "Sua progressão")
+        self.assertNotContains(response, "Membro fundador")
 
     def test_home_stats_show_real_total_predictions(self):
         User = get_user_model()
@@ -7472,10 +7425,11 @@ class WebSmokeTests(TransactionTestCase):
 
         response = self.client.get(reverse("home"))
 
-        self.assertContains(response, "previsões totais")
-        self.assertContains(response, f"<strong>{total_predictions}</strong><span>previsões totais</span>", html=True)
-        self.assertContains(response, f"<strong>{distributed_label} O₵</strong><span>distribuídas</span>", html=True)
-        self.assertContains(response, f"<strong>{moved_label} O₵</strong><span>movimentadas em previsões</span>", html=True)
+        self.assertContains(response, "Mercados em destaque")
+        self.assertNotContains(response, "previsões totais")
+        self.assertNotContains(response, f"<strong>{total_predictions}</strong><span>previsões totais</span>", html=True)
+        self.assertNotContains(response, f"<strong>{distributed_label} O₵</strong><span>creditadas na comunidade</span>", html=True)
+        self.assertNotContains(response, f"<strong>{moved_label} O₵</strong><span>reservadas em previsões</span>", html=True)
         self.assertNotContains(response, "previsões no mês")
         self.assertNotContains(response, "<span>sem dinheiro real</span>", html=True)
 
@@ -7495,63 +7449,17 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Mercado vindo da API")
             self.assertContains(response, "Feedback/suporte")
 
-        featured_market = {**api_market, "slug": "featured-api", "title": "Mercado destacado pela curadoria", "is_featured": True, "view_count": 4, "created_at": "2026-05-16T12:00:00+00:00"}
-        second_featured_market = {**api_market, "slug": "featured-api-2", "title": "Segundo mercado destacado", "is_featured": True, "view_count": 5, "created_at": "2026-05-17T12:00:00+00:00"}
-        regular_market = {
-            **api_market,
-            "slug": "regular-api",
-            "title": "Mercado comum mais visitado",
-            "is_featured": False,
-            "market_like_count": 100,
-            "view_count": 20,
-            "created_at": "2026-05-18T12:00:00+00:00",
-        }
-        second_viewed_market = {
-            **api_market,
-            "slug": "second-viewed-api",
-            "title": "Segundo mercado mais visitado",
-            "is_featured": False,
-            "view_count": 12,
-            "created_at": "2026-05-18T13:00:00+00:00",
-        }
-        with patch("core.views.get_markets", return_value=[regular_market, featured_market, second_featured_market, second_viewed_market]):
-            response = self.client.get(reverse("home"))
-            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertIn("Mercado comum mais visitado", watch_card)
-            self.assertIn("Segundo mercado mais visitado", watch_card)
-            self.assertNotIn("Mercado destacado pela curadoria", watch_card)
-            self.assertNotIn("Segundo mercado destacado", watch_card)
-            self.assertNotContains(response, "IA, política e cultura puxam o feed hoje.")
-
-        one_featured_market = {**api_market, "slug": "one-featured-api", "title": "Unico destaque manual", "is_featured": True, "view_count": 7, "created_at": "2026-05-15T12:00:00+00:00"}
-        fallback_market = {**api_market, "slug": "fallback-api", "title": "Segundo destaque por visualizações", "is_featured": False, "view_count": 8, "created_at": "2026-05-16T12:00:00+00:00"}
-        lower_fallback_market = {**api_market, "slug": "lower-fallback-api", "title": "Nao deve completar destaque", "is_featured": False, "view_count": 2, "created_at": "2026-05-18T12:00:00+00:00"}
-        with patch("core.views.get_markets", return_value=[lower_fallback_market, fallback_market, one_featured_market]):
-            response = self.client.get(reverse("home"))
-            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertIn("Segundo destaque por visualizações", watch_card)
-            self.assertIn("Unico destaque manual", watch_card)
-            self.assertNotIn("Nao deve completar destaque", watch_card)
-
-        tied_older_market = {**api_market, "slug": "tied-older-api", "title": "Empate antigo", "is_featured": False, "view_count": 9, "created_at": "2026-05-16T12:00:00+00:00"}
-        tied_newer_market = {**api_market, "slug": "tied-newer-api", "title": "Empate mais novo", "is_featured": False, "view_count": 9, "created_at": "2026-05-18T12:00:00+00:00"}
-        lower_like_market = {**api_market, "slug": "lower-like-api", "title": "Menos visitado", "is_featured": False, "view_count": 3, "created_at": "2026-05-19T12:00:00+00:00"}
-        with patch("core.views.get_markets", return_value=[tied_older_market, lower_like_market, tied_newer_market]):
-            response = self.client.get(reverse("home"))
-            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertLess(watch_card.index("Empate mais novo"), watch_card.index("Empate antigo"))
-            self.assertNotIn("Menos visitado", watch_card)
-
         liked_market = {**api_market, "slug": "liked-api", "title": "Mercado com mais curtidas", "is_featured": False, "market_like_count": 9, "view_count": 9, "created_at": "2026-05-17T12:00:00+00:00"}
         low_like_market = {**api_market, "slug": "low-like-api", "title": "Mercado com poucas curtidas", "is_featured": False, "market_like_count": 1, "view_count": 1, "created_at": "2026-05-18T12:00:00+00:00"}
         resolved_liked_market = {**api_market, "slug": "resolved-liked-api", "title": "Resolvido com curtidas", "status": "resolved", "is_featured": False, "market_like_count": 99, "view_count": 99, "created_at": "2026-05-19T12:00:00+00:00"}
         canceled_liked_market = {**api_market, "slug": "canceled-liked-api", "title": "Cancelado com curtidas", "status": "canceled", "is_featured": False, "market_like_count": 100, "view_count": 100, "created_at": "2026-05-20T12:00:00+00:00"}
         with patch("core.views.get_markets", return_value=[low_like_market, resolved_liked_market, canceled_liked_market, liked_market]):
             response = self.client.get(reverse("home"))
-            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertIn("Resolvido com curtidas", watch_card)
-            self.assertNotIn("Cancelado com curtidas", watch_card)
-            self.assertContains(response, "Ver mercado")
+            self.assertNotContains(response, '<aside class="watch-card">')
+            self.assertNotContains(response, "Inteligência coletiva")
+            self.assertNotContains(response, "Modo visitante")
+            self.assertNotContains(response, "Como participar em 40 segundos")
+            self.assertContains(response, "Ver resolução")
             self.assertContains(response, 'data-filter-target="[data-market-list]"')
             filter_html = response.content.decode().split('<div class="filters" data-filter-group data-filter-target="[data-market-list]">', 1)[1].split("</div>", 1)[0]
             expected_filter_order = [
@@ -7566,7 +7474,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual([filter_html.index(item) for item in expected_filter_order], sorted(filter_html.index(item) for item in expected_filter_order))
             self.assertNotIn('data-filter="featured"', filter_html)
             self.assertNotIn('data-filter="favorited"', filter_html)
-            self.assertIn("Encerrado", filter_html)
+            self.assertIn("Em alta", filter_html)
+            self.assertIn("Em apuração", filter_html)
             self.assertContains(response, "data-market-card")
             self.assertContains(response, 'data-market-likes="9"')
             self.assertContains(response, 'data-market-views="9"')
@@ -7588,12 +7497,6 @@ class WebSmokeTests(TransactionTestCase):
                 1,
             )[1]
             self.assertNotIn("Cancelado com curtidas", market_list)
-
-        with patch("core.views.get_markets", return_value=[liked_market]), patch("core.views.local_markets", return_value=[]):
-            response = self.client.get(reverse("home"))
-            watch_card = response.content.decode().split('<aside class="watch-card">', 1)[1].split("</aside>", 1)[0]
-            self.assertIn("Mercado com mais curtidas", watch_card)
-            self.assertEqual(watch_card.count('class="book-row"'), 1)
 
         with patch("markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))

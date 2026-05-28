@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -13,11 +11,11 @@ from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, get_rankings, mark_notifications_read, track_market_share
+from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, mark_notifications_read, track_market_share
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, is_authenticated
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
-from core.domain_client import get_domain_client, local_market, local_markets, local_stats
+from core.domain_client import get_domain_client, local_market, local_markets
 from core.platform_config import load_platform_config
 from core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
 from markets.models import Market, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
@@ -266,33 +264,6 @@ def _image_response(image):
     return HttpResponse(png_response_bytes(image), content_type="image/png")
 
 
-def _featured_eligible(markets):
-    return [market for market in markets if market.get("status") not in {"draft", "canceled"}]
-
-
-def _market_created_at_score(market):
-    value = market.get("created_at") or ""
-    if not value:
-        return 0
-    try:
-        return datetime.fromisoformat(str(value).replace("Z", "+00:00")).timestamp()
-    except ValueError:
-        return 0
-
-
-def _market_featured_key(market):
-    return (int(market.get("view_count") or 0), _market_created_at_score(market))
-
-
-def _select_featured_markets(markets, limit=2):
-    eligible_markets = _featured_eligible(markets)
-    return sorted(
-        eligible_markets,
-        key=_market_featured_key,
-        reverse=True,
-    )[:limit]
-
-
 def home(request):
     try:
         raw_markets = get_markets(token=auth_token(request) if is_authenticated(request) else None)
@@ -302,39 +273,11 @@ def home(request):
     markets = _mark_viewer_prediction_flags(markets, (auth_user(request) or {}).get("id") if is_authenticated(request) else None)
     markets = _mark_viewer_favorite_flags(markets, (auth_user(request) or {}).get("id") if is_authenticated(request) else None)
     markets = _mark_viewer_like_flags(markets, (auth_user(request) or {}).get("id") if is_authenticated(request) else None)
-    featured_candidates_by_slug = {market.get("slug"): market for market in _hydrate_market_visuals(_public_visible_markets(raw_markets)) if market.get("slug")}
-    for market in _hydrate_market_visuals(local_markets()):
-        slug = market.get("slug")
-        if slug:
-            featured_candidates_by_slug[slug] = {**market, **featured_candidates_by_slug.get(slug, {})}
-    featured_markets = _select_featured_markets(list(featured_candidates_by_slug.values()))
-    featured_market = featured_markets[0] if featured_markets else None
-    try:
-        ranking = get_rankings()["rows"][:3]
-    except AuthAPIError:
-        ranking = []
-    user_summary = None
-    user_badges = []
-    if is_authenticated(request):
-        try:
-            user_summary = get_me(auth_token(request))
-        except AuthAPIError:
-            user_summary = None
-        try:
-            user_badges = get_badges(auth_token(request))
-        except AuthAPIError:
-            user_badges = []
     return render(
         request,
         "core/home.html",
         {
             "markets": markets,
-            "featured_market": featured_market,
-            "featured_markets": featured_markets,
-            "stats": local_stats(),
-            "ranking": ranking,
-            "user_summary": user_summary,
-            "user_badges": user_badges,
         },
     )
 
@@ -371,7 +314,10 @@ def badges(request):
     try:
         badge_list = get_badge_catalog(auth_token(request) if is_authenticated(request) else None)
     except AuthAPIError:
-        badge_list = []
+        try:
+            badge_list = get_badge_catalog()
+        except AuthAPIError:
+            badge_list = []
     return render(request, "core/badges.html", {"badges": badge_list})
 
 

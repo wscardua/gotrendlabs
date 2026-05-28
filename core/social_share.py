@@ -17,8 +17,8 @@ INK = (15, 20, 24)
 MUTED = (84, 95, 95)
 GREEN = (19, 111, 74)
 LINE = (205, 225, 211)
-ORYNTH_CONTEXT = "Rede social de previsões educativas com reputação pública e resolução auditável."
-MARKET_CTA = "Dispute previsões, construa reputação e ganhe destaque."
+ORYNTH_CONTEXT = "Rede social de previsões educativas com consenso público, reputação e resolução auditável."
+MARKET_CTA = "Registre previsões, compare com a comunidade e construa reputação."
 
 
 def currency_label(value):
@@ -58,7 +58,7 @@ def market_share_context(request, market):
     volume_label = currency_label(market.get("volume_oc", 0))
     description = (
         f"Consenso atual: {market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · "
-        f"{volume_label} previstos. {MARKET_CTA} {ORYNTH_CONTEXT}"
+        f"{volume_label} reservados pela comunidade. {MARKET_CTA} {ORYNTH_CONTEXT}"
     )
     text = f"No Orynth Trends: {title}. {MARKET_CTA}"
     return build_share_context(
@@ -121,7 +121,7 @@ def render_market_card(market, share):
     return _render_card(
         eyebrow=f"Orynth Trends · {market.get('category', 'Mercado')} · {market.get('event') or market.get('subcategory', 'Evento')}",
         title=str(market.get("title", "Mercado Orynth Trends")),
-        lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {currency_label(market.get('volume_oc', 0))} previstos",
+        lead=f"{market.get('primary_probability', 0)}% {market.get('primary_outcome', '')} · {currency_label(market.get('volume_oc', 0))} reservados",
         body=option_summary or f"{MARKET_CTA} Fonte: {market.get('source', 'verificavel')}",
         url=share["display_url"],
         image_url=market.get("image_url"),

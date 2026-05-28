@@ -1,6 +1,6 @@
 from django.shortcuts import redirect, render
 
-from accounts.api_client import AuthAPIError, get_activity, get_badges, get_me, get_rankings, request_account_deletion, update_me
+from accounts.api_client import AuthAPIError, get_activity, get_badge_catalog, get_badges, get_me, get_rankings, request_account_deletion, update_me
 from accounts.forms import ProfileForm
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, clear_auth_session, is_authenticated, store_auth_session
@@ -80,11 +80,18 @@ def profile(request):
 
     try:
         profile_data = get_me(token)
-        badges = get_badges(token)
-        activity = get_activity(token)
     except AuthAPIError:
         profile_data = None
-        badges = []
+    try:
+        badges = get_badges(token)
+    except AuthAPIError:
+        try:
+            badges = get_badge_catalog()
+        except AuthAPIError:
+            badges = []
+    try:
+        activity = get_activity(token)
+    except AuthAPIError:
         activity = []
     if profile_data and form is None:
         form = ProfileForm(initial=_profile_form_initial(profile_data))
