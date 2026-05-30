@@ -6,8 +6,8 @@
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Confiança e segurança</span></div>
     <div class="doc-hero-grid">
       <div>
-        <h1>Segurança como parte visível da experiência.</h1>
-        <p class="lead">Orynth Trends precisa ser envolvente sem perder rigor: sem dinheiro real, com sessão protegida, moderação, fontes verificáveis e trilhas administrativas para decisões sensíveis.</p>
+        <h1>Confiança para prever com tranquilidade.</h1>
+        <p class="lead">Na Orynth Trends, você acompanha mercados, registra previsões e vê resultados com regras claras: sem dinheiro real, com fontes verificáveis, sessão protegida e histórico auditável.</p>
         <div class="hero-actions">
           <a class="btn primary" href="{% url 'concepts' %}">Entender conceitos</a>
           <a class="btn ghost" href="{% url 'feedback' %}">Enviar feedback</a>
@@ -44,7 +44,7 @@
       <article class="doc-section" id="contas">
         <div class="section-kicker"><span class="eyebrow">Conta</span><span class="tag safe">Autenticação</span></div>
         <h2>Acesso autenticado protege ações de valor.</h2>
-        <p>Visitantes podem ler mercados, comentários, conceitos e rankings públicos. Prever, comentar, reagir, acessar a carteira educativa, compartilhar conquistas pessoais e editar perfil exigem sessão válida.</p>
+        <p>Visitantes podem ler mercados, comentários, conceitos e rankings públicos. Registrar previsão, comentar, reagir, acessar a carteira educativa, compartilhar conquistas pessoais e editar perfil exigem sessão válida.</p>
         <div class="doc-card-grid two">
           <div class="doc-card"><strong>Privacidade de perfil</strong><span>Email, data de nascimento, sexo e bio ficam no contexto privado/editável do usuário autenticado.</span></div>
           <div class="doc-card"><strong>Anti-abuso configurável</strong><span>Cadastro e fluxos públicos de sugestão/feedback podem exigir reCAPTCHA validado no servidor.</span></div>
@@ -54,40 +54,40 @@
       <article class="doc-section" id="mercados">
         <div class="section-kicker"><span class="eyebrow">Mercados</span><span class="tag">Integridade</span></div>
         <h2>Estados explícitos reduzem ambiguidade.</h2>
-        <p>O ciclo canônico passa por draft, scheduled, open, locked, resolved ou canceled. Apenas mercados abertos aceitam novas previsões; mercados em apuração aguardam resolução e mercados resolvidos ficam somente leitura.</p>
+        <p>Todo mercado passa por estados claros, do rascunho à resolução. Apenas mercados abertos aceitam novas previsões; mercados em apuração aguardam resultado e mercados resolvidos ficam somente leitura.</p>
         <div class="trust-timeline">
-          <span>draft</span>
-          <span>scheduled</span>
-          <span>open</span>
-          <span>locked</span>
-          <span>resolved</span>
+          <span>Rascunho</span>
+          <span>Programado</span>
+          <span>Aberto</span>
+          <span>Em apuração</span>
+          <span>Resolvido</span>
         </div>
       </article>
 
       <article class="doc-section" id="resolucao">
         <div class="section-kicker"><span class="eyebrow">Resolução</span><span class="tag risk">Alta sensibilidade</span></div>
         <h2>Resultado exige evidência e registro operacional.</h2>
-        <p>Resolução manual deve informar opção vencedora, fonte pública ou justificativa, data/hora efetiva e timezone controlado. O sistema aplica efeitos de carteira educativa e reputação na mesma trilha de domínio.</p>
+        <p>Uma resolução manual precisa registrar opção vencedora, fonte pública ou justificativa, data e horário do resultado. A partir daí, carteira educativa e histórico público seguem a mesma trilha auditável.</p>
         <div class="doc-ledger">
-          <div><span>market.lock</span><strong>fecha previsões</strong></div>
-          <div><span>resolution evidence</span><strong>fonte ou justificativa</strong></div>
-          <div><span>ledger effects</span><strong>crédito, perda ou devolução</strong></div>
-          <div><span>admin event</span><strong>operador e horário</strong></div>
+          <div><span>Previsões encerradas</span><strong>mercado entra em apuração</strong></div>
+          <div><span>Fonte ou justificativa</span><strong>base pública do resultado</strong></div>
+          <div><span>Carteira educativa</span><strong>crédito, perda ou devolução</strong></div>
+          <div><span>Registro administrativo</span><strong>operador e horário</strong></div>
         </div>
       </article>
 
       <article class="doc-section" id="comunidade">
         <div class="section-kicker"><span class="eyebrow">Comunidade</span><span class="tag hot">Moderação</span></div>
         <h2>Discussão pública precisa de controles simples e rastreáveis.</h2>
-        <p>Comentários ficam vinculados a mercado e autor identificado por handle. Reações são idempotentes por usuário/comentário, e ocultação/restauração administrativa deve preservar o registro original.</p>
-        <div class="notice">Denúncias, respostas/thread, edição pelo autor e paginação avançada ainda estão fora desta fatia do MVP.</div>
+        <p>Comentários ficam vinculados ao mercado e ao autor identificado. Reações contam uma vez por usuário, e qualquer ocultação ou restauração administrativa preserva o registro original.</p>
+        <div class="notice">Novos controles de conversa, denúncia e organização de comentários estão previstos para evoluir a camada social com mais segurança.</div>
       </article>
 
       <article class="doc-section" id="limites">
-        <div class="section-kicker"><span class="eyebrow">Transparência</span><span class="tag">Limites do MVP</span></div>
-        <h2>O que ainda não é promessa de segurança final.</h2>
-        <p>OAuth real para Google/Facebook, MFA, refresh/revogação avançada, política final de cookie seguro, gestão avançada de operadores e auditoria administrativa mais rica ainda estão no backlog documentado.</p>
-        <div class="notice green">Esses limites não mudam a regra central: mutações relevantes devem passar pela API, gerar efeitos auditáveis e retornar erros previsíveis para a UX.</div>
+        <div class="section-kicker"><span class="eyebrow">Transparência</span><span class="tag">Proteções em evolução</span></div>
+        <h2>O que ainda está sendo fortalecido.</h2>
+        <p>Login social, MFA, revogação avançada de sessões, política final de cookies seguros, gestão avançada de operadores e auditoria administrativa mais rica seguem como evolução documentada da plataforma.</p>
+        <div class="notice green">Mesmo enquanto essas proteções evoluem, as ações importantes continuam registradas, verificáveis e tratadas de forma consistente pela plataforma.</div>
       </article>
     </section>
 
@@ -103,9 +103,9 @@
       <section class="panel trust-scorecard">
         <span class="eyebrow">Público</span>
         <h3>O que o usuário consegue verificar</h3>
-        <div><span>Status</span><strong>open / locked / resolved</strong></div>
-        <div><span>Prazo</span><strong>close_at + timezone</strong></div>
-        <div><span>Resultado</span><strong>opção vencedora + fonte</strong></div>
+        <div><span>Status</span><strong>Aberto, em apuração ou resolvido</strong></div>
+        <div><span>Prazo</span><strong>data limite e fuso horário</strong></div>
+        <div><span>Resultado</span><strong>opção vencedora e fonte</strong></div>
         <div><span>Carteira</span><strong>extrato conciliável</strong></div>
       </section>
       <section class="panel">

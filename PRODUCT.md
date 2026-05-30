@@ -12,7 +12,7 @@ O uso principal acontece no feed de mercados, detalhe do mercado, ranking, badge
 
 ## Product Purpose
 
-Orynth Trends e uma rede social de previsoes educativas com moeda interna, reputacao publica e resolucao auditavel. O produto transforma leituras sobre o futuro em historico comparavel: o usuario escolhe mercados, registra previsoes, acompanha probabilidades agregadas, compara desempenho e volta para ver resultados.
+Orynth Trends e uma rede social para prever eventos com moeda interna, reputacao publica e resolucao auditavel. O produto transforma previsoes sobre o futuro em historico comparavel: o usuario escolhe mercados, registra posicoes, acompanha probabilidades agregadas, compara desempenho e volta para ver resultados.
 
 Sucesso significa que usuarios entendem o produto sem associar a jogo financeiro, encontram mercados relevantes rapidamente, confiam nos criterios de resolucao e voltam para acompanhar consenso, ranking, badges e reputacao.
 
@@ -20,7 +20,7 @@ Sucesso significa que usuarios entendem o produto sem associar a jogo financeiro
 
 Clara, social, confiavel.
 
-A voz deve ser direta, humana e segura. A interface deve tratar previsoes como leitura publica, aprendizado e reputacao, evitando linguagem de aposta, trading ou promessa de ganho. O tom pode ser confiante e levemente competitivo, mas nunca agressivo, sensacionalista ou financeiro.
+A voz deve ser direta, humana e segura. A interface deve tratar previsoes como posicao publica, aprendizado e reputacao, evitando linguagem de aposta, trading ou promessa de ganho. O tom pode ser confiante e levemente competitivo, mas nunca agressivo, sensacionalista ou financeiro.
 
 ## Anti-references
 
@@ -34,7 +34,7 @@ A voz deve ser direta, humana e segura. A interface deve tratar previsoes como l
 
 1. Mercados primeiro: a home e as telas principais devem dar espaco para perguntas, consenso e acoes claras.
 2. Confianca antes de intensidade: criterios, fontes, estados e resolucao auditavel precisam estar visiveis sem parecer burocracia.
-3. Linguagem social, nao financeira: usar carteira educativa, credito reservado, leitura, reputacao e consenso em vez de termos com carga de aposta/trading.
+3. Linguagem social, nao financeira: usar carteira educativa, credito reservado, previsao, posicao, reputacao e consenso em vez de termos com carga de aposta/trading.
 4. Densidade com calma: usuarios recorrentes devem escanear muitos mercados rapidamente sem perder legibilidade.
 5. Familiaridade produtiva: controles, filtros, formularios e estados devem seguir affordances conhecidas; personalidade entra na copy, ritmo e microdetalhes.
 

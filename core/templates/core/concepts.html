@@ -3,29 +3,30 @@
 {% block content %}
 <main class="shell page-content doc-page">
   <section class="hero-card doc-hero">
-    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Conceitos e cálculos</span></div>
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Conceitos</span></div>
     <div class="doc-hero-grid">
       <div>
-        <h1>Como previsões viram consenso, crédito educativo e reputação.</h1>
-        <p class="lead">Orynth Trends é uma rede social de previsões com O₵ educativas. Você registra convicção, acompanha o consenso da comunidade e constrói histórico público quando mercados são resolvidos com fonte verificável.</p>
+        <h1>Sua visão sobre o futuro pode virar reputação pública.</h1>
+        <p class="lead">Registre previsões com O₵ educativas, acompanhe o consenso da comunidade e volte para conferir o resultado. Cada mercado resolvido ajuda a construir ranking, reputação e badges.</p>
         <div class="hero-actions">
           <a class="btn primary" href="{% url 'home' %}">Explorar mercados</a>
           <a class="btn ghost" href="{% url 'security' %}">Ver segurança</a>
         </div>
       </div>
       <div class="doc-slate" aria-label="Resumo do modelo Orynth Trends">
-        <span class="doc-slate-label">Fluxo do mercado</span>
+        <span class="doc-slate-label">Ciclo do mercado</span>
         <div class="doc-flow">
           <span>Aberto</span>
           <span>Previsões</span>
           <span>Em apuração</span>
           <span>Resolvido</span>
         </div>
+        <span class="doc-slate-label secondary">Sua previsão</span>
         <div class="doc-mini-ledger">
-          <div><span>Reserva</span><strong>separa O₵</strong></div>
-          <div><span>Acerto</span><strong>crédito + reputação</strong></div>
-          <div><span>Erro</span><strong>encerra a reserva</strong></div>
-          <div><span>Cancelamento</span><strong>devolve O₵</strong></div>
+          <div><span>Ao prever</span><strong>O₵ ficam reservadas</strong></div>
+          <div><span>Se acertar</span><strong>reserva volta + acerto</strong></div>
+          <div><span>Se não acertar</span><strong>reserva é encerrada</strong></div>
+          <div><span>Cancelamento</span><strong>reserva volta</strong></div>
         </div>
       </div>
     </div>
@@ -36,7 +37,7 @@
       <article class="doc-section" id="mercados">
         <div class="section-kicker"><span class="eyebrow">01</span><span class="tag safe">Mercados</span></div>
         <h2>Um mercado é uma pergunta objetiva com opções finitas.</h2>
-        <p>Mercados podem ser binários, com as opções canônicas SIM e NAO, ou de múltipla escolha, com uma única opção vencedora. A regra pública precisa deixar claro o evento, o prazo e o critério de resolução.</p>
+        <p>Mercados podem ser de SIM/NAO ou de múltipla escolha, sempre com uma única opção vencedora. A regra pública precisa deixar claro o evento, o prazo e o critério de resolução.</p>
         <div class="doc-card-grid two">
           <div class="doc-card"><strong>Binário</strong><span>Duas alternativas, começando em 50% para cada lado.</span></div>
           <div class="doc-card"><strong>Múltipla escolha</strong><span>As opções começam distribuídas igualmente e sempre somam 100%.</span></div>
@@ -46,19 +47,19 @@
       <article class="doc-section" id="coins">
         <div class="section-kicker"><span class="eyebrow">02</span><span class="tag hot">Orynth Coins</span></div>
         <h2>O₵ mede participação, não valor financeiro.</h2>
-        <p>Orynth Coins são internas, educativas e não sacáveis. Ao prever, parte do crédito disponível fica reservada no extrato auditável. A carteira educativa exibida é uma projeção operacional; se houver divergência, o ledger auditável vence.</p>
+        <p>Orynth Coins são internas, educativas e não sacáveis. Ao prever, parte do crédito disponível fica reservada no extrato auditável. A carteira educativa exibida é uma projeção operacional; se houver divergência, vale o registro auditável da plataforma.</p>
         <div class="doc-ledger">
-          <div><span>prediction_stake_lock</span><strong>disponível -> reservado</strong></div>
-          <div><span>prediction_refund</span><strong>devolve crédito cancelado</strong></div>
-          <div><span>prediction_payout</span><strong>credita acerto líquido</strong></div>
-          <div><span>prediction_loss</span><strong>encerra crédito reservado</strong></div>
+          <div><span>Ao prever</span><strong>parte das O₵ fica reservada</strong></div>
+          <div><span>Se o mercado for cancelado</span><strong>a reserva volta para você</strong></div>
+          <div><span>Se acertar</span><strong>a reserva volta e o acerto é creditado</strong></div>
+          <div><span>Se não acertar</span><strong>a reserva é encerrada</strong></div>
         </div>
       </article>
 
       <article class="doc-section" id="probabilidade">
         <div class="section-kicker"><span class="eyebrow">03</span><span class="tag">Consenso</span></div>
         <h2>A probabilidade é consenso agregado, não promessa de resultado.</h2>
-        <p>A fonte de verdade é decimal; percentuais inteiros aparecem apenas para leitura. A evolução visual é derivada das previsões registradas, usando peso base sintético e a força combinada de reputação e crédito reservado no momento da entrada.</p>
+        <p>O gráfico mostra como o consenso evolui a partir das previsões registradas. Cada participação entra com seu peso no momento da previsão, formando uma visão coletiva que pode mudar até o mercado fechar.</p>
         <div class="consensus-demo" aria-label="Exemplo visual de consenso">
           <div>
             <div class="consensus-label"><strong>SIM</strong><span>62%</span></div>
@@ -72,40 +73,87 @@
       </article>
 
       <article class="doc-section" id="retorno">
-        <div class="section-kicker"><span class="eyebrow">04</span><span class="tag safe">Crédito possível</span></div>
-        <h2>O crédito possível usa o consenso no momento da entrada.</h2>
-        <p>Uma previsão vencedora segue a ideia <strong>O₵ reservadas * (1 / p)</strong>, onde <strong>p</strong> é a probabilidade decimal capturada antes da previsão. Errar encerra o crédito reservado; acertar libera a reserva e credita o acerto líquido.</p>
+        <div class="section-kicker"><span class="eyebrow">04</span><span class="tag safe">Acertos difíceis</span></div>
+        <h2>Acertos difíceis contam mais no histórico.</h2>
+        <p>Quanto mais difícil era a previsão no momento da entrada, maior pode ser o crédito educativo do acerto. No exemplo abaixo, uma previsão feita quando o consenso estava em 62% poderia liberar até 161 O₵ educativas se acertar.</p>
         <div class="doc-card-grid three">
           <div class="metric"><strong>100 O₵</strong><span>crédito reservado</span></div>
           <div class="metric"><strong>0,62</strong><span>probabilidade de entrada</span></div>
-          <div class="metric"><strong>161 O₵</strong><span>crédito possível</span></div>
+          <div class="metric"><strong>161 O₵</strong><span>O₵ se acertar</span></div>
         </div>
       </article>
 
       <article class="doc-section" id="reputacao">
         <div class="section-kicker"><span class="eyebrow">05</span><span class="tag">Reputação</span></div>
         <h2>Reputação é histórico resolvido, separado de saldo.</h2>
-        <p>Reputação muda apenas na resolução. A fórmula MVP usa K=10: acertos contra baixa probabilidade tendem a subir mais, erros em alta probabilidade tendem a cair mais, e a reputação nunca fica negativa.</p>
+        <p>A reputação mede consistência ao longo do tempo. Ela só é atualizada na resolução e considera o quão difícil era sua previsão quando você entrou.</p>
         <div class="doc-card-grid two">
-          <div class="doc-card"><strong>Ranking</strong><span>Ordena reputação pública e exclui usuários administrativos.</span></div>
+          <div class="doc-card"><strong>Ranking</strong><span>Organiza a comunidade por reputação construída em mercados resolvidos.</span></div>
           <div class="doc-card"><strong>Badges</strong><span>Reconhecem volume, acertos, sequência, ranking, comentários, sugestões e feedbacks.</span></div>
         </div>
       </article>
 
+      <article class="doc-section" id="badges">
+        <div class="section-kicker"><span class="eyebrow">06</span><span class="tag safe">Badges</span></div>
+        <h2>Badges mostram onde suas previsões se destacam.</h2>
+        <p>Cada badge ajuda a transformar participação em prova pública: você acompanha mercados até a resolução, acerta com consistência, aparece no ranking e mostra para a comunidade os temas em que sua visão ganha força.</p>
+        <div class="doc-badge-preview" aria-label="Exemplos de badges conquistáveis">
+          <article>
+            <img class="badge-image-light has-dark" src="/media/badge_images/first_resolution_light.png" alt="Badge Primeira resolução" loading="lazy" decoding="async">
+            <img class="badge-image-dark" src="/media/badge_images/first_resolution_dark.png" alt="Badge Primeira resolução" loading="lazy" decoding="async">
+            <strong>Primeira resolução</strong>
+            <span>Acompanhou um mercado até o resultado.</span>
+          </article>
+          <article>
+            <img class="badge-image-light has-dark" src="/media/badge_images/five_hits_light.png" alt="Badge 5 acertos" loading="lazy" decoding="async">
+            <img class="badge-image-dark" src="/media/badge_images/five_hits_dark.png" alt="Badge 5 acertos" loading="lazy" decoding="async">
+            <strong>5 acertos</strong>
+            <span>Mostra consistência em previsões resolvidas.</span>
+          </article>
+          <article>
+            <img class="badge-image-light has-dark" src="/media/badge_images/top_ten_light.png" alt="Badge Top 10" loading="lazy" decoding="async">
+            <img class="badge-image-dark" src="/media/badge_images/top_ten_dark.png" alt="Badge Top 10" loading="lazy" decoding="async">
+            <strong>Top 10</strong>
+            <span>Destaca posição pública no ranking.</span>
+          </article>
+          <article>
+            <img class="badge-image-light has-dark" src="/media/badge_images/voice_builder_light.png" alt="Badge Voz ativa" loading="lazy" decoding="async">
+            <img class="badge-image-dark" src="/media/badge_images/voice_builder_dark.png" alt="Badge Voz ativa" loading="lazy" decoding="async">
+            <strong>Voz ativa</strong>
+            <span>Reconhece participação em conversas.</span>
+          </article>
+          <article>
+            <img class="badge-image-light has-dark" src="/media/badge_images/market_scout_light.png" alt="Badge Radar de mercados" loading="lazy" decoding="async">
+            <img class="badge-image-dark" src="/media/badge_images/market_scout_dark.png" alt="Badge Radar de mercados" loading="lazy" decoding="async">
+            <strong>Radar de mercados</strong>
+            <span>Valoriza sugestões aprovadas.</span>
+          </article>
+          <article>
+            <img class="badge-image-light has-dark" src="/media/badge_images/feedback_ally_light.png" alt="Badge Aliado do feedback" loading="lazy" decoding="async">
+            <img class="badge-image-dark" src="/media/badge_images/feedback_ally_dark.png" alt="Badge Aliado do feedback" loading="lazy" decoding="async">
+            <strong>Aliado do feedback</strong>
+            <span>Mostra contribuição para melhorar a Orynth.</span>
+          </article>
+        </div>
+        <div class="doc-section-actions">
+          <a class="btn ghost" href="{% url 'badges' %}">Ver badges</a>
+        </div>
+      </article>
+
       <article class="doc-section" id="resolucao">
-        <div class="section-kicker"><span class="eyebrow">06</span><span class="tag risk">Resolução</span></div>
+        <div class="section-kicker"><span class="eyebrow">07</span><span class="tag risk">Resolução</span></div>
         <h2>Fechamento bloqueia novas previsões; resolução aplica os efeitos.</h2>
-        <p>Um mercado aberto pode ser travado automaticamente pelo scheduler ou manualmente por operador autorizado. A resolução exige opção vencedora, evidência ou justificativa, data efetiva, timezone controlado e evento administrativo.</p>
+        <p>Depois que as previsões se encerram, o mercado aguarda apuração. O resultado só é publicado com base no critério definido e em uma fonte verificável.</p>
         <div class="notice green">Mercado cancelado preserva histórico, devolve 100% das O₵ reservadas e não altera reputação.</div>
       </article>
 
       <article class="doc-section" id="agentes-ia">
-        <div class="section-kicker"><span class="eyebrow">07</span><span class="tag safe">IA oficial</span></div>
-        <h2>Agentes IA oficiais são automações identificadas, não perfis humanos.</h2>
-        <p>A Orynth pode usar agentes oficiais para explicar mercados e testar liquidez operacional. Esses agentes aparecem identificados como IA oficial e usam usuários marcados como bot no sistema.</p>
+        <div class="section-kicker"><span class="eyebrow">08</span><span class="tag safe">IA oficial</span></div>
+        <h2>IA oficial aparece identificada e separada da comunidade.</h2>
+        <p>Quando a Orynth usa automações oficiais, a interface deixa isso explícito. Elas podem apoiar o entendimento dos mercados, mas não substituem pessoas nem escondem participação operacional.</p>
         <div class="doc-card-grid two">
-          <div class="doc-card"><strong>Analyst</strong><span>Comenta mercados com análise curta, equilibrada e identificada como IA. Pode comentar mesmo com 0 humanos, mas não altera probabilidade, participantes, carteira educativa, ranking, reputação ou badges.</span></div>
-          <div class="doc-card"><strong>Liquidity</strong><span>Tipo usado para testes controlados de previsão com crédito bot. Só pode agir quando habilitado por configuração administrativa, com humanos mínimos, saldo e limites operacionais.</span></div>
+          <div class="doc-card"><strong>Analyst</strong><span>Organiza sinais e dúvidas em comentários identificados como IA oficial, sem registrar previsão ou alterar reputação.</span></div>
+          <div class="doc-card"><strong>Liquidity</strong><span>Participa apenas como automação oficial, com transparência, limites operacionais e auditoria.</span></div>
         </div>
       </article>
     </section>
@@ -114,22 +162,18 @@
       <section class="panel doc-rail-card">
         <h3>Resumo rápido</h3>
         <a href="#mercados">Mercados objetivos</a>
-        <a href="#coins">O₵ e ledger</a>
+        <a href="#coins">O₵ educativas</a>
         <a href="#probabilidade">Consenso agregado</a>
-        <a href="#retorno">Crédito possível</a>
+        <a href="#retorno">Acertos difíceis</a>
         <a href="#reputacao">Reputação</a>
+        <a href="#badges">Badges conquistáveis</a>
         <a href="#resolucao">Resolução</a>
         <a href="#agentes-ia">Agentes IA oficiais</a>
       </section>
       <section class="panel">
-        <span class="eyebrow">Guardrail</span>
-        <h3>O frontend não calcula regra de domínio.</h3>
-        <p>Crédito reservado, crédito possível, reputação, saldo e transições de estado vêm da API. A interface apresenta contratos e feedbacks de forma clara.</p>
-      </section>
-      <section class="panel">
-        <span class="eyebrow">MVP</span>
-        <h3>Limites atuais</h3>
-        <p>Ainda não há tempo real avançado, revenda de posição ou arbitragem pública complexa. O foco é previsão única por usuário, extrato auditável e resolução verificável.</p>
+        <span class="eyebrow">O que lembrar</span>
+        <h3>Previsão educativa, consenso público e resolução verificável.</h3>
+        <p>A Orynth não é aposta. É uma rede social para registrar previsões sobre eventos futuros, acompanhar a comunidade e construir reputação com resultados apurados.</p>
       </section>
     </aside>
   </div>

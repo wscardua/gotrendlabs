@@ -418,18 +418,37 @@ def _ranking_positions(cursor):
           AND u.is_staff = false
           AND u.is_superuser = false
           AND u.is_bot = false
+          AND lower(COALESCE(u.username, '')) NOT LIKE '@dev%%'
+          AND lower(COALESCE(u.username, '')) NOT LIKE 'dev%%'
         ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
         """
     )
     return {row["id"]: index + 1 for index, row in enumerate(cursor.fetchall())}
 
 
+PUBLIC_BADGE_FILTERS = [
+    "b.code NOT LIKE 'dev_%%'",
+    "lower(COALESCE(b.name, '')) NOT LIKE '%% dev'",
+    "lower(COALESCE(b.description, '')) NOT LIKE '%%simulação dev%%'",
+    "lower(COALESCE(b.rule_description, '')) NOT LIKE '%%preview local%%'",
+]
+
+
+PUBLIC_USER_FILTERS = [
+    "lower(COALESCE(u.username, '')) NOT LIKE '@dev%%'",
+    "lower(COALESCE(u.username, '')) NOT LIKE 'dev%%'",
+]
+
+
 def _badge_response(row):
+    rule_description = row["rule_description"] or ""
+    if "futebool" in rule_description.lower():
+        rule_description = rule_description.replace("futebool", "Futebol").replace("Futebool", "Futebol")
     return {
         "code": row["code"],
         "name": row["name"],
         "description": row["description"],
-        "rule_description": row["rule_description"] or "",
+        "rule_description": rule_description,
         "badge_type": row["badge_type"] or "global",
         "image_url": row["image_url"] or "",
         "image_dark_url": row["image_dark_url"] or "",
@@ -440,7 +459,11 @@ def _badge_response(row):
 
 
 def _badge_rows(cursor, user_id=None, include_inactive=False):
-    active_sql = "" if include_inactive else "WHERE b.is_active = true"
+    where_parts = []
+    if not include_inactive:
+        where_parts.append("b.is_active = true")
+    where_parts.extend(PUBLIC_BADGE_FILTERS)
+    active_sql = f"WHERE {' AND '.join(where_parts)}" if where_parts else ""
     params = []
     if user_id:
         award_select = "a.awarded_at, a.reason_snapshot"
@@ -2450,6 +2473,10 @@ def _ranking_badges_by_user(cursor, user_ids, visible_limit=3):
             JOIN orynth_badge_definitions b ON b.id = a.badge_id
             WHERE b.is_active = true
               AND a.user_id = ANY(%s)
+              AND b.code NOT LIKE 'dev_%%'
+              AND lower(COALESCE(b.name, '')) NOT LIKE '%% dev'
+              AND lower(COALESCE(b.description, '')) NOT LIKE '%%simulação dev%%'
+              AND lower(COALESCE(b.rule_description, '')) NOT LIKE '%%preview local%%'
         ) ranked_badges
         WHERE badge_rank <= %s
         ORDER BY user_id ASC, badge_rank ASC
@@ -2488,7 +2515,15 @@ def _attach_ranking_badges(cursor, rows):
 
 
 def _ranking_theme_rows(cursor, category, subcategory, event, limit=50):
-    where = ["u.is_active = true", "u.is_staff = false", "u.is_superuser = false", "u.is_bot = false", "p.status = 'resolved'", "c.slug = %s"]
+    where = [
+        "u.is_active = true",
+        "u.is_staff = false",
+        "u.is_superuser = false",
+        "u.is_bot = false",
+        *PUBLIC_USER_FILTERS,
+        "p.status = 'resolved'",
+        "c.slug = %s",
+    ]
     params = [category]
     if subcategory:
         where.append("sc.slug = %s")
@@ -5936,6 +5971,9 @@ def get_rankings(
                   AND u.is_staff = false
                   AND u.is_superuser = false
                   AND u.is_bot = false
+                  AND lower(COALESCE(u.username, '')) NOT LIKE '@dev%%'
+                  AND lower(COALESCE(u.username, '')) NOT LIKE 'dev%%'
+                  AND lower(COALESCE(r.strong_category, '')) <> 'dev ranking'
                 ORDER BY r.reputation_score DESC, u.date_joined ASC, u.id ASC
                 LIMIT 50
                 """
