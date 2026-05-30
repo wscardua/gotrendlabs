@@ -1556,6 +1556,16 @@ class BackendAuthAPITests(TransactionTestCase):
             image_url="/media/badge_images/inactive.png",
         )
         UserBadgeAward.objects.create(user=user, badge=inactive_badge, awarded_at=base_time + timedelta(minutes=10), reason_snapshot="ranking:test")
+        dev_badge = BadgeDefinition.objects.create(
+            code="dev_ranking_noise",
+            name="Ranking DEV",
+            description="Badge de simulação dev.",
+            rule_description="preview local",
+            badge_type="performance",
+            image_url="/media/badge_images/dev-ranking.png",
+            is_active=True,
+        )
+        UserBadgeAward.objects.create(user=user, badge=dev_badge, awarded_at=base_time + timedelta(minutes=11), reason_snapshot="ranking:test")
 
         response = TestClient(app).get("/rankings")
         self.assertEqual(response.status_code, 200)
@@ -2065,9 +2075,14 @@ class BackendAuthAPITests(TransactionTestCase):
             "/auth/register",
             json={"display_name": "Ranking Super", "email": "ranking-super@example.com", "password": "supersecret123", "terms_accepted": True},
         )
+        dev_user = client.post(
+            "/auth/register",
+            json={"display_name": "Dev Ranking", "email": "dev-ranking@example.com", "password": "supersecret123", "terms_accepted": True},
+        )
         self.assertEqual(regular.status_code, 201)
         self.assertEqual(staff.status_code, 201)
         self.assertEqual(superuser.status_code, 201)
+        self.assertEqual(dev_user.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("ranking-staff@example.com",))
@@ -2079,11 +2094,22 @@ class BackendAuthAPITests(TransactionTestCase):
                         WHEN 'ranking-regular@example.com' THEN 120
                         WHEN 'ranking-staff@example.com' THEN 999
                         WHEN 'ranking-super@example.com' THEN 998
+                        WHEN 'dev-ranking@example.com' THEN 997
                         ELSE r.reputation_score
                     END
                     FROM orynth_users u
                     WHERE r.user_id = u.id
                     """
+                )
+                cursor.execute(
+                    """
+                    UPDATE orynth_user_reputations r
+                    SET strong_category = 'DEV Ranking'
+                    FROM orynth_users u
+                    WHERE r.user_id = u.id
+                      AND u.email = %s
+                    """,
+                    ("dev-ranking@example.com",),
                 )
 
         ranking = client.get("/rankings")
@@ -2092,6 +2118,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertIn("@rankingregular", handles)
         self.assertNotIn("@rankingstaff", handles)
         self.assertNotIn("@rankingsuper", handles)
+        self.assertNotIn("@devranking", handles)
 
     def test_register_requires_terms_profile_update_and_logical_deletion(self):
         client = TestClient(app)
@@ -3946,7 +3973,7 @@ class WebSmokeTests(TransactionTestCase):
                 if route == reverse("home"):
                     self.assertNotContains(response, category_notice)
                 if route == reverse("concepts"):
-                    self.assertContains(response, "Agentes IA oficiais são automações identificadas")
+                    self.assertContains(response, "IA oficial aparece identificada e separada da comunidade")
                     self.assertContains(response, "Analyst")
                     self.assertContains(response, "Liquidity")
                 if route == reverse("use-policy"):
@@ -4097,7 +4124,7 @@ class WebSmokeTests(TransactionTestCase):
                 self.assertContains(response, "Ranking")
                 self.assertContains(response, "← Feed")
                 self.assertContains(response, 'class="footer"')
-                self.assertContains(response, "Rede social de previsões educativas")
+                self.assertContains(response, "Rede social para prever eventos")
                 self.assertContains(response, "O₵ educativa")
                 self.assertContains(response, cta)
                 if route == reverse("login"):
@@ -7057,7 +7084,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "off")
             self.assertNotContains(response, "@localtheme")
-            self.assertContains(response, "Ainda não há leituras resolvidas para este recorte.")
+            self.assertContains(response, "Ainda não há previsões resolvidas para este recorte.")
 
     def test_ranking_page_uses_api_payload_as_authoritative(self):
         payload = {

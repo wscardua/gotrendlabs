@@ -6,10 +6,12 @@
     <div class="section-head compact">
       <div>
         <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Reconhecimento</span></div>
-        <h1 class="large-title">Badges</h1>
-        <p class="muted">Conquistas liberadas automaticamente por participação, precisão e contribuição para a comunidade.</p>
+        <h1 class="large-title">Mostre onde suas previsões se destacam.</h1>
+        <p class="muted">Badges transformam participação em sinais públicos de presença, acertos, ranking e contribuição para a comunidade.</p>
       </div>
-      {% if is_guest %}<a class="btn primary" href="{% url 'login' %}">Entrar para ver progresso</a>{% else %}<a class="btn primary" href="{% url 'profile' %}">Ver perfil</a>{% endif %}
+      <div class="badge-page-actions">
+        {% if is_guest %}<a class="btn primary" href="{% url 'login' %}">Entrar para ver progresso</a>{% else %}<a class="btn primary" href="{% url 'profile' %}">Ver perfil</a>{% endif %}
+      </div>
     </div>
     <div class="badge-grid">
       {% for badge in badges %}
@@ -29,6 +31,8 @@
                 <span class="badge-status earned">Conquistada</span>
                 {% if not is_guest %}<a class="badge-share-link" href="{% url 'share-badge' badge.code %}">Compartilhar</a>{% endif %}
               </div>
+            {% elif is_guest %}
+              <span class="badge-status">Para conquistar</span>
             {% else %}
               <span class="badge-status">Bloqueada</span>
             {% endif %}

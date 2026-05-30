@@ -35,7 +35,7 @@ Exibir desempenho acumulado do usuário e ranking social de forma compreensível
 - catálogo público de badges
 - compartilhamento de badges conquistadas por usuário autenticado, com página pública por token opaco e card social com metadados Open Graph/Twitter
 - gestão administrativa de badges com imagem e regra controlada
-- concessão automática de badges por eventos e leituras do domínio
+- concessão automática de badges por eventos e previsões do domínio
 
 ## Escopo excluído
 
@@ -55,10 +55,11 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - perfil e tela de ranking usam o mesmo contrato base
 - visitantes podem consultar ranking, mas "Seu recorte" deve convidar login sem exibir posição fictícia
 - usuários autenticados veem seu recorte somente quando houver dados reais no ranking filtrado/global exibido
-- administradores e superusuários não aparecem no ranking público
+- administradores, superusuários, bots e dados internos/dev não aparecem no ranking público
 - a tabela pública identifica participantes por handle
 - a tabela pública pode mostrar badges conquistadas antes do handle, em resumo compacto vindo da API
 - visitantes podem consultar o catálogo de badges ativas
+- catálogo e ranking públicos não expõem badges internas/dev ou conteúdos de preview local
 - usuários autenticados veem no catálogo e no perfil quais badges já conquistaram
 - usuários autenticados podem compartilhar somente badges já conquistadas, por página própria, links de redes, imagem social e cópia do link
 - links públicos de badge conquistada usam token opaco e não expõem identificador direto do usuário
@@ -78,11 +79,11 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - cancelamentos e refunds não alteram reputação
 - desfazer resolução remove os efeitos reputacionais daquele mercado ao recalcular previsões ainda resolvidas do usuário
 - ranking global usa a reputação persistida do usuário
-- ranking temático por categoria/subcategoria é recalculado em leitura usando apenas previsões resolvidas do recorte
-- ranking por evento é recalculado em leitura usando apenas previsões resolvidas do evento escolhido dentro de categoria/subcategoria
+- ranking temático por categoria/subcategoria é recalculado sob demanda usando apenas previsões resolvidas do recorte
+- ranking por evento é recalculado sob demanda usando apenas previsões resolvidas do evento escolhido dentro de categoria/subcategoria
 - tela pública de ranking usa `Carregar mais` em lotes cumulativos de 10 linhas, preservando filtros aplicados
 - linhas do ranking podem expor até 3 badges ativas conquistadas e `badges_total`; a UI resume excedentes como `+N`
-- usuários `is_staff` ou `is_superuser` são excluídos do ranking público
+- usuários `is_staff`, `is_superuser`, `is_bot` ou marcados por dados internos/dev são excluídos do ranking público
 - mudanças futuras de fórmula exigem decisão técnica registrada
 - badges não alteram reputação, ranking nem wallet
 - compartilhar badge não altera reputação, ranking, wallet, ledger nem elegibilidade de outras badges
@@ -111,7 +112,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - posição
 - contadores derivados
 - taxonomia para filtro de ranking
-- recortes temáticos são projeções de leitura no MVP, sem nova tabela dedicada
+- recortes temáticos são projeções calculadas no MVP, sem nova tabela dedicada
 - definições de badge com código, nome, descrição, tipo, imagem padrão/clara, imagem escura opcional, status e descrição pública da regra
 - regras de badge vinculadas à definição, com tipo controlado, threshold e recorte opcional de categoria/subcategoria/evento
 - conquistas de badge por usuário com data e snapshot do motivo, persistidas em `orynth_user_badge_awards`

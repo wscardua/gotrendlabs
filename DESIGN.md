@@ -102,7 +102,7 @@ components:
 
 ## 1. Overview
 
-Orynth Trends e uma interface de produto para previsoes sociais educativas. A primeira impressao deve ser de uma mesa de leitura publica: mercados visiveis, consenso facil de comparar, acoes diretas e sinais de confianca presentes sem parecer burocracia.
+Orynth Trends e uma interface de produto para previsoes sociais. A primeira impressao deve ser de uma rede confiavel para registrar posicoes publicas: mercados visiveis, consenso facil de comparar, acoes diretas e sinais de confianca presentes sem parecer burocracia.
 
 O sistema visual deve favorecer usuarios curiosos recorrentes. Eles entram para descobrir perguntas novas, registrar uma previsao, comparar o consenso e voltar para acompanhar reputacao, ranking e badges. A experiencia nao deve parecer cassino, sportsbook, exchange, terminal financeiro ou cripto especulativa.
 
@@ -111,7 +111,7 @@ Principios de composicao:
 - Mercados primeiro: a home e telas principais devem abrir espaco para cards, filtros e decisoes rapidas.
 - Densidade com calma: mostrar muitas oportunidades sem sacrificar legibilidade.
 - Confianca antes de intensidade: fonte, prazo, status e resolucao devem ficar claros.
-- Social antes de financeiro: falar em leitura, consenso, reputacao, credito reservado e carteira educativa.
+- Social antes de financeiro: falar em previsao, posicao, consenso, reputacao, credito reservado e carteira educativa.
 - Produto familiar: usar controles reconheciveis, estados previsiveis e uma hierarquia que desaparece a favor da tarefa.
 
 ## 2. Colors
@@ -192,7 +192,7 @@ Badges usam grid com icone de 62px, copy compacta e sombra baixa. Conquistados r
 Do:
 
 - Comecar telas principais pelo trabalho do usuario: mercados, filtros, consenso e acoes.
-- Usar "previsao", "leitura", "consenso", "reputacao", "credito reservado" e "carteira educativa".
+- Usar "previsao", "posicao", "consenso", "reputacao", "credito reservado" e "carteira educativa".
 - Mostrar fonte, prazo, status e resolucao sempre que isso aumentar confianca.
 - Manter botoes e acoes previsiveis, especialmente em cards repetidos.
 - Testar desktop com 3 colunas, desktop medio com 2 colunas e mobile com 1 coluna.
