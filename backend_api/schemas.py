@@ -27,6 +27,14 @@ class PasswordResetRequestResponse(BaseModel):
     reset_url: str = ""
 
 
+class EmailConfirmationResponse(BaseModel):
+    message: str
+
+
+class EmailConfirmationConfirmPayload(BaseModel):
+    token: str = Field(min_length=20, max_length=255)
+
+
 class PasswordResetConfirmPayload(BaseModel):
     token: str = Field(min_length=20, max_length=255)
     password: str = Field(min_length=8, max_length=128)
@@ -46,6 +54,8 @@ class UserResponse(BaseModel):
     last_login: Optional[str] = None
     account_status: str
     is_staff: bool = False
+    email_confirmed: bool = True
+    email_confirmed_at: Optional[str] = None
 
 
 class PublicUserResponse(BaseModel):

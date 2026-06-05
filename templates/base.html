@@ -75,11 +75,11 @@
               <span class="chip-meta"><strong>{{ viewer.handle }}</strong><span>{{ viewer.name }} · {{ viewer.balance_gtl }} GT₵{% if not can_access_admin_ops %} · Rep {{ viewer.reputation }}{% endif %}</span></span>
             </button>
             <div class="user-menu">
+              {% if can_access_admin_ops %}<a class="admin-entry" href="{% url 'admin-ops-dashboard' %}"><span>Painel Administrativo</span><small>Acesso restrito</small></a>{% endif %}
               <a href="{% url 'profile' %}">Perfil e badges</a>
               <a href="{% url 'wallet' %}">Carteira educativa</a>
               <a href="{% url 'suggestion' %}">Sugerir mercado</a>
               <a href="{% url 'feedback' %}">Feedback/suporte</a>
-              {% if can_access_admin_ops %}<a href="{% url 'admin-ops-dashboard' %}">Admin</a>{% endif %}
               <a href="{% url 'logout' %}">Sair desta sessão</a>
             </div>
           </div>
@@ -94,6 +94,23 @@
         <span>Você está navegando como operador; visitantes públicos estão vendo a página de manutenção.</span>
         <a href="{% url 'admin-ops-config' %}">Abrir Config</a>
       </div>
+    </div>
+  {% endif %}
+  {% if email_confirmation_required %}
+    <div class="maintenance-operator-banner email-confirmation-banner" role="status">
+      <div class="shell">
+        <strong>Confirme seu email</strong>
+        <span>Algumas ações ficam pausadas até a confirmação.</span>
+        <form method="post" action="{% url 'email-confirm-resend' %}?next={{ request.get_full_path|urlencode }}">
+          {% csrf_token %}
+          <button class="inline-action" type="submit">Reenviar link</button>
+        </form>
+      </div>
+    </div>
+  {% endif %}
+  {% if messages %}
+    <div class="shell site-messages">
+      {% for message in messages %}<div class="notice {% if message.tags == 'error' %}red{% else %}green{% endif %}">{{ message }}</div>{% endfor %}
     </div>
   {% endif %}
   {% block content %}{% endblock %}

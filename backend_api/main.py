@@ -17,6 +17,7 @@ from backend_api.agent_services import ai_health_summary, market_public_metrics,
 from backend_api.badge_engine import BadgeAwardEngine
 from backend_api.db import get_connection
 from backend_api.daemon_services import daemon_dashboard_status
+from backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, issue_email_confirmation, public_url
 from backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from backend_api.schemas import (
     AdminCategoryPayload,
@@ -53,6 +54,8 @@ from backend_api.schemas import (
     CommentListResponse,
     CommentModerationPayload,
     CommentResponse,
+    EmailConfirmationConfirmPayload,
+    EmailConfirmationResponse,
     LedgerResponse,
     LoginPayload,
     MarketListResponse,
@@ -305,6 +308,7 @@ def _unique_handle(cursor, value):
 
 
 def _user_response(row, *, display_name=None):
+    email_confirmed_at = row.get("email_confirmed_at") if hasattr(row, "get") else None
     return {
         "id": row["id"],
         "handle": _handle_seed(row["username"]),
@@ -315,6 +319,8 @@ def _user_response(row, *, display_name=None):
         "last_login": row["last_login"].isoformat() if row["last_login"] else None,
         "account_status": row["account_status"],
         "is_staff": bool(row["is_staff"]) if "is_staff" in row else False,
+        "email_confirmed": bool(email_confirmed_at),
+        "email_confirmed_at": email_confirmed_at.isoformat() if email_confirmed_at else None,
     }
 
 
@@ -756,6 +762,22 @@ def _record_wallet_entry(
             },
             suppress_self=False,
         )
+        if entry_type != "grant_initial":
+            enqueue_user_email(
+                cursor,
+                event_type="wallet.credited",
+                user_id=user_id,
+                template_key="wallet.credited",
+                context={
+                    "amount": int(amount),
+                    "description": description,
+                    "entry_type": entry_type,
+                    "reference_type": reference_type,
+                    "reference_id": reference_id,
+                    "wallet_url": public_url("/wallet/"),
+                },
+                idempotency_key=f"wallet.credited:{user_id}:{entry_id}",
+            )
     return entry_id
 
 
@@ -764,7 +786,8 @@ def _current_user(cursor, authorization):
     cursor.execute(
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
-               u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.is_bot
+               u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.is_bot,
+               u.email_confirmed_at
         FROM gotrendlabs_auth_sessions s
         JOIN gotrendlabs_users u ON u.id = s.user_id
         WHERE s.token_hash = %s
@@ -784,6 +807,16 @@ def _current_user(cursor, authorization):
     )
     _ensure_user_core(cursor, user["id"])
     return user
+
+
+def _require_email_confirmed(user):
+    if user.get("is_staff") or user.get("is_superuser") or user.get("is_bot"):
+        return
+    if not user.get("email_confirmed_at"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Confirme seu email para liberar esta ação.",
+        )
 
 
 def _current_staff_user(cursor, authorization):
@@ -1498,7 +1531,9 @@ def _issue_password_reset(cursor, user, *, ip_address=None, user_agent=""):
         """,
         (user["id"], hash_token(token), now, now + PASSWORD_RESET_TTL, ip_address, user_agent),
     )
-    return f"{PUBLIC_WEB_BASE_URL}/password-reset/confirm/{token}/"
+    reset_url = f"{PUBLIC_WEB_BASE_URL}/password-reset/confirm/{token}/"
+    enqueue_password_reset_email(cursor, user, reset_url)
+    return reset_url
 
 
 def _ledger_entries(cursor, user_id, limit=10):
@@ -2827,6 +2862,7 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
             body = payload.body.strip()
             if not body:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Comentário não pode ficar vazio.")
@@ -2862,6 +2898,7 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
 
 
 def _set_comment_reaction(cursor, comment_id, user, reaction):
+    _require_email_confirmed(user)
     user_id = user["id"]
     cursor.execute("SELECT mc.id FROM gotrendlabs_market_comments mc WHERE mc.id = %s AND mc.status = 'visible'", (comment_id,))
     if not cursor.fetchone():
@@ -2948,6 +2985,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
             cursor.execute(
                 """
                 SELECT id, slug, status
@@ -3088,6 +3126,8 @@ def create_suggestion(payload: MarketSuggestionPayload, request: Request, author
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _optional_current_user(cursor, authorization)
+            if user:
+                _require_email_confirmed(user)
             if not user and (not payload.guest_name.strip() or not payload.guest_email):
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
             if not user:
@@ -3127,6 +3167,8 @@ def create_feedback(payload: ProductFeedbackPayload, request: Request, authoriza
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _optional_current_user(cursor, authorization)
+            if user:
+                _require_email_confirmed(user)
             if not user and (not payload.guest_name.strip() or not payload.guest_email):
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
             if not user:
@@ -5509,16 +5551,20 @@ def register(payload: RegisterPayload, request: Request):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já está em uso.")
 
             now = datetime.now(timezone.utc)
+            cursor.execute("SELECT email_enabled FROM gotrendlabs_site_config WHERE singleton_key = 1")
+            site_config = cursor.fetchone()
+            email_confirmation_required = bool(site_config and site_config["email_enabled"])
             handle = _unique_handle(cursor, payload.display_name)
             cursor.execute(
                 """
                 INSERT INTO gotrendlabs_users
                     (password, last_login, is_superuser, username, first_name, last_name, is_staff, is_active,
                      date_joined, email, preferred_language, external_provider, external_subject,
-                     terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at, is_bot)
+                     terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at,
+                     email_confirmed_at, is_bot)
                 VALUES (%s, NULL, false, %s, %s, '', false, true, %s, %s, %s, '', '',
-                        %s, %s, 'active', NULL, NULL, false)
-                RETURNING id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff
+                        %s, %s, 'active', NULL, NULL, %s, false)
+                RETURNING id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff, email_confirmed_at
                 """,
                 (
                     make_password(payload.password),
@@ -5529,12 +5575,16 @@ def register(payload: RegisterPayload, request: Request):
                     language,
                     now,
                     TERMS_VERSION,
+                    None if email_confirmation_required else now,
                 ),
             )
             user = cursor.fetchone()
             _ensure_user_core(cursor, user["id"], display_name=payload.display_name.strip())
             session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "register", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+            if email_confirmation_required:
+                issue_email_confirmation(cursor, user, ip_address=ip_address, user_agent=user_agent)
+                _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
             return {"user": _user_response(user), "session": session}
 
 
@@ -5546,7 +5596,7 @@ def login(payload: LoginPayload, request: Request):
             cursor.execute(
                 """
                 SELECT id, username, email, first_name, preferred_language, password, is_active,
-                       date_joined, last_login, account_status, is_staff
+                       date_joined, last_login, account_status, is_staff, email_confirmed_at
                 FROM gotrendlabs_users
                 WHERE lower(email) = lower(%s)
                 """,
@@ -5573,7 +5623,7 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                SELECT id, email
+                SELECT id, username, email, first_name, preferred_language
                 FROM gotrendlabs_users
                 WHERE lower(email) = lower(%s)
                   AND is_active = true
@@ -5583,9 +5633,9 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
             )
             user = cursor.fetchone()
             if user:
-                reset_url = _issue_password_reset(cursor, user, ip_address=ip_address, user_agent=user_agent)
+                _issue_password_reset(cursor, user, ip_address=ip_address, user_agent=user_agent)
                 _record_event(cursor, "password_reset_requested", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
-    return {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
+    return {"message": PASSWORD_RESET_MESSAGE, "reset_url": ""}
 
 
 @app.post("/auth/password-reset/confirm", response_model=PasswordResetConfirmResponse)
@@ -5636,6 +5686,69 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
             )
             _record_event(cursor, "password_reset_confirmed", user_id=token_row["user_id"], email=token_row["email"], ip_address=ip_address, user_agent=user_agent)
     return {"message": "Senha atualizada com sucesso."}
+
+
+@app.post("/auth/email-confirm/confirm", response_model=EmailConfirmationResponse)
+def confirm_email(payload: EmailConfirmationConfirmPayload, request: Request):
+    ip_address, user_agent = _client_meta(request)
+    now = datetime.now(timezone.utc)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                SELECT t.id, t.user_id, u.email
+                FROM gotrendlabs_email_confirmation_tokens t
+                JOIN gotrendlabs_users u ON u.id = t.user_id
+                WHERE t.token_hash = %s
+                  AND t.used_at IS NULL
+                  AND t.expires_at > %s
+                  AND u.is_active = true
+                  AND u.account_status = 'active'
+                """,
+                (hash_token(payload.token), now),
+            )
+            token_row = cursor.fetchone()
+            if not token_row:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Link de confirmação inválido ou expirado.")
+            cursor.execute(
+                """
+                UPDATE gotrendlabs_users
+                SET email_confirmed_at = COALESCE(email_confirmed_at, %s)
+                WHERE id = %s
+                """,
+                (now, token_row["user_id"]),
+            )
+            cursor.execute("UPDATE gotrendlabs_email_confirmation_tokens SET used_at = %s WHERE id = %s", (now, token_row["id"]))
+            _record_event(cursor, "email_confirmed", user_id=token_row["user_id"], email=token_row["email"], ip_address=ip_address, user_agent=user_agent)
+    return {"message": "Email confirmado com sucesso."}
+
+
+@app.post("/auth/email-confirm/resend", response_model=EmailConfirmationResponse)
+def resend_email_confirmation(request: Request, authorization: str = Header(default="")):
+    ip_address, user_agent = _client_meta(request)
+    now = datetime.now(timezone.utc)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            if user.get("email_confirmed_at"):
+                return {"message": "Email já confirmado."}
+            cursor.execute(
+                """
+                SELECT created_at
+                FROM gotrendlabs_email_confirmation_tokens
+                WHERE user_id = %s
+                  AND used_at IS NULL
+                ORDER BY created_at DESC
+                LIMIT 1
+                """,
+                (user["id"],),
+            )
+            latest = cursor.fetchone()
+            if latest and latest["created_at"] > now - timedelta(minutes=10):
+                return {"message": "Aguarde alguns minutos antes de reenviar a confirmação."}
+            issue_email_confirmation(cursor, user, ip_address=ip_address, user_agent=user_agent)
+            _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+    return {"message": "Enviamos um novo link de confirmação."}
 
 
 @app.get("/auth/session", response_model=SessionContextResponse)
@@ -5711,6 +5824,7 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
             updates = []
             values = []
             if payload.display_name is not None:
@@ -5722,8 +5836,11 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
                 cursor.execute("SELECT id FROM gotrendlabs_users WHERE lower(email) = lower(%s) AND id <> %s", (payload.email, user["id"]))
                 if cursor.fetchone():
                     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe uma conta com este email.")
-                cursor.execute("UPDATE gotrendlabs_users SET email = %s WHERE id = %s", (payload.email.lower(), user["id"]))
+                cursor.execute("UPDATE gotrendlabs_users SET email = %s, email_confirmed_at = NULL WHERE id = %s", (payload.email.lower(), user["id"]))
                 user["email"] = payload.email.lower()
+                user["email_confirmed_at"] = None
+                issue_email_confirmation(cursor, user, ip_address=None, user_agent="")
+                _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"])
             if payload.handle is not None:
                 handle = _handle_seed(payload.handle)
                 if len(handle) < 2:
@@ -5766,6 +5883,7 @@ def request_account_deletion(request: Request, authorization: str = Header(defau
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
@@ -5828,6 +5946,7 @@ def create_my_wallet_recharge_request(authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
             wallet = _wallet_summary(cursor, user["id"])
             cursor.execute(
                 """

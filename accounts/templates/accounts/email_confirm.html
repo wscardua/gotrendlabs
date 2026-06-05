@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}GoTrendLabs | Confirmação de email{% endblock %}
+{% block content %}
+<main class="shell auth-page">
+  <section class="auth-card">
+    <span class="eyebrow">Conta</span>
+    <h1>{% if success %}Email confirmado{% else %}Link inválido ou expirado{% endif %}</h1>
+    <p>{{ message }}</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="{% url 'home' %}">Voltar aos mercados</a>
+      {% if not success %}<a class="btn ghost" href="{% url 'login' %}">Entrar e reenviar</a>{% endif %}
+    </div>
+  </section>
+</main>
+{% endblock %}

@@ -2,6 +2,49 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260605-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-NOTIFY-001`
+- Objetivo: configurar infraestrutura AWS SES SMTP para envio transacional sandbox da GoTrendLabs
+- Etapa atual: concluído; identidades SES `gotrendlabs.com.br`/`.com` verificadas, segredo SMTP instalado na produção, teste sandbox validado, production access solicitado e negado no caso `178067031900201`, recurso manual enviado pelo console AWS, comando de teste SMTP, runbook e specs atualizados em 2026-06-05
+- Artefatos afetados:
+  - `admin_ops/management/commands/send_smtp_test_email.py`
+  - `deploy/production/README.md`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: production access do SES foi negado, reenvio imediato por CLI retornou `ConflictException`, a conta sem Premium Support não permite acompanhar/responder ao caso via Support API e o recurso manual enviado pelo console AWS aguarda nova resposta
+- Iniciado em: 2026-06-05
+- Atualizado em: 2026-06-05
+- Encerrado em: 2026-06-05
+- Retomada: acompanhar o caso SES `178067031900201`, publicar a branch para disponibilizar `send_smtp_test_email` no deploy e então implementar envio real em `communications`
+- Reversão lógica: desativar `email_enabled`, remover segredo do ambiente e revogar usuário IAM SMTP se a integração SES for abandonada
+
+## WFLOW-20260605-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-NOTIFY-001`, `FEAT-AUTH-001`
+- Objetivo: implementar emails transacionais com SES em hold, outbox + daemon, templates editáveis e confirmação de email com login limitado
+- Etapa atual: concluído; `communications` criado com templates/outbox/tokens, FastAPI enfileira emails v1, Django/Admin Ops expõe confirmação/reenvio/templates/teste SMTP, daemon processa entregas com retry e guarda sandbox, specs e testes atualizados
+- Artefatos afetados:
+  - `communications/`
+  - `backend_api/main.py`
+  - `backend_api/email_outbox.py`
+  - `backend_api/market_lifecycle_engine.py`
+  - `backend_api/daemon_services.py`
+  - `accounts/`
+  - `admin_ops/`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: production access do SES segue em hold/negado no caso `178067031900201`; daemon suprime destinatários comuns enquanto `GOTRENDLABS_SES_PRODUCTION_ACCESS` não estiver ativo
+- Iniciado em: 2026-06-05
+- Atualizado em: 2026-06-05
+- Encerrado em: 2026-06-05
+- Retomada: quando production access for aprovado, ativar `GOTRENDLABS_SES_PRODUCTION_ACCESS=1`, revisar allowlist e validar envio real para destinatário operacional
+- Reversão lógica: desativar `email_enabled`, parar o daemon de envio ou marcar templates inativos, preservando outbox para auditoria
+
 ## Modelo
 
 ```md

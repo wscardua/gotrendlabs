@@ -38,6 +38,8 @@ from backend_api.main import app
 from backend_api.main import _ensure_user_core
 from backend_api.main import _record_wallet_entry
 from config.recaptcha import RecaptchaError
+from communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate
+from communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
 from core.domain_client import get_domain_client
 from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
@@ -130,7 +132,22 @@ def _seed_test_badges():
                 "subcategory": "",
                 "is_active": True,
             },
-        )
+            )
+
+
+def _seed_test_email_templates():
+    for key, locales in DEFAULT_EMAIL_TEMPLATES.items():
+        for locale, payload in locales.items():
+            EmailTemplate.objects.update_or_create(
+                key=key,
+                locale=locale,
+                defaults={
+                    "subject": payload["subject"],
+                    "body_text": payload["body_text"],
+                    "body_html": payload.get("body_html", ""),
+                    "is_active": True,
+                },
+            )
 
 
 class FixtureDomainClientTests(TestCase):
@@ -155,6 +172,7 @@ class BackendAuthAPITests(TransactionTestCase):
     def setUp(self):
         _seed_test_badges()
         _seed_test_markets()
+        _seed_test_email_templates()
 
     def _reset_ai_agent_state(self):
         AiAgentAction.objects.all().delete()
@@ -835,7 +853,11 @@ class BackendAuthAPITests(TransactionTestCase):
 
         requested = client.post("/auth/password-reset/request", json={"email": "reset-user@example.com"})
         self.assertEqual(requested.status_code, 200)
-        reset_url = requested.json()["reset_url"]
+        self.assertEqual(requested.json()["reset_url"], "")
+        reset_url = EmailDelivery.objects.get(
+            recipient_user__email="reset-user@example.com",
+            template_key="account.password_reset",
+        ).context["reset_url"]
         self.assertIn("/password-reset/confirm/", reset_url)
         token = urlparse(reset_url).path.strip("/").split("/")[-1]
         self.assertTrue(PasswordResetToken.objects.filter(user__email="reset-user@example.com", used_at__isnull=True).exists())
@@ -1489,7 +1511,7 @@ class BackendAuthAPITests(TransactionTestCase):
             "ai_openai_timeout_seconds": 20,
             "ai_openai_max_retries": 0,
         }
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "bedrock-test-key"}), patch("backend_api.agent_llm.httpx.post", return_value=FakeResponse()) as post:
+        with patch.dict(os.environ, {"AWS_BEARER_TOKEN_BEDROCK": "bedrock-test-key"}), patch("backend_api.agent_llm.httpx.post", return_value=FakeResponse()) as post:
             result = request_market_comment(config=config, prompt="teste")
 
         self.assertTrue(result["should_publish"])
@@ -1747,6 +1769,101 @@ class BackendAuthAPITests(TransactionTestCase):
 
         invalid = client.get("/users/me", headers={"Authorization": "Bearer invalid"})
         self.assertEqual(invalid.status_code, 401)
+
+    def test_email_confirmation_outbox_blocks_sensitive_actions_until_confirmed(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.save()
+        client = TestClient(app)
+        response = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Confirm Email User",
+                "email": "confirm-email-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(response.json()["user"]["email_confirmed"])
+        user_id = response.json()["user"]["id"]
+        delivery = EmailDelivery.objects.get(recipient_user_id=user_id, template_key="user.email_confirmation")
+        self.assertIn("confirmation_url", delivery.context)
+        self.assertEqual(EmailConfirmationToken.objects.filter(user_id=user_id, used_at__isnull=True).count(), 1)
+
+        option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
+        headers = {"Authorization": f"Bearer {response.json()['session']['token']}"}
+        blocked = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=headers,
+            json={"option_id": option.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(blocked.status_code, 403)
+        self.assertEqual(blocked.json()["detail"], "Confirme seu email para liberar esta ação.")
+
+        token = delivery.context["confirmation_url"].rstrip("/").rsplit("/", 1)[-1]
+        confirmed = client.post("/auth/email-confirm/confirm", json={"token": token})
+        self.assertEqual(confirmed.status_code, 200)
+        session = client.get("/auth/session", headers=headers)
+        self.assertTrue(session.json()["user"]["email_confirmed"])
+        allowed = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=headers,
+            json={"option_id": option.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(allowed.status_code, 201, allowed.json())
+
+    def test_password_reset_request_hides_public_url_and_queues_email(self):
+        user = get_user_model().objects.create_user(
+            username="@resetmail",
+            email="reset-mail@example.com",
+            password="testpass123",
+            first_name="Reset Mail",
+            email_confirmed_at=timezone.now(),
+        )
+        client = TestClient(app)
+        response = client.post("/auth/password-reset/request", json={"email": user.email})
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["reset_url"], "")
+        delivery = EmailDelivery.objects.get(recipient_user=user, template_key="account.password_reset")
+        self.assertIn("/password-reset/confirm/", delivery.context["reset_url"])
+
+    def test_email_template_rendering_and_sandbox_worker_guard(self):
+        template = EmailTemplate.objects.get(key="wallet.credited", locale="pt-br")
+        template.subject = "Crédito: {{ amount }} GT₵"
+        template.body_text = "Motivo: {{ description }}"
+        template.save()
+        rendered = render_template("wallet.credited", "pt-br", {"amount": 42, "description": "Teste"})
+        self.assertEqual(rendered["subject"], "Crédito: 42 GT₵")
+        self.assertEqual(rendered["body_text"], "Motivo: Teste")
+
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.smtp_host = "email-smtp.us-east-1.amazonaws.com"
+        site_config.smtp_port = 587
+        site_config.smtp_username = "smtp-user"
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+        delivery = EmailDelivery.objects.create(
+            event_type="wallet.credited",
+            recipient_email="person@example.com",
+            template_key="wallet.credited",
+            locale="pt-br",
+            context={"amount": 10, "description": "sandbox"},
+            idempotency_key="sandbox-guard-test",
+        )
+        with override_settings(
+            GOTRENDLABS_SMTP_PASSWORD="smtp-secret",
+            GOTRENDLABS_SMTP_API_KEY="",
+            GOTRENDLABS_SES_PRODUCTION_ACCESS=False,
+            GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST=set(),
+        ):
+            stats = process_due_email_deliveries()
+        delivery.refresh_from_db()
+        self.assertEqual(stats["suppressed"], 1)
+        self.assertEqual(delivery.status, "suppressed")
+        self.assertIn("SES sandbox guard", delivery.last_error)
 
     def test_operator_core_bootstrap_does_not_create_public_reputation_or_initial_grant(self):
         User = get_user_model()
@@ -2178,6 +2295,8 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(user.first_name, "Policy Updated")
         self.assertEqual(user.profile.birth_date.isoformat(), "1990-04-23")
         self.assertEqual(user.profile.sex, "prefer_not_to_say")
+        self.assertIsNone(user.email_confirmed_at)
+        get_user_model().objects.filter(id=user.id).update(email_confirmed_at=timezone.now())
 
         cleared = client.patch(
             "/users/me",
@@ -4995,6 +5114,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Controles da plataforma")
             self.assertContains(response, "Segredo SMTP")
             self.assertContains(response, "Configurado por ambiente")
+            self.assertContains(response, "Preset AWS SES")
+            self.assertContains(response, "Enviar teste sandbox")
             self.assertContains(response, "Saldo máximo para solicitar")
             self.assertContains(response, "Purge de logs e auditoria IA")
             self.assertContains(response, 'name="retention-system_log_retention_days"')
@@ -5003,7 +5124,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Regras dos agentes")
             self.assertContains(response, "Comentários IA podem ocorrer com 0 humanos")
             self.assertContains(response, "Previsão bot só roda")
-            self.assertContains(response, "Falhas da LLM/OpenAI são auditadas")
+            self.assertContains(response, "Falhas da LLM/provedor configurado são auditadas")
             self.assertContains(response, "Horas mínimas antes de voltar ao mesmo mercado.")
             self.assertContains(response, "Bot só prevê após atingir este número de humanos.")
             self.assertContains(response, "Tempo máximo de espera por chamada LLM.")
@@ -5057,6 +5178,71 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.ai_audit_retention_days, 120)
             self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
 
+            _seed_test_email_templates()
+            template = EmailTemplate.objects.get(key="user.email_confirmation", locale="pt-br")
+            response = self.client.get(reverse("admin-ops-email-template-edit", args=[template.id]))
+            self.assertContains(response, "Politica de Emails")
+            self.assertContains(response, "Logs de envio")
+            self.assertContains(response, "Somente PT-BR nesta versão")
+            self.assertContains(response, "Variáveis disponíveis")
+            self.assertContains(response, "Visualizar email HTML")
+            self.assertContains(response, "user.email_confirmation")
+            self.assertContains(response, "Confirme seu email e libere sua conta")
+            self.assertContains(response, "confirmation_url")
+            self.assertContains(response, "{{ confirmation_url }}")
+            self.assertContains(response, "https://gotrendlabs.com.br/email-confirm/confirm/exemplo/")
+            response = self.client.post(
+                reverse("admin-ops-email-template-edit", args=[template.id]),
+                {
+                    "subject": "Assunto editado {{ display_name }}",
+                    "body_text": "Corpo editado {{ confirmation_url }}",
+                    "body_html": "",
+                    "is_active": "on",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            template.refresh_from_db()
+            self.assertEqual(template.subject, "Assunto editado {{ display_name }}")
+            self.assertEqual(template.updated_by, staff)
+
+            EmailDelivery.objects.create(
+                event_type="account.password_reset",
+                recipient_user=staff,
+                recipient_email=staff.email,
+                template_key="account.password_reset",
+                locale="pt-br",
+                subject="Redefina sua senha na GoTrendLabs",
+                body_text="Use o link",
+                body_html="<a href='https://gotrendlabs.com.br/password-reset/confirm/secret/'>Reset</a>",
+                context={"reset_url": "https://gotrendlabs.com.br/password-reset/confirm/secret/"},
+                idempotency_key="account.password_reset:test-admin-log",
+                status="sent",
+                attempt_count=1,
+                sent_at=timezone.now(),
+            )
+            EmailDelivery.objects.create(
+                event_type="wallet.credited",
+                recipient_email="person@example.com",
+                template_key="wallet.credited",
+                locale="pt-br",
+                context={"wallet_url": "https://gotrendlabs.com.br/wallet/"},
+                idempotency_key="wallet.credited:sandbox-suppressed",
+                status="suppressed",
+                last_error="SES sandbox guard suppressed delivery to an unverified recipient.",
+            )
+            response = self.client.get(reverse("admin-ops-email-delivery-logs"))
+            self.assertContains(response, "Politica de Emails")
+            self.assertContains(response, "Outbox, tentativas e falhas")
+            self.assertContains(response, "Enviado")
+            self.assertContains(response, "Bloqueado")
+            self.assertContains(response, "account.password_reset")
+            self.assertContains(response, "wallet.credited")
+            self.assertContains(response, "account.password_reset:test-admin-log")
+            self.assertNotContains(response, "password-reset/confirm/secret")
+            response = self.client.get(f"{reverse('admin-ops-email-delivery-logs')}?status=suppressed&template_key=wallet.credited&recipient=person")
+            self.assertContains(response, "person@example.com")
+            self.assertNotContains(response, staff.email)
+
             response = self.client.post(
                 reverse("admin-ops-config"),
                 {
@@ -5076,6 +5262,49 @@ class WebSmokeTests(TransactionTestCase):
             site_config.refresh_from_db()
             self.assertEqual(site_config.system_log_retention_days, 45)
             self.assertEqual(site_config.ai_audit_retention_days, 120)
+
+    def test_smtp_test_command_uses_site_config_and_environment_secret(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = False
+        site_config.smtp_host = "email-smtp.us-east-1.amazonaws.com"
+        site_config.smtp_port = 587
+        site_config.smtp_username = "smtp-user"
+        site_config.smtp_use_tls = True
+        site_config.smtp_use_ssl = False
+        site_config.smtp_timeout_seconds = 12
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.default_reply_to_email = "support@gotrendlabs.com.br"
+        site_config.save()
+
+        out = StringIO()
+        smtp_context = patch("admin_ops.management.commands.send_smtp_test_email.smtplib.SMTP")
+        ssl_context = patch("admin_ops.management.commands.send_smtp_test_email.ssl.create_default_context", return_value="tls-context")
+        with override_settings(GOTRENDLABS_SMTP_PASSWORD="smtp-secret", GOTRENDLABS_SMTP_API_KEY=""), smtp_context as smtp_cls, ssl_context:
+            smtp = smtp_cls.return_value.__enter__.return_value
+            call_command("send_smtp_test_email", "--to", "success@simulator.amazonses.com", stdout=out)
+
+        smtp_cls.assert_called_once_with("email-smtp.us-east-1.amazonaws.com", 587, timeout=12)
+        smtp.starttls.assert_called_once_with(context="tls-context")
+        smtp.login.assert_called_once_with("smtp-user", "smtp-secret")
+        smtp.send_message.assert_called_once()
+        message = smtp.send_message.call_args.args[0]
+        self.assertEqual(message["From"], "no-reply@gotrendlabs.com.br")
+        self.assertEqual(message["To"], "success@simulator.amazonses.com")
+        self.assertEqual(message["Reply-To"], "support@gotrendlabs.com.br")
+        self.assertIn("Email delivery flag is disabled", out.getvalue())
+        self.assertIn("SMTP test email sent", out.getvalue())
+
+    def test_smtp_test_command_validates_required_secret(self):
+        site_config = SiteConfig.get_solo()
+        site_config.smtp_host = "email-smtp.us-east-1.amazonaws.com"
+        site_config.smtp_port = 587
+        site_config.smtp_username = "smtp-user"
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+
+        with override_settings(GOTRENDLABS_SMTP_PASSWORD="", GOTRENDLABS_SMTP_API_KEY=""):
+            with self.assertRaisesMessage(Exception, "GOTRENDLABS_SMTP_PASSWORD or GOTRENDLABS_SMTP_API_KEY"):
+                call_command("send_smtp_test_email", "--dry-run")
 
     def test_admin_config_persists_ai_agent_parameters(self):
         staff = get_user_model().objects.create_user(
@@ -5528,8 +5757,11 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
         response = self.client.get(reverse("home"))
-        self.assertContains(response, "Admin")
+        html = response.content.decode()
+        self.assertContains(response, "Painel Administrativo")
+        self.assertContains(response, "Acesso restrito")
         self.assertContains(response, reverse("admin-ops-dashboard"))
+        self.assertLess(html.find("Painel Administrativo"), html.find("Perfil e badges"))
 
     def test_public_top_nav_links_to_suggestion_for_all_visitors(self):
         home_response = self.client.get(reverse("home"))
@@ -6305,7 +6537,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "gotrendlabs.js?v=20260523-social-notifications")
+            self.assertContains(response, "gotrendlabs.js?v=20260605-email-template-preview")
 
         posted_market = {
             **api_market,

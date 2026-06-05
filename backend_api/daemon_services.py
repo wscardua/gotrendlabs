@@ -201,6 +201,9 @@ def run_daemon_cycle(now=None):
         locked_markets = close_due_auto_markets(now=now)
         pruned_details = prune_expired_operational_records(now=now)
         pruned_logs = pruned_details["total"]
+        from communications.services import process_due_email_deliveries
+
+        email_summary = process_due_email_deliveries(now=now)
     except Exception as exc:
         log_daemon_event(
             "daemon.run_failed",
@@ -232,7 +235,13 @@ def run_daemon_cycle(now=None):
     log_daemon_event(
         DAEMON_HEARTBEAT_EVENT,
         "Daemon operacional ativo.",
-        context={"locked_markets": len(locked_markets), "pruned_logs": pruned_logs, "pruned_log_details": pruned_details, "ai": ai_summary},
+        context={
+            "locked_markets": len(locked_markets),
+            "pruned_logs": pruned_logs,
+            "pruned_log_details": pruned_details,
+            "ai": ai_summary,
+            "email": email_summary,
+        },
     )
     if locked_markets:
         log_daemon_event(
@@ -245,7 +254,7 @@ def run_daemon_cycle(now=None):
         f"Daemon removeu {pruned_logs} registro(s) operacional(is) expirado(s).",
         context={"pruned_logs": pruned_logs, "pruned_log_details": pruned_details},
     )
-    return {"locked_markets": locked_markets, "pruned_logs": pruned_logs, "pruned_log_details": pruned_details, "ai": ai_summary}
+    return {"locked_markets": locked_markets, "pruned_logs": pruned_logs, "pruned_log_details": pruned_details, "ai": ai_summary, "email": email_summary}
 
 
 def daemon_dashboard_status(

@@ -48,6 +48,13 @@ class SiteEmailConfigForm(forms.Form):
         return cleaned_data
 
 
+class EmailTemplateForm(forms.Form):
+    subject = forms.CharField(label="Assunto", max_length=255)
+    body_text = forms.CharField(label="Corpo texto", widget=forms.Textarea(attrs={"rows": 10}))
+    body_html = forms.CharField(label="Corpo HTML", required=False, widget=forms.Textarea(attrs={"rows": 8}))
+    is_active = forms.BooleanField(label="Ativo", required=False, initial=True)
+
+
 class EconomyConfigForm(forms.Form):
     wallet_recharge_min_balance_gtl = forms.IntegerField(
         label="Saldo máximo para solicitar recarga",

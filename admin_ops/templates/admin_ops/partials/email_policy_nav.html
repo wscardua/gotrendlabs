@@ -1,0 +1,10 @@
+<nav class="email-policy-tabs" aria-label="Politica de emails">
+  <a class="{% if active_email_policy_tab == 'templates' %}active{% endif %}" href="{% url 'admin-ops-email-templates' %}">
+    <strong>Templates</strong>
+    <span>Conteudo transacional PT-BR</span>
+  </a>
+  <a class="{% if active_email_policy_tab == 'logs' %}active{% endif %}" href="{% url 'admin-ops-email-delivery-logs' %}">
+    <strong>Logs de envio</strong>
+    <span>Outbox, tentativas e falhas</span>
+  </a>
+</nav>
