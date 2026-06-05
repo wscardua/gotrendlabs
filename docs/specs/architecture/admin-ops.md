@@ -115,7 +115,7 @@
 - Modo manutenção é persistido em arquivo runtime fora do banco para desviar acesso público para página estática de manutenção mesmo quando a conexão com PostgreSQL/FastAPI estiver indisponível.
 - Config SMTP persiste parâmetros não sensíveis no banco; senha/API key ficam exclusivamente em variáveis de ambiente ou secret manager.
 - Admin Ops possui área de Agentes IA para listar, criar/editar agentes oficiais, revisar auditoria de ações e acompanhar saúde técnica.
-- Config operacional permite editar flags, provider/base URL/modelos, limites, cooldowns, timeout/retries, pausa global e motivo dos agentes IA; `OPENAI_API_KEY` é exibida apenas como presente/ausente.
+- Config operacional permite editar flags, provider/base URL/modelos, limites, cooldowns, timeout/retries, pausa global e motivo dos agentes IA; o segredo esperado do provedor (`OPENAI_API_KEY` ou `AWS_BEARER_TOKEN_BEDROCK`) é exibido apenas como presente/ausente.
 - Dashboard exibe saúde dos agentes IA com último ciclo, último sucesso, erro recente, ações 24h e estado das flags principais.
 - Auditoria de agentes IA usa blocos de 10 ações com `Carregar mais`, filtros por agente, mercado, tipo, status, período e motivo, além de tela de detalhe focada em contexto, payload resumido, hash/versão de prompt e vínculos com comentário/previsão.
 - Denúncias por usuários, moderação avançada, comunicações assíncronas de resolução, gestão de operadores e ajuste manual de reputação permanecem fora desta fatia.

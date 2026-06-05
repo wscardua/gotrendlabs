@@ -5,9 +5,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
+from django.core.management import call_command
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.db.models import Count, Q
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -86,6 +88,7 @@ from admin_ops.forms import (
     AdminUserWalletAdjustmentForm,
     DaemonConfigForm,
     EconomyConfigForm,
+    EmailTemplateForm,
     FeedbackRewardForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
@@ -96,12 +99,133 @@ from admin_ops.forms import (
     WalletRechargeRejectForm,
 )
 from admin_ops.models import SiteConfig
+from communications.models import EmailDelivery, EmailTemplate
 from core.platform_config import load_platform_config, save_platform_config
 
 
 THUMB_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "market_thumbnails", base_url=settings.MEDIA_URL + "market_thumbnails/")
 BADGE_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "badge_images", base_url=settings.MEDIA_URL + "badge_images/")
 LOAD_MORE_STEP = 10
+
+EMAIL_DELIVERY_STATUS_LABELS = {
+    "queued": "Na fila",
+    "sending": "Enviando",
+    "sent": "Enviado",
+    "failed": "Falhou",
+    "suppressed": "Bloqueado",
+}
+
+EMAIL_DELIVERY_STATUS_CLASSES = {
+    "queued": "warn",
+    "sending": "warn",
+    "sent": "safe",
+    "failed": "risk",
+    "suppressed": "warn",
+}
+
+
+EMAIL_TEMPLATE_HELP = {
+    "user.email_confirmation": {
+        "description": "Boas-vindas e confirmação de email para liberar ações sensíveis da conta.",
+        "variables": [
+            ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
+            ("confirmation_url", "Link único de confirmação", "{{ confirmation_url }}", "https://gotrendlabs.com.br/email-confirm/confirm/exemplo/"),
+            ("expires_hours", "Validade do link em horas", "{{ expires_hours }}", "48"),
+        ],
+    },
+    "account.password_reset": {
+        "description": "Recuperação de senha por link expirável enviado somente por email.",
+        "variables": [
+            ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
+            ("reset_url", "Link único de redefinição de senha", "{{ reset_url }}", "https://gotrendlabs.com.br/password-reset/confirm/exemplo/"),
+            ("expires_minutes", "Validade do link em minutos", "{{ expires_minutes }}", "60"),
+        ],
+    },
+    "market.locked": {
+        "description": "Aviso para participantes quando um mercado fecha para novas previsões.",
+        "variables": [
+            ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
+            ("market_title", "Título público do mercado", "{{ market_title }}", "Bitcoin fecha acima de US$ 120 mil em 2026?"),
+            ("market_url", "Link para acompanhar o mercado", "{{ market_url }}", "https://gotrendlabs.com.br/markets/bitcoin-120k-2026/"),
+        ],
+    },
+    "market.resolved": {
+        "description": "Aviso para participantes quando um mercado é resolvido.",
+        "variables": [
+            ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
+            ("market_title", "Título público do mercado", "{{ market_title }}", "Bitcoin fecha acima de US$ 120 mil em 2026?"),
+            ("winning_option", "Opção vencedora informada na resolução", "{{ winning_option }}", "SIM"),
+            ("market_url", "Link para ver o resultado", "{{ market_url }}", "https://gotrendlabs.com.br/markets/bitcoin-120k-2026/"),
+        ],
+    },
+    "wallet.credited": {
+        "description": "Aviso quando créditos são concedidos ao usuário.",
+        "variables": [
+            ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
+            ("amount", "Quantidade de GT₵ concedida", "{{ amount }}", "250"),
+            ("description", "Motivo do crédito", "{{ description }}", "Recompensa por sugestão aprovada"),
+            ("entry_type", "Tipo técnico do lançamento", "{{ entry_type }}", "suggestion_reward"),
+            ("reference_type", "Tipo da origem do crédito", "{{ reference_type }}", "market_suggestion"),
+            ("reference_id", "ID da origem do crédito", "{{ reference_id }}", "42"),
+            ("wallet_url", "Link da carteira", "{{ wallet_url }}", "https://gotrendlabs.com.br/wallet/"),
+        ],
+    },
+}
+
+
+def _email_template_help(template):
+    fallback = {"description": "Template transacional em PT-BR.", "variables": []}
+    return EMAIL_TEMPLATE_HELP.get(template.key if template else "", fallback)
+
+
+def _email_template_sample_context(template):
+    return {name: sample for name, _description, _token, sample in _email_template_help(template)["variables"]}
+
+
+def _email_delivery_datetime(value):
+    parsed = _parse_datetime(value)
+    if not parsed:
+        return None
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, timezone.get_current_timezone())
+    return parsed
+
+
+def _email_delivery_label(value):
+    if not value:
+        return "-"
+    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
+
+
+def _email_delivery_counts():
+    counts = {status: 0 for status in EMAIL_DELIVERY_STATUS_LABELS}
+    for row in EmailDelivery.objects.values("status").annotate(total=Count("id")):
+        counts[row["status"]] = row["total"]
+    counts["total"] = sum(counts.values())
+    return counts
+
+
+def _email_delivery_row(delivery):
+    return {
+        "id": delivery.id,
+        "created_at": _email_delivery_label(delivery.created_at),
+        "updated_at": _email_delivery_label(delivery.updated_at),
+        "last_attempt_at": _email_delivery_label(delivery.last_attempt_at),
+        "next_attempt_at": _email_delivery_label(delivery.next_attempt_at),
+        "sent_at": _email_delivery_label(delivery.sent_at),
+        "status": delivery.status,
+        "status_label": EMAIL_DELIVERY_STATUS_LABELS.get(delivery.status, delivery.status),
+        "status_class": EMAIL_DELIVERY_STATUS_CLASSES.get(delivery.status, "warn"),
+        "recipient_email": delivery.recipient_email,
+        "recipient_label": getattr(delivery.recipient_user, "username", "") or delivery.recipient_email,
+        "template_key": delivery.template_key,
+        "event_type": delivery.event_type,
+        "subject": delivery.subject,
+        "attempt_count": delivery.attempt_count,
+        "max_attempts": delivery.max_attempts,
+        "last_error": delivery.last_error,
+        "idempotency_key": delivery.idempotency_key,
+    }
 
 
 def _display_handle(value):
@@ -454,6 +578,8 @@ def dashboard(request):
 def config(request):
     platform_config = load_platform_config()
     site_config = SiteConfig.get_solo()
+    llm_provider = (site_config.ai_llm_provider or "openai").strip().lower()
+    llm_secret_name = "AWS_BEARER_TOKEN_BEDROCK" if llm_provider == "bedrock" else "OPENAI_API_KEY"
     maintenance_form = MaintenanceConfigForm(
         request.POST or None,
         initial={
@@ -509,6 +635,14 @@ def config(request):
         prefix="ai",
     )
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
+    if request.method == "POST" and request.POST.get("action") == "smtp_test":
+        try:
+            call_command("send_smtp_test_email")
+        except Exception as exc:
+            messages.error(request, f"Teste SMTP falhou: {exc}")
+        else:
+            messages.success(request, "Teste SMTP enviado para o SES mailbox simulator.")
+        return redirect("admin-ops-config")
     if (
         request.method == "POST"
         and maintenance_form.is_valid()
@@ -541,6 +675,7 @@ def config(request):
         return redirect("admin-ops-config")
     smtp_secret_configured = bool(settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY)
     openai_secret_configured = bool(getattr(settings, "OPENAI_API_KEY", "") or os.environ.get("OPENAI_API_KEY"))
+    llm_secret_configured = bool(getattr(settings, llm_secret_name, "") or os.environ.get(llm_secret_name, "").strip())
     return render(
         request,
         "admin_ops/config.html",
@@ -555,6 +690,102 @@ def config(request):
             "site_config": site_config,
             "smtp_secret_configured": smtp_secret_configured,
             "openai_secret_configured": openai_secret_configured,
+            "llm_secret_configured": llm_secret_configured,
+            "llm_secret_name": llm_secret_name,
+            "llm_provider": llm_provider,
+        },
+    )
+
+
+@admin_api_required
+def email_templates(request, template_id=None):
+    templates = EmailTemplate.objects.filter(locale="pt-br").order_by("key")
+    selected = templates.filter(id=template_id).first() if template_id else templates.first()
+    if template_id and not selected and templates.exists():
+        return redirect("admin-ops-email-templates")
+    if not selected:
+        return render(request, "admin_ops/email_templates.html", {"templates": [], "selected": None, "form": None})
+    template_help = _email_template_help(selected)
+    form = EmailTemplateForm(
+        request.POST or None,
+        initial={
+            "subject": selected.subject,
+            "body_text": selected.body_text,
+            "body_html": selected.body_html,
+            "is_active": selected.is_active,
+        },
+    )
+    if request.method == "POST" and form.is_valid():
+        selected.subject = form.cleaned_data["subject"].strip()
+        selected.body_text = form.cleaned_data["body_text"].strip()
+        selected.body_html = form.cleaned_data["body_html"].strip()
+        selected.is_active = form.cleaned_data["is_active"]
+        selected.updated_by = _admin_model_user(request)
+        selected.save()
+        messages.success(request, "Template atualizado.")
+        return redirect("admin-ops-email-template-edit", template_id=selected.id)
+    return render(
+        request,
+        "admin_ops/email_templates.html",
+        {
+            "templates": templates,
+            "selected": selected,
+            "form": form,
+            "template_description": template_help["description"],
+            "template_variables": template_help["variables"],
+            "template_sample_context": _email_template_sample_context(selected),
+        },
+    )
+
+
+@admin_api_required
+def email_delivery_logs(request):
+    filters = {
+        "q": request.GET.get("q") or "",
+        "status": request.GET.get("status") or "",
+        "template_key": request.GET.get("template_key") or "",
+        "recipient": request.GET.get("recipient") or "",
+        "from": request.GET.get("from") or "",
+        "to": request.GET.get("to") or "",
+    }
+    deliveries = EmailDelivery.objects.select_related("recipient_user").order_by("-created_at", "-id")
+    if filters["q"]:
+        deliveries = deliveries.filter(
+            Q(recipient_email__icontains=filters["q"])
+            | Q(template_key__icontains=filters["q"])
+            | Q(event_type__icontains=filters["q"])
+            | Q(subject__icontains=filters["q"])
+            | Q(idempotency_key__icontains=filters["q"])
+            | Q(last_error__icontains=filters["q"])
+        )
+    if filters["status"] in EMAIL_DELIVERY_STATUS_LABELS:
+        deliveries = deliveries.filter(status=filters["status"])
+    if filters["template_key"]:
+        deliveries = deliveries.filter(template_key=filters["template_key"])
+    if filters["recipient"]:
+        deliveries = deliveries.filter(recipient_email__icontains=filters["recipient"])
+    start_at = _email_delivery_datetime(filters["from"])
+    end_at = _email_delivery_datetime(filters["to"])
+    if start_at:
+        deliveries = deliveries.filter(created_at__gte=start_at)
+    if end_at:
+        deliveries = deliveries.filter(created_at__lte=end_at)
+
+    total = deliveries.count()
+    limit = _normalized_load_more_limit(request.GET.get("limit"))
+    visible_deliveries = list(deliveries[:limit])
+    template_keys = list(EmailTemplate.objects.filter(locale="pt-br").order_by("key").values_list("key", flat=True))
+    return render(
+        request,
+        "admin_ops/email_delivery_logs.html",
+        {
+            "deliveries": [_email_delivery_row(delivery) for delivery in visible_deliveries],
+            "filters": filters,
+            "counts": _email_delivery_counts(),
+            "status_labels": EMAIL_DELIVERY_STATUS_LABELS,
+            "template_keys": template_keys,
+            "pagination": _load_more_context(request, total, len(visible_deliveries), limit),
+            "total_filtered": total,
         },
     )
 

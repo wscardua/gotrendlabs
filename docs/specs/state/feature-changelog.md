@@ -1,5 +1,30 @@
 # Feature Changelog
 
+## 2026-06-05 — FEAT-AUTH-001 navegação administrativa
+
+- Entrada administrativa no chip do usuário passou de `Admin` para `Painel Administrativo`, aparece como primeira ação para staff/superusers e recebe sinalização visual própria de acesso restrito.
+
+## 2026-06-05 — FEAT-NOTIFY-001 emails transacionais
+
+- Adicionado app `communications` com `EmailTemplate`, `EmailDelivery` e `EmailConfirmationToken`.
+- Templates transacionais por chave/idioma passaram a ser editáveis no Admin Ops, com seeds para confirmação de email, recuperação de senha, mercado fechado/resolvido e crédito concedido.
+- Cadastro e alteração de email passam a emitir link expirável de confirmação; contas não confirmadas entram em login limitado até confirmar o endereço.
+- Recuperação de senha pública passou a enfileirar email transacional e não expõe mais `reset_url` na resposta pública.
+- Fechamento/resolução de mercado para participantes humanos e créditos concedidos passam a criar entregas idempotentes na outbox.
+- Daemon operacional passou a processar `EmailDelivery` com retries, status `queued`/`sending`/`sent`/`failed`/`suppressed` e guarda para SES sandbox.
+- Admin Ops passou a expor `Politica de Emails`, agrupando templates PT-BR, variáveis disponíveis, preview local do email HTML e logs filtráveis de entrega da outbox sem renderizar links sensíveis.
+- Status de implementação: `parcial`; production access SES, event bus dedicado, preferências/cadência avançadas e webhooks de bounce/complaint seguem fora desta fatia.
+
+## 2026-06-05 — FEAT-NOTIFY-001 SES SMTP operacional
+
+- Amazon SES foi configurado em `us-east-1` com identidades `gotrendlabs.com.br` e `gotrendlabs.com` verificadas por Easy DKIM.
+- Credencial SMTP dedicada foi criada para envio via `email-smtp.us-east-1.amazonaws.com:587`, mantendo senha somente em ambiente/secret manager.
+- Adicionado comando `send_smtp_test_email` para validar SMTP sandbox com a configuração do Admin Ops e o segredo do ambiente, sem persistir credencial sensível.
+- Produção recebeu o segredo SMTP em `.env.prod`, os parâmetros não sensíveis foram persistidos em `gotrendlabs_site_config` e o envio sandbox para o mailbox simulator do SES foi validado.
+- Solicitação de production access foi submetida ao SES em 2026-06-05 para uso transacional, mas a revisão retornou `DENIED` no caso `178067031900201`; reenvio imediato por CLI retornou `ConflictException`, recurso manual foi enviado no console AWS e a conta permanece em sandbox até nova resposta/aprovação.
+- Runbook de produção passou a documentar DNS DKIM, parâmetros SMTP não sensíveis, teste sandbox e etapa posterior de production access.
+- Status de implementação: `parcial`; envio real por `communications`, production access do SES e trilha de entrega seguem fora desta fatia.
+
 ## 2026-06-05 — GoTrendLabs validação final e ajustes de produção
 
 - Rebrand GoTrendLabs validado localmente e em produção com `manage.py check`, `makemigrations --check --dry-run`, suíte completa `129/129`, scans de resíduos em código/schema e checks HTTP/SSL dos domínios públicos.
@@ -63,7 +88,7 @@
 ## 2026-05-23 — FEAT-AIAGENT-001 agentes IA oficiais
 
 - Criado app `agents` com agentes oficiais vinculados a usuários `is_bot=true` e auditoria de ações IA.
-- Configuração operacional de IA foi adicionada a `gotrendlabs_site_config`, mantendo `OPENAI_API_KEY` fora do banco.
+- Configuração operacional de IA foi adicionada a `gotrendlabs_site_config`, mantendo o segredo do provedor LLM fora do banco (`OPENAI_API_KEY` ou `AWS_BEARER_TOKEN_BEDROCK`).
 - Daemon passou a executar ciclo IA isolado e a registrar resumo de comentários, previsões, skips e erros.
 - Comentários de bot expõem selo `IA oficial`; rankings, badges e reputação pública excluem bots.
 - Mercado sem participação humana passa a ser cancelado no fechamento automático, com refund de previsões abertas.

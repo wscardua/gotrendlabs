@@ -28,7 +28,7 @@
 - Logs técnicos de troubleshooting ficam em `gotrendlabs_system_logs`, com `expires_at`, purge por `created_at` conforme retenção configurável, índices de consulta operacional e contexto JSON redigido/truncado.
 - Parâmetros operacionais persistentes ficam em `gotrendlabs_site_config`, uma configuração singleton expansível para novos ajustes do site; nesta fatia inclui SMTP não sensível e retenção de logs/auditoria IA, com host, porta, usuário, TLS/SSL, timeout, remetente, reply-to, operador e timestamp de alteração.
 - Senhas, API keys e segredos SMTP não são persistidos no banco.
-- Configuração operacional de agentes IA fica em `gotrendlabs_site_config`; somente `OPENAI_API_KEY` permanece fora do banco.
+- Configuração operacional de agentes IA fica em `gotrendlabs_site_config`; o segredo do provedor LLM permanece fora do banco (`OPENAI_API_KEY` para OpenAI ou `AWS_BEARER_TOKEN_BEDROCK` para Bedrock).
 - `gotrendlabs_ai_agents` liga um agente oficial a um usuário `is_bot=true` e guarda persona/estilo editáveis sem substituir o template seguro de código.
 - `gotrendlabs_ai_agent_actions` guarda auditoria de ações IA com status, motivo, payload resumido, referência a mercado/comentário/previsão e hash/versão do prompt; o purge operacional remove ações mais antigas que `gotrendlabs_site_config.ai_audit_retention_days`.
 - Métricas públicas devem conseguir distinguir participantes/volume humanos e bots; rótulos legados preservam leitura humana.

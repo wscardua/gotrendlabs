@@ -1,0 +1,110 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Logs de Email{% endblock %}
+{% block content %}
+<main class="shell admin-layout user-directory-page email-policy-page">
+  <section class="panel user-directory">
+    <div class="user-directory-head">
+      <div>
+        <span class="eyebrow">Communications · outbox</span>
+        <h1 class="large-title">Politica de Emails</h1>
+        <p class="muted">Acompanhe envios transacionais, tentativas do daemon, bloqueios de sandbox e falhas SMTP sem expor links sensíveis dos templates.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-email-delivery-logs' %}">Atualizar</a>
+    </div>
+
+    {% include "admin_ops/partials/email_policy_nav.html" with active_email_policy_tab="logs" %}
+
+    <div class="user-summary-strip email-delivery-summary" aria-label="Resumo dos envios">
+      <div><span>Total</span><strong>{{ counts.total|default:0 }}</strong></div>
+      <div><span>Na fila</span><strong>{{ counts.queued|default:0 }}</strong></div>
+      <div><span>Enviados</span><strong>{{ counts.sent|default:0 }}</strong></div>
+      <div><span>Falhas</span><strong>{{ counts.failed|default:0 }}</strong></div>
+      <div><span>Bloqueados</span><strong>{{ counts.suppressed|default:0 }}</strong></div>
+    </div>
+
+    <form class="user-filter-panel email-delivery-filter" method="get">
+      <label class="user-search-field">
+        <span>Busca</span>
+        <input type="search" name="q" value="{{ filters.q }}" placeholder="Assunto, evento, idempotência, erro">
+      </label>
+      <label>
+        <span>Status</span>
+        <select name="status">
+          <option value="">Todos</option>
+          {% for status, label in status_labels.items %}
+            <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Template</span>
+        <select name="template_key">
+          <option value="">Todos</option>
+          {% for template_key in template_keys %}
+            <option value="{{ template_key }}" {% if filters.template_key == template_key %}selected{% endif %}>{{ template_key }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Destinatário</span>
+        <input type="search" name="recipient" value="{{ filters.recipient }}" placeholder="email@dominio.com">
+      </label>
+      <label>
+        <span>De</span>
+        <input type="datetime-local" name="from" value="{{ filters.from }}">
+      </label>
+      <label>
+        <span>Até</span>
+        <input type="datetime-local" name="to" value="{{ filters.to }}">
+      </label>
+      <div class="user-filter-actions">
+        <button class="btn small primary" type="submit">Aplicar</button>
+        <a class="btn small ghost" href="{% url 'admin-ops-email-delivery-logs' %}">Limpar</a>
+      </div>
+    </form>
+
+    <div class="system-log-pagination-bar">
+      <div class="user-result-meta">
+        <strong>{{ pagination.visible_count }}</strong>
+        <span>de {{ total_filtered }} entregas filtradas</span>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="table compact-table email-delivery-table">
+        <tr>
+          <th>Quando</th>
+          <th>Status</th>
+          <th>Destinatário</th>
+          <th>Template</th>
+          <th>Tentativas</th>
+          <th>Resultado</th>
+        </tr>
+        {% for delivery in deliveries %}
+          <tr>
+            <td>{{ delivery.created_at }}<br><small>Atualizado {{ delivery.updated_at }}</small></td>
+            <td><span class="tag {{ delivery.status_class }}">{{ delivery.status_label }}</span></td>
+            <td>{{ delivery.recipient_email }}<br><small>{{ delivery.recipient_label }}</small></td>
+            <td><code>{{ delivery.template_key }}</code><br><small>{{ delivery.event_type }}</small></td>
+            <td>{{ delivery.attempt_count }}/{{ delivery.max_attempts }}<br><small>Próxima {{ delivery.next_attempt_at }}</small></td>
+            <td>
+              {% if delivery.sent_at != "-" %}
+                <strong>Enviado em {{ delivery.sent_at }}</strong>
+              {% elif delivery.last_error %}
+                <strong>{{ delivery.last_error|truncatechars:110 }}</strong>
+              {% else %}
+                <span class="muted">{{ delivery.subject|default:"Aguardando processamento"|truncatechars:110 }}</span>
+              {% endif %}
+              <br><small title="{{ delivery.idempotency_key }}">{{ delivery.idempotency_key|truncatechars:64 }}</small>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">Nenhuma entrega encontrada.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    {% include "admin_ops/partials/load_more.html" with pagination=pagination label="Mais entregas" %}
+  </section>
+</main>
+{% endblock %}

@@ -17,6 +17,7 @@ class Command(BaseCommand):
         while True:
             result = run_daemon_cycle()
             ai = result.get("ai", {})
+            email = result.get("email", {})
             pruned = result.get("pruned_log_details", {})
             self.stdout.write(
                 self.style.SUCCESS(
@@ -28,7 +29,10 @@ class Command(BaseCommand):
                     f"AI comments {ai.get('comments_created', 0)}, "
                     f"AI predictions {ai.get('predictions_created', 0)}, "
                     f"AI skips {ai.get('skipped', 0)}, "
-                    f"AI errors {ai.get('errors', 0)}."
+                    f"AI errors {ai.get('errors', 0)}, "
+                    f"email sent {email.get('sent', 0)}, "
+                    f"email failed {email.get('failed', 0)}, "
+                    f"email suppressed {email.get('suppressed', 0)}."
                 )
             )
             if options["once"]:

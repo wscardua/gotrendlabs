@@ -19,6 +19,7 @@ class User(AbstractUser):
     account_status = models.CharField(max_length=32, choices=ACCOUNT_STATUS_CHOICES, default="active")
     deletion_requested_at = models.DateTimeField(null=True, blank=True)
     deactivated_at = models.DateTimeField(null=True, blank=True)
+    email_confirmed_at = models.DateTimeField(null=True, blank=True)
     is_bot = models.BooleanField(default=False)
 
     class Meta:
@@ -68,6 +69,8 @@ class AuthEvent(models.Model):
         ("account_deletion_requested", "Account deletion requested"),
         ("password_reset_requested", "Password reset requested"),
         ("password_reset_confirmed", "Password reset confirmed"),
+        ("email_confirmation_sent", "Email confirmation sent"),
+        ("email_confirmed", "Email confirmed"),
     )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True)

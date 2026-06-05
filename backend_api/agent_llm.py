@@ -33,12 +33,13 @@ def _extract_output_text(payload):
 
 
 def request_market_comment(*, config, prompt):
-    api_key = os.environ.get("OPENAI_API_KEY", "").strip()
-    if not api_key:
-        raise AgentLLMError("OPENAI_API_KEY ausente.")
     provider = (config.get("ai_llm_provider") or "openai").lower()
     if provider not in {"openai", "bedrock"}:
         raise AgentLLMError("Provedor LLM não suportado nesta fatia.")
+    secret_env = "AWS_BEARER_TOKEN_BEDROCK" if provider == "bedrock" else "OPENAI_API_KEY"
+    api_key = os.environ.get(secret_env, "").strip()
+    if not api_key:
+        raise AgentLLMError(f"{secret_env} ausente.")
 
     body = {
         "model": config.get("ai_model") or "gpt-5.4-mini",

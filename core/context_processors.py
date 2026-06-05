@@ -50,10 +50,16 @@ def session_context(request):
         and maintenance_enabled()
     )
     can_access_admin_ops = bool(user and (user.get("is_staff") or user.get("is_superuser")))
+    email_confirmation_required = bool(
+        user
+        and not user.get("email_confirmed", True)
+        and not (user.get("is_staff") or user.get("is_superuser"))
+    )
     return {
         "viewer": viewer,
         "is_guest": not is_authenticated(request),
         "can_access_admin_ops": can_access_admin_ops,
+        "email_confirmation_required": email_confirmation_required,
         "operator_maintenance_notice": operator_maintenance_notice,
         "notifications": notifications,
     }

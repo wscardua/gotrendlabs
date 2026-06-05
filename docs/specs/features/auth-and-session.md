@@ -1,10 +1,10 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-21
+ultima_atualizacao: 2026-06-05
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -35,6 +35,9 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - criação e validação de sessão
 - logout
 - recuperação de senha por token de uso único
+- envio transacional do link de recuperação sem expor o link na resposta pública
+- confirmação de email por token expirável e uso único
+- login limitado para conta com email ainda não confirmado
 - recuperação do contexto do usuário autenticado
 - edição básica de perfil autenticado
 - exclusão lógica de conta
@@ -62,9 +65,12 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
 - telas de login, cadastro e recuperação de senha mantêm navegação pública para feed/mercados, badges e ranking, alternância de tema, rodapé público e retorno compacto `← Feed` no primeiro painel de conteúdo
 - rodapé público mantém links institucionais, produto, confiança e suporte; links de conta, mercados e operações administrativas não aparecem no rodapé
-- link de Admin Ops aparece apenas no chip do usuário autenticado quando o contexto indica `is_staff` ou `is_superuser`
+- link `Painel Administrativo` aparece apenas no chip do usuário autenticado quando o contexto indica `is_staff` ou `is_superuser`, como primeira ação e com sinalização visual de acesso restrito
 - login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
-- login oferece recuperação de senha por email; em desenvolvimento local o link pode ser exposto na UI para validação sem SMTP real
+- login oferece recuperação de senha por email; a resposta pública não expõe o link de reset
+- cadastro com email ativo em produção cria conta em login limitado e envia boas-vindas com link de confirmação
+- usuário com email não confirmado pode entrar, mas ações sensíveis ficam bloqueadas até confirmar o endereço
+- alteração de email no perfil invalida a confirmação anterior e dispara novo link de confirmação quando email estiver ativo
 - login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`), mesmo enquanto OAuth real permanecer como placeholder
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
@@ -93,13 +99,16 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - sistema não permite remover o último superusuário ativo
 - gestão administrativa não permite alterar reputação manualmente nesta fatia
 - `is_bot` não deve aparecer em `/users/me`, sessão comum ou perfil público
+- confirmação de email usa hash de token, expiração e uso único
+- reenvio de confirmação exige autenticação e respeita limite simples de frequência
+- staff, superuser e robôs internos não ficam bloqueados pelo login limitado
 
 ## Responsabilidades por camada
 
 - `frontend-web`: formulários, telas, redirecionamento e mensagens localizadas
 - `backend-api`: autenticação, sessão, vínculo de provedor, política de acesso e contratos staff de suporte a usuários
 - `database`: usuário, credenciais externas, sessão e preferências
-- `communications`: email de boas-vindas e fluxos transacionais futuros
+- `communications`: email de boas-vindas/confirmação e recuperação de senha
 
 ## Dados e persistência
 
@@ -110,6 +119,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - preferência de idioma
 - sessões e rastros de autenticação
 - tokens de recuperação de senha com hash, expiração e uso único
+- tokens de confirmação de email com hash, expiração e uso único
+- timestamp `email_confirmed_at` no usuário
 - aceite de política de uso
 - estado da conta e timestamps de exclusão lógica
 - marcador administrativo `is_bot`
@@ -138,10 +149,12 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - integração para login social e persistência de preferência de idioma
 - fluxo de cadastro, login e logout
 - fluxo de recuperação de senha com solicitação, token válido, token inválido/expirado e token reutilizado
+- fluxo de confirmação de email com token válido, token inválido/expirado, uso único e reenvio
+- login limitado para usuário sem email confirmado e bloqueio de ações sensíveis
 - fluxo de aceite obrigatório da política de uso
 - renderização de política de uso pública e modal de política no cadastro
 - renderização de navegação pública, alternância de tema, rodapé público e retorno compacto `← Feed` em login/cadastro/recuperação de senha
-- renderização do rodapé público sem links de conta/admin e renderização condicional de Admin Ops no chip apenas para staff/superuser
+- renderização do rodapé público sem links de conta/admin e renderização condicional de `Painel Administrativo` no chip apenas para staff/superuser
 - renderização de botões sociais iconizados para Google, Facebook e X em login/cadastro, com rótulos acessíveis e contrato placeholder sem OAuth real
 - login com lembrar acesso mantém sessão prolongada e login sem essa opção preserva expiração padrão
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
@@ -163,9 +176,11 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 - usuário consegue criar e acessar conta
 - usuário consegue solicitar recuperação e definir nova senha com link válido
+- usuário recebe link de recuperação por email sem que a resposta pública revele o link
+- usuário recém-cadastrado consegue entrar em modo limitado e confirma email por link expirável para liberar ações sensíveis
 - usuário consegue abrir a política de uso no cadastro sem sair do fluxo
 - visitantes em login/cadastro/recuperação de senha conseguem voltar para mercados pelo `← Feed`, alternar tema, acessar mercados, badges e ranking pela navegação pública e consultar links do rodapé público
-- visitantes e usuários comuns não veem Admin Ops no rodapé nem no chip do usuário; staff e superusers veem Admin Ops no chip autenticado
+- visitantes e usuários comuns não veem Admin Ops no rodapé nem no chip do usuário; staff e superusers veem `Painel Administrativo` no topo do chip autenticado com sinalização de acesso restrito
 - visitantes em login/cadastro veem os provedores sociais iniciais como ícones acessíveis para Google, Facebook e X
 - cadastro protegido exige conclusão do reCAPTCHA quando configurado
 - sessão inválida é tratada corretamente
@@ -181,6 +196,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - staff/superuser consegue ajustar a própria wallet com justificativa auditada; demais ações sensíveis sobre a própria conta continuam bloqueadas
 - marcador `bot` aparece e filtra apenas em Admin Ops
 - staff consegue gerar link de reset para usuário comum ativo; superuser consegue gerar link para conta administrativa ativa; a confirmação do reset segue o fluxo público existente e revoga sessões somente ao definir a nova senha
+- alteração de email exige nova confirmação antes de liberar ações sensíveis comuns
 
 ## Impacto de mudança
 

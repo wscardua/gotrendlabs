@@ -155,6 +155,44 @@ Para o certificado ser aceito em producao:
 O deploy nao gera certificado autoassinado por IP. Acesso por IP direto e apenas
 diagnostico temporario; o caminho oficial e sempre pelos dominios.
 
+## SES SMTP
+
+A producao usa Amazon SES em `us-east-1` para SMTP transacional. A configuracao operacional deve seguir duas fronteiras:
+
+- Identidades/DKIM no SES e DNS dos dominios `gotrendlabs.com.br` e `gotrendlabs.com`.
+- Parametros nao sensiveis no Admin Ops; senha SMTP somente em `GOTRENDLABS_SMTP_PASSWORD` ou secret manager.
+
+Configuracao padrao do Admin Ops depois da verificacao DNS:
+
+- servidor SMTP: `email-smtp.us-east-1.amazonaws.com`
+- porta: `587`
+- TLS: ativo
+- SSL: inativo
+- remetente padrao: `no-reply@gotrendlabs.com.br`
+- destinatario de teste sandbox: `success@simulator.amazonses.com`
+
+Fluxo seguro:
+
+1. Criar as identidades de dominio no SES apenas apos confirmacao operacional explicita.
+2. Publicar os 3 CNAMEs DKIM de cada dominio no DNS; no Cloudflare, manter os CNAMEs em `DNS only`.
+3. Aguardar o SES marcar os dominios como verificados em `us-east-1`.
+4. Criar credenciais SMTP regionais com um usuario dedicado, por exemplo `gotrendlabs-ses-smtp-us-east-1`.
+5. Atualizar `/opt/gotrendlabs/.env.prod` com `GOTRENDLABS_SMTP_PASSWORD` fora do Git e reiniciar os containers.
+6. Preencher no Admin Ops os parametros SMTP nao sensiveis e validar com:
+
+```bash
+docker compose -f deploy/production/docker-compose.yml run --rm django \
+  python manage.py send_smtp_test_email --to success@simulator.amazonses.com
+```
+
+Enquanto a conta SES estiver em sandbox, envios reais so podem ir para identidades verificadas ou para o mailbox simulator. O pedido de production access deve ser feito depois do teste sandbox com tipo `TRANSACTIONAL`, site `https://gotrendlabs.com.br` e contato operacional confirmado.
+
+O daemon de `communications` tambem aplica essa fronteira no app:
+
+- `GOTRENDLABS_SES_PRODUCTION_ACCESS=0` mantem o bloqueio de envio para destinatarios comuns.
+- `GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST=success@simulator.amazonses.com` permite testes controlados enquanto o SES estiver em sandbox.
+- Depois da aprovacao do SES, ativar `GOTRENDLABS_SES_PRODUCTION_ACCESS=1`, reiniciar os containers e executar novo teste operacional antes de liberar fluxos de produto.
+
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.

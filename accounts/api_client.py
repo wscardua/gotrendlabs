@@ -74,6 +74,14 @@ def confirm_password_reset(token, password):
     return _request("POST", "/auth/password-reset/confirm", {"token": token, "password": password})
 
 
+def confirm_email(token):
+    return _request("POST", "/auth/email-confirm/confirm", {"token": token})
+
+
+def resend_email_confirmation(token):
+    return _request("POST", "/auth/email-confirm/resend", token=token)
+
+
 def logout_user(token):
     return _request("POST", "/auth/logout", token=token)
 

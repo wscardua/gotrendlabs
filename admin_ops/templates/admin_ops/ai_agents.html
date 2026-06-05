@@ -29,10 +29,10 @@
           <strong>{{ health.predictions_created_24h|default:0 }}</strong>
           <small>Skips {{ health.skipped_24h|default:0 }}</small>
         </div>
-        <div class="admin-card dashboard-kpi {% if not health.openai_key_configured %}is-risk{% endif %}">
-          <span>OPENAI_API_KEY</span>
-          <strong>{% if health.openai_key_configured %}Configurada{% else %}Ausente{% endif %}</strong>
-          <small>{{ health.config.ai_model|default:"-" }}</small>
+        <div class="admin-card dashboard-kpi {% if not health.llm_secret_configured %}is-risk{% endif %}">
+          <span>{{ health.llm_secret_name|default:"OPENAI_API_KEY" }}</span>
+          <strong>{% if health.llm_secret_configured %}OK{% else %}Ausente{% endif %}</strong>
+          <small>{{ health.config.ai_llm_provider|default:"openai" }} · {{ health.config.ai_model|default:"-" }}</small>
         </div>
       </div>
     {% endwith %}

@@ -946,3 +946,114 @@ $$("[data-thumb-image]").forEach((image) => {
     image.nextElementSibling?.removeAttribute("hidden");
   });
 });
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderEmailTemplatePreview(source, samples) {
+  return String(source || "").replace(/{{\s*([a-zA-Z0-9_]+)\s*}}/g, (_match, name) => {
+    return samples[name] ?? "";
+  });
+}
+
+function sanitizePreviewHtml(html) {
+  const template = document.createElement("template");
+  template.innerHTML = String(html || "");
+  $$("script", template.content).forEach((node) => node.remove());
+  $$("*", template.content).forEach((node) => {
+    Array.from(node.attributes).forEach((attribute) => {
+      const name = attribute.name.toLowerCase();
+      const value = attribute.value.trim().toLowerCase();
+      if (name.startsWith("on") || value.startsWith("javascript:")) {
+        node.removeAttribute(attribute.name);
+      }
+    });
+  });
+  return template.innerHTML;
+}
+
+function insertAtCursor(field, value) {
+  if (!field || !("value" in field)) return false;
+  const start = field.selectionStart ?? field.value.length;
+  const end = field.selectionEnd ?? field.value.length;
+  field.value = `${field.value.slice(0, start)}${value}${field.value.slice(end)}`;
+  const next = start + value.length;
+  field.focus();
+  if (field.setSelectionRange) field.setSelectionRange(next, next);
+  field.dispatchEvent(new Event("input", { bubbles: true }));
+  return true;
+}
+
+$$("[data-email-template-editor]").forEach((form) => {
+  let activeField = null;
+  const sampleNode = $("#email-template-samples");
+  const samples = sampleNode ? JSON.parse(sampleNode.textContent || "{}") : {};
+  const subjectField = $('[name="subject"]', form);
+  const textField = $('[name="body_text"]', form);
+  const htmlField = $('[name="body_html"]', form);
+  const previewDialog = $("[data-email-preview-dialog]");
+  const previewBody = $("[data-email-preview-body]");
+  const previewMode = $("[data-email-preview-mode]");
+  const previewSubject = $("[data-email-preview-subject]");
+
+  [subjectField, textField, htmlField].forEach((field) => {
+    field?.addEventListener("focus", () => {
+      activeField = field;
+    });
+  });
+
+  $$("[data-email-var-token]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const token = button.dataset.emailVarToken || "";
+      const target = activeField || textField || subjectField;
+      if (!insertAtCursor(target, token)) {
+        try {
+          await navigator.clipboard.writeText(token);
+        } catch (_error) {
+        }
+      }
+    });
+  });
+
+  $("[data-email-preview-open]")?.addEventListener("click", () => {
+    const renderedSubject = renderEmailTemplatePreview(subjectField?.value || "", samples);
+    const htmlSource = (htmlField?.value || "").trim();
+    const textSource = textField?.value || "";
+    if (previewSubject) previewSubject.textContent = renderedSubject || "Sem assunto";
+    if (previewBody) {
+      previewBody.replaceChildren();
+      if (htmlSource) {
+        previewBody.innerHTML = sanitizePreviewHtml(renderEmailTemplatePreview(htmlSource, samples));
+        if (previewMode) previewMode.textContent = "Renderizando o campo Corpo HTML com valores de exemplo.";
+      } else {
+        const fallback = document.createElement("pre");
+        fallback.textContent = renderEmailTemplatePreview(textSource, samples);
+        previewBody.appendChild(fallback);
+        if (previewMode) previewMode.textContent = "Corpo HTML vazio; prévia usando Corpo texto.";
+      }
+    }
+    if (previewDialog?.showModal) {
+      previewDialog.showModal();
+    } else {
+      previewDialog?.setAttribute("open", "open");
+    }
+  });
+
+  $("[data-email-preview-close]")?.addEventListener("click", () => {
+    previewDialog?.close?.();
+    previewDialog?.removeAttribute("open");
+  });
+
+  previewDialog?.addEventListener("click", (event) => {
+    if (event.target === previewDialog) {
+      previewDialog.close?.();
+      previewDialog.removeAttribute("open");
+    }
+  });
+});

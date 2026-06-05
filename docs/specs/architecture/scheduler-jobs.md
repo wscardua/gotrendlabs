@@ -18,6 +18,7 @@
 - O daemon chama o ciclo de agentes IA como automação isolada: configs desligadas geram no-op, falhas LLM não interrompem rotinas principais e o heartbeat inclui resumo de comentários, previsões, skips e erros.
 - O ciclo de comentários IA pode avaliar múltiplos mercados localmente, mas chamadas LLM devem respeitar limite explícito de tentativas por ciclo e parar em erro real de provedor.
 - Fechamento automático deve cancelar mercados sem participantes humanos, liberando previsões abertas existentes, inclusive stakes bot criados por falha/configuração.
+- O daemon drena a outbox de `communications_emaildelivery`, aplicando guarda de sandbox SES, retries e resumo de enviados/falhos/suprimidos no heartbeat operacional.
 
 ## Dependências
 

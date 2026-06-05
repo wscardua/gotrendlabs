@@ -39,8 +39,8 @@
           <strong>{% if site_config.ai_agents_enabled %}Ativos{% else %}Inativos{% endif %}</strong>
         </div>
         <div>
-          <span>OpenAI</span>
-          <strong>{% if openai_secret_configured %}Configurada{% else %}Ausente{% endif %}</strong>
+          <span>{{ llm_provider|upper }}</span>
+          <strong>{% if llm_secret_configured %}Configurada{% else %}Ausente{% endif %}</strong>
         </div>
       </div>
     </div>
@@ -196,6 +196,12 @@
             <strong>{% if smtp_secret_configured %}Configurado por ambiente{% else %}Não configurado{% endif %}</strong>
             <small>Use GOTRENDLABS_SMTP_PASSWORD ou GOTRENDLABS_SMTP_API_KEY no ambiente. O valor não é exibido nem salvo no banco.</small>
           </div>
+          <div class="config-secret-card">
+            <span>Preset AWS SES</span>
+            <strong>us-east-1 · TLS 587 · DNS sandbox guard</strong>
+            <small>Host recomendado: email-smtp.us-east-1.amazonaws.com. Enquanto SES production access estiver pendente, o worker só entrega para simulator ou allowlist verificada.</small>
+            <button class="btn small ghost" type="submit" name="action" value="smtp_test">Enviar teste sandbox</button>
+          </div>
           <div class="config-form-grid">
             <label class="field">
               <span>Servidor SMTP</span>
@@ -265,13 +271,13 @@
               <li>Previsão bot só roda se Agentes e Previsões bot estiverem ligados, nunca com 0 humanos e sempre com humanos mínimos configurados.</li>
               <li>Stake bot respeita saldo, stake máximo, limites por ciclo/dia e a regra de uma previsão por usuário/mercado.</li>
               <li>Bots ficam fora de rankings, badges, streaks, recompensas e reputação pública.</li>
-              <li>Falhas da LLM/OpenAI são auditadas e não derrubam o daemon.</li>
+              <li>Falhas da LLM/provedor configurado são auditadas e não derrubam o daemon.</li>
             </ul>
           </div>
           <div class="config-secret-card">
-            <span>OPENAI_API_KEY</span>
-            <strong>{% if openai_secret_configured %}Configurada por ambiente{% else %}Não configurada{% endif %}</strong>
-            <small>O valor não é exibido nem salvo no banco.</small>
+            <span>{{ llm_secret_name }}</span>
+            <strong>{% if llm_secret_configured %}OK{% else %}Ausente{% endif %}</strong>
+            <small>{% if llm_secret_configured %}Configurada por ambiente.{% else %}Defina no ambiente antes de ativar IA.{% endif %} O valor não é exibido nem salvo no banco.</small>
           </div>
           <div class="config-inline-options">
             <label class="config-check-option">{{ ai_form.ai_agents_enabled }}<span><strong>Agentes</strong><small>Kill switch geral.</small></span></label>

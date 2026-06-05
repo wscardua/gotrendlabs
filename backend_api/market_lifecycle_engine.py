@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from fastapi import HTTPException, status
 
 from backend_api.badge_engine import BadgeAwardEngine
+from backend_api.email_outbox import enqueue_user_email, public_url
 
 
 INITIAL_REPUTATION = 100
@@ -259,6 +260,8 @@ class MarketLifecycleEngine:
         return [row["user_id"] for row in self.cursor.fetchall()]
 
     def _notify_market_participants(self, market_id, *, event_type, source_key, title, body, metadata=None, actor_id=None):
+        market_title = self._market_title(market_id, str(market_id))
+        email_key = {"market_locked": "market.locked", "market_resolved": "market.resolved"}.get(event_type)
         for recipient_id in self._participant_user_ids(market_id):
             self.cursor.execute(
                 """
@@ -279,6 +282,24 @@ class MarketLifecycleEngine:
                     datetime.now(timezone.utc),
                 ),
             )
+            if email_key:
+                enqueue_user_email(
+                    self.cursor,
+                    event_type=email_key,
+                    user_id=recipient_id,
+                    template_key=email_key,
+                    context={
+                        "market_title": market_title,
+                        "market_url": public_url(f"/markets/{self._market_slug(market_id)}/"),
+                        "winning_option": (metadata or {}).get("winning_option", ""),
+                    },
+                    idempotency_key=f"{email_key}:{recipient_id}:{market_id}",
+                )
+
+    def _market_slug(self, market_id):
+        self.cursor.execute("SELECT slug FROM gotrendlabs_markets WHERE id = %s", (market_id,))
+        market = self.cursor.fetchone()
+        return (market and market["slug"]) or str(market_id)
 
     def _accuracy_indicator(self, user_id):
         self.cursor.execute(

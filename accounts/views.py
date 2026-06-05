@@ -1,12 +1,13 @@
 from django import forms
 from django.conf import settings
+from django.contrib import messages
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 
-from accounts.api_client import AuthAPIError, confirm_password_reset, get_markets, login_user, logout_user, register_user, request_password_reset
+from accounts.api_client import AuthAPIError, confirm_email, confirm_password_reset, get_markets, get_session, login_user, logout_user, register_user, request_password_reset, resend_email_confirmation
 from accounts.forms import LoginForm, PasswordResetConfirmForm, PasswordResetRequestForm, RegisterForm
-from accounts.session import auth_token, clear_auth_session, is_authenticated, store_auth_session
+from accounts.session import USER_KEY, auth_token, clear_auth_session, is_authenticated, store_auth_session
 from core.domain_client import local_markets
 
 
@@ -149,6 +150,40 @@ def password_reset_confirm_view(request, token):
         else:
             success = True
     return render(request, "accounts/password_reset_confirm.html", {"form": form, "success": success})
+
+
+def email_confirm_view(request, token):
+    message = ""
+    success = False
+    try:
+        response = confirm_email(token)
+    except AuthAPIError as exc:
+        message = str(exc)
+    else:
+        success = True
+        message = response.get("message") or "Email confirmado com sucesso."
+        token_value = auth_token(request)
+        if token_value:
+            try:
+                session = get_session(token_value)
+            except AuthAPIError:
+                session = None
+            if session:
+                request.session[USER_KEY] = session["user"]
+    return render(request, "accounts/email_confirm.html", {"success": success, "message": message})
+
+
+def email_confirmation_resend_view(request):
+    token = auth_token(request)
+    if not token:
+        return redirect("login")
+    try:
+        response = resend_email_confirmation(token)
+    except AuthAPIError as exc:
+        messages.error(request, str(exc))
+    else:
+        messages.success(request, response.get("message") or "Novo link enviado.")
+    return redirect(request.GET.get("next") or "home")
 
 
 def logout_view(request):

@@ -1,0 +1,121 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Politica de Emails{% endblock %}
+{% block content %}
+<main class="shell admin-layout admin-config-page">
+  <section>
+    <div class="config-hero">
+      <div>
+        <span class="eyebrow">Communications · governanca operacional</span>
+        <h1 class="large-title">Politica de Emails</h1>
+        <p>Gerencie conteúdo transacional, variáveis permitidas e acompanhe a trilha de envio sem expor segredos ou links sensíveis.</p>
+      </div>
+      <div class="config-health-strip" aria-label="Resumo dos templates">
+        <div><span>Idioma</span><strong>PT-BR</strong></div>
+        <div><span>Modelos</span><strong>{{ templates|length }}</strong></div>
+        {% if selected %}
+          <div><span>Editando</span><strong title="{{ selected.key }}">{{ selected.key }}</strong></div>
+          <div><span>Status</span><strong>{% if selected.is_active %}Ativo{% else %}Inativo{% endif %}</strong></div>
+        {% endif %}
+      </div>
+    </div>
+    {% include "admin_ops/partials/email_policy_nav.html" with active_email_policy_tab="templates" %}
+    {% if messages %}
+      {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
+    {% endif %}
+    {% if selected %}
+      {{ template_sample_context|json_script:"email-template-samples" }}
+      <div class="email-template-layout">
+        <aside class="email-template-list" aria-label="Email templates disponíveis">
+          <div class="email-template-list-head">
+            <strong>Fluxos transacionais</strong>
+            <span>Somente PT-BR nesta versão</span>
+          </div>
+          {% for template in templates %}
+            <a class="{% if selected.id == template.id %}active{% endif %}" href="{% url 'admin-ops-email-template-edit' template.id %}">
+              <strong>{{ template.key }}</strong>
+              <span>{% if template.is_active %}Ativo{% else %}Inativo{% endif %}</span>
+            </a>
+          {% endfor %}
+        </aside>
+        <form class="admin-config-surface email-template-editor" method="post" data-email-template-editor>
+          {% csrf_token %}
+          <section class="email-template-compose">
+            <div class="email-template-main">
+              <div class="email-template-titlebar">
+                <div>
+                  <span class="eyebrow">Template · {{ selected.locale|upper }}</span>
+                  <h2>{{ selected.key }}</h2>
+                  <p>{{ template_description }}</p>
+                </div>
+              </div>
+              <div class="config-controls">
+                <label class="config-switch-row email-template-enable-row">
+                  {{ form.is_active }}
+                  <span>
+                    <span class="email-template-state {% if selected.is_active %}is-on{% endif %}">Status atual: {% if selected.is_active %}Ativo{% else %}Inativo{% endif %}</span>
+                    <strong>Usar este template</strong>
+                    <small>Se ficar inativo, o sistema usa o fallback padrão do código.</small>
+                  </span>
+                </label>
+                <label class="field full">
+                  <span>Assunto</span>
+                  {{ form.subject }}
+                  {% if form.subject.errors %}<small>{{ form.subject.errors|join:", " }}</small>{% endif %}
+                </label>
+                <label class="field full">
+                  <span>Corpo texto</span>
+                  {{ form.body_text }}
+                  {% if form.body_text.errors %}<small>{{ form.body_text.errors|join:", " }}</small>{% endif %}
+                </label>
+                <label class="field full">
+                  <span>Corpo HTML opcional</span>
+                  {{ form.body_html }}
+                  {% if form.body_html.errors %}<small>{{ form.body_html.errors|join:", " }}</small>{% endif %}
+                </label>
+                <div class="email-template-actions">
+                  <button class="btn ghost" type="button" data-email-preview-open>Visualizar email HTML</button>
+                  <button class="btn primary" type="submit">Salvar Email Template</button>
+                </div>
+              </div>
+            </div>
+            <aside class="email-template-vars" aria-label="Variáveis disponíveis">
+              <span class="eyebrow">Variáveis disponíveis</span>
+              <p>Clique em uma variável para inserir no campo em edição. O preview usa valores de exemplo, sem salvar nem enviar email.</p>
+              {% if template_variables %}
+                <div class="email-variable-list">
+                  {% for name, description, example, sample in template_variables %}
+                    <div class="email-variable-row">
+                      <button class="email-variable-token" type="button" data-email-var-token="{{ example }}">
+                        {% templatetag openvariable %} {{ name }} {% templatetag closevariable %}
+                      </button>
+                      <span>{{ description }}</span>
+                      <small>Exemplo: {{ sample }}</small>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="notice red">Nenhuma variável documentada para este template.</div>
+              {% endif %}
+            </aside>
+          </section>
+        </form>
+      </div>
+      <dialog class="email-preview-dialog" data-email-preview-dialog aria-label="Visualização do email HTML">
+        <div class="email-preview-shell">
+          <header class="email-preview-head">
+            <div>
+              <span class="eyebrow">Preview local</span>
+              <strong data-email-preview-subject>Assunto</strong>
+              <small data-email-preview-mode></small>
+            </div>
+            <button class="btn small ghost" type="button" data-email-preview-close>Fechar</button>
+          </header>
+          <div class="email-preview-body" data-email-preview-body></div>
+        </div>
+      </dialog>
+    {% else %}
+      <div class="notice red">Nenhum template PT-BR cadastrado.</div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

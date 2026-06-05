@@ -706,6 +706,9 @@ def ai_health_summary(cursor, *, now=None):
     else:
         status = "missing"
         label = "Sem sinal"
+    provider = (config.get("ai_llm_provider") or "openai").lower()
+    secret_env = "AWS_BEARER_TOKEN_BEDROCK" if provider == "bedrock" else "OPENAI_API_KEY"
+    secret_configured = bool(os.environ.get(secret_env, "").strip())
     return {
         "status": status,
         "status_label": label,
@@ -719,11 +722,13 @@ def ai_health_summary(cursor, *, now=None):
         "predictions_created_24h": counts.get(("prediction", "created"), 0),
         "skipped_24h": counts.get(("cycle", "skipped"), 0) + counts.get(("comment", "skipped"), 0) + counts.get(("prediction", "skipped"), 0),
         "openai_key_configured": bool(os.environ.get("OPENAI_API_KEY", "").strip()),
+        "llm_secret_configured": secret_configured,
+        "llm_secret_name": secret_env,
         "config": {
             "ai_agents_enabled": bool(config.get("ai_agents_enabled")),
             "ai_commenting_enabled": bool(config.get("ai_commenting_enabled")),
             "ai_predictions_enabled": bool(config.get("ai_predictions_enabled")),
-            "ai_llm_provider": config.get("ai_llm_provider") or "openai",
+            "ai_llm_provider": provider,
             "ai_llm_base_url": config.get("ai_llm_base_url") or "https://api.openai.com/v1",
             "ai_model": config.get("ai_model") or "gpt-5.4-mini",
             "ai_max_comments_per_cycle": int(config.get("ai_max_comments_per_cycle") or 1),

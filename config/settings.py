@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "admin_ops",
     "agents",
     "system_logs",
+    "communications",
 ]
 
 MIDDLEWARE = [
@@ -123,7 +124,14 @@ SYSTEM_LOG_RETENTION_DAYS = int(os.environ.get("SYSTEM_LOG_RETENTION_DAYS", "90"
 GOTRENDLABS_RUNTIME_CONFIG_PATH = os.environ.get("GOTRENDLABS_RUNTIME_CONFIG_PATH", str(BASE_DIR / ".runtime" / "platform_config.json"))
 GOTRENDLABS_SMTP_PASSWORD = os.environ.get("GOTRENDLABS_SMTP_PASSWORD", "")
 GOTRENDLABS_SMTP_API_KEY = os.environ.get("GOTRENDLABS_SMTP_API_KEY", "")
+GOTRENDLABS_SES_PRODUCTION_ACCESS = os.environ.get("GOTRENDLABS_SES_PRODUCTION_ACCESS", "0").strip().lower() in {"1", "true", "yes", "on"}
+GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST = {
+    email.strip().lower()
+    for email in os.environ.get("GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST", "success@simulator.amazonses.com").split(",")
+    if email.strip()
+}
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+AWS_BEARER_TOKEN_BEDROCK = os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "")
 
 LOGGING = {
     "version": 1,

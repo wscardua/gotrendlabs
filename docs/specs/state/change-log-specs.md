@@ -1,5 +1,16 @@
 # Change Log de Specs
 
+## 2026-06-05
+
+- registrada evolução de `FEAT-NOTIFY-001` para emails transacionais com `EmailTemplate`, `EmailDelivery`, `EmailConfirmationToken`, templates editáveis no Admin Ops, daemon de outbox e guarda de sandbox SES.
+- registrada decisão operacional de agrupar templates e logs de entrega em `Politica de Emails`, mantendo edição PT-BR com variáveis documentadas, preview local de HTML e listagem de outbox sem expor links sensíveis.
+- registrada evolução de `FEAT-AUTH-001` para confirmação de email por token expirável, login limitado até confirmação, reenvio limitado e recuperação de senha sem exposição pública do `reset_url`.
+- atualizado contrato de eventos para refletir outbox transacional antes do event bus dedicado.
+- registrada evolução de `FEAT-NOTIFY-001` para infraestrutura SMTP SES em `us-east-1`, com identidades `gotrendlabs.com.br` e `gotrendlabs.com` verificadas por Easy DKIM.
+- registrado que o remetente operacional padrão é `no-reply@gotrendlabs.com.br` e que host, porta, TLS/SSL e usuário SMTP são parâmetros não sensíveis administráveis.
+- registrado comando operacional `send_smtp_test_email` para teste sandbox com mailbox simulator do SES, mantendo senha SMTP fora do banco/interface.
+- atualizados gaps restantes de email para separar infraestrutura SES pronta de production access, configuração de segredo em produção e implementação do envio real em `communications`.
+
 ## 2026-05-24
 
 - registrada evolução de `FEAT-AUTH-001` para reset administrativo auditado por Admin Ops e exibição de `Sua progressão` para operadores sem participação no ranking público
