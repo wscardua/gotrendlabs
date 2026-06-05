@@ -4366,7 +4366,7 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertContains(
             response,
-            '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async">',
+            '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async" data-thumb-image>',
             html=True,
         )
 

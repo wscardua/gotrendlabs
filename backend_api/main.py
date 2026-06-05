@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
+from functools import lru_cache
 from ipaddress import ip_address as parse_ip_address
 import os
 import json
@@ -110,6 +111,21 @@ BADGE_TYPES = {"global", "category", "performance", "engagement"}
 PUBLIC_WEB_BASE_URL = os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
+
+
+@lru_cache(maxsize=512)
+def _local_media_url_exists(url):
+    if not url or not url.startswith("/media/"):
+        return True
+    relative_path = url.split("?", 1)[0].removeprefix("/media/").lstrip("/")
+    if not relative_path:
+        return False
+    return os.path.isfile(os.path.join(os.getcwd(), "media", relative_path))
+
+
+def _public_image_url(url):
+    url = (url or "").strip()
+    return url if _local_media_url_exists(url) else ""
 
 
 def _runtime_config_path():
@@ -1071,7 +1087,7 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
     return [_comment_response(row) for row in cursor.fetchall()]
 
 
-def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
+def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filter_public_image=True):
     cursor.execute(
         """
         SELECT id, label, probability_exact, hint
@@ -1160,7 +1176,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "close_label": row["close_label"] or _market_status_label(row["status"]),
         "thumb": row["thumb"],
         "thumb_color": row["thumb_color"],
-        "image_url": row["image_url"],
+        "image_url": _public_image_url(row["image_url"]) if filter_public_image else (row["image_url"] or ""),
         "summary": row["summary"],
         "resolution_criteria": row["resolution_criteria"],
         "close_at": row["close_at"].isoformat() if row["close_at"] else None,
@@ -4196,7 +4212,10 @@ def admin_list_markets(
             rows = _market_rows(cursor, where_sql, params, order_sql)
             cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_markets GROUP BY status")
             counts = {row["status"]: row["total"] for row in cursor.fetchall()}
-            return {"markets": [_market_response(cursor, row, include_comments=False) for row in rows], "counts": counts}
+            return {
+                "markets": [_market_response(cursor, row, include_comments=False, filter_public_image=False) for row in rows],
+                "counts": counts,
+            }
 
 
 @app.get("/admin/markets/{slug}/participants", response_model=AdminMarketParticipantListResponse)
@@ -4320,7 +4339,7 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             market_id = cursor.fetchone()["id"]
             _save_market_options(cursor, market_id, options)
             _record_admin_event(cursor, staff["id"], "market.create", "market", slug, payload.admin_notes)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.get("/admin/markets/{slug}", response_model=MarketResponse)
@@ -4328,7 +4347,7 @@ def admin_get_market(slug: str, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             _current_staff_user(cursor, authorization)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.patch("/admin/markets/{slug}", response_model=MarketResponse)
@@ -4442,7 +4461,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
             )
             _save_market_options(cursor, row["id"], options, preserve_existing_probability=preserve_operational_fields)
             _record_admin_event(cursor, staff["id"], "market.update", "market", new_slug, payload.admin_notes)
-            return _market_response(cursor, _admin_market_by_slug(cursor, new_slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, new_slug), filter_public_image=False)
 
 
 @app.post("/admin/markets/{slug}/publish", response_model=MarketResponse)
@@ -4452,7 +4471,7 @@ def admin_publish_market(slug: str, payload: AdminMarketActionPayload, authoriza
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
             _market_lifecycle_engine(cursor, staff["id"]).publish_market(row, slug, payload.note)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.post("/admin/markets/{slug}/cancel", response_model=MarketResponse)
@@ -4462,7 +4481,7 @@ def admin_cancel_market(slug: str, payload: AdminMarketActionPayload, authorizat
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
             _market_lifecycle_engine(cursor, staff["id"]).cancel_market(row, slug, payload.note)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.post("/admin/markets/{slug}/resolve", response_model=MarketResponse)
@@ -4472,7 +4491,7 @@ def admin_resolve_market(slug: str, payload: AdminMarketResolvePayload, authoriz
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
             _market_lifecycle_engine(cursor, staff["id"]).resolve_market(row, slug, payload)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.get("/admin/markets/{slug}/resolution-audit", response_model=AdminMarketResolutionAuditResponse)
@@ -4650,7 +4669,7 @@ def admin_lock_market(slug: str, payload: AdminMarketActionPayload, authorizatio
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
             _market_lifecycle_engine(cursor, staff["id"]).lock_market(row, slug, payload.note)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug))
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.get("/admin/queues", response_model=QueueListResponse)

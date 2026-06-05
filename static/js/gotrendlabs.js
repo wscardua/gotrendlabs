@@ -939,3 +939,10 @@ $$("[data-badge-form]").forEach((form) => {
   });
   updateBadgePreview(form);
 });
+
+$$("[data-thumb-image]").forEach((image) => {
+  image.addEventListener("error", () => {
+    image.hidden = true;
+    image.nextElementSibling?.removeAttribute("hidden");
+  });
+});
