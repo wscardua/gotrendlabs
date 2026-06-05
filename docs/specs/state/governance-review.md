@@ -5,7 +5,7 @@
 
 ## Objetivo da revisão
 
-Validar se a estrutura de specs, skills, workflows, testes e memória operacional está eficaz e eficiente para desenvolvimento assistido por IA no Orynth Trends.
+Validar se a estrutura de specs, skills, workflows, testes e memória operacional está eficaz e eficiente para desenvolvimento assistido por IA no GoTrendLabs.
 
 ## Conclusão
 
@@ -16,8 +16,8 @@ A estrutura está adequada para o objetivo atual porque separa conhecimento pers
 - estado e changelogs permitem retomada entre sessões
 - skills de governança coordenam leitura, edição, arquitetura e testes
 - skills técnicas reduzem improvisação por stack
-- `orynth-software-architect` adiciona desenho propositivo, segurança e decisões estruturais
-- `orynth-test-engineer` fecha a lacuna entre estratégia de testes e testes executáveis
+- `gotrendlabs-software-architect` adiciona desenho propositivo, segurança e decisões estruturais
+- `gotrendlabs-test-engineer` fecha a lacuna entre estratégia de testes e testes executáveis
 
 ## Boas práticas atendidas
 
@@ -39,4 +39,4 @@ A estrutura está adequada para o objetivo atual porque separa conhecimento pers
 
 ## Recomendação operacional
 
-Para qualquer pedido futuro que envolva evolução do produto, começar pelo `orynth-workflow-governor`. Para tarefas pontuais em uma camada técnica, usar a skill técnica correspondente somente depois de confirmar a feature spec e os contratos afetados.
+Para qualquer pedido futuro que envolva evolução do produto, começar pelo `gotrendlabs-workflow-governor`. Para tarefas pontuais em uma camada técnica, usar a skill técnica correspondente somente depois de confirmar a feature spec e os contratos afetados.

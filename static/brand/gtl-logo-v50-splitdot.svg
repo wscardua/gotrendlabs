@@ -1,0 +1,13 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs split dot logo</title>
+  <desc id="desc">A minimal split-dot mark for yes-no outcomes and consensus.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(42 32)">
+    <circle cx="58" cy="58" r="54" fill="#111315"/>
+    <path d="M58 4A54 54 0 0 1 58 112V4Z" fill="#FFFFFF"/>
+    <circle cx="58" cy="58" r="13" fill="#111315"/>
+    <path d="M28 88L58 58L88 28" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#68706F" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="650">Antes do sim ou nao virar consenso.</text>
+</svg>

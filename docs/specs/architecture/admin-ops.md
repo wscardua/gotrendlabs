@@ -49,16 +49,16 @@
 - Criação/edição de mercado deve selecionar categoria, subcategoria e evento a partir da taxonomia persistida; a subcategoria escolhida precisa pertencer à categoria selecionada e o evento escolhido precisa pertencer à subcategoria.
 - Na criação de mercado, categoria, subcategoria e evento iniciam sem seleção para evitar publicação acidental em taxonomia errada.
 - O formulário/listagem de badges deve permitir recorte opcional por evento depois de categoria/subcategoria; vazio permanece significando todos os eventos.
-- Eventos administrativos são registrados em `orynth_admin_events`.
+- Eventos administrativos são registrados em `gotrendlabs_admin_events`.
 - Mercados criados pelo admin nascem como `draft`; publicação válida muda para `open`; cancelamento muda para `canceled`.
 - Mercados `binary` possuem opções fixas `SIM`/`NAO` com snapshot inicial `50%`/`50%`.
 - Mercados `multiple` exigem pelo menos duas opções, sem limite máximo fixo nesta etapa, com percentuais iniciais decimais distribuídos igualmente.
-- Edição de mercado deve sincronizar opções preservando registros existentes quando já houver previsões vinculadas; opções referenciadas por `orynth_predictions` não podem ser apagadas/recriadas silenciosamente.
+- Edição de mercado deve sincronizar opções preservando registros existentes quando já houver previsões vinculadas; opções referenciadas por `gotrendlabs_predictions` não podem ser apagadas/recriadas silenciosamente.
 - Criação/edição exige controles operacionais mínimos antes de salvar: resumo, fonte, critério de resolução, data/hora de fechamento, fuso e cor do card.
 - Editor de mercado possui prévia ao vivo do card e aceita thumbnail do card como mídia local referenciada por URL.
 - `close_at`, `close_timezone` e `auto_close_enabled` ficam persistidos para integração com scheduler/daemon.
 - Quando `auto_close_enabled=true`, o fechamento para `locked` deve ser feito pelo daemon/scheduler; quando `false`, o Admin Ops deve oferecer ação manual de fechamento para mercados `open` ou `scheduled`.
-- Fechamento manual move o mercado para `locked` e registra evento `market.lock` em `orynth_admin_events`.
+- Fechamento manual move o mercado para `locked` e registra evento `market.lock` em `gotrendlabs_admin_events`.
 - Cancelamento administrativo aplica refund total, cancela previsões abertas e deve validar que não restou previsão `open` antes de concluir a transição.
 - Reconciliação de mercado já `canceled` com previsões `open` é operação excepcional de suporte; deve ser idempotente, preferir auditoria em `dry-run` antes da aplicação e registrar `market.cancel_reconcile`.
 - Tela de resolução lista mercados `locked` e `resolved`, mostra data/hora/timezone da resolução e permite ordenação por resolução recente, resolução antiga ou pendências.
@@ -68,10 +68,10 @@
 - Mercado `resolved` deve exibir ação “Auditoria”, abrindo tela read-only consumida de `GET /admin/markets/{slug}/resolution-audit`.
 - Tela de auditoria de resolução deve mostrar resumo do mercado, opção vencedora, data/hora/timezone, fonte/nota, totais de participantes, vencedores, perdedores, stake, refunds, payouts, losses e badges.
 - Lista de participantes da auditoria deve paginar de 10 em 10 na UI e preservar `limit`/`offset`.
-- Auditoria deve incluir legenda operacional do ledger explicando `refund`, `payout`, `loss`, `0 O₵` e badges, sem recalcular domínio no Django.
+- Auditoria deve incluir legenda operacional do ledger explicando `refund`, `payout`, `loss`, `0 GT₵` e badges, sem recalcular domínio no Django.
 - O rótulo curto de prazo exibido nos cards é derivado automaticamente de `close_at`; admin não informa esse texto manualmente.
 - A mensagem pública de fechamento (`close_label`) é opcional e textual; não controla o daemon.
-- Percentuais iniciais das opções são persistidos em `orynth_market_options.probability_exact`; inteiros são derivados apenas na serialização/UI.
+- Percentuais iniciais das opções são persistidos em `gotrendlabs_market_options.probability_exact`; inteiros são derivados apenas na serialização/UI.
 - Campos obrigatórios devem ser marcados visualmente no formulário e ações concluídas devem gerar feedback de sucesso para o operador.
 - Browse de mercados administrativos filtra por status via query string e mantém contadores globais por status.
 - Browse de mercados administrativos exibe `view_count` e `share_count` como indicadores compactos de popularidade operacional e permite ordenar por padrão, mais visualizados ou mais compartilhados.
@@ -96,19 +96,19 @@
 - Conversão em rascunho aparece apenas para sugestão de mercado; depois de convertida, a seção fica indisponível para novo envio.
 - Aprovação de créditos aparece para Feedback e Mercado quando houver usuário cadastrado; depois de aprovada, a seção fica indisponível para alteração ou reenvio.
 - Recompensas de fila usam ledger/projeção da wallet e bloqueiam duplicidade por item.
-- Configuração geral de Admin Ops define `wallet_recharge_min_balance_oc`, o saldo máximo para usuário solicitar recarga educativa.
+- Configuração geral de Admin Ops define `wallet_recharge_min_balance_gtl`, o saldo máximo para usuário solicitar recarga educativa.
 - Configuração geral de Admin Ops define os limites de heartbeat do daemon para status `Atrasado` e `Sem sinal`.
 - Configuração geral de Admin Ops define retenção separada para logs técnicos e auditoria IA, em dias, aplicada pelo daemon e comando de prune.
-- Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor em O₵ ou rejeita com nota, mantendo uma solicitação pendente por usuário.
+- Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor em GT₵ ou rejeita com nota, mantendo uma solicitação pendente por usuário.
 - Aprovação de recarga educativa cria ledger `educational_recharge`, atualiza projeção de saldo e registra `wallet_recharge.approve`; rejeição registra `wallet_recharge.reject` sem alterar wallet.
 - Comentários entram na fila operacional de moderação com filtro próprio e status `visible`/`hidden`.
 - A tela de revisão de comentário permite ocultar/restaurar com nota operacional.
-- Moderação de comentário registra `comment.hide` ou `comment.restore` em `orynth_admin_events`.
+- Moderação de comentário registra `comment.hide` ou `comment.restore` em `gotrendlabs_admin_events`.
 - Badges possuem catálogo administrável no Admin Ops, com upload de imagem para tema claro, upload opcional de imagem para tema escuro, texto público e regra automática selecionada de tipos controlados pelo backend.
 - Browse administrativo de badges deve exibir nome/código, status, tipo, regra, categoria/subcategoria, contagem de conquistas e ação de edição.
 - Formulário administrativo de badge deve exibir prévia do card público, atualizando nome, descrição, regra, imagens de tema e status antes de salvar.
 - Regras de badge com recorte temático devem selecionar categoria e subcategoria a partir da taxonomia dinâmica persistida; subcategorias são filtradas pela categoria escolhida.
-- Criação, edição e desativação de badge passam por contratos staff da FastAPI e registram `badge.create`, `badge.update` ou `badge.deactivate` em `orynth_admin_events`.
+- Criação, edição e desativação de badge passam por contratos staff da FastAPI e registram `badge.create`, `badge.update` ou `badge.deactivate` em `gotrendlabs_admin_events`.
 - Logs técnicos de troubleshooting ficam disponíveis no Admin Ops em área própria, com filtros operacionais e detalhe completo por contrato staff da FastAPI.
 - Config operacional fica disponível no Admin Ops logo após Dashboard e permite controlar modo manutenção e parâmetros SMTP.
 - Modo manutenção é persistido em arquivo runtime fora do banco para desviar acesso público para página estática de manutenção mesmo quando a conexão com PostgreSQL/FastAPI estiver indisponível.

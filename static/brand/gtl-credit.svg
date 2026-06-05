@@ -1,0 +1,12 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GTL credit symbol</title>
+  <desc id="desc">GTL internal credit symbol for GoTrendLabs.</desc>
+  <circle cx="128" cy="128" r="104" fill="#FFFDF7" stroke="#111315" stroke-width="12"/>
+  <path d="M82 82H151C166.464 82 179 94.536 179 110V146C179 161.464 166.464 174 151 174H82C66.536 174 54 161.464 54 146V110C54 94.536 66.536 82 82 82Z" stroke="#111315" stroke-width="10"/>
+  <path d="M82 128H113L130 106L154 106" stroke="#136F4A" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M131 106V170" stroke="#111315" stroke-width="10" stroke-linecap="round"/>
+  <path d="M99 170H164" stroke="#111315" stroke-width="10" stroke-linecap="round"/>
+  <path d="M188 94C174.745 94 164 108.103 164 125.5C164 142.897 174.745 157 188 157" stroke="#2D5E88" stroke-width="10" stroke-linecap="round"/>
+  <path d="M179 111H205" stroke="#2D5E88" stroke-width="8" stroke-linecap="round"/>
+  <path d="M179 140H205" stroke="#2D5E88" stroke-width="8" stroke-linecap="round"/>
+</svg>

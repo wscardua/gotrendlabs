@@ -1,0 +1,18 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs logo</title>
+  <desc id="desc">GoTrendLabs logo with GTL signal mark and wordmark.</desc>
+  <rect width="760" height="180" rx="28" fill="#F7F4EC"/>
+  <g transform="translate(36 34)">
+    <rect width="112" height="112" rx="28" fill="#111315"/>
+    <path d="M35 30H77C88.046 30 97 38.954 97 50V62C97 73.046 88.046 82 77 82H35C23.954 82 15 73.046 15 62V50C15 38.954 23.954 30 35 30Z" stroke="#FFFDF7" stroke-width="7"/>
+    <path d="M31 56H51L63 43L82 43" stroke="#136F4A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M64 43V86" stroke="#FFFDF7" stroke-width="7" stroke-linecap="round"/>
+    <path d="M39 86H84" stroke="#FFFDF7" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="178" y="88" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="800" letter-spacing="0">GoTrendLabs</text>
+  <text x="180" y="124" fill="#667071" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600" letter-spacing="0">Prove que voce viu antes.</text>
+  <path d="M178 140H700" stroke="#DED7C8" stroke-width="2" stroke-linecap="round"/>
+  <path d="M607 61H688" stroke="#136F4A" stroke-width="10" stroke-linecap="round"/>
+  <path d="M647 61V112" stroke="#111315" stroke-width="8" stroke-linecap="round"/>
+  <path d="M618 112H689" stroke="#111315" stroke-width="8" stroke-linecap="round"/>
+</svg>

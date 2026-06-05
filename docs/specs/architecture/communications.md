@@ -25,6 +25,6 @@
 
 ## Configuração operacional
 
-- `orynth_site_config` é a tabela singleton de configurações persistentes do site; communications usa os campos SMTP: host, porta, usuário, TLS/SSL, timeout, remetente, reply-to e status ativo.
-- `ORYNTH_SMTP_PASSWORD` ou `ORYNTH_SMTP_API_KEY` mantém o segredo de envio fora do banco.
+- `gotrendlabs_site_config` é a tabela singleton de configurações persistentes do site; communications usa os campos SMTP: host, porta, usuário, TLS/SSL, timeout, remetente, reply-to e status ativo.
+- `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY` mantém o segredo de envio fora do banco.
 - TLS e SSL são mutuamente exclusivos.

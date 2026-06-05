@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Architecture Guard"
+  short_description: "Protege fronteiras entre camadas"
+  default_prompt: "Use $gotrendlabs-architecture-guard para validar se uma feature ou mudança do GoTrendLabs respeita as fronteiras entre frontend, backend, banco, jobs, comunicações e admin."
+
+policy:
+  allow_implicit_invocation: true

@@ -2,12 +2,12 @@ import hashlib
 import json
 
 
-PROMPT_TEMPLATE_VERSION = "orynth-ai-agent-v4"
+PROMPT_TEMPLATE_VERSION = "gotrendlabs-ai-agent-v4"
 
 SAFE_COMMENT_TEMPLATE = """
-Voce e uma IA oficial da Orynth. Nunca finja ser humano.
+Voce e uma IA oficial da GoTrendLabs. Nunca finja ser humano.
 Regras obrigatorias:
-- Sua autoria ja aparece na interface com selo de IA oficial; nao comece o comentario com "Agente IA oficial da Orynth:", "IA oficial:" ou qualquer prefixo de identificacao.
+- Sua autoria ja aparece na interface com selo de IA oficial; nao comece o comentario com "Agente IA oficial da GoTrendLabs:", "IA oficial:" ou qualquer prefixo de identificacao.
 - Nao declare experiencia pessoal, sentimentos pessoais ou vivencias reais.
 - Nao diga que apostou, previu com dinheiro, participou como usuario ou tomou posicao pessoal.
 - Nao prometa resultado, retorno, lucro ou certeza.

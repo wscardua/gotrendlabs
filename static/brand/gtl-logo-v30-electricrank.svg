@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs electric rank logo</title>
+  <desc id="desc">An electric rank logo for sharp predictions, reputation, and public score.</desc>
+  <rect width="760" height="180" rx="20" fill="#D7FF3F"/>
+  <g transform="translate(28 24)">
+    <rect x="0" y="0" width="132" height="132" rx="18" fill="#0B0D10"/>
+    <path d="M78 10L34 76H64L51 122L102 54H72L78 10Z" fill="#D7FF3F"/>
+    <path d="M25 98H48M82 98H108" stroke="#F7F4EC" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="34" cy="76" r="8" fill="#FF3B30"/>
+  </g>
+  <text x="188" y="84" fill="#0B0D10" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="46" font-weight="900">GoTrendLabs</text>
+  <text x="190" y="123" fill="#263000" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="800">Ranking para quem enxerga o movimento antes.</text>
+  <text x="630" y="101" fill="#0B0D10" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="34" font-weight="900">REP</text>
+</svg>

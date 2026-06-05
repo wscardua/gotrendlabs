@@ -4,7 +4,7 @@ Data da rodada: 2026-05-20
 Ambiente web: `http://127.0.0.1:8000/`
 Backend API: `http://127.0.0.1:8001`
 Run: `qa_hard_20260520_100u`
-Usuario administrativo: `admin@orynth.local`
+Usuario administrativo: `admin@gotrendlabs.com.br`
 
 ## Resumo executivo
 
@@ -23,7 +23,7 @@ A rodada executou 100 usuarios simulados com operacao profunda e administracao p
 ## Cobertura operacional
 
 - Usuarios: cadastro preparado no banco por causa do reCAPTCHA ativo, depois operacao autenticada real por API: perfil, wallet, ledger, badges, ranking, mercados, view/share, preview, previsao, comentario, reacoes, sugestao e feedback.
-- Admin: login real como `admin@orynth.local`, dashboard, usuarios, ajuste de wallet, desativacao/reativacao, badge, mercados, publicacao, lock, resolucao, cancelamento/refund, moderacao e filas.
+- Admin: login real como `admin@gotrendlabs.com.br`, dashboard, usuarios, ajuste de wallet, desativacao/reativacao, badge, mercados, publicacao, lock, resolucao, cancelamento/refund, moderacao e filas.
 - Web: paginas publicas principais verificadas por HTTP no host `127.0.0.1:8000`.
 
 ## Mercados da rodada

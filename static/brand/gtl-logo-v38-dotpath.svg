@@ -1,0 +1,16 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs dot path logo</title>
+  <desc id="desc">A memorable dot-path mark for public predictions moving toward resolution.</desc>
+  <rect width="760" height="180" rx="24" fill="#F5F8F6"/>
+  <g transform="translate(28 26)">
+    <circle cx="24" cy="96" r="18" fill="#111315"/>
+    <circle cx="67" cy="55" r="18" fill="#111315"/>
+    <circle cx="110" cy="32" r="18" fill="#24C06F"/>
+    <path d="M24 96C42 72 51 65 67 55C84 44 94 39 110 32" stroke="#111315" stroke-width="12" stroke-linecap="round"/>
+    <path d="M31 115L58 130L108 104" stroke="#FFB000" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="108" cy="104" r="12" fill="#FF4D2E"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="186" y="122" fill="#5E6865" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Do palpite ao resultado, tudo fica rastreavel.</text>
+  <text x="631" y="100" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">REP</text>
+</svg>

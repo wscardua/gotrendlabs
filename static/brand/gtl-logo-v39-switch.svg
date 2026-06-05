@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs switch logo</title>
+  <desc id="desc">A binary switch mark for yes-no predictions, changing consensus, and clear outcomes.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(26 36)">
+    <rect x="0" y="0" width="144" height="94" rx="47" fill="#111315"/>
+    <circle cx="97" cy="47" r="36" fill="#24C06F"/>
+    <path d="M34 47H62" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+    <path d="M84 48L96 60L117 34" stroke="#111315" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M72 116H120" stroke="#FF4D2E" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="190" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="192" y="122" fill="#5F6868" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Escolha um lado antes da virada.</text>
+  <text x="636" y="100" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">YES</text>
+</svg>

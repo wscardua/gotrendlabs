@@ -1,4 +1,4 @@
-# Avaliação Simulada do Mock Orynth Market Inspired
+# Avaliação Simulada do Mock GoTrendLabs Market Inspired
 
 ## Escopo
 
@@ -50,10 +50,10 @@ Importante:
 - Considerações:
   - A página `concepts.html` ajudou bastante.
   - Gostou do texto “como ler um mercado sem confundir com aposta financeira”.
-  - Achou boa a repetição do aviso de que OC não é dinheiro real.
+  - Achou boa a repetição do aviso de que GTL não é dinheiro real.
 - Problemas encontrados:
   - Mesmo com a explicação, ainda há muito vocabulário visual de mercado financeiro.
-  - “Comprometer OC” e “retorno estimado” ainda parecem termos difíceis para uma primeira sessão.
+  - “Comprometer GTL” e “retorno estimado” ainda parecem termos difíceis para uma primeira sessão.
   - A página de detalhe do mercado continua densa para quem só quer entender o básico antes de agir.
 
 ### U04 · Diego, 29, gamer competitivo, motivado por ranking e performance
@@ -78,7 +78,7 @@ Importante:
 - Problemas encontrados:
   - O topo do site e o `app.js` parecem discordar sobre a navegação pública ideal.
   - Em várias páginas públicas o script remove links de `Categorias` e `Carteira` do header, o que pode empobrecer a navegação e até remover o estado ativo da página atual.
-  - O produto ensina a prever, mas ainda explica pouco a diferença prática entre ganhar OC e ganhar reputação.
+  - O produto ensina a prever, mas ainda explica pouco a diferença prática entre ganhar GTL e ganhar reputação.
 
 ### U06 · Felipe, 20, usuário mobile-first, navega por impulso
 
@@ -146,7 +146,7 @@ Importante:
 
 ### Síntese Executiva
 
-Esta rodada mostra que o mock `market-inspired` está mais claro e mais convincente do que a versão anterior para a experiência pública. O produto comunica melhor seu posicionamento, usa melhor a hero, introduz onboarding curto e reforça mais vezes que OC não é dinheiro real.
+Esta rodada mostra que o mock `market-inspired` está mais claro e mais convincente do que a versão anterior para a experiência pública. O produto comunica melhor seu posicionamento, usa melhor a hero, introduz onboarding curto e reforça mais vezes que GTL não é dinheiro real.
 
 Mesmo assim, os `10` relatos convergem para um ponto central: a interface ficou mais didática, mas continua semanticamente próxima demais do universo de trading. O principal desafio agora não é fazer o produto parecer sofisticado; é fazer o produto parecer sofisticado sem parecer financeiro demais.
 
@@ -159,11 +159,11 @@ Mesmo assim, os `10` relatos convergem para um ponto central: a interface ficou 
 
 2. Mecânica pública está mais clara, mas ainda não totalmente confiável
 
-- Houve melhora na explicação de consenso, OC e resolução.
+- Houve melhora na explicação de consenso, GTL e resolução.
 - Ainda assim, permanece dúvida sobre:
   - por que confiar no consenso;
   - como o retorno é calculado;
-  - qual a diferença prática entre OC, reputação e acerto;
+  - qual a diferença prática entre GTL, reputação e acerto;
   - quando existe recarga e com qual critério.
 
 3. Interatividade limitada em componentes que prometem profundidade

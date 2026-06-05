@@ -10,7 +10,7 @@
 - `FEAT-REP-001` depende de `FEAT-RES-001`
 - `FEAT-COMMENT-001` depende de `FEAT-MARKET-002` e `FEAT-AUTH-001`
 - `FEAT-SUGGEST-001` depende de `FEAT-AUTH-001` e `admin-ops`
-- `FEAT-NOTIFY-001` depende de eventos do domínio, preferências de idioma, configuração SMTP em `orynth_site_config` e segredo de envio em ambiente/secret manager
+- `FEAT-NOTIFY-001` depende de eventos do domínio, preferências de idioma, configuração SMTP em `gotrendlabs_site_config` e segredo de envio em ambiente/secret manager
 - `FEAT-I18N-001` é transversal às demais features
 - `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
 
@@ -32,35 +32,35 @@
 - Admin Ops consome comentários via FastAPI e pode degradar para Postgres local em desenvolvimento quando a API estiver desatualizada.
 - `FEAT-AUTH-001` e `FEAT-SUGGEST-001` compartilham validação reCAPTCHA server-side configurável por ambiente.
 - Django renderiza o widget v2 e encaminha `recaptcha_token`; FastAPI é a autoridade de validação para cadastro e envios guest.
-- `FEAT-OPSLOG-001` registra requests Django/FastAPI e logs Python em `orynth_system_logs`; Admin Ops consome `/admin/system-logs` para troubleshooting sem alterar domínio e configura `system_log_retention_days`.
+- `FEAT-OPSLOG-001` registra requests Django/FastAPI e logs Python em `gotrendlabs_system_logs`; Admin Ops consome `/admin/system-logs` para troubleshooting sem alterar domínio e configura `system_log_retention_days`.
 - Admin Ops consome `GET /admin/dashboard-summary` via FastAPI para consolidar métricas operacionais de mercados, filas, usuários, engajamento, wallet, badges, logs, manutenção, SMTP e reCAPTCHA.
-- Config operacional usa duas fontes por fronteira: modo manutenção em JSON runtime para sobreviver sem banco/API e parâmetros SMTP não sensíveis em `orynth_site_config`.
-- Recarga educativa de wallet usa `orynth_site_config.wallet_recharge_min_balance_oc` como piso operacional configurado no Admin Ops; Django e FastAPI bloqueiam solicitação quando `available_oc` está acima desse valor.
-- Status do daemon no Dashboard usa `orynth_site_config.daemon_stale_after_minutes` e `orynth_site_config.daemon_missing_after_minutes` como limites operacionais configurados no Admin Ops.
+- Config operacional usa duas fontes por fronteira: modo manutenção em JSON runtime para sobreviver sem banco/API e parâmetros SMTP não sensíveis em `gotrendlabs_site_config`.
+- Recarga educativa de wallet usa `gotrendlabs_site_config.wallet_recharge_min_balance_gtl` como piso operacional configurado no Admin Ops; Django e FastAPI bloqueiam solicitação quando `available_gtl` está acima desse valor.
+- Status do daemon no Dashboard usa `gotrendlabs_site_config.daemon_stale_after_minutes` e `gotrendlabs_site_config.daemon_missing_after_minutes` como limites operacionais configurados no Admin Ops.
 - Ranking web consome `GET /rankings` como fonte autoritativa, filtra por categoria/subcategoria/evento, exibe badges conquistadas resumidas após o handle e usa `Carregar mais` em blocos cumulativos de 10 linhas sem recalcular reputação ou elegibilidade de badges no Django.
 - Deploy MVP usa EC2 com Docker Compose para `proxy`, `django`, `fastapi` e `daemon`; PostgreSQL de producao fica em RDS/servico gerenciado fora do Compose.
 - Infra AWS base de producao foi provisionada em `us-east-1` com EC2 `t4g.micro`, RDS PostgreSQL 16 `db.t4g.micro`, VPC dedicada, SSM, CloudWatch minimo, Parameter Store, Secrets Manager e role OIDC restrita para GitHub Actions no branch `main`; o workflow de deploy agora faz preflight de variables/secrets e valida `aws sts get-caller-identity` antes do `ssm send-command`.
 - Acesso administrativo ao RDS usa tunel SSM pela EC2; o RDS permanece privado e aceita `5432` somente do security group da EC2.
 - Workflow `.github/workflows/deploy.yml` roda testes em `main` e esta preparado para disparar `deploy/production/deploy.sh` via SSM quando os secrets/variables do GitHub e `.env.prod` da EC2 estiverem configurados.
-- `FEAT-AIAGENT-001` integra `backend_api/agent_services.py` ao daemon operacional, usa `orynth_site_config` para flags/limites/retenção de auditoria, `orynth_ai_agents` para personas oficiais, `orynth_ai_agent_actions` para auditoria e exclui bots de ranking/badges/reputação pública.
+- `FEAT-AIAGENT-001` integra `backend_api/agent_services.py` ao daemon operacional, usa `gotrendlabs_site_config` para flags/limites/retenção de auditoria, `gotrendlabs_ai_agents` para personas oficiais, `gotrendlabs_ai_agent_actions` para auditoria e exclui bots de ranking/badges/reputação pública.
 - Admin Ops consome contratos staff de mercado para busca textual no browse e detalhe de participantes por mercado, mantendo Django como camada de exibição e FastAPI/backend como fonte das métricas humano/bot/total.
 
 ## Skills técnicas por stack
 
-- `orynth-django-web`: páginas, templates, HTMX, Alpine.js, i18n de interface e admin Django
-- `orynth-fastapi-domain`: domínio, contratos, autenticação, endpoints e regras centrais
-- `orynth-postgres-modeling`: modelagem relacional, ledger, integridade, índices e rastreabilidade
-- `orynth-ops-scheduler-communications`: jobs temporizados, eventos, emails, observabilidade operacional e fluxos assíncronos
+- `gotrendlabs-django-web`: páginas, templates, HTMX, Alpine.js, i18n de interface e admin Django
+- `gotrendlabs-fastapi-domain`: domínio, contratos, autenticação, endpoints e regras centrais
+- `gotrendlabs-postgres-modeling`: modelagem relacional, ledger, integridade, índices e rastreabilidade
+- `gotrendlabs-ops-scheduler-communications`: jobs temporizados, eventos, emails, observabilidade operacional e fluxos assíncronos
 
 ## Skills de produto e curadoria
 
-- `orynth-prediction-markets`: sugere mercados de previsão binários ou múltiplos usando dados internos da Orynth, trends sociais/cripto, links exatos de verificação, diversidade editorial, aviso de risco para cripto e checagem anti-repetição
+- `gotrendlabs-prediction-markets`: sugere mercados de previsão binários ou múltiplos usando dados internos da GoTrendLabs, trends sociais/cripto, links exatos de verificação, diversidade editorial, aviso de risco para cripto e checagem anti-repetição
 
 ## Skill de governança de processo
 
-- `orynth-workflow-governor`: abre, acompanha, retoma, bloqueia, conclui, cancela ou substitui workflows que tocam múltiplos documentos
-- `orynth-software-architect`: define arquitetura, segurança, módulos, riscos, ADRs e desenho técnico para mudanças relevantes
-- `orynth-test-engineer`: implementa, revisa e executa testes concretos de backend, frontend, contratos, integração e fluxos
+- `gotrendlabs-workflow-governor`: abre, acompanha, retoma, bloqueia, conclui, cancela ou substitui workflows que tocam múltiplos documentos
+- `gotrendlabs-software-architect`: define arquitetura, segurança, módulos, riscos, ADRs e desenho técnico para mudanças relevantes
+- `gotrendlabs-test-engineer`: implementa, revisa e executa testes concretos de backend, frontend, contratos, integração e fluxos
 
 ## Documentos de workflow
 

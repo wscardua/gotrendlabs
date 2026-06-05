@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs badge logo</title>
+  <desc id="desc">GoTrendLabs logo inspired by reputation badges and resolved predictions.</desc>
+  <rect width="760" height="180" rx="28" fill="#FFFDF7"/>
+  <g transform="translate(38 28)">
+    <path d="M62 8L112 36V92L62 120L12 92V36L62 8Z" fill="#111315"/>
+    <path d="M36 70L55 86L91 43" stroke="#DFF6DF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35 43H61L74 30" stroke="#136F4A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="178" y="86" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="800">GoTrendLabs</text>
+  <text x="180" y="123" fill="#667071" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600">Transforme previsoes em reputacao.</text>
+  <path d="M610 72H697" stroke="#DED7C8" stroke-width="8" stroke-linecap="round"/>
+  <path d="M610 96H667" stroke="#136F4A" stroke-width="8" stroke-linecap="round"/>
+  <path d="M610 120H690" stroke="#111315" stroke-width="8" stroke-linecap="round"/>
+</svg>

@@ -39,9 +39,9 @@
 - Usuários autenticados veem ações iconizadas de `like`/`dislike`; a UI só representa a reação retornada pelo domínio.
 - Listas web simples do produto e browses principais do Admin Ops devem usar o padrão `Carregar mais` em blocos cumulativos de 10 itens; paginação por offset fica reservada para auditorias ou telas com necessidade explícita de navegação posicional.
 - Ordenações e recortes rápidos do feed público podem acontecer no frontend sobre HTML já renderizado, desde que usem somente campos serializados pelo domínio (`viewer_has_favorite`, `viewer_has_prediction`, `viewer_has_like`, `is_featured`, `market_like_count`, `view_count`, `created_at`, `close_at`, status, volume, categoria, subcategoria e evento).
-- Métricas públicas da home devem consumir labels e totais prontos do backend/fallback local (`open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`); a UI não calcula totais de ledger, stakes, wallet ou previsão.
-- O label `distributed_oc` já deve chegar sem créditos de operadores; a UI não aplica filtro por papel em métricas públicas.
-- A moeda educativa deve ser exibida como `O₵` em textos visíveis; identificadores técnicos, campos e nomes internos continuam usando `_oc`.
+- Métricas públicas da home devem consumir labels e totais prontos do backend/fallback local (`open_markets`, `total_predictions`, `distributed_gtl`, `moved_gtl`); a UI não calcula totais de ledger, stakes, wallet ou previsão.
+- O label `distributed_gtl` já deve chegar sem créditos de operadores; a UI não aplica filtro por papel em métricas públicas.
+- A moeda educativa deve ser exibida como `GT₵` em textos visíveis; identificadores técnicos, campos e nomes internos continuam usando `_gtl`.
 - O indicador visual de prazo em cards deve ser derivado de `created_at`/`close_at` e acompanhar o texto `closes_in`; probabilidade permanece representada apenas pelos campos de consenso/probabilidade.
 - Esse indicador deve mudar de cor por estado de prazo (`open`, `soon`, `urgent`, `closed`) e recalcular enquanto a página estiver aberta, preservando leitura textual para acessibilidade.
 - O recorte rápido `Resolvidos` do feed público é uma filtragem visual client-side sobre cards já renderizados com status de domínio, sem alterar o contrato público de listagem.
@@ -58,7 +58,7 @@
 - A tela de ranking deve consumir `GET /rankings`; se a FastAPI estiver indisponível, a UI exibe erro/estado vazio sem recalcular reputação em Django ou no navegador.
 - O ranking público deve renderizar `handle` como identificação do usuário e nunca exibir recorte pessoal fictício para visitantes.
 - A tela autenticada de perfil deve manter a edição básica inline na própria `/profile/`, evitando rota separada para alteração de dados pessoais.
-- A tela autenticada de perfil deve preencher campos com dados reais retornados por `/users/me`, priorizando `orynth_user_profiles.display_name` para o nome editável.
+- A tela autenticada de perfil deve preencher campos com dados reais retornados por `/users/me`, priorizando `gotrendlabs_user_profiles.display_name` para o nome editável.
 - A UI de perfil não deve exibir dados privados em blocos públicos/resumo; email, data de nascimento, sexo e bio aparecem somente como campos editáveis do usuário autenticado.
 - O ticket de previsão deve iniciar sem opção marcada, orientar a seleção explícita e usar controle nativo obrigatório para impedir confirmação ambígua.
 - Usuário autenticado sem saldo disponível deve ver o ticket em estado de leitura, com indicação de saldo indisponível e CTA para wallet.

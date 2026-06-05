@@ -83,7 +83,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - eventos consumidos
 - templates
 - trilha de envio
-- `orynth_user_notifications`: destinatário, ator, mercado, comentário, tipo, chave de origem, título, corpo, estado de leitura, metadata e data
+- `gotrendlabs_user_notifications`: destinatário, ator, mercado, comentário, tipo, chave de origem, título, corpo, estado de leitura, metadata e data
 - configuração SMTP singleton: ativo, host, porta, usuário, TLS/SSL, timeout, remetente e reply-to
 
 ## Contratos afetados

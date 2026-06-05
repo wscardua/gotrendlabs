@@ -23,7 +23,7 @@ Use este arquivo como checklist rápido antes de encerrar processos.
 - contratos afetados declarados
 - camadas impactadas declaradas
 - testes esperados e critérios de aceite definidos
-- desenho de solução e riscos avaliados por `orynth-software-architect`
+- desenho de solução e riscos avaliados por `gotrendlabs-software-architect`
 
 ## Alterar feature
 
@@ -39,7 +39,7 @@ Use este arquivo como checklist rápido antes de encerrar processos.
 - spec lida antes do código
 - arquitetura validada antes da edição
 - testes executados ou pendências registradas
-- `orynth-test-engineer` usado quando houver testes concretos a criar ou revisar
+- `gotrendlabs-test-engineer` usado quando houver testes concretos a criar ou revisar
 - estado atualizado no final
 
 ## Testes

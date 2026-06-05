@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block title %}Orynth Trends Admin | {{ title }}{% endblock %}
+{% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
   <section class="editor-layout">
@@ -63,7 +63,7 @@
             <div>
               <h3>2. Opções</h3>
               <p data-option-help>Sim/Não usa duas opções fixas com probabilidade inicial balanceada.</p>
-              <p class="muted tiny-note">Os percentuais são salvos em <code>orynth_market_options.probability_exact</code>; o admin não edita manualmente nesta etapa.</p>
+              <p class="muted tiny-note">Os percentuais são salvos em <code>gotrendlabs_market_options.probability_exact</code>; o admin não edita manualmente nesta etapa.</p>
             </div>
             <button class="btn small ghost" type="button" data-add-option>Adicionar opção</button>
           </div>
@@ -156,9 +156,9 @@
             </div>
           </div>
           <div class="admin-dashboard-kpis compact">
-            <div class="admin-card dashboard-kpi"><span>Humanos</span><strong>{{ market_participants.summary.human_participants|default:0 }}</strong><small>{{ market_participants.summary.human_volume_oc|default:0 }} O₵</small></div>
-            <div class="admin-card dashboard-kpi"><span>Bots oficiais</span><strong>{{ market_participants.summary.bot_participants|default:0 }}</strong><small>{{ market_participants.summary.bot_volume_oc|default:0 }} O₵</small></div>
-            <div class="admin-card dashboard-kpi"><span>Total operacional</span><strong>{{ market_participants.summary.participants_total|default:0 }}</strong><small>{{ market_participants.summary.total_volume_oc|default:0 }} O₵</small></div>
+            <div class="admin-card dashboard-kpi"><span>Humanos</span><strong>{{ market_participants.summary.human_participants|default:0 }}</strong><small>{{ market_participants.summary.human_volume_gtl|default:0 }} GT₵</small></div>
+            <div class="admin-card dashboard-kpi"><span>Bots oficiais</span><strong>{{ market_participants.summary.bot_participants|default:0 }}</strong><small>{{ market_participants.summary.bot_volume_gtl|default:0 }} GT₵</small></div>
+            <div class="admin-card dashboard-kpi"><span>Total operacional</span><strong>{{ market_participants.summary.participants_total|default:0 }}</strong><small>{{ market_participants.summary.total_volume_gtl|default:0 }} GT₵</small></div>
           </div>
           <table class="table market-participants-table">
             <tr><th>Usuário</th><th>Tipo</th><th>Opção</th><th>Stake</th><th>Prob. entrada</th><th>Payout potencial</th><th>Status</th><th>Quando</th></tr>
@@ -167,9 +167,9 @@
                 <td><strong>{{ participant.display_name }}</strong><br><small>{{ participant.handle }} · #{{ participant.prediction_id }}</small></td>
                 <td>{% if participant.is_bot %}<span class="tag">IA oficial</span>{% else %}<span class="tag safe">Humano</span>{% endif %}</td>
                 <td>{{ participant.option_label }}</td>
-                <td>{{ participant.stake_amount }} O₵</td>
+                <td>{{ participant.stake_amount }} GT₵</td>
                 <td>{{ participant.probability_at_entry }}%</td>
-                <td>{{ participant.potential_payout }} O₵</td>
+                <td>{{ participant.potential_payout }} GT₵</td>
                 <td>{{ participant.status }}</td>
                 <td>{{ participant.created_at|slice:":16" }}</td>
               </tr>

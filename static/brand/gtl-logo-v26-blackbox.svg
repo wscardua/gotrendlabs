@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs black box logo</title>
+  <desc id="desc">A disruptive black-box mark for future calls becoming public proof.</desc>
+  <rect width="760" height="180" rx="20" fill="#070707"/>
+  <g transform="translate(28 24)">
+    <rect x="0" y="0" width="132" height="132" rx="18" fill="#F7F4EC"/>
+    <path d="M23 92L48 43L72 86L108 24" stroke="#070707" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M33 101H112" stroke="#D7FF3F" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="108" cy="24" r="14" fill="#FF3B30"/>
+    <path d="M108 24L124 8" stroke="#D7FF3F" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="188" y="84" fill="#F7F4EC" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="46" font-weight="900">GoTrendLabs</text>
+  <text x="190" y="123" fill="#D7FF3F" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="800">CALL IT BEFORE THE WORLD CATCHES UP</text>
+  <text x="632" y="101" fill="#F7F4EC" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="34" font-weight="900">GTL</text>
+</svg>

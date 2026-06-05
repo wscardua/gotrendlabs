@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs spark logo</title>
+  <desc id="desc">A bold spark mark for discovering early trends before the crowd.</desc>
+  <rect width="760" height="180" rx="24" fill="#101214"/>
+  <g transform="translate(28 24)">
+    <path d="M70 0L84 48L132 62L84 76L70 124L56 76L8 62L56 48L70 0Z" fill="#FFB000"/>
+    <path d="M42 92C60 70 83 68 106 91" stroke="#101214" stroke-width="11" stroke-linecap="round"/>
+    <circle cx="106" cy="91" r="10" fill="#24C06F"/>
+    <path d="M22 22L35 35M116 20L104 34M23 102L36 90M117 104L104 91" stroke="#FFFFFF" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#FFFFFF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="186" y="122" fill="#B8C2BF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">A faísca antes da tendência virar obvia.</text>
+  <text x="633" y="100" fill="#FFB000" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">GTL</text>
+</svg>

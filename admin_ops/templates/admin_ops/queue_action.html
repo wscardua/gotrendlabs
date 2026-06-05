@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block title %}Orynth Trends Admin | {{ title }}{% endblock %}
+{% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
   <section class="queue-review">
@@ -21,7 +21,7 @@
           <div class="queue-meta">
             <span class="tag">{{ item.queue_label }}</span>
             <span class="tag">{{ item.status_label }}</span>
-            {% if item.reward_oc %}<span class="tag safe">{{ item.reward_oc }} O₵ aprovados</span>{% endif %}
+            {% if item.reward_gtl %}<span class="tag safe">{{ item.reward_gtl }} GT₵ aprovados</span>{% endif %}
           </div>
           <h2>{{ item.title }}</h2>
           <dl class="queue-detail-list">
@@ -49,7 +49,7 @@
               {% if item.status == "pending" %}
                 <p class="muted">Defina o valor educativo que será creditado na carteira do usuário.</p>
                 <div class="form-grid">
-                  <div class="field full">{{ recharge_form.amount_oc.label_tag }}{{ recharge_form.amount_oc }}</div>
+                  <div class="field full">{{ recharge_form.amount_gtl.label_tag }}{{ recharge_form.amount_gtl }}</div>
                   <div class="field full">{{ recharge_form.note.label_tag }}{{ recharge_form.note }}</div>
                 </div>
                 <button class="btn success" type="submit" data-confirm="Aprovar recarga educativa?">Aprovar recarga</button>
@@ -107,17 +107,17 @@
               {% csrf_token %}
               <input type="hidden" name="operation" value="reward">
               <h3>Aprovar créditos</h3>
-              {% if item.reward_oc %}
+              {% if item.reward_gtl %}
                 <p class="muted">Créditos já aprovados e lançados no extrato do usuário.</p>
                 <div class="form-grid">
-                  <div class="field full"><label>Valor aprovado</label><input value="{{ item.reward_oc }} O₵" disabled></div>
+                  <div class="field full"><label>Valor aprovado</label><input value="{{ item.reward_gtl }} GT₵" disabled></div>
                   {% if item.admin_note %}<div class="field full"><label>Nota operacional</label><textarea disabled>{{ item.admin_note }}</textarea></div>{% endif %}
                 </div>
                 <button class="btn success" type="button" disabled>Créditos já aprovados</button>
               {% elif item.author_id %}
                 <p class="muted">Ao aprovar, os créditos entram na carteira do usuário e aparecem no extrato.</p>
                 <div class="form-grid">
-                  <div class="field full">{{ reward_form.amount_oc.label_tag }}{{ reward_form.amount_oc }}</div>
+                  <div class="field full">{{ reward_form.amount_gtl.label_tag }}{{ reward_form.amount_gtl }}</div>
                   <div class="field full">{{ reward_form.note.label_tag }}{{ reward_form.note }}</div>
                 </div>
                 <button class="btn success" type="submit" data-confirm="Aprovar envio de créditos?">Aprovar créditos</button>

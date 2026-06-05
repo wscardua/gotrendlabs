@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs ribbon logo</title>
+  <desc id="desc">A flowing ribbon mark representing shifting consensus and public trend movement.</desc>
+  <rect width="760" height="180" rx="30" fill="#F7F4EC"/>
+  <g transform="translate(32 34)">
+    <path d="M14 81C32 35 76 30 104 54C83 55 65 67 52 88C40 105 23 105 14 81Z" fill="#136F4A"/>
+    <path d="M27 54C50 77 80 87 111 71C98 112 51 117 23 93C43 91 56 79 66 61C51 66 38 62 27 54Z" fill="#111315"/>
+    <circle cx="79" cy="57" r="8" fill="#FFFDF7"/>
+  </g>
+  <text x="182" y="87" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="184" y="124" fill="#667071" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600">Entre antes da curva do consenso.</text>
+  <path d="M612 92C638 65 678 65 706 92" stroke="#136F4A" stroke-width="9" stroke-linecap="round"/>
+  <path d="M612 116C638 89 678 89 706 116" stroke="#111315" stroke-width="9" stroke-linecap="round"/>
+</svg>

@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs prediction portal logo</title>
+  <desc id="desc">A portal-like mark for opening markets, entering calls, and watching outcomes resolve.</desc>
+  <rect width="760" height="180" rx="28" fill="#F7F4EC"/>
+  <g transform="translate(32 25)">
+    <path d="M67 7C101 7 123 31 123 64C123 99 100 123 67 123C33 123 9 99 9 64C9 31 33 7 67 7Z" fill="#111315"/>
+    <path d="M67 27C88 27 102 42 102 64C102 86 88 102 67 102C46 102 31 86 31 64C31 42 46 27 67 27Z" fill="#F7F4EC"/>
+    <path d="M48 70L64 86L91 42" stroke="#136F4A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M15 64H0M134 64H119M67 0V15M67 128V113" stroke="#D84A3A" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#6B6660" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Entre no mercado antes da historia fechar.</text>
+  <text x="617" y="98" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">OPEN</text>
+</svg>

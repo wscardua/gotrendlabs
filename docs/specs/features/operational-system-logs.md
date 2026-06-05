@@ -48,16 +48,16 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 
 ## Regras
 
-- logs técnicos ficam em `orynth_system_logs`; ações administrativas de domínio continuam em `orynth_admin_events`
-- eventos específicos de autenticação continuam também em `orynth_auth_events`; logs técnicos não substituem a trilha de auth
+- logs técnicos ficam em `gotrendlabs_system_logs`; ações administrativas de domínio continuam em `gotrendlabs_admin_events`
+- eventos específicos de autenticação continuam também em `gotrendlabs_auth_events`; logs técnicos não substituem a trilha de auth
 - o Admin Ops consome contratos staff da FastAPI para listar e abrir logs
 - tokens, cookies, senhas, CSRF, session keys e chaves secretas nunca devem ser persistidos em claro
 - contexto e textos longos devem ser truncados com indicação explícita
 - falha ao persistir log não pode quebrar a request principal
-- logs do daemon usam `logger_name=orynth.daemon` e eventos como `daemon.heartbeat`, `daemon.run_started`, `daemon.markets_locked`, `daemon.logs_pruned` e `daemon.run_failed`
+- logs do daemon usam `logger_name=gotrendlabs.daemon` e eventos como `daemon.heartbeat`, `daemon.run_started`, `daemon.markets_locked`, `daemon.logs_pruned` e `daemon.run_failed`
 - ausência ou atraso de heartbeat deve aparecer no Dashboard Admin Ops como status operacional do daemon
-- status do daemon usa limites configuráveis em `orynth_site_config`: `daemon_stale_after_minutes` e `daemon_missing_after_minutes`
-- retenção de logs técnicos usa `orynth_site_config.system_log_retention_days`, default 90 dias, e o purge aplica o prazo atual por `created_at` também a registros antigos
+- status do daemon usa limites configuráveis em `gotrendlabs_site_config`: `daemon_stale_after_minutes` e `daemon_missing_after_minutes`
+- retenção de logs técnicos usa `gotrendlabs_site_config.system_log_retention_days`, default 90 dias, e o purge aplica o prazo atual por `created_at` também a registros antigos
 - logs associados a usuários devem expor identificador operacional amigável (`@handle`, nome e/ou email) no Admin Ops, sem exigir que o operador saiba o ID numérico
 - filtro administrativo de usuário deve aceitar `@handle`, nome, email ou ID e oferecer seleção pesquisável baseada nos usuários cadastrados, incluindo staff e superusers
 - listagem administrativa usa `Carregar mais` em blocos cumulativos de 10 registros e não renderiza uma página infinita

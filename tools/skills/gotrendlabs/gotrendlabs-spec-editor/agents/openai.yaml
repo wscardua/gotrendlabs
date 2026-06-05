@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Spec Editor"
+  short_description: "Deriva e mantém specs técnicas"
+  default_prompt: "Use $gotrendlabs-spec-editor para derivar ou atualizar specs técnicas do GoTrendLabs com rastreabilidade e impacto controlado."
+
+policy:
+  allow_implicit_invocation: true

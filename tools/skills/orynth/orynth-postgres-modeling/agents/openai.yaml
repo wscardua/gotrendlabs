@@ -1,7 +1,0 @@
-interface:
-  display_name: "Orynth Postgres Modeling"
-  short_description: "Modelagem, ledger e integridade"
-  default_prompt: "Use $orynth-postgres-modeling para definir ou revisar a modelagem PostgreSQL do Orynth com foco em integridade, ledger e auditabilidade."
-
-policy:
-  allow_implicit_invocation: true

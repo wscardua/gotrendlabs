@@ -17,7 +17,7 @@ class AiAgent(models.Model):
     comment_style = models.CharField(max_length=120, blank=True)
     max_comments_per_day = models.PositiveIntegerField(null=True, blank=True)
     max_predictions_per_day = models.PositiveIntegerField(null=True, blank=True)
-    max_stake_oc = models.PositiveIntegerField(null=True, blank=True)
+    max_stake_gtl = models.PositiveIntegerField(null=True, blank=True)
     cooldown_hours = models.PositiveIntegerField(null=True, blank=True)
     min_humans_for_prediction = models.PositiveIntegerField(null=True, blank=True)
     last_action_at = models.DateTimeField(null=True, blank=True)
@@ -26,7 +26,7 @@ class AiAgent(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_ai_agents"
+        db_table = "gotrendlabs_ai_agents"
         ordering = ["agent_type", "name", "id"]
         indexes = [
             models.Index(fields=["agent_type", "is_active"]),
@@ -62,7 +62,7 @@ class AiAgentAction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
-        db_table = "orynth_ai_agent_actions"
+        db_table = "gotrendlabs_ai_agent_actions"
         ordering = ["-created_at", "-id"]
         indexes = [
             models.Index(fields=["agent", "-created_at"]),

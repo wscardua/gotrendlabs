@@ -1,17 +1,26 @@
 # Feature Changelog
 
+## 2026-06-04 — GoTrendLabs deep rebrand
+
+- Plataforma renomeada para `GoTrendLabs` em produto, código, docs, deploy, templates, comandos e skills locais.
+- Moeda educativa passou a usar `GTL Credits` e símbolo `GT₵`.
+- Contratos técnicos de moeda passaram para o sufixo `_gtl`, substituindo o padrão técnico anterior.
+- Tabelas ativas passam a usar prefixo `gotrendlabs_*`, com migrations de rename para preservar dados.
+- Variáveis operacionais da marca passaram para `GOTRENDLABS_*` e domínio padrão `gotrendlabs.com.br`.
+- Status de implementação: `parcial` até conclusão de testes e mutações externas GitHub/AWS.
+
 ## 2026-05-28 — FEAT-MARKET-001 linguagem pública e home simplificada
 
 - Home pública passou a priorizar o grid de mercados, removendo hero narrativo, blocos laterais e progressão da primeira dobra.
-- Copy pública foi alinhada para tom claro, social e confiável, incluindo `Prever`, `Em apuração`, `carteira educativa`, `crédito reservado`, `O₵ reservadas` e microcopy de segurança sem dinheiro real.
+- Copy pública foi alinhada para tom claro, social e confiável, incluindo `Prever`, `Em apuração`, `carteira educativa`, `crédito reservado`, `GT₵ reservadas` e microcopy de segurança sem dinheiro real.
 - Cards do feed passaram a preservar ações na mesma linha em mobile, usar `NÃO` na camada pública e diferenciar `Prever`, `Em apuração` e `Ver resolução` por status.
 - Páginas públicas de login, cadastro, badges, compartilhamento, sugestões, feedback, conceitos, segurança e detalhe receberam ajustes de linguagem sem alterar models, migrations, seeds ou schema.
 - Status de implementação: `parcial`.
 
 ## 2026-05-24 — FEAT-OPSLOG-001 / FEAT-AIAGENT-001 retenção configurável
 
-- Admin Ops Config passou a persistir retenção separada para logs técnicos e auditoria IA em `orynth_site_config`.
-- Prune do daemon passou a aplicar o prazo atual por `created_at` para `orynth_system_logs` e `orynth_ai_agent_actions`, afetando também registros antigos.
+- Admin Ops Config passou a persistir retenção separada para logs técnicos e auditoria IA em `gotrendlabs_site_config`.
+- Prune do daemon passou a aplicar o prazo atual por `created_at` para `gotrendlabs_system_logs` e `gotrendlabs_ai_agent_actions`, afetando também registros antigos.
 - Comando operacional de prune passou a reportar logs técnicos e ações de auditoria IA removidos.
 - Status de implementação: `parcial`.
 
@@ -39,12 +48,12 @@
 - Admin Ops passou a expor limite de tentativas LLM por ciclo de comentário, default 3, separado do número máximo de comentários publicados.
 - Fallback de comentário tenta próximo mercado quando a LLM retorna `should_publish=false` ou texto inválido, mas para em erro real de provedor para controlar custo.
 - Saúde IA passou a considerar recuperação após ciclo bem-sucedido, sem manter status visual de erro por falhas históricas já superadas.
-- Prompt de comentário IA foi versionado para `orynth-ai-agent-v4` e passou a exigir cautela factual: sem upgrades, eventos, números, anúncios ou fontes específicas fora do contexto do mercado, usando linguagem condicional para inferências.
+- Prompt de comentário IA foi versionado para `gotrendlabs-ai-agent-v4` e passou a exigir cautela factual: sem upgrades, eventos, números, anúncios ou fontes específicas fora do contexto do mercado, usando linguagem condicional para inferências.
 
 ## 2026-05-23 — FEAT-AIAGENT-001 agentes IA oficiais
 
 - Criado app `agents` com agentes oficiais vinculados a usuários `is_bot=true` e auditoria de ações IA.
-- Configuração operacional de IA foi adicionada a `orynth_site_config`, mantendo `OPENAI_API_KEY` fora do banco.
+- Configuração operacional de IA foi adicionada a `gotrendlabs_site_config`, mantendo `OPENAI_API_KEY` fora do banco.
 - Daemon passou a executar ciclo IA isolado e a registrar resumo de comentários, previsões, skips e erros.
 - Comentários de bot expõem selo `IA oficial`; rankings, badges e reputação pública excluem bots.
 - Mercado sem participação humana passa a ser cancelado no fechamento automático, com refund de previsões abertas.
@@ -67,7 +76,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ## FEAT-NOTIFY-001
 
 ### 2026-05-23 - v0.2
-- `orynth_user_notifications` passou a persistir inbox in-app com idempotência por destinatário e `source_key`
+- `gotrendlabs_user_notifications` passou a persistir inbox in-app com idempotência por destinatário e `source_key`
 - FastAPI passou a expor `GET /users/me/notifications` e `POST /users/me/notifications/read-all`
 - ações sociais notificam participantes humanos de mercados em que fizeram previsão: nova previsão, curtida de mercado, comentário em mercado e curtida em comentário próprio
 - eventos sistêmicos notificam o beneficiário direto: crédito recebido, mercado participado fechado/resolvido e badge recebida
@@ -100,7 +109,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v0.5
-- Admin Ops Config passou a persistir limites de heartbeat do daemon em `orynth_site_config`
+- Admin Ops Config passou a persistir limites de heartbeat do daemon em `gotrendlabs_site_config`
 - Dashboard Summary passou a calcular `Ativo`, `Atrasado` e `Sem sinal` com base em `daemon_stale_after_minutes` e `daemon_missing_after_minutes`
 - validação administrativa impede limite de `Sem sinal` menor ou igual ao limite de `Atrasado`
 - status de implementação: `parcial`
@@ -108,7 +117,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ### 2026-05-20 - v0.4
 - rotinas de prune de logs e status do daemon passaram a viver em serviço backend reutilizável
 - comando `prune_system_logs` deixou de conter regra própria e passou a chamar o backend
-- daemon operacional passou a registrar heartbeat, início, falhas, fechamentos e prune em `orynth_system_logs`
+- daemon operacional passou a registrar heartbeat, início, falhas, fechamentos e prune em `gotrendlabs_system_logs`
 - Dashboard Admin Ops passou a exibir status do daemon a partir do heartbeat calculado pela FastAPI
 - status de implementação: `parcial`
 
@@ -123,12 +132,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - filtro de usuário passou a usar identificador pesquisável por `@handle`, nome, email ou ID, carregando usuários comuns, staff e superusers
 - contratos administrativos de logs passaram a expor `user_identifier` para exibição operacional amigável
 - detalhe do log remove duplicações visuais de mensagem/request e mantém usuário apenas no card principal
-- spec passou a explicitar cobertura de logs técnicos de segurança e fronteira com `orynth_auth_events`
+- spec passou a explicitar cobertura de logs técnicos de segurança e fronteira com `gotrendlabs_auth_events`
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v0.1
 - criada spec inicial para logs técnicos de troubleshooting
-- adicionada persistência em `orynth_system_logs` com retenção, redaction e contexto JSON
+- adicionada persistência em `gotrendlabs_system_logs` com retenção, redaction e contexto JSON
 - FastAPI passou a expor contratos staff para listagem e detalhe de logs
 - Django Admin Ops passou a consultar logs técnicos com filtros e tela de detalhe
 - status de implementação: `parcial`
@@ -136,7 +145,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ## FEAT-AUTH-001
 
 ### 2026-05-21 - v0.14
-- perfil autenticado passou a priorizar `orynth_user_profiles.display_name` como fonte real do nome editável, preservando `orynth_users.first_name` como compatibilidade
+- perfil autenticado passou a priorizar `gotrendlabs_user_profiles.display_name` como fonte real do nome editável, preservando `gotrendlabs_users.first_name` como compatibilidade
 - Admin Ops passou a marcar contas controladas por robôs internos via `is_bot`, com filtro, badge e auditoria `user.bot_update`, sem exposição em contratos públicos/autenticados comuns
 - ajuste manual de wallet da própria conta passou a ser permitido para `staff`/`superuser`, mantendo nota, ledger e auditoria, enquanto demais autoações sensíveis continuam bloqueadas
 - status de implementação: `parcial`
@@ -180,18 +189,18 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ### 2026-05-19 - v0.7
 - Admin Ops passou a ter gestão de usuários com listagem, busca, filtros por status/papel e detalhe operacional amplo
 - FastAPI passou a expor contratos staff para detalhe de usuário, desativação/reativação, revogação de sessões e ajuste manual de wallet
-- ações administrativas de usuário registram eventos `user.*` em `orynth_admin_events` e bloqueiam operações perigosas sobre a própria conta do operador
+- ações administrativas de usuário registram eventos `user.*` em `gotrendlabs_admin_events` e bloqueiam operações perigosas sobre a própria conta do operador
 - status de implementação: `parcial`
 
 ### 2026-05-19 - v0.6
 - login e cadastro passaram a exibir navegação pública compacta para mercados, badges e ranking
 - login e cadastro passaram a exibir retorno compacto `← Feed` no primeiro painel de conteúdo, seguindo o padrão das páginas públicas fora da home
 - cadastro passou a expor política de uso em modal, mantendo link para página pública completa `/use-policy/`
-- painel de cadastro passou a apresentar prévia de onboarding com ticket de mercado, badges bloqueadas e confiança/O₵ sem dinheiro real
+- painel de cadastro passou a apresentar prévia de onboarding com ticket de mercado, badges bloqueadas e confiança/GT₵ sem dinheiro real
 - status de implementação: `parcial`
 
 ### 2026-05-19 - v0.5
-- perfil autenticado passou a persistir e editar `birth_date` e `sex` opcionais em `orynth_user_profiles`
+- perfil autenticado passou a persistir e editar `birth_date` e `sex` opcionais em `gotrendlabs_user_profiles`
 - `GET/PATCH /users/me` expõe e atualiza dados privados do perfil; perfil público não expõe email, data de nascimento, sexo nem metadados privados
 - Django mantém edição básica inline na própria tela `/profile/`, com reputação em cards e exclusão lógica no painel lateral
 - status de implementação: `parcial`
@@ -211,7 +220,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-17 - v0.2
 - criada camada `backend-api` FastAPI para `POST /auth/register`, `POST /auth/login`, `GET /auth/session`, `POST /auth/logout` e placeholder de login social
-- persistência em PostgreSQL com `orynth_users`, `orynth_auth_sessions`, `orynth_external_identities` e `orynth_auth_events`
+- persistência em PostgreSQL com `gotrendlabs_users`, `gotrendlabs_auth_sessions`, `gotrendlabs_external_identities` e `gotrendlabs_auth_events`
 - Django deixou de criar/login usuário diretamente e passou a consumir o contrato da API, mantendo apenas token/contexto na sessão web
 - testes adicionados para contrato FastAPI de sessão e para fluxo web Django via API
 - status de implementação: `parcial`
@@ -261,7 +270,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `parcial`
 
 ### 2026-05-22 - v0.25
-- skill `orynth-prediction-markets` passou a aceitar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório `Não caracteriza recomendação de investimento`
+- skill `gotrendlabs-prediction-markets` passou a aceitar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório `Não caracteriza recomendação de investimento`
 - DEV recebeu 3 mercados cripto em `draft` com taxonomia `Cripto`, subcategorias `Preço`, `DeFi / On-chain` e `Meme coins`
 - adicionadas 3 thumbnails autorais para os mercados cripto, mantendo imagens sem texto/logos embutidos
 - status de implementação: `parcial`
@@ -278,21 +287,21 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `parcial`
 
 ### 2026-05-21 - v0.22
-- métrica pública `O₵ distribuídas` passou a excluir créditos de `staff` e `superuser` no contrato `/stats` e no fallback local da home
+- métrica pública `GT₵ distribuídas` passou a excluir créditos de `staff` e `superuser` no contrato `/stats` e no fallback local da home
 - espaçamento visual do bloco `AO VIVO`/destaques da home foi ajustado para reduzir colisão entre rótulo e título
 - status de implementação: `parcial`
 
 ### 2026-05-21 - v0.21
 - adicionadas 27 thumbnails autorais de mercado como imagens puras, quadradas e específicas por evento, usadas via `image_url`
 - documentado lote editorial seed de 27 mercados/categorias/subcategorias para retomada operacional e auditoria da fonte de verdade
-- guia da skill `orynth-prediction-markets` passou a registrar que inclusão aprovada cria taxonomia idempotente e mantém mercados em `draft`
+- guia da skill `gotrendlabs-prediction-markets` passou a registrar que inclusão aprovada cria taxonomia idempotente e mantém mercados em `draft`
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v0.20
-- home passou a exibir métricas públicas de economia educativa com `O₵ distribuídas` e `O₵ movimentadas em previsões`
-- FastAPI passou a expor `GET /stats` com `open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`, `resolution_sla` e `real_money`
-- fallback local Django passou a calcular `distributed_oc` a partir de créditos do ledger e `moved_oc` a partir de stakes de previsões
-- textos visíveis de moeda foram padronizados para `O₵`, preservando campos e identificadores técnicos `_oc`
+- home passou a exibir métricas públicas de economia educativa com `GT₵ distribuídas` e `GT₵ movimentadas em previsões`
+- FastAPI passou a expor `GET /stats` com `open_markets`, `total_predictions`, `distributed_gtl`, `moved_gtl`, `resolution_sla` e `real_money`
+- fallback local Django passou a calcular `distributed_gtl` a partir de créditos do ledger e `moved_gtl` a partir de stakes de previsões
+- textos visíveis de moeda foram padronizados para `GT₵`, preservando campos e identificadores técnicos `_gtl`
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v0.19
@@ -302,7 +311,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-20 - v0.18
 - fechamento automático de mercados vencidos com `auto_close_enabled=true` foi centralizado em serviço backend e em entrada própria da `MarketLifecycleEngine`
-- comando `run_orynth_daemon` foi adicionado como processo operacional fino, sem duplicar regra de domínio
+- comando `run_gotrendlabs_daemon` foi adicionado como processo operacional fino, sem duplicar regra de domínio
 - fechamentos automáticos registram `market.lock` com ator sistema/nulo e nota operacional padronizada
 - status de implementação: `parcial`
 
@@ -398,7 +407,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - adicionada primeira fatia real do Admin Ops para mercados e taxonomia
 - FastAPI expõe endpoints staff para listar, criar, editar, publicar e cancelar mercados
 - Django Admin Ops passou a consumir a API administrativa com bloqueio para guest e usuário comum
-- criada auditoria simples em `orynth_admin_events`
+- criada auditoria simples em `gotrendlabs_admin_events`
 - status de implementação: `parcial`
 
 ### 2026-05-17 - v0.2
@@ -468,7 +477,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `parcial`
 
 ### 2026-05-18 - v0.5
-- documentado que percentuais iniciais das opções ficam persistidos em `orynth_market_options.probability_exact`
+- documentado que percentuais iniciais das opções ficam persistidos em `gotrendlabs_market_options.probability_exact`
 - status de implementação: `parcial`
 
 ### 2026-05-18 - v0.4
@@ -515,7 +524,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `parcial`
 
 ### 2026-05-18 - v0.3
-- séries visuais de consenso passaram a ser derivadas de `orynth_predictions` ordenadas por criação
+- séries visuais de consenso passaram a ser derivadas de `gotrendlabs_predictions` ordenadas por criação
 - mercados binários e múltipla escolha expõem evolução por opção para cards e detalhe
 - adicionado fallback local de confirmação/persistência quando a FastAPI separada está indisponível no ambiente de desenvolvimento
 - testes cobrem confirmação local, payload antigo sem IDs/séries e hidratação visual dos cards
@@ -665,14 +674,14 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ## FEAT-WALLET-001
 
 ### 2026-05-21 - v1.2
-- agregado público `O₵ distribuídas` passou a considerar apenas créditos de usuários comuns, excluindo operadores `staff` e `superuser`
+- agregado público `GT₵ distribuídas` passou a considerar apenas créditos de usuários comuns, excluindo operadores `staff` e `superuser`
 - ajuste manual de wallet permite autoajuste por operador com nota e auditoria, preservando bloqueio das demais autoações sensíveis
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v1.1
-- ledger passou a alimentar o agregado público `O₵ distribuídas` usado nas métricas da home
+- ledger passou a alimentar o agregado público `GT₵ distribuídas` usado nas métricas da home
 - agregado público considera apenas lançamentos `direction="credit"` e não expõe recorte individual de wallet ou extrato
-- movimentação pública em previsões é exibida como soma de stakes registrados, mantendo o contexto educativo de `O₵`
+- movimentação pública em previsões é exibida como soma de stakes registrados, mantendo o contexto educativo de `GT₵`
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v1.0
@@ -681,15 +690,15 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v0.9
-- Admin Ops Config ganhou parâmetro `wallet_recharge_min_balance_oc` para definir o saldo máximo elegível à solicitação de recarga educativa
-- backend e wallet web bloqueiam nova solicitação quando `available_oc` está acima do piso configurado
+- Admin Ops Config ganhou parâmetro `wallet_recharge_min_balance_gtl` para definir o saldo máximo elegível à solicitação de recarga educativa
+- backend e wallet web bloqueiam nova solicitação quando `available_gtl` está acima do piso configurado
 - histórico de recargas na wallet mostra apenas os 3 itens mais recentes e o extrato pagina 10 lançamentos por vez
 - status de implementação: `parcial`
 
 ### 2026-05-20 - v0.8
 - wallet passou a permitir solicitação autenticada de recarga educativa com uma pendência por usuário
 - Admin Ops passou a listar `wallet_recharge` nas filas e aprovar ou rejeitar solicitações com auditoria
-- aprovação cria ledger `educational_recharge`, atualiza `orynth_wallet_balances` e não altera reputação nem `total_earned_oc`
+- aprovação cria ledger `educational_recharge`, atualiza `gotrendlabs_wallet_balances` e não altera reputação nem `total_earned_gtl`
 - status de implementação: `parcial`
 
 ### 2026-05-19 - v0.7
@@ -700,7 +709,7 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-19 - v0.6
 - refund de cancelamento passou a ser idempotente por previsão enquanto não houver novo lock/relock posterior
-- reconciliação operacional de mercado cancelado cria `prediction_refund` ausente e atualiza `orynth_wallet_balances` na mesma transação
+- reconciliação operacional de mercado cancelado cria `prediction_refund` ausente e atualiza `gotrendlabs_wallet_balances` na mesma transação
 - preservado caso de resolução desfeita seguida de cancelamento final, criando novo release após `prediction_resolution_relock`
 - status de implementação: `parcial`
 
@@ -712,21 +721,21 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ### 2026-05-18 - v0.4
 - ledger passou a reconhecer recompensas operacionais de feedback e sugestão de mercado
-- `reward_feedback` e `reward_suggestion` atualizam extrato e projeção `orynth_wallet_balances`
+- `reward_feedback` e `reward_suggestion` atualizam extrato e projeção `gotrendlabs_wallet_balances`
 - aprovações de crédito em filas operacionais bloqueiam duplicidade por item
 - recompensas operacionais não concedem reputação
 - status de implementação: `parcial`
 
 ### 2026-05-17 - v0.3
-- adicionada projeção operacional `orynth_wallet_balances` para leitura rápida de saldo
-- mantido `orynth_wallet_ledger` como fonte auditável e regra de reconciliação
+- adicionada projeção operacional `gotrendlabs_wallet_balances` para leitura rápida de saldo
+- mantido `gotrendlabs_wallet_ledger` como fonte auditável e regra de reconciliação
 - FastAPI passou a ler saldo pela projeção e a centralizar mutações no helper ledger + balance
 - migration inclui backfill de saldos existentes a partir do ledger
 - status de implementação: `parcial`
 
 ### 2026-05-17 - v0.2
-- criado ledger PostgreSQL `orynth_wallet_ledger` como fonte do saldo do usuário
-- cadastro passou a registrar `grant_initial` de `2000 O₵` na mesma transação do usuário
+- criado ledger PostgreSQL `gotrendlabs_wallet_ledger` como fonte do saldo do usuário
+- cadastro passou a registrar `grant_initial` de `2000 GT₵` na mesma transação do usuário
 - adicionados endpoints FastAPI de wallet e extrato autenticado
 - Django passou a renderizar carteira e extrato a partir da FastAPI
 - status de implementação: `parcial`
@@ -801,8 +810,8 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ## FEAT-NOTIFY-001
 
 ### 2026-05-20 - v0.2
-- Admin Ops passou a persistir configuração SMTP não sensível em `orynth_site_config`
-- senha/API key SMTP permanecem fora do banco, via `ORYNTH_SMTP_PASSWORD` ou `ORYNTH_SMTP_API_KEY`
+- Admin Ops passou a persistir configuração SMTP não sensível em `gotrendlabs_site_config`
+- senha/API key SMTP permanecem fora do banco, via `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY`
 - TLS e SSL são mutuamente exclusivos na configuração operacional
 - status de implementação: `parcial`
 
@@ -814,8 +823,8 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ## FEAT-I18N-001
 
 ### 2026-05-20 - v0.2
-- marca pública da plataforma alterada para `Orynth Trends` em templates, compartilhamento social, API title/health, README e specs ativas
-- nomes técnicos, identificadores `orynth_*`, arquivos, comandos, env vars e `Orynth Coins` foram preservados
+- marca pública da plataforma alterada para `GoTrendLabs` em templates, compartilhamento social, API title/health, README e specs ativas
+- nomes técnicos, identificadores `gotrendlabs_*`, arquivos, comandos, env vars e `GTL Credits` foram preservados
 - extração completa de strings para catálogos `pt-BR`/`en` segue fora desta fatia
 - status de implementação: `nao_iniciada`
 
@@ -827,12 +836,12 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 ## Sistema documental e skills
 
 ### 2026-05-17 - v0.3
-- adicionada skill `orynth-workflow-governor`
+- adicionada skill `gotrendlabs-workflow-governor`
 - adicionados templates em `docs/specs/workflows/`
 - adicionados `workflow-runs.md` e `workflow-checklists.md`
 - guia atualizado com fluxo de testes e governança de processo
 
 ### 2026-05-17 - v0.4
-- adicionada skill `orynth-software-architect` para arquitetura, segurança e desenho técnico
-- adicionada skill `orynth-test-engineer` para testes concretos de backend, frontend, integração e regressão
+- adicionada skill `gotrendlabs-software-architect` para arquitetura, segurança e desenho técnico
+- adicionada skill `gotrendlabs-test-engineer` para testes concretos de backend, frontend, integração e regressão
 - workflows atualizados para exigir arquitetura/segurança em mudanças relevantes e testes executáveis quando houver código

@@ -90,7 +90,7 @@ from system_logs.services import exception_payload, log_system_event, new_reques
 SESSION_TTL = timedelta(days=14)
 PASSWORD_RESET_TTL = timedelta(hours=1)
 PASSWORD_RESET_MESSAGE = "Se o email estiver cadastrado, enviaremos instruções para recuperar a senha."
-INITIAL_GRANT_OC = 2000
+INITIAL_GRANT_GTL = 2000
 INITIAL_REPUTATION = 100
 BASE_PREDICTION_WEIGHT = 10_000
 PROBABILITY_QUANT = Decimal("0.0001")
@@ -107,13 +107,13 @@ BADGE_RULE_TYPES = {
     "rewarded_feedback_count",
 }
 BADGE_TYPES = {"global", "category", "performance", "engagement"}
-PUBLIC_WEB_BASE_URL = os.environ.get("ORYNTH_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+PUBLIC_WEB_BASE_URL = os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
-app = FastAPI(title="Orynth Trends Backend API", version="0.1.0")
+app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
 
 
 def _runtime_config_path():
-    return os.environ.get("ORYNTH_RUNTIME_CONFIG_PATH") or os.path.join(os.getcwd(), ".runtime", "platform_config.json")
+    return os.environ.get("GOTRENDLABS_RUNTIME_CONFIG_PATH") or os.path.join(os.getcwd(), ".runtime", "platform_config.json")
 
 
 def _maintenance_mode_active():
@@ -221,7 +221,7 @@ def _request_user_id(authorization):
                 cursor.execute(
                     """
                     SELECT user_id
-                    FROM orynth_auth_sessions
+                    FROM gotrendlabs_auth_sessions
                     WHERE token_hash = %s
                       AND revoked_at IS NULL
                       AND expires_at > %s
@@ -280,7 +280,7 @@ def _unique_handle(cursor, value):
     handle = base
     suffix = 2
     while True:
-        cursor.execute("SELECT id FROM orynth_users WHERE lower(username) = lower(%s)", (handle,))
+        cursor.execute("SELECT id FROM gotrendlabs_users WHERE lower(username) = lower(%s)", (handle,))
         if not cursor.fetchone():
             return handle
         suffix_text = str(suffix)
@@ -317,8 +317,8 @@ def _admin_user_response(row):
         "created_at": row["date_joined"].isoformat(),
         "last_login": row["last_login"].isoformat() if row["last_login"] else None,
         "deactivated_at": row["deactivated_at"].isoformat() if row["deactivated_at"] else None,
-        "available_oc": int(row.get("available_oc") or 0),
-        "locked_oc": int(row.get("locked_oc") or 0),
+        "available_gtl": int(row.get("available_gtl") or 0),
+        "locked_gtl": int(row.get("locked_gtl") or 0),
         "reputation_score": int(row.get("reputation_score") or 0),
     }
 
@@ -333,7 +333,7 @@ def _public_user_response(row, *, display_name=None):
 
 def _ensure_user_core(cursor, user_id, *, display_name=None):
     now = datetime.now(timezone.utc)
-    cursor.execute("SELECT id, username, first_name, is_staff, is_superuser, is_bot FROM orynth_users WHERE id = %s", (user_id,))
+    cursor.execute("SELECT id, username, first_name, is_staff, is_superuser, is_bot FROM gotrendlabs_users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuário não encontrado.")
@@ -342,7 +342,7 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
     profile_name = display_name or user["first_name"] or user["username"]
     cursor.execute(
         """
-        INSERT INTO orynth_user_profiles (user_id, display_name, bio, strong_category, birth_date, sex, is_public, created_at, updated_at)
+        INSERT INTO gotrendlabs_user_profiles (user_id, display_name, bio, strong_category, birth_date, sex, is_public, created_at, updated_at)
         VALUES (%s, %s, '', '', NULL, '', true, %s, %s)
         ON CONFLICT (user_id) DO NOTHING
         """,
@@ -353,23 +353,23 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
         return
     cursor.execute(
         """
-        INSERT INTO orynth_user_reputations
+        INSERT INTO gotrendlabs_user_reputations
             (user_id, reputation_score, resolved_predictions_count, accuracy_indicator, streak, strong_category, last_updated_at)
         VALUES (%s, %s, 0, '0%%', 0, '', %s)
         ON CONFLICT (user_id) DO NOTHING
         """,
         (user_id, INITIAL_REPUTATION, now),
     )
-    cursor.execute("SELECT 1 FROM orynth_wallet_ledger WHERE user_id = %s AND entry_type = 'grant_initial'", (user_id,))
+    cursor.execute("SELECT 1 FROM gotrendlabs_wallet_ledger WHERE user_id = %s AND entry_type = 'grant_initial'", (user_id,))
     has_initial_grant = cursor.fetchone()
     if not has_initial_grant and not is_operator:
         _record_wallet_entry(
             cursor,
             user_id,
             entry_type="grant_initial",
-            amount=INITIAL_GRANT_OC,
+            amount=INITIAL_GRANT_GTL,
             direction="credit",
-            description="Saldo inicial do Orynth Trends",
+            description="Saldo inicial do GoTrendLabs",
             reference_type="auth_register",
             reference_id=str(user_id),
         )
@@ -377,15 +377,15 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
         _ensure_wallet_balance(cursor, user_id)
     cursor.execute(
         """
-        INSERT INTO orynth_user_badges (user_id, code, name, description, status, earned_at)
-        VALUES (%s, 'founding_member', 'Membro fundador', 'Entrou no Orynth Trends durante a fase inicial.', 'earned', %s)
+        INSERT INTO gotrendlabs_user_badges (user_id, code, name, description, status, earned_at)
+        VALUES (%s, 'founding_member', 'Membro fundador', 'Entrou no GoTrendLabs durante a fase inicial.', 'earned', %s)
         ON CONFLICT (user_id, code) DO NOTHING
         """,
         (user_id, now),
     )
     cursor.execute(
         """
-        INSERT INTO orynth_user_badges (user_id, code, name, description, status, earned_at)
+        INSERT INTO gotrendlabs_user_badges (user_id, code, name, description, status, earned_at)
         VALUES
             (%s, 'calibrated', 'Calibrado', 'Desbloqueado ao demonstrar consistência preditiva.', 'locked', NULL),
             (%s, 'early_signal', 'Early signal', 'Desbloqueado ao acertar antes do consenso virar.', 'locked', NULL),
@@ -397,10 +397,10 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
     BadgeAwardEngine.on_user_registered(cursor, user_id)
     cursor.execute(
         """
-        INSERT INTO orynth_user_activities (user_id, activity_type, title, description, reference_type, reference_id, occurred_at)
+        INSERT INTO gotrendlabs_user_activities (user_id, activity_type, title, description, reference_type, reference_id, occurred_at)
         SELECT %s, 'register', 'Conta criada', 'Perfil, carteira e reputação inicial ativados.', 'user', %s, %s
         WHERE NOT EXISTS (
-            SELECT 1 FROM orynth_user_activities
+            SELECT 1 FROM gotrendlabs_user_activities
             WHERE user_id = %s AND activity_type = 'register'
         )
         """,
@@ -412,8 +412,8 @@ def _ranking_positions(cursor):
     cursor.execute(
         """
         SELECT u.id
-        FROM orynth_user_reputations r
-        JOIN orynth_users u ON u.id = r.user_id
+        FROM gotrendlabs_user_reputations r
+        JOIN gotrendlabs_users u ON u.id = r.user_id
         WHERE u.is_active = true
           AND u.is_staff = false
           AND u.is_superuser = false
@@ -467,7 +467,7 @@ def _badge_rows(cursor, user_id=None, include_inactive=False):
     params = []
     if user_id:
         award_select = "a.awarded_at, a.reason_snapshot"
-        award_join = "LEFT JOIN orynth_user_badge_awards a ON a.badge_id = b.id AND a.user_id = %s"
+        award_join = "LEFT JOIN gotrendlabs_user_badge_awards a ON a.badge_id = b.id AND a.user_id = %s"
         params.append(user_id)
     else:
         award_select = "NULL AS awarded_at, '' AS reason_snapshot"
@@ -476,7 +476,7 @@ def _badge_rows(cursor, user_id=None, include_inactive=False):
         f"""
         SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
                {award_select}
-        FROM orynth_badge_definitions b
+        FROM gotrendlabs_badge_definitions b
         {award_join}
         {active_sql}
         ORDER BY (CASE WHEN a.awarded_at IS NULL THEN 1 ELSE 0 END) ASC, a.awarded_at ASC NULLS LAST, b.name ASC, b.code ASC
@@ -484,7 +484,7 @@ def _badge_rows(cursor, user_id=None, include_inactive=False):
         f"""
         SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
                {award_select}
-        FROM orynth_badge_definitions b
+        FROM gotrendlabs_badge_definitions b
         {active_sql}
         ORDER BY b.name ASC, b.code ASC
         """,
@@ -522,9 +522,9 @@ def _admin_badge_rows(cursor, where_sql="", params=None):
                b.is_active, b.created_at, b.updated_at,
                r.rule_type, r.threshold_value, r.category, r.subcategory, r.event, r.is_active AS rule_active,
                COUNT(a.id) AS awards_count
-        FROM orynth_badge_definitions b
-        JOIN orynth_badge_rules r ON r.badge_id = b.id
-        LEFT JOIN orynth_user_badge_awards a ON a.badge_id = b.id
+        FROM gotrendlabs_badge_definitions b
+        JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
+        LEFT JOIN gotrendlabs_user_badge_awards a ON a.badge_id = b.id
         {where_sql}
         GROUP BY b.id, r.id
         ORDER BY b.is_active DESC, b.name ASC, b.code ASC
@@ -553,7 +553,7 @@ def _validate_badge_taxonomy(cursor, payload):
     if not category:
         return
     cursor.execute(
-        "SELECT id FROM orynth_market_categories WHERE lower(name) = lower(%s) OR lower(slug) = lower(%s)",
+        "SELECT id FROM gotrendlabs_market_categories WHERE lower(name) = lower(%s) OR lower(slug) = lower(%s)",
         (category, category),
     )
     category_row = cursor.fetchone()
@@ -564,7 +564,7 @@ def _validate_badge_taxonomy(cursor, payload):
     cursor.execute(
         """
         SELECT id
-        FROM orynth_market_subcategories
+        FROM gotrendlabs_market_subcategories
         WHERE category_id = %s
           AND (lower(name) = lower(%s) OR lower(slug) = lower(%s))
         """,
@@ -578,7 +578,7 @@ def _validate_badge_taxonomy(cursor, payload):
     cursor.execute(
         """
         SELECT id
-        FROM orynth_market_events
+        FROM gotrendlabs_market_events
         WHERE subcategory_id = %s
           AND (lower(name) = lower(%s) OR lower(slug) = lower(%s))
         """,
@@ -598,42 +598,42 @@ def _ledger_wallet_totals(cursor, user_id):
                 WHEN direction = 'lock' THEN -amount
                 WHEN direction = 'release' THEN amount
                 ELSE 0
-            END), 0) AS available_oc,
-            COALESCE(SUM(CASE WHEN direction = 'lock' THEN amount WHEN direction IN ('release', 'settle') THEN -amount ELSE 0 END), 0) AS locked_oc,
+            END), 0) AS available_gtl,
+            COALESCE(SUM(CASE WHEN direction = 'lock' THEN amount WHEN direction IN ('release', 'settle') THEN -amount ELSE 0 END), 0) AS locked_gtl,
             COALESCE(SUM(CASE
                 WHEN direction = 'credit' AND entry_type IN ('prediction_payout', 'reward_feedback', 'reward_suggestion') THEN amount
                 WHEN direction = 'debit' AND entry_type = 'prediction_payout_reversal' THEN -amount
                 ELSE 0
-            END), 0) AS total_earned_oc
-        FROM orynth_wallet_ledger
+            END), 0) AS total_earned_gtl
+        FROM gotrendlabs_wallet_ledger
         WHERE user_id = %s
         """,
         (user_id,),
     )
     row = cursor.fetchone()
     return {
-        "available_oc": int(_row_value(row, "available_oc", 0) or 0),
-        "locked_oc": int(_row_value(row, "locked_oc", 1) or 0),
-        "total_earned_oc": int(_row_value(row, "total_earned_oc", 2) or 0),
+        "available_gtl": int(_row_value(row, "available_gtl", 0) or 0),
+        "locked_gtl": int(_row_value(row, "locked_gtl", 1) or 0),
+        "total_earned_gtl": int(_row_value(row, "total_earned_gtl", 2) or 0),
     }
 
 
 def _ensure_wallet_balance(cursor, user_id):
-    cursor.execute("SELECT user_id FROM orynth_wallet_balances WHERE user_id = %s", (user_id,))
+    cursor.execute("SELECT user_id FROM gotrendlabs_wallet_balances WHERE user_id = %s", (user_id,))
     if cursor.fetchone():
         return
     totals = _ledger_wallet_totals(cursor, user_id)
     cursor.execute(
         """
-        INSERT INTO orynth_wallet_balances (user_id, available_oc, locked_oc, total_earned_oc, updated_at)
+        INSERT INTO gotrendlabs_wallet_balances (user_id, available_gtl, locked_gtl, total_earned_gtl, updated_at)
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (user_id) DO NOTHING
         """,
         (
             user_id,
-            totals["available_oc"],
-            totals["locked_oc"],
-            totals["total_earned_oc"],
+            totals["available_gtl"],
+            totals["locked_gtl"],
+            totals["total_earned_gtl"],
             datetime.now(timezone.utc),
         ),
     )
@@ -643,17 +643,17 @@ def _wallet_summary(cursor, user_id):
     _ensure_wallet_balance(cursor, user_id)
     cursor.execute(
         """
-        SELECT available_oc, locked_oc, total_earned_oc
-        FROM orynth_wallet_balances
+        SELECT available_gtl, locked_gtl, total_earned_gtl
+        FROM gotrendlabs_wallet_balances
         WHERE user_id = %s
         """,
         (user_id,),
     )
     row = cursor.fetchone()
     return {
-        "available_oc": int(row["available_oc"] or 0),
-        "locked_oc": int(row["locked_oc"] or 0),
-        "total_earned_oc": int(row["total_earned_oc"] or 0),
+        "available_gtl": int(row["available_gtl"] or 0),
+        "locked_gtl": int(row["locked_gtl"] or 0),
+        "total_earned_gtl": int(row["total_earned_gtl"] or 0),
     }
 
 
@@ -672,7 +672,7 @@ def _record_wallet_entry(
     _ensure_wallet_balance(cursor, user_id)
     cursor.execute(
         """
-        INSERT INTO orynth_wallet_ledger
+        INSERT INTO gotrendlabs_wallet_ledger
             (user_id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
@@ -712,10 +712,10 @@ def _record_wallet_entry(
 
     cursor.execute(
         """
-        UPDATE orynth_wallet_balances
-        SET available_oc = available_oc + %s,
-            locked_oc = locked_oc + %s,
-            total_earned_oc = total_earned_oc + %s,
+        UPDATE gotrendlabs_wallet_balances
+        SET available_gtl = available_gtl + %s,
+            locked_gtl = locked_gtl + %s,
+            total_earned_gtl = total_earned_gtl + %s,
             updated_at = %s
         WHERE user_id = %s
         """,
@@ -749,8 +749,8 @@ def _current_user(cursor, authorization):
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
                u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.is_bot
-        FROM orynth_auth_sessions s
-        JOIN orynth_users u ON u.id = s.user_id
+        FROM gotrendlabs_auth_sessions s
+        JOIN gotrendlabs_users u ON u.id = s.user_id
         WHERE s.token_hash = %s
           AND s.revoked_at IS NULL
           AND s.expires_at > %s
@@ -763,7 +763,7 @@ def _current_user(cursor, authorization):
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão inválida.")
     cursor.execute(
-        "UPDATE orynth_auth_sessions SET last_seen_at = %s WHERE token_hash = %s",
+        "UPDATE gotrendlabs_auth_sessions SET last_seen_at = %s WHERE token_hash = %s",
         (datetime.now(timezone.utc), hash_token(token)),
     )
     _ensure_user_core(cursor, user["id"])
@@ -826,8 +826,8 @@ def _profile_response(cursor, user):
                p.updated_at AS profile_updated_at,
                r.reputation_score, r.resolved_predictions_count, r.accuracy_indicator,
                r.streak, r.strong_category AS reputation_category, r.last_updated_at
-        FROM orynth_user_profiles p
-        LEFT JOIN orynth_user_reputations r ON r.user_id = p.user_id
+        FROM gotrendlabs_user_profiles p
+        LEFT JOIN gotrendlabs_user_reputations r ON r.user_id = p.user_id
         WHERE p.user_id = %s
         """,
         (user["id"],),
@@ -889,7 +889,7 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
         f"""
         SELECT m.id, m.slug, m.title, m.summary, m.kind, m.status, m.status_label,
                m.primary_outcome, m.primary_probability_exact, m.secondary_probability_exact,
-               m.volume_oc, m.participants, m.source, m.closes_in, m.close_label,
+               m.volume_gtl, m.participants, m.source, m.closes_in, m.close_label,
                m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
@@ -898,12 +898,12 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
                c.name AS category, c.notice AS category_notice,
                sc.name AS subcategory, sc.notice AS subcategory_notice,
                ev.name AS event, ev.notice AS event_notice
-        FROM orynth_markets m
-        JOIN orynth_market_categories c ON c.id = m.category_id
-        JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
-        LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
-        LEFT JOIN orynth_market_likes ml ON ml.market_id = m.id
-        LEFT JOIN orynth_market_comments visible_comments ON visible_comments.market_id = m.id AND visible_comments.status = 'visible'
+        FROM gotrendlabs_markets m
+        JOIN gotrendlabs_market_categories c ON c.id = m.category_id
+        JOIN gotrendlabs_market_subcategories sc ON sc.id = m.subcategory_id
+        LEFT JOIN gotrendlabs_market_events ev ON ev.id = m.event_id
+        LEFT JOIN gotrendlabs_market_likes ml ON ml.market_id = m.id
+        LEFT JOIN gotrendlabs_market_comments visible_comments ON visible_comments.market_id = m.id AND visible_comments.status = 'visible'
         {where_sql}
         GROUP BY m.id, c.name, c.notice, sc.name, sc.notice, ev.name, ev.notice
         ORDER BY {order_sql}
@@ -974,7 +974,7 @@ def _market_sparklines(cursor, market_id, options):
     cursor.execute(
         """
         SELECT market_option_id, weight_at_entry
-        FROM orynth_predictions
+        FROM gotrendlabs_predictions
         WHERE market_id = %s AND status IN ('open', 'resolved')
         ORDER BY created_at ASC, id ASC
         """,
@@ -1041,7 +1041,7 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
     viewer_select = "NULL AS viewer_reaction"
     viewer_group = ""
     if viewer_id:
-        viewer_join = "LEFT JOIN orynth_comment_reactions vr ON vr.comment_id = mc.id AND vr.user_id = %s"
+        viewer_join = "LEFT JOIN gotrendlabs_comment_reactions vr ON vr.comment_id = mc.id AND vr.user_id = %s"
         viewer_select = "vr.reaction AS viewer_reaction"
         viewer_group = ", vr.reaction"
         params = [viewer_id, *params]
@@ -1055,10 +1055,10 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
                COALESCE(SUM(CASE WHEN cr.reaction = 'like' THEN 1 ELSE 0 END), 0) AS like_count,
                COALESCE(SUM(CASE WHEN cr.reaction = 'dislike' THEN 1 ELSE 0 END), 0) AS dislike_count,
                {viewer_select}
-        FROM orynth_market_comments mc
-        JOIN orynth_markets m ON m.id = mc.market_id
-        JOIN orynth_users u ON u.id = mc.author_id
-        LEFT JOIN orynth_comment_reactions cr ON cr.comment_id = mc.id
+        FROM gotrendlabs_market_comments mc
+        JOIN gotrendlabs_markets m ON m.id = mc.market_id
+        JOIN gotrendlabs_users u ON u.id = mc.author_id
+        LEFT JOIN gotrendlabs_comment_reactions cr ON cr.comment_id = mc.id
         {viewer_join}
         {where_sql}
         GROUP BY mc.id, mc.body, mc.status, mc.moderation_note, mc.moderated_by_id,
@@ -1075,7 +1075,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
     cursor.execute(
         """
         SELECT id, label, probability_exact, hint
-        FROM orynth_market_options
+        FROM gotrendlabs_market_options
         WHERE market_id = %s
         ORDER BY display_order ASC, id ASC
         """,
@@ -1103,7 +1103,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         cursor.execute(
             """
             SELECT 1
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE market_id = %s AND user_id = %s
             LIMIT 1
             """,
@@ -1113,7 +1113,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         cursor.execute(
             """
             SELECT 1
-            FROM orynth_market_favorites
+            FROM gotrendlabs_market_favorites
             WHERE market_id = %s AND user_id = %s
             LIMIT 1
             """,
@@ -1123,7 +1123,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         cursor.execute(
             """
             SELECT 1
-            FROM orynth_market_likes
+            FROM gotrendlabs_market_likes
             WHERE market_id = %s AND user_id = %s
             LIMIT 1
             """,
@@ -1148,13 +1148,13 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True):
         "primary_probability_exact": float(_decimal_probability(row["primary_probability_exact"])),
         "secondary_probability": _display_probability(row["secondary_probability_exact"]),
         "secondary_probability_exact": float(_decimal_probability(row["secondary_probability_exact"])),
-        "volume_oc": _currency_label(public_metrics["volume_oc"]),
+        "volume_gtl": _currency_label(public_metrics["volume_gtl"]),
         "participants": public_metrics["participants"],
         "human_participants": public_metrics["human_participants"],
         "bot_participants": public_metrics["bot_participants"],
-        "human_volume_oc": public_metrics["human_volume_oc"],
-        "bot_volume_oc": public_metrics["bot_volume_oc"],
-        "total_volume_oc": public_metrics["total_volume_oc"],
+        "human_volume_gtl": public_metrics["human_volume_gtl"],
+        "bot_volume_gtl": public_metrics["bot_volume_gtl"],
+        "total_volume_gtl": public_metrics["total_volume_gtl"],
         "source": row["source"],
         "closes_in": _short_close_label(row["close_at"]) or row["closes_in"],
         "close_label": row["close_label"] or _market_status_label(row["status"]),
@@ -1196,15 +1196,15 @@ def _participants_label(count):
 
 
 def _currency_label(value):
-    return str(value or "0 O₵").replace(" OC", " O₵")
+    return str(value or "0 GT₵").replace(" GTL", " GT₵")
 
 
-def _format_oc_amount(value):
+def _format_gtl_amount(value):
     return f"{int(value or 0):,}".replace(",", ".")
 
 
 def _volume_label(amount):
-    return _currency_label(f"{amount} O₵")
+    return _currency_label(f"{amount} GT₵")
 
 
 @app.get("/stats")
@@ -1214,35 +1214,35 @@ def get_public_stats():
             cursor.execute(
                 """
                 SELECT
-                    (SELECT COUNT(*) FROM orynth_markets WHERE status = 'open') AS open_markets,
+                    (SELECT COUNT(*) FROM gotrendlabs_markets WHERE status = 'open') AS open_markets,
                     (
                         SELECT COUNT(*)
-                        FROM orynth_predictions p
-                        JOIN orynth_users u ON u.id = p.user_id
+                        FROM gotrendlabs_predictions p
+                        JOIN gotrendlabs_users u ON u.id = p.user_id
                         WHERE u.is_bot = false
                     ) AS total_predictions,
                     (
                         SELECT COALESCE(SUM(l.amount), 0)
-                        FROM orynth_wallet_ledger l
-                        INNER JOIN orynth_users u ON u.id = l.user_id
+                        FROM gotrendlabs_wallet_ledger l
+                        INNER JOIN gotrendlabs_users u ON u.id = l.user_id
                         WHERE l.direction = 'credit'
                           AND u.is_staff = false
                           AND u.is_superuser = false
-                    ) AS distributed_oc,
+                    ) AS distributed_gtl,
                     (
                         SELECT COALESCE(SUM(p.stake_amount), 0)
-                        FROM orynth_predictions p
-                        JOIN orynth_users u ON u.id = p.user_id
+                        FROM gotrendlabs_predictions p
+                        JOIN gotrendlabs_users u ON u.id = p.user_id
                         WHERE u.is_bot = false
-                    ) AS moved_oc
+                    ) AS moved_gtl
                 """
             )
             row = cursor.fetchone()
     return {
         "open_markets": int(row["open_markets"] or 0),
         "total_predictions": int(row["total_predictions"] or 0),
-        "distributed_oc": _format_oc_amount(row["distributed_oc"]),
-        "moved_oc": _format_oc_amount(row["moved_oc"]),
+        "distributed_gtl": _format_gtl_amount(row["distributed_gtl"]),
+        "moved_gtl": _format_gtl_amount(row["moved_gtl"]),
         "resolution_sla": "pendente",
         "real_money": "R$0",
     }
@@ -1253,8 +1253,8 @@ def _market_probability_snapshot(cursor, market_id):
         """
         SELECT o.id, o.label, o.hint, o.display_order,
                %s + COALESCE(SUM(p.weight_at_entry), 0) AS total_weight
-        FROM orynth_market_options o
-        LEFT JOIN orynth_predictions p
+        FROM gotrendlabs_market_options o
+        LEFT JOIN gotrendlabs_predictions p
           ON p.market_option_id = o.id
          AND p.status = 'open'
         WHERE o.market_id = %s
@@ -1277,7 +1277,7 @@ def _market_probability_snapshot(cursor, market_id):
     for row in rows:
         probability_exact = probability_by_id[row["id"]]
         cursor.execute(
-            "UPDATE orynth_market_options SET probability_exact = %s, updated_at = %s WHERE id = %s",
+            "UPDATE gotrendlabs_market_options SET probability_exact = %s, updated_at = %s WHERE id = %s",
             (probability_exact, datetime.now(timezone.utc), row["id"]),
         )
         probability = _display_probability(probability_exact)
@@ -1288,10 +1288,10 @@ def _market_probability_snapshot(cursor, market_id):
     public_metrics = market_public_metrics(cursor, market_id)
     cursor.execute(
         """
-        UPDATE orynth_markets
+        UPDATE gotrendlabs_markets
         SET primary_probability_exact = %s,
             secondary_probability_exact = %s,
-            volume_oc = %s,
+            volume_gtl = %s,
             participants = %s,
             updated_at = %s
         WHERE id = %s
@@ -1299,7 +1299,7 @@ def _market_probability_snapshot(cursor, market_id):
         (
             primary_probability_exact,
             secondary_probability_exact,
-            public_metrics["volume_oc"],
+            public_metrics["volume_gtl"],
             public_metrics["participants"],
             datetime.now(timezone.utc),
             market_id,
@@ -1312,7 +1312,7 @@ def _prediction_preview(cursor, slug, payload):
     cursor.execute(
         """
         SELECT id, status
-        FROM orynth_markets
+        FROM gotrendlabs_markets
         WHERE slug = %s
         """,
         (slug,),
@@ -1326,7 +1326,7 @@ def _prediction_preview(cursor, slug, payload):
     cursor.execute(
         """
         SELECT id, probability_exact
-        FROM orynth_market_options
+        FROM gotrendlabs_market_options
         WHERE id = %s AND market_id = %s
         """,
         (payload.option_id, market["id"]),
@@ -1353,7 +1353,7 @@ def _sync_featured_market(cursor, market_id, is_featured):
         cursor.execute(
             """
             SELECT id
-            FROM orynth_markets
+            FROM gotrendlabs_markets
             WHERE is_featured = true
             ORDER BY updated_at DESC, display_order ASC, id ASC
             """
@@ -1362,7 +1362,7 @@ def _sync_featured_market(cursor, market_id, is_featured):
         cursor.execute(
             """
             SELECT id
-            FROM orynth_markets
+            FROM gotrendlabs_markets
             WHERE is_featured = true
               AND id <> %s
             ORDER BY updated_at DESC, display_order ASC, id ASC
@@ -1374,7 +1374,7 @@ def _sync_featured_market(cursor, market_id, is_featured):
         if market_id is None:
             cursor.execute(
                 """
-                UPDATE orynth_markets
+                UPDATE gotrendlabs_markets
                 SET is_featured = false,
                     updated_at = %s
                 WHERE is_featured = true
@@ -1385,7 +1385,7 @@ def _sync_featured_market(cursor, market_id, is_featured):
         else:
             cursor.execute(
                 """
-                UPDATE orynth_markets
+                UPDATE gotrendlabs_markets
                 SET is_featured = false,
                     updated_at = %s
                 WHERE is_featured = true
@@ -1424,13 +1424,13 @@ def _admin_user_row(cursor, user_id):
                u.date_joined, u.last_login, u.account_status, u.is_active,
                u.is_staff, u.is_superuser, u.is_bot, u.deactivated_at,
                p.display_name AS profile_display_name,
-               COALESCE(w.available_oc, 0) AS available_oc,
-               COALESCE(w.locked_oc, 0) AS locked_oc,
+               COALESCE(w.available_gtl, 0) AS available_gtl,
+               COALESCE(w.locked_gtl, 0) AS locked_gtl,
                COALESCE(r.reputation_score, 0) AS reputation_score
-        FROM orynth_users u
-        LEFT JOIN orynth_user_profiles p ON p.user_id = u.id
-        LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
-        LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
+        FROM gotrendlabs_users u
+        LEFT JOIN gotrendlabs_user_profiles p ON p.user_id = u.id
+        LEFT JOIN gotrendlabs_wallet_balances w ON w.user_id = u.id
+        LEFT JOIN gotrendlabs_user_reputations r ON r.user_id = u.id
         WHERE u.id = %s
         """,
         (user_id,),
@@ -1445,13 +1445,13 @@ def _admin_user_row(cursor, user_id):
                u.date_joined, u.last_login, u.account_status, u.is_active,
                u.is_staff, u.is_superuser, u.is_bot, u.deactivated_at,
                p.display_name AS profile_display_name,
-               COALESCE(w.available_oc, 0) AS available_oc,
-               COALESCE(w.locked_oc, 0) AS locked_oc,
+               COALESCE(w.available_gtl, 0) AS available_gtl,
+               COALESCE(w.locked_gtl, 0) AS locked_gtl,
                COALESCE(r.reputation_score, 0) AS reputation_score
-        FROM orynth_users u
-        LEFT JOIN orynth_user_profiles p ON p.user_id = u.id
-        LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
-        LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
+        FROM gotrendlabs_users u
+        LEFT JOIN gotrendlabs_user_profiles p ON p.user_id = u.id
+        LEFT JOIN gotrendlabs_wallet_balances w ON w.user_id = u.id
+        LEFT JOIN gotrendlabs_user_reputations r ON r.user_id = u.id
         WHERE u.id = %s
         """,
         (user_id,),
@@ -1476,7 +1476,7 @@ def _issue_password_reset(cursor, user, *, ip_address=None, user_agent=""):
     now = datetime.now(timezone.utc)
     cursor.execute(
         """
-        INSERT INTO orynth_password_reset_tokens
+        INSERT INTO gotrendlabs_password_reset_tokens
             (user_id, token_hash, created_at, expires_at, used_at, ip_address, user_agent)
         VALUES (%s, %s, %s, %s, NULL, %s, %s)
         """,
@@ -1489,7 +1489,7 @@ def _ledger_entries(cursor, user_id, limit=10):
     cursor.execute(
         """
         SELECT id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at
-        FROM orynth_wallet_ledger
+        FROM gotrendlabs_wallet_ledger
         WHERE user_id = %s
         ORDER BY created_at DESC, id DESC
         LIMIT %s
@@ -1521,9 +1521,9 @@ def _admin_user_detail(cursor, user_id):
         """
         SELECT p.id, p.status, p.stake_amount, p.won, p.created_at,
                m.slug AS market_slug, m.title AS market_title, mo.label AS option_label
-        FROM orynth_predictions p
-        JOIN orynth_markets m ON m.id = p.market_id
-        JOIN orynth_market_options mo ON mo.id = p.market_option_id
+        FROM gotrendlabs_predictions p
+        JOIN gotrendlabs_markets m ON m.id = p.market_id
+        JOIN gotrendlabs_market_options mo ON mo.id = p.market_option_id
         WHERE p.user_id = %s
         ORDER BY p.created_at DESC, p.id DESC
         LIMIT 10
@@ -1543,14 +1543,14 @@ def _admin_user_detail(cursor, user_id):
         }
         for row in cursor.fetchall()
     ]
-    cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_predictions WHERE user_id = %s GROUP BY status", (user_id,))
+    cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_predictions WHERE user_id = %s GROUP BY status", (user_id,))
     prediction_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
 
     cursor.execute(
         """
         SELECT mc.id, mc.status, mc.body, mc.created_at, m.slug AS market_slug, m.title AS market_title
-        FROM orynth_market_comments mc
-        JOIN orynth_markets m ON m.id = mc.market_id
+        FROM gotrendlabs_market_comments mc
+        JOIN gotrendlabs_markets m ON m.id = mc.market_id
         WHERE mc.author_id = %s
         ORDER BY mc.created_at DESC, mc.id DESC
         LIMIT 10
@@ -1568,15 +1568,15 @@ def _admin_user_detail(cursor, user_id):
         }
         for row in cursor.fetchall()
     ]
-    cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_comments WHERE author_id = %s GROUP BY status", (user_id,))
+    cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_market_comments WHERE author_id = %s GROUP BY status", (user_id,))
     comment_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
 
     cursor.execute(
         """
         SELECT b.code, b.name, b.description, b.badge_type, b.image_url, b.image_dark_url,
                a.awarded_at, a.reason_snapshot
-        FROM orynth_user_badge_awards a
-        JOIN orynth_badge_definitions b ON b.id = a.badge_id
+        FROM gotrendlabs_user_badge_awards a
+        JOIN gotrendlabs_badge_definitions b ON b.id = a.badge_id
         WHERE a.user_id = %s
         ORDER BY a.awarded_at DESC, b.name ASC
         LIMIT 20
@@ -1599,8 +1599,8 @@ def _admin_user_detail(cursor, user_id):
 
     cursor.execute(
         """
-        SELECT id, question, status, reward_oc, created_at
-        FROM orynth_market_suggestions
+        SELECT id, question, status, reward_gtl, created_at
+        FROM gotrendlabs_market_suggestions
         WHERE author_id = %s
         ORDER BY created_at DESC, id DESC
         LIMIT 10
@@ -1612,7 +1612,7 @@ def _admin_user_detail(cursor, user_id):
             "id": row["id"],
             "title": row["question"],
             "status": row["status"],
-            "reward_oc": row["reward_oc"],
+            "reward_gtl": row["reward_gtl"],
             "created_at": row["created_at"].isoformat(),
         }
         for row in cursor.fetchall()
@@ -1620,8 +1620,8 @@ def _admin_user_detail(cursor, user_id):
 
     cursor.execute(
         """
-        SELECT id, feedback_type, severity, status, reward_oc, created_at
-        FROM orynth_product_feedback
+        SELECT id, feedback_type, severity, status, reward_gtl, created_at
+        FROM gotrendlabs_product_feedback
         WHERE author_id = %s
         ORDER BY created_at DESC, id DESC
         LIMIT 10
@@ -1634,7 +1634,7 @@ def _admin_user_detail(cursor, user_id):
             "title": row["feedback_type"],
             "severity": row["severity"],
             "status": row["status"],
-            "reward_oc": row["reward_oc"],
+            "reward_gtl": row["reward_gtl"],
             "created_at": row["created_at"].isoformat(),
         }
         for row in cursor.fetchall()
@@ -1643,7 +1643,7 @@ def _admin_user_detail(cursor, user_id):
     cursor.execute(
         """
         SELECT id, created_at, last_seen_at, expires_at, revoked_at, ip_address, user_agent
-        FROM orynth_auth_sessions
+        FROM gotrendlabs_auth_sessions
         WHERE user_id = %s
         ORDER BY created_at DESC, id DESC
         LIMIT 10
@@ -1666,7 +1666,7 @@ def _admin_user_detail(cursor, user_id):
     cursor.execute(
         """
         SELECT event_type, email, provider, ip_address, user_agent, created_at
-        FROM orynth_auth_events
+        FROM gotrendlabs_auth_events
         WHERE user_id = %s OR lower(email) = lower(%s)
         ORDER BY created_at DESC, id DESC
         LIMIT 10
@@ -1688,7 +1688,7 @@ def _admin_user_detail(cursor, user_id):
     cursor.execute(
         """
         SELECT action, entity_type, entity_identifier, note, created_at, actor_id
-        FROM orynth_admin_events
+        FROM gotrendlabs_admin_events
         WHERE (entity_type = 'user' AND entity_identifier = %s) OR actor_id = %s
         ORDER BY created_at DESC, id DESC
         LIMIT 10
@@ -1781,9 +1781,9 @@ def _notification_rows(cursor, recipient_id, *, limit=10):
                n.comment_id,
                actor.username AS actor_handle, actor.first_name AS actor_display_name,
                m.slug AS market_slug, m.title AS market_title
-        FROM orynth_user_notifications n
-        LEFT JOIN orynth_users actor ON actor.id = n.actor_id
-        LEFT JOIN orynth_markets m ON m.id = n.market_id
+        FROM gotrendlabs_user_notifications n
+        LEFT JOIN gotrendlabs_users actor ON actor.id = n.actor_id
+        LEFT JOIN gotrendlabs_markets m ON m.id = n.market_id
         WHERE n.recipient_id = %s
         ORDER BY n.created_at DESC, n.id DESC
         LIMIT %s
@@ -1792,7 +1792,7 @@ def _notification_rows(cursor, recipient_id, *, limit=10):
     )
     notifications = [_notification_response(row) for row in cursor.fetchall()]
     cursor.execute(
-        "SELECT COUNT(*) AS total FROM orynth_user_notifications WHERE recipient_id = %s AND is_read = false",
+        "SELECT COUNT(*) AS total FROM gotrendlabs_user_notifications WHERE recipient_id = %s AND is_read = false",
         (recipient_id,),
     )
     unread = cursor.fetchone()
@@ -1803,8 +1803,8 @@ def _market_participant_recipient_ids(cursor, market_id, actor_id):
     cursor.execute(
         """
         SELECT DISTINCT p.user_id
-        FROM orynth_predictions p
-        JOIN orynth_users u ON u.id = p.user_id
+        FROM gotrendlabs_predictions p
+        JOIN gotrendlabs_users u ON u.id = p.user_id
         WHERE p.market_id = %s
           AND p.user_id <> %s
           AND u.is_bot = false
@@ -1833,14 +1833,14 @@ def _create_notification(
     notification_actor_id = actor.get("id") or actor_id
     if actor.get("is_bot") or (suppress_self and notification_actor_id and recipient_id == notification_actor_id):
         return
-    cursor.execute("SELECT is_bot FROM orynth_users WHERE id = %s", (recipient_id,))
+    cursor.execute("SELECT is_bot FROM gotrendlabs_users WHERE id = %s", (recipient_id,))
     recipient = cursor.fetchone()
     recipient_is_bot = recipient["is_bot"] if isinstance(recipient, dict) else recipient[0] if recipient else False
     if not recipient or recipient_is_bot:
         return
     cursor.execute(
         """
-        INSERT INTO orynth_user_notifications
+        INSERT INTO gotrendlabs_user_notifications
             (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
         ON CONFLICT (recipient_id, source_key) DO NOTHING
@@ -1884,7 +1884,7 @@ def _notify_comment_author(cursor, *, actor, comment_id, event_type, source_key,
     cursor.execute(
         """
         SELECT mc.author_id, mc.market_id
-        FROM orynth_market_comments mc
+        FROM gotrendlabs_market_comments mc
         WHERE mc.id = %s AND mc.status = 'visible'
         """,
         (comment_id,),
@@ -1946,7 +1946,7 @@ def _suggestion_response(row):
         "source": row["suggested_source"],
         "description": row["rationale"],
         "admin_note": row["admin_note"] or "",
-        "reward_oc": row["reward_oc"],
+        "reward_gtl": row["reward_gtl"],
         "converted_market_slug": row["converted_market_slug"],
         "created_at": row["created_at"].isoformat(),
         "created_at_label": _date_label(row["created_at"]),
@@ -1975,7 +1975,7 @@ def _feedback_response(row):
         "source": "",
         "description": row["description"],
         "admin_note": row["admin_note"] or "",
-        "reward_oc": row["reward_oc"],
+        "reward_gtl": row["reward_gtl"],
         "converted_market_slug": None,
         "created_at": row["created_at"].isoformat(),
         "created_at_label": _date_label(row["created_at"]),
@@ -1985,9 +1985,9 @@ def _feedback_response(row):
 
 def _wallet_recharge_response(row):
     title = "Solicitação de recarga educativa"
-    amount_oc = row["amount_oc"]
-    if amount_oc:
-        title = f"{title} · {amount_oc} O₵"
+    amount_gtl = row["amount_gtl"]
+    if amount_gtl:
+        title = f"{title} · {amount_gtl} GT₵"
     return {
         "id": row["id"],
         "kind": "wallet_recharge",
@@ -2008,7 +2008,7 @@ def _wallet_recharge_response(row):
         "source": "",
         "description": "Pedido de crédito educativo para voltar a participar dos mercados.",
         "admin_note": row["admin_note"] or "",
-        "reward_oc": amount_oc,
+        "reward_gtl": amount_gtl,
         "converted_market_slug": None,
         "created_at": row["created_at"].isoformat(),
         "created_at_label": _date_label(row["created_at"]),
@@ -2021,7 +2021,7 @@ def _wallet_recharge_public_response(row):
         "id": row["id"],
         "status": row["status"],
         "status_label": _queue_status_label(row["status"]),
-        "amount_oc": row["amount_oc"],
+        "amount_gtl": row["amount_gtl"],
         "admin_note": row["admin_note"] or "",
         "created_at": row["created_at"].isoformat(),
         "created_at_label": _date_label(row["created_at"]),
@@ -2033,8 +2033,8 @@ def _get_wallet_recharge_request(cursor, request_id):
     cursor.execute(
         """
         SELECT r.*, u.username AS author_handle
-        FROM orynth_wallet_recharge_requests r
-        JOIN orynth_users u ON u.id = r.user_id
+        FROM gotrendlabs_wallet_recharge_requests r
+        JOIN gotrendlabs_users u ON u.id = r.user_id
         WHERE r.id = %s
         """,
         (request_id,),
@@ -2049,9 +2049,9 @@ def _get_suggestion(cursor, suggestion_id):
     cursor.execute(
         """
         SELECT s.*, u.username AS author_handle, m.slug AS converted_market_slug
-        FROM orynth_market_suggestions s
-        LEFT JOIN orynth_users u ON u.id = s.author_id
-        LEFT JOIN orynth_markets m ON m.id = s.converted_market_id
+        FROM gotrendlabs_market_suggestions s
+        LEFT JOIN gotrendlabs_users u ON u.id = s.author_id
+        LEFT JOIN gotrendlabs_markets m ON m.id = s.converted_market_id
         WHERE s.id = %s
         """,
         (suggestion_id,),
@@ -2066,8 +2066,8 @@ def _get_feedback(cursor, feedback_id):
     cursor.execute(
         """
         SELECT f.*, u.username AS author_handle
-        FROM orynth_product_feedback f
-        LEFT JOIN orynth_users u ON u.id = f.author_id
+        FROM gotrendlabs_product_feedback f
+        LEFT JOIN gotrendlabs_users u ON u.id = f.author_id
         WHERE f.id = %s
         """,
         (feedback_id,),
@@ -2084,11 +2084,11 @@ def _upsert_category(cursor, name, slug=None, notice=None):
     should_update_notice = notice is not None
     cursor.execute(
         """
-        INSERT INTO orynth_market_categories (name, slug, notice, is_blocked, blocked_reason, created_at)
+        INSERT INTO gotrendlabs_market_categories (name, slug, notice, is_blocked, blocked_reason, created_at)
         VALUES (%s, %s, %s, false, '', %s)
         ON CONFLICT (slug) DO UPDATE
         SET name = EXCLUDED.name,
-            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE orynth_market_categories.notice END
+            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE gotrendlabs_market_categories.notice END
         RETURNING id, name, slug, notice, is_blocked
         """,
         (name.strip(), cleaned_slug, notice_value, datetime.now(timezone.utc), should_update_notice),
@@ -2102,11 +2102,11 @@ def _upsert_subcategory(cursor, category_id, name, slug=None, notice=None):
     should_update_notice = notice is not None
     cursor.execute(
         """
-        INSERT INTO orynth_market_subcategories (category_id, name, slug, notice, is_blocked, blocked_reason, created_at)
+        INSERT INTO gotrendlabs_market_subcategories (category_id, name, slug, notice, is_blocked, blocked_reason, created_at)
         VALUES (%s, %s, %s, %s, false, '', %s)
         ON CONFLICT (category_id, slug) DO UPDATE
         SET name = EXCLUDED.name,
-            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE orynth_market_subcategories.notice END
+            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE gotrendlabs_market_subcategories.notice END
         RETURNING id, name, slug, notice, is_blocked
         """,
         (category_id, name.strip(), cleaned_slug, notice_value, datetime.now(timezone.utc), should_update_notice),
@@ -2120,11 +2120,11 @@ def _upsert_event(cursor, subcategory_id, name, slug=None, notice=None):
     should_update_notice = notice is not None
     cursor.execute(
         """
-        INSERT INTO orynth_market_events (subcategory_id, name, slug, notice, is_blocked, blocked_reason, created_at)
+        INSERT INTO gotrendlabs_market_events (subcategory_id, name, slug, notice, is_blocked, blocked_reason, created_at)
         VALUES (%s, %s, %s, %s, false, '', %s)
         ON CONFLICT (subcategory_id, slug) DO UPDATE
         SET name = EXCLUDED.name,
-            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE orynth_market_events.notice END
+            notice = CASE WHEN %s THEN EXCLUDED.notice ELSE gotrendlabs_market_events.notice END
         RETURNING id, name, slug, notice, is_blocked
         """,
         (subcategory_id, name.strip(), cleaned_slug, notice_value, datetime.now(timezone.utc), should_update_notice),
@@ -2228,7 +2228,7 @@ def _save_market_options(cursor, market_id, options, *, preserve_existing_probab
     cursor.execute(
         """
         SELECT id, label, probability_exact
-        FROM orynth_market_options
+        FROM gotrendlabs_market_options
         WHERE market_id = %s
         """,
         (market_id,),
@@ -2244,7 +2244,7 @@ def _save_market_options(cursor, market_id, options, *, preserve_existing_probab
             probability_exact = existing["probability_exact"] if preserve_existing_probability else _decimal_probability(option["probability_exact"])
             cursor.execute(
                 """
-                UPDATE orynth_market_options
+                UPDATE gotrendlabs_market_options
                 SET probability_exact = %s,
                     hint = %s,
                     display_order = %s,
@@ -2262,7 +2262,7 @@ def _save_market_options(cursor, market_id, options, *, preserve_existing_probab
         else:
             cursor.execute(
                 """
-                INSERT INTO orynth_market_options (market_id, label, probability_exact, hint, display_order, created_at, updated_at)
+                INSERT INTO gotrendlabs_market_options (market_id, label, probability_exact, hint, display_order, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
@@ -2282,7 +2282,7 @@ def _save_market_options(cursor, market_id, options, *, preserve_existing_probab
     cursor.execute(
         """
         SELECT COUNT(*) AS total
-        FROM orynth_predictions
+        FROM gotrendlabs_predictions
         WHERE market_option_id = ANY(%s)
         """,
         (removed_ids,),
@@ -2292,7 +2292,7 @@ def _save_market_options(cursor, market_id, options, *, preserve_existing_probab
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Não é possível remover opções que já possuem previsões vinculadas.",
         )
-    cursor.execute("DELETE FROM orynth_market_options WHERE id = ANY(%s)", (removed_ids,))
+    cursor.execute("DELETE FROM gotrendlabs_market_options WHERE id = ANY(%s)", (removed_ids,))
 
 
 def _validate_publishable(cursor, market_id):
@@ -2300,7 +2300,7 @@ def _validate_publishable(cursor, market_id):
         """
         SELECT title, summary, source, resolution_criteria, close_at, close_timezone, thumb_color,
                kind, category_id, subcategory_id, event_id
-        FROM orynth_markets
+        FROM gotrendlabs_markets
         WHERE id = %s
         """,
         (market_id,),
@@ -2313,7 +2313,7 @@ def _validate_publishable(cursor, market_id):
     cursor.execute(
         """
                 SELECT label, probability_exact
-        FROM orynth_market_options
+        FROM gotrendlabs_market_options
         WHERE market_id = %s
         ORDER BY display_order ASC, id ASC
         """,
@@ -2341,8 +2341,8 @@ def _taxonomy_response(cursor):
     cursor.execute(
         """
         SELECT c.id, c.name, c.slug, c.notice, c.is_blocked, c.blocked_reason, c.blocked_at, COUNT(m.id) AS markets_count
-        FROM orynth_market_categories c
-        LEFT JOIN orynth_markets m ON m.category_id = c.id
+        FROM gotrendlabs_market_categories c
+        LEFT JOIN gotrendlabs_markets m ON m.category_id = c.id
         GROUP BY c.id, c.name, c.slug, c.notice, c.is_blocked, c.blocked_reason, c.blocked_at
         ORDER BY c.name ASC
         """
@@ -2352,8 +2352,8 @@ def _taxonomy_response(cursor):
         cursor.execute(
             """
             SELECT sc.id, sc.name, sc.slug, sc.notice, sc.is_blocked, sc.blocked_reason, sc.blocked_at, COUNT(m.id) AS markets_count
-            FROM orynth_market_subcategories sc
-            LEFT JOIN orynth_markets m ON m.subcategory_id = sc.id
+            FROM gotrendlabs_market_subcategories sc
+            LEFT JOIN gotrendlabs_markets m ON m.subcategory_id = sc.id
             WHERE sc.category_id = %s
             GROUP BY sc.id, sc.name, sc.slug, sc.notice, sc.is_blocked, sc.blocked_reason, sc.blocked_at
             ORDER BY sc.name ASC
@@ -2365,8 +2365,8 @@ def _taxonomy_response(cursor):
             cursor.execute(
                 """
                 SELECT ev.name, ev.slug, ev.notice, ev.is_blocked, ev.blocked_reason, ev.blocked_at, COUNT(m.id) AS markets_count
-                FROM orynth_market_events ev
-                LEFT JOIN orynth_markets m ON m.event_id = ev.id
+                FROM gotrendlabs_market_events ev
+                LEFT JOIN gotrendlabs_markets m ON m.event_id = ev.id
                 WHERE ev.subcategory_id = %s
                 GROUP BY ev.id, ev.name, ev.slug, ev.notice, ev.is_blocked, ev.blocked_reason, ev.blocked_at
                 ORDER BY ev.name ASC
@@ -2415,7 +2415,7 @@ def _ranking_categories(cursor):
     cursor.execute(
         """
         SELECT c.id, c.name, c.slug
-        FROM orynth_market_categories c
+        FROM gotrendlabs_market_categories c
         ORDER BY c.name ASC
         """
     )
@@ -2424,7 +2424,7 @@ def _ranking_categories(cursor):
         cursor.execute(
             """
             SELECT id, name, slug
-            FROM orynth_market_subcategories
+            FROM gotrendlabs_market_subcategories
             WHERE category_id = %s
             ORDER BY name ASC
             """,
@@ -2435,7 +2435,7 @@ def _ranking_categories(cursor):
             cursor.execute(
                 """
                 SELECT name, slug
-                FROM orynth_market_events
+                FROM gotrendlabs_market_events
                 WHERE subcategory_id = %s
                 ORDER BY name ASC
                 """,
@@ -2469,8 +2469,8 @@ def _ranking_badges_by_user(cursor, user_ids, visible_limit=3):
             SELECT a.user_id, b.code, b.name, b.badge_type, b.image_url, b.image_dark_url, a.awarded_at,
                    ROW_NUMBER() OVER (PARTITION BY a.user_id ORDER BY a.awarded_at DESC, b.code ASC) AS badge_rank,
                    COUNT(*) OVER (PARTITION BY a.user_id) AS badges_total
-            FROM orynth_user_badge_awards a
-            JOIN orynth_badge_definitions b ON b.id = a.badge_id
+            FROM gotrendlabs_user_badge_awards a
+            JOIN gotrendlabs_badge_definitions b ON b.id = a.badge_id
             WHERE b.is_active = true
               AND a.user_id = ANY(%s)
               AND b.code NOT LIKE 'dev_%%'
@@ -2536,12 +2536,12 @@ def _ranking_theme_rows(cursor, category, subcategory, event, limit=50):
         SELECT u.id, u.username, u.first_name, u.date_joined,
                p.probability_at_entry, p.won, p.updated_at, p.id AS prediction_id,
                c.name AS category_name, sc.name AS subcategory_name, ev.name AS event_name
-        FROM orynth_predictions p
-        JOIN orynth_users u ON u.id = p.user_id
-        JOIN orynth_markets m ON m.id = p.market_id
-        JOIN orynth_market_categories c ON c.id = m.category_id
-        JOIN orynth_market_subcategories sc ON sc.id = m.subcategory_id
-        LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
+        FROM gotrendlabs_predictions p
+        JOIN gotrendlabs_users u ON u.id = p.user_id
+        JOIN gotrendlabs_markets m ON m.id = p.market_id
+        JOIN gotrendlabs_market_categories c ON c.id = m.category_id
+        JOIN gotrendlabs_market_subcategories sc ON sc.id = m.subcategory_id
+        LEFT JOIN gotrendlabs_market_events ev ON ev.id = m.event_id
         WHERE {" AND ".join(where)}
         ORDER BY u.id ASC, p.updated_at ASC, p.id ASC
         """,
@@ -2592,7 +2592,7 @@ def _ranking_theme_rows(cursor, category, subcategory, event, limit=50):
 def _record_event(cursor, event_type, *, user_id=None, email="", provider="", ip_address=None, user_agent=""):
     cursor.execute(
         """
-        INSERT INTO orynth_auth_events (user_id, event_type, email, provider, ip_address, user_agent, created_at)
+        INSERT INTO gotrendlabs_auth_events (user_id, event_type, email, provider, ip_address, user_agent, created_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
         """,
         (user_id, event_type, email or "", provider or "", ip_address, user_agent, datetime.now(timezone.utc)),
@@ -2605,7 +2605,7 @@ def _create_session(cursor, user_id, request):
     ip_address, user_agent = _client_meta(request)
     cursor.execute(
         """
-        INSERT INTO orynth_auth_sessions
+        INSERT INTO gotrendlabs_auth_sessions
             (user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at, ip_address, user_agent)
         VALUES (%s, %s, %s, %s, %s, NULL, %s, %s)
         """,
@@ -2627,7 +2627,7 @@ def health():
 
 @app.get("/")
 def root():
-    return {"name": "Orynth Trends Backend API", "status": "ok"}
+    return {"name": "GoTrendLabs Backend API", "status": "ok"}
 
 
 @app.get("/markets", response_model=MarketListResponse)
@@ -2682,7 +2682,7 @@ def favorite_market(slug: str, authorization: str = Header(default="")):
             row = _public_market_row_or_404(cursor, slug)
             cursor.execute(
                 """
-                INSERT INTO orynth_market_favorites (user_id, market_id, created_at)
+                INSERT INTO gotrendlabs_market_favorites (user_id, market_id, created_at)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (user_id, market_id) DO NOTHING
                 """,
@@ -2699,7 +2699,7 @@ def unfavorite_market(slug: str, authorization: str = Header(default="")):
             row = _public_market_row_or_404(cursor, slug)
             cursor.execute(
                 """
-                DELETE FROM orynth_market_favorites
+                DELETE FROM gotrendlabs_market_favorites
                 WHERE user_id = %s AND market_id = %s
                 """,
                 (user["id"], row["id"]),
@@ -2715,7 +2715,7 @@ def like_market(slug: str, authorization: str = Header(default="")):
             row = _public_market_row_or_404(cursor, slug)
             cursor.execute(
                 """
-                INSERT INTO orynth_market_likes (user_id, market_id, created_at)
+                INSERT INTO gotrendlabs_market_likes (user_id, market_id, created_at)
                 VALUES (%s, %s, %s)
                 ON CONFLICT (user_id, market_id) DO NOTHING
                 RETURNING id
@@ -2745,7 +2745,7 @@ def unlike_market(slug: str, authorization: str = Header(default="")):
             row = _public_market_row_or_404(cursor, slug)
             cursor.execute(
                 """
-                DELETE FROM orynth_market_likes
+                DELETE FROM gotrendlabs_market_likes
                 WHERE user_id = %s AND market_id = %s
                 """,
                 (user["id"], row["id"]),
@@ -2757,7 +2757,7 @@ def unlike_market(slug: str, authorization: str = Header(default="")):
 def _increment_market_counter(cursor, slug, field_name):
     cursor.execute(
         f"""
-        UPDATE orynth_markets
+        UPDATE gotrendlabs_markets
         SET {field_name} = {field_name} + 1, updated_at = %s
         WHERE slug = %s AND status <> 'draft'
         RETURNING view_count, share_count
@@ -2789,7 +2789,7 @@ def list_market_comments(slug: str, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             viewer = _optional_current_user(cursor, authorization)
-            cursor.execute("SELECT id, status FROM orynth_markets WHERE slug = %s AND status <> 'draft'", (slug,))
+            cursor.execute("SELECT id, status FROM gotrendlabs_markets WHERE slug = %s AND status <> 'draft'", (slug,))
             market = cursor.fetchone()
             if not market:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
@@ -2814,7 +2814,7 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
             body = payload.body.strip()
             if not body:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Comentário não pode ficar vazio.")
-            cursor.execute("SELECT id, status FROM orynth_markets WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id, status FROM gotrendlabs_markets WHERE slug = %s", (slug,))
             market = cursor.fetchone()
             if not market:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
@@ -2822,7 +2822,7 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Este mercado não aceita comentários.")
             cursor.execute(
                 """
-                INSERT INTO orynth_market_comments
+                INSERT INTO gotrendlabs_market_comments
                     (market_id, author_id, body, status, moderation_note, moderated_by_id, moderated_at, created_at, updated_at)
                 VALUES (%s, %s, %s, 'visible', '', NULL, NULL, %s, %s)
                 RETURNING id
@@ -2847,12 +2847,12 @@ def create_comment(slug: str, payload: CommentCreatePayload, authorization: str 
 
 def _set_comment_reaction(cursor, comment_id, user, reaction):
     user_id = user["id"]
-    cursor.execute("SELECT mc.id FROM orynth_market_comments mc WHERE mc.id = %s AND mc.status = 'visible'", (comment_id,))
+    cursor.execute("SELECT mc.id FROM gotrendlabs_market_comments mc WHERE mc.id = %s AND mc.status = 'visible'", (comment_id,))
     if not cursor.fetchone():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comentário não encontrado.")
     cursor.execute(
         """
-        INSERT INTO orynth_comment_reactions (comment_id, user_id, reaction, created_at, updated_at)
+        INSERT INTO gotrendlabs_comment_reactions (comment_id, user_id, reaction, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s)
         ON CONFLICT (comment_id, user_id)
         DO UPDATE SET reaction = EXCLUDED.reaction, updated_at = EXCLUDED.updated_at
@@ -2871,18 +2871,18 @@ def _set_comment_reaction(cursor, comment_id, user, reaction):
             title="Seu comentário recebeu uma curtida",
             body=f"{_handle_seed(user['username'])} curtiu seu comentário.",
         )
-    cursor.execute("SELECT market_id FROM orynth_market_comments WHERE id = %s", (comment_id,))
+    cursor.execute("SELECT market_id FROM gotrendlabs_market_comments WHERE id = %s", (comment_id,))
     market_id = cursor.fetchone()["market_id"]
     return next(comment for comment in _market_comments(cursor, market_id, viewer_id=user_id) if comment["id"] == comment_id)
 
 
 def _clear_comment_reaction(cursor, comment_id, user_id, reaction):
-    cursor.execute("SELECT market_id FROM orynth_market_comments WHERE id = %s AND status = 'visible'", (comment_id,))
+    cursor.execute("SELECT market_id FROM gotrendlabs_market_comments WHERE id = %s AND status = 'visible'", (comment_id,))
     row = cursor.fetchone()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Comentário não encontrado.")
     cursor.execute(
-        "DELETE FROM orynth_comment_reactions WHERE comment_id = %s AND user_id = %s AND reaction = %s",
+        "DELETE FROM gotrendlabs_comment_reactions WHERE comment_id = %s AND user_id = %s AND reaction = %s",
         (comment_id, user_id, reaction),
     )
     return next(comment for comment in _market_comments(cursor, row["market_id"], viewer_id=user_id) if comment["id"] == comment_id)
@@ -2935,7 +2935,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
             cursor.execute(
                 """
                 SELECT id, slug, status
-                FROM orynth_markets
+                FROM gotrendlabs_markets
                 WHERE slug = %s
                 """,
                 (slug,),
@@ -2949,7 +2949,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
             cursor.execute(
                 """
                 SELECT id, label, probability_exact, hint
-                FROM orynth_market_options
+                FROM gotrendlabs_market_options
                 WHERE id = %s AND market_id = %s
                 """,
                 (payload.option_id, market["id"]),
@@ -2961,7 +2961,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
             cursor.execute(
                 """
                 SELECT id
-                FROM orynth_predictions
+                FROM gotrendlabs_predictions
                 WHERE user_id = %s AND market_id = %s
                 """,
                 (user["id"], market["id"]),
@@ -2971,8 +2971,8 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
 
             cursor.execute(
                 """
-                SELECT available_oc, locked_oc, total_earned_oc
-                FROM orynth_wallet_balances
+                SELECT available_gtl, locked_gtl, total_earned_gtl
+                FROM gotrendlabs_wallet_balances
                 WHERE user_id = %s
                 FOR UPDATE
                 """,
@@ -2983,21 +2983,21 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
                 _ensure_wallet_balance(cursor, user["id"])
                 cursor.execute(
                     """
-                    SELECT available_oc, locked_oc, total_earned_oc
-                    FROM orynth_wallet_balances
+                    SELECT available_gtl, locked_gtl, total_earned_gtl
+                    FROM gotrendlabs_wallet_balances
                     WHERE user_id = %s
                     FOR UPDATE
                     """,
                     (user["id"],),
                 )
                 balance = cursor.fetchone()
-            if int(balance["available_oc"] or 0) < payload.stake_amount:
+            if int(balance["available_gtl"] or 0) < payload.stake_amount:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo insuficiente para esta previsão.")
 
             cursor.execute(
                 """
                 SELECT reputation_score
-                FROM orynth_user_reputations
+                FROM gotrendlabs_user_reputations
                 WHERE user_id = %s
                 """,
                 (user["id"],),
@@ -3011,7 +3011,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
 
             cursor.execute(
                 """
-                INSERT INTO orynth_predictions
+                INSERT INTO gotrendlabs_predictions
                     (user_id, market_id, market_option_id, stake_amount, probability_at_entry,
                      weight_at_entry, potential_payout, status, won, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, 'open', NULL, %s, %s)
@@ -3079,9 +3079,9 @@ def create_suggestion(payload: MarketSuggestionPayload, request: Request, author
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                INSERT INTO orynth_market_suggestions
+                INSERT INTO gotrendlabs_market_suggestions
                     (author_id, guest_name, guest_email, question, category, subcategory, kind, suggested_source, rationale,
-                     status, admin_note, reward_oc, converted_market_id, reviewed_by_id, reviewed_at, rewarded_at, created_at, updated_at)
+                     status, admin_note, reward_gtl, converted_market_id, reviewed_by_id, reviewed_at, rewarded_at, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'pending', '', NULL, NULL, NULL, NULL, NULL, %s, %s)
                 RETURNING id
                 """,
@@ -3118,8 +3118,8 @@ def create_feedback(payload: ProductFeedbackPayload, request: Request, authoriza
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                INSERT INTO orynth_product_feedback
-                    (author_id, guest_name, guest_email, feedback_type, severity, description, status, admin_note, reward_oc,
+                INSERT INTO gotrendlabs_product_feedback
+                    (author_id, guest_name, guest_email, feedback_type, severity, description, status, admin_note, reward_gtl,
                      reviewed_by_id, reviewed_at, rewarded_at, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, 'pending', '', NULL, NULL, NULL, NULL, %s, %s)
                 RETURNING id
@@ -3222,8 +3222,8 @@ def admin_list_system_logs(
             cursor.execute(
                 f"""
                 SELECT COUNT(*) AS total
-                FROM orynth_system_logs l
-                LEFT JOIN orynth_users u ON u.id = l.user_id
+                FROM gotrendlabs_system_logs l
+                LEFT JOIN gotrendlabs_users u ON u.id = l.user_id
                 {where_sql}
                 """,
                 params,
@@ -3235,8 +3235,8 @@ def admin_list_system_logs(
                        l.request_id, l.method, l.path, l.status_code, l.duration_ms, l.user_id, l.ip_address,
                        l.user_agent, l.exception_type, l.stack_trace, l.context,
                        u.username, u.email AS user_email, u.first_name AS user_display_name
-                FROM orynth_system_logs l
-                LEFT JOIN orynth_users u ON u.id = l.user_id
+                FROM gotrendlabs_system_logs l
+                LEFT JOIN gotrendlabs_users u ON u.id = l.user_id
                 {where_sql}
                 ORDER BY l.created_at DESC, l.id DESC
                 LIMIT %s OFFSET %s
@@ -3253,7 +3253,7 @@ def admin_list_system_logs(
                     COALESCE(SUM(CASE WHEN level = 'WARNING' THEN 1 ELSE 0 END), 0) AS warning,
                     COALESCE(SUM(CASE WHEN level = 'ERROR' THEN 1 ELSE 0 END), 0) AS error,
                     COALESCE(SUM(CASE WHEN level = 'CRITICAL' THEN 1 ELSE 0 END), 0) AS critical
-                FROM orynth_system_logs
+                FROM gotrendlabs_system_logs
                 """
             )
             counts = cursor.fetchone()
@@ -3284,8 +3284,8 @@ def admin_get_system_log(log_id: int, authorization: str = Header(default="")):
                        l.request_id, l.method, l.path, l.status_code, l.duration_ms, l.user_id, l.ip_address,
                        l.user_agent, l.exception_type, l.stack_trace, l.context,
                        u.username, u.email AS user_email, u.first_name AS user_display_name
-                FROM orynth_system_logs l
-                LEFT JOIN orynth_users u ON u.id = l.user_id
+                FROM gotrendlabs_system_logs l
+                LEFT JOIN gotrendlabs_users u ON u.id = l.user_id
                 WHERE l.id = %s
                 """,
                 (log_id,),
@@ -3304,7 +3304,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_markets GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_markets GROUP BY status")
             market_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
             cursor.execute(
                 """
@@ -3312,7 +3312,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     COALESCE(SUM(view_count), 0) AS total_views,
                     COALESCE(SUM(share_count), 0) AS total_shares,
                     COALESCE(SUM(CASE WHEN status IN ('open', 'scheduled') AND close_at >= %s AND close_at <= %s THEN 1 ELSE 0 END), 0) AS closing_24h
-                FROM orynth_markets
+                FROM gotrendlabs_markets
                 """,
                 (now, next_24h),
             )
@@ -3321,10 +3321,10 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                 """
                 SELECT m.slug, m.title, m.status, m.status_label, c.name AS category,
                        s.name AS subcategory, ev.name AS event, m.view_count, m.share_count
-                FROM orynth_markets m
-                LEFT JOIN orynth_market_categories c ON c.id = m.category_id
-                LEFT JOIN orynth_market_subcategories s ON s.id = m.subcategory_id
-                LEFT JOIN orynth_market_events ev ON ev.id = m.event_id
+                FROM gotrendlabs_markets m
+                LEFT JOIN gotrendlabs_market_categories c ON c.id = m.category_id
+                LEFT JOIN gotrendlabs_market_subcategories s ON s.id = m.subcategory_id
+                LEFT JOIN gotrendlabs_market_events ev ON ev.id = m.event_id
                 ORDER BY m.view_count DESC, m.share_count DESC, m.created_at DESC
                 LIMIT 5
                 """
@@ -3343,14 +3343,14 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                 }
                 for row in cursor.fetchall()
             ]
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_suggestions GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_market_suggestions GROUP BY status")
             suggestion_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_product_feedback GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_product_feedback GROUP BY status")
             feedback_counts = {row["status"]: int(row["total"] or 0) for row in cursor.fetchall()}
             cursor.execute(
                 """
                 SELECT severity, COUNT(*) AS total
-                FROM orynth_product_feedback
+                FROM gotrendlabs_product_feedback
                 WHERE status = 'pending'
                 GROUP BY severity
                 """
@@ -3365,7 +3365,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     COALESCE(SUM(CASE WHEN is_staff = true AND is_superuser = false THEN 1 ELSE 0 END), 0) AS staff,
                     COALESCE(SUM(CASE WHEN is_superuser = true THEN 1 ELSE 0 END), 0) AS superuser,
                     COALESCE(SUM(CASE WHEN date_joined >= %s THEN 1 ELSE 0 END), 0) AS new_7d
-                FROM orynth_users
+                FROM gotrendlabs_users
                 """,
                 (since,),
             )
@@ -3378,7 +3378,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     COALESCE(SUM(CASE WHEN status = 'resolved' THEN 1 ELSE 0 END), 0) AS resolved,
                     COALESCE(SUM(CASE WHEN status = 'canceled' THEN 1 ELSE 0 END), 0) AS canceled,
                     COALESCE(SUM(CASE WHEN created_at >= %s THEN 1 ELSE 0 END), 0) AS created_7d
-                FROM orynth_predictions
+                FROM gotrendlabs_predictions
                 """,
                 (since,),
             )
@@ -3389,45 +3389,45 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     COUNT(*) AS total,
                     COALESCE(SUM(CASE WHEN status = 'visible' THEN 1 ELSE 0 END), 0) AS visible,
                     COALESCE(SUM(CASE WHEN status = 'hidden' THEN 1 ELSE 0 END), 0) AS hidden
-                FROM orynth_market_comments
+                FROM gotrendlabs_market_comments
                 """
             )
             comment_counts = cursor.fetchone()
             cursor.execute(
                 """
                 SELECT
-                    COALESCE(SUM(available_oc), 0) AS available_oc,
-                    COALESCE(SUM(locked_oc), 0) AS locked_oc
-                FROM orynth_wallet_balances
+                    COALESCE(SUM(available_gtl), 0) AS available_gtl,
+                    COALESCE(SUM(locked_gtl), 0) AS locked_gtl
+                FROM gotrendlabs_wallet_balances
                 """
             )
             wallet_counts = cursor.fetchone()
             cursor.execute(
                 """
                 SELECT
-                    (SELECT COUNT(*) FROM orynth_badge_definitions WHERE is_active = true) AS active_catalog,
-                    (SELECT COUNT(*) FROM orynth_user_badge_awards) AS awarded
+                    (SELECT COUNT(*) FROM gotrendlabs_badge_definitions WHERE is_active = true) AS active_catalog,
+                    (SELECT COUNT(*) FROM gotrendlabs_user_badge_awards) AS awarded
                 """
             )
             badge_counts = cursor.fetchone()
             cursor.execute(
                 """
                 SELECT level, COUNT(*) AS total
-                FROM orynth_system_logs
+                FROM gotrendlabs_system_logs
                 WHERE created_at >= %s
                 GROUP BY level
                 """,
                 (since,),
             )
             log_counts = {row["level"].lower(): int(row["total"] or 0) for row in cursor.fetchall()}
-            cursor.execute("SELECT COUNT(*) AS total FROM orynth_admin_events WHERE created_at >= %s", (since,))
+            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_admin_events WHERE created_at >= %s", (since,))
             admin_events_7d = int(cursor.fetchone()["total"] or 0)
             cursor.execute(
                 """
                 SELECT e.action, e.entity_type, e.entity_identifier, e.note, e.created_at,
                        u.username AS actor_handle, u.first_name AS actor_name
-                FROM orynth_admin_events e
-                LEFT JOIN orynth_users u ON u.id = e.actor_id
+                FROM gotrendlabs_admin_events e
+                LEFT JOIN gotrendlabs_users u ON u.id = e.actor_id
                 ORDER BY e.created_at DESC, e.id DESC
                 LIMIT 6
                 """
@@ -3449,13 +3449,13 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                        daemon_stale_after_minutes, daemon_missing_after_minutes,
                        ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled,
                        ai_llm_provider, ai_llm_base_url, ai_model, ai_max_comments_per_cycle,
-                       ai_max_predictions_per_cycle, ai_min_humans_for_prediction, ai_max_stake_oc
-                FROM orynth_site_config
+                       ai_max_predictions_per_cycle, ai_min_humans_for_prediction, ai_max_stake_gtl
+                FROM gotrendlabs_site_config
                 WHERE singleton_key = 1
                 """
             )
             site_config = cursor.fetchone()
-            smtp_secret_configured = bool(os.environ.get("ORYNTH_SMTP_PASSWORD") or os.environ.get("ORYNTH_SMTP_API_KEY"))
+            smtp_secret_configured = bool(os.environ.get("GOTRENDLABS_SMTP_PASSWORD") or os.environ.get("GOTRENDLABS_SMTP_API_KEY"))
             smtp_ready = bool(
                 site_config
                 and site_config["email_enabled"]
@@ -3510,8 +3510,8 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "comments_hidden": int(comment_counts["hidden"] or 0),
                 },
                 "wallet": {
-                    "available_oc": int(wallet_counts["available_oc"] or 0),
-                    "locked_oc": int(wallet_counts["locked_oc"] or 0),
+                    "available_gtl": int(wallet_counts["available_gtl"] or 0),
+                    "locked_gtl": int(wallet_counts["locked_gtl"] or 0),
                 },
                 "badges": {
                     "active_catalog": int(badge_counts["active_catalog"] or 0),
@@ -3539,7 +3539,7 @@ def _admin_ai_agent_response(cursor, row, now=None):
     cursor.execute(
         """
         SELECT action_type, status, COUNT(*) AS total
-        FROM orynth_ai_agent_actions
+        FROM gotrendlabs_ai_agent_actions
         WHERE agent_id = %s
           AND created_at >= %s
         GROUP BY action_type, status
@@ -3560,7 +3560,7 @@ def _admin_ai_agent_response(cursor, row, now=None):
         "comment_style": row["comment_style"] or "",
         "max_comments_per_day": row["max_comments_per_day"],
         "max_predictions_per_day": row["max_predictions_per_day"],
-        "max_stake_oc": row["max_stake_oc"],
+        "max_stake_gtl": row["max_stake_gtl"],
         "cooldown_hours": row["cooldown_hours"],
         "min_humans_for_prediction": row["min_humans_for_prediction"],
         "last_action_at": row["last_action_at"].isoformat() if row["last_action_at"] else None,
@@ -3578,8 +3578,8 @@ def _admin_ai_agent_rows(cursor):
     cursor.execute(
         """
         SELECT a.*, u.username, u.first_name, u.is_bot
-        FROM orynth_ai_agents a
-        JOIN orynth_users u ON u.id = a.user_id
+        FROM gotrendlabs_ai_agents a
+        JOIN gotrendlabs_users u ON u.id = a.user_id
         ORDER BY a.agent_type ASC, a.name ASC, a.id ASC
         """
     )
@@ -3589,13 +3589,13 @@ def _admin_ai_agent_rows(cursor):
 def _validate_ai_agent_payload(cursor, payload, agent_id=None):
     if payload.agent_type not in {"analyst", "liquidity", "contrarian"}:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de agente inválido.")
-    cursor.execute("SELECT id, is_bot FROM orynth_users WHERE id = %s AND is_active = true", (payload.user_id,))
+    cursor.execute("SELECT id, is_bot FROM gotrendlabs_users WHERE id = %s AND is_active = true", (payload.user_id,))
     user = cursor.fetchone()
     if not user:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Usuário bot não encontrado.")
     if not user["is_bot"]:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Agente IA deve usar usuário marcado como bot.")
-    cursor.execute("SELECT id FROM orynth_ai_agents WHERE user_id = %s", (payload.user_id,))
+    cursor.execute("SELECT id FROM gotrendlabs_ai_agents WHERE user_id = %s", (payload.user_id,))
     existing = cursor.fetchone()
     if existing and existing["id"] != agent_id:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Este usuário bot já está vinculado a outro agente IA.")
@@ -3618,9 +3618,9 @@ def admin_create_ai_agent(payload: AdminAiAgentPayload, authorization: str = Hea
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                INSERT INTO orynth_ai_agents
+                INSERT INTO gotrendlabs_ai_agents
                     (name, agent_type, user_id, is_active, personality_prompt, comment_style,
-                     max_comments_per_day, max_predictions_per_day, max_stake_oc, cooldown_hours,
+                     max_comments_per_day, max_predictions_per_day, max_stake_gtl, cooldown_hours,
                      min_humans_for_prediction, last_error, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '', %s, %s)
                 RETURNING id
@@ -3634,7 +3634,7 @@ def admin_create_ai_agent(payload: AdminAiAgentPayload, authorization: str = Hea
                     payload.comment_style.strip(),
                     payload.max_comments_per_day,
                     payload.max_predictions_per_day,
-                    payload.max_stake_oc,
+                    payload.max_stake_gtl,
                     payload.cooldown_hours,
                     payload.min_humans_for_prediction,
                     now,
@@ -3646,8 +3646,8 @@ def admin_create_ai_agent(payload: AdminAiAgentPayload, authorization: str = Hea
             cursor.execute(
                 """
                 SELECT a.*, u.username, u.first_name, u.is_bot
-                FROM orynth_ai_agents a
-                JOIN orynth_users u ON u.id = a.user_id
+                FROM gotrendlabs_ai_agents a
+                JOIN gotrendlabs_users u ON u.id = a.user_id
                 WHERE a.id = %s
                 """,
                 (agent_id,),
@@ -3663,8 +3663,8 @@ def admin_get_ai_agent(agent_id: int, authorization: str = Header(default="")):
             cursor.execute(
                 """
                 SELECT a.*, u.username, u.first_name, u.is_bot
-                FROM orynth_ai_agents a
-                JOIN orynth_users u ON u.id = a.user_id
+                FROM gotrendlabs_ai_agents a
+                JOIN gotrendlabs_users u ON u.id = a.user_id
                 WHERE a.id = %s
                 """,
                 (agent_id,),
@@ -3684,7 +3684,7 @@ def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authoriza
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_ai_agents
+                UPDATE gotrendlabs_ai_agents
                 SET name = %s,
                     agent_type = %s,
                     user_id = %s,
@@ -3693,7 +3693,7 @@ def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authoriza
                     comment_style = %s,
                     max_comments_per_day = %s,
                     max_predictions_per_day = %s,
-                    max_stake_oc = %s,
+                    max_stake_gtl = %s,
                     cooldown_hours = %s,
                     min_humans_for_prediction = %s,
                     updated_at = %s
@@ -3709,7 +3709,7 @@ def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authoriza
                     payload.comment_style.strip(),
                     payload.max_comments_per_day,
                     payload.max_predictions_per_day,
-                    payload.max_stake_oc,
+                    payload.max_stake_gtl,
                     payload.cooldown_hours,
                     payload.min_humans_for_prediction,
                     now,
@@ -3722,8 +3722,8 @@ def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authoriza
             cursor.execute(
                 """
                 SELECT a.*, u.username, u.first_name, u.is_bot
-                FROM orynth_ai_agents a
-                JOIN orynth_users u ON u.id = a.user_id
+                FROM gotrendlabs_ai_agents a
+                JOIN gotrendlabs_users u ON u.id = a.user_id
                 WHERE a.id = %s
                 """,
                 (agent_id,),
@@ -3784,9 +3784,9 @@ def admin_list_ai_agent_actions(
             cursor.execute(
                 f"""
                 SELECT act.*, a.name AS agent_name, m.slug AS market_slug, m.title AS market_title
-                FROM orynth_ai_agent_actions act
-                LEFT JOIN orynth_ai_agents a ON a.id = act.agent_id
-                LEFT JOIN orynth_markets m ON m.id = act.market_id
+                FROM gotrendlabs_ai_agent_actions act
+                LEFT JOIN gotrendlabs_ai_agents a ON a.id = act.agent_id
+                LEFT JOIN gotrendlabs_markets m ON m.id = act.market_id
                 {where_sql}
                 ORDER BY act.created_at DESC, act.id DESC
                 LIMIT 100
@@ -3804,9 +3804,9 @@ def admin_get_ai_agent_action(action_id: int, authorization: str = Header(defaul
             cursor.execute(
                 """
                 SELECT act.*, a.name AS agent_name, m.slug AS market_slug, m.title AS market_title
-                FROM orynth_ai_agent_actions act
-                LEFT JOIN orynth_ai_agents a ON a.id = act.agent_id
-                LEFT JOIN orynth_markets m ON m.id = act.market_id
+                FROM gotrendlabs_ai_agent_actions act
+                LEFT JOIN gotrendlabs_ai_agents a ON a.id = act.agent_id
+                LEFT JOIN gotrendlabs_markets m ON m.id = act.market_id
                 WHERE act.id = %s
                 """,
                 (action_id,),
@@ -3831,7 +3831,7 @@ def admin_list_users(
         "created_asc": "u.date_joined ASC, u.id ASC",
         "last_login_desc": "u.last_login DESC NULLS LAST, u.id DESC",
         "last_login_asc": "u.last_login ASC NULLS LAST, u.id ASC",
-        "wallet_desc": "COALESCE(w.available_oc, 0) DESC, u.id DESC",
+        "wallet_desc": "COALESCE(w.available_gtl, 0) DESC, u.id DESC",
         "reputation_desc": "COALESCE(r.reputation_score, 0) DESC, u.id DESC",
     }
     where = []
@@ -3864,13 +3864,13 @@ def admin_list_users(
                        u.date_joined, u.last_login, u.account_status, u.is_active,
                        u.is_staff, u.is_superuser, u.is_bot, u.deactivated_at,
                        p.display_name AS profile_display_name,
-                       COALESCE(w.available_oc, 0) AS available_oc,
-                       COALESCE(w.locked_oc, 0) AS locked_oc,
+                       COALESCE(w.available_gtl, 0) AS available_gtl,
+                       COALESCE(w.locked_gtl, 0) AS locked_gtl,
                        COALESCE(r.reputation_score, 0) AS reputation_score
-                FROM orynth_users u
-                LEFT JOIN orynth_user_profiles p ON p.user_id = u.id
-                LEFT JOIN orynth_wallet_balances w ON w.user_id = u.id
-                LEFT JOIN orynth_user_reputations r ON r.user_id = u.id
+                FROM gotrendlabs_users u
+                LEFT JOIN gotrendlabs_user_profiles p ON p.user_id = u.id
+                LEFT JOIN gotrendlabs_wallet_balances w ON w.user_id = u.id
+                LEFT JOIN gotrendlabs_user_reputations r ON r.user_id = u.id
                 {where_sql}
                 ORDER BY {order_map.get(order, order_map['created_desc'])}
                 LIMIT 100
@@ -3888,7 +3888,7 @@ def admin_list_users(
                     COALESCE(SUM(CASE WHEN is_superuser = true THEN 1 ELSE 0 END), 0) AS superuser,
                     COALESCE(SUM(CASE WHEN is_bot = true THEN 1 ELSE 0 END), 0) AS bots,
                     COALESCE(SUM(CASE WHEN is_staff = false AND is_superuser = false THEN 1 ELSE 0 END), 0) AS users
-                FROM orynth_users
+                FROM gotrendlabs_users
                 """
             )
             counts = cursor.fetchone()
@@ -3927,7 +3927,7 @@ def admin_deactivate_user(user_id: int, payload: AdminMarketActionPayload, autho
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_users
+                UPDATE gotrendlabs_users
                 SET account_status = 'deactivated',
                     is_active = false,
                     deactivated_at = %s
@@ -3937,7 +3937,7 @@ def admin_deactivate_user(user_id: int, payload: AdminMarketActionPayload, autho
             )
             cursor.execute(
                 """
-                UPDATE orynth_auth_sessions
+                UPDATE gotrendlabs_auth_sessions
                 SET revoked_at = %s
                 WHERE user_id = %s AND revoked_at IS NULL
                 """,
@@ -3959,7 +3959,7 @@ def admin_reactivate_user(user_id: int, payload: AdminMarketActionPayload, autho
             _require_admin_target(staff, target, allow_superuser=True)
             cursor.execute(
                 """
-                UPDATE orynth_users
+                UPDATE gotrendlabs_users
                 SET account_status = 'active',
                     is_active = true,
                     deactivated_at = NULL
@@ -3983,7 +3983,7 @@ def admin_revoke_user_sessions(user_id: int, payload: AdminMarketActionPayload, 
             _require_admin_target(staff, target, allow_superuser=True)
             cursor.execute(
                 """
-                UPDATE orynth_auth_sessions
+                UPDATE gotrendlabs_auth_sessions
                 SET revoked_at = %s
                 WHERE user_id = %s AND revoked_at IS NULL
                 """,
@@ -4006,13 +4006,13 @@ def admin_adjust_user_wallet(user_id: int, payload: AdminUserWalletAdjustmentPay
             target = _admin_user_row(cursor, user_id)
             _require_admin_target(staff, target, allow_superuser=True, allow_self=True)
             wallet = _wallet_summary(cursor, user_id)
-            if payload.direction == "debit" and wallet["available_oc"] < payload.amount_oc:
+            if payload.direction == "debit" and wallet["available_gtl"] < payload.amount_gtl:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo disponível insuficiente para débito manual.")
             _record_wallet_entry(
                 cursor,
                 user_id,
                 entry_type="manual_adjustment",
-                amount=payload.amount_oc,
+                amount=payload.amount_gtl,
                 direction=payload.direction,
                 description=note,
                 reference_type="admin_user_adjustment",
@@ -4040,7 +4040,7 @@ def admin_update_user_roles(user_id: int, payload: AdminUserRolePayload, authori
                 cursor.execute(
                     """
                     SELECT COUNT(*) AS total
-                    FROM orynth_users
+                    FROM gotrendlabs_users
                     WHERE is_superuser = true
                       AND is_active = true
                       AND account_status = 'active'
@@ -4052,7 +4052,7 @@ def admin_update_user_roles(user_id: int, payload: AdminUserRolePayload, authori
                     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Não é possível remover o último superusuário ativo.")
             cursor.execute(
                 """
-                UPDATE orynth_users
+                UPDATE gotrendlabs_users
                 SET is_staff = %s,
                     is_superuser = %s
                 WHERE id = %s
@@ -4074,7 +4074,7 @@ def admin_update_user_bot(user_id: int, payload: AdminUserBotPayload, authorizat
             staff = _current_staff_user(cursor, authorization)
             target = _admin_user_row(cursor, user_id)
             _require_admin_target(staff, target, allow_superuser=True)
-            cursor.execute("UPDATE orynth_users SET is_bot = %s WHERE id = %s", (bool(payload.is_bot), user_id))
+            cursor.execute("UPDATE gotrendlabs_users SET is_bot = %s WHERE id = %s", (bool(payload.is_bot), user_id))
             label = "bot" if payload.is_bot else "human"
             _record_admin_event(cursor, staff["id"], "user.bot_update", "user", str(user_id), f"{note} | bot={label}")
             return _admin_user_detail(cursor, user_id)
@@ -4128,7 +4128,7 @@ def admin_moderate_comment(comment_id: int, payload: CommentModerationPayload, a
             cursor.execute(
                 """
                 SELECT mc.id, mc.market_id
-                FROM orynth_market_comments mc
+                FROM gotrendlabs_market_comments mc
                 WHERE mc.id = %s
                 """,
                 (comment_id,),
@@ -4140,7 +4140,7 @@ def admin_moderate_comment(comment_id: int, payload: CommentModerationPayload, a
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_market_comments
+                UPDATE gotrendlabs_market_comments
                 SET status = %s,
                     moderation_note = %s,
                     moderated_by_id = %s,
@@ -4194,7 +4194,7 @@ def admin_list_markets(
                 "shares_desc": "m.share_count DESC, m.view_count DESC, m.display_order ASC, m.id ASC",
             }.get(order, "m.display_order ASC, m.id ASC")
             rows = _market_rows(cursor, where_sql, params, order_sql)
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_markets GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_markets GROUP BY status")
             counts = {row["status"]: row["total"] for row in cursor.fetchall()}
             return {"markets": [_market_response(cursor, row, include_comments=False) for row in rows], "counts": counts}
 
@@ -4211,9 +4211,9 @@ def admin_get_market_participants(slug: str, authorization: str = Header(default
                 SELECT p.id AS prediction_id, p.user_id, u.username AS handle, u.first_name AS display_name,
                        u.is_bot, o.label AS option_label, p.stake_amount, p.probability_at_entry,
                        p.potential_payout, p.status, p.won, p.created_at
-                FROM orynth_predictions p
-                JOIN orynth_users u ON u.id = p.user_id
-                JOIN orynth_market_options o ON o.id = p.market_option_id
+                FROM gotrendlabs_predictions p
+                JOIN gotrendlabs_users u ON u.id = p.user_id
+                JOIN gotrendlabs_market_options o ON o.id = p.market_option_id
                 WHERE p.market_id = %s
                 ORDER BY u.is_bot ASC, p.created_at ASC, p.id ASC
                 """,
@@ -4259,7 +4259,7 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             event = _upsert_event(cursor, subcategory["id"], payload.event)
             _ensure_taxonomy_available(category, subcategory, event)
             slug = _slug_seed(payload.slug or payload.title)
-            cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug = %s", (slug,))
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de mercado já está em uso.")
             options = _normalize_market_options(payload)
@@ -4271,15 +4271,15 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             _sync_featured_market(cursor, None, payload.is_featured)
             cursor.execute(
                 """
-                INSERT INTO orynth_markets
+                INSERT INTO gotrendlabs_markets
                     (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
-                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_oc, participants,
+                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_gtl, participants,
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
+                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
                 RETURNING id
                 """,
                 (
@@ -4294,7 +4294,7 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
                     primary,
                     primary_probability_exact,
                     secondary_probability_exact,
-                    payload.volume_oc,
+                    payload.volume_gtl,
                     payload.participants,
                     payload.source.strip(),
                     _payload_closes_in(payload),
@@ -4345,13 +4345,13 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
             _ensure_taxonomy_available(category, subcategory, event)
             new_slug = _slug_seed(payload.slug or slug)
             if new_slug != slug:
-                cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s AND id <> %s", (new_slug, row["id"]))
+                cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug = %s AND id <> %s", (new_slug, row["id"]))
                 if cursor.fetchone():
                     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de mercado já está em uso.")
             options = _normalize_market_options(payload)
             _validate_admin_market_payload(payload)
             _ensure_featured_allowed(row["status"], payload.is_featured)
-            cursor.execute("SELECT COUNT(*) AS total FROM orynth_predictions WHERE market_id = %s", (row["id"],))
+            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_predictions WHERE market_id = %s", (row["id"],))
             has_predictions = bool(cursor.fetchone()["total"])
             preserve_operational_fields = row["status"] != "draft" or has_predictions
             if preserve_operational_fields:
@@ -4359,7 +4359,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 primary = row["primary_outcome"]
                 primary_probability_exact = _decimal_probability(row["primary_probability_exact"])
                 secondary_probability_exact = _decimal_probability(row["secondary_probability_exact"])
-                volume_oc = row["volume_oc"]
+                volume_gtl = row["volume_gtl"]
                 participants = row["participants"]
                 resolution_type = row["resolution_type"] or ""
                 resolution_note = row["resolution_note"] or ""
@@ -4368,14 +4368,14 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 primary = payload.primary_outcome or (options[0]["label"] if options else "")
                 primary_probability_exact = _decimal_probability(payload.primary_probability_exact or (options[0]["probability_exact"] if options else 0))
                 secondary_probability_exact = _decimal_probability(payload.secondary_probability_exact or (options[1]["probability_exact"] if len(options) > 1 else 0))
-                volume_oc = payload.volume_oc
+                volume_gtl = payload.volume_gtl
                 participants = payload.participants
                 resolution_type = payload.resolution_type
                 resolution_note = payload.resolution_note
             _sync_featured_market(cursor, row["id"], payload.is_featured)
             cursor.execute(
                 """
-                UPDATE orynth_markets
+                UPDATE gotrendlabs_markets
                 SET category_id = %s,
                     subcategory_id = %s,
                     event_id = %s,
@@ -4387,7 +4387,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                     primary_outcome = %s,
                     primary_probability_exact = %s,
                     secondary_probability_exact = %s,
-                    volume_oc = %s,
+                    volume_gtl = %s,
                     participants = %s,
                     source = %s,
                     closes_in = %s,
@@ -4419,7 +4419,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                     primary,
                     primary_probability_exact,
                     secondary_probability_exact,
-                    volume_oc,
+                    volume_gtl,
                     participants,
                     payload.source.strip(),
                     _payload_closes_in(payload),
@@ -4490,8 +4490,8 @@ def admin_get_market_resolution_audit(
                 SELECT m.id, m.slug, m.title, m.status, m.winning_option_id, m.resolved_at,
                        m.resolution_timezone, m.resolution_note, m.source,
                        o.label AS winning_option_label
-                FROM orynth_markets m
-                LEFT JOIN orynth_market_options o ON o.id = m.winning_option_id
+                FROM gotrendlabs_markets m
+                LEFT JOIN gotrendlabs_market_options o ON o.id = m.winning_option_id
                 WHERE m.slug = %s
                 """,
                 (slug,),
@@ -4509,7 +4509,7 @@ def admin_get_market_resolution_audit(
                        COALESCE(SUM(CASE WHEN won IS TRUE THEN 1 ELSE 0 END), 0) AS winners_total,
                        COALESCE(SUM(CASE WHEN won IS FALSE THEN 1 ELSE 0 END), 0) AS losers_total,
                        COALESCE(SUM(stake_amount), 0) AS stake_total
-                FROM orynth_predictions
+                FROM gotrendlabs_predictions
                 WHERE market_id = %s
                 """,
                 (market["id"],),
@@ -4520,8 +4520,8 @@ def admin_get_market_resolution_audit(
                 SELECT COALESCE(SUM(CASE WHEN l.entry_type = 'prediction_refund' THEN l.amount ELSE 0 END), 0) AS refund_total,
                        COALESCE(SUM(CASE WHEN l.entry_type = 'prediction_payout' THEN l.amount ELSE 0 END), 0) AS payout_total,
                        COALESCE(SUM(CASE WHEN l.entry_type = 'prediction_loss' THEN l.amount ELSE 0 END), 0) AS loss_total
-                FROM orynth_predictions p
-                LEFT JOIN orynth_wallet_ledger l
+                FROM gotrendlabs_predictions p
+                LEFT JOIN gotrendlabs_wallet_ledger l
                   ON l.reference_type = 'prediction'
                  AND l.reference_id = p.id::text
                  AND l.entry_type IN ('prediction_refund', 'prediction_payout', 'prediction_loss')
@@ -4533,14 +4533,14 @@ def admin_get_market_resolution_audit(
             cursor.execute(
                 """
                 SELECT COUNT(*) AS total
-                FROM orynth_user_badge_awards a
+                FROM gotrendlabs_user_badge_awards a
                 WHERE a.reason_snapshot LIKE %s
-                  AND a.user_id IN (SELECT user_id FROM orynth_predictions WHERE market_id = %s)
+                  AND a.user_id IN (SELECT user_id FROM gotrendlabs_predictions WHERE market_id = %s)
                 """,
                 (reason_pattern, market["id"]),
             )
             badge_total = cursor.fetchone()["total"]
-            cursor.execute("SELECT COUNT(*) AS total FROM orynth_predictions WHERE market_id = %s", (market["id"],))
+            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_predictions WHERE market_id = %s", (market["id"],))
             participant_total = int(cursor.fetchone()["total"] or 0)
             cursor.execute(
                 """
@@ -4549,7 +4549,7 @@ def admin_get_market_resolution_audit(
                            COALESCE(SUM(CASE WHEN entry_type = 'prediction_refund' THEN amount ELSE 0 END), 0) AS prediction_refund,
                            COALESCE(SUM(CASE WHEN entry_type = 'prediction_payout' THEN amount ELSE 0 END), 0) AS prediction_payout,
                            COALESCE(SUM(CASE WHEN entry_type = 'prediction_loss' THEN amount ELSE 0 END), 0) AS prediction_loss
-                    FROM orynth_wallet_ledger
+                    FROM gotrendlabs_wallet_ledger
                     WHERE reference_type = 'prediction'
                       AND reference_id ~ '^[0-9]+$'
                       AND entry_type IN ('prediction_refund', 'prediction_payout', 'prediction_loss')
@@ -4561,9 +4561,9 @@ def admin_get_market_resolution_audit(
                        COALESCE(lt.prediction_refund, 0) AS prediction_refund,
                        COALESCE(lt.prediction_payout, 0) AS prediction_payout,
                        COALESCE(lt.prediction_loss, 0) AS prediction_loss
-                FROM orynth_predictions p
-                JOIN orynth_users u ON u.id = p.user_id
-                JOIN orynth_market_options o ON o.id = p.market_option_id
+                FROM gotrendlabs_predictions p
+                JOIN gotrendlabs_users u ON u.id = p.user_id
+                JOIN gotrendlabs_market_options o ON o.id = p.market_option_id
                 LEFT JOIN ledger_totals lt ON lt.prediction_id = p.id
                 WHERE p.market_id = %s
                 ORDER BY p.id ASC
@@ -4578,8 +4578,8 @@ def admin_get_market_resolution_audit(
                 cursor.execute(
                     """
                     SELECT a.user_id, b.code, b.name, a.awarded_at, a.reason_snapshot
-                    FROM orynth_user_badge_awards a
-                    JOIN orynth_badge_definitions b ON b.id = a.badge_id
+                    FROM gotrendlabs_user_badge_awards a
+                    JOIN gotrendlabs_badge_definitions b ON b.id = a.badge_id
                     WHERE a.reason_snapshot LIKE %s
                       AND a.user_id = ANY(%s)
                     ORDER BY a.awarded_at ASC, b.code ASC
@@ -4675,9 +4675,9 @@ def admin_list_queues(
                 cursor.execute(
                     f"""
                     SELECT s.*, u.username AS author_handle, m.slug AS converted_market_slug
-                    FROM orynth_market_suggestions s
-                    LEFT JOIN orynth_users u ON u.id = s.author_id
-                    LEFT JOIN orynth_markets m ON m.id = s.converted_market_id
+                    FROM gotrendlabs_market_suggestions s
+                    LEFT JOIN gotrendlabs_users u ON u.id = s.author_id
+                    LEFT JOIN gotrendlabs_markets m ON m.id = s.converted_market_id
                     {where_sql}
                     ORDER BY s.created_at ASC, s.id ASC
                     """,
@@ -4697,8 +4697,8 @@ def admin_list_queues(
                 cursor.execute(
                     f"""
                     SELECT f.*, u.username AS author_handle
-                    FROM orynth_product_feedback f
-                    LEFT JOIN orynth_users u ON u.id = f.author_id
+                    FROM gotrendlabs_product_feedback f
+                    LEFT JOIN gotrendlabs_users u ON u.id = f.author_id
                     {where_sql}
                     ORDER BY f.created_at ASC, f.id ASC
                     """,
@@ -4715,8 +4715,8 @@ def admin_list_queues(
                 cursor.execute(
                     f"""
                     SELECT r.*, u.username AS author_handle
-                    FROM orynth_wallet_recharge_requests r
-                    JOIN orynth_users u ON u.id = r.user_id
+                    FROM gotrendlabs_wallet_recharge_requests r
+                    JOIN gotrendlabs_users u ON u.id = r.user_id
                     {where_sql}
                     ORDER BY r.created_at ASC, r.id ASC
                     """,
@@ -4725,11 +4725,11 @@ def admin_list_queues(
                 items.extend(_wallet_recharge_response(row) for row in cursor.fetchall())
             reverse = order != "created_asc"
             items = sorted(items, key=lambda item: item["created_at"], reverse=reverse)
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_market_suggestions GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_market_suggestions GROUP BY status")
             suggestion_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_product_feedback GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_product_feedback GROUP BY status")
             feedback_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
-            cursor.execute("SELECT status, COUNT(*) AS total FROM orynth_wallet_recharge_requests GROUP BY status")
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_wallet_recharge_requests GROUP BY status")
             recharge_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
             return {"items": items, "counts": {"suggestion": suggestion_counts, "feedback": feedback_counts, "wallet_recharge": recharge_counts}}
 
@@ -4746,7 +4746,7 @@ def admin_review_queue_item(kind: str, item_id: int, payload: QueueReviewPayload
                 _get_suggestion(cursor, item_id)
                 cursor.execute(
                     """
-                    UPDATE orynth_market_suggestions
+                    UPDATE gotrendlabs_market_suggestions
                     SET status = %s, admin_note = %s, reviewed_by_id = %s, reviewed_at = %s, updated_at = %s
                     WHERE id = %s
                     """,
@@ -4763,7 +4763,7 @@ def admin_review_queue_item(kind: str, item_id: int, payload: QueueReviewPayload
                 _get_feedback(cursor, item_id)
                 cursor.execute(
                     """
-                    UPDATE orynth_product_feedback
+                    UPDATE gotrendlabs_product_feedback
                     SET status = %s, admin_note = %s, reviewed_by_id = %s, reviewed_at = %s, updated_at = %s
                     WHERE id = %s
                     """,
@@ -4788,7 +4788,7 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
             _ensure_taxonomy_available(category, subcategory, event)
             now = datetime.now(timezone.utc)
             close_at = now + timedelta(days=30)
-            slug = _unique_slug(cursor, "orynth_markets", suggestion["question"])
+            slug = _unique_slug(cursor, "gotrendlabs_markets", suggestion["question"])
             options = _normalize_market_options(
                 AdminMarketPayload(
                     title=suggestion["question"],
@@ -4810,17 +4810,17 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
             secondary_probability_exact = _decimal_probability(options[1]["probability_exact"] if len(options) > 1 else 0)
             cursor.execute(
                 """
-                INSERT INTO orynth_markets
+                INSERT INTO gotrendlabs_markets
                     (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
-                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_oc, participants,
+                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_gtl, participants,
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 O₵', '0 usuários',
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 GT₵', '0 usuários',
                         %s, %s, '', '', '#d8ece2', '', 'A definir pela curadoria antes da publicação.',
                         %s, 'America/Sao_Paulo', true, false, '', '', '', %s, %s, %s,
-                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM orynth_markets), %s, %s)
+                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
                 RETURNING id
                 """,
                 (
@@ -4848,7 +4848,7 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
             _save_market_options(cursor, market_id, options)
             cursor.execute(
                 """
-                UPDATE orynth_market_suggestions
+                UPDATE gotrendlabs_market_suggestions
                 SET status = 'converted',
                     admin_note = %s,
                     converted_market_id = %s,
@@ -4872,14 +4872,14 @@ def admin_reward_suggestion(suggestion_id: int, payload: SuggestionRewardPayload
             suggestion = _get_suggestion(cursor, suggestion_id)
             if not suggestion["author_id"]:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sugestão sem usuário cadastrado não pode receber créditos.")
-            if suggestion["reward_oc"]:
+            if suggestion["reward_gtl"]:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Sugestão já recebeu créditos.")
             now = datetime.now(timezone.utc)
             _record_wallet_entry(
                 cursor,
                 suggestion["author_id"],
                 entry_type="reward_suggestion",
-                amount=payload.amount_oc,
+                amount=payload.amount_gtl,
                 direction="credit",
                 description="Crédito por sugestão validada",
                 reference_type="suggestion",
@@ -4888,17 +4888,17 @@ def admin_reward_suggestion(suggestion_id: int, payload: SuggestionRewardPayload
             )
             cursor.execute(
                 """
-                UPDATE orynth_market_suggestions
+                UPDATE gotrendlabs_market_suggestions
                 SET status = 'rewarded',
                     admin_note = %s,
-                    reward_oc = %s,
+                    reward_gtl = %s,
                     reviewed_by_id = %s,
                     reviewed_at = %s,
                     rewarded_at = %s,
                     updated_at = %s
                 WHERE id = %s
                 """,
-                (payload.note, payload.amount_oc, staff["id"], now, now, now, suggestion_id),
+                (payload.note, payload.amount_gtl, staff["id"], now, now, now, suggestion_id),
             )
             _record_admin_event(cursor, staff["id"], "suggestion.reward", "market_suggestion", str(suggestion_id), payload.note)
             BadgeAwardEngine.on_suggestion_rewarded(cursor, suggestion["author_id"], suggestion_id=suggestion_id)
@@ -4913,14 +4913,14 @@ def admin_reward_feedback(feedback_id: int, payload: FeedbackRewardPayload, auth
             feedback = _get_feedback(cursor, feedback_id)
             if not feedback["author_id"]:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Feedback sem usuário não pode receber recompensa.")
-            if feedback["status"] == "rewarded" or feedback["reward_oc"]:
+            if feedback["status"] == "rewarded" or feedback["reward_gtl"]:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Feedback já recompensado.")
             now = datetime.now(timezone.utc)
             _record_wallet_entry(
                 cursor,
                 feedback["author_id"],
                 entry_type="reward_feedback",
-                amount=payload.amount_oc,
+                amount=payload.amount_gtl,
                 direction="credit",
                 description="Recompensa por feedback validado",
                 reference_type="feedback",
@@ -4929,17 +4929,17 @@ def admin_reward_feedback(feedback_id: int, payload: FeedbackRewardPayload, auth
             )
             cursor.execute(
                 """
-                UPDATE orynth_product_feedback
+                UPDATE gotrendlabs_product_feedback
                 SET status = 'rewarded',
                     admin_note = %s,
-                    reward_oc = %s,
+                    reward_gtl = %s,
                     reviewed_by_id = %s,
                     reviewed_at = %s,
                     rewarded_at = %s,
                     updated_at = %s
                 WHERE id = %s
                 """,
-                (payload.note, payload.amount_oc, staff["id"], now, now, now, feedback_id),
+                (payload.note, payload.amount_gtl, staff["id"], now, now, now, feedback_id),
             )
             _record_admin_event(cursor, staff["id"], "feedback.reward", "product_feedback", str(feedback_id), payload.note)
             BadgeAwardEngine.on_feedback_rewarded(cursor, feedback["author_id"], feedback_id=feedback_id)
@@ -4960,7 +4960,7 @@ def admin_approve_wallet_recharge(request_id: int, payload: WalletRechargeApprov
                 cursor,
                 recharge["user_id"],
                 entry_type="educational_recharge",
-                amount=payload.amount_oc,
+                amount=payload.amount_gtl,
                 direction="credit",
                 description=note,
                 reference_type="wallet_recharge_request",
@@ -4969,16 +4969,16 @@ def admin_approve_wallet_recharge(request_id: int, payload: WalletRechargeApprov
             )
             cursor.execute(
                 """
-                UPDATE orynth_wallet_recharge_requests
+                UPDATE gotrendlabs_wallet_recharge_requests
                 SET status = 'approved',
-                    amount_oc = %s,
+                    amount_gtl = %s,
                     admin_note = %s,
                     reviewed_by_id = %s,
                     reviewed_at = %s,
                     updated_at = %s
                 WHERE id = %s
                 """,
-                (payload.amount_oc, note, staff["id"], now, now, request_id),
+                (payload.amount_gtl, note, staff["id"], now, now, request_id),
             )
             _record_admin_event(cursor, staff["id"], "wallet_recharge.approve", "wallet_recharge_request", str(request_id), note)
             return _wallet_recharge_response(_get_wallet_recharge_request(cursor, request_id))
@@ -4998,7 +4998,7 @@ def admin_reject_wallet_recharge(request_id: int, payload: WalletRechargeRejectP
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_wallet_recharge_requests
+                UPDATE gotrendlabs_wallet_recharge_requests
                 SET status = 'rejected',
                     admin_note = %s,
                     reviewed_by_id = %s,
@@ -5028,13 +5028,13 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
             badge_type, rule_type = _validate_badge_payload(payload)
             _validate_badge_taxonomy(cursor, payload)
             code = _slug_seed(payload.code or payload.name, max_length=80)
-            cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
+            cursor.execute("SELECT id FROM gotrendlabs_badge_definitions WHERE code = %s", (code,))
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe badge com este código.")
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                INSERT INTO orynth_badge_definitions
+                INSERT INTO gotrendlabs_badge_definitions
                     (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 RETURNING id
@@ -5055,7 +5055,7 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
             badge_id = cursor.fetchone()["id"]
             cursor.execute(
                 """
-                INSERT INTO orynth_badge_rules
+                INSERT INTO gotrendlabs_badge_rules
                     (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, true, %s, %s)
                 """,
@@ -5081,14 +5081,14 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
             staff = _current_staff_user(cursor, authorization)
             badge_type, rule_type = _validate_badge_payload(payload)
             _validate_badge_taxonomy(cursor, payload)
-            cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
+            cursor.execute("SELECT id FROM gotrendlabs_badge_definitions WHERE code = %s", (code,))
             badge = cursor.fetchone()
             if not badge:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_badge_definitions
+                UPDATE gotrendlabs_badge_definitions
                 SET name = %s,
                     description = %s,
                     rule_description = %s,
@@ -5113,7 +5113,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
             )
             cursor.execute(
                 """
-                UPDATE orynth_badge_rules
+                UPDATE gotrendlabs_badge_rules
                 SET rule_type = %s,
                     threshold_value = %s,
                     category = %s,
@@ -5142,13 +5142,13 @@ def admin_deactivate_badge(code: str, payload: AdminMarketActionPayload, authori
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_badge_definitions WHERE code = %s", (code,))
+            cursor.execute("SELECT id FROM gotrendlabs_badge_definitions WHERE code = %s", (code,))
             badge = cursor.fetchone()
             if not badge:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
             now = datetime.now(timezone.utc)
-            cursor.execute("UPDATE orynth_badge_definitions SET is_active = false, updated_at = %s WHERE id = %s", (now, badge["id"]))
-            cursor.execute("UPDATE orynth_badge_rules SET is_active = false, updated_at = %s WHERE badge_id = %s", (now, badge["id"]))
+            cursor.execute("UPDATE gotrendlabs_badge_definitions SET is_active = false, updated_at = %s WHERE id = %s", (now, badge["id"]))
+            cursor.execute("UPDATE gotrendlabs_badge_rules SET is_active = false, updated_at = %s WHERE badge_id = %s", (now, badge["id"]))
             _record_admin_event(cursor, staff["id"], "badge.deactivate", "badge", code, payload.note)
             return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
 
@@ -5177,15 +5177,15 @@ def admin_update_category(slug: str, payload: AdminCategoryPayload, authorizatio
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             new_slug = _slug_seed(payload.slug or payload.name, max_length=100)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s AND id <> %s", (new_slug, category["id"]))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s AND id <> %s", (new_slug, category["id"]))
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de categoria já está em uso.")
             cursor.execute(
-                "UPDATE orynth_market_categories SET name = %s, slug = %s, notice = %s WHERE id = %s",
+                "UPDATE gotrendlabs_market_categories SET name = %s, slug = %s, notice = %s WHERE id = %s",
                 (payload.name.strip(), new_slug, payload.notice.strip(), category["id"]),
             )
             _record_admin_event(cursor, staff["id"], "category.update", "category", new_slug)
@@ -5197,14 +5197,14 @@ def admin_block_category(slug: str, payload: AdminMarketActionPayload, authoriza
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_market_categories
+                UPDATE gotrendlabs_market_categories
                 SET is_blocked = true, blocked_at = %s, blocked_reason = %s
                 WHERE id = %s
                 """,
@@ -5219,13 +5219,13 @@ def admin_unblock_category(slug: str, payload: AdminMarketActionPayload, authori
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
             cursor.execute(
                 """
-                UPDATE orynth_market_categories
+                UPDATE gotrendlabs_market_categories
                 SET is_blocked = false, blocked_at = NULL, blocked_reason = ''
                 WHERE id = %s
                 """,
@@ -5240,7 +5240,7 @@ def admin_create_subcategory(slug: str, payload: AdminSubcategoryPayload, author
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
@@ -5254,12 +5254,12 @@ def admin_update_subcategory(slug: str, subcategory_slug: str, payload: AdminSub
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
             cursor.execute(
-                "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_subcategories WHERE category_id = %s AND slug = %s",
                 (category["id"], subcategory_slug),
             )
             subcategory = cursor.fetchone()
@@ -5268,7 +5268,7 @@ def admin_update_subcategory(slug: str, subcategory_slug: str, payload: AdminSub
             new_slug = _slug_seed(payload.slug or payload.name, max_length=100)
             cursor.execute(
                 """
-                SELECT id FROM orynth_market_subcategories
+                SELECT id FROM gotrendlabs_market_subcategories
                 WHERE category_id = %s AND slug = %s AND id <> %s
                 """,
                 (category["id"], new_slug, subcategory["id"]),
@@ -5276,7 +5276,7 @@ def admin_update_subcategory(slug: str, subcategory_slug: str, payload: AdminSub
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de subcategoria já está em uso.")
             cursor.execute(
-                "UPDATE orynth_market_subcategories SET name = %s, slug = %s, notice = %s WHERE id = %s",
+                "UPDATE gotrendlabs_market_subcategories SET name = %s, slug = %s, notice = %s WHERE id = %s",
                 (payload.name.strip(), new_slug, payload.notice.strip(), subcategory["id"]),
             )
             _record_admin_event(cursor, staff["id"], "subcategory.update", "subcategory", new_slug)
@@ -5288,12 +5288,12 @@ def admin_block_subcategory(slug: str, subcategory_slug: str, payload: AdminMark
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
             cursor.execute(
-                "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_subcategories WHERE category_id = %s AND slug = %s",
                 (category["id"], subcategory_slug),
             )
             subcategory = cursor.fetchone()
@@ -5302,7 +5302,7 @@ def admin_block_subcategory(slug: str, subcategory_slug: str, payload: AdminMark
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_market_subcategories
+                UPDATE gotrendlabs_market_subcategories
                 SET is_blocked = true, blocked_at = %s, blocked_reason = %s
                 WHERE id = %s
                 """,
@@ -5317,12 +5317,12 @@ def admin_unblock_subcategory(slug: str, subcategory_slug: str, payload: AdminMa
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (slug,))
+            cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (slug,))
             category = cursor.fetchone()
             if not category:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
             cursor.execute(
-                "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_subcategories WHERE category_id = %s AND slug = %s",
                 (category["id"], subcategory_slug),
             )
             subcategory = cursor.fetchone()
@@ -5330,7 +5330,7 @@ def admin_unblock_subcategory(slug: str, subcategory_slug: str, payload: AdminMa
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Subcategoria não encontrada.")
             cursor.execute(
                 """
-                UPDATE orynth_market_subcategories
+                UPDATE gotrendlabs_market_subcategories
                 SET is_blocked = false, blocked_at = NULL, blocked_reason = ''
                 WHERE id = %s
                 """,
@@ -5341,12 +5341,12 @@ def admin_unblock_subcategory(slug: str, subcategory_slug: str, payload: AdminMa
 
 
 def _taxonomy_category_and_subcategory(cursor, category_slug, subcategory_slug):
-    cursor.execute("SELECT id FROM orynth_market_categories WHERE slug = %s", (category_slug,))
+    cursor.execute("SELECT id FROM gotrendlabs_market_categories WHERE slug = %s", (category_slug,))
     category = cursor.fetchone()
     if not category:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Categoria não encontrada.")
     cursor.execute(
-        "SELECT id FROM orynth_market_subcategories WHERE category_id = %s AND slug = %s",
+        "SELECT id FROM gotrendlabs_market_subcategories WHERE category_id = %s AND slug = %s",
         (category["id"], subcategory_slug),
     )
     subcategory = cursor.fetchone()
@@ -5373,7 +5373,7 @@ def admin_update_event(slug: str, subcategory_slug: str, event_slug: str, payloa
             staff = _current_staff_user(cursor, authorization)
             _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
             cursor.execute(
-                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_events WHERE subcategory_id = %s AND slug = %s",
                 (subcategory["id"], event_slug),
             )
             event = cursor.fetchone()
@@ -5382,7 +5382,7 @@ def admin_update_event(slug: str, subcategory_slug: str, event_slug: str, payloa
             new_slug = _slug_seed(payload.slug or payload.name, max_length=100)
             cursor.execute(
                 """
-                SELECT id FROM orynth_market_events
+                SELECT id FROM gotrendlabs_market_events
                 WHERE subcategory_id = %s AND slug = %s AND id <> %s
                 """,
                 (subcategory["id"], new_slug, event["id"]),
@@ -5390,7 +5390,7 @@ def admin_update_event(slug: str, subcategory_slug: str, event_slug: str, payloa
             if cursor.fetchone():
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de evento já está em uso.")
             cursor.execute(
-                "UPDATE orynth_market_events SET name = %s, slug = %s, notice = %s WHERE id = %s",
+                "UPDATE gotrendlabs_market_events SET name = %s, slug = %s, notice = %s WHERE id = %s",
                 (payload.name.strip(), new_slug, payload.notice.strip(), event["id"]),
             )
             _record_admin_event(cursor, staff["id"], "event.update", "event", new_slug)
@@ -5404,7 +5404,7 @@ def admin_block_event(slug: str, subcategory_slug: str, event_slug: str, payload
             staff = _current_staff_user(cursor, authorization)
             _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
             cursor.execute(
-                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_events WHERE subcategory_id = %s AND slug = %s",
                 (subcategory["id"], event_slug),
             )
             event = cursor.fetchone()
@@ -5413,7 +5413,7 @@ def admin_block_event(slug: str, subcategory_slug: str, event_slug: str, payload
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_market_events
+                UPDATE gotrendlabs_market_events
                 SET is_blocked = true, blocked_at = %s, blocked_reason = %s
                 WHERE id = %s
                 """,
@@ -5430,7 +5430,7 @@ def admin_unblock_event(slug: str, subcategory_slug: str, event_slug: str, paylo
             staff = _current_staff_user(cursor, authorization)
             _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
             cursor.execute(
-                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_events WHERE subcategory_id = %s AND slug = %s",
                 (subcategory["id"], event_slug),
             )
             event = cursor.fetchone()
@@ -5438,7 +5438,7 @@ def admin_unblock_event(slug: str, subcategory_slug: str, event_slug: str, paylo
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
             cursor.execute(
                 """
-                UPDATE orynth_market_events
+                UPDATE gotrendlabs_market_events
                 SET is_blocked = false, blocked_at = NULL, blocked_reason = ''
                 WHERE id = %s
                 """,
@@ -5455,17 +5455,17 @@ def admin_delete_event(slug: str, subcategory_slug: str, event_slug: str, author
             staff = _current_staff_user(cursor, authorization)
             _, subcategory = _taxonomy_category_and_subcategory(cursor, slug, subcategory_slug)
             cursor.execute(
-                "SELECT id FROM orynth_market_events WHERE subcategory_id = %s AND slug = %s",
+                "SELECT id FROM gotrendlabs_market_events WHERE subcategory_id = %s AND slug = %s",
                 (subcategory["id"], event_slug),
             )
             event = cursor.fetchone()
             if not event:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Evento não encontrado.")
-            cursor.execute("SELECT COUNT(*) AS total FROM orynth_markets WHERE event_id = %s", (event["id"],))
+            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_markets WHERE event_id = %s", (event["id"],))
             linked_markets = cursor.fetchone()["total"]
             if linked_markets:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Evento possui mercados vinculados.")
-            cursor.execute("DELETE FROM orynth_market_events WHERE id = %s", (event["id"],))
+            cursor.execute("DELETE FROM gotrendlabs_market_events WHERE id = %s", (event["id"],))
             _record_admin_event(cursor, staff["id"], "event.delete", "event", event_slug)
             return _taxonomy_response(cursor)
 
@@ -5482,7 +5482,7 @@ def register(payload: RegisterPayload, request: Request):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SELECT id FROM orynth_users WHERE lower(email) = lower(%s)",
+                "SELECT id FROM gotrendlabs_users WHERE lower(email) = lower(%s)",
                 (payload.email,),
             )
             if cursor.fetchone():
@@ -5493,7 +5493,7 @@ def register(payload: RegisterPayload, request: Request):
             handle = _unique_handle(cursor, payload.display_name)
             cursor.execute(
                 """
-                INSERT INTO orynth_users
+                INSERT INTO gotrendlabs_users
                     (password, last_login, is_superuser, username, first_name, last_name, is_staff, is_active,
                      date_joined, email, preferred_language, external_provider, external_subject,
                      terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at, is_bot)
@@ -5528,7 +5528,7 @@ def login(payload: LoginPayload, request: Request):
                 """
                 SELECT id, username, email, first_name, preferred_language, password, is_active,
                        date_joined, last_login, account_status, is_staff
-                FROM orynth_users
+                FROM gotrendlabs_users
                 WHERE lower(email) = lower(%s)
                 """,
                 (payload.email,),
@@ -5539,7 +5539,7 @@ def login(payload: LoginPayload, request: Request):
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha inválidos.")
 
             now = datetime.now(timezone.utc)
-            cursor.execute("UPDATE orynth_users SET last_login = %s WHERE id = %s", (now, user["id"]))
+            cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
             user["last_login"] = now
             session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
@@ -5555,7 +5555,7 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
             cursor.execute(
                 """
                 SELECT id, email
-                FROM orynth_users
+                FROM gotrendlabs_users
                 WHERE lower(email) = lower(%s)
                   AND is_active = true
                   AND account_status = 'active'
@@ -5578,8 +5578,8 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
             cursor.execute(
                 """
                 SELECT t.id, t.user_id, u.email
-                FROM orynth_password_reset_tokens t
-                JOIN orynth_users u ON u.id = t.user_id
+                FROM gotrendlabs_password_reset_tokens t
+                JOIN gotrendlabs_users u ON u.id = t.user_id
                 WHERE t.token_hash = %s
                   AND t.used_at IS NULL
                   AND t.expires_at > %s
@@ -5593,7 +5593,7 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Link de recuperação inválido ou expirado.")
             cursor.execute(
                 """
-                UPDATE orynth_users
+                UPDATE gotrendlabs_users
                 SET password = %s
                 WHERE id = %s
                 """,
@@ -5601,7 +5601,7 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
             )
             cursor.execute(
                 """
-                UPDATE orynth_auth_sessions
+                UPDATE gotrendlabs_auth_sessions
                 SET revoked_at = %s
                 WHERE user_id = %s AND revoked_at IS NULL
                 """,
@@ -5609,7 +5609,7 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
             )
             cursor.execute(
                 """
-                UPDATE orynth_password_reset_tokens
+                UPDATE gotrendlabs_password_reset_tokens
                 SET used_at = %s
                 WHERE id = %s
                 """,
@@ -5635,7 +5635,7 @@ def logout(request: Request, authorization: str = Header(default="")):
         with connection.cursor() as cursor:
             cursor.execute(
                 """
-                UPDATE orynth_auth_sessions
+                UPDATE gotrendlabs_auth_sessions
                 SET revoked_at = %s
                 WHERE token_hash = %s AND revoked_at IS NULL
                 RETURNING user_id
@@ -5678,7 +5678,7 @@ def mark_my_notifications_read(authorization: str = Header(default="")):
             user = _current_user(cursor, authorization)
             cursor.execute(
                 """
-                UPDATE orynth_user_notifications
+                UPDATE gotrendlabs_user_notifications
                 SET is_read = true, read_at = %s
                 WHERE recipient_id = %s AND is_read = false
                 """,
@@ -5697,27 +5697,27 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
             if payload.display_name is not None:
                 updates.append("display_name = %s")
                 values.append(payload.display_name.strip())
-                cursor.execute("UPDATE orynth_users SET first_name = %s WHERE id = %s", (payload.display_name.strip(), user["id"]))
+                cursor.execute("UPDATE gotrendlabs_users SET first_name = %s WHERE id = %s", (payload.display_name.strip(), user["id"]))
                 user["first_name"] = payload.display_name.strip()
             if payload.email is not None and payload.email.lower() != user["email"].lower():
-                cursor.execute("SELECT id FROM orynth_users WHERE lower(email) = lower(%s) AND id <> %s", (payload.email, user["id"]))
+                cursor.execute("SELECT id FROM gotrendlabs_users WHERE lower(email) = lower(%s) AND id <> %s", (payload.email, user["id"]))
                 if cursor.fetchone():
                     raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe uma conta com este email.")
-                cursor.execute("UPDATE orynth_users SET email = %s WHERE id = %s", (payload.email.lower(), user["id"]))
+                cursor.execute("UPDATE gotrendlabs_users SET email = %s WHERE id = %s", (payload.email.lower(), user["id"]))
                 user["email"] = payload.email.lower()
             if payload.handle is not None:
                 handle = _handle_seed(payload.handle)
                 if len(handle) < 2:
                     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Identificador inválido.")
                 if handle != user["username"]:
-                    cursor.execute("SELECT id FROM orynth_users WHERE lower(username) = lower(%s) AND id <> %s", (handle, user["id"]))
+                    cursor.execute("SELECT id FROM gotrendlabs_users WHERE lower(username) = lower(%s) AND id <> %s", (handle, user["id"]))
                     if cursor.fetchone():
                         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Já existe uma conta com este identificador.")
-                    cursor.execute("UPDATE orynth_users SET username = %s WHERE id = %s", (handle, user["id"]))
+                    cursor.execute("UPDATE gotrendlabs_users SET username = %s WHERE id = %s", (handle, user["id"]))
                     user["username"] = handle
             if payload.preferred_language is not None:
                 language = payload.preferred_language if payload.preferred_language in {"pt-br", "en"} else "pt-br"
-                cursor.execute("UPDATE orynth_users SET preferred_language = %s WHERE id = %s", (language, user["id"]))
+                cursor.execute("UPDATE gotrendlabs_users SET preferred_language = %s WHERE id = %s", (language, user["id"]))
                 user["preferred_language"] = language
             if "birth_date" in payload.model_fields_set:
                 if payload.birth_date and payload.birth_date > date.today():
@@ -5737,7 +5737,7 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
                 updates.append("updated_at = %s")
                 values.append(datetime.now(timezone.utc))
                 values.append(user["id"])
-                cursor.execute(f"UPDATE orynth_user_profiles SET {', '.join(updates)} WHERE user_id = %s", values)
+                cursor.execute(f"UPDATE gotrendlabs_user_profiles SET {', '.join(updates)} WHERE user_id = %s", values)
             return _profile_response(cursor, user)
 
 
@@ -5750,7 +5750,7 @@ def request_account_deletion(request: Request, authorization: str = Header(defau
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                UPDATE orynth_users
+                UPDATE gotrendlabs_users
                 SET account_status = 'deactivated',
                     is_active = false,
                     deletion_requested_at = %s,
@@ -5761,7 +5761,7 @@ def request_account_deletion(request: Request, authorization: str = Header(defau
             )
             cursor.execute(
                 """
-                UPDATE orynth_auth_sessions
+                UPDATE gotrendlabs_auth_sessions
                 SET revoked_at = %s
                 WHERE user_id = %s AND revoked_at IS NULL
                 """,
@@ -5793,8 +5793,8 @@ def get_my_wallet_recharge_requests(authorization: str = Header(default="")):
             user = _current_user(cursor, authorization)
             cursor.execute(
                 """
-                SELECT id, status, amount_oc, admin_note, created_at, reviewed_at
-                FROM orynth_wallet_recharge_requests
+                SELECT id, status, amount_gtl, admin_note, created_at, reviewed_at
+                FROM gotrendlabs_wallet_recharge_requests
                 WHERE user_id = %s
                 ORDER BY created_at DESC, id DESC
                 LIMIT 10
@@ -5812,22 +5812,22 @@ def create_my_wallet_recharge_request(authorization: str = Header(default="")):
             wallet = _wallet_summary(cursor, user["id"])
             cursor.execute(
                 """
-                SELECT wallet_recharge_min_balance_oc
-                FROM orynth_site_config
+                SELECT wallet_recharge_min_balance_gtl
+                FROM gotrendlabs_site_config
                 WHERE singleton_key = 1
                 """
             )
             site_config = cursor.fetchone()
-            min_balance = int(site_config["wallet_recharge_min_balance_oc"] if site_config else 100)
-            if wallet["available_oc"] > min_balance:
+            min_balance = int(site_config["wallet_recharge_min_balance_gtl"] if site_config else 100)
+            if wallet["available_gtl"] > min_balance:
                 raise HTTPException(
                     status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail=f"Recarga disponível apenas para saldo disponível de até {min_balance} O₵.",
+                    detail=f"Recarga disponível apenas para saldo disponível de até {min_balance} GT₵.",
                 )
             cursor.execute(
                 """
                 SELECT id
-                FROM orynth_wallet_recharge_requests
+                FROM gotrendlabs_wallet_recharge_requests
                 WHERE user_id = %s AND status = 'pending'
                 """,
                 (user["id"],),
@@ -5837,10 +5837,10 @@ def create_my_wallet_recharge_request(authorization: str = Header(default="")):
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
-                INSERT INTO orynth_wallet_recharge_requests
-                    (user_id, status, amount_oc, admin_note, reviewed_by_id, reviewed_at, created_at, updated_at)
+                INSERT INTO gotrendlabs_wallet_recharge_requests
+                    (user_id, status, amount_gtl, admin_note, reviewed_by_id, reviewed_at, created_at, updated_at)
                 VALUES (%s, 'pending', NULL, '', NULL, NULL, %s, %s)
-                RETURNING id, status, amount_oc, admin_note, created_at, reviewed_at
+                RETURNING id, status, amount_gtl, admin_note, created_at, reviewed_at
                 """,
                 (user["id"], now, now),
             )
@@ -5856,7 +5856,7 @@ def get_my_ledger(authorization: str = Header(default="")):
             cursor.execute(
                 """
                 SELECT id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at
-                FROM orynth_wallet_ledger
+                FROM gotrendlabs_wallet_ledger
                 WHERE user_id = %s
                 ORDER BY created_at DESC, id DESC
                 """,
@@ -5896,7 +5896,7 @@ def get_my_activity(authorization: str = Header(default="")):
             cursor.execute(
                 """
                 SELECT activity_type, title, description, reference_type, reference_id, occurred_at
-                FROM orynth_user_activities
+                FROM gotrendlabs_user_activities
                 WHERE user_id = %s
                 ORDER BY occurred_at DESC, id DESC
                 LIMIT 20
@@ -5924,7 +5924,7 @@ def get_public_profile(handle: str):
             cursor.execute(
                 """
                 SELECT id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff
-                FROM orynth_users
+                FROM gotrendlabs_users
                 WHERE lower(username) = lower(%s) AND is_active = true AND account_status = 'active'
                 """,
                 (cleaned,),
@@ -5933,7 +5933,7 @@ def get_public_profile(handle: str):
             if not user:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil não encontrado.")
             _ensure_user_core(cursor, user["id"])
-            cursor.execute("SELECT is_public FROM orynth_user_profiles WHERE user_id = %s", (user["id"],))
+            cursor.execute("SELECT is_public FROM gotrendlabs_user_profiles WHERE user_id = %s", (user["id"],))
             if not cursor.fetchone()["is_public"]:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Perfil não encontrado.")
             return _public_profile_response(cursor, user)
@@ -5951,7 +5951,7 @@ def get_rankings(
     with get_connection() as connection:
         with connection.cursor() as cursor:
             categories = _ranking_categories(cursor)
-            cursor.execute("SELECT id FROM orynth_users WHERE is_active = true")
+            cursor.execute("SELECT id FROM gotrendlabs_users WHERE is_active = true")
             for row in cursor.fetchall():
                 _ensure_user_core(cursor, row["id"])
             if selected_category:
@@ -5965,8 +5965,8 @@ def get_rankings(
             cursor.execute(
                 """
                 SELECT u.id, u.username, u.first_name, r.reputation_score, r.accuracy_indicator, r.strong_category
-                FROM orynth_user_reputations r
-                JOIN orynth_users u ON u.id = r.user_id
+                FROM gotrendlabs_user_reputations r
+                JOIN gotrendlabs_users u ON u.id = r.user_id
                 WHERE u.is_active = true
                   AND u.is_staff = false
                   AND u.is_superuser = false

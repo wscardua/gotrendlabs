@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/orynth}"
+APP_DIR="${APP_DIR:-/opt/gotrendlabs}"
 BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-}"
 COMPOSE_FILE="deploy/production/docker-compose.yml"
@@ -43,13 +43,13 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
   exit 1
 fi
 
-HTTPS_SITE="$(grep -E "^ORYNTH_HTTPS_SITE=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
+HTTPS_SITE="$(grep -E "^GOTRENDLABS_HTTPS_SITE=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
 if [[ -n "$HTTPS_SITE" && ! -f "$CERT_DIR/ip.crt" ]]; then
   HTTPS_HOST="${HTTPS_SITE#https://}"
   HTTPS_HOST="${HTTPS_HOST%%/*}"
   HTTPS_HOST="${HTTPS_HOST%%:*}"
   if [[ -z "$HTTPS_HOST" ]]; then
-    HTTPS_HOST="$(grep -E "^ORYNTH_ALLOWED_HOSTS=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- | cut -d, -f1 || true)"
+    HTTPS_HOST="$(grep -E "^GOTRENDLABS_ALLOWED_HOSTS=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- | cut -d, -f1 || true)"
   fi
 
   mkdir -p "$CERT_DIR"

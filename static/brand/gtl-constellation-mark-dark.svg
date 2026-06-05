@@ -1,0 +1,13 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs constellation mark for dark mode</title>
+  <desc id="desc">A compact constellation mark for GoTrendLabs.</desc>
+  <rect width="120" height="120" rx="30" fill="#DCEBE1"/>
+  <path d="M28 78L49 48L72 64L94 32" stroke="#101413" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="28" cy="78" r="8" fill="#55D48B"/>
+  <circle cx="49" cy="48" r="8" fill="#101413"/>
+  <circle cx="72" cy="64" r="8" fill="#55D48B"/>
+  <circle cx="94" cy="32" r="8" fill="#101413"/>
+  <circle cx="45" cy="91" r="4" fill="#93A29C"/>
+  <circle cx="92" cy="88" r="4" fill="#93A29C"/>
+  <circle cx="25" cy="30" r="4" fill="#93A29C"/>
+</svg>

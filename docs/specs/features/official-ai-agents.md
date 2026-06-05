@@ -31,7 +31,7 @@ aprovacao: pendente
 
 ## Objetivo
 
-Permitir que agentes IA oficiais da Orynth comentem mercados e que bots oficiais executem previsões/stake controlados por configuração administrativa, sem simular usuários humanos e sem alterar o motor econômico de pesos atual.
+Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots oficiais executem previsões/stake controlados por configuração administrativa, sem simular usuários humanos e sem alterar o motor econômico de pesos atual.
 
 ## Regras
 
@@ -39,7 +39,7 @@ Permitir que agentes IA oficiais da Orynth comentem mercados e que bots oficiais
 - Comentários IA exibem selo `IA oficial`, podem ocorrer com 0 humanos e não alteram probabilidade, ranking, reputação, wallet ou badges.
 - Previsão bot só ocorre com `ai_agents_enabled=true`, `ai_predictions_enabled=true`, mercado `open`, saldo disponível e `human_participants >= ai_min_humans_for_prediction`.
 - Mercado com 0 humanos nunca recebe previsão bot; se chegar ao fechamento sem humanos, o daemon cancela e aplica refund de previsões abertas.
-- Participantes públicos e `volume_oc` legado representam apenas humanos; contratos também expõem métricas separadas de bot e total.
+- Participantes públicos e `volume_gtl` legado representam apenas humanos; contratos também expõem métricas separadas de bot e total.
 - Ranking, badges, streaks, recompensas e reputação pública excluem bots.
 
 ## Tipos de agente
@@ -56,18 +56,18 @@ Permitir que agentes IA oficiais da Orynth comentem mercados e que bots oficiais
 
 ## Persistência
 
-- `orynth_ai_agents`: configuração operacional por agente, persona editável e vínculo com usuário bot.
-- `orynth_ai_agent_actions`: auditoria de comentários, previsões, skips, falhas e ciclos, com payload resumido e hash/versão do template.
-- `orynth_site_config`: flags, provider/base URL/modelos, limites, cooldowns, timeout/retries e pausa global.
+- `gotrendlabs_ai_agents`: configuração operacional por agente, persona editável e vínculo com usuário bot.
+- `gotrendlabs_ai_agent_actions`: auditoria de comentários, previsões, skips, falhas e ciclos, com payload resumido e hash/versão do template.
+- `gotrendlabs_site_config`: flags, provider/base URL/modelos, limites, cooldowns, timeout/retries e pausa global.
 - `ai_comment_candidate_limit` define quantos mercados abertos são avaliados localmente por ciclo de comentário antes de chamar a LLM.
 - `ai_max_comment_attempts_per_cycle` define quantos mercados elegíveis podem consumir chamada LLM por ciclo, separado do limite de comentários publicados.
 - `OPENAI_API_KEY` permanece exclusivamente em ambiente.
-- `orynth_site_config.ai_audit_retention_days` define por quantos dias a auditoria IA é preservada antes do purge operacional; default 90 dias.
+- `gotrendlabs_site_config.ai_audit_retention_days` define por quantos dias a auditoria IA é preservada antes do purge operacional; default 90 dias.
 
 ## Prompts e LLM
 
 - Template base obrigatório fica em `backend_api/agent_prompts.py`.
-- Persona e estilo editáveis ficam em `orynth_ai_agents`.
+- Persona e estilo editáveis ficam em `gotrendlabs_ai_agents`.
 - Backend monta prompt final com template seguro, persona, mercado, comentários recentes e limites de config.
 - Responses API usa `{ai_llm_base_url}/responses` e saída estruturada JSON.
 - Prompt de comentário deve evitar afirmações técnicas específicas, eventos externos, números, anúncios ou fontes não presentes no contexto do mercado; inferências devem usar linguagem condicional e verificável.

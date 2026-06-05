@@ -2,8 +2,8 @@
 
 ## Modelo
 
-- `orynth_wallet_ledger` é a fonte auditável das mutações da wallet.
-- `orynth_wallet_balances` é a projeção operacional para leitura rápida do saldo atual.
+- `gotrendlabs_wallet_ledger` é a fonte auditável das mutações da wallet.
+- `gotrendlabs_wallet_balances` é a projeção operacional para leitura rápida do saldo atual.
 - A wallet exibida ao usuário deve ser reconciliável com a razão de transações.
 - Cada mutação relevante gera uma entrada de ledger.
 - Cada mutação relevante atualiza ledger e projeção de saldo na mesma transação.
@@ -39,23 +39,23 @@
 ### Balance
 
 - `user_id`
-- `available_oc`
-- `locked_oc`
-- `total_earned_oc`
+- `available_gtl`
+- `locked_gtl`
+- `total_earned_gtl`
 - `updated_at`
 
 ## Regras
 
 - O saldo exibido deve ser conciliável com o ledger.
-- Leituras frequentes de saldo devem usar `orynth_wallet_balances`.
-- Em caso de divergência, `orynth_wallet_ledger` vence e a projeção deve ser reconstruída.
+- Leituras frequentes de saldo devem usar `gotrendlabs_wallet_balances`.
+- Em caso de divergência, `gotrendlabs_wallet_ledger` vence e a projeção deve ser reconstruída.
 - Ajustes manuais exigem operador e justificativa.
 - Ajustes manuais administrativos usam `entry_type="manual_adjustment"`, `reference_type="admin_user_adjustment"` e `reference_id` com o id do usuário afetado.
-- Ajustes manuais aceitam apenas `direction="credit"` ou `direction="debit"` sobre saldo disponível; débito maior que `available_oc` deve ser rejeitado.
-- Ajustes manuais administrativos devem registrar `user.wallet_adjust` em `orynth_admin_events` e preencher `created_by`.
+- Ajustes manuais aceitam apenas `direction="credit"` ou `direction="debit"` sobre saldo disponível; débito maior que `available_gtl` deve ser rejeitado.
+- Ajustes manuais administrativos devem registrar `user.wallet_adjust` em `gotrendlabs_admin_events` e preencher `created_by`.
 - Ajustes manuais administrativos podem ter `created_by` igual ao usuário afetado quando o operador é `staff`/`superuser`; a auditoria continua obrigatória.
 - Toda referência deve apontar para o objeto causal quando houver.
-- `prediction_stake_lock` deve reduzir `available_oc`, aumentar `locked_oc` e apontar para `reference_type="prediction"`.
+- `prediction_stake_lock` deve reduzir `available_gtl`, aumentar `locked_gtl` e apontar para `reference_type="prediction"`.
 - `prediction_refund` deve usar `direction="release"` e devolver stake bloqueado para saldo disponível.
 - Refund de cancelamento deve ser idempotente por previsão enquanto não houver novo `lock`/`prediction_resolution_relock` posterior; isso evita duplicidade em reconciliações e preserva o caso de resolução desfeita seguida de cancelamento final.
 - `prediction_payout` deve usar `direction="credit"` e representar ganho líquido acima do stake liberado.
@@ -68,8 +68,8 @@
 - Recompensas operacionais exigem usuário cadastrado e valor inteiro positivo.
 - Uma recompensa operacional não pode ser registrada mais de uma vez para o mesmo `entry_type`, `reference_type` e `reference_id`.
 - Recompensas por feedback ou sugestão não geram reputação.
-- Recarga educativa aprovada não gera reputação nem incrementa `total_earned_oc`.
-- Solicitação de recarga educativa deve ser bloqueada quando `available_oc` for maior que `orynth_site_config.wallet_recharge_min_balance_oc`.
+- Recarga educativa aprovada não gera reputação nem incrementa `total_earned_gtl`.
+- Solicitação de recarga educativa deve ser bloqueada quando `available_gtl` for maior que `gotrendlabs_site_config.wallet_recharge_min_balance_gtl`.
 - Usuário pode manter no máximo uma solicitação de recarga educativa `pending`; novas solicitações ficam bloqueadas até aprovação ou rejeição administrativa.
-- O agregado público `distributed_oc` usado pela home soma apenas lançamentos `direction="credit"` do ledger de usuários comuns, excluindo usuários `staff` e `superuser`, incluindo `grant_initial`, recompensas operacionais, recargas educativas aprovadas, ajustes manuais de crédito e payouts líquidos desses usuários.
-- Agregados públicos derivados do ledger não expõem usuário, saldo individual nem extrato, e não substituem a projeção `orynth_wallet_balances`.
+- O agregado público `distributed_gtl` usado pela home soma apenas lançamentos `direction="credit"` do ledger de usuários comuns, excluindo usuários `staff` e `superuser`, incluindo `grant_initial`, recompensas operacionais, recargas educativas aprovadas, ajustes manuais de crédito e payouts líquidos desses usuários.
+- Agregados públicos derivados do ledger não expõem usuário, saldo individual nem extrato, e não substituem a projeção `gotrendlabs_wallet_balances`.

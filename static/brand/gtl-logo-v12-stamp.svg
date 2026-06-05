@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs proof stamp logo</title>
+  <desc id="desc">A proof-stamp identity for resolved predictions and public reputation.</desc>
+  <rect width="760" height="180" rx="30" fill="#FFFDF7"/>
+  <g transform="translate(32 28) rotate(-6 62 62)">
+    <rect x="6" y="6" width="112" height="112" rx="24" fill="#F7F4EC" stroke="#111315" stroke-width="8"/>
+    <text x="31" y="56" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="27" font-weight="850">GTL</text>
+    <path d="M31 77L50 93L91 45" stroke="#136F4A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M25 102H98" stroke="#111315" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <text x="182" y="86" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="184" y="123" fill="#667071" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600">Carimbe sua leitura antes do resultado.</text>
+  <rect x="606" y="58" width="104" height="60" rx="14" fill="#111315"/>
+  <text x="629" y="96" fill="#FFFDF7" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="22" font-weight="850">PROOF</text>
+</svg>

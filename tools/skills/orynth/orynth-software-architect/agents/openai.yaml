@@ -1,7 +1,0 @@
-interface:
-  display_name: "Orynth Software Architect"
-  short_description: "Arquitetura, segurança e desenho técnico"
-  default_prompt: "Use $orynth-software-architect para definir a arquitetura, segurança, módulos e decisões técnicas de uma feature do Orynth antes da implementação."
-
-policy:
-  allow_implicit_invocation: true

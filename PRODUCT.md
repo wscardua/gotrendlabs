@@ -2,17 +2,17 @@
 
 ## Register
 
-Orynth Trends public product guidance for copy, interaction language, trust cues and visual direction.
+GoTrendLabs public product guidance for copy, interaction language, trust cues and visual direction.
 
 ## Users
 
-Curiosos recorrentes que querem prever eventos futuros, acompanhar o consenso da comunidade e construir reputacao publica ao longo do tempo. Eles chegam pela curiosidade social, mas precisam sentir rapidamente que a Orynth nao e aposta, cassino, exchange ou ferramenta financeira.
+Curiosos recorrentes que querem prever eventos futuros, acompanhar o consenso da comunidade e construir reputacao publica ao longo do tempo. Eles chegam pela curiosidade social, mas precisam sentir rapidamente que a GoTrendLabs nao e aposta, cassino, exchange ou ferramenta financeira.
 
 O uso principal acontece no feed de mercados, detalhe do mercado, ranking, badges, carteira educativa, perfil e fluxos autenticados. Admin Ops existe como superficie operacional separada, mais densa e utilitaria.
 
 ## Product Purpose
 
-Orynth Trends e uma rede social para prever eventos com moeda interna, reputacao publica e resolucao auditavel. O produto transforma previsoes sobre o futuro em historico comparavel: o usuario escolhe mercados, registra posicoes, acompanha probabilidades agregadas, compara desempenho e volta para ver resultados.
+GoTrendLabs e uma rede social para prever eventos com moeda interna, reputacao publica e resolucao auditavel. O produto transforma previsoes sobre o futuro em historico comparavel: o usuario escolhe mercados, registra posicoes, acompanha probabilidades agregadas, compara desempenho e volta para ver resultados.
 
 Sucesso significa que usuarios entendem o produto sem associar a jogo financeiro, encontram mercados relevantes rapidamente, confiam nos criterios de resolucao e voltam para acompanhar consenso, ranking, badges e reputacao.
 
@@ -42,4 +42,4 @@ A voz deve ser direta, humana e segura. A interface deve tratar previsoes como p
 
 Mirar WCAG 2.2 AA como padrao de produto. Priorizar navegacao por teclado, estados de foco visiveis, contraste suficiente, textos que nao dependam apenas de cor, suporte a tema escuro/claro, reducao de movimento quando aplicavel e labels acessiveis para acoes iconizadas.
 
-Conteudo deve permanecer em pt-BR claro, com caminho futuro para i18n. O simbolo O₵ pode aparecer em interface, mas o significado deve ser educativo e nao financeiro sempre que houver risco de ambiguidade.
+Conteudo deve permanecer em pt-BR claro, com caminho futuro para i18n. O simbolo GT₵ pode aparecer em interface, mas o significado deve ser educativo e nao financeiro sempre que houver risco de ambiguidade.

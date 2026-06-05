@@ -12,7 +12,7 @@
 - FEAT-AUTH-001 usa versão fixa de política de uso `2026-05-17`; versionamento administrável fica para etapa futura.
 - FEAT-MARKET-001/002 possui admin CRUD básico real para mercado e taxonomia, FEAT-AUTH-001 possui gestão administrativa de usuários/roles, e FEAT-RES-001 possui auditoria staff read-only de resolução aplicada; ainda faltam revisão editorial avançada, gestão avançada de operadores, mascaramento seletivo de dados sensíveis e auditorias avançadas fora do ciclo de resolução.
 - Fallbacks locais mutáveis de domínio foram removidos de previsão/stake, ranking, comentários e Admin Ops; exceções documentadas de leitura/fallback de desenvolvimento não devem alterar domínio quando a FastAPI estiver indisponível.
-- FEAT-MARKET-001/002 usa snapshots persistidos e séries visuais derivadas de `orynth_predictions`; ainda falta tabela materializada de histórico de snapshots para analytics/escala.
+- FEAT-MARKET-001/002 usa snapshots persistidos e séries visuais derivadas de `gotrendlabs_predictions`; ainda falta tabela materializada de histórico de snapshots para analytics/escala.
 - FEAT-WALLET-001 já possui bloqueio de stake, refund, payout, perda por resolução, reconciliação operacional para cancelados inconsistentes, recarga educativa por fila Admin Ops com piso configurável e ajuste manual auditado por admin; ainda falta política automática de janela/cadência de recarga.
 - FEAT-REP-001 usa fórmula MVP em resolução; fórmula avançada futura depende de decisão técnica registrada.
 - FEAT-REP-001 possui badges administráveis, concessão automática MVP e compartilhamento social com card Open Graph/Twitter; ainda faltam raridade pública, temporadas e reprocessamento administrativo em lote.

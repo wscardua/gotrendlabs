@@ -94,7 +94,7 @@ def export_admin(media_files):
         )
         if reputation
         else None,
-        "wallet_balance": model_payload(wallet, ["available_oc", "locked_oc", "total_earned_oc"]) if wallet else None,
+        "wallet_balance": model_payload(wallet, ["available_gtl", "locked_gtl", "total_earned_gtl"]) if wallet else None,
         "wallet_ledger": [
             model_payload(entry, ["entry_type", "amount", "direction", "description", "reference_type", "reference_id", "created_at"])
             for entry in WalletLedgerEntry.objects.filter(user=admin).order_by("created_at", "id")
@@ -140,7 +140,7 @@ def export_site_config():
         config,
         [
             "singleton_key",
-            "wallet_recharge_min_balance_oc",
+            "wallet_recharge_min_balance_gtl",
             "daemon_stale_after_minutes",
             "daemon_missing_after_minutes",
             "email_enabled",
@@ -218,7 +218,7 @@ def export_markets(media_files, market_slugs):
                         "primary_outcome",
                         "primary_probability_exact",
                         "secondary_probability_exact",
-                        "volume_oc",
+                        "volume_gtl",
                         "participants",
                         "source",
                         "closes_in",

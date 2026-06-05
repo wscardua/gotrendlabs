@@ -3,7 +3,7 @@ const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selec
 
 const currentPage = location.pathname.split("/").pop() || "index.html";
 const isAdmin = currentPage.startsWith("admin-");
-const storedTheme = localStorage.getItem("orynth-theme");
+const storedTheme = localStorage.getItem("gotrendlabs-theme");
 const initialTheme = currentPage === "dark-mode.html" ? "dark" : (storedTheme || document.body.dataset.theme || "light");
 document.body.dataset.theme = initialTheme;
 
@@ -11,7 +11,7 @@ function publicHeader() {
   return `
     <header class="topbar">
       <nav class="shell nav">
-        <a class="brand" href="index.html"><span class="brand-mark">O</span><span>Orynth</span></a>
+        <a class="brand" href="index.html"><span class="brand-mark">O</span><span>GoTrendLabs</span></a>
         <div class="nav-links">
           <a class="nav-link ${currentPage === "index.html" ? "active" : ""}" href="index.html">Mercados</a>
           <a class="nav-link ${currentPage === "rankings.html" ? "active" : ""}" href="rankings.html">Ranking</a>
@@ -20,7 +20,7 @@ function publicHeader() {
           <button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button>
           <span class="language">PT-BR</span>
           <div class="user-chip">
-            <button class="user-button" type="button"><span class="avatar">WL</span><span class="chip-meta"><strong>Will Costa</strong><span>2.480 OC · Rep 82</span></span></button>
+            <button class="user-button" type="button"><span class="avatar">WL</span><span class="chip-meta"><strong>Will Costa</strong><span>2.480 GTL · Rep 82</span></span></button>
             <div class="user-menu">
               <a href="profile.html">Perfil e badges</a>
               <a href="wallet.html">Carteira e extrato</a>
@@ -38,7 +38,7 @@ function adminHeader() {
   return `
     <header class="topbar">
       <nav class="shell nav">
-        <a class="brand" href="admin-dashboard.html"><span class="brand-mark">A</span><span>Orynth Admin</span></a>
+        <a class="brand" href="admin-dashboard.html"><span class="brand-mark">A</span><span>GoTrendLabs Admin</span></a>
         <div class="nav-links"></div>
         <div class="nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="index.html">Ver site público</a></div>
       </nav>
@@ -50,7 +50,7 @@ function footer() {
   return `
     <footer class="footer">
       <div class="shell footer-grid">
-        <div><strong>Orynth</strong><p>Rede social de previsões com moeda educativa, reputação e resolução auditável.</p></div>
+        <div><strong>GoTrendLabs</strong><p>Rede social de previsões com moeda educativa, reputação e resolução auditável.</p></div>
         <div><strong>Produto</strong><a href="index.html">Mercados</a><a href="rankings.html">Ranking</a><a href="suggestion.html">Sugerir mercado</a></div>
         <div><strong>Confiança</strong><a href="concepts.html">Conceitos</a><a href="security.html">Segurança</a><a href="feedback.html">Feedback</a></div>
         <div><strong>Comunidade</strong><a href="rankings.html">Ranking</a><a href="share-result.html">Compartilhar resultado</a><a href="suggestion.html">Sugerir mercado</a></div>
@@ -124,7 +124,7 @@ function syncThemeButtons() {
 $$("[data-theme-toggle]").forEach((button) => {
   button.addEventListener("click", () => {
     document.body.dataset.theme = document.body.dataset.theme === "dark" ? "light" : "dark";
-    localStorage.setItem("orynth-theme", document.body.dataset.theme);
+    localStorage.setItem("gotrendlabs-theme", document.body.dataset.theme);
     syncThemeButtons();
   });
 });
@@ -152,9 +152,9 @@ $$("[data-choice]").forEach((choice) => {
 $$("[data-amount]").forEach((range) => {
   const output = $(`[data-amount-output="${range.dataset.amount}"]`);
   const update = () => {
-    if (output) output.textContent = `${range.value} OC`;
+    if (output) output.textContent = `${range.value} GTL`;
     const returnBox = $(`[data-return-output="${range.dataset.amount}"]`);
-    if (returnBox) returnBox.textContent = `${Math.round(Number(range.value) * 1.62)} OC`;
+    if (returnBox) returnBox.textContent = `${Math.round(Number(range.value) * 1.62)} GTL`;
   };
   range.addEventListener("input", update);
   update();

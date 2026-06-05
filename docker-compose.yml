@@ -1,12 +1,14 @@
+name: gotrendlabs
+
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: orynth-postgres
+    container_name: gotrendlabs-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-orynth}
-      POSTGRES_USER: ${POSTGRES_USER:-orynth}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-orynth_dev_password}
+      POSTGRES_DB: ${POSTGRES_DB:-gotrendlabs}
+      POSTGRES_USER: ${POSTGRES_USER:-gotrendlabs}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-gotrendlabs_dev_password}
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
@@ -17,4 +19,3 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-

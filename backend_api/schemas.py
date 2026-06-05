@@ -116,9 +116,9 @@ class PublicUserProfileResponse(BaseModel):
 
 
 class WalletResponse(BaseModel):
-    available_oc: int
-    locked_oc: int
-    total_earned_oc: int
+    available_gtl: int
+    locked_gtl: int
+    total_earned_gtl: int
 
 
 class LedgerEntryResponse(BaseModel):
@@ -142,7 +142,7 @@ class WalletRechargeRequestResponse(BaseModel):
     id: int
     status: str
     status_label: str
-    amount_oc: Optional[int] = None
+    amount_gtl: Optional[int] = None
     admin_note: str = ""
     created_at: str
     created_at_label: str = ""
@@ -167,8 +167,8 @@ class AdminUserResponse(BaseModel):
     created_at: str
     last_login: Optional[str] = None
     deactivated_at: Optional[str] = None
-    available_oc: int = 0
-    locked_oc: int = 0
+    available_gtl: int = 0
+    locked_gtl: int = 0
     reputation_score: int = 0
 
 
@@ -197,7 +197,7 @@ class AdminUserDetailResponse(BaseModel):
 
 class AdminUserWalletAdjustmentPayload(BaseModel):
     direction: str
-    amount_oc: int = Field(gt=0, le=1000000)
+    amount_gtl: int = Field(gt=0, le=1000000)
     note: str = Field(min_length=1, max_length=2000)
 
 
@@ -273,7 +273,7 @@ class AdminAiAgentPayload(BaseModel):
     comment_style: str = Field(default="", max_length=120)
     max_comments_per_day: Optional[int] = Field(default=None, ge=0, le=10000)
     max_predictions_per_day: Optional[int] = Field(default=None, ge=0, le=10000)
-    max_stake_oc: Optional[int] = Field(default=None, ge=0, le=1000000)
+    max_stake_gtl: Optional[int] = Field(default=None, ge=0, le=1000000)
     cooldown_hours: Optional[int] = Field(default=None, ge=0, le=10000)
     min_humans_for_prediction: Optional[int] = Field(default=None, ge=0, le=10000)
 
@@ -291,7 +291,7 @@ class AdminAiAgentResponse(BaseModel):
     comment_style: str = ""
     max_comments_per_day: Optional[int] = None
     max_predictions_per_day: Optional[int] = None
-    max_stake_oc: Optional[int] = None
+    max_stake_gtl: Optional[int] = None
     cooldown_hours: Optional[int] = None
     min_humans_for_prediction: Optional[int] = None
     last_action_at: Optional[str] = None
@@ -469,13 +469,13 @@ class MarketResponse(BaseModel):
     primary_probability_exact: float = 0
     secondary_probability: int
     secondary_probability_exact: float = 0
-    volume_oc: str
+    volume_gtl: str
     participants: str
     human_participants: int = 0
     bot_participants: int = 0
-    human_volume_oc: int = 0
-    bot_volume_oc: int = 0
-    total_volume_oc: int = 0
+    human_volume_gtl: int = 0
+    bot_volume_gtl: int = 0
+    total_volume_gtl: int = 0
     source: str
     closes_in: str
     close_label: str
@@ -566,7 +566,7 @@ class AdminMarketPayload(BaseModel):
     primary_outcome: str = ""
     primary_probability_exact: float = Field(default=0, ge=0, le=100)
     secondary_probability_exact: float = Field(default=0, ge=0, le=100)
-    volume_oc: str = ""
+    volume_gtl: str = ""
     participants: str = ""
     source: str = ""
     closes_in: str = ""
@@ -682,17 +682,17 @@ class QueueReviewPayload(BaseModel):
 
 
 class FeedbackRewardPayload(BaseModel):
-    amount_oc: int = Field(gt=0, le=10000)
+    amount_gtl: int = Field(gt=0, le=10000)
     note: str = ""
 
 
 class SuggestionRewardPayload(BaseModel):
-    amount_oc: int = Field(gt=0, le=10000)
+    amount_gtl: int = Field(gt=0, le=10000)
     note: str = ""
 
 
 class WalletRechargeApprovalPayload(BaseModel):
-    amount_oc: int = Field(gt=0, le=10000)
+    amount_gtl: int = Field(gt=0, le=10000)
     note: str = ""
 
 
@@ -720,7 +720,7 @@ class QueueItemResponse(BaseModel):
     source: str = ""
     description: str = ""
     admin_note: str = ""
-    reward_oc: Optional[int] = None
+    reward_gtl: Optional[int] = None
     converted_market_slug: Optional[str] = None
     created_at: str
     created_at_label: str = ""

@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs consensus pulse logo</title>
+  <desc id="desc">A pulse identity for live consensus, public signals, and changing probabilities.</desc>
+  <rect width="760" height="180" rx="28" fill="#111315"/>
+  <g transform="translate(30 37)">
+    <path d="M5 53H31L44 23L62 88L79 40L96 53H130" stroke="#F7F4EC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="44" cy="23" r="9" fill="#D84A3A"/>
+    <circle cx="62" cy="88" r="9" fill="#2D5E88"/>
+    <circle cx="96" cy="53" r="9" fill="#136F4A"/>
+    <rect x="18" y="8" width="96" height="96" rx="28" stroke="#F7F4EC" stroke-width="5" opacity=".3"/>
+  </g>
+  <text x="184" y="84" fill="#F7F4EC" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#A8B5B0" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">O pulso vivo das previsoes da comunidade.</text>
+  <text x="618" y="98" fill="#F7F4EC" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">LIVE</text>
+</svg>

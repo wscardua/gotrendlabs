@@ -97,7 +97,7 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - `prediction_loss` para baixa auditável de stake perdido
 - `prediction_payout_reversal` para estornar ganho líquido ao desfazer resolução
 - `prediction_resolution_relock` para rebloquear stake ao desfazer resolução
-- auditoria de resolução derivada de `orynth_predictions`, `orynth_wallet_ledger` e `orynth_user_badge_awards`, filtrando badges por `reason_snapshot` do evento `market_resolved:{market_id}`
+- auditoria de resolução derivada de `gotrendlabs_predictions`, `gotrendlabs_wallet_ledger` e `gotrendlabs_user_badge_awards`, filtrando badges por `reason_snapshot` do evento `market_resolved:{market_id}`
 
 ## Contratos afetados
 

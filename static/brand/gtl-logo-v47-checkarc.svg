@@ -1,0 +1,11 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs check arc logo</title>
+  <desc id="desc">A minimal arc and check mark for predictions that later resolve.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(42 34)">
+    <path d="M4 64C19 28 51 8 88 8" stroke="#111315" stroke-width="12" stroke-linecap="round"/>
+    <path d="M29 82L52 105L103 44" stroke="#111315" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#68706F" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="650">Sua chamada. Seu historico.</text>
+</svg>

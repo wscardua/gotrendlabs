@@ -49,7 +49,7 @@ class SiteEmailConfigForm(forms.Form):
 
 
 class EconomyConfigForm(forms.Form):
-    wallet_recharge_min_balance_oc = forms.IntegerField(
+    wallet_recharge_min_balance_gtl = forms.IntegerField(
         label="Saldo máximo para solicitar recarga",
         min_value=0,
         max_value=1000000,
@@ -111,7 +111,7 @@ class AiConfigForm(forms.Form):
     ai_max_comments_per_day = forms.IntegerField(label="Comentários por dia", min_value=0, max_value=10000, initial=20)
     ai_comment_max_chars = forms.IntegerField(label="Máximo de caracteres", min_value=120, max_value=1000, initial=700)
     ai_min_humans_for_prediction = forms.IntegerField(label="Mínimo de humanos para previsão", min_value=0, max_value=10000, initial=1)
-    ai_max_stake_oc = forms.IntegerField(label="Stake máximo bot", min_value=1, max_value=1000000, initial=25)
+    ai_max_stake_gtl = forms.IntegerField(label="Stake máximo bot", min_value=1, max_value=1000000, initial=25)
     ai_max_predictions_per_cycle = forms.IntegerField(label="Previsões por ciclo", min_value=0, max_value=100, initial=1)
     ai_max_predictions_per_day = forms.IntegerField(label="Previsões por dia", min_value=0, max_value=10000, initial=10)
     ai_skip_if_human_comments_recent = forms.BooleanField(label="Pular se houver comentário humano recente", required=False)
@@ -156,7 +156,7 @@ class AiAgentForm(forms.Form):
     comment_style = forms.CharField(label="Estilo de comentário", required=False, max_length=120)
     max_comments_per_day = forms.IntegerField(label="Comentários/dia do agente", required=False, min_value=0, max_value=10000)
     max_predictions_per_day = forms.IntegerField(label="Previsões/dia do agente", required=False, min_value=0, max_value=10000)
-    max_stake_oc = forms.IntegerField(label="Stake máximo do agente", required=False, min_value=0, max_value=1000000)
+    max_stake_gtl = forms.IntegerField(label="Stake máximo do agente", required=False, min_value=0, max_value=1000000)
     cooldown_hours = forms.IntegerField(label="Cooldown do agente (h)", required=False, min_value=0, max_value=10000)
     min_humans_for_prediction = forms.IntegerField(label="Mínimo de humanos do agente", required=False, min_value=0, max_value=10000)
 
@@ -182,7 +182,7 @@ class AiAgentForm(forms.Form):
         agent_type = cleaned_data.get("agent_type")
         if agent_type == "analyst":
             cleaned_data["max_predictions_per_day"] = None
-            cleaned_data["max_stake_oc"] = None
+            cleaned_data["max_stake_gtl"] = None
             cleaned_data["min_humans_for_prediction"] = None
         elif agent_type == "liquidity":
             cleaned_data["personality_prompt"] = ""
@@ -194,7 +194,7 @@ class AiAgentForm(forms.Form):
             cleaned_data["comment_style"] = ""
             cleaned_data["max_comments_per_day"] = None
             cleaned_data["max_predictions_per_day"] = None
-            cleaned_data["max_stake_oc"] = None
+            cleaned_data["max_stake_gtl"] = None
             cleaned_data["cooldown_hours"] = None
             cleaned_data["min_humans_for_prediction"] = None
         return cleaned_data
@@ -379,7 +379,7 @@ class AdminMarketForm(forms.Form):
             "primary_outcome": self.initial.get("primary_outcome") or primary["label"],
             "primary_probability_exact": self.initial.get("primary_probability_exact", primary.get("probability_exact", primary["probability"])),
             "secondary_probability_exact": self.initial.get("secondary_probability_exact", secondary.get("probability_exact", secondary["probability"])),
-            "volume_oc": self.initial.get("volume_oc") or "0 O₵",
+            "volume_gtl": self.initial.get("volume_gtl") or "0 GT₵",
             "participants": self.initial.get("participants") or "0 usuários",
             "source": self.cleaned_data.get("source") or "",
             "closes_in": "",
@@ -433,12 +433,12 @@ class QueueReviewForm(forms.Form):
 
 
 class FeedbackRewardForm(forms.Form):
-    amount_oc = forms.IntegerField(label="Recompensa O₵", min_value=1, max_value=10000, initial=50)
+    amount_gtl = forms.IntegerField(label="Recompensa GT₵", min_value=1, max_value=10000, initial=50)
     note = forms.CharField(label="Nota operacional", widget=forms.Textarea, required=False)
 
 
 class WalletRechargeApprovalForm(forms.Form):
-    amount_oc = forms.IntegerField(label="Recarga O₵", min_value=1, max_value=10000, initial=250)
+    amount_gtl = forms.IntegerField(label="Recarga GT₵", min_value=1, max_value=10000, initial=250)
     note = forms.CharField(label="Nota operacional", widget=forms.Textarea, required=False)
 
 
@@ -452,7 +452,7 @@ class AdminUserNoteForm(forms.Form):
 
 class AdminUserWalletAdjustmentForm(forms.Form):
     direction = forms.ChoiceField(label="Direção", choices=(("", "Selecione"), ("credit", "Crédito"), ("debit", "Débito")))
-    amount_oc = forms.IntegerField(label="Valor O₵", min_value=1, max_value=1000000)
+    amount_gtl = forms.IntegerField(label="Valor GT₵", min_value=1, max_value=1000000)
     note = forms.CharField(label="Nota operacional", max_length=2000, widget=forms.Textarea)
 
 

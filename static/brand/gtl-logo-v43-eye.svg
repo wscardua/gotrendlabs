@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs eye logo</title>
+  <desc id="desc">A compact eye mark for seeing trends before consensus becomes obvious.</desc>
+  <rect width="760" height="180" rx="24" fill="#F6F7F2"/>
+  <g transform="translate(25 32)">
+    <path d="M8 58C30 20 58 4 88 4C118 4 142 25 152 58C140 91 116 112 88 112C58 112 30 96 8 58Z" fill="#111315"/>
+    <circle cx="88" cy="58" r="34" fill="#F6F7F2"/>
+    <circle cx="88" cy="58" r="17" fill="#111315"/>
+    <path d="M52 82C73 65 98 66 123 86" stroke="#24C06F" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="114" cy="34" r="9" fill="#FF4D2E"/>
+  </g>
+  <text x="205" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="207" y="122" fill="#5F6868" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Veja antes. Registre antes. Prove depois.</text>
+  <text x="639" y="100" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">SEE</text>
+</svg>

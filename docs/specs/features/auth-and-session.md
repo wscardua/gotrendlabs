@@ -69,7 +69,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - perfil autenticado exibe reputação em cards e mantém edição de dados na própria tela de perfil, sem rota separada
-- perfil autenticado usa `orynth_user_profiles.display_name` como fonte principal do nome editável; `orynth_users.first_name` permanece apenas como fallback/compatibilidade
+- perfil autenticado usa `gotrendlabs_user_profiles.display_name` como fonte principal do nome editável; `gotrendlabs_users.first_name` permanece apenas como fallback/compatibilidade
 - `birth_date`, `sex`, email e bio são privados ao usuário autenticado e não aparecem no perfil público
 - exclusão lógica desativa login e sessões sem apagar dados físicos
 - Admin Ops lista usuários, abre detalhe operacional amplo e exibe badges adquiridas para suporte
@@ -129,7 +129,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte
 - Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação, revogação de sessões, gestão controlada de papéis e marcação `is_bot` via contratos staff
-- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust`, `user.roles_update`, `user.bot_update` ou `user.password_reset_request` em `orynth_admin_events`
+- ações administrativas de conta devem registrar `user.deactivate`, `user.reactivate`, `user.sessions_revoke`, `user.wallet_adjust`, `user.roles_update`, `user.bot_update` ou `user.password_reset_request` em `gotrendlabs_admin_events`
 - contratos staff mínimos: `GET /admin/users`, `GET /admin/users/{user_id}`, `POST /admin/users/{user_id}/deactivate`, `POST /admin/users/{user_id}/reactivate`, `POST /admin/users/{user_id}/sessions/revoke`, `POST /admin/users/{user_id}/roles`, `POST /admin/users/{user_id}/bot`, `POST /admin/users/{user_id}/password-reset`
 
 ## Testes esperados
@@ -147,7 +147,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
 - fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
 - fluxo de edição de perfil na própria página autenticada
-- regressão para `/profile/` renderizar dados reais de `orynth_user_profiles`, incluindo `display_name`, `bio`, `birth_date` e `sex`
+- regressão para `/profile/` renderizar dados reais de `gotrendlabs_user_profiles`, incluindo `display_name`, `bio`, `birth_date` e `sex`
 - fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público
 - fluxo de exclusão lógica
 - fluxo staff de listagem/detalhe administrativo de usuário
@@ -171,7 +171,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - sessão inválida é tratada corretamente
 - idioma preferencial é respeitado após autenticação
 - usuário autenticado consegue editar dados pessoais sem sair da tela de perfil
-- nome editável do perfil vem de `orynth_user_profiles.display_name` e é sincronizado no update sem substituir dados reais por valores genéricos da sessão
+- nome editável do perfil vem de `gotrendlabs_user_profiles.display_name` e é sincronizado no update sem substituir dados reais por valores genéricos da sessão
 - perfil público não expõe email, data de nascimento, sexo nem metadados privados do perfil
 - conta desativada não consegue efetuar login
 - staff consegue consultar usuários, abrir detalhe operacional e agir sobre status/sessões sem mutação local no Django

@@ -9,7 +9,7 @@ DEFAULT_MAINTENANCE_MESSAGE = "Estamos fazendo uma manutenção rápida para dei
 
 
 def runtime_config_path():
-    return Path(settings.ORYNTH_RUNTIME_CONFIG_PATH)
+    return Path(settings.GOTRENDLABS_RUNTIME_CONFIG_PATH)
 
 
 def default_platform_config():

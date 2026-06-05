@@ -127,7 +127,7 @@ class Command(BaseCommand):
                 "primary_outcome": "Sim",
                 "primary_probability_exact": primary_probability,
                 "secondary_probability_exact": secondary_probability,
-                "volume_oc": "0 O₵",
+                "volume_gtl": "0 GT₵",
                 "participants": "0 usuários",
                 "source": payload["source"],
                 "closes_in": "39d",

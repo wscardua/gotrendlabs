@@ -1,0 +1,9 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GTL mark</title>
+  <desc id="desc">GoTrendLabs monogram mark with a consensus loop, rising trend, and ledger base.</desc>
+  <rect width="256" height="256" rx="56" fill="#111315"/>
+  <path d="M77 70H179C196.673 70 211 84.3269 211 102V154C211 171.673 196.673 186 179 186H77C59.3269 186 45 171.673 45 154V102C45 84.3269 59.3269 70 77 70Z" stroke="#F7F4EC" stroke-width="14"/>
+  <path d="M81 128H124L147 101L176 101" stroke="#136F4A" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M148 101V164" stroke="#F7F4EC" stroke-width="14" stroke-linecap="round"/>
+  <path d="M101 164H179" stroke="#F7F4EC" stroke-width="14" stroke-linecap="round"/>
+</svg>

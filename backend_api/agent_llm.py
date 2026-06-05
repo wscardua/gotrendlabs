@@ -49,7 +49,7 @@ def request_market_comment(*, config, prompt):
         body["text"] = {
             "format": {
                 "type": "json_schema",
-                "name": "orynth_ai_market_comment",
+                "name": "gotrendlabs_ai_market_comment",
                 "strict": True,
                 "schema": COMMENT_JSON_SCHEMA,
             }

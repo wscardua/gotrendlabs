@@ -16,7 +16,7 @@
 - Mercado `binary` exige exatamente duas opções canônicas: `SIM` e `NAO`, ambas com snapshot inicial `50%`.
 - Mercado `multiple` exige ao menos duas opções, sem limite máximo fixo nesta etapa; snapshots iniciais são distribuídos automaticamente e devem somar `100%`.
 - Opções de mercado são entidades referenciáveis por previsões; edição administrativa deve atualizar opções existentes por identidade/label estável quando possível.
-- Opção com previsão vinculada em `orynth_predictions` não pode ser removida fisicamente; tentativa de remoção deve retornar erro de domínio claro.
+- Opção com previsão vinculada em `gotrendlabs_predictions` não pode ser removida fisicamente; tentativa de remoção deve retornar erro de domínio claro.
 - Mercados administrativos devem persistir `close_at`, `close_timezone` e `auto_close_enabled` para permitir fechamento automático pelo scheduler/daemon.
 - `closes_in` é rótulo derivado de `close_at` para apresentação; não deve ser informado manualmente pelo admin.
 - `close_label` é mensagem pública opcional sobre fechamento; não substitui `close_at` nem controla transição de estado.

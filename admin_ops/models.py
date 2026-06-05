@@ -4,7 +4,7 @@ from django.db import models
 
 class SiteConfig(models.Model):
     singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
-    wallet_recharge_min_balance_oc = models.PositiveIntegerField(default=100)
+    wallet_recharge_min_balance_gtl = models.PositiveIntegerField(default=100)
     daemon_stale_after_minutes = models.PositiveIntegerField(default=5)
     daemon_missing_after_minutes = models.PositiveIntegerField(default=15)
     system_log_retention_days = models.PositiveIntegerField(default=90)
@@ -24,7 +24,7 @@ class SiteConfig(models.Model):
     ai_max_comments_per_day = models.PositiveIntegerField(default=20)
     ai_comment_max_chars = models.PositiveIntegerField(default=700)
     ai_min_humans_for_prediction = models.PositiveIntegerField(default=1)
-    ai_max_stake_oc = models.PositiveIntegerField(default=25)
+    ai_max_stake_gtl = models.PositiveIntegerField(default=25)
     ai_max_predictions_per_cycle = models.PositiveIntegerField(default=1)
     ai_max_predictions_per_day = models.PositiveIntegerField(default=10)
     ai_skip_if_human_comments_recent = models.BooleanField(default=True)
@@ -52,7 +52,7 @@ class SiteConfig(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_site_config"
+        db_table = "gotrendlabs_site_config"
         constraints = [
             models.CheckConstraint(
                 check=~(models.Q(smtp_use_tls=True) & models.Q(smtp_use_ssl=True)),

@@ -20,13 +20,13 @@ O MVP precisa de deploy simples, barato e auditável, com Django server-rendered
 
 Em `2026-05-21`, a base AWS foi provisionada em `us-east-1`:
 
-- EC2 `orynth-prod-host` (`i-0fc304f1acb85daea`, `t4g.micro`, Ubuntu ARM64) com Docker, Compose, SSM Agent, CloudWatch Agent, AWS CLI e `postgresql-client`.
-- RDS `orynth-prod-db` (`db.t4g.micro`, PostgreSQL 16.13) privado, criptografado, com deletion protection e `rds.force_ssl=1`.
+- EC2 `gotrendlabs-prod-host` (`i-0fc304f1acb85daea`, `t4g.micro`, Ubuntu ARM64) com Docker, Compose, SSM Agent, CloudWatch Agent, AWS CLI e `postgresql-client`.
+- RDS `gotrendlabs-prod-db` (`db.t4g.micro`, PostgreSQL 16.13) privado, criptografado, com deletion protection e `rds.force_ssl=1`.
 - VPC dedicada `10.40.0.0/16`, uma subnet pública para EC2 e duas subnets privadas para RDS.
 - Security groups mantêm apenas `80/443` públicos na EC2; `22`, `5432`, `8000` e `8001` não ficam públicos.
 - Acesso operacional por SSM; acesso administrativo ao RDS por túnel SSM via EC2.
 - CloudWatch Agent envia métricas de memória/disco e logs básicos; alarmes mínimos de EC2/RDS foram criados.
-- GitHub Actions OIDC foi preparado para o repo `wscardua/orynth` no branch `main`, mas o deploy automático ainda depende de `.env.prod` criado fora do Git na EC2.
+- GitHub Actions OIDC foi preparado para o repo `wscardua/gotrendlabs` no branch `main`, mas o deploy automático ainda depende de `.env.prod` criado fora do Git na EC2.
 
 O plano AWS `FREE` restringiu o backup retention do RDS a `1` dia. A decisão alvo continua ser `7` dias quando a conta for migrada para plano pago ou quando a restrição deixar de aplicar.
 

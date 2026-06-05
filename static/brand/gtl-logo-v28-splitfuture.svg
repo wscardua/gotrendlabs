@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs split future logo</title>
+  <desc id="desc">A split-future mark showing the moment before consensus chooses a side.</desc>
+  <rect width="760" height="180" rx="20" fill="#FFFFFF"/>
+  <path d="M0 0H304L230 180H0V0Z" fill="#0B0D10"/>
+  <g transform="translate(31 25)">
+    <path d="M65 0L128 130H2L65 0Z" fill="#FFFFFF"/>
+    <path d="M65 31L96 95H34L65 31Z" fill="#0B0D10"/>
+    <path d="M65 31V120" stroke="#FF3B30" stroke-width="10" stroke-linecap="round"/>
+    <path d="M36 95H96" stroke="#D7FF3F" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="330" y="84" fill="#0B0D10" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="46" font-weight="900">GoTrendLabs</text>
+  <text x="332" y="122" fill="#4C5555" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="750">Antes do sim. Antes do nao. Antes do consenso.</text>
+  <text x="636" y="100" fill="#0B0D10" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="32" font-weight="900">CALL</text>
+</svg>

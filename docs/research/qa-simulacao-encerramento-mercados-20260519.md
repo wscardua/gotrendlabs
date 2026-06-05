@@ -3,12 +3,12 @@
 Data da rodada: 2026-05-19  
 Ambiente: `http://127.0.0.1:8000/` + `http://127.0.0.1:8001`  
 Run: `qa_20260519_admin_resolution`  
-Usuario administrativo: `admin@orynth.local`  
+Usuario administrativo: `admin@gotrendlabs.com.br`  
 Fonte simulada de resolucao: `https://example.com/qa-resolution/20260519`
 
 ## Resumo executivo
 
-A rodada administrativa resolveu 3 mercados ainda abertos usando o usuario `admin@orynth.local`. Foram conferidos status do mercado, opcao vencedora, eventos administrativos, previsoes resolvidas, entradas de ledger, saldos de wallet, reputacao e badges.
+A rodada administrativa resolveu 3 mercados ainda abertos usando o usuario `admin@gotrendlabs.com.br`. Foram conferidos status do mercado, opcao vencedora, eventos administrativos, previsoes resolvidas, entradas de ledger, saldos de wallet, reputacao e badges.
 
 Resultado principal: todas as conferencias numericas da rodada nova passaram. Nenhuma correcao de codigo foi aplicada.
 
@@ -38,8 +38,8 @@ Para cada mercado, foi feita fotografia antes/depois dos usuarios afetados e das
 
 - vencedor: `prediction_refund` libera o stake, `prediction_payout` credita o ganho liquido;
 - perdedor: `prediction_loss` liquida o stake bloqueado;
-- saldo esperado do vencedor: `available_oc += potential_payout`, `locked_oc -= stake`, `total_earned_oc += potential_payout - stake`;
-- saldo esperado do perdedor: `available_oc` inalterado, `locked_oc -= stake`, `total_earned_oc` inalterado;
+- saldo esperado do vencedor: `available_gtl += potential_payout`, `locked_gtl -= stake`, `total_earned_gtl += potential_payout - stake`;
+- saldo esperado do perdedor: `available_gtl` inalterado, `locked_gtl -= stake`, `total_earned_gtl` inalterado;
 - reputacao: delta calculado por probabilidade de entrada, contador de resolvidas, acuracia e streak;
 - badges: motor de badges acionado apos resolucao do mercado;
 - eventos admin: `market.lock` e `market.resolve` criados para cada mercado.
@@ -158,13 +158,13 @@ Comando de correcao aplicado: `python manage.py reconcile_canceled_market_refund
 Resultado antes da correcao:
 
 - `pergunta22`: 8 previsoes abertas em mercado `canceled`
-- stake bloqueado afetado: 710 OC
+- stake bloqueado afetado: 710 GTL
 
 Resultado da reconciliacao:
 
 - previsoes canceladas: 8
 - refunds `prediction_refund` criados: 8
-- valor total liberado: 710 OC
+- valor total liberado: 710 GTL
 - evento administrativo criado: `market.cancel_reconcile`
 - nota: `qa_20260519_rerun: reconciliar mercado cancelado com previsoes abertas`
 

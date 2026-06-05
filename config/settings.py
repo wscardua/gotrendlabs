@@ -6,16 +6,16 @@ from config.env import load_env_file
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_env_file(BASE_DIR / ".env")
 
-SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-orynth-django-fixtures")
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-gotrendlabs-django-fixtures")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("ORYNTH_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    for host in os.environ.get("GOTRENDLABS_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
     if host.strip()
 ]
 CSRF_TRUSTED_ORIGINS = [
     origin.strip()
-    for origin in os.environ.get("ORYNTH_CSRF_TRUSTED_ORIGINS", "").split(",")
+    for origin in os.environ.get("GOTRENDLABS_CSRF_TRUSTED_ORIGINS", "").split(",")
     if origin.strip()
 ]
 
@@ -70,7 +70,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-if os.environ.get("ORYNTH_USE_SQLITE") == "1":
+if os.environ.get("GOTRENDLABS_USE_SQLITE") == "1":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
@@ -81,9 +81,9 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": os.environ.get("DJANGO_POSTGRES_DB") or os.environ.get("POSTGRES_DB", "orynth"),
-            "USER": os.environ.get("DJANGO_POSTGRES_USER") or os.environ.get("POSTGRES_USER", "orynth"),
-            "PASSWORD": os.environ.get("DJANGO_POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD", "orynth_dev_password"),
+            "NAME": os.environ.get("DJANGO_POSTGRES_DB") or os.environ.get("POSTGRES_DB", "gotrendlabs"),
+            "USER": os.environ.get("DJANGO_POSTGRES_USER") or os.environ.get("POSTGRES_USER", "gotrendlabs"),
+            "PASSWORD": os.environ.get("DJANGO_POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD", "gotrendlabs_dev_password"),
             "HOST": os.environ.get("DJANGO_POSTGRES_HOST") or os.environ.get("POSTGRES_HOST", "127.0.0.1"),
             "PORT": os.environ.get("DJANGO_POSTGRES_PORT") or os.environ.get("POSTGRES_PORT", "5432"),
         }
@@ -111,7 +111,7 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"
 BACKEND_API_URL = os.environ.get("BACKEND_API_URL", "http://127.0.0.1:8001")
-PUBLIC_SHARE_BASE_URL = os.environ.get("ORYNTH_PUBLIC_BASE_URL", "").rstrip("/")
+PUBLIC_SHARE_BASE_URL = os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL", "").rstrip("/")
 RECAPTCHA_SITE_KEY = os.environ.get("RECAPTCHA_SITE_KEY", "")
 RECAPTCHA_SECRET_KEY = os.environ.get("RECAPTCHA_SECRET_KEY", "")
 if "RECAPTCHA_ENABLED" in os.environ:
@@ -120,9 +120,9 @@ else:
     RECAPTCHA_ENABLED = bool(RECAPTCHA_SECRET_KEY)
 
 SYSTEM_LOG_RETENTION_DAYS = int(os.environ.get("SYSTEM_LOG_RETENTION_DAYS", "90"))
-ORYNTH_RUNTIME_CONFIG_PATH = os.environ.get("ORYNTH_RUNTIME_CONFIG_PATH", str(BASE_DIR / ".runtime" / "platform_config.json"))
-ORYNTH_SMTP_PASSWORD = os.environ.get("ORYNTH_SMTP_PASSWORD", "")
-ORYNTH_SMTP_API_KEY = os.environ.get("ORYNTH_SMTP_API_KEY", "")
+GOTRENDLABS_RUNTIME_CONFIG_PATH = os.environ.get("GOTRENDLABS_RUNTIME_CONFIG_PATH", str(BASE_DIR / ".runtime" / "platform_config.json"))
+GOTRENDLABS_SMTP_PASSWORD = os.environ.get("GOTRENDLABS_SMTP_PASSWORD", "")
+GOTRENDLABS_SMTP_API_KEY = os.environ.get("GOTRENDLABS_SMTP_API_KEY", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 
 LOGGING = {

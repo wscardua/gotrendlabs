@@ -45,7 +45,7 @@ def get_system_log_retention_days():
     try:
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT system_log_retention_days FROM orynth_site_config WHERE singleton_key = 1")
+                cursor.execute("SELECT system_log_retention_days FROM gotrendlabs_site_config WHERE singleton_key = 1")
                 row = cursor.fetchone()
                 if row:
                     return _coerce_retention_days(row["system_log_retention_days"], _fallback_system_log_retention_days())
@@ -177,7 +177,7 @@ def log_system_event(
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO orynth_system_logs
+                    INSERT INTO gotrendlabs_system_logs
                         (created_at, expires_at, level, source, logger_name, event_type, message,
                          request_id, method, path, status_code, duration_ms, user_id, ip_address,
                          user_agent, exception_type, stack_trace, context)

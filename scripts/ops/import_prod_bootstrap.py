@@ -126,7 +126,7 @@ def assert_safe_target(data):
 def import_admin(data):
     User = get_user_model()
     user_payload = data["admin"]["user"]
-    password = os.environ.get("ORYNTH_BOOTSTRAP_ADMIN_PASSWORD", "")
+    password = os.environ.get("GOTRENDLABS_BOOTSTRAP_ADMIN_PASSWORD", "")
     existing_email = User.objects.filter(email=user_payload["email"]).exclude(username=user_payload["username"]).first()
     if existing_email:
         raise SystemExit(f"Email {user_payload['email']} is already used by another user.")
@@ -186,9 +186,9 @@ def import_admin(data):
         WalletBalance.objects.update_or_create(
             user=user,
             defaults={
-                "available_oc": wallet.get("available_oc", 0),
-                "locked_oc": wallet.get("locked_oc", 0),
-                "total_earned_oc": wallet.get("total_earned_oc", 0),
+                "available_gtl": wallet.get("available_gtl", 0),
+                "locked_gtl": wallet.get("locked_gtl", 0),
+                "total_earned_gtl": wallet.get("total_earned_gtl", 0),
             },
         )
 
@@ -254,7 +254,7 @@ def import_site_config(data, admin):
     SiteConfig.objects.update_or_create(
         singleton_key=payload.get("singleton_key", 1),
         defaults={
-            "wallet_recharge_min_balance_oc": payload.get("wallet_recharge_min_balance_oc", 100),
+            "wallet_recharge_min_balance_gtl": payload.get("wallet_recharge_min_balance_gtl", 100),
             "daemon_stale_after_minutes": payload.get("daemon_stale_after_minutes", 5),
             "daemon_missing_after_minutes": payload.get("daemon_missing_after_minutes", 15),
             "email_enabled": payload.get("email_enabled", False),
@@ -317,7 +317,7 @@ def import_editorial(data, admin):
                 "primary_outcome": item.get("primary_outcome", ""),
                 "primary_probability_exact": decimal_value(item.get("primary_probability_exact", 0)),
                 "secondary_probability_exact": decimal_value(item.get("secondary_probability_exact", 0)),
-                "volume_oc": item.get("volume_oc", ""),
+                "volume_gtl": item.get("volume_gtl", ""),
                 "participants": item.get("participants", ""),
                 "source": item.get("source", ""),
                 "closes_in": item.get("closes_in", ""),
