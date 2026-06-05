@@ -115,6 +115,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `MarketResponse` expõe `category`, `subcategory`, `event`, `category_notice`, `subcategory_notice` e `event_notice`; cards e detalhe público devem apresentar a trilha `categoria / subcategoria / evento`, enquanto avisos de categoria/subcategoria/evento aparecem apenas no detalhe/ticket, abaixo do critério de resolução, quando preenchidos
 - `MarketResponse` expõe `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para seleção visual, destaque e ordenação client-side
 - `MarketResponse` expõe `comment_count` com a contagem de comentários `visible` para leitura pública nos cards
+- `MarketResponse` público só deve expor `image_url` local (`/media/...`) quando o arquivo existir no armazenamento de mídia do ambiente; contratos administrativos preservam a URL cadastrada para curadoria.
 - Cards da home/feed devem comunicar prazo restante por texto (`closes_in`) e por indicador visual derivado de `created_at`/`close_at`, sem reutilizar probabilidade como progresso de tempo.
 - O indicador de prazo deve hidratar estados visuais `open`, `soon`, `urgent` e `closed`, atualizar periodicamente enquanto a página estiver aberta e manter texto legível para não depender só de cor.
 - `MarketResponse` expõe `view_count` e `share_count` como métricas de popularidade usadas no Admin Ops e na seleção pública de destaques/onboarding
@@ -127,6 +128,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - o modo `Favoritos` usa `viewer_has_favorite` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - o modo `Minhas previsões` usa `viewer_has_prediction` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - controle `Carregar mais` do feed atua sobre a lista filtrada/ordenada no cliente, sem chamada adicional ao backend
+- cards com imagem ausente ou erro de carregamento devem cair para fallback textual (`thumb`) sem renderizar ícone quebrado
 - `GET /stats` expõe métricas públicas da home: `open_markets`, `total_predictions`, `distributed_gtl`, `moved_gtl`, `resolution_sla` e `real_money`
 - a métrica pública `previsões totais` é calculada a partir de `gotrendlabs_predictions` persistidas, sem janela mensal
 - a métrica pública `GT₵ distribuídas` soma créditos positivos registrados no ledger de wallet de usuários comuns, excluindo operadores (`staff`/`superuser`), e é enviada como label pronto para apresentação

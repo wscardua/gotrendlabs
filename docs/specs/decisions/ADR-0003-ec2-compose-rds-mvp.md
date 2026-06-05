@@ -12,6 +12,7 @@ O MVP precisa de deploy simples, barato e auditável, com Django server-rendered
 - A produção MVP roda em uma EC2 pública com Docker Compose.
 - O Compose separa `proxy`, `django`, `fastapi` e `daemon` em serviços distintos.
 - O proxy usa Caddy para terminar HTTPS e servir `/static/` e `/media/`.
+- O volume `mediafiles` é compartilhado por Caddy e Django e montado read-only no FastAPI para validação de mídia local referenciada por payload público.
 - O PostgreSQL de produção fica fora do Compose, em serviço gerenciado como Amazon RDS.
 - O deploy inicial usa o fluxo `git pull` na EC2, build local da imagem, migrations, `collectstatic` e `docker compose up`.
 - Deve existir apenas um container `daemon` por ambiente.

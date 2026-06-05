@@ -31,7 +31,8 @@
 
 ## Implementação atual
 
-- Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Usuários, Categorias, Badge, Mercado, Resolução e Filas; menus secundários duplicados não devem ser renderizados nas telas internas.
+- Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Agentes IA, Usuários, Categorias, Badge, Mercado, Resolução, Filas e Logs; menus secundários duplicados não devem ser renderizados nas telas internas.
+- O topo Admin Ops possui layout próprio, separado do topo público: ações de tema/site público ficam fora da faixa rolável, e a navegação pode rolar/empilhar em larguras intermediárias sem sobrepor `Logs`.
 - Dashboard consome o contrato staff `GET /admin/dashboard-summary` da FastAPI e exibe saúde operacional da plataforma em blocos de KPIs, ação necessária, saúde técnica, engajamento, economia/reputação, top mercados e eventos administrativos recentes.
 - Dashboard exibe indicador `Backend API` em Saúde técnica a partir de uma consulta Django read-only ao `GET /health`, independente do resumo staff, para evidenciar se a API de domínio está online.
 - Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.

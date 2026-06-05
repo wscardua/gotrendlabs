@@ -25,21 +25,22 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260604-GOTRENDLABS-001
 
 - Tipo: `change-feature`
-- Status: `aberto`
+- Status: `concluido`
 - Feature alvo: `FEAT-I18N-001`, `FEAT-WALLET-001`, `FEAT-AUTH-001`, `FEAT-OPSLOG-001`
 - Objetivo: substituir profundamente a identidade da plataforma por GoTrendLabs, com moeda GTL Credits/GT₵ e contratos técnicos `_gtl`
-- Etapa atual: rebrand de código, docs, deploy, migrations de schema e migrations de domínio controlado implementados; validação completa pendente
+- Etapa atual: concluído; rebrand de código, docs, deploy, migrations de schema/domínio controlado, assets GTL, correções de mídia pública, topo Admin Ops e validação local/cloud finalizados em 2026-06-05
 - Artefatos afetados:
   - `backend_api/`, `accounts/`, `markets/`, `admin_ops/`, `agents/`, `system_logs/`
   - `templates/`, `static/css/gotrendlabs.css`, `static/js/gotrendlabs.js`, `static/brand/`
   - `deploy/production/`, `.github/workflows/deploy.yml`, `.env.example`, `.env.prod.example`
   - `docs/specs/`, `tools/skills/gotrendlabs/`
-- Bloqueios: mutações externas reais de GitHub/AWS/produção dependem de validação final e janela operacional
+- Bloqueios: nenhum
 - Iniciado em: 2026-06-04
-- Atualizado em: 2026-06-04
-- Encerrado em: pendente
-- Retomada: executar testes, scan de resíduos, validar migrations em banco restaurado e só então aplicar renames externos de GitHub/AWS
+- Atualizado em: 2026-06-05
+- Encerrado em: 2026-06-05
+- Retomada: acompanhar PR para `main`, GitHub Actions `CI and Deploy` e smoke pós-merge; evoluir i18n por catálogos em workflow futuro
 - Reversão lógica: restaurar backup `git-all-refs.bundle` e dump local criado antes da mudança; em produção, reverter por snapshot RDS e app dir anterior se o deploy for iniciado
+- Evidências de validação: `manage.py check`, `makemigrations --check --dry-run`, suíte completa `129/129` com `--keepdb`, scans de resíduos em código/schema local e cloud, `docker compose config`, containers `gotrendlabs-*` em execução, `maintenance_enabled=False`, `market_thumbnails=39`, `badge_images=30`, domínios `gotrendlabs.com.br`, `www.gotrendlabs.com.br`, `gotrendlabs.com` e `www.gotrendlabs.com` com HTTP 200 e SSL válido.
 
 ## WFLOW-20260528-PUBLIC-COPY-001
 

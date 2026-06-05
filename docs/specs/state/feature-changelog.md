@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-06-05 — GoTrendLabs validação final e ajustes de produção
+
+- Rebrand GoTrendLabs validado localmente e em produção com `manage.py check`, `makemigrations --check --dry-run`, suíte completa `129/129`, scans de resíduos em código/schema e checks HTTP/SSL dos domínios públicos.
+- FastAPI passou a filtrar URLs locais de thumbnail inexistentes em payloads públicos, preservando a URL crua nos contratos Admin Ops; templates públicos possuem fallback textual quando a imagem falha no navegador.
+- Docker Compose de produção passou a montar `mediafiles` também no serviço FastAPI, permitindo que a API valide existência de `/media/...`; volume `gotrendlabs_mediafiles` foi restaurado com thumbnails/badges.
+- Topo do Admin Ops ganhou layout próprio com navegação rolável/empilhável em larguras intermediárias, evitando sobreposição de `Logs` com alternância de tema e `Ver site público`.
+- Produção verificada fora de modo manutenção, com EC2 no commit validado, containers `gotrendlabs-*` em execução, schema ativo sem resíduos antigos e domínios `gotrendlabs.com.br`/`.com` servindo 200 com SSL válido.
+- Status de implementação: `parcial`, com rebrand profundo concluído nesta fatia; internacionalização completa por catálogo permanece fora do escopo.
+
 ## 2026-06-04 — GoTrendLabs deep rebrand
 
 - Plataforma renomeada para `GoTrendLabs` em produto, código, docs, deploy, templates, comandos e skills locais.
