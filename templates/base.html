@@ -5,6 +5,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}GoTrendLabs{% endblock %}</title>
+  <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml" media="(prefers-color-scheme: light)">
+  <link rel="icon" href="{% static 'brand/gtl-constellation-mark-dark.svg' %}?v=20260605-favicon" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+  <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml">
+  <meta name="theme-color" content="#F4F2E9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260604-home-top-breathing">
   {% block extra_head %}{% endblock %}
   <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
