@@ -3,7 +3,7 @@ from django.db import migrations
 
 BOT_IDENTITIES = (
     {
-        "old_username": "@orynth_ai_analyst",
+        "old_username": "@gotrendlabs_ai_analyst",
         "new_username": "@gotrendlabs_ai_analyst",
         "email": "gotrendlabs-ai-analyst@gotrendlabs.com.br",
         "first_name": "GoTrendLabs AI Analyst",
@@ -12,7 +12,7 @@ BOT_IDENTITIES = (
         "agent_type": "analyst",
     },
     {
-        "old_username": "@orynth_ai_liquidity",
+        "old_username": "@gotrendlabs_ai_liquidity",
         "new_username": "@gotrendlabs_ai_liquidity",
         "email": "gotrendlabs-ai-liquidity@gotrendlabs.com.br",
         "first_name": "GoTrendLabs AI Liquidity",

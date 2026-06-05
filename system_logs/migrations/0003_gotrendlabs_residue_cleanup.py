@@ -2,15 +2,15 @@ from django.db import migrations
 
 
 REPLACEMENTS = [
-    ("/Users/williamsca/Documents/orynth", "/Users/williamsca/Documents/gotrendlabs"),
-    ("Orynth Trends", "GoTrendLabs"),
-    ("Orynth Coins", "GTL Credits"),
-    ("Orynth Credits", "GTL Credits"),
-    ("Orynth", "GoTrendLabs"),
-    ("ORYNTH", "GOTRENDLABS"),
-    ("orynth", "gotrendlabs"),
-    ("O₵", "GT₵"),
-    ("_oc", "_gtl"),
+    ("/Users/williamsca/Documents/gotrendlabs", "/Users/williamsca/Documents/gotrendlabs"),
+    ("GoTrendLabs", "GoTrendLabs"),
+    ("GTL Credits", "GTL Credits"),
+    ("GTL Credits", "GTL Credits"),
+    ("GoTrendLabs", "GoTrendLabs"),
+    ("GOTRENDLABS", "GOTRENDLABS"),
+    ("gotrendlabs", "gotrendlabs"),
+    ("GT₵", "GT₵"),
+    ("_gtl", "_gtl"),
 ]
 
 
@@ -38,7 +38,7 @@ def cleanup_schema_identifiers(apps, schema_editor):
                AND (c.conname LIKE %s OR c.conname LIKE %s OR c.conname LIKE %s OR c.conname LIKE %s)
              ORDER BY c.conname
             """,
-            ["%orynth%", "%Orynth%", "%ORYNTH%", "%_oc%"],
+            ["%gotrendlabs%", "%GoTrendLabs%", "%GOTRENDLABS%", "%_gtl%"],
         )
         for old_name, table_name in cursor.fetchall():
             new_name = clean_identifier(old_name)
@@ -70,7 +70,7 @@ def cleanup_schema_identifiers(apps, schema_editor):
                AND (indexname LIKE %s OR indexname LIKE %s OR indexname LIKE %s OR indexname LIKE %s)
              ORDER BY indexname
             """,
-            ["%orynth%", "%Orynth%", "%ORYNTH%", "%_oc%"],
+            ["%gotrendlabs%", "%GoTrendLabs%", "%GOTRENDLABS%", "%_gtl%"],
         )
         for (old_name,) in cursor.fetchall():
             new_name = clean_identifier(old_name)

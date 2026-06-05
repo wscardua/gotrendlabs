@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="siteconfig",
-            name="wallet_recharge_min_balance_oc",
+            name="wallet_recharge_min_balance_gtl",
             field=models.PositiveIntegerField(default=100),
         ),
     ]

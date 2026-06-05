@@ -38,40 +38,40 @@ class Migration(migrations.Migration):
                 ("user", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="system_logs", to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                "db_table": "orynth_system_logs",
+                "db_table": "gotrendlabs_system_logs",
                 "ordering": ["-created_at", "-id"],
             },
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["-created_at", "-id"], name="orynth_sys_created_9652c9_idx"),
+            index=models.Index(fields=["-created_at", "-id"], name="gotrendlabs_sys_created_9652c9_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["expires_at"], name="orynth_sys_expires_376d29_idx"),
+            index=models.Index(fields=["expires_at"], name="gotrendlabs_sys_expires_376d29_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["source", "level", "-created_at"], name="orynth_sys_source__c1423a_idx"),
+            index=models.Index(fields=["source", "level", "-created_at"], name="gotrendlabs_sys_source__c1423a_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["request_id", "-created_at"], name="orynth_sys_request_05fdd2_idx"),
+            index=models.Index(fields=["request_id", "-created_at"], name="gotrendlabs_sys_request_05fdd2_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["user", "-created_at"], name="orynth_sys_user_id_65648e_idx"),
+            index=models.Index(fields=["user", "-created_at"], name="gotrendlabs_sys_user_id_65648e_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["event_type", "-created_at"], name="orynth_sys_event_t_97b621_idx"),
+            index=models.Index(fields=["event_type", "-created_at"], name="gotrendlabs_sys_event_t_97b621_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["status_code", "-created_at"], name="orynth_sys_status__ae46db_idx"),
+            index=models.Index(fields=["status_code", "-created_at"], name="gotrendlabs_sys_status__ae46db_idx"),
         ),
         migrations.AddIndex(
             model_name="systemlog",
-            index=models.Index(fields=["exception_type", "-created_at"], name="orynth_sys_except_79ea7c_idx"),
+            index=models.Index(fields=["exception_type", "-created_at"], name="gotrendlabs_sys_except_79ea7c_idx"),
         ),
     ]

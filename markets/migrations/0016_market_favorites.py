@@ -26,16 +26,16 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "orynth_market_favorites",
+                "db_table": "gotrendlabs_market_favorites",
             },
         ),
         migrations.AddIndex(
             model_name="marketfavorite",
-            index=models.Index(fields=["user", "-created_at"], name="orynth_fav_user_id_8f6c74_idx"),
+            index=models.Index(fields=["user", "-created_at"], name="gtl_fav_user_8f6c74_idx"),
         ),
         migrations.AddIndex(
             model_name="marketfavorite",
-            index=models.Index(fields=["market"], name="orynth_fav_market_0f7d22_idx"),
+            index=models.Index(fields=["market"], name="gtl_fav_mkt_0f7d22_idx"),
         ),
         migrations.AddConstraint(
             model_name="marketfavorite",

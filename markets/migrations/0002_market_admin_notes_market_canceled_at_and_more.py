@@ -45,8 +45,8 @@ class Migration(migrations.Migration):
                 ('actor', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='admin_events', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_admin_events',
-                'indexes': [models.Index(fields=['entity_type', 'entity_identifier', '-created_at'], name='orynth_admi_entity__136fc4_idx'), models.Index(fields=['actor', '-created_at'], name='orynth_admi_actor_i_3e6084_idx')],
+                'db_table': 'gotrendlabs_admin_events',
+                'indexes': [models.Index(fields=['entity_type', 'entity_identifier', '-created_at'], name='gotrendlabs_entity__716833_idx'), models.Index(fields=['actor', '-created_at'], name='gotrendlabs_actor_i_33a282_idx')],
             },
         ),
     ]

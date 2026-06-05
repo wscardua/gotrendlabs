@@ -13,42 +13,42 @@ class Migration(migrations.Migration):
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_created_9652c9_idx',
-            old_name='orynth_sys_created_9652c9_idx',
+            old_name='gotrendlabs_sys_created_9652c9_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_expires_376d29_idx',
-            old_name='orynth_sys_expires_376d29_idx',
+            old_name='gotrendlabs_sys_expires_376d29_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_source_c1423a_idx',
-            old_name='orynth_sys_source__c1423a_idx',
+            old_name='gotrendlabs_sys_source__c1423a_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_request_05fdd2_idx',
-            old_name='orynth_sys_request_05fdd2_idx',
+            old_name='gotrendlabs_sys_request_05fdd2_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_user_65648e_idx',
-            old_name='orynth_sys_user_id_65648e_idx',
+            old_name='gotrendlabs_sys_user_id_65648e_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_event_97b621_idx',
-            old_name='orynth_sys_event_t_97b621_idx',
+            old_name='gotrendlabs_sys_event_t_97b621_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_status_ae46db_idx',
-            old_name='orynth_sys_status__ae46db_idx',
+            old_name='gotrendlabs_sys_status__ae46db_idx',
         ),
         migrations.RenameIndex(
             model_name='systemlog',
             new_name='gtl_sys_except_79ea7c_idx',
-            old_name='orynth_sys_except_79ea7c_idx',
+            old_name='gotrendlabs_sys_except_79ea7c_idx',
         ),
         migrations.AlterModelTable(
             name='systemlog',

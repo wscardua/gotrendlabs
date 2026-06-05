@@ -47,11 +47,11 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "orynth_predictions",
+                "db_table": "gotrendlabs_predictions",
                 "indexes": [
-                    models.Index(fields=["user", "-created_at"], name="orynth_pred_user_id_d7edfb_idx"),
-                    models.Index(fields=["market", "-created_at"], name="orynth_pred_market__b8c9ed_idx"),
-                    models.Index(fields=["market_option"], name="orynth_pred_market__73056c_idx"),
+                    models.Index(fields=["user", "-created_at"], name="gotrendlabs_user_id_f1cb47_idx"),
+                    models.Index(fields=["market", "-created_at"], name="gotrendlabs_market__be6734_idx"),
+                    models.Index(fields=["market_option"], name="gotrendlabs_market__c8f73e_idx"),
                 ],
                 "constraints": [
                     models.UniqueConstraint(fields=("user", "market"), name="uniq_prediction_user_market"),
