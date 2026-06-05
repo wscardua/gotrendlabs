@@ -204,7 +204,7 @@ def _market_initial(market):
         "primary_outcome": market.get("primary_outcome", ""),
         "primary_probability_exact": market.get("primary_probability_exact", 0),
         "secondary_probability_exact": market.get("secondary_probability_exact", 0),
-        "volume_oc": market.get("volume_oc", ""),
+        "volume_gtl": market.get("volume_gtl", ""),
         "participants": market.get("participants", ""),
         "category": market.get("category", ""),
         "subcategory": market.get("subcategory", ""),
@@ -269,9 +269,9 @@ def _empty_market_participants():
             "participants": "0 participantes",
             "human_participants": 0,
             "bot_participants": 0,
-            "human_volume_oc": 0,
-            "bot_volume_oc": 0,
-            "total_volume_oc": 0,
+            "human_volume_gtl": 0,
+            "bot_volume_gtl": 0,
+            "total_volume_gtl": 0,
             "participants_total": 0,
             "human_predictions": 0,
             "bot_predictions": 0,
@@ -479,7 +479,7 @@ def config(request):
     )
     economy_form = EconomyConfigForm(
         request.POST or None,
-        initial={"wallet_recharge_min_balance_oc": site_config.wallet_recharge_min_balance_oc},
+        initial={"wallet_recharge_min_balance_gtl": site_config.wallet_recharge_min_balance_gtl},
         prefix="economy",
     )
     daemon_form = DaemonConfigForm(
@@ -527,7 +527,7 @@ def config(request):
         )
         for field, value in email_form.cleaned_data.items():
             setattr(site_config, field, value)
-        site_config.wallet_recharge_min_balance_oc = economy_form.cleaned_data["wallet_recharge_min_balance_oc"]
+        site_config.wallet_recharge_min_balance_gtl = economy_form.cleaned_data["wallet_recharge_min_balance_gtl"]
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
@@ -539,7 +539,7 @@ def config(request):
         site_config.save()
         messages.success(request, "Configurações atualizadas.")
         return redirect("admin-ops-config")
-    smtp_secret_configured = bool(settings.ORYNTH_SMTP_PASSWORD or settings.ORYNTH_SMTP_API_KEY)
+    smtp_secret_configured = bool(settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY)
     openai_secret_configured = bool(getattr(settings, "OPENAI_API_KEY", "") or os.environ.get("OPENAI_API_KEY"))
     return render(
         request,
@@ -609,7 +609,7 @@ def _ai_agent_initial(agent):
         "comment_style": agent.get("comment_style", ""),
         "max_comments_per_day": agent.get("max_comments_per_day"),
         "max_predictions_per_day": agent.get("max_predictions_per_day"),
-        "max_stake_oc": agent.get("max_stake_oc"),
+        "max_stake_gtl": agent.get("max_stake_gtl"),
         "cooldown_hours": agent.get("cooldown_hours"),
         "min_humans_for_prediction": agent.get("min_humans_for_prediction"),
     }
@@ -629,8 +629,8 @@ def _ai_agent_bot_choices(token, current_agent=None):
         seen_ids.add(user_id)
         handle = user.get("handle") or f"@user-{user_id}"
         display_name = user.get("display_name") or handle
-        balance = user.get("available_oc", 0)
-        choices.append((str(user_id), f"{display_name} ({handle}) · ID {user_id} · {balance} O₵"))
+        balance = user.get("available_gtl", 0)
+        choices.append((str(user_id), f"{display_name} ({handle}) · ID {user_id} · {balance} GT₵"))
     if current_agent and current_agent.get("user_id") and current_agent.get("user_id") not in seen_ids and current_agent.get("user_is_bot"):
         user_id = current_agent["user_id"]
         handle = current_agent.get("user_handle") or f"@user-{user_id}"
@@ -881,7 +881,7 @@ def user_detail(request, user_id):
                         token,
                         user_id,
                         wallet_form.cleaned_data["direction"],
-                        wallet_form.cleaned_data["amount_oc"],
+                        wallet_form.cleaned_data["amount_gtl"],
                         wallet_form.cleaned_data["note"],
                     )
                     messages.success(request, "Ajuste manual de wallet registrado.")
@@ -1546,8 +1546,8 @@ def queue_action(request, action, kind=None, item_id=None):
         review_form = QueueReviewForm(initial={"status": item.get("status", "pending"), "note": item.get("admin_note", "")})
         if kind == "comment":
             review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
-        reward_form = FeedbackRewardForm(initial={"amount_oc": item.get("reward_oc") or 50, "note": item.get("admin_note", "")})
-        recharge_form = WalletRechargeApprovalForm(initial={"amount_oc": item.get("reward_oc") or 250, "note": item.get("admin_note", "")})
+        reward_form = FeedbackRewardForm(initial={"amount_gtl": item.get("reward_gtl") or 50, "note": item.get("admin_note", "")})
+        recharge_form = WalletRechargeApprovalForm(initial={"amount_gtl": item.get("reward_gtl") or 250, "note": item.get("admin_note", "")})
         recharge_reject_form = WalletRechargeRejectForm(initial={"note": item.get("admin_note", "")})
     if request.method == "POST" and item and not error:
         operation = request.POST.get("operation", "review")
@@ -1561,7 +1561,7 @@ def queue_action(request, action, kind=None, item_id=None):
                     admin_approve_wallet_recharge(
                         token,
                         item_id,
-                        recharge_form.cleaned_data["amount_oc"],
+                        recharge_form.cleaned_data["amount_gtl"],
                         recharge_form.cleaned_data.get("note") or "",
                     )
                     messages.success(request, "Recarga educativa aprovada.")
@@ -1594,21 +1594,21 @@ def queue_action(request, action, kind=None, item_id=None):
                 return redirect("admin-ops-moderation")
             if operation == "reward" and kind == "feedback":
                 reward_form = FeedbackRewardForm(request.POST)
-                if item.get("reward_oc"):
+                if item.get("reward_gtl"):
                     error = "Créditos já aprovados para este item."
                     raise AuthAPIError(error, 422)
                 if reward_form.is_valid():
-                    admin_reward_feedback(token, item_id, reward_form.cleaned_data["amount_oc"], reward_form.cleaned_data.get("note") or "")
+                    admin_reward_feedback(token, item_id, reward_form.cleaned_data["amount_gtl"], reward_form.cleaned_data.get("note") or "")
                     messages.success(request, "Feedback recompensado.")
                     return redirect("admin-ops-moderation")
                 error = "Revise a recompensa."
             elif operation == "reward" and kind == "suggestion":
                 reward_form = FeedbackRewardForm(request.POST)
-                if item.get("reward_oc"):
+                if item.get("reward_gtl"):
                     error = "Créditos já aprovados para este item."
                     raise AuthAPIError(error, 422)
                 if reward_form.is_valid():
-                    admin_reward_suggestion(token, item_id, reward_form.cleaned_data["amount_oc"], reward_form.cleaned_data.get("note") or "")
+                    admin_reward_suggestion(token, item_id, reward_form.cleaned_data["amount_gtl"], reward_form.cleaned_data.get("note") or "")
                     messages.success(request, "Sugestão recompensada.")
                     return redirect("admin-ops-moderation")
                 error = "Revise a recompensa."

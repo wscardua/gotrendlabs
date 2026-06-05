@@ -1,0 +1,16 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs educational credits logo</title>
+  <desc id="desc">A stacked internal-credit mark designed for GTL credits and prediction participation.</desc>
+  <rect width="760" height="180" rx="28" fill="#FAFAF6"/>
+  <g transform="translate(35 23)">
+    <ellipse cx="64" cy="38" rx="48" ry="20" fill="#111315"/>
+    <path d="M16 38V91C16 102 38 111 64 111C90 111 112 102 112 91V38" fill="#111315"/>
+    <ellipse cx="64" cy="91" rx="48" ry="20" fill="#111315"/>
+    <ellipse cx="64" cy="38" rx="32" ry="11" fill="#F7F4EC"/>
+    <text x="41" y="80" fill="#F7F4EC" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="26" font-weight="850">GTL</text>
+    <path d="M40 111C53 124 82 124 94 111" stroke="#136F4A" stroke-width="7" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#65706E" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Creditos para participar. Historico para provar.</text>
+  <text x="611" y="98" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">GTL₵</text>
+</svg>

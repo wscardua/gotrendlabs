@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 ("reviewed_by", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="reviewed_suggestions", to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                "db_table": "orynth_market_suggestions",
+                "db_table": "gotrendlabs_market_suggestions",
             },
         ),
         migrations.CreateModel(
@@ -45,7 +45,7 @@ class Migration(migrations.Migration):
                 ("description", models.TextField()),
                 ("status", models.CharField(choices=[("pending", "Pending"), ("reviewed", "Reviewed"), ("rewarded", "Rewarded"), ("rejected", "Rejected")], db_index=True, default="pending", max_length=20)),
                 ("admin_note", models.TextField(blank=True)),
-                ("reward_oc", models.PositiveIntegerField(blank=True, null=True)),
+                ("reward_gtl", models.PositiveIntegerField(blank=True, null=True)),
                 ("reviewed_at", models.DateTimeField(blank=True, null=True)),
                 ("rewarded_at", models.DateTimeField(blank=True, null=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -54,27 +54,27 @@ class Migration(migrations.Migration):
                 ("reviewed_by", models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name="reviewed_feedback", to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                "db_table": "orynth_product_feedback",
+                "db_table": "gotrendlabs_product_feedback",
             },
         ),
         migrations.AddIndex(
             model_name="marketsuggestion",
-            index=models.Index(fields=["status", "-created_at"], name="orynth_mark_status_232638_idx"),
+            index=models.Index(fields=["status", "-created_at"], name="gotrendlabs_status_baab98_idx"),
         ),
         migrations.AddIndex(
             model_name="marketsuggestion",
-            index=models.Index(fields=["author", "-created_at"], name="orynth_mark_author__3604fd_idx"),
+            index=models.Index(fields=["author", "-created_at"], name="gotrendlabs_author__f2b997_idx"),
         ),
         migrations.AddIndex(
             model_name="productfeedback",
-            index=models.Index(fields=["status", "-created_at"], name="orynth_prod_status_55d5ea_idx"),
+            index=models.Index(fields=["status", "-created_at"], name="gotrendlabs_status_4fc908_idx"),
         ),
         migrations.AddIndex(
             model_name="productfeedback",
-            index=models.Index(fields=["severity", "status"], name="orynth_prod_severit_57fcbc_idx"),
+            index=models.Index(fields=["severity", "status"], name="gotrendlabs_severit_361218_idx"),
         ),
         migrations.AddIndex(
             model_name="productfeedback",
-            index=models.Index(fields=["author", "-created_at"], name="orynth_prod_author__b5d962_idx"),
+            index=models.Index(fields=["author", "-created_at"], name="gotrendlabs_author__62f65f_idx"),
         ),
     ]

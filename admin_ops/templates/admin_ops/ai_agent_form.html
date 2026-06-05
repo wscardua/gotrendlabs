@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block title %}Orynth Trends Admin | {{ title }}{% endblock %}
+{% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout ai-agent-editor-page">
   <section>
@@ -118,11 +118,11 @@
             {% if form.max_predictions_per_day.errors %}<small class="field-error">{{ form.max_predictions_per_day.errors|join:", " }}</small>{% endif %}
           </label>
           <label class="field" data-agent-field="prediction">
-            <span>{{ form.max_stake_oc.label }}</span>
-            {{ form.max_stake_oc }}
+            <span>{{ form.max_stake_gtl.label }}</span>
+            {{ form.max_stake_gtl }}
             <small>Stake máximo por previsão deste agente.</small>
             <small class="agent-field-status" data-agent-field-status></small>
-            {% if form.max_stake_oc.errors %}<small class="field-error">{{ form.max_stake_oc.errors|join:", " }}</small>{% endif %}
+            {% if form.max_stake_gtl.errors %}<small class="field-error">{{ form.max_stake_gtl.errors|join:", " }}</small>{% endif %}
           </label>
           <label class="field" data-agent-field="comment">
             <span>{{ form.cooldown_hours.label }}</span>
@@ -154,7 +154,7 @@
         data-predictions-enabled="{{ site_config.ai_predictions_enabled|yesno:'true,false' }}"
         data-global-comments-day="{{ site_config.ai_max_comments_per_day }}"
         data-global-predictions-day="{{ site_config.ai_max_predictions_per_day }}"
-        data-global-stake="{{ site_config.ai_max_stake_oc }}"
+        data-global-stake="{{ site_config.ai_max_stake_gtl }}"
         data-global-cooldown="{{ site_config.ai_market_cooldown_hours }}"
         data-global-min-humans="{{ site_config.ai_min_humans_for_prediction }}"
       >
@@ -244,7 +244,7 @@
       const predictionsDay = numberOr(fieldValue("max_predictions_per_day"), globals.predictionsDay);
       const cooldown = numberOr(fieldValue("cooldown_hours"), globals.cooldown);
       const minHumans = numberOr(fieldValue("min_humans_for_prediction"), globals.minHumans);
-      const stakeRaw = fieldValue("max_stake_oc");
+      const stakeRaw = fieldValue("max_stake_gtl");
       const stake = stakeRaw ? Math.min(numberOr(stakeRaw, globals.stake), globals.stake) : globals.stake;
 
       const typeTitle = {
@@ -271,8 +271,8 @@
       setText("agent-preview-state", blockers.length ? `Bloqueado agora: ${blockers.join(", ")}.` : "Elegível quando o daemon encontrar mercado compatível.");
       setText("agent-preview-user", botUser);
       setText("agent-preview-comments", type === "liquidity" ? "Este tipo não cria comentários; use Analyst para análises públicas." : `Até ${commentsDay} comentário(s)/dia para este agente, com cooldown efetivo de ${cooldown}h por mercado.`);
-      setText("agent-preview-predictions", type === "liquidity" ? `Até ${predictionsDay} previsão(ões)/dia, stake efetivo máximo de ${stake} O₵ e mínimo de ${minHumans} humano(s).` : "Este tipo não cria previsão bot nesta entrega.");
-      setText("agent-preview-globals", `Agentes ${enabledLabel(globals.agents)}, comentários ${enabledLabel(globals.comments)}, previsões bot ${enabledLabel(globals.predictions)}. Globais: ${globals.commentsDay} comentários/dia, ${globals.predictionsDay} previsões/dia, stake ${globals.stake} O₵, ${globals.minHumans} humano(s).`);
+      setText("agent-preview-predictions", type === "liquidity" ? `Até ${predictionsDay} previsão(ões)/dia, stake efetivo máximo de ${stake} GT₵ e mínimo de ${minHumans} humano(s).` : "Este tipo não cria previsão bot nesta entrega.");
+      setText("agent-preview-globals", `Agentes ${enabledLabel(globals.agents)}, comentários ${enabledLabel(globals.comments)}, previsões bot ${enabledLabel(globals.predictions)}. Globais: ${globals.commentsDay} comentários/dia, ${globals.predictionsDay} previsões/dia, stake ${globals.stake} GT₵, ${globals.minHumans} humano(s).`);
     };
 
     const updateFieldAvailability = () => {

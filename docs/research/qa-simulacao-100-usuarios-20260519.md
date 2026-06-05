@@ -53,7 +53,7 @@ Evidencia:
 
 - `POST /auth/register` retornou `422`
 - mensagem: `Confirme que voce nao e um robo.`
-- afetou 100 tentativas com dominio valido `qa-orynth.dev`
+- afetou 100 tentativas com dominio valido `qa-gotrendlabs.dev`
 
 Recomendacao:
 
@@ -66,27 +66,27 @@ Impacto: baixo/medio; `.test` e comum em fixtures, mas o validador Pydantic/Emai
 
 Evidencia:
 
-- `qa_20260519_realops_001@orynth.test` retornou erro de validacao.
+- `qa_20260519_realops_001@gotrendlabs.com.br` retornou erro de validacao.
 - Mensagem tecnica exposta: `The part after the @-sign is a special-use or reserved name...`
 
 Recomendacao:
 
-- Usar dominios de QA nao reservados nas fixtures (`qa-orynth.dev`, por exemplo), ou padronizar gerador local.
+- Usar dominios de QA nao reservados nas fixtures (`qa-gotrendlabs.dev`, por exemplo), ou padronizar gerador local.
 - Melhorar a mensagem de erro exibida para usuario final, evitando texto tecnico em ingles.
 
-### 3. Conceito OC/probabilidade/retorno ainda gera ambiguidade
+### 3. Conceito GTL/probabilidade/retorno ainda gera ambiguidade
 
 Impacto: medio para onboarding e confianca.
 
 Padrao das personas:
 
-- 62 personas apontaram que o fluxo funciona, mas precisa reduzir ambiguidade entre Orynth Coins, probabilidade e retorno.
+- 62 personas apontaram que o fluxo funciona, mas precisa reduzir ambiguidade entre GTL Credits, probabilidade e retorno.
 - 25 personas, especialmente novatos e usuarios apressados, pediram mais orientacao antes de prever.
 
 Recomendacao:
 
 - Adicionar microcopy perto da acao de previsao explicando:
-  - OC nao e dinheiro real;
+  - GTL nao e dinheiro real;
   - probabilidade e consenso atual;
   - retorno estimado e informativo ate a resolucao;
   - stake fica bloqueado no ledger.
@@ -149,8 +149,8 @@ Contratos administrativos responderam `200` com usuario staff sintetico. A rodad
 
 Prefixos usados:
 
-- usuarios comuns: `qa_20260519_seededops-001@qa-orynth.dev` ate `qa_20260519_seededops-100@qa-orynth.dev`
-- staff sintetico: `qa_20260519_seededops-staff@qa-orynth.dev`
+- usuarios comuns: `qa_20260519_seededops-001@qa-gotrendlabs.dev` ate `qa_20260519_seededops-100@qa-gotrendlabs.dev`
+- staff sintetico: `qa_20260519_seededops-staff@qa-gotrendlabs.dev`
 - sugestoes/feedbacks: textos contendo `QA qa_20260519_seededops`
 
 Esses dados ficaram no banco local para auditoria da rodada. Para remover depois, recomenda-se uma limpeza por prefixo/run_id em usuarios, sessoes, sugestoes, feedbacks, comentarios, previsoes e entradas de ledger relacionadas.
@@ -159,7 +159,7 @@ Esses dados ficaram no banco local para auditoria da rodada. Para remover depois
 
 1. Criar mecanismo controlado de seed/cleanup de QA para ambientes locais.
 2. Melhorar mensagem de erro de email invalido para dominios reservados.
-3. Reforcar microcopy de previsao: OC, probabilidade, retorno e stake bloqueado.
+3. Reforcar microcopy de previsao: GTL, probabilidade, retorno e stake bloqueado.
 4. Levar fonte/criterio de resolucao para mais perto da acao de prever.
 5. Adicionar ferramentas basicas de leitura em comentarios.
 6. Criar checklist visual/E2E com navegador para validar estados autenticados renderizados, alem dos contratos API.

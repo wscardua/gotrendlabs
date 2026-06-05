@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block title %}Orynth Trends Admin | Usuários{% endblock %}
+{% block title %}GoTrendLabs Admin | Usuários{% endblock %}
 {% block content %}
 <main class="shell admin-layout user-directory-page">
   <section class="panel user-directory">
@@ -90,7 +90,7 @@
             {% if user.is_bot %}<span class="tag">Bot</span>{% endif %}
           </div>
           <div class="user-row-metrics">
-            <div><span>Saldo</span><strong>{{ user.available_oc }} O₵</strong><small>{{ user.locked_oc }} bloqueado</small></div>
+            <div><span>Saldo</span><strong>{{ user.available_gtl }} GT₵</strong><small>{{ user.locked_gtl }} bloqueado</small></div>
             <div><span>Rep</span><strong>{{ user.reputation_score }}</strong><small>score atual</small></div>
             <div><span>Login</span><strong>{{ user.last_login|default:"-" }}</strong><small>último acesso</small></div>
           </div>

@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_user_profiles',
+                'db_table': 'gotrendlabs_user_profiles',
             },
         ),
         migrations.CreateModel(
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='activities', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_user_activities',
+                'db_table': 'gotrendlabs_user_activities',
             },
         ),
         migrations.CreateModel(
@@ -59,8 +59,8 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='wallet_ledger', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_wallet_ledger',
-                'indexes': [models.Index(fields=['user', '-created_at'], name='orynth_wall_user_id_3c3a21_idx'), models.Index(fields=['entry_type', '-created_at'], name='orynth_wall_entry_t_4414fa_idx')],
+                'db_table': 'gotrendlabs_wallet_ledger',
+                'indexes': [models.Index(fields=['user', '-created_at'], name='gotrendlabs_user_id_33c3db_idx'), models.Index(fields=['entry_type', '-created_at'], name='gotrendlabs_entry_t_431ab3_idx')],
             },
         ),
         migrations.CreateModel(
@@ -76,8 +76,8 @@ class Migration(migrations.Migration):
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='reputation', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_user_reputations',
-                'indexes': [models.Index(fields=['-reputation_score', 'last_updated_at'], name='orynth_user_reputat_aee49b_idx')],
+                'db_table': 'gotrendlabs_user_reputations',
+                'indexes': [models.Index(fields=['-reputation_score', 'last_updated_at'], name='gotrendlabs_reputat_55708c_idx')],
             },
         ),
         migrations.CreateModel(
@@ -92,8 +92,8 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='badges', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_user_badges',
-                'indexes': [models.Index(fields=['user', 'status'], name='orynth_user_user_id_addbce_idx')],
+                'db_table': 'gotrendlabs_user_badges',
+                'indexes': [models.Index(fields=['user', 'status'], name='gotrendlabs_user_id_2fadaf_idx')],
             },
         ),
         migrations.AddConstraint(
@@ -102,6 +102,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='useractivity',
-            index=models.Index(fields=['user', '-occurred_at'], name='orynth_user_user_id_fc18eb_idx'),
+            index=models.Index(fields=['user', '-occurred_at'], name='gotrendlabs_user_id_15ff1f_idx'),
         ),
     ]

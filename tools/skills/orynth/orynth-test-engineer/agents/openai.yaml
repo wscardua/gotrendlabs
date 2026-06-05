@@ -1,7 +1,0 @@
-interface:
-  display_name: "Orynth Test Engineer"
-  short_description: "Testes backend, frontend e regressão"
-  default_prompt: "Use $orynth-test-engineer para implementar, revisar e executar testes concretos de backend, frontend, contratos e fluxos do Orynth."
-
-policy:
-  allow_implicit_invocation: true

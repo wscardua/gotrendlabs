@@ -1,7 +1,0 @@
-interface:
-  display_name: "Orynth Spec Editor"
-  short_description: "Deriva e mantém specs técnicas"
-  default_prompt: "Use $orynth-spec-editor para derivar ou atualizar specs técnicas do Orynth com rastreabilidade e impacto controlado."
-
-policy:
-  allow_implicit_invocation: true

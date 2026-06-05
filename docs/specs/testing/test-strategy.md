@@ -29,4 +29,4 @@ Garantir que cada feature tenha critérios de aceite verificáveis e cobertura s
 - Mudanças que alterem testes de feature devem atualizar `docs/specs/state/feature-changelog.md`.
 - Revisões amplas de testes devem abrir workflow `test-review-cycle`.
 - Uma feature não deve ser marcada como `validada` sem evidência de teste ou pendência documentada.
-- `orynth-test-strategy` define o que deve ser testado; `orynth-test-engineer` transforma isso em testes executáveis e evidência.
+- `gotrendlabs-test-strategy` define o que deve ser testado; `gotrendlabs-test-engineer` transforma isso em testes executáveis e evidência.

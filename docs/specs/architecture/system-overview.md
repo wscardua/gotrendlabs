@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Definir fronteiras estáveis entre as camadas do Orynth Trends para que a implementação orientada por IA mantenha separação clara de responsabilidades.
+Definir fronteiras estáveis entre as camadas do GoTrendLabs para que a implementação orientada por IA mantenha separação clara de responsabilidades.
 
 ## Camadas
 

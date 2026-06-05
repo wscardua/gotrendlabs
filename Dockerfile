@@ -15,9 +15,9 @@ RUN pip install --upgrade pip \
 
 COPY . .
 
-RUN addgroup --system orynth \
-    && adduser --system --ingroup orynth orynth \
+RUN addgroup --system gotrendlabs \
+    && adduser --system --ingroup gotrendlabs gotrendlabs \
     && mkdir -p /app/staticfiles /app/media /app/.runtime \
-    && chown -R orynth:orynth /app
+    && chown -R gotrendlabs:gotrendlabs /app
 
-USER orynth
+USER gotrendlabs

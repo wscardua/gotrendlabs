@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Orynth Trends | Feedback/Suporte{% endblock %}
+{% block title %}GoTrendLabs | Feedback/Suporte{% endblock %}
 {% block extra_head %}{% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}{% endblock %}
 {% block content %}
 <main class="shell hero">
   <section class="panel" style="max-width:860px;margin:auto">
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Feedback da plataforma</span></div>
-    <h1 class="large-title">Ajude a deixar a Orynth Trends mais clara.</h1>
+    <h1 class="large-title">Ajude a deixar a GoTrendLabs mais clara.</h1>
     <p class="lead">Feedbacks úteis melhoram regras, linguagem e confiança. No MVP, contribuições relevantes entram na fila operacional para revisão.</p>
     {% if form_error %}<div class="tag risk">{{ form_error }}</div>{% endif %}
     {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}

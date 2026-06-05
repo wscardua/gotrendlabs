@@ -4,14 +4,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orynth Trends | Login</title>
-  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260521-choice-polish">
-  <script src="{% static 'js/orynth.js' %}?v=20260521-choice-polish" defer></script>
+  <title>GoTrendLabs | Login</title>
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260604-home-top-breathing">
+  <script src="{% static 'js/gotrendlabs.js' %}?v=20260521-choice-polish" defer></script>
 </head>
 <body>
   <header class="topbar">
     <nav class="shell nav">
-      <a class="brand" href="{% url 'home' %}"><span class="brand-mark">O</span><span>Orynth Trends</span></a>
+      <a class="brand" href="{% url 'home' %}" aria-label="GoTrendLabs">
+        <span class="brand-logo" aria-hidden="true">
+          <img class="brand-logo-image brand-logo-light" src="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260604-split-lockup" alt="">
+          <img class="brand-logo-image brand-logo-dark" src="{% static 'brand/gtl-constellation-mark-dark.svg' %}?v=20260604-split-lockup" alt="">
+        </span>
+        <span class="brand-wordmark">GoTrendLabs</span>
+      </a>
       <div class="nav-links">
         <a class="nav-link" href="{% url 'home' %}">Mercados</a>
         <a class="nav-link" href="{% url 'badges' %}">Badges</a>
@@ -33,8 +39,8 @@
         </div>
         <div class="auth-note-list" aria-label="Recursos da conta">
           <div class="auth-note">
-            <strong>O₵ educativa</strong>
-            <span>Crédito usado apenas dentro da experiência Orynth Trends.</span>
+            <strong>GT₵ educativa</strong>
+            <span>Crédito usado apenas dentro da experiência GoTrendLabs.</span>
           </div>
           <div class="auth-note">
             <strong>Reputação</strong>
@@ -81,7 +87,7 @@
             <span class="auth-social-label">X</span>
           </button>
         </div>
-        <p class="auth-disclaimer">Orynth Coins não representam dinheiro real, investimento ou saque financeiro.</p>
+        <p class="auth-disclaimer">GTL Credits não representam dinheiro real, investimento ou saque financeiro.</p>
       </section>
     </div>
   </main>

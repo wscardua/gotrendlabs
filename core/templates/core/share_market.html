@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Orynth Trends | Compartilhar mercado{% endblock %}
+{% block title %}GoTrendLabs | Compartilhar mercado{% endblock %}
 {% block extra_head %}{% include "core/partials/share_meta.html" %}{% endblock %}
 {% block content %}
 <main class="shell hero">
@@ -15,11 +15,11 @@
       </div>
       <div>
         <div class="share-brand-block">
-          <p class="share-brand">Orynth Trends · {{ market.category }}{% if market.event %} · {{ market.event }}{% endif %}</p>
+          <p class="share-brand">GoTrendLabs · {{ market.category }}{% if market.event %} · {{ market.event }}{% endif %}</p>
           <p class="share-context">Consenso público, reputação e resolução auditável.</p>
         </div>
         <h1 class="large-title">{{ market.title }}</h1>
-        <p class="lead">Consenso atual: {{ market.primary_probability }}% {{ market.primary_outcome }} · {{ market.volume_oc }} reservados pela comunidade.</p>
+        <p class="lead">Consenso atual: {{ market.primary_probability }}% {{ market.primary_outcome }} · {{ market.volume_gtl }} reservados pela comunidade.</p>
         <div class="share-option-list" aria-label="Opções do mercado">
           {% for option in market.options %}
             <div class="share-option-row">

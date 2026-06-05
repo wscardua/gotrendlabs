@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs reputation vault logo</title>
+  <desc id="desc">A vault-like identity for accumulated prediction reputation, not financial value.</desc>
+  <rect width="760" height="180" rx="28" fill="#FFFDF7"/>
+  <g transform="translate(33 25)">
+    <rect x="9" y="24" width="112" height="94" rx="24" fill="#111315"/>
+    <circle cx="65" cy="71" r="31" fill="#F7F4EC"/>
+    <path d="M65 45V97M39 71H91" stroke="#111315" stroke-width="7" stroke-linecap="round"/>
+    <path d="M48 54L82 88M82 54L48 88" stroke="#136F4A" stroke-width="6" stroke-linecap="round"/>
+    <path d="M31 24C35 6 95 6 99 24" stroke="#111315" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#65706E" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Reputacao guardada em historico publico.</text>
+  <text x="616" y="98" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">REP</text>
+</svg>

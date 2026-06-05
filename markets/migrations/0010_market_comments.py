@@ -51,12 +51,12 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "orynth_market_comments",
+                "db_table": "gotrendlabs_market_comments",
                 "ordering": ["-created_at", "-id"],
                 "indexes": [
-                    models.Index(fields=["market", "status", "-created_at"], name="orynth_mark_market__f9e441_idx"),
-                    models.Index(fields=["author", "-created_at"], name="orynth_mark_author__e373b2_idx"),
-                    models.Index(fields=["status", "-created_at"], name="orynth_mark_status_1e4f0e_idx"),
+                    models.Index(fields=["market", "status", "-created_at"], name="gtl_mark_mkt_f9e441_idx"),
+                    models.Index(fields=["author", "-created_at"], name="gtl_mark_auth_e373b2_idx"),
+                    models.Index(fields=["status", "-created_at"], name="gtl_mark_stat_1e4f0e_idx"),
                 ],
             },
         ),
@@ -80,10 +80,10 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "orynth_comment_reactions",
+                "db_table": "gotrendlabs_comment_reactions",
                 "indexes": [
-                    models.Index(fields=["comment", "reaction"], name="orynth_comm_comment_e86827_idx"),
-                    models.Index(fields=["user", "-created_at"], name="orynth_comm_user_id_53c6e6_idx"),
+                    models.Index(fields=["comment", "reaction"], name="gtl_comm_cmt_e86827_idx"),
+                    models.Index(fields=["user", "-created_at"], name="gtl_comm_user_53c6e6_idx"),
                 ],
                 "constraints": [
                     models.UniqueConstraint(fields=("comment", "user"), name="uniq_comment_reaction_comment_user"),

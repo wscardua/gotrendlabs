@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs prism logo</title>
+  <desc id="desc">A prism mark turning many public takes into one consensus signal.</desc>
+  <rect width="760" height="180" rx="28" fill="#FAFAF6"/>
+  <g transform="translate(34 28)">
+    <path d="M63 8L118 101H8L63 8Z" fill="#111315"/>
+    <path d="M63 28L98 88H28L63 28Z" fill="#FAFAF6"/>
+    <path d="M16 36H42M12 62H50M15 88H42" stroke="#D84A3A" stroke-width="6" stroke-linecap="round"/>
+    <path d="M86 42L123 25M91 64L128 64M86 87L123 104" stroke="#136F4A" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="63" cy="88" r="8" fill="#2D5E88"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#65706E" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Muitas leituras entram. Um consenso aparece.</text>
+  <text x="628" y="98" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">GTL</text>
+</svg>

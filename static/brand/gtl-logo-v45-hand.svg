@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs hand raise logo</title>
+  <desc id="desc">A human hand mark for public takes, social prediction, and reputation.</desc>
+  <rect width="760" height="180" rx="24" fill="#101214"/>
+  <g transform="translate(36 19)">
+    <path d="M37 61V22C37 14 43 8 51 8C59 8 65 14 65 22V58" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
+    <path d="M65 58V15C65 7 71 1 79 1C87 1 93 7 93 15V68" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round"/>
+    <path d="M93 68V32C93 24 99 18 107 18C115 18 121 24 121 32V75C121 111 100 136 66 136C35 136 14 116 14 86V69C14 61 20 55 28 55C36 55 42 61 42 69V82" stroke="#FFFFFF" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M28 104L48 119L88 82" stroke="#24C06F" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="88" cy="82" r="9" fill="#FFB000"/>
+  </g>
+  <text x="190" y="84" fill="#FFFFFF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="192" y="122" fill="#B8C2BF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Levante sua tese antes da multidao.</text>
+  <text x="630" y="100" fill="#FFFFFF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">TAKE</text>
+</svg>

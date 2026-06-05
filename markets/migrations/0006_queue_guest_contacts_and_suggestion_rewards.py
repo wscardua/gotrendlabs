@@ -22,7 +22,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="marketsuggestion",
-            name="reward_oc",
+            name="reward_gtl",
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AddField(

@@ -1,0 +1,17 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs impact coin logo</title>
+  <desc id="desc">A heavy impact coin mark for internal credits, calls, and reputation.</desc>
+  <rect width="760" height="180" rx="20" fill="#F7F4EC"/>
+  <g transform="translate(26 20)">
+    <circle cx="70" cy="70" r="66" fill="#0B0D10"/>
+    <circle cx="70" cy="70" r="49" fill="#F7F4EC"/>
+    <path d="M45 79L61 50L78 79L97 38" stroke="#0B0D10" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M47 101H96" stroke="#0B0D10" stroke-width="9" stroke-linecap="round"/>
+    <path d="M108 45C95 45 86 56 86 70C86 84 95 95 108 95" stroke="#FF3B30" stroke-width="8" stroke-linecap="round"/>
+    <path d="M31 31L109 109" stroke="#D7FF3F" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="188" y="83" fill="#0B0D10" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="46" font-weight="900">GoTrendLabs</text>
+  <text x="190" y="122" fill="#4C5555" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="750">GTL₵ para prever. Historico para provar.</text>
+  <rect x="607" y="54" width="112" height="66" rx="14" fill="#0B0D10"/>
+  <text x="624" y="98" fill="#D7FF3F" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="28" font-weight="900">GTL₵</text>
+</svg>

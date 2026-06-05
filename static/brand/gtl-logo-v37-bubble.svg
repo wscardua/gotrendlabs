@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs call bubble logo</title>
+  <desc id="desc">A social call bubble mark for public predictions, debate, and consensus.</desc>
+  <rect width="760" height="180" rx="24" fill="#101214"/>
+  <g transform="translate(30 28)">
+    <path d="M62 0C97 0 124 24 124 58C124 92 97 116 62 116H48L18 138L25 106C10 95 0 78 0 58C0 24 27 0 62 0Z" fill="#FFFFFF"/>
+    <path d="M32 65L53 43L69 65L94 35" stroke="#101214" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="94" cy="35" r="10" fill="#FF4D2E"/>
+    <circle cx="31" cy="90" r="9" fill="#24C06F"/>
+  </g>
+  <text x="184" y="84" fill="#FFFFFF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="186" y="122" fill="#B8C2BF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Toda previsao vira uma chamada publica.</text>
+  <text x="626" y="100" fill="#FFFFFF" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">CALL</text>
+</svg>

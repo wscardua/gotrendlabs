@@ -12,7 +12,7 @@ class MarketCategory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_market_categories"
+        db_table = "gotrendlabs_market_categories"
         ordering = ["name"]
 
 
@@ -27,7 +27,7 @@ class MarketSubcategory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_market_subcategories"
+        db_table = "gotrendlabs_market_subcategories"
         ordering = ["category__name", "name"]
         constraints = [
             models.UniqueConstraint(fields=["category", "slug"], name="uniq_market_subcategory_category_slug"),
@@ -45,7 +45,7 @@ class MarketEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_market_events"
+        db_table = "gotrendlabs_market_events"
         ordering = ["subcategory__category__name", "subcategory__name", "name"]
         constraints = [
             models.UniqueConstraint(fields=["subcategory", "slug"], name="uniq_market_event_subcategory_slug"),
@@ -75,7 +75,7 @@ class Market(models.Model):
     primary_outcome = models.CharField(max_length=80)
     primary_probability_exact = models.DecimalField(max_digits=7, decimal_places=4, default=0)
     secondary_probability_exact = models.DecimalField(max_digits=7, decimal_places=4, default=0)
-    volume_oc = models.CharField(max_length=80, blank=True)
+    volume_gtl = models.CharField(max_length=80, blank=True)
     participants = models.CharField(max_length=80, blank=True)
     source = models.CharField(max_length=180, blank=True)
     closes_in = models.CharField(max_length=40, blank=True)
@@ -122,7 +122,7 @@ class Market(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_markets"
+        db_table = "gotrendlabs_markets"
         ordering = ["display_order", "id"]
         indexes = [
             models.Index(fields=["status", "display_order"]),
@@ -151,7 +151,7 @@ class MarketOption(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_market_options"
+        db_table = "gotrendlabs_market_options"
         ordering = ["display_order", "id"]
         constraints = [
             models.UniqueConstraint(fields=["market", "label"], name="uniq_market_option_market_label"),
@@ -178,7 +178,7 @@ class Prediction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_predictions"
+        db_table = "gotrendlabs_predictions"
         indexes = [
             models.Index(fields=["user", "-created_at"]),
             models.Index(fields=["market", "-created_at"]),
@@ -195,10 +195,10 @@ class MarketFavorite(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_market_favorites"
+        db_table = "gotrendlabs_market_favorites"
         indexes = [
-            models.Index(fields=["user", "-created_at"], name="orynth_fav_user_id_8f6c74_idx"),
-            models.Index(fields=["market"], name="orynth_fav_market_0f7d22_idx"),
+            models.Index(fields=["user", "-created_at"], name="gtl_fav_user_8f6c74_idx"),
+            models.Index(fields=["market"], name="gtl_fav_mkt_0f7d22_idx"),
         ]
         constraints = [
             models.UniqueConstraint(fields=["user", "market"], name="uniq_market_favorite_user_market"),
@@ -211,10 +211,10 @@ class MarketLike(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_market_likes"
+        db_table = "gotrendlabs_market_likes"
         indexes = [
-            models.Index(fields=["user", "-created_at"], name="orynth_like_user_id_7d3f2a_idx"),
-            models.Index(fields=["market"], name="orynth_like_market_6b8a91_idx"),
+            models.Index(fields=["user", "-created_at"], name="gtl_like_user_7d3f2a_idx"),
+            models.Index(fields=["market"], name="gtl_like_mkt_6b8a91_idx"),
         ]
         constraints = [
             models.UniqueConstraint(fields=["user", "market"], name="uniq_market_like_user_market"),
@@ -241,12 +241,12 @@ class MarketComment(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_market_comments"
+        db_table = "gotrendlabs_market_comments"
         ordering = ["-created_at", "-id"]
         indexes = [
-            models.Index(fields=["market", "status", "-created_at"], name="orynth_mark_market__f9e441_idx"),
-            models.Index(fields=["author", "-created_at"], name="orynth_mark_author__e373b2_idx"),
-            models.Index(fields=["status", "-created_at"], name="orynth_mark_status_1e4f0e_idx"),
+            models.Index(fields=["market", "status", "-created_at"], name="gtl_mark_mkt_f9e441_idx"),
+            models.Index(fields=["author", "-created_at"], name="gtl_mark_auth_e373b2_idx"),
+            models.Index(fields=["status", "-created_at"], name="gtl_mark_stat_1e4f0e_idx"),
         ]
 
 
@@ -260,10 +260,10 @@ class CommentReaction(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_comment_reactions"
+        db_table = "gotrendlabs_comment_reactions"
         indexes = [
-            models.Index(fields=["comment", "reaction"], name="orynth_comm_comment_e86827_idx"),
-            models.Index(fields=["user", "-created_at"], name="orynth_comm_user_id_53c6e6_idx"),
+            models.Index(fields=["comment", "reaction"], name="gtl_comm_cmt_e86827_idx"),
+            models.Index(fields=["user", "-created_at"], name="gtl_comm_user_53c6e6_idx"),
         ]
         constraints = [
             models.UniqueConstraint(fields=["comment", "user"], name="uniq_comment_reaction_comment_user"),
@@ -291,12 +291,12 @@ class UserNotification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_user_notifications"
+        db_table = "gotrendlabs_user_notifications"
         ordering = ["-created_at", "-id"]
         indexes = [
-            models.Index(fields=["recipient", "is_read", "-created_at"], name="orynth_notif_rec_7f17_idx"),
-            models.Index(fields=["market", "-created_at"], name="orynth_notif_mkt_74d6_idx"),
-            models.Index(fields=["comment", "-created_at"], name="orynth_notif_cmt_6c58_idx"),
+            models.Index(fields=["recipient", "is_read", "-created_at"], name="gtl_notif_rec_7f17_idx"),
+            models.Index(fields=["market", "-created_at"], name="gtl_notif_mkt_74d6_idx"),
+            models.Index(fields=["comment", "-created_at"], name="gtl_notif_cmt_6c58_idx"),
         ]
         constraints = [
             models.UniqueConstraint(fields=["recipient", "source_key"], name="uniq_notification_recipient_source"),
@@ -312,7 +312,7 @@ class AdminEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_admin_events"
+        db_table = "gotrendlabs_admin_events"
         indexes = [
             models.Index(fields=["entity_type", "entity_identifier", "-created_at"]),
             models.Index(fields=["actor", "-created_at"]),
@@ -334,7 +334,7 @@ class MarketSuggestion(models.Model):
     rationale = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
     admin_note = models.TextField(blank=True)
-    reward_oc = models.PositiveIntegerField(null=True, blank=True)
+    reward_gtl = models.PositiveIntegerField(null=True, blank=True)
     converted_market = models.ForeignKey(Market, on_delete=models.SET_NULL, null=True, blank=True, related_name="source_suggestions")
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_suggestions")
     reviewed_at = models.DateTimeField(null=True, blank=True)
@@ -343,7 +343,7 @@ class MarketSuggestion(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_market_suggestions"
+        db_table = "gotrendlabs_market_suggestions"
         indexes = [
             models.Index(fields=["status", "-created_at"]),
             models.Index(fields=["author", "-created_at"]),
@@ -362,7 +362,7 @@ class ProductFeedback(models.Model):
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
     admin_note = models.TextField(blank=True)
-    reward_oc = models.PositiveIntegerField(null=True, blank=True)
+    reward_gtl = models.PositiveIntegerField(null=True, blank=True)
     reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_feedback")
     reviewed_at = models.DateTimeField(null=True, blank=True)
     rewarded_at = models.DateTimeField(null=True, blank=True)
@@ -370,7 +370,7 @@ class ProductFeedback(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_product_feedback"
+        db_table = "gotrendlabs_product_feedback"
         indexes = [
             models.Index(fields=["status", "-created_at"]),
             models.Index(fields=["severity", "status"]),

@@ -73,7 +73,7 @@ Itens enviados entram na fila operacional para revisão por staff.
 - histórico de sugestão precisa ser rastreável
 - visitante pode submeter conteúdo, mas não recebe créditos enquanto não houver usuário associado
 - visitante precisa concluir reCAPTCHA válido quando a proteção estiver habilitada; usuário autenticado não sofre essa fricção em sugestão/feedback
-- recompensa exige usuário cadastrado, valor inteiro positivo em O₵ e item ainda não recompensado
+- recompensa exige usuário cadastrado, valor inteiro positivo em GT₵ e item ainda não recompensado
 - recompensa por feedback ou sugestão não concede reputação
 - conversão em rascunho precisa respeitar validações de mercado e taxonomia existentes
 - staff não autenticado ou usuário não staff recebe bloqueio administrativo
@@ -90,8 +90,8 @@ Itens enviados entram na fila operacional para revisão por staff.
 
 ## Dados e persistência
 
-- sugestão: autor opcional, nome/email guest, pergunta, categoria, subcategoria, tipo interno, fonte, justificativa, status, nota administrativa, recompensa em O₵, mercado convertido opcional, datas de criação/revisão/recompensa
-- feedback: autor opcional, nome/email guest, tipo, severidade interna, descrição, status, nota administrativa, recompensa em O₵, datas de criação/revisão/recompensa
+- sugestão: autor opcional, nome/email guest, pergunta, categoria, subcategoria, tipo interno, fonte, justificativa, status, nota administrativa, recompensa em GT₵, mercado convertido opcional, datas de criação/revisão/recompensa
+- feedback: autor opcional, nome/email guest, tipo, severidade interna, descrição, status, nota administrativa, recompensa em GT₵, datas de criação/revisão/recompensa
 - status canônicos de sugestão: `pending`, `reviewed`, `converted`, `rewarded`, `rejected`
 - status canônicos de feedback: `pending`, `reviewed`, `rewarded`, `rejected`
 
@@ -120,7 +120,7 @@ Itens enviados entram na fila operacional para revisão por staff.
 ## Observabilidade e operação
 
 - medir volume, taxa de aproveitamento, backlog, itens recompensados e conversões em rascunho
-- registrar ações administrativas em `orynth_admin_events`: `suggestion.review`, `suggestion.convert_draft`, `suggestion.reward`, `feedback.review`, `feedback.reward`
+- registrar ações administrativas em `gotrendlabs_admin_events`: `suggestion.review`, `suggestion.convert_draft`, `suggestion.reward`, `feedback.review`, `feedback.reward`
 - eventos de domínio `suggestion.submitted` e `feedback.submitted` permanecem previstos; emissão assíncrona dedicada fica pendente
 
 ## Testes esperados
@@ -131,7 +131,7 @@ Itens enviados entram na fila operacional para revisão por staff.
 - revisão administrativa por staff
 - bloqueio `403` para usuário comum em endpoints admin
 - conversão de sugestão em mercado `draft`
-- recompensa de feedback e sugestão gerando ledger e atualizando `orynth_wallet_balances`
+- recompensa de feedback e sugestão gerando ledger e atualizando `gotrendlabs_wallet_balances`
 - bloqueio de recompensa duplicada, valor inválido e item sem usuário associado
 - smoke tests de formulários públicos e tela de revisão do Admin Ops
 

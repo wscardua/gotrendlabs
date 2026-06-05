@@ -1,7 +1,0 @@
-interface:
-  display_name: "Orynth Ops Scheduler Comms"
-  short_description: "Jobs, eventos e comunicações"
-  default_prompt: "Use $orynth-ops-scheduler-communications para implementar jobs, eventos e comunicações do Orynth com idempotência, rastreabilidade e respeito aos contratos."
-
-policy:
-  allow_implicit_invocation: true

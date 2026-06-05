@@ -1,6 +1,6 @@
 # Lote Editorial Seed de Mercados - 2026-05-21
 
-Este documento registra a memoria versionada do lote editorial criado para povoar a base local de testes da Orynth Trends em 21 de maio de 2026, com adicoes editoriais posteriores quando aprovadas.
+Este documento registra a memoria versionada do lote editorial criado para povoar a base local de testes da GoTrendLabs em 21 de maio de 2026, com adicoes editoriais posteriores quando aprovadas.
 
 ## Decisoes Operacionais
 

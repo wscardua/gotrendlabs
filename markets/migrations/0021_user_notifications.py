@@ -59,21 +59,21 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "orynth_user_notifications",
+                "db_table": "gotrendlabs_user_notifications",
                 "ordering": ["-created_at", "-id"],
             },
         ),
         migrations.AddIndex(
             model_name="usernotification",
-            index=models.Index(fields=["recipient", "is_read", "-created_at"], name="orynth_notif_rec_7f17_idx"),
+            index=models.Index(fields=["recipient", "is_read", "-created_at"], name="gtl_notif_rec_7f17_idx"),
         ),
         migrations.AddIndex(
             model_name="usernotification",
-            index=models.Index(fields=["market", "-created_at"], name="orynth_notif_mkt_74d6_idx"),
+            index=models.Index(fields=["market", "-created_at"], name="gtl_notif_mkt_74d6_idx"),
         ),
         migrations.AddIndex(
             model_name="usernotification",
-            index=models.Index(fields=["comment", "-created_at"], name="orynth_notif_cmt_6c58_idx"),
+            index=models.Index(fields=["comment", "-created_at"], name="gtl_notif_cmt_6c58_idx"),
         ),
         migrations.AddConstraint(
             model_name="usernotification",

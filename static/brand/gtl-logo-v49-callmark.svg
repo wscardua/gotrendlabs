@@ -1,0 +1,12 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs minimal call mark logo</title>
+  <desc id="desc">A minimal call mark for registering a public take before consensus.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(46 35)">
+    <path d="M13 12H98V75H49L14 102V75H13V12Z" fill="#111315"/>
+    <path d="M34 48H77" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="78" cy="48" r="9" fill="#FFFFFF"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#68706F" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="650">Registre sua leitura antes.</text>
+</svg>

@@ -50,7 +50,7 @@
 - Ajuste manual de wallet pode ser aplicado à própria conta do operador staff/superuser; as demais autoações sensíveis continuam bloqueadas.
 - Recuperação de senha deve expor `POST /auth/password-reset/request` e `POST /auth/password-reset/confirm`, armazenando apenas hash do token, expiração e uso único; confirmação revoga sessões ativas.
 - Concessão automática de badge deve ser idempotente e não pode alterar reputação, ranking, wallet ou ledger.
-- A `BadgeAwardEngine` é o ponto único para avaliar regras e persistir conquistas em `orynth_user_badge_awards`; handlers HTTP e ações administrativas devem apenas disparar eventos de domínio.
+- A `BadgeAwardEngine` é o ponto único para avaliar regras e persistir conquistas em `gotrendlabs_user_badge_awards`; handlers HTTP e ações administrativas devem apenas disparar eventos de domínio.
 - Resolução de mercado deve chamar a engine após persistir resultado, reputation delta, streak e ranking derivado dos participantes afetados.
 - Prévia de previsão deve ser calculada pelo backend sem efeitos colaterais; criação de previsão, stake, ledger, probabilidades e payout permanecem mutações exclusivas da FastAPI.
 - Logs técnicos de troubleshooting devem ser expostos por contratos staff em `/admin/system-logs`, preservando redaction de segredos e sem substituir eventos administrativos de domínio.
@@ -58,13 +58,13 @@
 - `GET /admin/dashboard-summary` deve expor resumo agregado para staff com blocos `markets`, `queues`, `users`, `engagement`, `wallet`, `badges`, `system`, `top_markets` e `recent_admin_events`.
 - `GET /health` deve permanecer disponível como healthcheck público read-only e pode ser consumido pelo Admin Ops para indicar se a Backend API está online, sem autenticação e sem efeitos colaterais.
 - O resumo do Dashboard deve usar somente agregações SQL/contagens e janela fixa de 7 dias para métricas recentes, sem recalcular reputação, payout, probabilidade ou regras de domínio.
-- O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `orynth_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
-- Status do daemon deve usar `orynth_site_config.daemon_stale_after_minutes` para `Atrasado` e `orynth_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.
-- `GET /stats` deve expor métricas públicas de leitura para a home, incluindo mercados abertos, previsões totais, `O₵` distribuídas e `O₵` movimentadas, sem efeitos colaterais.
-- `distributed_oc` em `/stats` é agregado a partir de créditos do ledger de wallet de usuários comuns, excluindo `staff` e `superuser`; `moved_oc` é agregado a partir de stakes de previsões registradas.
-- Respostas públicas de moeda podem entregar labels prontos para apresentação com `O₵`, preservando nomes técnicos `_oc` nos contratos.
+- O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `gotrendlabs_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
+- Status do daemon deve usar `gotrendlabs_site_config.daemon_stale_after_minutes` para `Atrasado` e `gotrendlabs_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.
+- `GET /stats` deve expor métricas públicas de leitura para a home, incluindo mercados abertos, previsões totais, `GT₵` distribuídas e `GT₵` movimentadas, sem efeitos colaterais.
+- `distributed_gtl` em `/stats` é agregado a partir de créditos do ledger de wallet de usuários comuns, excluindo `staff` e `superuser`; `moved_gtl` é agregado a partir de stakes de previsões registradas.
+- Respostas públicas de moeda podem entregar labels prontos para apresentação com `GT₵`, preservando nomes técnicos `_gtl` nos contratos.
 - Agentes IA oficiais são orquestrados por serviços backend reutilizáveis; frontend público apenas exibe comentários, selo e métricas serializadas.
 - Prompts seguros de agentes ficam em código backend, personas editáveis ficam em banco e segredos LLM ficam exclusivamente no ambiente.
-- Previsões bot oficiais usam o mesmo fluxo de `Prediction`, ledger e probabilidade por pesos, mas são bloqueadas sem participantes humanos e auditadas em `orynth_ai_agent_actions`.
-- Contratos públicos de mercado devem separar métricas humanas, bot e total; `volume_oc` e `participants` públicos representam humanos.
+- Previsões bot oficiais usam o mesmo fluxo de `Prediction`, ledger e probabilidade por pesos, mas são bloqueadas sem participantes humanos e auditadas em `gotrendlabs_ai_agent_actions`.
+- Contratos públicos de mercado devem separar métricas humanas, bot e total; `volume_gtl` e `participants` públicos representam humanos.
 - Ranking, badges, reputação pública e recompensas devem excluir usuários `is_bot=true`.

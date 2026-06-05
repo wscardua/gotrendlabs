@@ -1,0 +1,16 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs ledger logo</title>
+  <desc id="desc">GoTrendLabs logo with ledger rows and a rising consensus mark.</desc>
+  <rect width="760" height="180" rx="28" fill="#FFFDF7"/>
+  <g transform="translate(36 34)">
+    <rect width="112" height="112" rx="18" fill="#F7F4EC" stroke="#111315" stroke-width="8"/>
+    <path d="M28 34H84" stroke="#DED7C8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M28 56H64" stroke="#DED7C8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M28 78H84" stroke="#DED7C8" stroke-width="8" stroke-linecap="round"/>
+    <path d="M28 76L49 56L65 64L86 36" stroke="#136F4A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="178" y="88" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="800">GoTrendLabs</text>
+  <text x="180" y="124" fill="#667071" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600">Previsoes publicas, reputacao real.</text>
+  <text x="615" y="105" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="36" font-weight="800">GTL</text>
+  <path d="M610 116H694" stroke="#136F4A" stroke-width="8" stroke-linecap="round"/>
+</svg>

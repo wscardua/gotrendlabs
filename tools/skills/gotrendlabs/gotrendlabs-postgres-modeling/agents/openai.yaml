@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Postgres Modeling"
+  short_description: "Modelagem, ledger e integridade"
+  default_prompt: "Use $gotrendlabs-postgres-modeling para definir ou revisar a modelagem PostgreSQL do GoTrendLabs com foco em integridade, ledger e auditabilidade."
+
+policy:
+  allow_implicit_invocation: true

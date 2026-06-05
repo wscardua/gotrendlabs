@@ -35,7 +35,7 @@ class Command(BaseCommand):
                     for market in markets:
                         self.stdout.write(
                             f"DRY-RUN {market['slug']}: {market['open_predictions']} open predictions, "
-                            f"stake {market['stake_amount']} O₵"
+                            f"stake {market['stake_amount']} GT₵"
                         )
                     self.stdout.write(f"DRY-RUN total: {len(markets)} markets, {total_predictions} open predictions.")
                     return
@@ -76,8 +76,8 @@ class Command(BaseCommand):
         cursor.execute(
             f"""
             SELECT m.id, m.slug, COUNT(p.id) AS open_predictions, COALESCE(SUM(p.stake_amount), 0) AS stake_amount
-            FROM orynth_markets m
-            JOIN orynth_predictions p ON p.market_id = m.id
+            FROM gotrendlabs_markets m
+            JOIN gotrendlabs_predictions p ON p.market_id = m.id
             WHERE m.status = 'canceled'
               AND p.status = 'open'
               {slug_filter}

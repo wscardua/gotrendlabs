@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Workflow Governor"
+  short_description: "Governa mudanças multi-documento"
+  default_prompt: "Use $gotrendlabs-workflow-governor para abrir, acompanhar e concluir um workflow de mudança no GoTrendLabs sem deixar specs, testes, contratos ou estado desalinhados."
+
+policy:
+  allow_implicit_invocation: true

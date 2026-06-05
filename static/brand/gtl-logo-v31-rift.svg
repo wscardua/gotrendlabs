@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs rift logo</title>
+  <desc id="desc">A fractured future mark for taking a public position before consensus settles.</desc>
+  <rect width="760" height="180" rx="12" fill="#050505"/>
+  <path d="M0 0H212L154 180H0V0Z" fill="#F4FF00"/>
+  <g transform="translate(29 17)">
+    <path d="M78 0L32 66H64L45 146L114 52H79L78 0Z" fill="#050505"/>
+    <path d="M15 106L55 92L86 113L127 89" stroke="#FF2E63" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="127" cy="89" r="12" fill="#050505"/>
+  </g>
+  <text x="240" y="79" fill="#F7F4EC" font-family="Arial Black, IBM Plex Sans, Inter, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="242" y="122" fill="#F4FF00" font-family="IBM Plex Mono, IBM Plex Sans, Inter, Arial, sans-serif" font-size="17" font-weight="800">BREAK CONSENSUS EARLY</text>
+  <text x="641" y="101" fill="#F7F4EC" font-family="Arial Black, IBM Plex Sans, Inter, Arial, sans-serif" font-size="34" font-weight="900">GTL</text>
+</svg>

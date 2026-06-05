@@ -60,8 +60,8 @@ def _popular_signup_market():
     return {
         **market,
         "display_primary_outcome": _display_outcome(primary_label),
-        "estimated_return_oc": round(SIGNUP_TICKET_STAKE * (100 / primary_probability)),
-        "stake_oc": SIGNUP_TICKET_STAKE,
+        "estimated_return_gtl": round(SIGNUP_TICKET_STAKE * (100 / primary_probability)),
+        "stake_gtl": SIGNUP_TICKET_STAKE,
     }
 
 

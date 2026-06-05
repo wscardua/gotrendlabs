@@ -1,0 +1,16 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs future lens logo</title>
+  <desc id="desc">A lens mark for looking at the future through market consensus.</desc>
+  <rect width="760" height="180" rx="28" fill="#ECF2F1"/>
+  <g transform="translate(34 25)">
+    <circle cx="62" cy="62" r="47" fill="#111315"/>
+    <circle cx="62" cy="62" r="31" fill="#ECF2F1"/>
+    <path d="M40 69C51 47 69 42 88 55" stroke="#D84A3A" stroke-width="7" stroke-linecap="round"/>
+    <path d="M42 82C59 63 79 66 98 88" stroke="#136F4A" stroke-width="7" stroke-linecap="round"/>
+    <path d="M95 95L124 124" stroke="#111315" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="49" cy="53" r="6" fill="#2D5E88"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#5E6B69" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Uma lente social para enxergar tendencias antes.</text>
+  <text x="620" y="98" fill="#2D5E88" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">VIEW</text>
+</svg>

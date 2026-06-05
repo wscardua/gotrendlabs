@@ -32,7 +32,7 @@ class Migration(migrations.Migration):
                 ('updated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='updated_site_configs', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_site_config',
+                'db_table': 'gotrendlabs_site_config',
             },
         ),
         migrations.AddConstraint(

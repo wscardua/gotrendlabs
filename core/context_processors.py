@@ -23,8 +23,8 @@ def session_context(request):
             wallet = get_wallet(auth_token(request))
         except AuthAPIError:
             wallet = _local_wallet(user.get("id"))
-        viewer["balance_oc"] = wallet.get("available_oc", viewer["balance_oc"])
-        viewer["locked_oc"] = wallet.get("locked_oc", viewer["locked_oc"])
+        viewer["balance_gtl"] = wallet.get("available_gtl", viewer["balance_gtl"])
+        viewer["locked_gtl"] = wallet.get("locked_gtl", viewer["locked_gtl"])
         if is_operator:
             viewer["reputation"] = ""
             viewer["accuracy"] = ""
@@ -69,9 +69,9 @@ def _local_wallet(user_id):
     except Exception:
         return {}
     return {
-        "available_oc": balance.available_oc,
-        "locked_oc": balance.locked_oc,
-        "total_earned_oc": balance.total_earned_oc,
+        "available_gtl": balance.available_gtl,
+        "locked_gtl": balance.locked_gtl,
+        "total_earned_gtl": balance.total_earned_gtl,
     }
 
 

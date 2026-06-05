@@ -12,7 +12,7 @@
 - registrada atualização de `scheduler-jobs.md` para explicitar avaliação local de múltiplos mercados e limite de chamadas LLM por ciclo
 - registrada regra de cautela factual do prompt IA para evitar afirmações técnicas específicas, eventos, números, anúncios ou fontes ausentes do contexto do mercado
 - registrada evolução de `FEAT-OPSLOG-001` e `FEAT-AIAGENT-001` para retenção configurável separada de logs técnicos e auditoria IA no Admin Ops
-- registrado que o purge operacional passa a usar `created_at` e o prazo atual de `orynth_site_config`, afetando também registros antigos
+- registrado que o purge operacional passa a usar `created_at` e o prazo atual de `gotrendlabs_site_config`, afetando também registros antigos
 
 ## 2026-05-17
 
@@ -23,21 +23,21 @@
 - adicionadas 4 skills técnicas por stack para Django, FastAPI, Postgres e operações assíncronas/comunicações
 - adicionada governança de workflows para mudanças multi-documento, retomada e reversão lógica
 - reforçada a presença de testes no guia rápido e nas regras de conclusão
-- adicionado índice de skills em `tools/skills/orynth/README.md`
+- adicionado índice de skills em `tools/skills/gotrendlabs/README.md`
 - adicionada revisão de governança em `governance-review.md`
-- adicionadas skills `orynth-software-architect` e `orynth-test-engineer`
+- adicionadas skills `gotrendlabs-software-architect` e `gotrendlabs-test-engineer`
 - workflows e guia atualizados para incluir arquitetura/segurança e testes executáveis
 - registrada implementação parcial de `FEAT-AUTH-001` com backend FastAPI como autoridade de autenticação/sessão e Django como consumidor web
 - registrada evolução de `FEAT-AUTH-001` com aceite obrigatório de política, edição de perfil e exclusão lógica de conta
 - registrada implementação parcial de `FEAT-WALLET-001` e `FEAT-REP-001` com núcleo de usuário persistido em PostgreSQL e exposto pela FastAPI
-- registrada projeção `orynth_wallet_balances` para leitura rápida de saldo sem substituir o ledger auditável
+- registrada projeção `gotrendlabs_wallet_balances` para leitura rápida de saldo sem substituir o ledger auditável
 - registrada implementação parcial de `FEAT-MARKET-001` e `FEAT-MARKET-002` com mercados públicos persistidos em PostgreSQL, expostos pela FastAPI e consumidos pelo Django
 
 ## 2026-05-18
 
 - registrada primeira fatia real do Admin Ops para mercados e taxonomia
 - formalizada proteção por usuário `is_staff=true` nas rotas administrativas
-- documentado cancelamento lógico de mercado e auditoria simples em `orynth_admin_events`
+- documentado cancelamento lógico de mercado e auditoria simples em `gotrendlabs_admin_events`
 - atualizados gaps restantes de admin para separar CRUD básico real de fluxos operacionais ainda pendentes
 - registrada regra de opções por tipo: `binary` fixo `SIM`/`NAO` em `50%`/`50%` e `multiple` com duas ou mais opções distribuídas automaticamente
 - registrado filtro real por status no browse administrativo de mercados
@@ -47,7 +47,7 @@
 - registrado fechamento manual para mercados sem daemon automático, com transição para `locked` e evento `market.lock`
 - registrada resolução manual com `resolved_at`, `resolution_timezone`, payout/reputação, undo operacional e refund total de cancelamento
 - registrada preservação de gráficos de consenso após resolução usando previsões `open` e `resolved`
-- registrado que `close_label` é mensagem pública opcional e que percentuais ficam em `orynth_market_options.probability_exact`
+- registrado que `close_label` é mensagem pública opcional e que percentuais ficam em `gotrendlabs_market_options.probability_exact`
 - registrado vínculo obrigatório entre categoria/subcategoria da taxonomia persistida no editor administrativo de mercado
 - registrada primeira fatia real de filas operacionais para sugestão de mercado e feedback
 - registrado envio autenticado ou guest com nome/email para feedback e sugestão
@@ -100,31 +100,31 @@
 - registrada regra de notificações sociais para mercados participados por previsão: nova previsão, curtida de mercado, comentário e curtida em comentário
 - registrada regra de notificações sistêmicas para crédito recebido, mercado participado fechado/resolvido e badge recebida
 - registrado roteamento contextual do dropdown: badges para `/badges/`, créditos para `/wallet/`, eventos de mercado para o detalhe do mercado e comentários para `#comments`
-- atualizado mapa de integração para refletir JSON runtime de manutenção, `orynth_site_config`, SMTP via ambiente e resumo operacional centralizado na FastAPI
+- atualizado mapa de integração para refletir JSON runtime de manutenção, `gotrendlabs_site_config`, SMTP via ambiente e resumo operacional centralizado na FastAPI
 - registrada `MarketLifecycleEngine` como ponto central do ciclo operacional de mercado no backend
 - registrado `GET /admin/markets/{slug}/resolution-audit` como contrato staff read-only para auditoria de resolução
 - registrado que Admin Ops mostra ação “Auditoria” em mercados resolvidos, com paginação de 10 participantes e legenda de ledger
 - registrada rodada QA hard com 100 usuários simulados em `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`
-- adicionada skill `orynth-prediction-markets` para curadoria assistida de mercados de previsão com dados internos, trends sociais, diversidade, links exatos de verificação e anti-repetição
-- adicionado guia `docs/guides/orynth-prediction-markets-skill.md` para uso da skill de curadoria de mercados
+- adicionada skill `gotrendlabs-prediction-markets` para curadoria assistida de mercados de previsão com dados internos, trends sociais, diversidade, links exatos de verificação e anti-repetição
+- adicionado guia `docs/guides/gotrendlabs-prediction-markets-skill.md` para uso da skill de curadoria de mercados
 
 ## 2026-05-21
 
-- reforçada a skill `orynth-prediction-markets` para exigir validação da fonte de resolução antes de aceitar mercados sugeridos
+- reforçada a skill `gotrendlabs-prediction-markets` para exigir validação da fonte de resolução antes de aceitar mercados sugeridos
 - documentado que a validação pode usar navegador local, browser automation, APIs, web search, ORM, banco ou APIs internas quando necessário
 - adicionado `Status de validacao da fonte` ao formato esperado de mercados sugeridos
 - registrado que operadores (`staff`/`superuser`) não recebem bootstrap público de reputação, wallet inicial, badges ou atividade social
 - registrado que thumbnails de mercado com `image_url` devem ser imagens puras do evento, sem título/texto embutido, mantendo HTML/API como fonte de verdade de metadados
 - documentado o lote editorial seed de 27 mercados em `docs/specs/state/editorial-seed-markets-20260521.md`
-- registrado que `/profile/` usa dados reais de `orynth_user_profiles`, com `display_name` como fonte principal do nome editável
+- registrado que `/profile/` usa dados reais de `gotrendlabs_user_profiles`, com `display_name` como fonte principal do nome editável
 - registrado marcador administrativo `is_bot` restrito a Admin Ops, com filtro, badge, edição auditada e sem exposição pública
 - registrado que ajuste manual de wallet da própria conta é permitido para operadores, mantendo auditoria, enquanto outras autoações sensíveis seguem bloqueadas
-- registrado que `O₵ distribuídas` exclui créditos de `staff` e `superuser`
+- registrado que `GT₵ distribuídas` exclui créditos de `staff` e `superuser`
 - registrado que ticket de previsão não pré-seleciona opção, orienta escolha explícita, usa radio obrigatório e apresenta estado sem saldo disponível
 - registrado que card social de mercado exibe opções/probabilidades e CTA editorial para o detalhe do mercado
 
 ## 2026-05-22
 
-- ampliada a skill `orynth-prediction-markets` para suportar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório de que mercados cripto não caracterizam recomendação de investimento
+- ampliada a skill `gotrendlabs-prediction-markets` para suportar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório de que mercados cripto não caracterizam recomendação de investimento
 - documentado seed DEV de 3 mercados cripto em `docs/specs/state/editorial-seed-markets-20260521.md`, mantendo status `draft`, taxonomia idempotente e thumbs locais autorais
 - documentado lote aprovado `Mercado > Cripto` com aviso no nível da subcategoria, eventos por moeda e comando idempotente `seed_crypto_markets_20260522`

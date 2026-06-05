@@ -1,5 +1,5 @@
 ---
-name: "Orynth Trends"
+name: "GoTrendLabs"
 description: "A calm, trustworthy product UI for social prediction markets with educational credits, public consensus, and reputation."
 colors:
   ink-carbon: "#111315"
@@ -102,7 +102,7 @@ components:
 
 ## 1. Overview
 
-Orynth Trends e uma interface de produto para previsoes sociais. A primeira impressao deve ser de uma rede confiavel para registrar posicoes publicas: mercados visiveis, consenso facil de comparar, acoes diretas e sinais de confianca presentes sem parecer burocracia.
+GoTrendLabs e uma interface de produto para previsoes sociais. A primeira impressao deve ser de uma rede confiavel para registrar posicoes publicas: mercados visiveis, consenso facil de comparar, acoes diretas e sinais de confianca presentes sem parecer burocracia.
 
 O sistema visual deve favorecer usuarios curiosos recorrentes. Eles entram para descobrir perguntas novas, registrar uma previsao, comparar o consenso e voltar para acompanhar reputacao, ranking e badges. A experiencia nao deve parecer cassino, sportsbook, exchange, terminal financeiro ou cripto especulativa.
 

@@ -12,8 +12,8 @@
 - Datas, números e formatações respeitam localidade ativa.
 - Slugs e identificadores não dependem exclusivamente do texto traduzido.
 - Conteúdo de mercado traduzido precisa manter rastreabilidade ao conteúdo base.
-- A marca pública atual da plataforma é `Orynth Trends`; nomes técnicos e históricos não precisam ser renomeados quando forem identificadores, caminhos, tabelas, comandos ou registros legados.
-- A moeda educativa é exibida em textos de produto como `O₵`; nomes técnicos, campos e sufixos internos permanecem como `_oc`.
+- A marca pública atual da plataforma é `GoTrendLabs`; nomes técnicos e históricos não precisam ser renomeados quando forem identificadores, caminhos, tabelas, comandos ou registros legados.
+- A moeda educativa é exibida em textos de produto como `GT₵`; nomes técnicos, campos e sufixos internos permanecem como `_gtl`.
 - Estados técnicos podem ter rótulos públicos diferentes: `locked` deve aparecer para usuários finais como `Em apuração`, preservando `locked`/`Fechado` apenas em contexto técnico, histórico ou operacional.
 
 ## Campos de conteúdo com potencial multilíngue
@@ -29,7 +29,7 @@
 ## Estado atual
 
 - `pt-BR` permanece como idioma base.
-- O branding visível usa `Orynth Trends`; `Orynth Coins` permanece como nome textual da moeda educativa quando aparecer em avisos ou documentação de produto.
+- O branding visível usa `GoTrendLabs`; `GTL Credits` permanece como nome textual da moeda educativa quando aparecer em avisos ou documentação de produto.
 - A copy pública do feed usa `Em alta`, `Abertos`, `Em apuração`, `Prever`, `carteira educativa`, `crédito reservado` e `resolução auditável` como glossário base desta fatia.
 - A primeira UI de comentários usa textos fixos em `pt-BR`; extração completa para catálogos `pt-BR`/`en` fica para `FEAT-I18N-001`.
 - Mensagens de erro de reCAPTCHA permanecem fixas em `pt-BR` nesta fatia; extração para catálogos fica para `FEAT-I18N-001`.

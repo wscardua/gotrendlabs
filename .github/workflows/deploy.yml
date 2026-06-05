@@ -1,4 +1,4 @@
-name: CI and Deploy
+name: GoTrendLabs CI and Deploy
 
 on:
   push:
@@ -17,13 +17,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_DB: orynth
-          POSTGRES_USER: orynth
-          POSTGRES_PASSWORD: orynth_dev_password
+          POSTGRES_DB: gotrendlabs
+          POSTGRES_USER: gotrendlabs
+          POSTGRES_PASSWORD: gotrendlabs_dev_password
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U orynth -d orynth"
+          --health-cmd "pg_isready -U gotrendlabs -d gotrendlabs"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -44,9 +44,9 @@ jobs:
 
       - name: Run test suite
         env:
-          POSTGRES_DB: orynth
-          POSTGRES_USER: orynth
-          POSTGRES_PASSWORD: orynth_dev_password
+          POSTGRES_DB: gotrendlabs
+          POSTGRES_USER: gotrendlabs
+          POSTGRES_PASSWORD: gotrendlabs_dev_password
           POSTGRES_HOST: 127.0.0.1
           POSTGRES_PORT: "5432"
         run: python manage.py test
@@ -117,7 +117,7 @@ jobs:
         id: ssm
         env:
           AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-          APP_DIR: ${{ vars.APP_DIR || '/opt/orynth' }}
+          APP_DIR: ${{ vars.APP_DIR || '/opt/gotrendlabs' }}
           BRANCH: ${{ vars.DEPLOY_BRANCH || 'main' }}
           REPO_URL: ${{ vars.REPO_URL || format('https://github.com/{0}.git', github.repository) }}
           INSTANCE_ID: ${{ vars.AWS_EC2_INSTANCE_ID || secrets.AWS_EC2_INSTANCE_ID }}
@@ -126,7 +126,7 @@ jobs:
             --region "$AWS_REGION" \
             --instance-ids "$INSTANCE_ID" \
             --document-name "AWS-RunShellScript" \
-            --comment "Deploy Orynth from GitHub Actions" \
+            --comment "Deploy GoTrendLabs from GitHub Actions" \
             --parameters commands="[
               \"set -eu\",
               \"export APP_DIR='$APP_DIR'\",

@@ -4,15 +4,21 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orynth Trends | Criar conta</title>
-  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260521-choice-polish">
+  <title>GoTrendLabs | Criar conta</title>
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260604-home-top-breathing">
   {% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}
-  <script src="{% static 'js/orynth.js' %}?v=20260521-choice-polish" defer></script>
+  <script src="{% static 'js/gotrendlabs.js' %}?v=20260521-choice-polish" defer></script>
 </head>
 <body>
   <header class="topbar">
     <nav class="shell nav">
-      <a class="brand" href="{% url 'home' %}"><span class="brand-mark">O</span><span>Orynth Trends</span></a>
+      <a class="brand" href="{% url 'home' %}" aria-label="GoTrendLabs">
+        <span class="brand-logo" aria-hidden="true">
+          <img class="brand-logo-image brand-logo-light" src="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260604-split-lockup" alt="">
+          <img class="brand-logo-image brand-logo-dark" src="{% static 'brand/gtl-constellation-mark-dark.svg' %}?v=20260604-split-lockup" alt="">
+        </span>
+        <span class="brand-wordmark">GoTrendLabs</span>
+      </a>
       <div class="nav-links">
         <a class="nav-link" href="{% url 'home' %}">Mercados</a>
         <a class="nav-link" href="{% url 'badges' %}">Badges</a>
@@ -30,7 +36,7 @@
         <div class="auth-copy">
           <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Nova conta</span></div>
           <h1>Transforme boas previsões em reputação pública.</h1>
-          <p class="lead">A conta habilita previsões com O₵ educativa, comentários, sugestões, carteira educativa, badges e reputação auditável.</p>
+          <p class="lead">A conta habilita previsões com GT₵ educativa, comentários, sugestões, carteira educativa, badges e reputação auditável.</p>
         </div>
         <div class="signup-showcase" aria-label="Prévia do histórico público">
           <section class="signup-ticket">
@@ -39,7 +45,7 @@
                 <span class="tag safe">Mais visitado</span>
                 <small>{{ signup_market.category|default:"IA" }} · {{ signup_market.status_label|default:"Mercado binário" }} · {{ signup_market.view_count|default:0 }} visualizações</small>
               </div>
-              <strong>{{ signup_market.stake_oc|default:80 }} O₵</strong>
+              <strong>{{ signup_market.stake_gtl|default:80 }} GT₵</strong>
             </div>
             <h3>{{ signup_market.title|default:"OpenAI lançará GPT-6 em 2026?" }}</h3>
             <div class="signup-ticket-chart">
@@ -72,7 +78,7 @@
             </div>
             <div class="signup-ticket-foot">
               <span>Escolha: <strong>{{ signup_market.display_primary_outcome|default:"SIM" }}</strong></span>
-              <span>Crédito possível: <strong>{{ signup_market.estimated_return_oc|default:129 }} O₵</strong></span>
+              <span>Crédito possível: <strong>{{ signup_market.estimated_return_gtl|default:129 }} GT₵</strong></span>
             </div>
           </section>
           <section class="signup-badges" aria-label="Badges iniciais bloqueadas">
@@ -96,7 +102,7 @@
         <div class="auth-note-list" aria-label="Pilares da conta">
           <div class="auth-note">
             <strong>0 R$</strong>
-            <span>Orynth Coins não representam dinheiro real, investimento ou saque.</span>
+            <span>GTL Credits não representam dinheiro real, investimento ou saque.</span>
           </div>
           <div class="auth-note">
             <strong>@handle</strong>
@@ -120,7 +126,7 @@
           <div class="field full"><label for="{{ form.email.id_for_label }}">Email</label><input id="{{ form.email.id_for_label }}" name="{{ form.email.name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email">{% if form.email.errors %}<small>{{ form.email.errors|join:", " }}</small>{% endif %}</div>
           <div class="field full"><label for="{{ form.language.id_for_label }}">Idioma</label><select id="{{ form.language.id_for_label }}" name="{{ form.language.name }}"><option value="pt-br" {% if form.language.value == "pt-br" or not form.language.value %}selected{% endif %}>PT-BR</option><option value="en" {% if form.language.value == "en" %}selected{% endif %}>EN</option></select></div>
           <div class="field full"><label for="{{ form.password.id_for_label }}">Senha</label><input id="{{ form.password.id_for_label }}" name="{{ form.password.name }}" type="password" autocomplete="new-password">{% if form.password.errors %}<small>{{ form.password.errors|join:", " }}</small>{% endif %}</div>
-          <div class="field full checkbox-field"><label><input name="{{ form.terms_accepted.name }}" type="checkbox" {% if form.terms_accepted.value %}checked{% endif %}> <span>Aceito a <a class="inline-policy-link" href="{% url 'use-policy' %}" data-open-modal="#use-policy-modal">política de uso</a>, incluindo que Orynth Coins não representam dinheiro real.</span></label>{% if form.terms_accepted.errors %}<small>{{ form.terms_accepted.errors|join:", " }}</small>{% endif %}</div>
+          <div class="field full checkbox-field"><label><input name="{{ form.terms_accepted.name }}" type="checkbox" {% if form.terms_accepted.value %}checked{% endif %}> <span>Aceito a <a class="inline-policy-link" href="{% url 'use-policy' %}" data-open-modal="#use-policy-modal">política de uso</a>, incluindo que GTL Credits não representam dinheiro real.</span></label>{% if form.terms_accepted.errors %}<small>{{ form.terms_accepted.errors|join:", " }}</small>{% endif %}</div>
           {% if recaptcha_enabled and recaptcha_site_key %}<div class="field full recaptcha-field"><div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div></div>{% endif %}
           <button class="btn primary full" type="submit">Criar conta</button>
         </form>
@@ -154,11 +160,11 @@
         <span class="eyebrow">Política de uso</span>
         <button class="modal-close" type="button" data-close-modal aria-label="Fechar política de uso">×</button>
       </div>
-      <h3 id="use-policy-modal-title">Orynth Coins são educativas e não representam dinheiro real.</h3>
+      <h3 id="use-policy-modal-title">GTL Credits são educativas e não representam dinheiro real.</h3>
       <div class="policy-modal-body">
         <p>Ao criar conta, você aceita participar de uma rede social de previsões com crédito educativo, reputação pública e resolução auditável.</p>
         <ul>
-          <li>O₵ não é dinheiro real, investimento, prêmio sacável ou ativo transferível fora da plataforma.</li>
+          <li>GT₵ não é dinheiro real, investimento, prêmio sacável ou ativo transferível fora da plataforma.</li>
           <li>Previsões ficam vinculadas ao seu histórico público e seguem os estados do mercado.</li>
           <li>Comentários, sugestões, feedbacks e contas podem passar por moderação operacional.</li>
           <li>Mercados exigem prazo, opções finitas e critério verificável de resolução.</li>

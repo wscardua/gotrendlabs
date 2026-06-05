@@ -83,7 +83,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - ações em controles de compartilhamento de pergunta/resultado incrementam `share_count` do mercado, sem bloquear navegação quando o tracking falha
 - página social de mercado mostra opções com barras discretas de consenso e CTA clicável `Dispute previsões, construa reputação e ganhe destaque.` direcionando ao detalhe do mercado
 - imagem social dinâmica de mercado inclui resumo das opções principais quando disponível
-- contrato expõe `sparkline_series` e paths SVG derivados de `orynth_predictions`
+- contrato expõe `sparkline_series` e paths SVG derivados de `gotrendlabs_predictions`
 - gráficos de evolução devem preservar histórico após resolução, considerando previsões `resolved` além das `open`
 - Django usa fallback local em Postgres para IDs de opções e campos visuais quando a FastAPI está indisponível ou com payload antigo
 - ticket do detalhe renderiza card de ciclo do mercado e destaque de resultado resolvido usando apenas estado serializado pelo domínio
@@ -98,7 +98,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - comentários vinculados
 - previsões como fonte derivada da evolução visual do consenso
 - contadores denormalizados `view_count` e `share_count` em mercado para leitura operacional rápida
-- curtidas reais em `orynth_market_likes`, com uma curtida por usuário/mercado
+- curtidas reais em `gotrendlabs_market_likes`, com uma curtida por usuário/mercado
 
 ## Contratos afetados
 

@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs orbit logo</title>
+  <desc id="desc">GoTrendLabs logo with an orbit-like consensus path and trend center.</desc>
+  <rect width="760" height="180" rx="28" fill="#111315"/>
+  <g transform="translate(36 34)">
+    <circle cx="56" cy="56" r="48" stroke="#FFFDF7" stroke-width="8"/>
+    <path d="M17 70C38 38 82 31 105 51" stroke="#136F4A" stroke-width="8" stroke-linecap="round"/>
+    <path d="M30 74H51L65 58L84 58" stroke="#FFFDF7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="98" cy="48" r="10" fill="#136F4A"/>
+  </g>
+  <text x="178" y="87" fill="#FFFDF7" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="800">GoTrendLabs</text>
+  <text x="180" y="124" fill="#DED7C8" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600">Acompanhe o consenso antes da virada.</text>
+  <path d="M612 90H700" stroke="#136F4A" stroke-width="10" stroke-linecap="round"/>
+</svg>

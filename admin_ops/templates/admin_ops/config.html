@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block title %}Orynth Trends Admin | Config{% endblock %}
+{% block title %}GoTrendLabs Admin | Config{% endblock %}
 {% block content %}
 <main class="shell admin-layout admin-config-page">
   <section>
@@ -24,7 +24,7 @@
         </div>
         <div>
           <span>Piso recarga</span>
-          <strong>{{ site_config.wallet_recharge_min_balance_oc }} O₵</strong>
+          <strong>{{ site_config.wallet_recharge_min_balance_gtl }} GT₵</strong>
         </div>
         <div>
           <span>Daemon</span>
@@ -128,17 +128,17 @@
             <h2>Recarga de wallet</h2>
             <p>Define quando o usuário pode entrar na fila de recarga educativa. A aprovação e o valor final continuam sob decisão administrativa.</p>
           </div>
-          <span class="config-status is-on">{{ site_config.wallet_recharge_min_balance_oc }} O₵</span>
+          <span class="config-status is-on">{{ site_config.wallet_recharge_min_balance_gtl }} GT₵</span>
         </div>
         <div class="config-controls">
           <label class="field compact-field">
             <span>Saldo máximo para solicitar</span>
-            {{ economy_form.wallet_recharge_min_balance_oc }}
-            {% if economy_form.wallet_recharge_min_balance_oc.errors %}<small>{{ economy_form.wallet_recharge_min_balance_oc.errors|join:", " }}</small>{% endif %}
+            {{ economy_form.wallet_recharge_min_balance_gtl }}
+            {% if economy_form.wallet_recharge_min_balance_gtl.errors %}<small>{{ economy_form.wallet_recharge_min_balance_gtl.errors|join:", " }}</small>{% endif %}
           </label>
           <div class="config-meta">
             <span>Regra ativa</span>
-            <strong>Usuários com saldo disponível até {{ site_config.wallet_recharge_min_balance_oc }} O₵ podem solicitar recarga.</strong>
+            <strong>Usuários com saldo disponível até {{ site_config.wallet_recharge_min_balance_gtl }} GT₵ podem solicitar recarga.</strong>
           </div>
         </div>
       </section>
@@ -177,7 +177,7 @@
           <div>
             <span class="eyebrow">Communications</span>
             <h2>Email SMTP</h2>
-            <p>Dados não sensíveis ficam em <code>orynth_site_config</code>; senha ou API key permanecem no ambiente.</p>
+            <p>Dados não sensíveis ficam em <code>gotrendlabs_site_config</code>; senha ou API key permanecem no ambiente.</p>
           </div>
           <span class="config-status {% if site_config.is_ready_for_delivery and smtp_secret_configured %}is-on{% endif %}">
             {% if site_config.is_ready_for_delivery and smtp_secret_configured %}Pronto{% else %}Pendente{% endif %}
@@ -194,7 +194,7 @@
           <div class="config-secret-card">
             <span>Segredo SMTP</span>
             <strong>{% if smtp_secret_configured %}Configurado por ambiente{% else %}Não configurado{% endif %}</strong>
-            <small>Use ORYNTH_SMTP_PASSWORD ou ORYNTH_SMTP_API_KEY no ambiente. O valor não é exibido nem salvo no banco.</small>
+            <small>Use GOTRENDLABS_SMTP_PASSWORD ou GOTRENDLABS_SMTP_API_KEY no ambiente. O valor não é exibido nem salvo no banco.</small>
           </div>
           <div class="config-form-grid">
             <label class="field">
@@ -292,7 +292,7 @@
             <label class="field compact-field"><span>Comentários/dia</span>{{ ai_form.ai_max_comments_per_day }}<small>Teto global diário para todos os agentes.</small>{% if ai_form.ai_max_comments_per_day.errors %}<small class="field-error">{{ ai_form.ai_max_comments_per_day.errors|join:", " }}</small>{% endif %}</label>
             <label class="field compact-field"><span>Máx. chars comentário</span>{{ ai_form.ai_comment_max_chars }}<small>Tamanho máximo do texto publicado pela IA.</small>{% if ai_form.ai_comment_max_chars.errors %}<small class="field-error">{{ ai_form.ai_comment_max_chars.errors|join:", " }}</small>{% endif %}</label>
             <label class="field compact-field"><span>Mín. humanos previsão</span>{{ ai_form.ai_min_humans_for_prediction }}<small>Bot só prevê após atingir este número de humanos.</small>{% if ai_form.ai_min_humans_for_prediction.errors %}<small class="field-error">{{ ai_form.ai_min_humans_for_prediction.errors|join:", " }}</small>{% endif %}</label>
-            <label class="field compact-field"><span>Stake máximo bot</span>{{ ai_form.ai_max_stake_oc }}<small>Maior stake permitido por previsão oficial bot.</small>{% if ai_form.ai_max_stake_oc.errors %}<small class="field-error">{{ ai_form.ai_max_stake_oc.errors|join:", " }}</small>{% endif %}</label>
+            <label class="field compact-field"><span>Stake máximo bot</span>{{ ai_form.ai_max_stake_gtl }}<small>Maior stake permitido por previsão oficial bot.</small>{% if ai_form.ai_max_stake_gtl.errors %}<small class="field-error">{{ ai_form.ai_max_stake_gtl.errors|join:", " }}</small>{% endif %}</label>
             <label class="field compact-field"><span>Previsões/ciclo</span>{{ ai_form.ai_max_predictions_per_cycle }}<small>Quantas previsões bot podem ocorrer por ciclo daemon.</small>{% if ai_form.ai_max_predictions_per_cycle.errors %}<small class="field-error">{{ ai_form.ai_max_predictions_per_cycle.errors|join:", " }}</small>{% endif %}</label>
             <label class="field compact-field"><span>Previsões/dia</span>{{ ai_form.ai_max_predictions_per_day }}<small>Teto global diário para stakes oficiais bot.</small>{% if ai_form.ai_max_predictions_per_day.errors %}<small class="field-error">{{ ai_form.ai_max_predictions_per_day.errors|join:", " }}</small>{% endif %}</label>
             <label class="field compact-field"><span>Janela comentário humano</span>{{ ai_form.ai_recent_human_comment_window_hours }}<small>Horas usadas para detectar debate humano recente.</small>{% if ai_form.ai_recent_human_comment_window_hours.errors %}<small class="field-error">{{ ai_form.ai_recent_human_comment_window_hours.errors|join:", " }}</small>{% endif %}</label>

@@ -42,7 +42,7 @@ class MarketLifecycleEngine:
         self.validate_publishable(self.cursor, row["id"])
         self.cursor.execute(
             """
-            UPDATE orynth_markets
+            UPDATE gotrendlabs_markets
             SET status = 'open', status_label = 'Aberto', updated_by_id = %s, updated_at = %s
             WHERE id = %s
             """,
@@ -58,7 +58,7 @@ class MarketLifecycleEngine:
             self._undo_resolved_market_predictions(row["id"], slug, now)
             self.cursor.execute(
                 """
-                UPDATE orynth_markets
+                UPDATE gotrendlabs_markets
                 SET status = 'locked',
                     status_label = 'Fechado',
                     winning_option_id = NULL,
@@ -80,7 +80,7 @@ class MarketLifecycleEngine:
         self._assert_no_open_predictions(row["id"], slug)
         self.cursor.execute(
             """
-            UPDATE orynth_markets
+            UPDATE gotrendlabs_markets
             SET status = 'canceled',
                 status_label = 'Cancelado',
                 is_featured = false,
@@ -110,7 +110,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT id, label
-            FROM orynth_market_options
+            FROM gotrendlabs_market_options
             WHERE id = %s
               AND market_id = %s
             """,
@@ -138,7 +138,7 @@ class MarketLifecycleEngine:
             resolution_note = f"{note}\nFonte: {evidence}".strip()
         self.cursor.execute(
             """
-            UPDATE orynth_markets
+            UPDATE gotrendlabs_markets
             SET status = 'resolved',
                 status_label = 'Resolvido',
                 primary_outcome = %s,
@@ -183,7 +183,7 @@ class MarketLifecycleEngine:
         now = datetime.now(timezone.utc)
         self.cursor.execute(
             """
-            UPDATE orynth_markets
+            UPDATE gotrendlabs_markets
             SET status = 'locked',
                 status_label = 'Fechado',
                 admin_notes = %s,
@@ -217,7 +217,7 @@ class MarketLifecycleEngine:
         now = now or datetime.now(timezone.utc)
         self.cursor.execute(
             """
-            UPDATE orynth_markets
+            UPDATE gotrendlabs_markets
             SET status = 'locked',
                 status_label = 'Fechado',
                 admin_notes = %s,
@@ -240,7 +240,7 @@ class MarketLifecycleEngine:
         return self._refund_market_predictions(market_id, slug, now)
 
     def _market_title(self, market_id, fallback):
-        self.cursor.execute("SELECT title FROM orynth_markets WHERE id = %s", (market_id,))
+        self.cursor.execute("SELECT title FROM gotrendlabs_markets WHERE id = %s", (market_id,))
         market = self.cursor.fetchone()
         return (market and market["title"]) or fallback
 
@@ -248,8 +248,8 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT DISTINCT p.user_id
-            FROM orynth_predictions p
-            JOIN orynth_users u ON u.id = p.user_id
+            FROM gotrendlabs_predictions p
+            JOIN gotrendlabs_users u ON u.id = p.user_id
             WHERE p.market_id = %s
               AND u.is_bot = false
             ORDER BY p.user_id ASC
@@ -262,7 +262,7 @@ class MarketLifecycleEngine:
         for recipient_id in self._participant_user_ids(market_id):
             self.cursor.execute(
                 """
-                INSERT INTO orynth_user_notifications
+                INSERT INTO gotrendlabs_user_notifications
                     (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
                 VALUES (%s, %s, %s, NULL, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
                 ON CONFLICT (recipient_id, source_key) DO NOTHING
@@ -285,7 +285,7 @@ class MarketLifecycleEngine:
             """
             SELECT COUNT(*) AS total,
                    COALESCE(SUM(CASE WHEN won = true THEN 1 ELSE 0 END), 0) AS wins
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE user_id = %s
               AND status = 'resolved'
             """,
@@ -306,7 +306,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT reputation_score, streak
-            FROM orynth_user_reputations
+            FROM gotrendlabs_user_reputations
             WHERE user_id = %s
             FOR UPDATE
             """,
@@ -319,11 +319,11 @@ class MarketLifecycleEngine:
         new_streak = current_streak + 1 if won else 0
         self.cursor.execute(
             """
-            UPDATE orynth_user_reputations
+            UPDATE gotrendlabs_user_reputations
             SET reputation_score = %s,
                 resolved_predictions_count = (
                     SELECT COUNT(*)
-                    FROM orynth_predictions
+                    FROM gotrendlabs_predictions
                     WHERE user_id = %s
                       AND status = 'resolved'
                 ),
@@ -340,7 +340,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT probability_at_entry, won
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE user_id = %s
               AND status = 'resolved'
             ORDER BY updated_at ASC, id ASC
@@ -357,7 +357,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT won
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE user_id = %s
               AND status = 'resolved'
             ORDER BY updated_at DESC, id DESC
@@ -372,7 +372,7 @@ class MarketLifecycleEngine:
 
         self.cursor.execute(
             """
-            UPDATE orynth_user_reputations
+            UPDATE gotrendlabs_user_reputations
             SET reputation_score = %s,
                 resolved_predictions_count = %s,
                 accuracy_indicator = %s,
@@ -388,8 +388,8 @@ class MarketLifecycleEngine:
             """
             SELECT p.id, p.user_id, p.market_option_id, p.stake_amount, p.probability_at_entry,
                    p.potential_payout, u.is_bot
-            FROM orynth_predictions p
-            JOIN orynth_users u ON u.id = p.user_id
+            FROM gotrendlabs_predictions p
+            JOIN gotrendlabs_users u ON u.id = p.user_id
             WHERE p.market_id = %s
               AND p.status = 'open'
             ORDER BY p.id ASC
@@ -402,7 +402,7 @@ class MarketLifecycleEngine:
             won = prediction["market_option_id"] == winning_option_id
             self.cursor.execute(
                 """
-                UPDATE orynth_predictions
+                UPDATE gotrendlabs_predictions
                 SET status = 'resolved',
                     won = %s,
                     updated_at = %s
@@ -456,7 +456,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT id, user_id, stake_amount
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE market_id = %s
               AND status = 'open'
             ORDER BY id ASC
@@ -470,7 +470,7 @@ class MarketLifecycleEngine:
         for prediction in predictions:
             self.cursor.execute(
                 """
-                UPDATE orynth_predictions
+                UPDATE gotrendlabs_predictions
                 SET status = 'canceled',
                     won = NULL,
                     updated_at = %s
@@ -481,14 +481,14 @@ class MarketLifecycleEngine:
             self.cursor.execute(
                 """
                 SELECT id
-                FROM orynth_wallet_ledger
+                FROM gotrendlabs_wallet_ledger
                 WHERE reference_type = 'prediction'
                   AND reference_id = %s
                   AND entry_type = 'prediction_refund'
                   AND direction = 'release'
                   AND id > COALESCE((
                       SELECT MAX(id)
-                      FROM orynth_wallet_ledger
+                      FROM gotrendlabs_wallet_ledger
                       WHERE reference_type = 'prediction'
                         AND reference_id = %s
                         AND direction = 'lock'
@@ -522,7 +522,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT COUNT(*) AS count
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE market_id = %s
               AND status = 'open'
             """,
@@ -539,7 +539,7 @@ class MarketLifecycleEngine:
         self.cursor.execute(
             """
             SELECT id, user_id, stake_amount, won
-            FROM orynth_predictions
+            FROM gotrendlabs_predictions
             WHERE market_id = %s
               AND status = 'resolved'
             ORDER BY id ASC
@@ -555,7 +555,7 @@ class MarketLifecycleEngine:
                 self.cursor.execute(
                     """
                     SELECT COALESCE(SUM(amount), 0) AS payout_amount
-                    FROM orynth_wallet_ledger
+                    FROM gotrendlabs_wallet_ledger
                     WHERE reference_type = 'prediction'
                       AND reference_id = %s
                       AND entry_type = 'prediction_payout'
@@ -612,7 +612,7 @@ class MarketLifecycleEngine:
                 )
             self.cursor.execute(
                 """
-                UPDATE orynth_predictions
+                UPDATE gotrendlabs_predictions
                 SET status = 'open',
                     won = NULL,
                     updated_at = %s

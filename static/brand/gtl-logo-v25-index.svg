@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs index mark logo</title>
+  <desc id="desc">A compact index-like mark for prediction score, ranking, consensus, and public reputation.</desc>
+  <rect width="760" height="180" rx="28" fill="#FFFFFF"/>
+  <g transform="translate(34 28)">
+    <rect x="7" y="7" width="114" height="114" rx="21" fill="#111315"/>
+    <path d="M31 88V57M55 88V39M79 88V68M103 88V29" stroke="#F7F4EC" stroke-width="10" stroke-linecap="round"/>
+    <path d="M30 31L54 50L78 36L103 20" stroke="#136F4A" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="54" cy="50" r="7" fill="#D84A3A"/>
+    <circle cx="103" cy="20" r="7" fill="#2D5E88"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#65706E" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Seu indice publico de leitura do futuro.</text>
+  <text x="620" y="98" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">RANK</text>
+</svg>

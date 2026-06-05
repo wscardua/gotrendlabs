@@ -1,0 +1,12 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs minimal monogram logo</title>
+  <desc id="desc">A minimal GTL monogram designed as a strong product icon.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(38 35)">
+    <rect x="0" y="0" width="110" height="110" rx="26" fill="#111315"/>
+    <path d="M29 33H78M29 55H60M29 77H78" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+    <path d="M82 34V77" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#68706F" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="650">Mercados de previsao social.</text>
+</svg>

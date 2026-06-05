@@ -22,7 +22,7 @@ class User(AbstractUser):
     is_bot = models.BooleanField(default=False)
 
     class Meta:
-        db_table = "orynth_users"
+        db_table = "gotrendlabs_users"
 
 
 class AuthSession(models.Model):
@@ -36,7 +36,7 @@ class AuthSession(models.Model):
     user_agent = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = "orynth_auth_sessions"
+        db_table = "gotrendlabs_auth_sessions"
         indexes = [
             models.Index(fields=["token_hash"]),
             models.Index(fields=["user", "revoked_at", "expires_at"]),
@@ -52,7 +52,7 @@ class ExternalIdentity(models.Model):
     last_login_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = "orynth_external_identities"
+        db_table = "gotrendlabs_external_identities"
         constraints = [
             models.UniqueConstraint(fields=["provider", "subject"], name="uniq_external_identity_provider_subject"),
         ]
@@ -79,7 +79,7 @@ class AuthEvent(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_auth_events"
+        db_table = "gotrendlabs_auth_events"
         indexes = [
             models.Index(fields=["event_type", "created_at"]),
             models.Index(fields=["email", "created_at"]),
@@ -96,7 +96,7 @@ class PasswordResetToken(models.Model):
     user_agent = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = "orynth_password_reset_tokens"
+        db_table = "gotrendlabs_password_reset_tokens"
         indexes = [
             models.Index(fields=["token_hash"]),
             models.Index(fields=["user", "used_at", "expires_at"]),
@@ -122,7 +122,7 @@ class UserProfile(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_user_profiles"
+        db_table = "gotrendlabs_user_profiles"
 
 
 class UserReputation(models.Model):
@@ -135,7 +135,7 @@ class UserReputation(models.Model):
     last_updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_user_reputations"
+        db_table = "gotrendlabs_user_reputations"
         indexes = [
             models.Index(fields=["-reputation_score", "last_updated_at"]),
         ]
@@ -155,7 +155,7 @@ class WalletLedgerEntry(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_wallet_ledger"
+        db_table = "gotrendlabs_wallet_ledger"
         indexes = [
             models.Index(fields=["user", "-created_at"]),
             models.Index(fields=["entry_type", "-created_at"]),
@@ -164,13 +164,13 @@ class WalletLedgerEntry(models.Model):
 
 class WalletBalance(models.Model):
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet_balance")
-    available_oc = models.IntegerField(default=0)
-    locked_oc = models.IntegerField(default=0)
-    total_earned_oc = models.IntegerField(default=0)
+    available_gtl = models.IntegerField(default=0)
+    locked_gtl = models.IntegerField(default=0)
+    total_earned_gtl = models.IntegerField(default=0)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_wallet_balances"
+        db_table = "gotrendlabs_wallet_balances"
 
 
 class WalletRechargeRequest(models.Model):
@@ -178,7 +178,7 @@ class WalletRechargeRequest(models.Model):
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="wallet_recharge_requests")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
-    amount_oc = models.PositiveIntegerField(null=True, blank=True)
+    amount_gtl = models.PositiveIntegerField(null=True, blank=True)
     admin_note = models.TextField(blank=True)
     reviewed_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -192,7 +192,7 @@ class WalletRechargeRequest(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_wallet_recharge_requests"
+        db_table = "gotrendlabs_wallet_recharge_requests"
         indexes = [
             models.Index(fields=["status", "-created_at"]),
             models.Index(fields=["user", "-created_at"]),
@@ -217,7 +217,7 @@ class UserBadge(models.Model):
     earned_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        db_table = "orynth_user_badges"
+        db_table = "gotrendlabs_user_badges"
         constraints = [
             models.UniqueConstraint(fields=["user", "code"], name="uniq_user_badge_code"),
         ]
@@ -246,7 +246,7 @@ class BadgeDefinition(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_badge_definitions"
+        db_table = "gotrendlabs_badge_definitions"
         ordering = ["name", "code"]
         indexes = [
             models.Index(fields=["is_active", "badge_type"]),
@@ -276,7 +276,7 @@ class BadgeRule(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        db_table = "orynth_badge_rules"
+        db_table = "gotrendlabs_badge_rules"
         indexes = [
             models.Index(fields=["rule_type", "is_active"]),
         ]
@@ -289,7 +289,7 @@ class UserBadgeAward(models.Model):
     reason_snapshot = models.CharField(max_length=255, blank=True)
 
     class Meta:
-        db_table = "orynth_user_badge_awards"
+        db_table = "gotrendlabs_user_badge_awards"
         constraints = [
             models.UniqueConstraint(fields=["user", "badge"], name="uniq_user_badge_award"),
         ]
@@ -309,7 +309,7 @@ class UserActivity(models.Model):
     occurred_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = "orynth_user_activities"
+        db_table = "gotrendlabs_user_activities"
         indexes = [
             models.Index(fields=["user", "-occurred_at"]),
         ]

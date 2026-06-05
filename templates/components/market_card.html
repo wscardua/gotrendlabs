@@ -6,7 +6,7 @@
   data-market-likes="{{ market.market_like_count|default:0 }}"
   data-market-comments="{{ market.comment_count|default:0 }}"
   data-market-views="{{ market.view_count|default:0 }}"
-  data-market-volume="{{ market.volume_oc }}"
+  data-market-volume="{{ market.volume_gtl }}"
   data-market-created-at="{{ market.created_at }}"
   data-market-close-at="{{ market.close_at }}"
   data-market-status="{{ market.status }}"
@@ -17,9 +17,10 @@
 >
   <div class="thumb" style="--thumb:{{ market.thumb_color }}">
     {% if market.image_url %}
-      <img src="{{ market.image_url }}" alt="" loading="lazy" decoding="async">
+      <img src="{{ market.image_url }}" alt="" loading="lazy" decoding="async" data-thumb-image>
+      <span class="thumb-fallback" hidden>{{ market.thumb|default:"GT" }}</span>
     {% else %}
-      {{ market.thumb|default:"OR" }}
+      <span class="thumb-fallback">{{ market.thumb|default:"GT" }}</span>
     {% endif %}
   </div>
   <div>
@@ -31,7 +32,7 @@
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span>
     </div>
     <div class="mini-stats">
-      <span>{{ market.volume_oc }} reservados</span>
+      <span>{{ market.volume_gtl }} reservados</span>
       <span>{{ market.participants }}</span>
       <span>Fonte: {{ market.source }}</span>
     </div>

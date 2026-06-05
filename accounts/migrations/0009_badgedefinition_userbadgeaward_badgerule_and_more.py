@@ -10,7 +10,7 @@ DEFAULT_BADGES = [
     {
         "code": "founding_member",
         "name": "Membro fundador",
-        "description": "Entrou no Orynth durante a fase inicial.",
+        "description": "Entrou no GoTrendLabs durante a fase inicial.",
         "rule_description": "Concedida ao criar conta na fase inicial.",
         "badge_type": "global",
         "rule_type": "founding_member",
@@ -177,7 +177,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
             options={
-                'db_table': 'orynth_badge_definitions',
+                'db_table': 'gotrendlabs_badge_definitions',
                 'ordering': ['name', 'code'],
             },
         ),
@@ -191,7 +191,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='badge_awards', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_user_badge_awards',
+                'db_table': 'gotrendlabs_user_badge_awards',
             },
         ),
         migrations.CreateModel(
@@ -208,20 +208,20 @@ class Migration(migrations.Migration):
                 ('badge', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='rule', to='accounts.badgedefinition')),
             ],
             options={
-                'db_table': 'orynth_badge_rules',
+                'db_table': 'gotrendlabs_badge_rules',
             },
         ),
         migrations.AddIndex(
             model_name='badgedefinition',
-            index=models.Index(fields=['is_active', 'badge_type'], name='orynth_badg_is_acti_b37fd7_idx'),
+            index=models.Index(fields=['is_active', 'badge_type'], name='gotrendlabs_is_acti_d24ef6_idx'),
         ),
         migrations.AddIndex(
             model_name='userbadgeaward',
-            index=models.Index(fields=['user', '-awarded_at'], name='orynth_user_user_id_59b1e6_idx'),
+            index=models.Index(fields=['user', '-awarded_at'], name='gotrendlabs_user_id_323f8e_idx'),
         ),
         migrations.AddIndex(
             model_name='userbadgeaward',
-            index=models.Index(fields=['badge', '-awarded_at'], name='orynth_user_badge_i_eb1e38_idx'),
+            index=models.Index(fields=['badge', '-awarded_at'], name='gotrendlabs_badge_i_d81c55_idx'),
         ),
         migrations.AddConstraint(
             model_name='userbadgeaward',
@@ -229,7 +229,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='badgerule',
-            index=models.Index(fields=['rule_type', 'is_active'], name='orynth_badg_rule_ty_6ca51a_idx'),
+            index=models.Index(fields=['rule_type', 'is_active'], name='gotrendlabs_rule_ty_6584aa_idx'),
         ),
         migrations.RunPython(seed_badges, migrations.RunPython.noop),
     ]

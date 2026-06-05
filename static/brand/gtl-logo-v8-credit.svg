@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs credit logo</title>
+  <desc id="desc">GoTrendLabs logo integrating an internal credit motif with GTL.</desc>
+  <rect width="760" height="180" rx="28" fill="#F7F4EC"/>
+  <g transform="translate(36 34)">
+    <circle cx="56" cy="56" r="54" fill="#FFFDF7" stroke="#111315" stroke-width="8"/>
+    <text x="27" y="67" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="28" font-weight="850">GTL</text>
+    <path d="M82 31C72 31 64 42 64 56C64 70 72 81 82 81" stroke="#136F4A" stroke-width="7" stroke-linecap="round"/>
+    <path d="M75 45H91" stroke="#136F4A" stroke-width="5" stroke-linecap="round"/>
+    <path d="M75 67H91" stroke="#136F4A" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <text x="178" y="87" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="800">GoTrendLabs</text>
+  <text x="180" y="124" fill="#667071" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="600">Creditos internos para registrar previsoes.</text>
+  <path d="M612 76L639 102L696 54" stroke="#136F4A" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

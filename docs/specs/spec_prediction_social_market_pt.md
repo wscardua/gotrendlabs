@@ -11,7 +11,7 @@
 
 ## Resumo Executivo
 
-O produto é uma aplicação web social onde usuários fazem previsões sobre eventos futuros usando uma moeda interna da plataforma. Nesta spec, a moeda interna adotada para o MVP será `Orynth Coins`. A experiência combina:
+O produto é uma aplicação web social onde usuários fazem previsões sobre eventos futuros usando uma moeda interna da plataforma. Nesta spec, a moeda interna adotada para o MVP será `GTL Credits`. A experiência combina:
 
 - feed de mercados;
 - tomada de posição em mercados binários e de múltipla escolha;
@@ -101,12 +101,12 @@ A experiência voltada ao usuário final deve priorizar tom social, claro e conf
 - previsão ou posição própria antes do consenso mudar;
 - reputação construída por histórico resolvido;
 - badges como sinal público de presença, acertos, ranking e contribuição;
-- O₵ como crédito educativo interno;
+- GT₵ como crédito educativo interno;
 - resolução auditável com fonte verificável.
 
 Na camada pública, termos com forte associação financeira ou de trading devem ser evitados quando houver equivalente mais claro:
 
-- usar `O₵ reservadas`, `crédito reservado` ou `crédito educativo` em vez de `stake`;
+- usar `GT₵ reservadas`, `crédito reservado` ou `crédito educativo` em vez de `stake`;
 - usar `crédito possível se acertar` em vez de `retorno estimado` ou `payout`;
 - usar `carteira educativa` em vez de `wallet`;
 - usar `prever`, `registrar previsão` ou `registrar posição` em vez de chamadas com tom de aposta;
@@ -392,7 +392,7 @@ Entra em um mercado
 ↓
 Escolhe uma opção do mercado
 ↓
-Define stake em `Orynth Coins`
+Define stake em `GTL Credits`
 ↓
 Confirma previsão
 ↓
@@ -400,7 +400,7 @@ Probabilidade do mercado é atualizada
 ↓
 Mercado é resolvido por admin na data apropriada
 ↓
-Saldo em `Orynth Coins` e reputação são recalculados
+Saldo em `GTL Credits` e reputação são recalculados
 ↓
 Usuário acompanha resultado no perfil e ranking
 ```
@@ -460,7 +460,7 @@ Os dois tipos iniciais de mercado são:
 - `binary`: duas opções possíveis, como `SIM` e `NÃO`;
 - `multiple_choice`: três ou mais opções possíveis, com uma única vencedora ao final.
 
-O usuário participa aportando `Orynth Coins` em uma das opções disponíveis. O sistema agrega o peso das previsões e transforma isso em uma probabilidade percebida pelo mercado para cada opção.
+O usuário participa aportando `GTL Credits` em uma das opções disponíveis. O sistema agrega o peso das previsões e transforma isso em uma probabilidade percebida pelo mercado para cada opção.
 
 Essa probabilidade tem três funções:
 
@@ -519,13 +519,13 @@ Para evitar ambiguidade entre saldo, recompensa e extrato, o MVP deve adotar uma
 
 Nome adotado nesta spec:
 
-- `Orynth Coins`
+- `GTL Credits`
 
 Sugestões de naming que podem ser avaliadas depois sem impacto arquitetural:
 
 - `Pulse`
 - `Signals`
-- `Orynth Credits`
+- `GTL Credits`
 - `Insight Coins`
 
 ### Saldo inicial do usuário
@@ -534,47 +534,47 @@ Todo usuário inicia com:
 
 | Campo | Valor inicial |
 |---|---:|
-| `orynth_coins_available` | 1000 |
-| `orynth_coins_locked` | 0 |
+| `gotrendlabs_coins_available` | 1000 |
+| `gotrendlabs_coins_locked` | 0 |
 | `reputation` | 100 |
 
 ### Recarga controlada de moeda interna
 
-Para evitar que o usuário fique permanentemente travado após perder todo o saldo, o sistema deve prever uma recarga controlada de `Orynth Coins`.
+Para evitar que o usuário fique permanentemente travado após perder todo o saldo, o sistema deve prever uma recarga controlada de `GTL Credits`.
 
 Diretriz recomendada para o MVP:
 
-- se o usuário ficar abaixo de um piso mínimo de `Orynth Coins`, pode receber recarga automática;
+- se o usuário ficar abaixo de um piso mínimo de `GTL Credits`, pode receber recarga automática;
 - a recarga deve acontecer no máximo uma vez por janela de tempo;
 - a recarga devolve capacidade de participar, mas não recompõe reputação;
-- a recarga deve ser pequena o suficiente para preservar o valor relativo das `Orynth Coins`.
+- a recarga deve ser pequena o suficiente para preservar o valor relativo das `GTL Credits`.
 
 Exemplo inicial de política:
 
-- se `orynth_coins_available < 100`, conceder `+300` `Orynth Coins`;
+- se `gotrendlabs_coins_available < 100`, conceder `+300` `GTL Credits`;
 - limite de uma recarga por dia.
 
 Objetivo:
 
 - evitar abandono por falta total de saldo;
-- manter `Orynth Coins` como recurso renovável, mas controlado;
+- manter `GTL Credits` como recurso renovável, mas controlado;
 - preservar reputação como sinal meritocrático separado.
 
 ### Indicação e bônus de aquisição
 
-O sistema pode conceder `Orynth Coins` por indicação de novos usuários, desde que o bônus esteja vinculado a ativação real e não apenas ao clique ou cadastro.
+O sistema pode conceder `GTL Credits` por indicação de novos usuários, desde que o bônus esteja vinculado a ativação real e não apenas ao clique ou cadastro.
 
 Diretriz recomendada para o MVP:
 
 - cada usuário recebe link ou código de convite;
 - o convidado deve criar conta e completar uma ação mínima real;
 - o bônus só é liberado após essa ativação;
-- indicação concede `Orynth Coins`, mas nunca reputação.
+- indicação concede `GTL Credits`, mas nunca reputação.
 
 Exemplo inicial de política:
 
-- indicador recebe `+200` `Orynth Coins`;
-- convidado recebe `+100` `Orynth Coins` extras;
+- indicador recebe `+200` `GTL Credits`;
+- convidado recebe `+100` `GTL Credits` extras;
 - gatilho do bônus: conta criada e primeira previsão válida realizada pelo convidado.
 
 Regras de proteção:
@@ -656,7 +656,7 @@ Onde:
 
 ---
 
-## Recompensa em `Orynth Coins`
+## Recompensa em `GTL Credits`
 
 Objetivo da fórmula:
 
@@ -686,10 +686,10 @@ Onde:
 
 ### Observação de produto
 
-Essa fórmula é simples e boa para explicar o sistema, mas pode gerar inflação de `Orynth Coins` se não houver contrapesos. Para o MVP, isso é aceitável desde que existam métricas para acompanhar:
+Essa fórmula é simples e boa para explicar o sistema, mas pode gerar inflação de `GTL Credits` se não houver contrapesos. Para o MVP, isso é aceitável desde que existam métricas para acompanhar:
 
 - distribuição de saldo entre usuários;
-- velocidade de crescimento das `Orynth Coins`;
+- velocidade de crescimento das `GTL Credits`;
 - concentração no topo do ranking.
 
 Se necessário, uma etapa seguinte pode introduzir:
@@ -744,7 +744,7 @@ K_FACTOR = 10
 - reputação mínima: `0`;
 - reputação não deve ficar negativa no MVP;
 - reputação deve ser atualizada apenas na resolução do mercado;
-- ranking principal pode usar reputação, não apenas saldo em `Orynth Coins`.
+- ranking principal pode usar reputação, não apenas saldo em `GTL Credits`.
 
 ---
 
@@ -766,7 +766,7 @@ class User:
     banned_reason: str | None
     referral_code: str | None
     referred_by_user_id: UUID | None
-    last_orynth_coins_refill_at: datetime | None
+    last_gotrendlabs_coins_refill_at: datetime | None
     deletion_requested_at: datetime | None
     deactivated_at: datetime | None
 
@@ -792,7 +792,7 @@ Descrição dos campos:
 - `banned_reason`: justificativa administrativa para bloqueio ou banimento, quando houver.
 - `referral_code`: código público usado para indicar novos usuários.
 - `referred_by_user_id`: usuário responsável pela indicação, quando houver.
-- `last_orynth_coins_refill_at`: data da última recarga automática de `Orynth Coins`.
+- `last_gotrendlabs_coins_refill_at`: data da última recarga automática de `GTL Credits`.
 - `deletion_requested_at`: momento em que o usuário pediu exclusão lógica da conta.
 - `deactivated_at`: momento em que a conta foi efetivamente desativada sem remoção física de dados.
 - `reputation`: pontuação reputacional acumulada com base no desempenho preditivo.
@@ -838,8 +838,8 @@ class ReferralEvent:
     status: str
     # pending | qualified | rewarded | rejected
 
-    referrer_orynth_coins_bonus: int
-    referred_orynth_coins_bonus: int
+    referrer_gotrendlabs_coins_bonus: int
+    referred_gotrendlabs_coins_bonus: int
 
     qualified_at: datetime | None
     rewarded_at: datetime | None
@@ -854,10 +854,10 @@ Descrição dos campos:
 - `referrer_user_id`: usuário que fez a indicação.
 - `referred_user_id`: usuário convidado.
 - `status`: estado do processo de indicação.
-- `referrer_orynth_coins_bonus`: bônus previsto ou entregue ao indicador.
-- `referred_orynth_coins_bonus`: bônus previsto ou entregue ao convidado.
+- `referrer_gotrendlabs_coins_bonus`: bônus previsto ou entregue ao indicador.
+- `referred_gotrendlabs_coins_bonus`: bônus previsto ou entregue ao convidado.
 - `qualified_at`: data em que a indicação cumpriu o critério de ativação.
-- `rewarded_at`: data em que as `Orynth Coins` foram efetivamente creditadas.
+- `rewarded_at`: data em que as `GTL Credits` foram efetivamente creditadas.
 - `rejection_reason`: motivo de invalidação da indicação, quando houver.
 - `created_at`: data de criação do evento.
 
@@ -883,7 +883,7 @@ Descrição dos campos:
 
 - `id`: identificador único da carteira.
 - `user_id`: usuário dono da carteira.
-- `currency_code`: código interno da moeda, como `ORYNTH_COINS`.
+- `currency_code`: código interno da moeda, como `GOTRENDLABS_COINS`.
 - `available_balance`: saldo livre para novas previsões ou recompensas configuradas.
 - `locked_balance`: saldo comprometido em previsões ainda não liquidadas.
 - `lifetime_earned`: total histórico de moeda adquirida pelo usuário.
@@ -949,7 +949,7 @@ class MarketSuggestion:
 
     reviewed_by_user_id: UUID | None
     linked_market_id: UUID | None
-    reward_orynth_coins_granted: int | None
+    reward_gotrendlabs_coins_granted: int | None
     rejection_reason: str | None
 
     created_at: datetime
@@ -970,7 +970,7 @@ Descrição dos campos:
 - `status`: estado da sugestão no fluxo de curadoria.
 - `reviewed_by_user_id`: administrador que revisou a sugestão.
 - `linked_market_id`: mercado publicado gerado a partir da sugestão, se houver.
-- `reward_orynth_coins_granted`: bônus em `Orynth Coins` concedido ao autor quando a sugestão virar mercado.
+- `reward_gotrendlabs_coins_granted`: bônus em `GTL Credits` concedido ao autor quando a sugestão virar mercado.
 - `rejection_reason`: motivo da rejeição, quando aplicável.
 - `created_at`: data de envio da sugestão.
 - `reviewed_at`: data da revisão administrativa.
@@ -1096,7 +1096,7 @@ class Prediction:
     probability_at_entry: float
     weight_at_entry: float
 
-    orynth_coins_delta: int | None
+    gotrendlabs_coins_delta: int | None
     reputation_delta: float | None
     won: bool | None
 
@@ -1116,11 +1116,11 @@ Descrição dos campos:
 - `market_id`: mercado em que a previsão foi feita.
 - `market_option_id`: opção específica escolhida pelo usuário.
 - `choice`: representação simplificada para mercados binários, se ainda mantida.
-- `stake`: quantidade de `Orynth Coins` comprometida na previsão.
+- `stake`: quantidade de `GTL Credits` comprometida na previsão.
 - `user_reputation_at_entry`: reputação do usuário no momento em que entrou no mercado.
 - `probability_at_entry`: probabilidade da opção escolhida no momento da entrada.
 - `weight_at_entry`: peso calculado da previsão no momento da entrada.
-- `orynth_coins_delta`: variação final de `Orynth Coins` causada por essa previsão após a resolução.
+- `gotrendlabs_coins_delta`: variação final de `GTL Credits` causada por essa previsão após a resolução.
 - `reputation_delta`: variação final de reputação causada por essa previsão.
 - `won`: indica se a previsão foi vencedora, perdedora ou ainda não resolvida.
 - `created_at`: data de criação da previsão.
@@ -1193,7 +1193,7 @@ class FeedbackSubmission:
     # pending | reviewed | rewarded | rejected
 
     reviewed_by_user_id: UUID | None
-    reward_orynth_coins_granted: int | None
+    reward_gotrendlabs_coins_granted: int | None
     admin_notes: str | None
 
     created_at: datetime
@@ -1209,7 +1209,7 @@ Descrição dos campos:
 - `body`: conteúdo textual principal do feedback.
 - `status`: estado de revisão e eventual recompensa.
 - `reviewed_by_user_id`: administrador que revisou o feedback.
-- `reward_orynth_coins_granted`: quantidade de `Orynth Coins` concedida se o feedback for recompensado.
+- `reward_gotrendlabs_coins_granted`: quantidade de `GTL Credits` concedida se o feedback for recompensado.
 - `admin_notes`: observações internas da revisão.
 - `created_at`: data do envio.
 - `reviewed_at`: data da análise administrativa.
@@ -1411,7 +1411,7 @@ Regras iniciais:
 - o sistema deve gerar link compartilhável da badge recebida;
 - o compartilhamento deve incluir nome da badge, descrição curta e contexto mínimo;
 - o conteúdo compartilhado deve respeitar idioma e identidade visual da plataforma;
-- compartilhar badge não altera reputação, `Orynth Coins` nem ranking.
+- compartilhar badge não altera reputação, `GTL Credits` nem ranking.
 
 ### Diretriz de produto
 
@@ -1595,7 +1595,7 @@ Observação: a arquitetura deve permitir adicionar outros provedores no futuro 
 - a sugestão não cria mercado automaticamente;
 - a sugestão deve entrar em fila de revisão administrativa;
 - o admin pode aprovar, editar, rejeitar ou transformar a sugestão em mercado publicado;
-- se a sugestão virar mercado publicado, o autor pode receber bônus em `Orynth Coins`;
+- se a sugestão virar mercado publicado, o autor pode receber bônus em `GTL Credits`;
 - bônus por sugestão aprovada nunca concede reputação.
 
 ### Detalhe do mercado
@@ -1612,7 +1612,7 @@ Observação: a arquitetura deve permitir adicionar outros provedores no futuro 
 
 ### Perfil
 
-- exibir carteira com saldo disponível, saldo bloqueado, ganhos, cargas de `Orynth Coins` e extrato;
+- exibir carteira com saldo disponível, saldo bloqueado, ganhos, cargas de `GTL Credits` e extrato;
 - exibir reputação;
 - permitir edição privada e opcional, na própria tela de perfil, de email, idioma, bio, data de nascimento (`birth_date`, formato `YYYY-MM-DD`) e sexo (`male`, `female`, `other`, `prefer_not_to_say`);
 - não expor email, data de nascimento, sexo nem metadados privados no perfil público;
@@ -1668,13 +1668,13 @@ Regras iniciais de curtida:
 
 ### Carteira, recarga e indicação
 
-- o sistema deve prever recarga controlada de `Orynth Coins` para usuários com saldo muito baixo;
-- recarga de `Orynth Coins` não deve alterar reputação;
-- o sistema deve permitir indicação com bônus em `Orynth Coins` condicionado a ativação real do convidado;
+- o sistema deve prever recarga controlada de `GTL Credits` para usuários com saldo muito baixo;
+- recarga de `GTL Credits` não deve alterar reputação;
+- o sistema deve permitir indicação com bônus em `GTL Credits` condicionado a ativação real do convidado;
 - bônus de indicação não deve conceder reputação;
 - a ativação mínima do convidado deve incluir ao menos a primeira previsão válida;
 - o sistema deve prevenir autoindicação e bônus duplicado;
-- o sistema pode conceder `Orynth Coins` por sugestão de mercado publicada;
+- o sistema pode conceder `GTL Credits` por sugestão de mercado publicada;
 - a recompensa por sugestão deve ser menor e mais controlada do que o saldo inicial padrão.
 - o sistema deve manter carteira com saldo disponível e saldo bloqueado;
 - o `stake` de uma previsão deve ser bloqueado imediatamente após a confirmação;
@@ -1686,7 +1686,7 @@ Regras iniciais de curtida:
 - usuários autenticados ou visitantes identificados por nome/email podem enviar feedback para a plataforma;
 - visitantes precisam concluir reCAPTCHA v2 checkbox quando a proteção anti-abuso estiver configurada;
 - feedback deve entrar em fila de revisão administrativa;
-- o admin decide se o feedback é válido, se será recompensado e qual valor de `Orynth Coins` será concedido;
+- o admin decide se o feedback é válido, se será recompensado e qual valor de `GTL Credits` será concedido;
 - recompensa por feedback nunca concede reputação;
 - toda recompensa de feedback deve gerar lançamento rastreável na carteira;
 - o produto deve permitir exposição simples do histórico de feedback do usuário.
@@ -1694,7 +1694,7 @@ Regras iniciais de curtida:
 ### Ranking
 
 - ranking global por reputação;
-- alternativa secundária por saldo ou desempenho em `Orynth Coins`;
+- alternativa secundária por saldo ou desempenho em `GTL Credits`;
 - exibir posição do usuário atual;
 - permitir exibição resumida de badges de destaque.
 
@@ -1713,7 +1713,7 @@ Regras iniciais de curtida:
 - banir usuários;
 - revisar sugestões de mercados enviadas por usuários;
 - revisar feedbacks enviados por usuários;
-- conceder ajustes e recompensas em `Orynth Coins` quando permitido;
+- conceder ajustes e recompensas em `GTL Credits` quando permitido;
 - registrar fonte pública da resolução.
 
 ### Interface administrativa do MVP
@@ -1748,7 +1748,7 @@ Capacidades mínimas esperadas:
 - revisar fila de sugestões de mercado;
 - aprovar, editar, rejeitar ou publicar sugestões de usuários;
 - vincular sugestão aprovada ao mercado publicado;
-- conceder ou confirmar bônus em `Orynth Coins` ao autor da sugestão publicada;
+- conceder ou confirmar bônus em `GTL Credits` ao autor da sugestão publicada;
 - revisar fila de feedbacks;
 - marcar feedback como recompensado, rejeitado ou apenas revisado;
 - definir o valor da recompensa de feedback quando aplicável;
@@ -1760,7 +1760,7 @@ Visão operacional mínima esperada no painel:
 - total de usuários ativos em janela configurável;
 - total de mercados criados, abertos, fechados, resolvidos e cancelados;
 - total de previsões registradas;
-- volume total de `Orynth Coins` negociadas;
+- volume total de `GTL Credits` negociadas;
 - total de contratos ou posições negociadas;
 - fila de sugestões pendentes;
 - fila de feedbacks pendentes;
@@ -2006,7 +2006,7 @@ Responsabilidades:
 - listar sugestões do próprio usuário;
 - permitir revisão administrativa;
 - vincular sugestão aprovada a mercado publicado;
-- controlar concessão de bônus em `Orynth Coins` quando a sugestão for publicada.
+- controlar concessão de bônus em `GTL Credits` quando a sugestão for publicada.
 
 ### Feedback
 
@@ -2024,7 +2024,7 @@ Responsabilidades:
 - validar reCAPTCHA para visitante quando configurado;
 - listar histórico do próprio usuário;
 - permitir análise administrativa;
-- permitir configuração manual de recompensa por feedback válido em `Orynth Coins`;
+- permitir configuração manual de recompensa por feedback válido em `GTL Credits`;
 - registrar o crédito correspondente na carteira.
 
 ### Comments
@@ -2100,7 +2100,7 @@ GET /rankings
 Responsabilidades:
 
 - expor ranking por reputação;
-- permitir variações futuras por saldo em `Orynth Coins` ou outros filtros.
+- permitir variações futuras por saldo em `GTL Credits` ou outros filtros.
 
 ### Páginas Django previstas
 
@@ -2168,7 +2168,7 @@ Mercado passa a exibir resultado final
 
 ### Qualidade do sistema
 
-- distribuição de `Orynth Coins`;
+- distribuição de `GTL Credits`;
 - distribuição de reputação;
 - concentração de previsões por categoria;
 - taxa de mercados resolvidos no prazo;
@@ -2195,7 +2195,7 @@ Mercado passa a exibir resultado final
 - entrar em mercado;
 - enviar previsão válida em mercado binário;
 - enviar previsão válida em mercado de múltipla escolha;
-- receber recarga de `Orynth Coins` quando elegível;
+- receber recarga de `GTL Credits` quando elegível;
 - indicar usuário e receber bônus quando a ativação for válida;
 - sugerir pergunta e receber bônus se ela virar mercado publicado;
 - enviar feedback e receber recompensa quando aprovado;
@@ -2208,7 +2208,7 @@ Mercado passa a exibir resultado final
 - bloquear saldo ao registrar previsão;
 - fechar mercado automaticamente na data/hora/fuso configurados;
 - resolver mercado;
-- refletir carteira de `Orynth Coins` e reputação no perfil e ranking.
+- refletir carteira de `GTL Credits` e reputação no perfil e ranking.
 
 ### Integração Django ↔ FastAPI
 
@@ -2252,7 +2252,7 @@ Mercado passa a exibir resultado final
 - falha no envio de email transacional;
 - compartilhamento social com metadados incompletos;
 - concessão incorreta ou duplicada de badge;
-- recarga de `Orynth Coins` aplicada fora da política definida;
+- recarga de `GTL Credits` aplicada fora da política definida;
 - tentativa de autoindicação;
 - tentativa de bônus duplicado por indicação;
 - sugestão duplicada, ambígua ou impossível de resolver;
@@ -2271,9 +2271,9 @@ Mercado passa a exibir resultado final
 
 ## Riscos do MVP
 
-- fórmulas simples demais podem inflar `Orynth Coins` rapidamente;
+- fórmulas simples demais podem inflar `GTL Credits` rapidamente;
 - reputação multiplicando stake pode favorecer concentração excessiva;
-- recarga de `Orynth Coins` ou bônus de indicação mal calibrados podem distorcer a economia do produto;
+- recarga de `GTL Credits` ou bônus de indicação mal calibrados podem distorcer a economia do produto;
 - fechamento automático mal implementado pode gerar mercados aceitando previsões após o prazo;
 - carteira inconsistente compromete confiança do produto com rapidez;
 - mercados mal escritos reduzem confiança no produto;
@@ -2289,9 +2289,9 @@ Mercado passa a exibir resultado final
 ## Decisões em Aberto
 
 1. Um usuário pode prever várias vezes no mesmo mercado ou apenas uma?
-2. O ranking principal será por reputação, saldo em `Orynth Coins` ou combinação dos dois?
+2. O ranking principal será por reputação, saldo em `GTL Credits` ou combinação dos dois?
 3. Haverá fechamento automático antes da resolução ou o mercado aceita previsões até o limite?
-4. As `Orynth Coins` retornam como `reward bruto` ou `lucro líquido + devolução de stake`?
+4. As `GTL Credits` retornam como `reward bruto` ou `lucro líquido + devolução de stake`?
 5. Resolvido para o MVP: o feed oferece ordenações rápidas por tendência, encerramento, volume, novidade e favoritos editoriais; o destaque principal prioriza mercados publicados não cancelados por `view_count`, excluindo `draft` e `cancelled`, com desempate por data mais recente.
 6. O perfil será público para todos os usuários desde o MVP?
 7. Qual será o limite inicial de opções por mercado de múltipla escolha no MVP?

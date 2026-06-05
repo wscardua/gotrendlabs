@@ -4,15 +4,22 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Orynth Trends Admin{% endblock %}</title>
-  <link rel="stylesheet" href="{% static 'css/orynth.css' %}?v=20260523-social-notifications">
-  <script src="{% static 'js/orynth.js' %}?v=20260523-social-notifications" defer></script>
+  <title>{% block title %}GoTrendLabs Admin{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260605-admin-nav-layout">
+  <script src="{% static 'js/gotrendlabs.js' %}?v=20260523-social-notifications" defer></script>
 </head>
 <body>
-  <header class="topbar">
-    <nav class="shell nav">
-      <a class="brand" href="{% url 'admin-ops-dashboard' %}"><span class="brand-mark">A</span><span>Orynth Trends Admin</span></a>
-      <div class="nav-links">
+  <header class="topbar admin-topbar">
+    <nav class="shell nav admin-nav">
+      <a class="brand" href="{% url 'admin-ops-dashboard' %}" aria-label="GoTrendLabs Admin">
+        <span class="brand-logo" aria-hidden="true">
+          <img class="brand-logo-image brand-logo-light" src="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260604-split-lockup" alt="">
+          <img class="brand-logo-image brand-logo-dark" src="{% static 'brand/gtl-constellation-mark-dark.svg' %}?v=20260604-split-lockup" alt="">
+        </span>
+        <span class="brand-wordmark">GoTrendLabs</span>
+        <span class="brand-admin-label">Admin</span>
+      </a>
+      <div class="nav-links admin-nav-links">
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>
         <a class="nav-link {% if 'ai-agent' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-ai-agents' %}">Agentes IA</a>
@@ -24,7 +31,7 @@
         <a class="nav-link {% if 'moderation' in request.resolver_match.url_name or 'queue' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Filas</a>
         <a class="nav-link {% if 'system-log' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-system-logs' %}">Logs</a>
       </div>
-      <div class="nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="{% url 'home' %}">Ver site público</a></div>
+      <div class="nav-actions admin-nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="{% url 'home' %}">Ver site público</a></div>
     </nav>
   </header>
   {% block content %}{% endblock %}

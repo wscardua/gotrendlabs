@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='external_identities', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_external_identities',
+                'db_table': 'gotrendlabs_external_identities',
             },
         ),
         migrations.CreateModel(
@@ -41,7 +41,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='api_sessions', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_auth_sessions',
+                'db_table': 'gotrendlabs_auth_sessions',
             },
         ),
         migrations.CreateModel(
@@ -57,7 +57,7 @@ class Migration(migrations.Migration):
                 ('user', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_auth_events',
+                'db_table': 'gotrendlabs_auth_events',
             },
         ),
         migrations.AddConstraint(
@@ -66,18 +66,18 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='authsession',
-            index=models.Index(fields=['token_hash'], name='orynth_auth_token_h_81d7b9_idx'),
+            index=models.Index(fields=['token_hash'], name='gotrendlabs_token_h_7416d4_idx'),
         ),
         migrations.AddIndex(
             model_name='authsession',
-            index=models.Index(fields=['user', 'revoked_at', 'expires_at'], name='orynth_auth_user_id_16946e_idx'),
+            index=models.Index(fields=['user', 'revoked_at', 'expires_at'], name='gotrendlabs_user_id_000420_idx'),
         ),
         migrations.AddIndex(
             model_name='authevent',
-            index=models.Index(fields=['event_type', 'created_at'], name='orynth_auth_event_t_d07fd1_idx'),
+            index=models.Index(fields=['event_type', 'created_at'], name='gotrendlabs_event_t_503652_idx'),
         ),
         migrations.AddIndex(
             model_name='authevent',
-            index=models.Index(fields=['email', 'created_at'], name='orynth_auth_email_639e76_idx'),
+            index=models.Index(fields=['email', 'created_at'], name='gotrendlabs_email_40d8e1_idx'),
         ),
     ]

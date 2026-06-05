@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs bolt check logo</title>
+  <desc id="desc">A bolt-check mark for fast calls that become verified public proof.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(32 24)">
+    <rect x="0" y="0" width="132" height="132" rx="40" fill="#111315"/>
+    <path d="M75 13L35 70H62L52 119L99 57H72L75 13Z" fill="#FFB000"/>
+    <path d="M29 87L47 105L86 68" stroke="#FFFFFF" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="86" cy="68" r="9" fill="#24C06F"/>
+  </g>
+  <text x="190" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="192" y="122" fill="#5F6868" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Rapido para chamar. Claro para verificar.</text>
+  <text x="632" y="100" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">OK</text>
+</svg>

@@ -115,7 +115,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - recortes temáticos são projeções calculadas no MVP, sem nova tabela dedicada
 - definições de badge com código, nome, descrição, tipo, imagem padrão/clara, imagem escura opcional, status e descrição pública da regra
 - regras de badge vinculadas à definição, com tipo controlado, threshold e recorte opcional de categoria/subcategoria/evento
-- conquistas de badge por usuário com data e snapshot do motivo, persistidas em `orynth_user_badge_awards`
+- conquistas de badge por usuário com data e snapshot do motivo, persistidas em `gotrendlabs_user_badge_awards`
 
 ## Contratos afetados
 

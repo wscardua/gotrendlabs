@@ -13,27 +13,27 @@ def backfill_wallet_balances(apps, schema_editor):
 
     for user in User.objects.all().iterator():
         entries = WalletLedgerEntry.objects.filter(user_id=user.id)
-        available_oc = 0
-        locked_oc = 0
-        total_earned_oc = 0
+        available_gtl = 0
+        locked_gtl = 0
+        total_earned_gtl = 0
         for entry in entries:
             if entry.direction == "credit":
-                available_oc += entry.amount
+                available_gtl += entry.amount
                 if entry.entry_type in ("prediction_payout", "reward_feedback", "reward_suggestion"):
-                    total_earned_oc += entry.amount
+                    total_earned_gtl += entry.amount
             elif entry.direction == "debit":
-                available_oc -= entry.amount
+                available_gtl -= entry.amount
             elif entry.direction == "lock":
-                locked_oc += entry.amount
+                locked_gtl += entry.amount
             elif entry.direction == "release":
-                locked_oc -= entry.amount
+                locked_gtl -= entry.amount
 
         WalletBalance.objects.update_or_create(
             user_id=user.id,
             defaults={
-                "available_oc": available_oc,
-                "locked_oc": locked_oc,
-                "total_earned_oc": total_earned_oc,
+                "available_gtl": available_gtl,
+                "locked_gtl": locked_gtl,
+                "total_earned_gtl": total_earned_gtl,
                 "updated_at": timezone.now(),
             },
         )
@@ -50,14 +50,14 @@ class Migration(migrations.Migration):
             name='WalletBalance',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('available_oc', models.IntegerField(default=0)),
-                ('locked_oc', models.IntegerField(default=0)),
-                ('total_earned_oc', models.IntegerField(default=0)),
+                ('available_gtl', models.IntegerField(default=0)),
+                ('locked_gtl', models.IntegerField(default=0)),
+                ('total_earned_gtl', models.IntegerField(default=0)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='wallet_balance', to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                'db_table': 'orynth_wallet_balances',
+                'db_table': 'gotrendlabs_wallet_balances',
             },
         ),
         migrations.RunPython(backfill_wallet_balances, migrations.RunPython.noop),

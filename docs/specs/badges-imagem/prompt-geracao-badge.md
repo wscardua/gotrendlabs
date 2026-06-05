@@ -1,8 +1,8 @@
 
-Quero gerar uma coleção de badges digitais premium para o Orynth Trends. Gere cada badge separadamente, uma imagem para cada item numerado. Todas devem manter a mesma identidade visual.
+Quero gerar uma coleção de badges digitais premium para o GoTrendLabs. Gere cada badge separadamente, uma imagem para cada item numerado. Todas devem manter a mesma identidade visual.
 
 Contexto geral:
-Orynth Trends é uma rede social de previsões educativas, reputação pública, inteligência coletiva e resolução auditável de mercados. As badges representam mérito, participação, precisão, confiança, contribuição para a comunidade e progresso reputacional. Elas não devem parecer aposta, cassino, trading, casa de apostas ou plataforma financeira.
+GoTrendLabs é uma rede social de previsões educativas, reputação pública, inteligência coletiva e resolução auditável de mercados. As badges representam mérito, participação, precisão, confiança, contribuição para a comunidade e progresso reputacional. Elas não devem parecer aposta, cassino, trading, casa de apostas ou plataforma financeira.
 
 Estilo visual comum para todas:
 Emblema arredondado premium, ícone centralizado, estilo híbrido entre flat design e soft 3D, geometria limpa, profundidade sutil, acabamento moderno de app, visual elegante, confiável e sofisticado. A composição deve parecer parte de um sistema coeso de conquistas digitais. Use formas limpas, poucos elementos e alto refinamento visual.
@@ -52,7 +52,7 @@ Crie uma badge para usuários cujo feedback ajuda a melhorar o produto. O símbo
 Crie uma badge de especialista por categoria. Tema: previsões de futebol para a Copa 2026. O símbolo central deve ser uma bola de futebol refinada orbitando um pequeno marcador de previsão verificada, com geometria sutil de linhas de campo e brilho dourado de reputação. A imagem deve sugerir domínio no tema, precisão e reconhecimento público. Evite bandeiras nacionais, escudos de times, troféus com texto e estética de apostas esportivas.
 
 11. Template para badge temática futura
-Crie uma badge de especialista por categoria. Tema: [CATEGORIA] / [SUBCATEGORIA]. O símbolo central deve representar domínio nesse tema usando um símbolo sutil e elegante da categoria, preservando a identidade visual do Orynth Trends: previsão social, reputação, confiança e resolução auditável. Evite excesso de elementos literais. Esta badge deve servir como modelo visual adaptável para outras categorias e subcategorias.
+Crie uma badge de especialista por categoria. Tema: [CATEGORIA] / [SUBCATEGORIA]. O símbolo central deve representar domínio nesse tema usando um símbolo sutil e elegante da categoria, preservando a identidade visual do GoTrendLabs: previsão social, reputação, confiança e resolução auditável. Evite excesso de elementos literais. Esta badge deve servir como modelo visual adaptável para outras categorias e subcategorias.
 
 
 gere as badges pode usar um formato de escudo em alguns deixo por sua sugestão

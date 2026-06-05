@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs monolith logo</title>
+  <desc id="desc">A monolithic identity for a public record of future calls and resolved reputation.</desc>
+  <rect width="760" height="180" rx="12" fill="#101214"/>
+  <g transform="translate(33 14)">
+    <path d="M36 8L120 32V136L36 152L8 126V34L36 8Z" fill="#F7F4EC"/>
+    <path d="M36 8V152M36 8L8 34M36 152L8 126" stroke="#101214" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M56 103L75 48L96 91" stroke="#101214" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M50 118H104" stroke="#F4FF00" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="75" cy="48" r="10" fill="#FF2E63"/>
+  </g>
+  <text x="190" y="79" fill="#F7F4EC" font-family="Arial Black, IBM Plex Sans, Inter, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="192" y="122" fill="#AAB5B2" font-family="IBM Plex Mono, IBM Plex Sans, Inter, Arial, sans-serif" font-size="17" font-weight="800">THE PUBLIC RECORD OF BEFORE</text>
+  <text x="628" y="101" fill="#F4FF00" font-family="Arial Black, IBM Plex Sans, Inter, Arial, sans-serif" font-size="34" font-weight="900">REP</text>
+</svg>

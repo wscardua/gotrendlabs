@@ -81,4 +81,4 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - `resolved_at_label` é campo de apresentação derivado de `resolved_at` + `resolution_timezone`; cálculos e ordenação devem usar `resolved_at`.
 - Previsões bot oficiais são `Prediction` reais de usuários `is_bot=true`, criadas somente pelo backend/daemon quando flags e limites permitirem.
 - Previsão bot é bloqueada quando `human_participants=0` ou abaixo de `ai_min_humans_for_prediction`.
-- Respostas de mercado expõem `human_participants`, `bot_participants`, `human_volume_oc`, `bot_volume_oc` e `total_volume_oc`; `participants` e `volume_oc` legados representam humanos.
+- Respostas de mercado expõem `human_participants`, `bot_participants`, `human_volume_gtl`, `bot_volume_gtl` e `total_volume_gtl`; `participants` e `volume_gtl` legados representam humanos.

@@ -78,9 +78,9 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - visitante não vê o filtro `Favoritos`, mas vê a ação de favoritar em estado apagado/readonly e recebe aviso de login ao tentar usar
 - visitante não vê o filtro `Minhas previsões`
 - o card principal do feed exibe os dois mercados publicados não cancelados mais visualizados por `view_count`, excluindo `draft` e `canceled`, com mercado mais novo como desempate
-- a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, total de `O₵` distribuídas e total de `O₵` movimentadas em previsões, sem filtrar por mês
-- a métrica `O₵ distribuídas` exclui créditos destinados a `staff` e `superuser`, evitando inflar economia pública com saldos operacionais internos
-- métricas públicas de moeda devem usar o símbolo de apresentação `O₵`; campos e identificadores técnicos permanecem com sufixo `_oc`
+- a hero do feed exibe métricas compactas, incluindo total real de previsões persistidas, total de `GT₵` distribuídas e total de `GT₵` movimentadas em previsões, sem filtrar por mês
+- a métrica `GT₵ distribuídas` exclui créditos destinados a `staff` e `superuser`, evitando inflar economia pública com saldos operacionais internos
+- métricas públicas de moeda devem usar o símbolo de apresentação `GT₵`; campos e identificadores técnicos permanecem com sufixo `_gtl`
 - o texto da home deve preservar o contexto educativo e evitar termos que sugiram dinheiro real, trading ou saque
 - prévias públicas fora do feed, como o ticket de onboarding no cadastro, podem reutilizar mercados serializados pelo domínio como sinal social; para cadastro, usa maior `view_count` entre publicados não cancelados, exclui `draft` e `canceled`, e usa o mais recente por `created_at` como desempate/fallback
 
@@ -115,6 +115,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `MarketResponse` expõe `category`, `subcategory`, `event`, `category_notice`, `subcategory_notice` e `event_notice`; cards e detalhe público devem apresentar a trilha `categoria / subcategoria / evento`, enquanto avisos de categoria/subcategoria/evento aparecem apenas no detalhe/ticket, abaixo do critério de resolução, quando preenchidos
 - `MarketResponse` expõe `is_featured`, `market_like_count`, `view_count`, `created_at` e `close_at` para seleção visual, destaque e ordenação client-side
 - `MarketResponse` expõe `comment_count` com a contagem de comentários `visible` para leitura pública nos cards
+- `MarketResponse` público só deve expor `image_url` local (`/media/...`) quando o arquivo existir no armazenamento de mídia do ambiente; contratos administrativos preservam a URL cadastrada para curadoria.
 - Cards da home/feed devem comunicar prazo restante por texto (`closes_in`) e por indicador visual derivado de `created_at`/`close_at`, sem reutilizar probabilidade como progresso de tempo.
 - O indicador de prazo deve hidratar estados visuais `open`, `soon`, `urgent` e `closed`, atualizar periodicamente enquanto a página estiver aberta e manter texto legível para não depender só de cor.
 - `MarketResponse` expõe `view_count` e `share_count` como métricas de popularidade usadas no Admin Ops e na seleção pública de destaques/onboarding
@@ -127,10 +128,11 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - o modo `Favoritos` usa `viewer_has_favorite` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - o modo `Minhas previsões` usa `viewer_has_prediction` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - controle `Carregar mais` do feed atua sobre a lista filtrada/ordenada no cliente, sem chamada adicional ao backend
-- `GET /stats` expõe métricas públicas da home: `open_markets`, `total_predictions`, `distributed_oc`, `moved_oc`, `resolution_sla` e `real_money`
-- a métrica pública `previsões totais` é calculada a partir de `orynth_predictions` persistidas, sem janela mensal
-- a métrica pública `O₵ distribuídas` soma créditos positivos registrados no ledger de wallet de usuários comuns, excluindo operadores (`staff`/`superuser`), e é enviada como label pronto para apresentação
-- a métrica pública `O₵ movimentadas` soma stakes de previsões registradas e é enviada como label pronto para apresentação
+- cards com imagem ausente ou erro de carregamento devem cair para fallback textual (`thumb`) sem renderizar ícone quebrado
+- `GET /stats` expõe métricas públicas da home: `open_markets`, `total_predictions`, `distributed_gtl`, `moved_gtl`, `resolution_sla` e `real_money`
+- a métrica pública `previsões totais` é calculada a partir de `gotrendlabs_predictions` persistidas, sem janela mensal
+- a métrica pública `GT₵ distribuídas` soma créditos positivos registrados no ledger de wallet de usuários comuns, excluindo operadores (`staff`/`superuser`), e é enviada como label pronto para apresentação
+- a métrica pública `GT₵ movimentadas` soma stakes de previsões registradas e é enviada como label pronto para apresentação
 - browse administrativo de mercados usa fallback local em Postgres quando a API administrativa falha, mantendo a visualização de ativos/rascunhos disponível em desenvolvimento
 - browse administrativo de mercados exibe popularidade em indicadores compactos e permite alternar entre ordem padrão, mais visualizados e mais compartilhados
 - Admin Ops gerencia categorias/subcategorias/eventos em tela de browse operacional com criação, edição, bloqueio/desbloqueio e indicação visual de estado
@@ -145,9 +147,9 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - categoria/subcategoria/evento com estado de bloqueio lógico e aviso opcional de até 500 caracteres; evento é vinculado à subcategoria e obrigatório para mercados novos no Admin Ops/API
 - snapshot resumido de probabilidade
 - `is_featured` no mercado para curadoria editorial do feed
-- `orynth_market_favorites` guarda favoritos pessoais com unicidade por usuário e mercado
-- `orynth_market_likes` guarda curtidas reais do mercado com unicidade por usuário e mercado
-- `market_like_count` derivado de curtidas reais em `orynth_market_likes`; likes em comentários não alimentam esse contador
+- `gotrendlabs_market_favorites` guarda favoritos pessoais com unicidade por usuário e mercado
+- `gotrendlabs_market_likes` guarda curtidas reais do mercado com unicidade por usuário e mercado
+- `market_like_count` derivado de curtidas reais em `gotrendlabs_market_likes`; likes em comentários não alimentam esse contador
 - `comment_count` derivado de comentários com `status=visible`; comentários ocultos por moderação não alimentam esse contador
 - `created_at` e `close_at` para ordenações rápidas
 - `view_count` e `share_count` para ordenações operacionais no Admin Ops
@@ -177,7 +179,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - renderização dos modos de ordenação rápida e do recorte `Resolvidos` no feed web
 - regressão para o modo `Mais curtidas` ordenando por curtidas reais do mercado
 - regressão para métrica de previsões totais baseada em previsões persistidas reais
-- regressão para métricas públicas de `O₵ distribuídas` e `O₵ movimentadas` na home e no contrato `/stats`, garantindo exclusão de créditos de operadores na distribuição
+- regressão para métricas públicas de `GT₵ distribuídas` e `GT₵ movimentadas` na home e no contrato `/stats`, garantindo exclusão de créditos de operadores na distribuição
 - renderização de `data-*` de ordenação e contador de curtidas no card
 - renderização do contador de comentários visíveis no card para visitante e usuário autenticado
 - regressão para título do card como link para o detalhe do mercado
@@ -214,8 +216,8 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - título e CTA principal levam ao detalhe do mercado
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
 - destaque principal exibe até dois mercados publicados não cancelados mais visualizados, excluindo `draft` e `canceled`, incluindo resolvidos quando liderarem por popularidade
-- home exibe métricas públicas de economia educativa com `O₵ distribuídas` e `O₵ movimentadas em previsões`, sem sugerir dinheiro real
-- créditos de `staff`/`superuser` não entram no número público de `O₵ distribuídas`
+- home exibe métricas públicas de economia educativa com `GT₵ distribuídas` e `GT₵ movimentadas em previsões`, sem sugerir dinheiro real
+- créditos de `staff`/`superuser` não entram no número público de `GT₵ distribuídas`
 
 ## Impacto de mudança
 

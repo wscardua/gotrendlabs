@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 ('primary_outcome', models.CharField(max_length=80)),
                 ('primary_probability', models.PositiveSmallIntegerField(default=0)),
                 ('secondary_probability', models.PositiveSmallIntegerField(default=0)),
-                ('volume_oc', models.CharField(blank=True, max_length=80)),
+                ('volume_gtl', models.CharField(blank=True, max_length=80)),
                 ('participants', models.CharField(blank=True, max_length=80)),
                 ('source', models.CharField(blank=True, max_length=180)),
                 ('closes_in', models.CharField(blank=True, max_length=40)),
@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
             options={
-                'db_table': 'orynth_markets',
+                'db_table': 'gotrendlabs_markets',
                 'ordering': ['display_order', 'id'],
             },
         ),
@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                 ('created_at', models.DateTimeField(auto_now_add=True)),
             ],
             options={
-                'db_table': 'orynth_market_categories',
+                'db_table': 'gotrendlabs_market_categories',
                 'ordering': ['name'],
             },
         ),
@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
                 ('category', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='subcategories', to='markets.marketcategory')),
             ],
             options={
-                'db_table': 'orynth_market_subcategories',
+                'db_table': 'gotrendlabs_market_subcategories',
                 'ordering': ['category__name', 'name'],
             },
         ),
@@ -86,7 +86,7 @@ class Migration(migrations.Migration):
                 ('market', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='options', to='markets.market')),
             ],
             options={
-                'db_table': 'orynth_market_options',
+                'db_table': 'gotrendlabs_market_options',
                 'ordering': ['display_order', 'id'],
             },
         ),
@@ -115,14 +115,14 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name='market',
-            index=models.Index(fields=['status', 'display_order'], name='orynth_mark_status_55fd9b_idx'),
+            index=models.Index(fields=['status', 'display_order'], name='gotrendlabs_status_6cb6b1_idx'),
         ),
         migrations.AddIndex(
             model_name='market',
-            index=models.Index(fields=['category', 'status'], name='orynth_mark_categor_5687eb_idx'),
+            index=models.Index(fields=['category', 'status'], name='gotrendlabs_categor_f8b2cb_idx'),
         ),
         migrations.AddIndex(
             model_name='market',
-            index=models.Index(fields=['subcategory', 'status'], name='orynth_mark_subcate_2df3e6_idx'),
+            index=models.Index(fields=['subcategory', 'status'], name='gotrendlabs_subcate_0948f1_idx'),
         ),
     ]

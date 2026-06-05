@@ -55,7 +55,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
-                "db_table": "orynth_market_events",
+                "db_table": "gotrendlabs_market_events",
                 "ordering": ["subcategory__category__name", "subcategory__name", "name"],
             },
         ),
@@ -88,6 +88,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddIndex(
             model_name="market",
-            index=models.Index(fields=["event", "status"], name="orynth_mark_event_i_ea32c2_idx"),
+            index=models.Index(fields=["event", "status"], name="gotrendlabs_event_i_d281dd_idx"),
         ),
     ]

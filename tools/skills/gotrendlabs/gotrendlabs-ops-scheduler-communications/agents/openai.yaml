@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Ops Scheduler Comms"
+  short_description: "Jobs, eventos e comunicações"
+  default_prompt: "Use $gotrendlabs-ops-scheduler-communications para implementar jobs, eventos e comunicações do GoTrendLabs com idempotência, rastreabilidade e respeito aos contratos."
+
+policy:
+  allow_implicit_invocation: true

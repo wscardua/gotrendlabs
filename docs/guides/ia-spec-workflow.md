@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este guia mostra como usar as specs e as skills do Orynth Trends para evoluir o projeto sem perder memória, sem misturar camadas e sem refazer áreas não impactadas.
+Este guia mostra como usar as specs e as skills do GoTrendLabs para evoluir o projeto sem perder memória, sem misturar camadas e sem refazer áreas não impactadas.
 
 ## Ordem de trabalho
 
@@ -10,7 +10,7 @@ Este guia mostra como usar as specs e as skills do Orynth Trends para evoluir o 
 2. Ler a spec funcional em [../specs/spec_prediction_social_market_pt.md](../specs/spec_prediction_social_market_pt.md).
 3. Ler a feature em `docs/specs/features/`.
 4. Revisar contratos em `docs/specs/contracts/`.
-5. Passar por arquitetura/segurança com `orynth-software-architect` quando a mudança for relevante.
+5. Passar por arquitetura/segurança com `gotrendlabs-software-architect` quando a mudança for relevante.
 6. Validar fronteiras em `docs/specs/architecture/`.
 7. Revisar testes esperados em `docs/specs/testing/`.
 8. Implementar ou revisar testes concretos quando houver código.
@@ -19,34 +19,34 @@ Este guia mostra como usar as specs e as skills do Orynth Trends para evoluir o 
 
 ## Quando usar cada skill
 
-Índice completo: [../../tools/skills/orynth/README.md](../../tools/skills/orynth/README.md).
+Índice completo: [../../tools/skills/gotrendlabs/README.md](../../tools/skills/gotrendlabs/README.md).
 
-- `orynth-workflow-governor`: abrir, acompanhar, retomar, bloquear, concluir, cancelar ou substituir workflows multi-documento
-- `orynth-spec-editor`: criar, traduzir, refinar ou alterar specs
-- `orynth-spec-orchestrator`: conduzir implementação a partir das specs
-- `orynth-software-architect`: definir arquitetura, segurança, estrutura de módulos e decisões técnicas relevantes
-- `orynth-architecture-guard`: validar separação entre camadas
-- `orynth-test-strategy`: definir critérios de aceite, regressão e cobertura
-- `orynth-test-engineer`: implementar, revisar e executar testes concretos de backend, frontend, contratos e fluxos
-- `orynth-django-web`: implementar frontend server-rendered, HTMX, Alpine.js, i18n de interface e admin Django
-- `orynth-fastapi-domain`: implementar domínio, autenticação, endpoints e regras centrais em FastAPI/Python
-- `orynth-postgres-modeling`: desenhar modelos relacionais, ledger, constraints, índices e rastreabilidade
-- `orynth-ops-scheduler-communications`: implementar scheduler, jobs, eventos, comunicações e operação assíncrona
+- `gotrendlabs-workflow-governor`: abrir, acompanhar, retomar, bloquear, concluir, cancelar ou substituir workflows multi-documento
+- `gotrendlabs-spec-editor`: criar, traduzir, refinar ou alterar specs
+- `gotrendlabs-spec-orchestrator`: conduzir implementação a partir das specs
+- `gotrendlabs-software-architect`: definir arquitetura, segurança, estrutura de módulos e decisões técnicas relevantes
+- `gotrendlabs-architecture-guard`: validar separação entre camadas
+- `gotrendlabs-test-strategy`: definir critérios de aceite, regressão e cobertura
+- `gotrendlabs-test-engineer`: implementar, revisar e executar testes concretos de backend, frontend, contratos e fluxos
+- `gotrendlabs-django-web`: implementar frontend server-rendered, HTMX, Alpine.js, i18n de interface e admin Django
+- `gotrendlabs-fastapi-domain`: implementar domínio, autenticação, endpoints e regras centrais em FastAPI/Python
+- `gotrendlabs-postgres-modeling`: desenhar modelos relacionais, ledger, constraints, índices e rastreabilidade
+- `gotrendlabs-ops-scheduler-communications`: implementar scheduler, jobs, eventos, comunicações e operação assíncrona
 
 ## Combinação recomendada de skills
 
-- coordenação de processo multi-documento: `orynth-workflow-governor`
-- mudança de documentação: `orynth-spec-editor`
-- arquitetura e segurança propositiva: `orynth-software-architect`
-- validação de fronteira: `orynth-architecture-guard`
-- definição de aceite e regressão: `orynth-test-strategy`
-- execução de testes concretos: `orynth-test-engineer`
+- coordenação de processo multi-documento: `gotrendlabs-workflow-governor`
+- mudança de documentação: `gotrendlabs-spec-editor`
+- arquitetura e segurança propositiva: `gotrendlabs-software-architect`
+- validação de fronteira: `gotrendlabs-architecture-guard`
+- definição de aceite e regressão: `gotrendlabs-test-strategy`
+- execução de testes concretos: `gotrendlabs-test-engineer`
 - execução técnica:
-  - UI e admin: `orynth-django-web`
-  - domínio e API: `orynth-fastapi-domain`
-  - persistência: `orynth-postgres-modeling`
-  - automações e comunicações: `orynth-ops-scheduler-communications`
-- coordenação geral da implementação: `orynth-spec-orchestrator`
+  - UI e admin: `gotrendlabs-django-web`
+  - domínio e API: `gotrendlabs-fastapi-domain`
+  - persistência: `gotrendlabs-postgres-modeling`
+  - automações e comunicações: `gotrendlabs-ops-scheduler-communications`
+- coordenação geral da implementação: `gotrendlabs-spec-orchestrator`
 
 ## Mapa visual das skills
 
@@ -64,20 +64,20 @@ flowchart LR
     end
 
     subgraph GOV["Skills de governança"]
-        WG["orynth-workflow-governor"]
-        SE["orynth-spec-editor"]
-        SA["orynth-software-architect"]
-        AG["orynth-architecture-guard"]
-        TS["orynth-test-strategy"]
-        TE["orynth-test-engineer"]
-        SO["orynth-spec-orchestrator"]
+        WG["gotrendlabs-workflow-governor"]
+        SE["gotrendlabs-spec-editor"]
+        SA["gotrendlabs-software-architect"]
+        AG["gotrendlabs-architecture-guard"]
+        TS["gotrendlabs-test-strategy"]
+        TE["gotrendlabs-test-engineer"]
+        SO["gotrendlabs-spec-orchestrator"]
     end
 
     subgraph STACK["Skills técnicas"]
-        DJ["orynth-django-web"]
-        FA["orynth-fastapi-domain"]
-        PG["orynth-postgres-modeling"]
-        OP["orynth-ops-scheduler-communications"]
+        DJ["gotrendlabs-django-web"]
+        FA["gotrendlabs-fastapi-domain"]
+        PG["gotrendlabs-postgres-modeling"]
+        OP["gotrendlabs-ops-scheduler-communications"]
     end
 
     subgraph OUTPUT["Saídas"]
@@ -151,30 +151,30 @@ flowchart LR
 
 Leitura rápida:
 
-- `orynth-workflow-governor` coordena processos longos e evita docs descasados.
-- `orynth-spec-editor` muda a verdade documental.
-- `orynth-software-architect` propõe arquitetura, segurança e estrutura antes de mudanças relevantes.
-- `orynth-architecture-guard` protege fronteiras.
-- `orynth-test-strategy` garante aceite, regressão e cobertura.
-- `orynth-test-engineer` transforma a estratégia em testes executáveis e evidência.
-- `orynth-spec-orchestrator` conduz a implementação usando as skills técnicas corretas.
+- `gotrendlabs-workflow-governor` coordena processos longos e evita docs descasados.
+- `gotrendlabs-spec-editor` muda a verdade documental.
+- `gotrendlabs-software-architect` propõe arquitetura, segurança e estrutura antes de mudanças relevantes.
+- `gotrendlabs-architecture-guard` protege fronteiras.
+- `gotrendlabs-test-strategy` garante aceite, regressão e cobertura.
+- `gotrendlabs-test-engineer` transforma a estratégia em testes executáveis e evidência.
+- `gotrendlabs-spec-orchestrator` conduz a implementação usando as skills técnicas corretas.
 
 ## Fluxo visual de uma mudança
 
 ```mermaid
 flowchart TD
-    ASK["Pedido: nova feature, alteração ou implementação"] --> WG["Abrir ou retomar workflow\norynth-workflow-governor"]
+    ASK["Pedido: nova feature, alteração ou implementação"] --> WG["Abrir ou retomar workflow\ngotrendlabs-workflow-governor"]
     WG --> READ["Ler estado, workflow run,\nfeature, contratos e changelogs"]
 
     READ --> KIND{"Tipo de trabalho"}
 
-    KIND -->|Spec nova ou alteração| SE["Atualizar specs\norynth-spec-editor"]
-    KIND -->|Implementação| SO["Planejar execução\norynth-spec-orchestrator"]
-    KIND -->|Revisão de testes| TS["Revisar testes\norynth-test-strategy"]
+    KIND -->|Spec nova ou alteração| SE["Atualizar specs\ngotrendlabs-spec-editor"]
+    KIND -->|Implementação| SO["Planejar execução\ngotrendlabs-spec-orchestrator"]
+    KIND -->|Revisão de testes| TS["Revisar testes\ngotrendlabs-test-strategy"]
 
     SE --> CONTRACTS["Atualizar contratos afetados"]
-    CONTRACTS --> SA["Definir arquitetura e segurança\norynth-software-architect"]
-    SA --> AG["Validar fronteiras\norynth-architecture-guard"]
+    CONTRACTS --> SA["Definir arquitetura e segurança\ngotrendlabs-software-architect"]
+    SA --> AG["Validar fronteiras\ngotrendlabs-architecture-guard"]
     AG --> TS
     TS --> READY{"Pode codar?"}
 
@@ -191,7 +191,7 @@ flowchart TD
     FA --> VERIFY
     PG --> VERIFY
     OP --> VERIFY
-    VERIFY --> TE["Implementar/revisar testes concretos\norynth-test-engineer"]
+    VERIFY --> TE["Implementar/revisar testes concretos\ngotrendlabs-test-engineer"]
 
     TE --> UPDATE["Atualizar implementation-status,\nfeature-changelog e change-log-specs"]
     UPDATE --> DECIDE{"Mudou fronteira,\ncontrato estrutural ou fórmula?"}
@@ -219,7 +219,7 @@ Reversão é lógica, não apagamento: registre novo workflow ou marque o workfl
 
 ## Arquitetura e segurança
 
-Use `orynth-software-architect` antes de implementação quando houver nova feature, alteração de contrato, banco, ledger, autenticação, autorização, sessão, wallet, stake, resolução, reputação, ranking, eventos, scheduler, comunicações ou fronteiras entre camadas.
+Use `gotrendlabs-software-architect` antes de implementação quando houver nova feature, alteração de contrato, banco, ledger, autenticação, autorização, sessão, wallet, stake, resolução, reputação, ranking, eventos, scheduler, comunicações ou fronteiras entre camadas.
 
 Saídas esperadas:
 
@@ -228,7 +228,7 @@ Saídas esperadas:
 - contratos ou ADRs necessários
 - orientação para testes arquiteturais, integração e segurança
 
-Depois disso, use `orynth-architecture-guard` para validar aderência às fronteiras decididas.
+Depois disso, use `gotrendlabs-architecture-guard` para validar aderência às fronteiras decididas.
 
 ## Fluxo de testes
 
@@ -240,7 +240,7 @@ Ordem recomendada:
 2. confirmar critérios em `docs/specs/testing/acceptance-criteria.md`
 3. declarar na feature os testes unitários, de integração e de fluxo esperados
 4. mapear regressões por contrato e dependência direta
-5. usar `orynth-test-engineer` para transformar a estratégia em testes executáveis quando houver código
+5. usar `gotrendlabs-test-engineer` para transformar a estratégia em testes executáveis quando houver código
 6. atualizar `feature-changelog.md` quando testes mudarem por alteração de spec
 7. registrar pendência em `known-gaps.md` se teste necessário não puder ser implementado agora
 
@@ -251,7 +251,7 @@ Uma implementação só deve ir para `validada` quando houver evidência de test
 1. Abrir workflow `new-feature`.
 2. Criar nova spec em `docs/specs/features/` com frontmatter padrão.
 3. Declarar contratos afetados e dependências.
-4. Passar por `orynth-software-architect` para desenho técnico e segurança.
+4. Passar por `gotrendlabs-software-architect` para desenho técnico e segurança.
 5. Definir testes esperados e critérios de aceite.
 6. Atualizar `integration-map.md` e `implementation-status.md`.
 7. Criar entrada inicial em `feature-changelog.md`.
@@ -263,7 +263,7 @@ Uma implementação só deve ir para `validada` quando houver evidência de test
 1. Abrir workflow `change-feature`.
 2. Alterar a spec da feature afetada.
 3. Atualizar somente os contratos listados como impactados.
-4. Passar por `orynth-software-architect` quando houver impacto estrutural, segurança, dados, contrato ou domínio.
+4. Passar por `gotrendlabs-software-architect` quando houver impacto estrutural, segurança, dados, contrato ou domínio.
 5. Revisar testes da feature e das dependências diretas.
 6. Marcar implementações afetadas como `defasada_pela_spec` quando necessário.
 7. Registrar a alteração em `feature-changelog.md`.
@@ -309,13 +309,13 @@ Leia nesta ordem:
 Prompt sugerido:
 
 ```text
-Use $orynth-workflow-governor e $orynth-spec-editor para abrir workflow new-feature e derivar a spec técnica de wallet a partir da spec funcional, preenchendo contratos, testes esperados, dependências, changelog e estado.
+Use $gotrendlabs-workflow-governor e $gotrendlabs-spec-editor para abrir workflow new-feature e derivar a spec técnica de wallet a partir da spec funcional, preenchendo contratos, testes esperados, dependências, changelog e estado.
 ```
 
 Complemento arquitetural:
 
 ```text
-Use $orynth-software-architect para definir a arquitetura, riscos de segurança, módulos, dados, contratos e ADRs necessários para a feature FEAT-WALLET-001 antes da implementação.
+Use $gotrendlabs-software-architect para definir a arquitetura, riscos de segurança, módulos, dados, contratos e ADRs necessários para a feature FEAT-WALLET-001 antes da implementação.
 ```
 
 ### Alterar regra de stake sem afetar comentários
@@ -330,13 +330,13 @@ Passos:
 Prompt sugerido:
 
 ```text
-Use $orynth-workflow-governor e $orynth-spec-editor para revisar a regra de stake da feature FEAT-PRED-001 com impacto controlado, atualizando contratos, testes, changelog e estado sem alterar features não dependentes.
+Use $gotrendlabs-workflow-governor e $gotrendlabs-spec-editor para revisar a regra de stake da feature FEAT-PRED-001 com impacto controlado, atualizando contratos, testes, changelog e estado sem alterar features não dependentes.
 ```
 
 Complemento técnico:
 
 ```text
-Use $orynth-fastapi-domain e $orynth-postgres-modeling para detalhar a mudança de stake no domínio e no ledger, preservando os contratos atuais ou propondo ajuste explícito neles.
+Use $gotrendlabs-fastapi-domain e $gotrendlabs-postgres-modeling para detalhar a mudança de stake no domínio e no ledger, preservando os contratos atuais ou propondo ajuste explícito neles.
 ```
 
 ### Mudar estado de mercado e atualizar contratos/testes
@@ -344,7 +344,7 @@ Use $orynth-fastapi-domain e $orynth-postgres-modeling para detalhar a mudança 
 Prompt sugerido:
 
 ```text
-Use $orynth-workflow-governor, $orynth-architecture-guard e $orynth-test-strategy para revisar a introdução de um novo estado de mercado, atualizar contratos de ciclo de vida, testes e regressões esperadas.
+Use $gotrendlabs-workflow-governor, $gotrendlabs-architecture-guard e $gotrendlabs-test-strategy para revisar a introdução de um novo estado de mercado, atualizar contratos de ciclo de vida, testes e regressões esperadas.
 ```
 
 ### Retomar implementação de feature parcial
@@ -352,19 +352,19 @@ Use $orynth-workflow-governor, $orynth-architecture-guard e $orynth-test-strateg
 Prompt sugerido:
 
 ```text
-Use $orynth-spec-orchestrator para retomar a implementação da feature FEAT-WALLET-001 a partir do estado atual, contratos dependentes e critérios de aceite.
+Use $gotrendlabs-spec-orchestrator para retomar a implementação da feature FEAT-WALLET-001 a partir do estado atual, contratos dependentes e critérios de aceite.
 ```
 
 Antes de codar, verificar se há workflow aberto:
 
 ```text
-Use $orynth-workflow-governor para retomar o workflow aberto da feature FEAT-WALLET-001, identificar a próxima ação objetiva e validar pendências de testes.
+Use $gotrendlabs-workflow-governor para retomar o workflow aberto da feature FEAT-WALLET-001, identificar a próxima ação objetiva e validar pendências de testes.
 ```
 
 Se a execução começar pelo backend:
 
 ```text
-Use $orynth-fastapi-domain e $orynth-postgres-modeling para retomar a implementação da feature FEAT-WALLET-001 a partir da spec técnica, dos contratos do ledger e do status atual.
+Use $gotrendlabs-fastapi-domain e $gotrendlabs-postgres-modeling para retomar a implementação da feature FEAT-WALLET-001 a partir da spec técnica, dos contratos do ledger e do status atual.
 ```
 
 ### Traduzir uma spec para `en` mantendo rastreabilidade
@@ -372,7 +372,7 @@ Use $orynth-fastapi-domain e $orynth-postgres-modeling para retomar a implementa
 Prompt sugerido:
 
 ```text
-Use $orynth-workflow-governor e $orynth-spec-editor para traduzir a spec da feature FEAT-MARKET-002 para en, preservando o vínculo com a origem funcional, registrando changelog e sem alterar contratos fora do escopo.
+Use $gotrendlabs-workflow-governor e $gotrendlabs-spec-editor para traduzir a spec da feature FEAT-MARKET-002 para en, preservando o vínculo com a origem funcional, registrando changelog e sem alterar contratos fora do escopo.
 ```
 
 ### Revisar testes antes de validar uma feature
@@ -380,13 +380,13 @@ Use $orynth-workflow-governor e $orynth-spec-editor para traduzir a spec da feat
 Prompt sugerido:
 
 ```text
-Use $orynth-workflow-governor e $orynth-test-strategy para abrir test-review-cycle da feature FEAT-PRED-001, mapear testes unitários, integração, fluxo e regressões por contrato, e atualizar feature-changelog.
+Use $gotrendlabs-workflow-governor e $gotrendlabs-test-strategy para abrir test-review-cycle da feature FEAT-PRED-001, mapear testes unitários, integração, fluxo e regressões por contrato, e atualizar feature-changelog.
 ```
 
 Depois da estratégia:
 
 ```text
-Use $orynth-test-engineer para implementar ou revisar testes concretos backend/frontend da feature FEAT-PRED-001, executar o que for aplicável e registrar evidência ou pendências no workflow.
+Use $gotrendlabs-test-engineer para implementar ou revisar testes concretos backend/frontend da feature FEAT-PRED-001, executar o que for aplicável e registrar evidência ou pendências no workflow.
 ```
 
 ### Implementar tela Django + HTMX a partir da spec
@@ -394,13 +394,13 @@ Use $orynth-test-engineer para implementar ou revisar testes concretos backend/f
 Prompt sugerido:
 
 ```text
-Use $orynth-django-web para implementar a interface server-rendered da feature FEAT-MARKET-001 com HTMX, i18n e respeito estrito ao contrato de listagem de mercados.
+Use $gotrendlabs-django-web para implementar a interface server-rendered da feature FEAT-MARKET-001 com HTMX, i18n e respeito estrito ao contrato de listagem de mercados.
 ```
 
 Após implementar:
 
 ```text
-Use $orynth-test-engineer para criar ou revisar testes de template, interação HTMX, i18n e regressão da feature FEAT-MARKET-001.
+Use $gotrendlabs-test-engineer para criar ou revisar testes de template, interação HTMX, i18n e regressão da feature FEAT-MARKET-001.
 ```
 
 ### Implementar endpoint e regra de domínio em FastAPI
@@ -408,7 +408,7 @@ Use $orynth-test-engineer para criar ou revisar testes de template, interação 
 Prompt sugerido:
 
 ```text
-Use $orynth-fastapi-domain para implementar a mutação principal da feature FEAT-PRED-001 em FastAPI/Python, mantendo a lógica de domínio centralizada e alinhada aos contratos.
+Use $gotrendlabs-fastapi-domain para implementar a mutação principal da feature FEAT-PRED-001 em FastAPI/Python, mantendo a lógica de domínio centralizada e alinhada aos contratos.
 ```
 
 ### Revisar modelagem de banco e ledger
@@ -416,7 +416,7 @@ Use $orynth-fastapi-domain para implementar a mutação principal da feature FEA
 Prompt sugerido:
 
 ```text
-Use $orynth-postgres-modeling para propor a modelagem relacional da wallet e do ledger da feature FEAT-WALLET-001 com foco em integridade, auditabilidade e índices úteis.
+Use $gotrendlabs-postgres-modeling para propor a modelagem relacional da wallet e do ledger da feature FEAT-WALLET-001 com foco em integridade, auditabilidade e índices úteis.
 ```
 
 ### Implementar fechamento automático e email
@@ -424,7 +424,7 @@ Use $orynth-postgres-modeling para propor a modelagem relacional da wallet e do 
 Prompt sugerido:
 
 ```text
-Use $orynth-ops-scheduler-communications para desenhar ou implementar o fluxo de lock automático de mercado e disparo de comunicações derivadas de `market.locked` ou `market.resolved`.
+Use $gotrendlabs-ops-scheduler-communications para desenhar ou implementar o fluxo de lock automático de mercado e disparo de comunicações derivadas de `market.locked` ou `market.resolved`.
 ```
 
 ## Checklists curtos

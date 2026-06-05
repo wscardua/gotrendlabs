@@ -3,8 +3,8 @@
     "name": "Will Costa",
     "handle": "@willcosta",
     "initials": "WL",
-    "balance_oc": 2480,
-    "locked_oc": 410,
+    "balance_gtl": 2480,
+    "locked_gtl": 410,
     "reputation": 82,
     "accuracy": "64%",
     "streak": 5,
@@ -14,8 +14,8 @@
     "open_markets": 128,
     "total_predictions": 2843,
     "monthly_predictions": "41k",
-    "distributed_oc": "2.480",
-    "moved_oc": "41.530",
+    "distributed_gtl": "2.480",
+    "moved_gtl": "41.530",
     "resolution_sla": "94%",
     "real_money": "0 R$"
   },
@@ -33,7 +33,7 @@
       "primary_probability_exact": 62.0,
       "secondary_probability": 38,
       "secondary_probability_exact": 38.0,
-      "volume_oc": "18.240 O₵",
+      "volume_gtl": "18.240 GT₵",
       "participants": "1.204 usuários",
       "source": "blog oficial/OpenAI",
       "closes_in": "228d",
@@ -65,7 +65,7 @@
       "primary_probability_exact": 54.0,
       "secondary_probability": 46,
       "secondary_probability_exact": 46.0,
-      "volume_oc": "9.880 O₵",
+      "volume_gtl": "9.880 GT₵",
       "participants": "743 usuários",
       "source": "documento regulatório",
       "closes_in": "142d",
@@ -92,7 +92,7 @@
       "primary_probability_exact": 37.0,
       "secondary_probability": 63,
       "secondary_probability_exact": 63.0,
-      "volume_oc": "13.410 O₵",
+      "volume_gtl": "13.410 GT₵",
       "participants": "936 usuários",
       "source": "relatório trimestral",
       "closes_in": "251d",
@@ -120,7 +120,7 @@
       "primary_probability_exact": 100.0,
       "secondary_probability": 0,
       "secondary_probability_exact": 0.0,
-      "volume_oc": "Crédito distribuído",
+      "volume_gtl": "Crédito distribuído",
       "participants": "1.812 usuários recompensados",
       "source": "fonte regulatória validada",
       "closes_in": "fim",
@@ -142,9 +142,9 @@
     {"position": 4, "name": "Mika Data", "reputation": 80, "accuracy": "63%", "category": "Política"}
   ],
   "ledger": [
-    {"date": "2026-05-17", "label": "Saldo inicial do MVP", "amount": "+2.000 O₵"},
-    {"date": "2026-05-17", "label": "Previsão aberta em GPT-6", "amount": "-80 O₵ bloqueado"},
-    {"date": "2026-05-17", "label": "Bonus de sequência", "amount": "+120 O₵"}
+    {"date": "2026-05-17", "label": "Saldo inicial do MVP", "amount": "+2.000 GT₵"},
+    {"date": "2026-05-17", "label": "Previsão aberta em GPT-6", "amount": "-80 GT₵ bloqueado"},
+    {"date": "2026-05-17", "label": "Bonus de sequência", "amount": "+120 GT₵"}
   ],
   "admin": {
     "queues": [

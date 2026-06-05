@@ -28,7 +28,7 @@ def wallet_home(request):
     try:
         ledger = get_ledger(token)
     except AuthAPIError:
-        ledger = {"wallet": {"available_oc": 0, "locked_oc": 0, "total_earned_oc": 0}, "entries": []}
+        ledger = {"wallet": {"available_gtl": 0, "locked_gtl": 0, "total_earned_gtl": 0}, "entries": []}
     try:
         profile = get_me(token)
         ledger["reputation"] = profile.get("reputation", {})
@@ -44,9 +44,9 @@ def wallet_home(request):
     entries_total = len(entries)
     entries_limit = _load_more_limit(request.GET.get("ledger_limit"), entries_total)
     visible_entries = entries[:entries_limit]
-    recharge_min_balance = SiteConfig.get_solo().wallet_recharge_min_balance_oc
-    available_oc = int(ledger.get("wallet", {}).get("available_oc") or 0)
-    recharge_eligible = available_oc <= recharge_min_balance
+    recharge_min_balance = SiteConfig.get_solo().wallet_recharge_min_balance_gtl
+    available_gtl = int(ledger.get("wallet", {}).get("available_gtl") or 0)
+    recharge_eligible = available_gtl <= recharge_min_balance
     context = {
         **ledger,
         "entries": list(visible_entries),
@@ -68,9 +68,9 @@ def request_recharge(request):
         return redirect("wallet")
     try:
         wallet = get_ledger(auth_token(request)).get("wallet", {})
-        recharge_min_balance = SiteConfig.get_solo().wallet_recharge_min_balance_oc
-        if int(wallet.get("available_oc") or 0) > recharge_min_balance:
-            messages.error(request, f"Recarga disponível apenas para saldo disponível de até {recharge_min_balance} O₵.")
+        recharge_min_balance = SiteConfig.get_solo().wallet_recharge_min_balance_gtl
+        if int(wallet.get("available_gtl") or 0) > recharge_min_balance:
+            messages.error(request, f"Recarga disponível apenas para saldo disponível de até {recharge_min_balance} GT₵.")
             return redirect("wallet")
     except AuthAPIError:
         pass

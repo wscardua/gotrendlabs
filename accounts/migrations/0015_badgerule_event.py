@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
             field=models.CharField(blank=True, default="", max_length=80),
         ),
         migrations.RunSQL(
-            "ALTER TABLE orynth_badge_rules ALTER COLUMN event SET DEFAULT ''",
-            "ALTER TABLE orynth_badge_rules ALTER COLUMN event DROP DEFAULT",
+            "ALTER TABLE gotrendlabs_badge_rules ALTER COLUMN event SET DEFAULT ''",
+            "ALTER TABLE gotrendlabs_badge_rules ALTER COLUMN event DROP DEFAULT",
         ),
     ]

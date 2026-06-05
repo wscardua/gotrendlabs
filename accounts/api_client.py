@@ -45,12 +45,12 @@ def _request(method, path, payload=None, token=None, timeout=5):
 
 
 def _currency_label(value):
-    return str(value or "0 O₵").replace(" OC", " O₵")
+    return str(value or "0 GT₵").replace(" GTL", " GT₵")
 
 
 def _normalize_market_payload(market):
-    if isinstance(market, dict) and "volume_oc" in market:
-        return {**market, "volume_oc": _currency_label(market.get("volume_oc"))}
+    if isinstance(market, dict) and "volume_gtl" in market:
+        return {**market, "volume_gtl": _currency_label(market.get("volume_gtl"))}
     return market
 
 
@@ -235,11 +235,11 @@ def admin_revoke_user_sessions(token, user_id, note):
     return _request("POST", f"/admin/users/{user_id}/sessions/revoke", {"note": note}, token=token)
 
 
-def admin_adjust_user_wallet(token, user_id, direction, amount_oc, note):
+def admin_adjust_user_wallet(token, user_id, direction, amount_gtl, note):
     return _request(
         "POST",
         f"/admin/users/{user_id}/wallet/adjust",
-        {"direction": direction, "amount_oc": amount_oc, "note": note},
+        {"direction": direction, "amount_gtl": amount_gtl, "note": note},
         token=token,
     )
 
@@ -372,16 +372,16 @@ def admin_convert_suggestion(token, item_id, note=""):
     return _request("POST", f"/admin/queues/suggestions/{item_id}/convert-draft", {"note": note}, token=token)
 
 
-def admin_reward_feedback(token, item_id, amount_oc, note=""):
-    return _request("POST", f"/admin/queues/feedback/{item_id}/reward", {"amount_oc": amount_oc, "note": note}, token=token)
+def admin_reward_feedback(token, item_id, amount_gtl, note=""):
+    return _request("POST", f"/admin/queues/feedback/{item_id}/reward", {"amount_gtl": amount_gtl, "note": note}, token=token)
 
 
-def admin_reward_suggestion(token, item_id, amount_oc, note=""):
-    return _request("POST", f"/admin/queues/suggestions/{item_id}/reward", {"amount_oc": amount_oc, "note": note}, token=token)
+def admin_reward_suggestion(token, item_id, amount_gtl, note=""):
+    return _request("POST", f"/admin/queues/suggestions/{item_id}/reward", {"amount_gtl": amount_gtl, "note": note}, token=token)
 
 
-def admin_approve_wallet_recharge(token, item_id, amount_oc, note=""):
-    return _request("POST", f"/admin/queues/wallet-recharges/{item_id}/approve", {"amount_oc": amount_oc, "note": note}, token=token)
+def admin_approve_wallet_recharge(token, item_id, amount_gtl, note=""):
+    return _request("POST", f"/admin/queues/wallet-recharges/{item_id}/approve", {"amount_gtl": amount_gtl, "note": note}, token=token)
 
 
 def admin_reject_wallet_recharge(token, item_id, note=""):

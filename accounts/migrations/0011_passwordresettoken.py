@@ -25,10 +25,10 @@ class Migration(migrations.Migration):
                 ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="password_reset_tokens", to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                "db_table": "orynth_password_reset_tokens",
+                "db_table": "gotrendlabs_password_reset_tokens",
                 "indexes": [
-                    models.Index(fields=["token_hash"], name="orynth_pass_token_h_9fa770_idx"),
-                    models.Index(fields=["user", "used_at", "expires_at"], name="orynth_pass_user_id_7d1622_idx"),
+                    models.Index(fields=["token_hash"], name="gotrendlabs_token_h_5d1be6_idx"),
+                    models.Index(fields=["user", "used_at", "expires_at"], name="gotrendlabs_user_id_9798d9_idx"),
                 ],
             },
         ),

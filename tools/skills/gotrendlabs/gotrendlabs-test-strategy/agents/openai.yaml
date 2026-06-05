@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Test Strategy"
+  short_description: "Define aceite, cobertura e regressão"
+  default_prompt: "Use $gotrendlabs-test-strategy para definir testes esperados, critérios de aceite e regressões a proteger em uma feature do GoTrendLabs."
+
+policy:
+  allow_implicit_invocation: true

@@ -61,7 +61,7 @@ Campos mínimos de cada item em `badges`:
 - A fórmula pode evoluir, mas as mudanças precisam ser registradas em decisão técnica.
 - O ranking deve ser explicável o suficiente para suporte e operação.
 - O histórico público não pode depender apenas de posição agregada; deve haver lastro em previsões resolvidas.
-- O ranking global usa a reputação persistida em `orynth_user_reputations`.
+- O ranking global usa a reputação persistida em `gotrendlabs_user_reputations`.
 - Ranking filtrado por categoria/subcategoria é uma projeção de leitura recalculada a partir de previsões resolvidas daquele recorte, usando a mesma fórmula MVP.
 - Ranking filtrado por evento é uma projeção de leitura recalculada a partir de previsões resolvidas daquele evento, sempre dentro de uma categoria e subcategoria selecionadas.
 - Usuários administrativos (`is_staff` ou `is_superuser`) não participam do ranking público.
@@ -76,7 +76,7 @@ Campos mínimos de cada item em `badges`:
 
 Badges são expostas como catálogo administrável e conquistas do usuário. A regra executável fica no backend e usa apenas `rule_type` controlado.
 
-Conquistas de usuário são persistidas em `orynth_user_badge_awards`. A exibição pública não deve tratar badge conquistada como estado efêmero de tela.
+Conquistas de usuário são persistidas em `gotrendlabs_user_badge_awards`. A exibição pública não deve tratar badge conquistada como estado efêmero de tela.
 
 ### Shapes mínimos
 

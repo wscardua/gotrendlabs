@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
             fields=[
                 ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
                 ("status", models.CharField(choices=[("pending", "Pending"), ("approved", "Approved"), ("rejected", "Rejected")], db_index=True, default="pending", max_length=20)),
-                ("amount_oc", models.PositiveIntegerField(blank=True, null=True)),
+                ("amount_gtl", models.PositiveIntegerField(blank=True, null=True)),
                 ("admin_note", models.TextField(blank=True)),
                 ("reviewed_at", models.DateTimeField(blank=True, null=True)),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -26,16 +26,16 @@ class Migration(migrations.Migration):
                 ("user", models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name="wallet_recharge_requests", to=settings.AUTH_USER_MODEL)),
             ],
             options={
-                "db_table": "orynth_wallet_recharge_requests",
+                "db_table": "gotrendlabs_wallet_recharge_requests",
             },
         ),
         migrations.AddIndex(
             model_name="walletrechargerequest",
-            index=models.Index(fields=["status", "-created_at"], name="orynth_wall_status_07af12_idx"),
+            index=models.Index(fields=["status", "-created_at"], name="gotrendlabs_status_db58de_idx"),
         ),
         migrations.AddIndex(
             model_name="walletrechargerequest",
-            index=models.Index(fields=["user", "-created_at"], name="orynth_wall_user_id_173962_idx"),
+            index=models.Index(fields=["user", "-created_at"], name="gotrendlabs_user_id_856416_idx"),
         ),
         migrations.AddConstraint(
             model_name="walletrechargerequest",

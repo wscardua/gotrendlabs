@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% block title %}Orynth Trends Admin | Usuário{% endblock %}
+{% block title %}GoTrendLabs Admin | Usuário{% endblock %}
 {% block content %}
 <main class="shell admin-layout user-admin-page">
   <section class="panel user-admin-shell">
@@ -30,8 +30,8 @@
           <section class="data-card-grid four">
             <article class="data-card">
               <span class="data-label">Disponível</span>
-              <strong>{{ detail.wallet.available_oc }} O₵</strong>
-              <small>{{ detail.wallet.locked_oc }} O₵ bloqueado</small>
+              <strong>{{ detail.wallet.available_gtl }} GT₵</strong>
+              <small>{{ detail.wallet.locked_gtl }} GT₵ bloqueado</small>
             </article>
             <article class="data-card">
               <span class="data-label">Reputação</span>
@@ -45,7 +45,7 @@
             </article>
             <article class="data-card">
               <span class="data-label">Ganhos</span>
-              <strong>{{ detail.wallet.total_earned_oc }} O₵</strong>
+              <strong>{{ detail.wallet.total_earned_gtl }} GT₵</strong>
               <small>ledger conciliável</small>
             </article>
           </section>
@@ -90,7 +90,7 @@
                   <table class="table compact-table">
                     <tr><th>Mercado</th><th>Opção</th><th>Status</th><th>Stake</th></tr>
                     {% for prediction in detail.predictions %}
-                      <tr><td>{{ prediction.market_title }}</td><td>{{ prediction.option_label }}</td><td>{{ prediction.status }}</td><td>{{ prediction.stake_amount }} O₵</td></tr>
+                      <tr><td>{{ prediction.market_title }}</td><td>{{ prediction.option_label }}</td><td>{{ prediction.status }}</td><td>{{ prediction.stake_amount }} GT₵</td></tr>
                     {% empty %}<tr><td colspan="4">Sem previsões.</td></tr>{% endfor %}
                   </table>
                 </div>
@@ -118,7 +118,7 @@
                   <table class="table compact-table">
                     <tr><th>Item</th><th>Status</th><th>Recompensa</th></tr>
                     {% for item in detail.suggestions %}
-                      <tr><td>{{ item.title }}</td><td>{{ item.status }}</td><td>{{ item.reward_oc|default:"-" }}</td></tr>
+                      <tr><td>{{ item.title }}</td><td>{{ item.status }}</td><td>{{ item.reward_gtl|default:"-" }}</td></tr>
                     {% empty %}<tr><td colspan="3">Sem sugestões.</td></tr>{% endfor %}
                   </table>
                 </div>
@@ -251,8 +251,8 @@
               {% csrf_token %}
               <label for="{{ wallet_form.direction.id_for_label }}">Ajuste de wallet</label>
               {{ wallet_form.direction }}
-              <label for="{{ wallet_form.amount_oc.id_for_label }}">Valor O₵</label>
-              {{ wallet_form.amount_oc }}
+              <label for="{{ wallet_form.amount_gtl.id_for_label }}">Valor GT₵</label>
+              {{ wallet_form.amount_gtl }}
               <label for="{{ wallet_form.note.id_for_label }}">Justificativa</label>
               {{ wallet_form.note }}
               <input type="hidden" name="action" value="wallet_adjust">

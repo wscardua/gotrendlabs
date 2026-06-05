@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs blade logo</title>
+  <desc id="desc">A sharp blade mark for precise calls, early conviction, and public scoring.</desc>
+  <rect width="760" height="180" rx="12" fill="#F7F4EC"/>
+  <path d="M0 0H760V180H520L760 0H0Z" fill="#111315"/>
+  <g transform="translate(32 24)">
+    <path d="M19 119L113 11L91 103L124 104L48 142L62 112L19 119Z" fill="#F4FF00"/>
+    <path d="M62 112L91 103L113 11" stroke="#111315" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="48" cy="142" r="10" fill="#FF2E63"/>
+  </g>
+  <text x="190" y="79" fill="#F7F4EC" font-family="Arial Black, IBM Plex Sans, Inter, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="192" y="122" fill="#F4FF00" font-family="IBM Plex Mono, IBM Plex Sans, Inter, Arial, sans-serif" font-size="17" font-weight="800">SHARP CALLS. PUBLIC SCORE.</text>
+  <text x="637" y="101" fill="#F7F4EC" font-family="Arial Black, IBM Plex Sans, Inter, Arial, sans-serif" font-size="34" font-weight="900">GTL₵</text>
+</svg>

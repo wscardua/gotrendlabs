@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(model_name="siteconfig", name="ai_max_comments_per_day", field=models.PositiveIntegerField(default=20)),
         migrations.AddField(model_name="siteconfig", name="ai_comment_max_chars", field=models.PositiveIntegerField(default=700)),
         migrations.AddField(model_name="siteconfig", name="ai_min_humans_for_prediction", field=models.PositiveIntegerField(default=1)),
-        migrations.AddField(model_name="siteconfig", name="ai_max_stake_oc", field=models.PositiveIntegerField(default=25)),
+        migrations.AddField(model_name="siteconfig", name="ai_max_stake_gtl", field=models.PositiveIntegerField(default=25)),
         migrations.AddField(model_name="siteconfig", name="ai_max_predictions_per_cycle", field=models.PositiveIntegerField(default=1)),
         migrations.AddField(model_name="siteconfig", name="ai_max_predictions_per_day", field=models.PositiveIntegerField(default=10)),
         migrations.AddField(model_name="siteconfig", name="ai_skip_if_human_comments_recent", field=models.BooleanField(default=True)),

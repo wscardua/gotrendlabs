@@ -13,6 +13,7 @@ from urllib.parse import quote, urlparse
 
 from django.conf import settings
 from django.core.management import call_command
+from django.contrib.staticfiles import finders
 from django.test import TestCase, TransactionTestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
@@ -80,7 +81,7 @@ def _seed_test_markets():
                 "primary_outcome": payload.get("primary_outcome", ""),
                 "primary_probability_exact": payload.get("primary_probability_exact", payload.get("primary_probability", 0)),
                 "secondary_probability_exact": payload.get("secondary_probability_exact", payload.get("secondary_probability", 0)),
-                "volume_oc": payload.get("volume_oc", ""),
+                "volume_gtl": payload.get("volume_gtl", ""),
                 "participants": payload.get("participants", ""),
                 "source": payload.get("source", ""),
                 "closes_in": payload.get("closes_in", ""),
@@ -142,12 +143,12 @@ class FixtureDomainClientTests(TestCase):
         self.assertIn("probability_exact", market["options"][0])
         self.assertGreaterEqual(len(market["options"]), 2)
 
-    def test_api_client_normalizes_legacy_oc_volume_labels(self):
-        with patch("accounts.api_client._request", return_value={"slug": "legacy", "volume_oc": "1355 OC"}):
-            self.assertEqual(api_get_market("legacy")["volume_oc"], "1355 O₵")
+    def test_api_client_normalizes_legacy_gtl_volume_labels(self):
+        with patch("accounts.api_client._request", return_value={"slug": "legacy", "volume_gtl": "1355 GTL"}):
+            self.assertEqual(api_get_market("legacy")["volume_gtl"], "1355 GT₵")
 
-        with patch("accounts.api_client._request", return_value={"markets": [{"slug": "legacy", "volume_oc": "1355 OC"}]}):
-            self.assertEqual(api_get_markets()[0]["volume_oc"], "1355 O₵")
+        with patch("accounts.api_client._request", return_value={"markets": [{"slug": "legacy", "volume_gtl": "1355 GTL"}]}):
+            self.assertEqual(api_get_markets()[0]["volume_gtl"], "1355 GT₵")
 
 
 class BackendAuthAPITests(TransactionTestCase):
@@ -493,7 +494,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(user.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", (staff_email,))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", (staff_email,))
         admin_markets = client.get("/admin/markets", headers={"Authorization": f"Bearer {user.json()['session']['token']}"})
         self.assertEqual(admin_markets.status_code, 200)
         admin_market = next(item for item in admin_markets.json()["markets"] if item["slug"] == "openai-gpt6-2026")
@@ -559,7 +560,7 @@ class BackendAuthAPITests(TransactionTestCase):
         target_id = target.json()["user"]["id"]
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("user-admin-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("user-admin-staff@example.com",))
 
         forbidden = client.get("/admin/users", headers=target_headers)
         self.assertEqual(forbidden.status_code, 403)
@@ -574,7 +575,7 @@ class BackendAuthAPITests(TransactionTestCase):
         payload = detail.json()
         self.assertEqual(payload["user"]["handle"], "@manageduser")
         self.assertFalse(payload["user"]["is_bot"])
-        self.assertEqual(payload["wallet"]["available_oc"], 2000)
+        self.assertEqual(payload["wallet"]["available_gtl"], 2000)
         self.assertIn("sessions", payload)
         self.assertIn("auth_events", payload)
 
@@ -593,10 +594,10 @@ class BackendAuthAPITests(TransactionTestCase):
         credit = client.post(
             f"/admin/users/{target_id}/wallet/adjust",
             headers=staff_headers,
-            json={"direction": "credit", "amount_oc": 75, "note": "Crédito de suporte"},
+            json={"direction": "credit", "amount_gtl": 75, "note": "Crédito de suporte"},
         )
         self.assertEqual(credit.status_code, 200)
-        self.assertEqual(credit.json()["wallet"]["available_oc"], 2075)
+        self.assertEqual(credit.json()["wallet"]["available_gtl"], 2075)
         self.assertTrue(
             WalletLedgerEntry.objects.filter(
                 user_id=target_id,
@@ -612,17 +613,17 @@ class BackendAuthAPITests(TransactionTestCase):
         excessive_debit = client.post(
             f"/admin/users/{target_id}/wallet/adjust",
             headers=staff_headers,
-            json={"direction": "debit", "amount_oc": 999999, "note": "Débito excessivo"},
+            json={"direction": "debit", "amount_gtl": 999999, "note": "Débito excessivo"},
         )
         self.assertEqual(excessive_debit.status_code, 422)
 
         self_credit = client.post(
             f"/admin/users/{staff_id}/wallet/adjust",
             headers=staff_headers,
-            json={"direction": "credit", "amount_oc": 25, "note": "Ajuste operacional próprio"},
+            json={"direction": "credit", "amount_gtl": 25, "note": "Ajuste operacional próprio"},
         )
         self.assertEqual(self_credit.status_code, 200)
-        self.assertEqual(self_credit.json()["wallet"]["available_oc"], 2025)
+        self.assertEqual(self_credit.json()["wallet"]["available_gtl"], 2025)
         self.assertTrue(
             UserNotification.objects.filter(
                 recipient_id=staff_id,
@@ -688,8 +689,8 @@ class BackendAuthAPITests(TransactionTestCase):
         staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true, is_superuser = true WHERE email = %s", ("root-admin@example.com",))
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("role-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true, is_superuser = true WHERE email = %s", ("root-admin@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("role-staff@example.com",))
 
         forbidden = client.post(
             f"/admin/users/{target_id}/roles",
@@ -771,10 +772,10 @@ class BackendAuthAPITests(TransactionTestCase):
         target_headers = {"Authorization": f"Bearer {target.json()['session']['token']}"}
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE id = %s", (staff_id,))
-                cursor.execute("UPDATE orynth_users SET is_staff = true, is_superuser = true WHERE id = %s", (superuser_id,))
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE id = %s", (admin_target_id,))
-                cursor.execute("UPDATE orynth_users SET account_status = 'deactivated', is_active = false WHERE id = %s", (disabled_id,))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE id = %s", (staff_id,))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true, is_superuser = true WHERE id = %s", (superuser_id,))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE id = %s", (admin_target_id,))
+                cursor.execute("UPDATE gotrendlabs_users SET account_status = 'deactivated', is_active = false WHERE id = %s", (disabled_id,))
 
         reset = client.post(
             f"/admin/users/{target_id}/password-reset",
@@ -883,7 +884,7 @@ class BackendAuthAPITests(TransactionTestCase):
         user_headers = {"Authorization": f"Bearer {user.json()['session']['token']}"}
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("logs-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("logs-staff@example.com",))
 
         forbidden = client.get("/admin/system-logs", headers=user_headers)
         self.assertEqual(forbidden.status_code, 403)
@@ -892,7 +893,7 @@ class BackendAuthAPITests(TransactionTestCase):
         log_id = log_system_event(
             level="ERROR",
             source="fastapi",
-            logger_name="orynth.test",
+            logger_name="gotrendlabs_tests",
             event_type="request_exception",
             message="Falha simulada de troubleshooting",
             request_id=request_id,
@@ -951,14 +952,14 @@ class BackendAuthAPITests(TransactionTestCase):
         now = timezone.now()
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("dashboard-staff@example.com",))
-                cursor.execute("SELECT id FROM orynth_users WHERE email = %s", ("dashboard-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("dashboard-staff@example.com",))
+                cursor.execute("SELECT id FROM gotrendlabs_users WHERE email = %s", ("dashboard-staff@example.com",))
                 staff_id = cursor.fetchone()["id"]
-                cursor.execute("SELECT id FROM orynth_markets WHERE slug = %s", ("openai-gpt6-2026",))
+                cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug = %s", ("openai-gpt6-2026",))
                 market_id = cursor.fetchone()["id"]
                 cursor.execute(
                     """
-                    INSERT INTO orynth_market_suggestions
+                    INSERT INTO gotrendlabs_market_suggestions
                         (author_id, guest_name, guest_email, question, category, subcategory, kind, suggested_source, rationale, status, admin_note, created_at, updated_at)
                     VALUES (%s, '', '', 'Contrato operacional pendente?', 'IA', 'Modelos', 'binary', 'Fonte', '', 'pending', '', %s, %s)
                     """,
@@ -966,7 +967,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_product_feedback
+                    INSERT INTO gotrendlabs_product_feedback
                         (author_id, guest_name, guest_email, feedback_type, severity, description, status, admin_note, created_at, updated_at)
                     VALUES (%s, '', '', 'bug', 'high', 'Falha importante para dashboard.', 'pending', '', %s, %s)
                     """,
@@ -974,7 +975,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_market_comments
+                    INSERT INTO gotrendlabs_market_comments
                         (market_id, author_id, body, status, moderation_note, created_at, updated_at)
                     VALUES (%s, %s, 'Comentário oculto de teste.', 'hidden', '', %s, %s)
                     """,
@@ -982,7 +983,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_admin_events
+                    INSERT INTO gotrendlabs_admin_events
                         (actor_id, action, entity_type, entity_identifier, note, created_at)
                     VALUES (%s, 'dashboard_probe', 'market', 'openai-gpt6-2026', 'Evento para resumo', %s)
                     """,
@@ -990,7 +991,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_system_logs
+                    INSERT INTO gotrendlabs_system_logs
                         (created_at, expires_at, level, source, logger_name, event_type, message, request_id, method, path, status_code, duration_ms, user_id, ip_address, user_agent, exception_type, stack_trace, context)
                     VALUES (%s, %s, 'ERROR', 'fastapi', 'test.dashboard', 'dashboard_error', 'Erro para resumo', 'req-dashboard', 'GET', '/admin/dashboard-summary', 500, 12, %s, '127.0.0.1', 'test', 'RuntimeError', 'RuntimeError: boom', '{}'::jsonb)
                     """,
@@ -998,15 +999,15 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_system_logs
+                    INSERT INTO gotrendlabs_system_logs
                         (created_at, expires_at, level, source, logger_name, event_type, message, request_id, method, path, status_code, duration_ms, user_id, ip_address, user_agent, exception_type, stack_trace, context)
-                    VALUES (%s, %s, 'INFO', 'python', 'orynth.daemon', 'daemon.heartbeat', 'Daemon operacional ativo.', '', '', '', NULL, NULL, NULL, NULL, '', '', '', '{"locked_markets": 1}'::jsonb)
+                    VALUES (%s, %s, 'INFO', 'python', 'gotrendlabs.daemon', 'daemon.heartbeat', 'Daemon operacional ativo.', '', '', '', NULL, NULL, NULL, NULL, '', '', '', '{"locked_markets": 1}'::jsonb)
                     """,
                     (now, now + timedelta(days=90)),
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_admin_events
+                    INSERT INTO gotrendlabs_admin_events
                         (actor_id, action, entity_type, entity_identifier, note, created_at)
                     VALUES (NULL, 'market.lock', 'market', 'daemon-dashboard-market', %s, %s)
                     """,
@@ -1014,9 +1015,9 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_site_config
+                    INSERT INTO gotrendlabs_site_config
                         (
-                            singleton_key, wallet_recharge_min_balance_oc, daemon_stale_after_minutes, daemon_missing_after_minutes,
+                            singleton_key, wallet_recharge_min_balance_gtl, daemon_stale_after_minutes, daemon_missing_after_minutes,
                             system_log_retention_days, ai_audit_retention_days,
                             email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
                             default_from_email, default_reply_to_email,
@@ -1024,7 +1025,7 @@ class BackendAuthAPITests(TransactionTestCase):
                             ai_model, ai_high_reasoning_model, ai_market_cooldown_hours, ai_max_comments_per_market_per_day,
                             ai_max_comments_per_cycle, ai_max_comment_attempts_per_cycle, ai_comment_candidate_limit,
                             ai_max_comments_per_day, ai_comment_max_chars, ai_min_humans_for_prediction,
-                            ai_max_stake_oc, ai_max_predictions_per_cycle, ai_max_predictions_per_day, ai_skip_if_human_comments_recent,
+                            ai_max_stake_gtl, ai_max_predictions_per_cycle, ai_max_predictions_per_day, ai_skip_if_human_comments_recent,
                             ai_recent_human_comment_window_hours, ai_openai_timeout_seconds, ai_openai_max_retries, ai_pause_reason,
                             updated_by_id, updated_at
                         )
@@ -1054,8 +1055,8 @@ class BackendAuthAPITests(TransactionTestCase):
             with patch.dict(
                 os.environ,
                 {
-                    "ORYNTH_RUNTIME_CONFIG_PATH": config_path,
-                    "ORYNTH_SMTP_PASSWORD": "secret",
+                    "GOTRENDLABS_RUNTIME_CONFIG_PATH": config_path,
+                    "GOTRENDLABS_SMTP_PASSWORD": "secret",
                     "RECAPTCHA_ENABLED": "1",
                 },
             ):
@@ -1098,12 +1099,12 @@ class BackendAuthAPITests(TransactionTestCase):
         AiAgentAction.objects.filter(id=valid_action.id).update(created_at=now)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT id FROM orynth_users WHERE is_staff = true ORDER BY id LIMIT 1")
+                cursor.execute("SELECT id FROM gotrendlabs_users WHERE is_staff = true ORDER BY id LIMIT 1")
                 staff = cursor.fetchone()
                 staff_id = staff["id"] if staff else None
-                cursor.execute("SELECT id FROM orynth_market_categories ORDER BY id LIMIT 1")
+                cursor.execute("SELECT id FROM gotrendlabs_market_categories ORDER BY id LIMIT 1")
                 category_id = cursor.fetchone()["id"]
-                cursor.execute("SELECT id FROM orynth_market_subcategories WHERE category_id = %s ORDER BY id LIMIT 1", (category_id,))
+                cursor.execute("SELECT id FROM gotrendlabs_market_subcategories WHERE category_id = %s ORDER BY id LIMIT 1", (category_id,))
                 subcategory_id = cursor.fetchone()["id"]
                 market_rows = [
                     ("daemon-auto-vencido", "open", True, due_close_at),
@@ -1114,9 +1115,9 @@ class BackendAuthAPITests(TransactionTestCase):
                 for slug, status_value, auto_close_enabled, close_at in market_rows:
                     cursor.execute(
                         """
-                        INSERT INTO orynth_markets
+                        INSERT INTO gotrendlabs_markets
                             (slug, title, summary, kind, status, status_label, primary_outcome, primary_probability_exact,
-                             secondary_probability_exact, volume_oc, participants, source, closes_in, close_label, thumb,
+                             secondary_probability_exact, volume_gtl, participants, source, closes_in, close_label, thumb,
                              thumb_color, image_url, resolution_criteria, resolution_type, close_at, close_timezone,
                              auto_close_enabled, resolved_at, resolution_timezone, canceled_at, winning_option_id,
                              resolution_note, admin_notes, category_id, subcategory_id, created_by_id, updated_by_id,
@@ -1143,7 +1144,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_system_logs
+                    INSERT INTO gotrendlabs_system_logs
                         (created_at, expires_at, level, source, logger_name, event_type, message, request_id, method, path, status_code, duration_ms, user_id, ip_address, user_agent, exception_type, stack_trace, context)
                     VALUES
                         (%s, %s, 'INFO', 'python', 'test.prune', 'expired', 'expired', '', '', '', NULL, NULL, NULL, NULL, '', '', '', '{}'::jsonb),
@@ -1173,7 +1174,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertIn("system_logs", pruned)
         self.assertIn("ai_agent_actions", pruned)
 
-        log_system_event(logger_name="orynth.daemon", event_type="daemon.heartbeat", message="Daemon operacional ativo.")
+        log_system_event(logger_name="gotrendlabs.daemon", event_type="daemon.heartbeat", message="Daemon operacional ativo.")
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 status_payload = daemon_dashboard_status(cursor, now=now + timedelta(minutes=1))
@@ -1186,10 +1187,10 @@ class BackendAuthAPITests(TransactionTestCase):
     def test_daemon_management_commands_use_backend_services(self):
         out = StringIO()
         with patch(
-            "system_logs.management.commands.run_orynth_daemon.run_daemon_cycle",
+            "system_logs.management.commands.run_gotrendlabs_daemon.run_daemon_cycle",
             return_value={"locked_markets": [{"slug": "x"}], "pruned_logs": 3, "pruned_log_details": {"system_logs": 2, "ai_agent_actions": 1}},
         ) as cycle:
-            call_command("run_orynth_daemon", "--once", stdout=out)
+            call_command("run_gotrendlabs_daemon", "--once", stdout=out)
         cycle.assert_called_once()
         self.assertIn("locked 1 market", out.getvalue())
         self.assertIn("2 system log", out.getvalue())
@@ -1232,8 +1233,8 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_predictions_enabled = False
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_test", email="orynth-ai-test@example.com", password="x", is_bot=True, first_name="Orynth AI Test")
-        AiAgent.objects.create(name="Orynth AI Test", agent_type="analyst", user=bot, is_active=True)
+        bot = User.objects.create_user(username="@gotrendlabs_ai_test", email="gotrendlabs-ai-test@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Test")
+        AiAgent.objects.create(name="GoTrendLabs AI Test", agent_type="analyst", user=bot, is_active=True)
 
         with patch("backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("llm down")):
             with get_connection() as connection:
@@ -1261,7 +1262,7 @@ class BackendAuthAPITests(TransactionTestCase):
 
     def test_ai_comment_contract_marks_official_bot_author(self):
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_comment", email="orynth-ai-comment@example.com", password="x", is_bot=True, first_name="Orynth AI Comment")
+        bot = User.objects.create_user(username="@gotrendlabs_ai_comment", email="gotrendlabs-ai-comment@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Comment")
         market = Market.objects.get(slug="openai-gpt6-2026")
         MarketComment.objects.create(market=market, author=bot, body="Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.")
 
@@ -1297,7 +1298,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertIn("fatos especificos nao confirmados", prompt)
 
     def test_ai_comment_text_strips_official_prefix(self):
-        body = _safe_comment_text("Agente IA oficial da Orynth: Tese SIM: sinal. Tese NÃO: contraponto.", 700)
+        body = _safe_comment_text("Agente IA oficial da GoTrendLabs: Tese SIM: sinal. Tese NÃO: contraponto.", 700)
 
         self.assertEqual(body, "Tese SIM: sinal. Tese NÃO: contraponto.")
 
@@ -1312,8 +1313,8 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_comment_candidate_limit = 200
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_fallback", email="orynth-ai-fallback@example.com", password="x", is_bot=True, first_name="Orynth AI Fallback")
-        AiAgent.objects.create(name="Orynth AI Fallback", agent_type="analyst", user=bot, is_active=True)
+        bot = User.objects.create_user(username="@gotrendlabs_ai_fallback", email="gotrendlabs-ai-fallback@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Fallback")
+        AiAgent.objects.create(name="GoTrendLabs AI Fallback", agent_type="analyst", user=bot, is_active=True)
         Market.objects.filter(status="open").update(is_featured=False, view_count=0)
         first = Market.objects.get(slug="openai-gpt6-2026")
         second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
@@ -1346,8 +1347,8 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_max_comment_attempts_per_cycle = 3
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_validation", email="orynth-ai-validation@example.com", password="x", is_bot=True, first_name="Orynth AI Validation")
-        AiAgent.objects.create(name="Orynth AI Validation", agent_type="analyst", user=bot, is_active=True)
+        bot = User.objects.create_user(username="@gotrendlabs_ai_validation", email="gotrendlabs-ai-validation@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Validation")
+        AiAgent.objects.create(name="GoTrendLabs AI Validation", agent_type="analyst", user=bot, is_active=True)
         Market.objects.filter(status="open").update(is_featured=False, view_count=0)
         first = Market.objects.get(slug="openai-gpt6-2026")
         second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
@@ -1379,8 +1380,8 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_max_comment_attempts_per_cycle = 3
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_timeout", email="orynth-ai-timeout@example.com", password="x", is_bot=True, first_name="Orynth AI Timeout")
-        AiAgent.objects.create(name="Orynth AI Timeout", agent_type="analyst", user=bot, is_active=True)
+        bot = User.objects.create_user(username="@gotrendlabs_ai_timeout", email="gotrendlabs-ai-timeout@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Timeout")
+        AiAgent.objects.create(name="GoTrendLabs AI Timeout", agent_type="analyst", user=bot, is_active=True)
 
         with patch("backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("timeout")) as llm:
             summary = self._run_ai_cycle_for_test()
@@ -1401,8 +1402,8 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_comment_candidate_limit = 200
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_attempt_limit", email="orynth-ai-attempt-limit@example.com", password="x", is_bot=True, first_name="Orynth AI Attempt Limit")
-        AiAgent.objects.create(name="Orynth AI Attempt Limit", agent_type="analyst", user=bot, is_active=True)
+        bot = User.objects.create_user(username="@gotrendlabs_ai_attempt_limit", email="gotrendlabs-ai-attempt-limit@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Attempt Limit")
+        AiAgent.objects.create(name="GoTrendLabs AI Attempt Limit", agent_type="analyst", user=bot, is_active=True)
 
         with patch("backend_api.agent_services.request_market_comment", return_value={"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": []}) as llm:
             summary = self._run_ai_cycle_for_test()
@@ -1422,8 +1423,8 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_comment_candidate_limit = 200
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_ai_candidate_limit", email="orynth-ai-candidate-limit@example.com", password="x", is_bot=True, first_name="Orynth AI Candidate Limit")
-        AiAgent.objects.create(name="Orynth AI Candidate Limit", agent_type="analyst", user=bot, is_active=True)
+        bot = User.objects.create_user(username="@gotrendlabs_ai_candidate_limit", email="gotrendlabs-ai-candidate-limit@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Candidate Limit")
+        AiAgent.objects.create(name="GoTrendLabs AI Candidate Limit", agent_type="analyst", user=bot, is_active=True)
         Market.objects.filter(status="open").update(is_featured=False, view_count=0)
         category = MarketCategory.objects.first()
         subcategory = MarketSubcategory.objects.filter(category=category).first()
@@ -1509,7 +1510,7 @@ class BackendAuthAPITests(TransactionTestCase):
     def test_ranking_and_badges_ignore_bots(self):
         User = get_user_model()
         human = User.objects.create_user(username="@ranking_human", email="ranking-human@example.com", password="x")
-        bot = User.objects.create_user(username="@ranking_bot", email="ranking-bot@example.com", password="x", is_bot=True, first_name="Orynth AI Ranking")
+        bot = User.objects.create_user(username="@ranking_bot", email="ranking-bot@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Ranking")
         UserReputation.objects.create(user=human, reputation_score=120, accuracy_indicator="0%")
         UserReputation.objects.create(user=bot, reputation_score=999, accuracy_indicator="0%")
         BadgeDefinition.objects.update_or_create(
@@ -1582,12 +1583,12 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_commenting_enabled = False
         site_config.ai_predictions_enabled = True
         site_config.ai_min_humans_for_prediction = 1
-        site_config.ai_max_stake_oc = 25
+        site_config.ai_max_stake_gtl = 25
         site_config.save()
         User = get_user_model()
-        bot = User.objects.create_user(username="@orynth_liquidity_bot", email="orynth-liquidity@example.com", password="x", is_bot=True, first_name="Orynth Liquidity Bot")
-        AiAgent.objects.create(name="Orynth Liquidity Bot", agent_type="liquidity", user=bot, is_active=True)
-        WalletBalance.objects.create(user=bot, available_oc=100, locked_oc=0, total_earned_oc=0)
+        bot = User.objects.create_user(username="@gotrendlabs_liquidity_bot", email="gotrendlabs-liquidity@example.com", password="x", is_bot=True, first_name="GoTrendLabs Liquidity Bot")
+        AiAgent.objects.create(name="GoTrendLabs Liquidity Bot", agent_type="liquidity", user=bot, is_active=True)
+        WalletBalance.objects.create(user=bot, available_gtl=100, locked_gtl=0, total_earned_gtl=0)
         market = Market.objects.get(slug="openai-gpt6-2026")
 
         with get_connection() as connection:
@@ -1604,13 +1605,13 @@ class BackendAuthAPITests(TransactionTestCase):
         site_config.ai_commenting_enabled = False
         site_config.ai_predictions_enabled = True
         site_config.ai_min_humans_for_prediction = 1
-        site_config.ai_max_stake_oc = 5
+        site_config.ai_max_stake_gtl = 5
         site_config.save()
         User = get_user_model()
         human = User.objects.create_user(username="@skip_human", email="skip-human@example.com", password="x")
-        bot = User.objects.create_user(username="@skip_liquidity_bot", email="skip-liquidity@example.com", password="x", is_bot=True, first_name="Orynth Liquidity")
-        AiAgent.objects.create(name="Orynth Liquidity Skip", agent_type="liquidity", user=bot, is_active=True)
-        WalletBalance.objects.create(user=bot, available_oc=100, locked_oc=0, total_earned_oc=0)
+        bot = User.objects.create_user(username="@skip_liquidity_bot", email="skip-liquidity@example.com", password="x", is_bot=True, first_name="GoTrendLabs Liquidity")
+        AiAgent.objects.create(name="GoTrendLabs Liquidity Skip", agent_type="liquidity", user=bot, is_active=True)
+        WalletBalance.objects.create(user=bot, available_gtl=100, locked_gtl=0, total_earned_gtl=0)
         markets = list(Market.objects.filter(status="open").order_by("id")[:2])
         first = markets[0]
         second = markets[1]
@@ -1642,8 +1643,8 @@ class BackendAuthAPITests(TransactionTestCase):
         captured = SystemLog.objects.filter(request_id=request_id).latest("id")
         self.assertEqual(captured.context["headers"]["authorization"], "[REDACTED]")
 
-        logging.getLogger("orynth.tests.system_logs").warning("handler persistence smoke", extra={"api_token": "secret"})
-        self.assertTrue(SystemLog.objects.filter(logger_name="orynth.tests.system_logs", event_type="logging", message__icontains="handler persistence smoke").exists())
+        logging.getLogger("gotrendlabs_tests.system_logs").warning("handler persistence smoke", extra={"api_token": "secret"})
+        self.assertTrue(SystemLog.objects.filter(logger_name="gotrendlabs_tests.system_logs", event_type="logging", message__icontains="handler persistence smoke").exists())
 
     def test_register_handle_collision_keeps_at_prefix(self):
         client = TestClient(app)
@@ -1701,9 +1702,9 @@ class BackendAuthAPITests(TransactionTestCase):
 
         wallet = client.get("/users/me/wallet", headers=headers)
         self.assertEqual(wallet.status_code, 200)
-        self.assertEqual(wallet.json()["available_oc"], 2000)
-        self.assertEqual(wallet.json()["locked_oc"], 0)
-        self.assertEqual(WalletBalance.objects.get(user__username="@usercore").available_oc, 2000)
+        self.assertEqual(wallet.json()["available_gtl"], 2000)
+        self.assertEqual(wallet.json()["locked_gtl"], 0)
+        self.assertEqual(WalletBalance.objects.get(user__username="@usercore").available_gtl, 2000)
 
         ledger = client.get("/users/me/ledger", headers=headers)
         self.assertEqual(ledger.status_code, 200)
@@ -1725,10 +1726,10 @@ class BackendAuthAPITests(TransactionTestCase):
 
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("SELECT id FROM orynth_users WHERE username = %s", ("@usercore",))
+                cursor.execute("SELECT id FROM gotrendlabs_users WHERE username = %s", ("@usercore",))
                 user_id = cursor.fetchone()["id"]
-                cursor.execute("UPDATE orynth_users SET first_name = '' WHERE id = %s", (user_id,))
-                cursor.execute("UPDATE orynth_user_profiles SET display_name = %s WHERE user_id = %s", ("Nome vindo do perfil", user_id))
+                cursor.execute("UPDATE gotrendlabs_users SET first_name = '' WHERE id = %s", (user_id,))
+                cursor.execute("UPDATE gotrendlabs_user_profiles SET display_name = %s WHERE user_id = %s", ("Nome vindo do perfil", user_id))
         profile_backed_me = client.get("/users/me", headers=headers)
         self.assertEqual(profile_backed_me.status_code, 200)
         self.assertEqual(profile_backed_me.json()["user"]["display_name"], "Nome vindo do perfil")
@@ -1742,7 +1743,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(repeat_me.status_code, 200)
         self.assertEqual(UserReputation.objects.filter(user__username="@usercore").count(), 1)
         self.assertEqual(WalletLedgerEntry.objects.filter(user__username="@usercore", entry_type="grant_initial").count(), 1)
-        self.assertEqual(WalletBalance.objects.get(user__username="@usercore").available_oc, 2000)
+        self.assertEqual(WalletBalance.objects.get(user__username="@usercore").available_gtl, 2000)
 
         invalid = client.get("/users/me", headers={"Authorization": "Bearer invalid"})
         self.assertEqual(invalid.status_code, 401)
@@ -1754,7 +1755,7 @@ class BackendAuthAPITests(TransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO orynth_users (
+                    INSERT INTO gotrendlabs_users (
                         password, last_login, is_superuser, username, first_name, last_name, email,
                         is_staff, is_active, date_joined, preferred_language, external_provider,
                         external_subject, terms_accepted_at, terms_version, account_status,
@@ -1776,7 +1777,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertFalse(UserReputation.objects.filter(user=operator).exists())
         self.assertFalse(WalletLedgerEntry.objects.filter(user=operator).exists())
         self.assertFalse(WalletLedgerEntry.objects.filter(user=operator, entry_type="grant_initial").exists())
-        self.assertEqual(WalletBalance.objects.get(user=operator).available_oc, 0)
+        self.assertEqual(WalletBalance.objects.get(user=operator).available_gtl, 0)
         self.assertFalse(operator.badges.exists())
         self.assertFalse(operator.activities.exists())
 
@@ -1796,7 +1797,7 @@ class BackendAuthAPITests(TransactionTestCase):
         staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("badge-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("badge-staff@example.com",))
 
         public_catalog = client.get("/badges")
         self.assertEqual(public_catalog.status_code, 200)
@@ -1866,7 +1867,7 @@ class BackendAuthAPITests(TransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO orynth_badge_definitions
+                    INSERT INTO gotrendlabs_badge_definitions
                         (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
                     VALUES ('auto-comment', 'Comentou IA', 'Fez um comentário em IA.', 'Publique 1 comentário visível em IA/Modelos.', 'engagement', '', '', true, now(), now())
                     RETURNING id
@@ -1875,7 +1876,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 badge_id = cursor.fetchone()["id"]
                 cursor.execute(
                     """
-                    INSERT INTO orynth_badge_rules
+                    INSERT INTO gotrendlabs_badge_rules
                         (badge_id, rule_type, threshold_value, category, subcategory, is_active, created_at, updated_at)
                     VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', true, now(), now())
                     """,
@@ -1883,7 +1884,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_badge_definitions
+                    INSERT INTO gotrendlabs_badge_definitions
                         (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
                     VALUES ('auto-comment-event', 'Comentou em Geral', 'Fez um comentário no evento Geral.', 'Publique 1 comentário visível em IA/Modelos/Geral.', 'engagement', '', '', true, now(), now())
                     RETURNING id
@@ -1892,7 +1893,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 event_badge_id = cursor.fetchone()["id"]
                 cursor.execute(
                     """
-                    INSERT INTO orynth_badge_rules
+                    INSERT INTO gotrendlabs_badge_rules
                         (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
                     VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', 'Geral', true, now(), now())
                     """,
@@ -1900,7 +1901,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 )
                 cursor.execute(
                     """
-                    INSERT INTO orynth_badge_definitions
+                    INSERT INTO gotrendlabs_badge_definitions
                         (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
                     VALUES ('auto-comment-wrong-event', 'Comentou Bitcoin', 'Fez um comentário no evento Bitcoin.', 'Publique 1 comentário visível em IA/Modelos/Bitcoin.', 'engagement', '', '', true, now(), now())
                     RETURNING id
@@ -1909,7 +1910,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 wrong_event_badge_id = cursor.fetchone()["id"]
                 cursor.execute(
                     """
-                    INSERT INTO orynth_badge_rules
+                    INSERT INTO gotrendlabs_badge_rules
                         (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
                     VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', 'Bitcoin', true, now(), now())
                     """,
@@ -1926,9 +1927,9 @@ class BackendAuthAPITests(TransactionTestCase):
                 cursor.execute(
                     """
                     SELECT COUNT(*) AS total
-                    FROM orynth_user_badge_awards a
-                    JOIN orynth_users u ON u.id = a.user_id
-                    JOIN orynth_badge_definitions b ON b.id = a.badge_id
+                    FROM gotrendlabs_user_badge_awards a
+                    JOIN gotrendlabs_users u ON u.id = a.user_id
+                    JOIN gotrendlabs_badge_definitions b ON b.id = a.badge_id
                     WHERE u.email = 'badge-auto@example.com'
                       AND b.code = 'auto-comment'
                     """
@@ -1937,9 +1938,9 @@ class BackendAuthAPITests(TransactionTestCase):
                 cursor.execute(
                     """
                     SELECT b.code, COUNT(a.id) AS total
-                    FROM orynth_badge_definitions b
-                    LEFT JOIN orynth_user_badge_awards a ON a.badge_id = b.id
-                    LEFT JOIN orynth_users u ON u.id = a.user_id AND u.email = 'badge-auto@example.com'
+                    FROM gotrendlabs_badge_definitions b
+                    LEFT JOIN gotrendlabs_user_badge_awards a ON a.badge_id = b.id
+                    LEFT JOIN gotrendlabs_users u ON u.id = a.user_id AND u.email = 'badge-auto@example.com'
                     WHERE b.code IN ('auto-comment-event', 'auto-comment-wrong-event')
                     GROUP BY b.code
                     ORDER BY b.code
@@ -1965,7 +1966,7 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("theme-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("theme-staff@example.com",))
         staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
 
         market_response = client.post(
@@ -2085,11 +2086,11 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(dev_user.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("ranking-staff@example.com",))
-                cursor.execute("UPDATE orynth_users SET is_superuser = true WHERE email = %s", ("ranking-super@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("ranking-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_superuser = true WHERE email = %s", ("ranking-super@example.com",))
                 cursor.execute(
                     """
-                    UPDATE orynth_user_reputations r
+                    UPDATE gotrendlabs_user_reputations r
                     SET reputation_score = CASE u.email
                         WHEN 'ranking-regular@example.com' THEN 120
                         WHEN 'ranking-staff@example.com' THEN 999
@@ -2097,15 +2098,15 @@ class BackendAuthAPITests(TransactionTestCase):
                         WHEN 'dev-ranking@example.com' THEN 997
                         ELSE r.reputation_score
                     END
-                    FROM orynth_users u
+                    FROM gotrendlabs_users u
                     WHERE r.user_id = u.id
                     """
                 )
                 cursor.execute(
                     """
-                    UPDATE orynth_user_reputations r
+                    UPDATE gotrendlabs_user_reputations r
                     SET strong_category = 'DEV Ranking'
-                    FROM orynth_users u
+                    FROM gotrendlabs_users u
                     WHERE r.user_id = u.id
                       AND u.email = %s
                     """,
@@ -2320,8 +2321,8 @@ class BackendAuthAPITests(TransactionTestCase):
 
         self.assertTrue(WalletLedgerEntry.objects.filter(id=entry_id, user=user, amount=55).exists())
         balance = WalletBalance.objects.get(user=user)
-        self.assertEqual(balance.available_oc, 55)
-        self.assertEqual(balance.locked_oc, 0)
+        self.assertEqual(balance.available_gtl, 55)
+        self.assertEqual(balance.locked_gtl, 0)
 
     def test_prediction_stake_locks_wallet_updates_market_and_blocks_duplicate_user_entry(self):
         client = TestClient(app)
@@ -2358,8 +2359,8 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertTrue(Prediction.objects.filter(id=payload["prediction_id"], user=user, market__slug="openai-gpt6-2026").exists())
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_stake_lock", direction="lock", amount=80, reference_id=str(payload["prediction_id"])).exists())
         balance = WalletBalance.objects.get(user=user)
-        self.assertEqual(balance.available_oc, 1920)
-        self.assertEqual(balance.locked_oc, 80)
+        self.assertEqual(balance.available_gtl, 1920)
+        self.assertEqual(balance.locked_gtl, 80)
         option.refresh_from_db()
         self.assertGreater(option.probability_exact, Decimal("50.0000"))
 
@@ -2457,7 +2458,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(loser_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("resolution-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("resolution-staff@example.com",))
 
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         winner_headers = {"Authorization": f"Bearer {winner_register.json()['session']['token']}"}
@@ -2562,10 +2563,10 @@ class BackendAuthAPITests(TransactionTestCase):
 
         winner_balance = WalletBalance.objects.get(user__username="@resolutionwinner")
         loser_balance = WalletBalance.objects.get(user__username="@resolutionloser")
-        self.assertEqual(winner_balance.available_oc, 1900 + winner_prediction.potential_payout)
-        self.assertEqual(winner_balance.locked_oc, 0)
-        self.assertEqual(loser_balance.available_oc, 1900)
-        self.assertEqual(loser_balance.locked_oc, 0)
+        self.assertEqual(winner_balance.available_gtl, 1900 + winner_prediction.potential_payout)
+        self.assertEqual(winner_balance.locked_gtl, 0)
+        self.assertEqual(loser_balance.available_gtl, 1900)
+        self.assertEqual(loser_balance.locked_gtl, 0)
 
         winner_p = Decimal(winner_prediction.probability_at_entry) / Decimal("100")
         loser_p = Decimal(loser_prediction.probability_at_entry) / Decimal("100")
@@ -2622,10 +2623,10 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_resolution_relock", direction="lock", reference_id=str(loser_prediction.id), amount=100).exists())
         winner_balance.refresh_from_db()
         loser_balance.refresh_from_db()
-        self.assertEqual(winner_balance.available_oc, 1900)
-        self.assertEqual(winner_balance.locked_oc, 100)
-        self.assertEqual(loser_balance.available_oc, 1900)
-        self.assertEqual(loser_balance.locked_oc, 100)
+        self.assertEqual(winner_balance.available_gtl, 1900)
+        self.assertEqual(winner_balance.locked_gtl, 100)
+        self.assertEqual(loser_balance.available_gtl, 1900)
+        self.assertEqual(loser_balance.locked_gtl, 100)
         self.assertEqual(UserReputation.objects.get(user__username="@resolutionwinner").reputation_score, 100)
         self.assertEqual(UserReputation.objects.get(user__username="@resolutionwinner").resolved_predictions_count, 0)
         self.assertEqual(UserReputation.objects.get(user__username="@resolutionloser").reputation_score, 100)
@@ -2662,7 +2663,7 @@ class BackendAuthAPITests(TransactionTestCase):
             }
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("audit-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("audit-staff@example.com",))
 
         market_response = client.post(
             "/admin/markets",
@@ -2703,7 +2704,7 @@ class BackendAuthAPITests(TransactionTestCase):
             with get_connection() as connection:
                 with connection.cursor() as cursor:
                     cursor.execute(
-                        "UPDATE orynth_market_options SET probability_exact = %s WHERE id = %s",
+                        "UPDATE gotrendlabs_market_options SET probability_exact = %s WHERE id = %s",
                         (p_percent, options[plan["option"]].id),
                     )
             response = client.post(
@@ -2718,8 +2719,8 @@ class BackendAuthAPITests(TransactionTestCase):
             self.assertEqual(prediction.probability_at_entry, p_percent)
             self.assertEqual(prediction.potential_payout, expected_payout_total)
             balance = WalletBalance.objects.get(user__username=f"@audit{key.replace('_', '')}")
-            self.assertEqual(balance.available_oc, 2000 - plan["stake"])
-            self.assertEqual(balance.locked_oc, plan["stake"])
+            self.assertEqual(balance.available_gtl, 2000 - plan["stake"])
+            self.assertEqual(balance.locked_gtl, plan["stake"])
 
         self.assertEqual(client.post("/admin/markets/auditoria-distribuicao-mvp/lock", headers=users["staff"]["headers"], json={"note": "fechar"}).status_code, 200)
         resolved = client.post(
@@ -2743,9 +2744,9 @@ class BackendAuthAPITests(TransactionTestCase):
             self.assertEqual(prediction.status, "resolved")
             self.assertEqual(prediction.won, plan["won"])
             balance = WalletBalance.objects.get(user__username=f"@audit{key.replace('_', '')}")
-            self.assertEqual(balance.available_oc, expected_available)
-            self.assertEqual(balance.locked_oc, 0)
-            self.assertEqual(balance.total_earned_oc, expected_earned)
+            self.assertEqual(balance.available_gtl, expected_available)
+            self.assertEqual(balance.locked_gtl, 0)
+            self.assertEqual(balance.total_earned_gtl, expected_earned)
             reputation = UserReputation.objects.get(user__username=f"@audit{key.replace('_', '')}")
             self.assertEqual(reputation.reputation_score, 100 + expected_delta)
             self.assertEqual(reputation.resolved_predictions_count, 1)
@@ -2769,9 +2770,9 @@ class BackendAuthAPITests(TransactionTestCase):
             balance = WalletBalance.objects.get(user__username=f"@audit{key.replace('_', '')}")
             self.assertEqual(prediction.status, "open")
             self.assertIsNone(prediction.won)
-            self.assertEqual(balance.available_oc, 2000 - plan["stake"])
-            self.assertEqual(balance.locked_oc, plan["stake"])
-            self.assertEqual(balance.total_earned_oc, 0)
+            self.assertEqual(balance.available_gtl, 2000 - plan["stake"])
+            self.assertEqual(balance.locked_gtl, plan["stake"])
+            self.assertEqual(balance.total_earned_gtl, 0)
             reputation = UserReputation.objects.get(user__username=f"@audit{key.replace('_', '')}")
             self.assertEqual(reputation.reputation_score, 100)
             self.assertEqual(reputation.resolved_predictions_count, 0)
@@ -2787,9 +2788,9 @@ class BackendAuthAPITests(TransactionTestCase):
             balance = WalletBalance.objects.get(user__username=f"@audit{key.replace('_', '')}")
             self.assertEqual(prediction.status, "canceled")
             self.assertIsNone(prediction.won)
-            self.assertEqual(balance.available_oc, 2000)
-            self.assertEqual(balance.locked_oc, 0)
-            self.assertEqual(balance.total_earned_oc, 0)
+            self.assertEqual(balance.available_gtl, 2000)
+            self.assertEqual(balance.locked_gtl, 0)
+            self.assertEqual(balance.total_earned_gtl, 0)
             self.assertEqual(UserReputation.objects.get(user__username=f"@audit{key.replace('_', '')}").reputation_score, 100)
             self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", direction="release", reference_id=str(prediction.id), amount=plan["stake"]).exists())
 
@@ -2819,7 +2820,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(user_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("cancel-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("cancel-staff@example.com",))
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         user_headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
         market_response = client.post(
@@ -2860,8 +2861,8 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(prediction.status, "canceled")
         self.assertIsNone(prediction.won)
         balance = WalletBalance.objects.get(user__username="@canceluser")
-        self.assertEqual(balance.available_oc, 2000)
-        self.assertEqual(balance.locked_oc, 0)
+        self.assertEqual(balance.available_gtl, 2000)
+        self.assertEqual(balance.locked_gtl, 0)
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", direction="release", amount=125, reference_id=str(prediction.id)).exists())
         after_reputation = UserReputation.objects.get(user__username="@canceluser")
         self.assertEqual(after_reputation.reputation_score, before_reputation.reputation_score)
@@ -2900,7 +2901,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(user_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("reconcile-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("reconcile-staff@example.com",))
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         user_headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
         market_response = client.post(
@@ -2938,7 +2939,7 @@ class BackendAuthAPITests(TransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    UPDATE orynth_markets
+                    UPDATE gotrendlabs_markets
                     SET status = 'canceled',
                         status_label = 'Cancelado',
                         canceled_at = %s
@@ -2963,8 +2964,8 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(prediction.status, "canceled")
         self.assertIsNone(prediction.won)
         balance = WalletBalance.objects.get(user__username="@reconcileuser")
-        self.assertEqual(balance.available_oc, 2000)
-        self.assertEqual(balance.locked_oc, 0)
+        self.assertEqual(balance.available_gtl, 2000)
+        self.assertEqual(balance.locked_gtl, 0)
         self.assertEqual(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", direction="release", amount=180, reference_id=str(prediction.id)).count(), 1)
         after_reputation = UserReputation.objects.get(user__username="@reconcileuser")
         self.assertEqual(after_reputation.reputation_score, before_reputation.reputation_score)
@@ -3014,7 +3015,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(second_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("preserve-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("preserve-staff@example.com",))
 
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         first_headers = {"Authorization": f"Bearer {first_register.json()['session']['token']}"}
@@ -3056,7 +3057,7 @@ class BackendAuthAPITests(TransactionTestCase):
             "primary_outcome": "SIM",
             "primary_probability_exact": 0,
             "secondary_probability_exact": 0,
-            "volume_oc": "0 O₵",
+            "volume_gtl": "0 GT₵",
             "participants": "0 usuários",
             "resolution_type": "",
             "resolution_note": "",
@@ -3070,7 +3071,7 @@ class BackendAuthAPITests(TransactionTestCase):
         edited_payload = edited.json()
         self.assertFalse(edited_payload["auto_close_enabled"])
         self.assertEqual(edited_payload["status_label"], before["status_label"])
-        self.assertEqual(edited_payload["volume_oc"], before["volume_oc"])
+        self.assertEqual(edited_payload["volume_gtl"], before["volume_gtl"])
         self.assertEqual(edited_payload["participants"], before["participants"])
         self.assertEqual(edited_payload["primary_probability_exact"], before["primary_probability_exact"])
         self.assertEqual(edited_payload["secondary_probability_exact"], before["secondary_probability_exact"])
@@ -3097,7 +3098,7 @@ class BackendAuthAPITests(TransactionTestCase):
             "primary_outcome": "NAO",
             "primary_probability_exact": 0,
             "secondary_probability_exact": 0,
-            "volume_oc": "0 O₵",
+            "volume_gtl": "0 GT₵",
             "participants": "0 usuários",
             "resolution_type": "",
             "resolution_note": "",
@@ -3167,7 +3168,7 @@ class BackendAuthAPITests(TransactionTestCase):
 
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_markets SET status = 'canceled' WHERE slug = %s", ("tiktok-ban-eua-2026",))
+                cursor.execute("UPDATE gotrendlabs_markets SET status = 'canceled' WHERE slug = %s", ("tiktok-ban-eua-2026",))
         canceled = client.post(
             "/markets/tiktok-ban-eua-2026/comments",
             headers=user_headers,
@@ -3190,7 +3191,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(staff_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("comment-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("comment-staff@example.com",))
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         admin_comments = client.get("/admin/comments", headers=staff_headers)
         self.assertEqual(admin_comments.status_code, 200)
@@ -3246,7 +3247,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(staff_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("staff-admin@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("staff-admin@example.com",))
         headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         staff_session = client.get("/auth/session", headers=headers)
         self.assertEqual(staff_session.status_code, 200)
@@ -3532,7 +3533,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(edit_after_prediction.json()["title"], "Energia solar será maioria em 2030? Revisado")
         self.assertFalse(edit_after_prediction.json()["auto_close_enabled"])
         self.assertEqual(edit_after_prediction.json()["status_label"], "Aberto")
-        self.assertEqual(edit_after_prediction.json()["volume_oc"], "20 O₵")
+        self.assertEqual(edit_after_prediction.json()["volume_gtl"], "20 GT₵")
         self.assertEqual(edit_after_prediction.json()["participants"], "1 participante")
         self.assertEqual(
             Decimal(str(next(option for option in edit_after_prediction.json()["options"] if option["label"] == "SIM")["probability_exact"])),
@@ -3542,7 +3543,7 @@ class BackendAuthAPITests(TransactionTestCase):
         republish_open = client.post("/admin/markets/energia-solar-maioria-2030/publish", headers=headers, json={"note": "publicar de novo"})
         self.assertEqual(republish_open.status_code, 200)
         self.assertEqual(republish_open.json()["status"], "open")
-        self.assertEqual(republish_open.json()["volume_oc"], "20 O₵")
+        self.assertEqual(republish_open.json()["volume_gtl"], "20 GT₵")
         self.assertEqual(
             Decimal(str(next(option for option in republish_open.json()["options"] if option["label"] == "SIM")["probability_exact"])),
             probability_after_prediction,
@@ -3723,9 +3724,9 @@ class BackendAuthAPITests(TransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    INSERT INTO orynth_site_config (
+                    INSERT INTO gotrendlabs_site_config (
                         singleton_key,
-                        wallet_recharge_min_balance_oc,
+                        wallet_recharge_min_balance_gtl,
                         daemon_stale_after_minutes,
                         daemon_missing_after_minutes,
                         system_log_retention_days,
@@ -3754,7 +3755,7 @@ class BackendAuthAPITests(TransactionTestCase):
                         ai_max_comments_per_day,
                         ai_comment_max_chars,
                         ai_min_humans_for_prediction,
-                        ai_max_stake_oc,
+                        ai_max_stake_gtl,
                         ai_max_predictions_per_cycle,
                         ai_max_predictions_per_day,
                         ai_skip_if_human_comments_recent,
@@ -3771,7 +3772,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     )
                     ON CONFLICT (singleton_key)
                     DO UPDATE SET
-                        wallet_recharge_min_balance_oc = EXCLUDED.wallet_recharge_min_balance_oc,
+                        wallet_recharge_min_balance_gtl = EXCLUDED.wallet_recharge_min_balance_gtl,
                         system_log_retention_days = EXCLUDED.system_log_retention_days,
                         ai_audit_retention_days = EXCLUDED.ai_audit_retention_days,
                         updated_at = NOW()
@@ -3805,7 +3806,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(staff_register.status_code, 201)
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                cursor.execute("UPDATE orynth_users SET is_staff = true WHERE email = %s", ("queue-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("queue-staff@example.com",))
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
 
         queue = client.get("/admin/queues", headers=staff_headers)
@@ -3820,11 +3821,11 @@ class BackendAuthAPITests(TransactionTestCase):
         approved_recharge = client.post(
             f"/admin/queues/wallet-recharges/{recharge_id}/approve",
             headers=staff_headers,
-            json={"amount_oc": 250, "note": "Recarga educativa controlada."},
+            json={"amount_gtl": 250, "note": "Recarga educativa controlada."},
         )
         self.assertEqual(approved_recharge.status_code, 200)
         self.assertEqual(approved_recharge.json()["status"], "approved")
-        self.assertEqual(approved_recharge.json()["reward_oc"], 250)
+        self.assertEqual(approved_recharge.json()["reward_gtl"], 250)
         self.assertTrue(
             WalletLedgerEntry.objects.filter(
                 entry_type="educational_recharge",
@@ -3838,7 +3839,7 @@ class BackendAuthAPITests(TransactionTestCase):
         duplicate_recharge_approval = client.post(
             f"/admin/queues/wallet-recharges/{recharge_id}/approve",
             headers=staff_headers,
-            json={"amount_oc": 100, "note": "Duplicado."},
+            json={"amount_gtl": 100, "note": "Duplicado."},
         )
         self.assertEqual(duplicate_recharge_approval.status_code, 422)
 
@@ -3846,8 +3847,8 @@ class BackendAuthAPITests(TransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    UPDATE orynth_site_config
-                    SET wallet_recharge_min_balance_oc = 10000, updated_at = NOW()
+                    UPDATE gotrendlabs_site_config
+                    SET wallet_recharge_min_balance_gtl = 10000, updated_at = NOW()
                     WHERE singleton_key = 1
                     """
                 )
@@ -3879,25 +3880,25 @@ class BackendAuthAPITests(TransactionTestCase):
         rewarded = client.post(
             f"/admin/queues/feedback/{feedback_id}/reward",
             headers=staff_headers,
-            json={"amount_oc": 75, "note": "Feedback útil."},
+            json={"amount_gtl": 75, "note": "Feedback útil."},
         )
         self.assertEqual(rewarded.status_code, 200)
         self.assertEqual(rewarded.json()["status"], "rewarded")
-        self.assertEqual(rewarded.json()["reward_oc"], 75)
+        self.assertEqual(rewarded.json()["reward_gtl"], 75)
         self.assertTrue(WalletLedgerEntry.objects.filter(entry_type="reward_feedback", amount=75, reference_id=str(feedback_id)).exists())
         self.assertTrue(UserBadgeAward.objects.filter(user__username="@queueuser", badge__code="feedback_ally").exists())
         self.assertTrue(AdminEvent.objects.filter(action="feedback.reward", entity_identifier=str(feedback_id)).exists())
         duplicate_reward = client.post(
             f"/admin/queues/feedback/{feedback_id}/reward",
             headers=staff_headers,
-            json={"amount_oc": 25, "note": "Duplicado."},
+            json={"amount_gtl": 25, "note": "Duplicado."},
         )
         self.assertEqual(duplicate_reward.status_code, 422)
 
         suggestion_reward = client.post(
             f"/admin/queues/suggestions/{suggestion_id}/reward",
             headers=staff_headers,
-            json={"amount_oc": 30, "note": "Sugestão útil."},
+            json={"amount_gtl": 30, "note": "Sugestão útil."},
         )
         self.assertEqual(suggestion_reward.status_code, 200)
         self.assertEqual(suggestion_reward.json()["status"], "rewarded")
@@ -3906,12 +3907,12 @@ class BackendAuthAPITests(TransactionTestCase):
         duplicate_suggestion_reward = client.post(
             f"/admin/queues/suggestions/{suggestion_id}/reward",
             headers=staff_headers,
-            json={"amount_oc": 15, "note": "Duplicado."},
+            json={"amount_gtl": 15, "note": "Duplicado."},
         )
         self.assertEqual(duplicate_suggestion_reward.status_code, 422)
         balance = WalletBalance.objects.get(user__username="@queueuser")
-        self.assertEqual(balance.available_oc, 2355)
-        self.assertEqual(balance.total_earned_oc, 105)
+        self.assertEqual(balance.available_gtl, 2355)
+        self.assertEqual(balance.total_earned_gtl, 105)
 
         anonymous_feedback = client.post(
             "/feedback",
@@ -3921,7 +3922,7 @@ class BackendAuthAPITests(TransactionTestCase):
         blocked_reward = client.post(
             f"/admin/queues/feedback/{anonymous_feedback.json()['id']}/reward",
             headers=staff_headers,
-            json={"amount_oc": 10, "note": "Sem usuário."},
+            json={"amount_gtl": 10, "note": "Sem usuário."},
         )
         self.assertEqual(blocked_reward.status_code, 422)
 
@@ -3931,11 +3932,11 @@ class WebSmokeTests(TransactionTestCase):
         _seed_test_badges()
         _seed_test_markets()
 
-    def test_user_model_uses_orynth_postgres_table(self):
+    def test_user_model_uses_gotrendlabs_postgres_table(self):
         User = get_user_model()
 
         self.assertEqual(User._meta.label, "accounts.User")
-        self.assertEqual(User._meta.db_table, "orynth_users")
+        self.assertEqual(User._meta.db_table, "gotrendlabs_users")
 
     def test_main_pages_render(self):
         category_notice = "Aviso amplo da categoria."
@@ -3969,7 +3970,7 @@ class WebSmokeTests(TransactionTestCase):
                 response = self.client.get(route)
                 self.assertEqual(response.status_code, 200)
                 if route == reverse("feedback"):
-                    self.assertContains(response, "Ajude a deixar a Orynth Trends mais clara.")
+                    self.assertContains(response, "Ajude a deixar a GoTrendLabs mais clara.")
                 if route == reverse("home"):
                     self.assertNotContains(response, category_notice)
                 if route == reverse("concepts"):
@@ -4029,7 +4030,7 @@ class WebSmokeTests(TransactionTestCase):
     def test_prediction_ticket_shows_no_balance_state(self):
         User = get_user_model()
         user = User.objects.create_user(username="emptywallet", email="empty-wallet@example.com", password="testpass123", first_name="Empty Wallet")
-        WalletBalance.objects.update_or_create(user=user, defaults={"available_oc": 0, "locked_oc": 0, "total_earned_oc": 0})
+        WalletBalance.objects.update_or_create(user=user, defaults={"available_gtl": 0, "locked_gtl": 0, "total_earned_gtl": 0})
         session = self.client.session
         session[TOKEN_KEY] = "api-token"
         session[USER_KEY] = {
@@ -4044,11 +4045,11 @@ class WebSmokeTests(TransactionTestCase):
         response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         self.assertContains(response, "Saldo indisponível")
-        self.assertContains(response, "Você não tem O₵ disponível para entrar neste mercado.")
+        self.assertContains(response, "Você não tem GT₵ disponível para entrar neste mercado.")
         self.assertContains(response, "Sem saldo disponível, esta área fica somente para leitura.")
         self.assertNotContains(response, 'data-prediction-preview-url="')
 
-    def test_django_system_log_uses_orynth_session_user(self):
+    def test_django_system_log_uses_gotrendlabs_session_user(self):
         User = get_user_model()
         user = User.objects.create_user(username="@loggedweb", email="logged-web@example.com", password="testpass123", first_name="Logged Web")
         session = self.client.session
@@ -4084,7 +4085,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "visualizações")
         self.assertContains(response, "Mini gráfico de evolução do consenso")
         self.assertContains(response, "Primeira previsão")
-        self.assertContains(response, "Orynth Coins não representam dinheiro real")
+        self.assertContains(response, "GTL Credits não representam dinheiro real")
 
     def test_register_ticket_uses_most_viewed_market(self):
         api_market = get_domain_client().market("openai-gpt6-2026")
@@ -4125,7 +4126,7 @@ class WebSmokeTests(TransactionTestCase):
                 self.assertContains(response, "← Feed")
                 self.assertContains(response, 'class="footer"')
                 self.assertContains(response, "Rede social para prever eventos")
-                self.assertContains(response, "O₵ educativa")
+                self.assertContains(response, "GT₵ educativa")
                 self.assertContains(response, cta)
                 if route == reverse("login"):
                     self.assertContains(response, "Lembrar meu acesso neste dispositivo")
@@ -4169,7 +4170,7 @@ class WebSmokeTests(TransactionTestCase):
     def test_prediction_confirm_does_not_persist_locally_when_api_is_unavailable(self):
         User = get_user_model()
         user = User.objects.create_user(username="localpredict", email="local-predict@example.com", password="testpass123", first_name="Local Predict")
-        WalletBalance.objects.create(user=user, available_oc=2000, locked_oc=0, total_earned_oc=0)
+        WalletBalance.objects.create(user=user, available_gtl=2000, locked_gtl=0, total_earned_gtl=0)
         option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
         session = self.client.session
         session[TOKEN_KEY] = "api-token"
@@ -4191,8 +4192,8 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Serviço de autenticação indisponível.", status_code=400)
         self.assertFalse(Prediction.objects.filter(user=user, market__slug="openai-gpt6-2026").exists())
         balance = WalletBalance.objects.get(user=user)
-        self.assertEqual(balance.available_oc, 2000)
-        self.assertEqual(balance.locked_oc, 0)
+        self.assertEqual(balance.available_gtl, 2000)
+        self.assertEqual(balance.locked_gtl, 0)
 
     def test_market_detail_hydrates_option_ids_from_local_db_when_api_payload_is_stale(self):
         User = get_user_model()
@@ -4365,7 +4366,7 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertContains(
             response,
-            '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async">',
+            '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async" data-thumb-image>',
             html=True,
         )
 
@@ -4544,7 +4545,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, 'data-market-liked="true"')
 
     def test_market_filter_javascript_supports_open_and_view_based_trending(self):
-        script = (settings.BASE_DIR / "static/js/orynth.js").read_text()
+        script = (settings.BASE_DIR / "static/js/gotrendlabs.js").read_text()
 
         self.assertIn("views: parseNumber(card.dataset.marketViews)", script)
         self.assertIn('mode === "likes"', script)
@@ -4573,7 +4574,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertIn('headers: {"X-Requested-With": "XMLHttpRequest"}', script)
         self.assertIn("syncMarketFavorite(payload.slug || form.dataset.marketSlug", script)
         self.assertIn("syncMarketLike(payload.slug || form.dataset.marketSlug", script)
-        styles = (settings.BASE_DIR / "static/css/orynth.css").read_text()
+        styles = (settings.BASE_DIR / "static/css/gotrendlabs.css").read_text()
         self.assertIn('[data-market-list][data-market-filter-mode="closing"] [data-market-card]:not([data-market-status="locked"])', styles)
         self.assertIn('[data-market-list][data-market-filter-mode="favorited"] [data-market-card][data-market-favorited="false"]', styles)
         self.assertIn(".market-favorite-button", styles)
@@ -4818,7 +4819,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, 'data-share-text="Badge Viewer conquistou')
             self.assertContains(response, "/media/badge_images/founding.png")
             self.assertContains(response, "/media/badge_images/founding-dark.png")
-            self.assertContains(response, "Orynth Trends")
+            self.assertContains(response, "GoTrendLabs")
             self.assertContains(response, "testserver/share/badge/founding_member")
             self.assertContains(response, "t=")
             self.assertNotContains(response, "u=50")
@@ -4882,7 +4883,7 @@ class WebSmokeTests(TransactionTestCase):
 
         with patch("core.views.get_market", return_value=market):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
-            self.assertContains(response, "Orynth Trends")
+            self.assertContains(response, "GoTrendLabs")
             self.assertContains(response, "testserver/share/market/openai-gpt6-2026")
             self.assertContains(response, "Consenso público, reputação e resolução auditável")
             self.assertContains(response, "Registre previsões, compare com a comunidade e construa reputação.")
@@ -4922,12 +4923,12 @@ class WebSmokeTests(TransactionTestCase):
 
         with patch("core.views.get_market", return_value=resolved_market):
             response = self.client.get(reverse("share-result", args=["resolved-api"]))
-            self.assertContains(response, "Orynth Trends")
+            self.assertContains(response, "GoTrendLabs")
             self.assertContains(response, "Resultado vindo da API")
             self.assertContains(response, "<span>Resultado</span><strong>SIM</strong>", html=True)
             self.assertLess(response.content.decode().index("Resultado vindo da API"), response.content.decode().index("<span>Resultado</span>"))
             self.assertContains(response, "testserver/share/result/resolved-api")
-            self.assertNotContains(response, "Resultado publicado no Orynth Trends.")
+            self.assertNotContains(response, "Resultado publicado no GoTrendLabs.")
             self.assertContains(response, "Consenso público, reputação e resolução auditável")
             self.assertNotContains(response, "Will Costa")
             self.assertNotContains(response, "compartilhou um resultado.")
@@ -4986,9 +4987,9 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
 
         with TemporaryDirectory() as tmpdir, override_settings(
-            ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
-            ORYNTH_SMTP_PASSWORD="super-secret-smtp",
-            ORYNTH_SMTP_API_KEY="",
+            GOTRENDLABS_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
+            GOTRENDLABS_SMTP_PASSWORD="super-secret-smtp",
+            GOTRENDLABS_SMTP_API_KEY="",
         ):
             response = self.client.get(reverse("admin-ops-config"))
             self.assertContains(response, "Controles da plataforma")
@@ -5007,7 +5008,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Bot só prevê após atingir este número de humanos.")
             self.assertContains(response, "Tempo máximo de espera por chamada LLM.")
             self.assertContains(response, 'name="ai-ai_llm_provider"')
-            self.assertContains(response, 'name="ai-ai_max_stake_oc"')
+            self.assertContains(response, 'name="ai-ai_max_stake_gtl"')
             self.assertContains(response, 'name="ai-ai_predictions_enabled"')
             self.assertContains(response, 'name="ai-ai_max_comment_attempts_per_cycle"')
             self.assertContains(response, 'name="ai-ai_comment_candidate_limit"')
@@ -5018,7 +5019,7 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "maintenance-maintenance_enabled": "on",
                     "maintenance-maintenance_message": "Voltamos logo depois da janela operacional.",
-                    "economy-wallet_recharge_min_balance_oc": "150",
+                    "economy-wallet_recharge_min_balance_gtl": "150",
                     "daemon-daemon_stale_after_minutes": "7",
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "45",
@@ -5049,7 +5050,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.smtp_timeout_seconds, 15)
             self.assertEqual(site_config.default_from_email, "no-reply@example.com")
             self.assertEqual(site_config.default_reply_to_email, "support@example.com")
-            self.assertEqual(site_config.wallet_recharge_min_balance_oc, 150)
+            self.assertEqual(site_config.wallet_recharge_min_balance_gtl, 150)
             self.assertEqual(site_config.daemon_stale_after_minutes, 7)
             self.assertEqual(site_config.daemon_missing_after_minutes, 21)
             self.assertEqual(site_config.system_log_retention_days, 45)
@@ -5060,7 +5061,7 @@ class WebSmokeTests(TransactionTestCase):
                 reverse("admin-ops-config"),
                 {
                     "maintenance-maintenance_message": "",
-                    "economy-wallet_recharge_min_balance_oc": "150",
+                    "economy-wallet_recharge_min_balance_gtl": "150",
                     "daemon-daemon_stale_after_minutes": "7",
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "0",
@@ -5097,14 +5098,14 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
 
         with TemporaryDirectory() as tmpdir, override_settings(
-            ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
+            GOTRENDLABS_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
             OPENAI_API_KEY="test-openai-key",
         ):
             response = self.client.post(
                 reverse("admin-ops-config"),
                 {
                     "maintenance-maintenance_message": "",
-                    "economy-wallet_recharge_min_balance_oc": "100",
+                    "economy-wallet_recharge_min_balance_gtl": "100",
                     "daemon-daemon_stale_after_minutes": "6",
                     "daemon-daemon_missing_after_minutes": "18",
                     "retention-system_log_retention_days": "90",
@@ -5130,7 +5131,7 @@ class WebSmokeTests(TransactionTestCase):
                     "ai-ai_max_comments_per_day": "15",
                     "ai-ai_comment_max_chars": "650",
                     "ai-ai_min_humans_for_prediction": "2",
-                    "ai-ai_max_stake_oc": "30",
+                    "ai-ai_max_stake_gtl": "30",
                     "ai-ai_max_predictions_per_cycle": "2",
                     "ai-ai_max_predictions_per_day": "8",
                     "ai-ai_skip_if_human_comments_recent": "on",
@@ -5155,7 +5156,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.ai_max_comments_per_day, 15)
             self.assertEqual(site_config.ai_comment_max_chars, 650)
             self.assertEqual(site_config.ai_min_humans_for_prediction, 2)
-            self.assertEqual(site_config.ai_max_stake_oc, 30)
+            self.assertEqual(site_config.ai_max_stake_gtl, 30)
             self.assertEqual(site_config.ai_max_predictions_per_cycle, 2)
             self.assertEqual(site_config.ai_max_predictions_per_day, 8)
             self.assertEqual(site_config.ai_recent_human_comment_window_hours, 4)
@@ -5177,12 +5178,12 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
 
-        with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
+        with TemporaryDirectory() as tmpdir, override_settings(GOTRENDLABS_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
             response = self.client.post(
                 reverse("admin-ops-config"),
                 {
                     "maintenance-maintenance_message": "Manutenção rápida.",
-                    "economy-wallet_recharge_min_balance_oc": "100",
+                    "economy-wallet_recharge_min_balance_gtl": "100",
                     "daemon-daemon_stale_after_minutes": "5",
                     "daemon-daemon_missing_after_minutes": "15",
                     "retention-system_log_retention_days": "90",
@@ -5214,9 +5215,9 @@ class WebSmokeTests(TransactionTestCase):
             "users": [
                 {
                     "id": 91,
-                    "handle": "@orynth_ai_analyst",
+                    "handle": "@gotrendlabs_ai_analyst",
                     "email": "ai@example.com",
-                    "display_name": "Orynth AI Analyst",
+                    "display_name": "GoTrendLabs AI Analyst",
                     "preferred_language": "pt-br",
                     "account_status": "active",
                     "is_active": True,
@@ -5226,8 +5227,8 @@ class WebSmokeTests(TransactionTestCase):
                     "created_at": "2026-05-22T00:00:00+00:00",
                     "last_login": None,
                     "deactivated_at": None,
-                    "available_oc": 500,
-                    "locked_oc": 0,
+                    "available_gtl": 500,
+                    "locked_gtl": 0,
                     "reputation_score": 0,
                 },
                 {
@@ -5244,8 +5245,8 @@ class WebSmokeTests(TransactionTestCase):
                     "created_at": "2026-05-22T00:00:00+00:00",
                     "last_login": None,
                     "deactivated_at": None,
-                    "available_oc": 100,
-                    "locked_oc": 0,
+                    "available_gtl": 100,
+                    "locked_gtl": 0,
                     "reputation_score": 0,
                 },
                 {
@@ -5262,8 +5263,8 @@ class WebSmokeTests(TransactionTestCase):
                     "created_at": "2026-05-22T00:00:00+00:00",
                     "last_login": None,
                     "deactivated_at": "2026-05-22T01:00:00+00:00",
-                    "available_oc": 300,
-                    "locked_oc": 0,
+                    "available_gtl": 300,
+                    "locked_gtl": 0,
                     "reputation_score": 0,
                 },
             ],
@@ -5271,12 +5272,12 @@ class WebSmokeTests(TransactionTestCase):
         }
         created_agent = {
             "id": 7,
-            "name": "Orynth Analyst",
+            "name": "GoTrendLabs Analyst",
             "agent_type": "analyst",
             "is_active": True,
             "user_id": 91,
-            "user_handle": "@orynth_ai_analyst",
-            "user_display_name": "Orynth AI Analyst",
+            "user_handle": "@gotrendlabs_ai_analyst",
+            "user_display_name": "GoTrendLabs AI Analyst",
             "user_is_bot": True,
             "personality_prompt": "",
             "comment_style": "",
@@ -5291,7 +5292,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "sem rotina backend ativa")
             self.assertContains(response, "Não usado por Analyst")
             self.assertContains(response, "Não usado por Liquidity")
-            self.assertContains(response, "Orynth AI Analyst (@orynth_ai_analyst) · ID 91 · 500 O₵")
+            self.assertContains(response, "GoTrendLabs AI Analyst (@gotrendlabs_ai_analyst) · ID 91 · 500 GT₵")
             self.assertNotContains(response, "Human User")
             self.assertNotContains(response, "Inactive Bot")
             users_mock.assert_called_with("staff-token", bot="yes", status="active", order="created_desc")
@@ -5299,7 +5300,7 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.post(
                 reverse("admin-ops-ai-agent-new"),
                 {
-                    "name": "Orynth Analyst",
+                    "name": "GoTrendLabs Analyst",
                     "agent_type": "analyst",
                     "user_id": "91",
                     "is_active": "on",
@@ -5307,7 +5308,7 @@ class WebSmokeTests(TransactionTestCase):
                     "comment_style": "direto",
                     "max_comments_per_day": "",
                     "max_predictions_per_day": "",
-                    "max_stake_oc": "",
+                    "max_stake_gtl": "",
                     "cooldown_hours": "",
                     "min_humans_for_prediction": "",
                 },
@@ -5316,14 +5317,14 @@ class WebSmokeTests(TransactionTestCase):
             create_mock.assert_called_once()
             self.assertEqual(create_mock.call_args.args[1]["user_id"], 91)
             self.assertIsNone(create_mock.call_args.args[1]["max_predictions_per_day"])
-            self.assertIsNone(create_mock.call_args.args[1]["max_stake_oc"])
+            self.assertIsNone(create_mock.call_args.args[1]["max_stake_gtl"])
             self.assertIsNone(create_mock.call_args.args[1]["min_humans_for_prediction"])
 
             create_mock.reset_mock()
             response = self.client.post(
                 reverse("admin-ops-ai-agent-new"),
                 {
-                    "name": "Orynth Liquidity",
+                    "name": "GoTrendLabs Liquidity",
                     "agent_type": "liquidity",
                     "user_id": "91",
                     "is_active": "on",
@@ -5331,7 +5332,7 @@ class WebSmokeTests(TransactionTestCase):
                     "comment_style": "este estilo deve ser limpo",
                     "max_comments_per_day": "7",
                     "max_predictions_per_day": "3",
-                    "max_stake_oc": "25",
+                    "max_stake_gtl": "25",
                     "cooldown_hours": "12",
                     "min_humans_for_prediction": "2",
                 },
@@ -5343,7 +5344,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertIsNone(payload["max_comments_per_day"])
             self.assertIsNone(payload["cooldown_hours"])
             self.assertEqual(payload["max_predictions_per_day"], 3)
-            self.assertEqual(payload["max_stake_oc"], 25)
+            self.assertEqual(payload["max_stake_gtl"], 25)
             self.assertEqual(payload["min_humans_for_prediction"], 2)
 
     def test_admin_ai_agent_audit_filters_reason_and_loads_more_in_blocks(self):
@@ -5362,7 +5363,7 @@ class WebSmokeTests(TransactionTestCase):
             {
                 "id": index,
                 "agent_id": 2,
-                "agent_name": "Orynth AI Analyst",
+                "agent_name": "GoTrendLabs AI Analyst",
                 "market_id": 43,
                 "market_slug": "vencedor-grupo-c-copa-2026",
                 "market_title": "Quem vencerá o Grupo C da Copa 2026?",
@@ -5370,7 +5371,7 @@ class WebSmokeTests(TransactionTestCase):
                 "status": "skipped" if index % 2 else "failed",
                 "reason": "llm_error_timeout",
                 "payload_summary": {},
-                "prompt_template_version": "orynth-ai-agent-v2",
+                "prompt_template_version": "gotrendlabs-ai-agent-v2",
                 "prompt_hash": "abc123",
                 "comment_id": None,
                 "prediction_id": None,
@@ -5404,7 +5405,7 @@ class WebSmokeTests(TransactionTestCase):
         action = {
             "id": 7,
             "agent_id": 2,
-            "agent_name": "Orynth AI Analyst",
+            "agent_name": "GoTrendLabs AI Analyst",
             "market_id": 43,
             "market_slug": "vencedor-grupo-c-copa-2026",
             "market_title": "Quem vencerá o Grupo C da Copa 2026?",
@@ -5412,7 +5413,7 @@ class WebSmokeTests(TransactionTestCase):
             "status": "created",
             "reason": "comment_created",
             "payload_summary": {"confidence": 0.68, "risk_flags": []},
-            "prompt_template_version": "orynth-ai-agent-v2",
+            "prompt_template_version": "gotrendlabs-ai-agent-v2",
             "prompt_hash": "abc123def456abc123def456",
             "comment_id": 163,
             "prediction_id": None,
@@ -5431,7 +5432,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "vencedor-grupo-c-copa-2026")
 
     def test_maintenance_mode_redirects_public_pages_without_blocking_admin_or_assets(self):
-        with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
+        with TemporaryDirectory() as tmpdir, override_settings(GOTRENDLABS_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
             save_platform_config(
                 {
                     "maintenance_enabled": True,
@@ -5448,7 +5449,7 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("maintenance"))
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "Manutenção de teste.")
-            self.assertContains(response, "Orynth Trends está ficando mais estável.")
+            self.assertContains(response, "GoTrendLabs está ficando mais estável.")
             self.assertContains(response, "Entrar como operador")
             self.assertContains(response, "Leituras com reputação pública")
             response = self.client.get(reverse("login"))
@@ -5456,8 +5457,10 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("admin-ops-config"))
             self.assertEqual(response.status_code, 302)
             self.assertIn(reverse("login"), response["Location"])
-            response = self.client.get(f"{settings.STATIC_URL}css/orynth.css")
-            self.assertNotEqual(response.status_code, 302)
+            self.assertTrue(finders.find("css/gotrendlabs.css"))
+            self.assertTrue(finders.find("js/gotrendlabs.js"))
+            self.assertTrue(finders.find("brand/gtl-constellation-mark-light.svg"))
+            self.assertTrue(finders.find("brand/gtl-constellation-mark-dark.svg"))
 
     def test_staff_can_browse_public_site_during_maintenance_with_operator_banner(self):
         staff = get_user_model().objects.create_user(
@@ -5478,7 +5481,7 @@ class WebSmokeTests(TransactionTestCase):
             "is_superuser": False,
         }
         session.save()
-        with TemporaryDirectory() as tmpdir, override_settings(ORYNTH_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
+        with TemporaryDirectory() as tmpdir, override_settings(GOTRENDLABS_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json")):
             save_platform_config(
                 {
                     "maintenance_enabled": True,
@@ -5541,8 +5544,8 @@ class WebSmokeTests(TransactionTestCase):
         with patch.dict(
             os.environ,
             {
-                "FASTAPI_POSTGRES_DB": "orynth_api",
-                "FASTAPI_POSTGRES_USER": "orynth_fastapi",
+                "FASTAPI_POSTGRES_DB": "gotrendlabs_api",
+                "FASTAPI_POSTGRES_USER": "gotrendlabs_fastapi",
                 "FASTAPI_POSTGRES_PASSWORD": "fastapi-secret",
                 "FASTAPI_POSTGRES_HOST": "db.internal",
                 "FASTAPI_POSTGRES_PORT": "6543",
@@ -5552,8 +5555,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(
                 database_config(),
                 {
-                    "dbname": "orynth_api",
-                    "user": "orynth_fastapi",
+                    "dbname": "gotrendlabs_api",
+                    "user": "gotrendlabs_fastapi",
                     "password": "fastapi-secret",
                     "host": "db.internal",
                     "port": "6543",
@@ -5590,7 +5593,7 @@ class WebSmokeTests(TransactionTestCase):
             "primary_outcome": market.primary_outcome,
             "primary_probability_exact": float(market.primary_probability_exact),
             "secondary_probability_exact": float(market.secondary_probability_exact),
-            "volume_oc": market.volume_oc,
+            "volume_gtl": market.volume_gtl,
             "participants": market.participants,
             "category": market.category.name,
             "subcategory": market.subcategory.name,
@@ -5614,14 +5617,14 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Popularidade operacional")
         self.assertContains(response, "12 visualizações · 3 compartilhamentos")
 
-    @override_settings(PUBLIC_SHARE_BASE_URL="https://share.orynth.example")
+    @override_settings(PUBLIC_SHARE_BASE_URL="https://share.gotrendlabs.example")
     def test_share_links_use_configured_public_origin(self):
         market = get_domain_client().market("openai-gpt6-2026")
         resolved_market = {**market, "slug": "resolved-api", "status": "resolved", "title": "Resultado vindo da API", "primary_outcome": "SIM"}
-        public_market_url = "https://share.orynth.example/share/market/openai-gpt6-2026/"
-        public_market_image_url = "https://share.orynth.example/share/market/openai-gpt6-2026/image/"
-        public_result_url = "https://share.orynth.example/share/result/resolved-api/"
-        public_result_image_url = "https://share.orynth.example/share/result/resolved-api/image/"
+        public_market_url = "https://share.gotrendlabs.example/share/market/openai-gpt6-2026/"
+        public_market_image_url = "https://share.gotrendlabs.example/share/market/openai-gpt6-2026/image/"
+        public_result_url = "https://share.gotrendlabs.example/share/result/resolved-api/"
+        public_result_image_url = "https://share.gotrendlabs.example/share/result/resolved-api/image/"
 
         with patch("core.views.get_market", return_value=market):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
@@ -5655,8 +5658,8 @@ class WebSmokeTests(TransactionTestCase):
         badge = BadgeDefinition.objects.create(code="origin_founder", name="Membro origem", description="Entrou cedo.")
         UserBadgeAward.objects.create(user=user, badge=badge, awarded_at=timezone.now(), reason_snapshot="Criar conta.")
         token = public_badge_share_token(user.id, "origin_founder")
-        public_badge_url = f"https://share.orynth.example/share/badge/origin_founder/?t={token}"
-        public_badge_image_url = f"https://share.orynth.example/share/badge/origin_founder/image/?t={token}"
+        public_badge_url = f"https://share.gotrendlabs.example/share/badge/origin_founder/?t={token}"
+        public_badge_image_url = f"https://share.gotrendlabs.example/share/badge/origin_founder/image/?t={token}"
 
         response = self.client.get(f"{reverse('share-badge', args=['origin_founder'])}?t={token}")
         self.assertContains(response, public_badge_url)
@@ -5790,7 +5793,7 @@ class WebSmokeTests(TransactionTestCase):
                 "comments_visible": 3,
                 "comments_hidden": 0,
             },
-            "wallet": {"available_oc": 2000, "locked_oc": 50},
+            "wallet": {"available_gtl": 2000, "locked_gtl": 50},
             "badges": {"active_catalog": 2, "awarded": 6},
             "system": {
                 "logs_error_7d": 1,
@@ -5887,8 +5890,8 @@ class WebSmokeTests(TransactionTestCase):
                     "created_at": "2026-05-19T00:00:00+00:00",
                     "last_login": "2026-05-19T01:00:00+00:00",
                     "deactivated_at": None,
-                    "available_oc": 2100,
-                    "locked_oc": 50,
+                    "available_gtl": 2100,
+                    "locked_gtl": 50,
                     "reputation_score": 120,
                 }
             ],
@@ -5897,7 +5900,7 @@ class WebSmokeTests(TransactionTestCase):
         user_detail = {
             "user": user_data["users"][0],
             "profile": {"bio": "Bio privada", "strong_category": "IA", "birth_date": "1990-01-01", "sex": "other", "is_public": True},
-            "wallet": {"available_oc": 2100, "locked_oc": 50, "total_earned_oc": 100},
+            "wallet": {"available_gtl": 2100, "locked_gtl": 50, "total_earned_gtl": 100},
             "ledger": [{"entry_id": 1, "entry_type": "grant_initial", "amount": 2000, "direction": "credit", "description": "Saldo inicial", "reference_type": "auth_register", "reference_id": "55", "created_at": "2026-05-19T00:00:00+00:00", "created_by": None}],
             "reputation": {"reputation_score": 120, "ranking_position": 3, "resolved_predictions_count": 2, "accuracy_indicator": "50%", "streak": 1, "strong_category": "IA", "last_updated_at": "2026-05-19T00:00:00+00:00"},
             "prediction_counts": {"open": 1},
@@ -5919,7 +5922,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Suporte operacional")
             self.assertContains(response, "Usuários")
             self.assertContains(response, "Operated User")
-            self.assertContains(response, "2100 O₵")
+            self.assertContains(response, "2100 GT₵")
             response = self.client.get(f"{reverse('admin-ops-users')}?q=operated&status=active&role=user&order=wallet_desc")
             self.assertContains(response, "Operated User")
             self.assertContains(response, "Bot")
@@ -6158,7 +6161,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Crédito líquido do vencedor")
             self.assertContains(response, "Liquida o stake de quem errou")
             self.assertContains(response, "SIM")
-            self.assertContains(response, "payout 80 O₵")
+            self.assertContains(response, "payout 80 GT₵")
             self.assertContains(response, "Primeira resolução")
             self.assertContains(response, "Próxima")
             audit_mock.assert_called_once_with("staff-token", "resolved-api", limit=1, offset=0)
@@ -6234,9 +6237,9 @@ class WebSmokeTests(TransactionTestCase):
                 "participants": "1 participante",
                 "human_participants": 1,
                 "bot_participants": 1,
-                "human_volume_oc": 10,
-                "bot_volume_oc": 25,
-                "total_volume_oc": 35,
+                "human_volume_gtl": 10,
+                "bot_volume_gtl": 25,
+                "total_volume_gtl": 35,
                 "participants_total": 2,
                 "human_predictions": 1,
                 "bot_predictions": 1,
@@ -6260,8 +6263,8 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "prediction_id": 2,
                     "user_id": 11,
-                    "handle": "@orynth_ai_liquidity",
-                    "display_name": "Orynth AI Liquidity",
+                    "handle": "@gotrendlabs_ai_liquidity",
+                    "display_name": "GoTrendLabs AI Liquidity",
                     "is_bot": True,
                     "badge_label": "IA oficial",
                     "option_label": "NAO",
@@ -6281,7 +6284,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Humanos")
             self.assertContains(response, "Bots oficiais")
             self.assertContains(response, "Humano Admin")
-            self.assertContains(response, "Orynth AI Liquidity")
+            self.assertContains(response, "GoTrendLabs AI Liquidity")
             self.assertContains(response, "IA oficial")
             self.assertContains(response, "data-market-form")
             self.assertContains(response, "data-add-option")
@@ -6302,7 +6305,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "orynth.js?v=20260523-social-notifications")
+            self.assertContains(response, "gotrendlabs.js?v=20260523-social-notifications")
 
         posted_market = {
             **api_market,
@@ -6313,7 +6316,7 @@ class WebSmokeTests(TransactionTestCase):
             "primary_outcome": "SIM",
             "primary_probability_exact": 72.0721,
             "secondary_probability_exact": 27.9279,
-            "volume_oc": "910 O₵",
+            "volume_gtl": "910 GT₵",
             "participants": "10 participantes",
             "resolution_type": "manual",
             "resolution_note": "Nota interna preservada",
@@ -6350,7 +6353,7 @@ class WebSmokeTests(TransactionTestCase):
             sent_payload = update_market.call_args.args[2]
             self.assertFalse(sent_payload["auto_close_enabled"])
             self.assertEqual(sent_payload["status_label"], "Aberto")
-            self.assertEqual(sent_payload["volume_oc"], "910 O₵")
+            self.assertEqual(sent_payload["volume_gtl"], "910 GT₵")
             self.assertEqual(sent_payload["participants"], "10 participantes")
             self.assertEqual(sent_payload["primary_probability_exact"], 72.0721)
             self.assertEqual(sent_payload["secondary_probability_exact"], 27.9279)
@@ -6393,8 +6396,8 @@ class WebSmokeTests(TransactionTestCase):
                 "created_at": "2026-05-20T00:00:00+00:00",
                 "last_login": "2026-05-20T00:00:00+00:00",
                 "deactivated_at": None,
-                "available_oc": 1000 + index,
-                "locked_oc": 0,
+                "available_gtl": 1000 + index,
+                "locked_gtl": 0,
                 "reputation_score": index,
             }
             for index in range(1, 13)
@@ -6444,7 +6447,7 @@ class WebSmokeTests(TransactionTestCase):
                 "resolved_at": None,
                 "resolution_timezone": "America/Sao_Paulo",
                 "participants": f"{index} participantes",
-                "volume_oc": f"{index * 10} O₵",
+                "volume_gtl": f"{index * 10} GT₵",
             }
             for index in range(1, 13)
         ]
@@ -6896,14 +6899,14 @@ class WebSmokeTests(TransactionTestCase):
             "preferred_language": "pt-br",
         }
         session.save()
-        ledger_payload = {"wallet": {"available_oc": 0, "locked_oc": 0, "total_earned_oc": 0}, "entries": []}
+        ledger_payload = {"wallet": {"available_gtl": 0, "locked_gtl": 0, "total_earned_gtl": 0}, "entries": []}
         recharge_requests = {
             "requests": [
                 {
                     "id": 12,
                     "status": "pending",
                     "status_label": "Pendente",
-                    "amount_oc": None,
+                    "amount_gtl": None,
                     "created_at": "2026-05-20T12:00:00+00:00",
                     "created_at_label": "20/05/2026 12:00",
                     "reviewed_at": None,
@@ -6950,7 +6953,7 @@ class WebSmokeTests(TransactionTestCase):
             "created_at_label": "20/05/2026 12:00",
             "description": "Pedido de crédito educativo.",
             "admin_note": "",
-            "reward_oc": None,
+            "reward_gtl": None,
         }
         with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}):
             response = self.client.get(reverse("admin-ops-moderation") + "?kind=wallet_recharge")
@@ -6958,11 +6961,11 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Solicitação de recarga educativa")
 
         with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
-            "admin_ops.views.admin_approve_wallet_recharge", return_value={**queue_item, "status": "approved", "reward_oc": 300}
+            "admin_ops.views.admin_approve_wallet_recharge", return_value={**queue_item, "status": "approved", "reward_gtl": 300}
         ) as approve:
             response = self.client.post(
                 reverse("admin-ops-queue-item-action", args=["wallet_recharge", 12, "review"]),
-                {"operation": "approve-recharge", "amount_oc": 300, "note": "Recarga aprovada."},
+                {"operation": "approve-recharge", "amount_gtl": 300, "note": "Recarga aprovada."},
             )
             self.assertEqual(response.status_code, 302)
             approve.assert_called_once_with("staff-token", 12, 300, "Recarga aprovada.")
@@ -7002,14 +7005,14 @@ class WebSmokeTests(TransactionTestCase):
             }
             for index in range(1, 13)
         ]
-        ledger_payload = {"wallet": {"available_oc": 1200, "locked_oc": 0, "total_earned_oc": 0}, "entries": ledger_entries}
+        ledger_payload = {"wallet": {"available_gtl": 1200, "locked_gtl": 0, "total_earned_gtl": 0}, "entries": ledger_entries}
         recharge_payload = {
             "requests": [
                 {
                     "id": index,
                     "status": "approved",
                     "status_label": f"Status {index}",
-                    "amount_oc": index * 10,
+                    "amount_gtl": index * 10,
                     "created_at": f"2026-05-{index:02d}T12:00:00+00:00",
                     "created_at_label": f"20/05/2026 1{index}:00",
                     "reviewed_at": None,
@@ -7063,7 +7066,7 @@ class WebSmokeTests(TransactionTestCase):
         session[USER_KEY] = {
             "id": 1,
             "handle": "willcosta",
-            "email": "will@orynth.test",
+            "email": "will@gotrendlabs.com.br",
             "display_name": "Will Costa",
             "preferred_language": "pt-br",
         }
@@ -7208,14 +7211,14 @@ class WebSmokeTests(TransactionTestCase):
             },
         }
         ledger_payload = {
-            "wallet": {"available_oc": 2000, "locked_oc": 0, "total_earned_oc": 0},
+            "wallet": {"available_gtl": 2000, "locked_gtl": 0, "total_earned_gtl": 0},
             "entries": [
                 {
                     "entry_id": 1,
                     "entry_type": "grant_initial",
                     "amount": 2000,
                     "direction": "credit",
-                    "description": "Saldo inicial do Orynth Trends",
+                    "description": "Saldo inicial do GoTrendLabs",
                     "reference_type": "auth_register",
                     "reference_id": "20",
                     "created_at": "2026-05-17T00:00:00+00:00",
@@ -7274,7 +7277,7 @@ class WebSmokeTests(TransactionTestCase):
             return_value={**profile_payload, "reputation": {**profile_payload["reputation"], "reputation_score": 117}},
         ), patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_wallet_recharge_requests", return_value={"requests": []}):
             response = self.client.get(reverse("wallet"))
-            self.assertContains(response, "2000 O₵")
+            self.assertContains(response, "2000 GT₵")
             self.assertContains(response, "117")
             self.assertContains(response, "grant_initial")
 
@@ -7443,27 +7446,27 @@ class WebSmokeTests(TransactionTestCase):
         )
         Prediction.objects.filter(id=prediction.id).update(created_at=timezone.now() - timedelta(days=45))
         total_predictions = Prediction.objects.count()
-        distributed_oc = sum(
+        distributed_gtl = sum(
             WalletLedgerEntry.objects.filter(direction="credit", user__is_staff=False, user__is_superuser=False).values_list("amount", flat=True)
         )
-        moved_oc = sum(Prediction.objects.values_list("stake_amount", flat=True))
-        distributed_label = f"{distributed_oc:,}".replace(",", ".")
-        moved_label = f"{moved_oc:,}".replace(",", ".")
+        moved_gtl = sum(Prediction.objects.values_list("stake_amount", flat=True))
+        distributed_label = f"{distributed_gtl:,}".replace(",", ".")
+        moved_label = f"{moved_gtl:,}".replace(",", ".")
 
         response = self.client.get(reverse("home"))
 
         self.assertContains(response, "Mercados em destaque")
         self.assertNotContains(response, "previsões totais")
         self.assertNotContains(response, f"<strong>{total_predictions}</strong><span>previsões totais</span>", html=True)
-        self.assertNotContains(response, f"<strong>{distributed_label} O₵</strong><span>creditadas na comunidade</span>", html=True)
-        self.assertNotContains(response, f"<strong>{moved_label} O₵</strong><span>reservadas em previsões</span>", html=True)
+        self.assertNotContains(response, f"<strong>{distributed_label} GT₵</strong><span>creditadas na comunidade</span>", html=True)
+        self.assertNotContains(response, f"<strong>{moved_label} GT₵</strong><span>reservadas em previsões</span>", html=True)
         self.assertNotContains(response, "previsões no mês")
         self.assertNotContains(response, "<span>sem dinheiro real</span>", html=True)
 
         api_response = TestClient(app).get("/stats")
         self.assertEqual(api_response.status_code, 200)
-        self.assertIn("distributed_oc", api_response.json())
-        self.assertIn("moved_oc", api_response.json())
+        self.assertIn("distributed_gtl", api_response.json())
+        self.assertIn("moved_gtl", api_response.json())
 
     def test_market_pages_consume_api_and_fallback_to_fixture(self):
         api_market = {
@@ -7542,7 +7545,7 @@ class WebSmokeTests(TransactionTestCase):
             "user": {
                 "id": 10,
                 "handle": "@carolvision",
-                "email": "carol@orynth.test",
+                "email": "carol@gotrendlabs.com.br",
                 "display_name": "Carol Vision",
                 "preferred_language": "pt-br",
             },
@@ -7554,7 +7557,7 @@ class WebSmokeTests(TransactionTestCase):
                 reverse("register"),
                 {
                     "display_name": "Carol Vision",
-                    "email": "carol@orynth.test",
+                    "email": "carol@gotrendlabs.com.br",
                     "language": "pt-br",
                     "password": "testpass123",
                     "terms_accepted": "on",
@@ -7570,10 +7573,10 @@ class WebSmokeTests(TransactionTestCase):
         with patch("accounts.views.login_user", return_value=auth_response) as login_user:
             response = self.client.post(
                 reverse("login"),
-                {"email": "carol@orynth.test", "password": "testpass123"},
+                {"email": "carol@gotrendlabs.com.br", "password": "testpass123"},
             )
         self.assertRedirects(response, reverse("home"))
-        self.assertEqual(login_user.call_args.args[0], {"email": "carol@orynth.test", "password": "testpass123"})
+        self.assertEqual(login_user.call_args.args[0], {"email": "carol@gotrendlabs.com.br", "password": "testpass123"})
         self.assertLess(self.client.session.get_expiry_age(), 60 * 60 * 24 * 30)
 
         with patch("accounts.views.logout_user", return_value={}):
@@ -7582,7 +7585,7 @@ class WebSmokeTests(TransactionTestCase):
         with patch("accounts.views.login_user", return_value=auth_response):
             response = self.client.post(
                 reverse("login"),
-                {"email": "carol@orynth.test", "password": "testpass123", "remember_me": "on"},
+                {"email": "carol@gotrendlabs.com.br", "password": "testpass123", "remember_me": "on"},
             )
         self.assertRedirects(response, reverse("home"))
         self.assertGreaterEqual(self.client.session.get_expiry_age(), (60 * 60 * 24 * 30) - 5)
@@ -7598,5 +7601,5 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "SIM")
-        self.assertContains(response, "120 O₵")
-        self.assertContains(response, "240 O₵")
+        self.assertContains(response, "120 GT₵")
+        self.assertContains(response, "240 GT₵")

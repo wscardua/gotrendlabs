@@ -1,0 +1,15 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs position flag logo</title>
+  <desc id="desc">A flag identity for staking a public position without financial betting language.</desc>
+  <rect width="760" height="180" rx="28" fill="#F8F1E8"/>
+  <g transform="translate(39 26)">
+    <path d="M32 15V124" stroke="#111315" stroke-width="9" stroke-linecap="round"/>
+    <path d="M36 18C57 6 82 31 109 17V80C82 94 57 69 36 81V18Z" fill="#111315"/>
+    <path d="M50 41H95M50 61H80" stroke="#F8F1E8" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="96" cy="80" r="13" fill="#136F4A"/>
+    <path d="M87 80L94 87L108 69" stroke="#F8F1E8" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="44" font-weight="850">GoTrendLabs</text>
+  <text x="186" y="122" fill="#6F6258" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="18" font-weight="650">Marque sua posicao antes do consenso mudar.</text>
+  <text x="621" y="98" fill="#111315" font-family="IBM Plex Sans, Inter, Arial, sans-serif" font-size="30" font-weight="850">TAKE</text>
+</svg>

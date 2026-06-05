@@ -50,7 +50,7 @@ Usuário interage com o sistema no idioma preferido e recebe conteúdo e formata
 
 - conteúdo base e traduzido precisam permanecer rastreáveis
 - identificadores não dependem apenas da tradução
-- branding visível usa `Orynth Trends`, preservando `Orynth Coins` como nome textual da moeda educativa e identificadores técnicos `orynth_*`
+- branding visível usa `GoTrendLabs`, preservando `GTL Credits` como nome textual da moeda educativa e identificadores técnicos `gotrendlabs_*`
 
 ## Responsabilidades por camada
 

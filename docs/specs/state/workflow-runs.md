@@ -22,6 +22,26 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Reversão lógica: como cancelar ou substituir sem apagar histórico
 ```
 
+## WFLOW-20260604-GOTRENDLABS-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-I18N-001`, `FEAT-WALLET-001`, `FEAT-AUTH-001`, `FEAT-OPSLOG-001`
+- Objetivo: substituir profundamente a identidade da plataforma por GoTrendLabs, com moeda GTL Credits/GT₵ e contratos técnicos `_gtl`
+- Etapa atual: concluído; rebrand de código, docs, deploy, migrations de schema/domínio controlado, assets GTL, correções de mídia pública, topo Admin Ops e validação local/cloud finalizados em 2026-06-05
+- Artefatos afetados:
+  - `backend_api/`, `accounts/`, `markets/`, `admin_ops/`, `agents/`, `system_logs/`
+  - `templates/`, `static/css/gotrendlabs.css`, `static/js/gotrendlabs.js`, `static/brand/`
+  - `deploy/production/`, `.github/workflows/deploy.yml`, `.env.example`, `.env.prod.example`
+  - `docs/specs/`, `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-04
+- Atualizado em: 2026-06-05
+- Encerrado em: 2026-06-05
+- Retomada: acompanhar PR para `main`, GitHub Actions `CI and Deploy` e smoke pós-merge; evoluir i18n por catálogos em workflow futuro
+- Reversão lógica: restaurar backup `git-all-refs.bundle` e dump local criado antes da mudança; em produção, reverter por snapshot RDS e app dir anterior se o deploy for iniciado
+- Evidências de validação: `manage.py check`, `makemigrations --check --dry-run`, suíte completa `129/129` com `--keepdb`, scans de resíduos em código/schema local e cloud, `docker compose config`, containers `gotrendlabs-*` em execução, `maintenance_enabled=False`, `market_thumbnails=39`, `badge_images=30`, domínios `gotrendlabs.com.br`, `www.gotrendlabs.com.br`, `gotrendlabs.com` e `www.gotrendlabs.com` com HTTP 200 e SSL válido.
+
 ## WFLOW-20260528-PUBLIC-COPY-001
 
 - Tipo: `change-feature`
@@ -34,8 +54,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `core/templates/core/`
   - `markets/templates/markets/detail.html`
   - `templates/components/market_card.html`
-  - `static/css/orynth.css`
-  - `static/js/orynth.js`
+  - `static/css/gotrendlabs.css`
+  - `static/js/gotrendlabs.js`
   - `docs/specs/`
   - `PRODUCT.md`
   - `DESIGN.md`
@@ -64,7 +84,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-24
 - Encerrado em: 2026-05-24
 - Retomada: acompanhar em produção o primeiro ciclo do daemon após deploy para validar contadores de prune
-- Reversão lógica: ocultar campos de retenção no Admin Ops e voltar defaults de 90 dias, preservando colunas em `orynth_site_config` para compatibilidade
+- Reversão lógica: ocultar campos de retenção no Admin Ops e voltar defaults de 90 dias, preservando colunas em `gotrendlabs_site_config` para compatibilidade
 
 ## WFLOW-20260517-001
 
@@ -75,7 +95,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Etapa atual: concluído
 - Artefatos afetados:
   - `docs/specs/`
-  - `tools/skills/orynth/`
+  - `tools/skills/gotrendlabs/`
   - `docs/guides/ia-spec-workflow.md`
 - Bloqueios: nenhum
 - Iniciado em: 2026-05-17
@@ -102,7 +122,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-20
 - Encerrado em: 2026-05-20
 - Retomada: daemon ja possui container de producao no deploy EC2; proxima evolucao e alertas externos/observabilidade
-- Reversão lógica: desativar execução do comando `run_orynth_daemon` preservando serviços backend e eventos já registrados
+- Reversão lógica: desativar execução do comando `run_gotrendlabs_daemon` preservando serviços backend e eventos já registrados
 
 ## WFLOW-20260520-018
 
@@ -146,7 +166,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-21
 - Encerrado em: 2026-05-21
 - Retomada: criar `.env.prod` na EC2, configurar secrets/variables do GitHub, executar primeiro deploy e apontar DNS quando houver dominio
-- Reversão lógica: remover recursos AWS provisionados em `us-east-1` usando tags `Project=orynth`, `Environment=prod`, `ManagedBy=codex-mcp`, preservando ADR como decisão substituída se a estratégia mudar
+- Reversão lógica: remover recursos AWS provisionados em `us-east-1` usando tags `Project=gotrendlabs`, `Environment=prod`, `ManagedBy=codex-mcp`, preservando ADR como decisão substituída se a estratégia mudar
 
 ## WFLOW-20260521-002
 
@@ -187,14 +207,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-23
 - Encerrado em: 2026-05-23
 - Retomada: acompanhar deploy em `main`, validar migrations em produção e observar primeiro ciclo daemon com IA desligada por padrão
-- Reversão lógica: desativar `ai_agents_enabled` em `orynth_site_config`, manter auditoria histórica e remover integração do ciclo IA por workflow substituto
+- Reversão lógica: desativar `ai_agents_enabled` em `gotrendlabs_site_config`, manter auditoria histórica e remover integração do ciclo IA por workflow substituto
 
 ## WFLOW-20260520-002
 
 - Tipo: `change-feature`
 - Status: `concluido`
 - Feature alvo: `FEAT-MARKET-001`, `FEAT-WALLET-001`, `FEAT-AUTH-001`
-- Objetivo: padronizar símbolo público `O₵`, expor métricas educativas na home e reorganizar rodapé/Admin Ops
+- Objetivo: padronizar símbolo público `GT₵`, expor métricas educativas na home e reorganizar rodapé/Admin Ops
 - Etapa atual: concluído
 - Artefatos afetados:
   - `backend_api/main.py`
@@ -203,7 +223,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `core/templates/core/home.html`
   - `templates/base.html`
   - `templates/components/footer.html`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -211,7 +231,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-20
 - Encerrado em: 2026-05-20
 - Retomada: evoluir um formatador central de moeda/i18n quando `FEAT-I18N-001` avançar
-- Reversão lógica: restaurar labels visíveis antigos, remover métricas públicas da home e voltar Admin Ops para a navegação anterior preservando contratos internos `_oc`
+- Reversão lógica: restaurar labels visíveis antigos, remover métricas públicas da home e voltar Admin Ops para a navegação anterior preservando contratos internos `_gtl`
 
 ## WFLOW-20260517-002
 
@@ -222,10 +242,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Etapa atual: concluído
 - Artefatos afetados:
   - `docs/specs/state/feature-changelog.md`
-  - `tools/skills/orynth/orynth-django-web/`
-  - `tools/skills/orynth/orynth-fastapi-domain/`
-  - `tools/skills/orynth/orynth-postgres-modeling/`
-  - `tools/skills/orynth/orynth-ops-scheduler-communications/`
+  - `tools/skills/gotrendlabs/gotrendlabs-django-web/`
+  - `tools/skills/gotrendlabs/gotrendlabs-fastapi-domain/`
+  - `tools/skills/gotrendlabs/gotrendlabs-postgres-modeling/`
+  - `tools/skills/gotrendlabs/gotrendlabs-ops-scheduler-communications/`
   - `docs/guides/ia-spec-workflow.md`
 - Bloqueios: nenhum
 - Iniciado em: 2026-05-17
@@ -246,10 +266,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/state/workflow-runs.md`
   - `docs/specs/state/workflow-checklists.md`
   - `docs/specs/state/governance-review.md`
-  - `tools/skills/orynth/orynth-workflow-governor/`
-  - `tools/skills/orynth/README.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-workflow-governor/`
+  - `tools/skills/gotrendlabs/README.md`
   - `docs/guides/ia-spec-workflow.md`
-  - `tools/skills/orynth/*/SKILL.md`
+  - `tools/skills/gotrendlabs/*/SKILL.md`
 - Bloqueios: nenhum
 - Iniciado em: 2026-05-17
 - Atualizado em: 2026-05-17
@@ -265,9 +285,9 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Objetivo: adicionar skills de arquiteto de software/segurança e engenheiro de testes, atualizando fluxos obrigatórios
 - Etapa atual: concluído
 - Artefatos afetados:
-  - `tools/skills/orynth/orynth-software-architect/`
-  - `tools/skills/orynth/orynth-test-engineer/`
-  - `tools/skills/orynth/README.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-software-architect/`
+  - `tools/skills/gotrendlabs/gotrendlabs-test-engineer/`
+  - `tools/skills/gotrendlabs/README.md`
   - `docs/specs/workflows/`
   - `docs/specs/state/workflow-checklists.md`
   - `docs/specs/state/integration-map.md`
@@ -276,7 +296,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-05-17
 - Atualizado em: 2026-05-17
 - Encerrado em: 2026-05-17
-- Retomada: usar `orynth-software-architect` antes de mudanças relevantes e `orynth-test-engineer` para testes executáveis
+- Retomada: usar `gotrendlabs-software-architect` antes de mudanças relevantes e `gotrendlabs-test-engineer` para testes executáveis
 - Reversão lógica: criar workflow substituto que ajuste obrigatoriedade ou escopo das skills
 
 ## WFLOW-20260517-005
@@ -333,7 +353,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Tipo: `change-feature`
 - Status: `concluido`
 - Feature alvo: `FEAT-WALLET-001`
-- Objetivo: adicionar projeção `orynth_wallet_balances` para leitura rápida de saldo mantendo ledger como fonte auditável
+- Objetivo: adicionar projeção `gotrendlabs_wallet_balances` para leitura rápida de saldo mantendo ledger como fonte auditável
 - Etapa atual: concluído
 - Artefatos afetados:
   - `accounts/`
@@ -565,15 +585,15 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `backend_api/`
   - `accounts/api_client.py`
   - `config/urls.py`
-  - `static/js/orynth.js`
+  - `static/js/gotrendlabs.js`
   - `tests/test_web_smoke.py`
   - `docs/specs/state/`
 - Bloqueios: resolução, payout real, reputação avançada, comunicações e refund/cancelamento ficam fora desta entrega
 - Iniciado em: 2026-05-18
 - Atualizado em: 2026-05-18
 - Encerrado em: 2026-05-18
-- Retomada: implementar FEAT-RES-001 usando `orynth_predictions`, `prediction_stake_lock` e snapshots de entrada como base
-- Reversão lógica: desativar rota de confirmação no Django e endpoint FastAPI, preservando `orynth_predictions` e ledger para auditoria/migração
+- Retomada: implementar FEAT-RES-001 usando `gotrendlabs_predictions`, `prediction_stake_lock` e snapshots de entrada como base
+- Reversão lógica: desativar rota de confirmação no Django e endpoint FastAPI, preservando `gotrendlabs_predictions` e ledger para auditoria/migração
 
 ## WFLOW-20260518-017
 
@@ -594,7 +614,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-05-18
 - Atualizado em: 2026-05-18
 - Encerrado em: 2026-05-18
-- Retomada: criar tabela de snapshots se o volume de previsões tornar caro recalcular séries a partir de `orynth_predictions`
+- Retomada: criar tabela de snapshots se o volume de previsões tornar caro recalcular séries a partir de `gotrendlabs_predictions`
 - Reversão lógica: ocultar sparklines nos templates preservando snapshots atuais de opção e registros de previsão
 
 ## WFLOW-20260518-018
@@ -842,7 +862,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `core/`
   - `config/`
   - `templates/`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `.env.example`
   - `README.md`
   - `tests/test_web_smoke.py`
@@ -852,7 +872,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-20
 - Encerrado em: 2026-05-20
 - Retomada: evoluir envio real em `communications`, criação operacional de roles PostgreSQL de menor privilégio e gráficos/históricos do dashboard quando priorizado
-- Reversão lógica: ocultar Config/Dashboard ampliado no Admin Ops, manter `orynth_site_config` preservada e desativar middleware de manutenção se necessário
+- Reversão lógica: ocultar Config/Dashboard ampliado no Admin Ops, manter `gotrendlabs_site_config` preservada e desativar middleware de manutenção se necessário
 
 ## WFLOW-20260520-003
 
@@ -868,7 +888,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `accounts/api_client.py`
   - `admin_ops/`
   - `markets/management/commands/reconcile_canceled_market_refunds.py`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/research/qa-simulacao-hard-100-usuarios-20260520.md`
   - `docs/specs/`
@@ -893,7 +913,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `wallet/`
   - `profiles/`
   - `config/urls.py`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -936,7 +956,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `accounts/templates/accounts/login.html`
   - `accounts/templates/accounts/register.html`
   - `backend_api/main.py`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/features/auth-and-session.md`
   - `docs/specs/state/`
@@ -956,7 +976,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Etapa atual: concluído; `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_market_card_title_links_to_market_detail`, suíte `.venv/bin/python manage.py test tests.test_web_smoke` e `git diff --check` executados com sucesso em 2026-05-20
 - Artefatos afetados:
   - `templates/components/market_card.html`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/features/market-feed.md`
   - `docs/specs/state/`
@@ -992,14 +1012,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Tipo: `change-feature`
 - Status: `concluido`
 - Feature alvo: `FEAT-I18N-001`, `sistema-documental`
-- Objetivo: renomear a marca pública da plataforma para `Orynth Trends` preservando identificadores técnicos e `Orynth Coins`
+- Objetivo: renomear a marca pública da plataforma para `GoTrendLabs` preservando identificadores técnicos e `GTL Credits`
 - Etapa atual: concluído; testes e busca final registrados na implementação desta branch
 - Artefatos afetados:
   - `templates/`
   - `accounts/templates/accounts/`
   - `core/`
   - `backend_api/main.py`
-  - `static/js/orynth.js`
+  - `static/js/gotrendlabs.js`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -1007,19 +1027,19 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-20
 - Encerrado em: 2026-05-20
 - Retomada: extrair strings de marca para catálogos quando `FEAT-I18N-001` avançar
-- Reversão lógica: restaurar textos públicos para `Orynth`, mantendo `Orynth Coins` e identificadores técnicos inalterados
+- Reversão lógica: restaurar textos públicos para `GoTrendLabs`, mantendo `GTL Credits` e identificadores técnicos inalterados
 
 ## WFLOW-20260520-010
 
 - Tipo: `docs-tooling`
 - Status: `concluido`
 - Feature alvo: `sistema-documental`, `curadoria-de-mercados`
-- Objetivo: criar skill local para sugerir mercados de previsão com dados internos da Orynth, trends sociais, links exatos de verificação, diversidade editorial e anti-repetição
-- Etapa atual: concluído; `python3 /Users/williamsca/.codex/skills/.system/skill-creator/scripts/quick_validate.py tools/skills/orynth/orynth-prediction-markets` executado com sucesso em 2026-05-20
+- Objetivo: criar skill local para sugerir mercados de previsão com dados internos da GoTrendLabs, trends sociais, links exatos de verificação, diversidade editorial e anti-repetição
+- Etapa atual: concluído; `python3 /Users/williamsca/.codex/skills/.system/skill-creator/scripts/quick_validate.py tools/skills/gotrendlabs/gotrendlabs-prediction-markets` executado com sucesso em 2026-05-20
 - Artefatos afetados:
-  - `tools/skills/orynth/orynth-prediction-markets/`
-  - `tools/skills/orynth/README.md`
-  - `docs/guides/orynth-prediction-markets-skill.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-prediction-markets/`
+  - `tools/skills/gotrendlabs/README.md`
+  - `docs/guides/gotrendlabs-prediction-markets-skill.md`
   - `docs/specs/state/`
 - Bloqueios: nenhum
 - Iniciado em: 2026-05-20
@@ -1033,13 +1053,13 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Tipo: `docs-tooling`
 - Status: `concluido`
 - Feature alvo: `sistema-documental`, `curadoria-de-mercados`
-- Objetivo: reforçar a skill `orynth-prediction-markets` para validar que a fonte de resolução consegue fundamentar e certificar o resultado antes de sugerir mercados
-- Etapa atual: concluído; `python3 /Users/williamsca/.codex/skills/.system/skill-creator/scripts/quick_validate.py tools/skills/orynth/orynth-prediction-markets` e `git diff --check` executados com sucesso em 2026-05-21
+- Objetivo: reforçar a skill `gotrendlabs-prediction-markets` para validar que a fonte de resolução consegue fundamentar e certificar o resultado antes de sugerir mercados
+- Etapa atual: concluído; `python3 /Users/williamsca/.codex/skills/.system/skill-creator/scripts/quick_validate.py tools/skills/gotrendlabs/gotrendlabs-prediction-markets` e `git diff --check` executados com sucesso em 2026-05-21
 - Artefatos afetados:
-  - `tools/skills/orynth/orynth-prediction-markets/SKILL.md`
-  - `tools/skills/orynth/orynth-prediction-markets/references/fontes-sociais-e-verificacao.md`
-  - `tools/skills/orynth/orynth-prediction-markets/references/framework-de-mercados.md`
-  - `docs/guides/orynth-prediction-markets-skill.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-prediction-markets/SKILL.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-prediction-markets/references/fontes-sociais-e-verificacao.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-prediction-markets/references/framework-de-mercados.md`
+  - `docs/guides/gotrendlabs-prediction-markets-skill.md`
   - `docs/specs/state/`
 - Bloqueios: nenhum
 - Iniciado em: 2026-05-21
@@ -1062,8 +1082,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `core/`
   - `markets/templates/markets/detail.html`
   - `profiles/views.py`
-  - `static/css/orynth.css`
-  - `static/js/orynth.js`
+  - `static/css/gotrendlabs.css`
+  - `static/js/gotrendlabs.js`
   - `templates/`
   - `tests/test_web_smoke.py`
   - `docs/specs/features/`
@@ -1075,7 +1095,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-05-21
 - Encerrado em: 2026-05-21
 - Retomada: avaliar cache-busting centralizado para assets estáticos e teste visual automatizado quando o navegador MCP estiver disponível
-- Reversão lógica: remover `is_bot`, restaurar ticket com botão desabilitado até escolha, voltar métrica `distributed_oc` para todos os créditos e retirar opções/CTA do share de mercado
+- Reversão lógica: remover `is_bot`, restaurar ticket com botão desabilitado até escolha, voltar métrica `distributed_gtl` para todos os créditos e retirar opções/CTA do share de mercado
 
 ## WFLOW-20260521-003
 
@@ -1083,7 +1103,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-MARKET-001`
 - Objetivo: impedir que mercados fixture sejam semeados em produção e limpar os fixtures criados no primeiro deploy
-- Etapa atual: concluído; migration inicial de mercados sem `RunPython` de seed, seed explícito restrito ao harness de testes e RDS de produção validado com `orynth_markets = 0`
+- Etapa atual: concluído; migration inicial de mercados sem `RunPython` de seed, seed explícito restrito ao harness de testes e RDS de produção validado com `gotrendlabs_markets = 0`
 - Artefatos afetados:
   - `markets/migrations/0001_initial.py`
   - `tests/test_web_smoke.py`
@@ -1101,7 +1121,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-MARKET-001`, `FEAT-AUTH-001`, `FEAT-WALLET-001`
 - Objetivo: criar fluxo one-off idempotente para popular PRD com dados editoriais bons de DEV, admin inicial, wallet conciliada, badges com mídia e site config
-- Etapa atual: concluído; PRD populado com `@admin`, wallet conciliada, 10 badges com mídia, site config, 27 mercados editoriais, 65 opções e 47 arquivos de mídia; snapshot RDS pré-import `orynth-prod-before-bootstrap-20260521215807`; senha de `admin@orynth.local` resetada e validada, parâmetros temporários de senha removidos do SSM
+- Etapa atual: concluído; PRD populado com `@admin`, wallet conciliada, 10 badges com mídia, site config, 27 mercados editoriais, 65 opções e 47 arquivos de mídia; snapshot RDS pré-import `gotrendlabs-prod-before-bootstrap-20260521215807`; senha de `admin@gotrendlabs.com.br` resetada e validada, parâmetros temporários de senha removidos do SSM
 - Artefatos afetados:
   - `scripts/ops/export_dev_bootstrap.py`
   - `scripts/ops/import_prod_bootstrap.py`
@@ -1123,8 +1143,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Artefatos afetados:
   - `templates/components/market_card.html`
   - `markets/templates/markets/detail.html`
-  - `static/js/orynth.js`
-  - `static/css/orynth.css`
+  - `static/js/gotrendlabs.js`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/features/`
   - `docs/specs/architecture/frontend-web.md`
@@ -1164,11 +1184,11 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-MARKET-001`, `FEAT-MARKET-002`
 - Objetivo: ampliar a curadoria assistida para mercados cripto com fontes objetivas, aviso de risco e seed DEV inicial com thumbnails autorais
-- Etapa atual: concluído; skill `orynth-prediction-markets` atualizada para cripto, 3 mercados DEV criados como `draft`, thumbs 512x512 geradas em `media/market_thumbnails/`, `quick_validate.py` e `git diff --check` executados com sucesso em 2026-05-22
+- Etapa atual: concluído; skill `gotrendlabs-prediction-markets` atualizada para cripto, 3 mercados DEV criados como `draft`, thumbs 512x512 geradas em `media/market_thumbnails/`, `quick_validate.py` e `git diff --check` executados com sucesso em 2026-05-22
 - Artefatos afetados:
-  - `tools/skills/orynth/orynth-prediction-markets/`
-  - `tools/skills/orynth/README.md`
-  - `docs/guides/orynth-prediction-markets-skill.md`
+  - `tools/skills/gotrendlabs/gotrendlabs-prediction-markets/`
+  - `tools/skills/gotrendlabs/README.md`
+  - `docs/guides/gotrendlabs-prediction-markets-skill.md`
   - `docs/specs/state/`
   - `media/market_thumbnails/generated-bitcoin-acima-80000-30-junho-2026.png`
   - `media/market_thumbnails/generated-solana-acima-bsc-tvl-31-maio-2026.png`
@@ -1194,7 +1214,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `admin_ops/`
   - `templates/components/market_card.html`
   - `markets/templates/markets/detail.html`
-  - `static/js/orynth.js`
+  - `static/js/gotrendlabs.js`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -1217,8 +1237,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `core/`
   - `admin_ops/`
   - `markets/templates/markets/detail.html`
-  - `static/js/orynth.js`
-  - `static/css/orynth.css`
+  - `static/js/gotrendlabs.js`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -1241,7 +1261,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `core/`
   - `admin_ops/`
   - `markets/templates/markets/detail.html`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -1263,7 +1283,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `accounts/`
   - `admin_ops/`
   - `markets/templates/markets/detail.html`
-  - `static/css/orynth.css`
+  - `static/css/gotrendlabs.css`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -1283,8 +1303,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Artefatos afetados:
   - `templates/components/market_card.html`
   - `markets/templates/markets/detail.html`
-  - `static/css/orynth.css`
-  - `static/js/orynth.js`
+  - `static/css/gotrendlabs.css`
+  - `static/js/gotrendlabs.js`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum
@@ -1324,8 +1344,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Artefatos afetados:
   - `backend_api/`
   - `profiles/`
-  - `static/css/orynth.css`
-  - `static/js/orynth.js`
+  - `static/css/gotrendlabs.css`
+  - `static/js/gotrendlabs.js`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: nenhum

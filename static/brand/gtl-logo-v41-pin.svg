@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs pin logo</title>
+  <desc id="desc">A simple pin mark for fixing a public prediction before the outcome.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(34 22)">
+    <path d="M68 0C102 0 126 24 126 58C126 101 68 136 68 136C68 136 10 101 10 58C10 24 34 0 68 0Z" fill="#111315"/>
+    <path d="M42 63L61 82L95 40" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="95" cy="40" r="10" fill="#24C06F"/>
+    <path d="M43 99H94" stroke="#FFB000" stroke-width="9" stroke-linecap="round"/>
+  </g>
+  <text x="190" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="192" y="122" fill="#5F6868" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">Fixe sua previsao antes do resultado.</text>
+  <text x="637" y="100" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">PIN</text>
+</svg>

@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_DIR="${APP_DIR:-/opt/orynth}"
+APP_DIR="${APP_DIR:-/opt/gotrendlabs}"
 BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-}"
 COMPOSE_FILE="deploy/production/docker-compose.yml"
 ENV_FILE=".env.prod"
-CERT_DIR=".runtime/caddy-certs"
 
 if [[ ! -d "$APP_DIR/.git" ]]; then
   if [[ -z "$REPO_URL" ]]; then
@@ -41,29 +40,6 @@ git pull --ff-only origin "$BRANCH"
 if [[ ! -f "$COMPOSE_FILE" ]]; then
   echo "Missing compose file: $APP_DIR/$COMPOSE_FILE" >&2
   exit 1
-fi
-
-HTTPS_SITE="$(grep -E "^ORYNTH_HTTPS_SITE=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- || true)"
-if [[ -n "$HTTPS_SITE" && ! -f "$CERT_DIR/ip.crt" ]]; then
-  HTTPS_HOST="${HTTPS_SITE#https://}"
-  HTTPS_HOST="${HTTPS_HOST%%/*}"
-  HTTPS_HOST="${HTTPS_HOST%%:*}"
-  if [[ -z "$HTTPS_HOST" ]]; then
-    HTTPS_HOST="$(grep -E "^ORYNTH_ALLOWED_HOSTS=" "$ENV_FILE" | tail -n 1 | cut -d= -f2- | cut -d, -f1 || true)"
-  fi
-
-  mkdir -p "$CERT_DIR"
-  if [[ "$HTTPS_HOST" =~ ^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-    SAN="IP:$HTTPS_HOST"
-  else
-    SAN="DNS:$HTTPS_HOST"
-  fi
-
-  openssl req -x509 -nodes -newkey rsa:2048 -days 365 \
-    -keyout "$CERT_DIR/ip.key" \
-    -out "$CERT_DIR/ip.crt" \
-    -subj "/CN=$HTTPS_HOST" \
-    -addext "subjectAltName=$SAN"
 fi
 
 docker compose -f "$COMPOSE_FILE" build

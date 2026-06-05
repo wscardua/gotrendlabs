@@ -1,0 +1,7 @@
+interface:
+  display_name: "GoTrendLabs Software Architect"
+  short_description: "Arquitetura, segurança e desenho técnico"
+  default_prompt: "Use $gotrendlabs-software-architect para definir a arquitetura, segurança, módulos e decisões técnicas de uma feature do GoTrendLabs antes da implementação."
+
+policy:
+  allow_implicit_invocation: true

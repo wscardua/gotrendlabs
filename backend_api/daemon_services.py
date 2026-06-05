@@ -9,7 +9,7 @@ from system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
 
 AUTO_CLOSE_NOTE = "Fechamento automático pelo daemon."
 AUTO_CANCEL_NO_HUMANS_NOTE = "Cancelamento automático pelo daemon: mercado sem participação humana."
-DAEMON_LOGGER = "orynth.daemon"
+DAEMON_LOGGER = "gotrendlabs.daemon"
 DAEMON_HEARTBEAT_EVENT = "daemon.heartbeat"
 DEFAULT_STALE_AFTER_MINUTES = 5
 DEFAULT_MISSING_AFTER_MINUTES = 15
@@ -32,7 +32,7 @@ def _record_wallet_entry(cursor, user_id, *, entry_type, amount, direction, desc
     now = datetime.now(timezone.utc)
     cursor.execute(
         """
-        INSERT INTO orynth_wallet_ledger
+        INSERT INTO gotrendlabs_wallet_ledger
             (user_id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         RETURNING id
@@ -41,7 +41,7 @@ def _record_wallet_entry(cursor, user_id, *, entry_type, amount, direction, desc
     )
     cursor.execute(
         """
-        INSERT INTO orynth_wallet_balances (user_id, available_oc, locked_oc, total_earned_oc, updated_at)
+        INSERT INTO gotrendlabs_wallet_balances (user_id, available_gtl, locked_gtl, total_earned_gtl, updated_at)
         VALUES (%s, 0, 0, 0, %s)
         ON CONFLICT (user_id) DO NOTHING
         """,
@@ -50,9 +50,9 @@ def _record_wallet_entry(cursor, user_id, *, entry_type, amount, direction, desc
     if direction == "release":
         cursor.execute(
             """
-            UPDATE orynth_wallet_balances
-            SET available_oc = available_oc + %s,
-                locked_oc = GREATEST(locked_oc - %s, 0),
+            UPDATE gotrendlabs_wallet_balances
+            SET available_gtl = available_gtl + %s,
+                locked_gtl = GREATEST(locked_gtl - %s, 0),
                 updated_at = %s
             WHERE user_id = %s
             """,
@@ -79,7 +79,7 @@ def close_due_auto_markets(now=None):
             cursor.execute(
                 """
                 SELECT *
-                FROM orynth_markets
+                FROM gotrendlabs_markets
                 WHERE status IN ('open', 'scheduled')
                   AND auto_close_enabled = true
                   AND close_at IS NOT NULL
@@ -95,8 +95,8 @@ def close_due_auto_markets(now=None):
                 cursor.execute(
                     """
                     SELECT COUNT(DISTINCT p.user_id) AS total
-                    FROM orynth_predictions p
-                    JOIN orynth_users u ON u.id = p.user_id
+                    FROM gotrendlabs_predictions p
+                    JOIN gotrendlabs_users u ON u.id = p.user_id
                     WHERE p.market_id = %s
                       AND p.status = 'open'
                       AND u.is_bot = false
@@ -117,7 +117,7 @@ def prune_expired_system_logs(now=None):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             retention = _retention_config(cursor)["system_log_retention_days"]
-            cursor.execute("DELETE FROM orynth_system_logs WHERE created_at < %s", (now - timedelta(days=retention),))
+            cursor.execute("DELETE FROM gotrendlabs_system_logs WHERE created_at < %s", (now - timedelta(days=retention),))
             return cursor.rowcount
 
 
@@ -126,7 +126,7 @@ def _retention_config(cursor):
         cursor.execute(
             """
             SELECT system_log_retention_days, ai_audit_retention_days
-            FROM orynth_site_config
+            FROM gotrendlabs_site_config
             WHERE singleton_key = 1
             """
         )
@@ -144,7 +144,7 @@ def prune_expired_ai_agent_actions(now=None):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             retention = _retention_config(cursor)["ai_audit_retention_days"]
-            cursor.execute("DELETE FROM orynth_ai_agent_actions WHERE created_at < %s", (now - timedelta(days=retention),))
+            cursor.execute("DELETE FROM gotrendlabs_ai_agent_actions WHERE created_at < %s", (now - timedelta(days=retention),))
             return cursor.rowcount
 
 
@@ -153,9 +153,9 @@ def prune_expired_operational_records(now=None):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             retention = _retention_config(cursor)
-            cursor.execute("DELETE FROM orynth_system_logs WHERE created_at < %s", (now - timedelta(days=retention["system_log_retention_days"]),))
+            cursor.execute("DELETE FROM gotrendlabs_system_logs WHERE created_at < %s", (now - timedelta(days=retention["system_log_retention_days"]),))
             system_logs = cursor.rowcount
-            cursor.execute("DELETE FROM orynth_ai_agent_actions WHERE created_at < %s", (now - timedelta(days=retention["ai_audit_retention_days"]),))
+            cursor.execute("DELETE FROM gotrendlabs_ai_agent_actions WHERE created_at < %s", (now - timedelta(days=retention["ai_audit_retention_days"]),))
             ai_agent_actions = cursor.rowcount
     return {
         "system_logs": system_logs,
@@ -261,7 +261,7 @@ def daemon_dashboard_status(
     cursor.execute(
         """
         SELECT created_at, context
-        FROM orynth_system_logs
+        FROM gotrendlabs_system_logs
         WHERE logger_name = %s
           AND event_type = %s
         ORDER BY created_at DESC, id DESC
@@ -273,7 +273,7 @@ def daemon_dashboard_status(
     cursor.execute(
         """
         SELECT created_at
-        FROM orynth_system_logs
+        FROM gotrendlabs_system_logs
         WHERE logger_name = %s
           AND event_type = 'daemon.run_failed'
         ORDER BY created_at DESC, id DESC
@@ -285,7 +285,7 @@ def daemon_dashboard_status(
     cursor.execute(
         """
         SELECT COUNT(*) AS total
-        FROM orynth_admin_events
+        FROM gotrendlabs_admin_events
         WHERE action = 'market.lock'
           AND actor_id IS NULL
           AND note = %s

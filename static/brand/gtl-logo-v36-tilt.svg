@@ -1,0 +1,14 @@
+<svg width="760" height="180" viewBox="0 0 760 180" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">GoTrendLabs tilt logo</title>
+  <desc id="desc">A simple tilted mark for early calls, consensus movement, and public reputation.</desc>
+  <rect width="760" height="180" rx="24" fill="#FFFFFF"/>
+  <g transform="translate(34 28) rotate(-9 62 62)">
+    <rect x="3" y="3" width="118" height="118" rx="32" fill="#111315"/>
+    <path d="M33 78L56 48L77 75L96 42" stroke="#FFFFFF" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="96" cy="42" r="11" fill="#24C06F"/>
+    <path d="M35 94H96" stroke="#FFB000" stroke-width="10" stroke-linecap="round"/>
+  </g>
+  <text x="184" y="84" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="45" font-weight="900">GoTrendLabs</text>
+  <text x="186" y="122" fill="#5F6868" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="18" font-weight="700">O sinal que aparece antes do consenso.</text>
+  <text x="631" y="100" fill="#111315" font-family="Inter, IBM Plex Sans, Arial, sans-serif" font-size="32" font-weight="900">GTL</text>
+</svg>

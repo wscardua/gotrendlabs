@@ -69,7 +69,7 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - cada previsão deve ficar vinculada a mercado, opção e usuário
 - nesta etapa do MVP, cada usuário pode registrar no máximo uma previsão por mercado
 - a mutação financeira deve ser refletida no ledger
-- a evolução do consenso é recalculada a partir de `orynth_predictions` ordenadas por criação, usando peso base sintético e `reputacao * stake`
+- a evolução do consenso é recalculada a partir de `gotrendlabs_predictions` ordenadas por criação, usando peso base sintético e `reputacao * stake`
 - múltipla escolha deve expor uma linha de evolução por opção
 - a fonte de verdade da probabilidade é decimal (`probability_exact`); percentuais inteiros são apenas apresentação truncada
 - `probability_at_entry` e `potential_payout` devem usar a probabilidade decimal vigente antes da entrada

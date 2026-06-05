@@ -1,7 +1,0 @@
-interface:
-  display_name: "Orynth FastAPI Domain"
-  short_description: "Domínio, auth e endpoints FastAPI"
-  default_prompt: "Use $orynth-fastapi-domain para implementar regras de domínio e endpoints do Orynth em FastAPI/Python, preservando contratos e auditabilidade."
-
-policy:
-  allow_implicit_invocation: true

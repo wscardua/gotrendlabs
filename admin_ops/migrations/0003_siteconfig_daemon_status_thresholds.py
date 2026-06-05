@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("admin_ops", "0002_siteconfig_wallet_recharge_min_balance_oc"),
+        ("admin_ops", "0002_siteconfig_wallet_recharge_min_balance_gtl"),
     ]
 
     operations = [
