@@ -1,24 +1,26 @@
+(gotrendlabs_tls) {
+	tls {
+		protocols tls1.2 tls1.3
+	}
+}
+
 (gotrendlabs_reverse_proxy) {
-  encode gzip
+	encode gzip
 
-  handle_path /static/* {
-    root * /srv/static
-    file_server
-  }
+	handle_path /static/* {
+		root * /srv/static
+		file_server
+	}
 
-  handle_path /media/* {
-    root * /srv/media
-    file_server
-  }
+	handle_path /media/* {
+		root * /srv/media
+		file_server
+	}
 
-  reverse_proxy django:8000
+	reverse_proxy django:8000
 }
 
-{$GOTRENDLABS_HTTP_SITE:http://localhost} {
-  import gotrendlabs_reverse_proxy
-}
-
-{$GOTRENDLABS_HTTPS_SITE:https://localhost} {
-  tls /etc/caddy/certs/ip.crt /etc/caddy/certs/ip.key
-  import gotrendlabs_reverse_proxy
+gotrendlabs.com.br, www.gotrendlabs.com.br, gotrendlabs.com, www.gotrendlabs.com {
+	import gotrendlabs_tls
+	import gotrendlabs_reverse_proxy
 }

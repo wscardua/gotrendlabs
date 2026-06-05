@@ -138,18 +138,22 @@ O workflow agora faz um preflight explicito da configuracao e falha cedo quando 
 
 ## DNS e HTTPS
 
-O Caddy emite e renova o certificado automaticamente quando:
+O Caddy emite e renova certificados publicos automaticamente para:
 
-- `GOTRENDLABS_DOMAIN` aponta para o IP publico da EC2;
+- `gotrendlabs.com.br`
+- `www.gotrendlabs.com.br`
+- `gotrendlabs.com`
+- `www.gotrendlabs.com`
+
+Para o certificado ser aceito em producao:
+
+- os registros DNS desses hosts apontam para o IP publico da EC2;
 - portas `80` e `443` estao liberadas no security group;
 - nenhum outro processo esta usando `80` ou `443` na EC2.
+- no Cloudflare, use SSL/TLS `Full (strict)` depois que o Caddy emitir o certificado.
 
-Sem dominio registrado, use acesso temporario por IP:
-
-- `GOTRENDLABS_HTTP_SITE=http://32.199.120.235`
-- `GOTRENDLABS_HTTPS_SITE=:443`
-- o deploy gera um certificado autoassinado temporario para o IP em `.runtime/caddy-certs/`;
-- o HTTPS por IP pode exigir aceitar o aviso do navegador.
+O deploy nao gera certificado autoassinado por IP. Acesso por IP direto e apenas
+diagnostico temporario; o caminho oficial e sempre pelos dominios.
 
 ## Observacoes operacionais
 
