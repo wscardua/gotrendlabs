@@ -43,6 +43,7 @@ services:
     env_file:
       - ../../.env.prod
     volumes:
+      - mediafiles:/app/media:ro
       - runtime:/app/.runtime
 
   daemon:
