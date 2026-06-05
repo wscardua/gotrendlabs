@@ -6,6 +6,7 @@
 - FastAPI passou a filtrar URLs locais de thumbnail inexistentes em payloads públicos, preservando a URL crua nos contratos Admin Ops; templates públicos possuem fallback textual quando a imagem falha no navegador.
 - Docker Compose de produção passou a montar `mediafiles` também no serviço FastAPI, permitindo que a API valide existência de `/media/...`; volume `gotrendlabs_mediafiles` foi restaurado com thumbnails/badges.
 - Topo do Admin Ops ganhou layout próprio com navegação rolável/empilhável em larguras intermediárias, evitando sobreposição de `Logs` com alternância de tema e `Ver site público`.
+- Templates base público e Admin Ops passaram a declarar favicon SVG da marca GoTrendLabs, com variantes por preferência de tema do navegador e `theme-color` alinhado ao shell visual.
 - Produção verificada fora de modo manutenção, com EC2 no commit validado, containers `gotrendlabs-*` em execução, schema ativo sem resíduos antigos e domínios `gotrendlabs.com.br`/`.com` servindo 200 com SSL válido.
 - Status de implementação: `parcial`, com rebrand profundo concluído nesta fatia; internacionalização completa por catálogo permanece fora do escopo.
 
