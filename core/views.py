@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, get_referral, get_taxonomy, mark_notifications_read, track_market_share
 from accounts.session import api_login_required
-from accounts.session import auth_token, auth_user, is_authenticated
+from accounts.session import auth_token, auth_user, is_authenticated, login_url_with_next, safe_redirect_url
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from core.domain_client import get_domain_client, local_market, local_markets
 from core.platform_config import load_platform_config
@@ -345,7 +345,7 @@ def notifications_read_all(request):
             pass
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({"ok": True})
-    return redirect(request.POST.get("next") or reverse("home"))
+    return redirect(safe_redirect_url(request, request.POST.get("next"), reverse("home")))
 
 
 def concepts(request):
@@ -375,7 +375,7 @@ def badges(request):
 def share_badge(request, code):
     badge, viewer, is_public = _badge_share_payload(request, code)
     if not badge and not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={request.get_full_path()}")
+        return redirect(login_url_with_next(request, request.get_full_path()))
     if not badge:
         messages.error(request, "Essa badge ainda não está disponível para compartilhamento.")
         return redirect("badges")
@@ -386,7 +386,7 @@ def share_badge(request, code):
 def share_badge_image(request, code):
     badge, viewer, _ = _badge_share_payload(request, code)
     if not badge and not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={request.get_full_path()}")
+        return redirect(login_url_with_next(request, request.get_full_path()))
     if not badge:
         messages.error(request, "Essa badge ainda não está disponível para compartilhamento.")
         return redirect("badges")

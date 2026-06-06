@@ -22,7 +22,7 @@ def clean_identifier(name):
         return cleaned
     import hashlib
 
-    digest = hashlib.md5(name.encode("utf-8")).hexdigest()[:8]
+    digest = hashlib.md5(name.encode("utf-8"), usedforsecurity=False).hexdigest()[:8]
     return f"{cleaned[:54]}_{digest}"
 
 

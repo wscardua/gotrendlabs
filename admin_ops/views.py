@@ -1,10 +1,12 @@
 from pathlib import Path
+from io import BytesIO
 import json
 import os
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.core.management import call_command
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
@@ -101,11 +103,14 @@ from admin_ops.forms import (
 from admin_ops.models import SiteConfig
 from communications.models import EmailDelivery, EmailTemplate
 from core.platform_config import load_platform_config, save_platform_config
+from PIL import Image, UnidentifiedImageError
 
 
 THUMB_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "market_thumbnails", base_url=settings.MEDIA_URL + "market_thumbnails/")
 BADGE_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "badge_images", base_url=settings.MEDIA_URL + "badge_images/")
 LOAD_MORE_STEP = 10
+MAX_UPLOAD_IMAGE_BYTES = 5 * 1024 * 1024
+ALLOWED_UPLOAD_FORMATS = {"JPEG", "PNG", "WEBP"}
 
 EMAIL_DELIVERY_STATUS_LABELS = {
     "queued": "Na fila",
@@ -305,16 +310,35 @@ def _market_resolution_meta(market):
     return enriched
 
 
+def _safe_image_content(upload, *, prefix):
+    if upload.size > MAX_UPLOAD_IMAGE_BYTES:
+        raise ValueError("Imagem excede o limite de 5 MB.")
+    try:
+        raw = upload.read()
+        image = Image.open(BytesIO(raw))
+        image.verify()
+        image = Image.open(BytesIO(raw))
+    except (UnidentifiedImageError, OSError) as exc:
+        raise ValueError("Arquivo de imagem inválido.") from exc
+    if image.format not in ALLOWED_UPLOAD_FORMATS:
+        raise ValueError("Formato de imagem não permitido. Use PNG, JPEG ou WebP.")
+    if image.width <= 0 or image.height <= 0 or image.width * image.height > 20_000_000:
+        raise ValueError("Dimensões da imagem não permitidas.")
+    image = image.convert("RGBA") if image.mode not in {"RGB", "RGBA"} else image
+    output = BytesIO()
+    image.save(output, format="PNG", optimize=True)
+    output.seek(0)
+    return f"{prefix}.png", ContentFile(output.read())
+
+
 def _save_thumbnail(upload):
-    suffix = Path(upload.name).suffix.lower()[:12]
-    filename = THUMB_STORAGE.get_available_name(f"market-thumb{suffix}")
-    return THUMB_STORAGE.save(filename, upload)
+    filename, content = _safe_image_content(upload, prefix="market-thumb")
+    return THUMB_STORAGE.save(THUMB_STORAGE.get_available_name(filename), content)
 
 
 def _save_badge_image(upload):
-    suffix = Path(upload.name).suffix.lower()[:12]
-    filename = BADGE_STORAGE.get_available_name(f"badge{suffix}")
-    return BADGE_STORAGE.save(filename, upload)
+    filename, content = _safe_image_content(upload, prefix="badge")
+    return BADGE_STORAGE.save(BADGE_STORAGE.get_available_name(filename), content)
 
 
 def _market_initial(market):
@@ -1302,6 +1326,7 @@ def badge_form(request, mode="new", code=None):
         if code and not badge and not error:
             error = "Badge não encontrada."
     post_data = None
+    upload_error = ""
     if request.method == "POST":
         if request.POST.get("action") == "deactivate" and code:
             try:
@@ -1311,16 +1336,21 @@ def badge_form(request, mode="new", code=None):
             except AuthAPIError as exc:
                 error = str(exc)
         post_data = request.POST.copy()
-        if request.FILES.get("badge_image"):
-            saved_name = _save_badge_image(request.FILES["badge_image"])
-            post_data["image_url"] = BADGE_STORAGE.url(saved_name)
-        if request.FILES.get("badge_dark_image"):
-            saved_name = _save_badge_image(request.FILES["badge_dark_image"])
-            post_data["image_dark_url"] = BADGE_STORAGE.url(saved_name)
+        try:
+            if request.FILES.get("badge_image"):
+                saved_name = _save_badge_image(request.FILES["badge_image"])
+                post_data["image_url"] = BADGE_STORAGE.url(saved_name)
+            if request.FILES.get("badge_dark_image"):
+                saved_name = _save_badge_image(request.FILES["badge_dark_image"])
+                post_data["image_dark_url"] = BADGE_STORAGE.url(saved_name)
+        except ValueError as exc:
+            upload_error = str(exc)
     initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True}
     form = AdminBadgeForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
+    if upload_error:
+        form.add_error(None, upload_error)
     if request.method == "POST" and request.POST.get("action") != "deactivate":
-        if form.is_valid():
+        if not upload_error and form.is_valid():
             try:
                 if mode == "new":
                     badge = admin_create_badge(token, form.to_payload())
@@ -1648,6 +1678,7 @@ def market_form(request, mode="new", slug=None):
     except AuthAPIError as exc:
         error = error or str(exc)
     post_data = None
+    upload_error = ""
     if request.method == "POST":
         if request.POST.get("action") == "lock" and mode != "new":
             try:
@@ -1657,18 +1688,23 @@ def market_form(request, mode="new", slug=None):
             except AuthAPIError as exc:
                 error = str(exc)
         post_data = request.POST.copy()
-        if request.FILES.get("thumbnail_file"):
-            saved_name = _save_thumbnail(request.FILES["thumbnail_file"])
-            post_data["image_url"] = THUMB_STORAGE.url(saved_name)
+        try:
+            if request.FILES.get("thumbnail_file"):
+                saved_name = _save_thumbnail(request.FILES["thumbnail_file"])
+                post_data["image_url"] = THUMB_STORAGE.url(saved_name)
+        except ValueError as exc:
+            upload_error = str(exc)
     initial = _market_initial(market) if market else _default_market_initial_for_taxonomy(taxonomy_data)
     if post_data is not None and mode != "new" and not post_data.get("event"):
         post_data["event"] = initial.get("event") or "Geral"
     form = AdminMarketForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
+    if upload_error:
+        form.add_error(None, upload_error)
     is_readonly = bool(market and market.get("status") == "resolved")
     if is_readonly:
         for field in form.fields.values():
             field.disabled = True
-    if request.method == "POST" and request.POST.get("action") != "lock" and form.is_valid():
+    if request.method == "POST" and request.POST.get("action") != "lock" and not upload_error and form.is_valid():
         if is_readonly:
             error = "Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar."
             return render(

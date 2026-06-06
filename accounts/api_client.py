@@ -1,6 +1,7 @@
 import json
 import json.decoder
 import urllib.error
+import urllib.parse
 import urllib.request
 from urllib.parse import urlencode
 
@@ -11,6 +12,13 @@ class AuthAPIError(Exception):
     def __init__(self, message, status_code=None):
         super().__init__(message)
         self.status_code = status_code
+
+
+def _http_urlopen(request, *, timeout):
+    scheme = urllib.parse.urlsplit(request.full_url).scheme.lower()
+    if scheme not in {"http", "https"}:
+        raise AuthAPIError("BACKEND_API_URL deve usar HTTP ou HTTPS.")
+    return urllib.request.urlopen(request, timeout=timeout)  # nosec B310
 
 
 def _request(method, path, payload=None, token=None, timeout=5):
@@ -25,7 +33,7 @@ def _request(method, path, payload=None, token=None, timeout=5):
         method=method,
     )
     try:
-        with urllib.request.urlopen(request, timeout=timeout) as response:
+        with _http_urlopen(request, timeout=timeout) as response:
             raw = response.read()
             return json.loads(raw.decode()) if raw else {}
     except json.decoder.JSONDecodeError as exc:

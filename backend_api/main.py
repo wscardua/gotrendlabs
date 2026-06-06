@@ -1,12 +1,14 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from functools import lru_cache
+import hashlib
 from ipaddress import ip_address as parse_ip_address
 import os
 import json
 import re
 import secrets
 import string
+import sys
 import time
 from typing import Optional
 import unicodedata
@@ -117,6 +119,41 @@ BADGE_TYPES = {"global", "category", "performance", "engagement"}
 PUBLIC_WEB_BASE_URL = os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
 
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
+
+_RATE_LIMIT_BUCKETS = {}
+
+
+def _rate_limits_enabled():
+    configured = os.environ.get("GOTRENDLABS_RATE_LIMITS_ENABLED")
+    if configured is not None:
+        return configured.strip().lower() in {"1", "true", "yes", "on"}
+    return "test" not in sys.argv
+
+
+def _rate_limit_identity(request, *parts):
+    ip_address, _ = _client_meta(request)
+    clean_parts = [str(part or "").strip().lower()[:256] for part in parts if str(part or "").strip()]
+    raw_identity = "|".join([ip_address or "unknown", *clean_parts])
+    return hashlib.sha256(raw_identity.encode()).hexdigest()
+
+
+def _enforce_rate_limit(bucket, identity, *, limit, window_seconds):
+    if not _rate_limits_enabled():
+        return
+    now = time.monotonic()
+    key = (bucket, identity)
+    hits = [hit for hit in _RATE_LIMIT_BUCKETS.get(key, []) if now - hit < window_seconds]
+    if len(hits) >= limit:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.",
+        )
+    hits.append(now)
+    _RATE_LIMIT_BUCKETS[key] = hits
+
+
+def _clear_rate_limits():
+    _RATE_LIMIT_BUCKETS.clear()
 
 
 @lru_cache(maxsize=512)
@@ -3031,14 +3068,16 @@ def _increment_market_counter(cursor, slug, field_name):
 
 
 @app.post("/markets/{slug}/view")
-def track_market_view(slug: str):
+def track_market_view(slug: str, request: Request):
+    _enforce_rate_limit("market-view", _rate_limit_identity(request, slug), limit=120, window_seconds=60)
     with get_connection() as connection:
         with connection.cursor() as cursor:
             return _increment_market_counter(cursor, slug, "view_count")
 
 
 @app.post("/markets/{slug}/share")
-def track_market_share(slug: str):
+def track_market_share(slug: str, request: Request):
+    _enforce_rate_limit("market-share", _rate_limit_identity(request, slug), limit=60, window_seconds=60)
     with get_connection() as connection:
         with connection.cursor() as cursor:
             return _increment_market_counter(cursor, slug, "share_count")
@@ -3337,6 +3376,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
 @app.post("/suggestions/", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @app.post("/suggestions", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED)
 def create_suggestion(payload: MarketSuggestionPayload, request: Request, authorization: str = Header(default="")):
+    _enforce_rate_limit("suggestion", _rate_limit_identity(request, payload.guest_email or authorization), limit=20, window_seconds=3600)
     if payload.kind not in {"binary", "multiple"}:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de mercado inválido.")
     with get_connection() as connection:
@@ -3379,6 +3419,7 @@ def create_suggestion(payload: MarketSuggestionPayload, request: Request, author
 @app.post("/feedback/", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
 @app.post("/feedback", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED)
 def create_feedback(payload: ProductFeedbackPayload, request: Request, authorization: str = Header(default="")):
+    _enforce_rate_limit("feedback", _rate_limit_identity(request, payload.guest_email or authorization), limit=20, window_seconds=3600)
     if payload.severity not in {"low", "medium", "high"}:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Severidade inválida.")
     with get_connection() as connection:
@@ -5750,6 +5791,7 @@ def admin_delete_event(slug: str, subcategory_slug: str, event_slug: str, author
 
 @app.post("/auth/register", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterPayload, request: Request):
+    _enforce_rate_limit("register", _rate_limit_identity(request, payload.email), limit=10, window_seconds=3600)
     if not payload.terms_accepted:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="É preciso aceitar a política de uso para criar conta.")
     _ensure_recaptcha(payload.recaptcha_token, request)
@@ -5809,6 +5851,7 @@ def register(payload: RegisterPayload, request: Request):
 @app.post("/auth/login", response_model=AuthResponse)
 def login(payload: LoginPayload, request: Request):
     ip_address, user_agent = _client_meta(request)
+    _enforce_rate_limit("login", _rate_limit_identity(request, payload.email), limit=10, window_seconds=300)
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -5836,6 +5879,7 @@ def login(payload: LoginPayload, request: Request):
 @app.post("/auth/password-reset/request", response_model=PasswordResetRequestResponse)
 def request_password_reset(payload: PasswordResetRequestPayload, request: Request):
     ip_address, user_agent = _client_meta(request)
+    _enforce_rate_limit("password-reset-request", _rate_limit_identity(request, payload.email), limit=5, window_seconds=3600)
     reset_url = ""
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -5859,6 +5903,7 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
 @app.post("/auth/password-reset/confirm", response_model=PasswordResetConfirmResponse)
 def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Request):
     ip_address, user_agent = _client_meta(request)
+    _enforce_rate_limit("password-reset-confirm", _rate_limit_identity(request), limit=10, window_seconds=3600)
     now = datetime.now(timezone.utc)
     with get_connection() as connection:
         with connection.cursor() as cursor:
@@ -5908,6 +5953,7 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
 
 @app.post("/auth/email-confirm/confirm", response_model=EmailConfirmationResponse)
 def confirm_email(payload: EmailConfirmationConfirmPayload, request: Request):
+    _enforce_rate_limit("email-confirm", _rate_limit_identity(request), limit=10, window_seconds=3600)
     ip_address, user_agent = _client_meta(request)
     now = datetime.now(timezone.utc)
     with get_connection() as connection:
@@ -5943,6 +5989,7 @@ def confirm_email(payload: EmailConfirmationConfirmPayload, request: Request):
 
 @app.post("/auth/email-confirm/resend", response_model=EmailConfirmationResponse)
 def resend_email_confirmation(request: Request, authorization: str = Header(default="")):
+    _enforce_rate_limit("email-confirm-resend", _rate_limit_identity(request, authorization), limit=5, window_seconds=3600)
     ip_address, user_agent = _client_meta(request)
     now = datetime.now(timezone.utc)
     with get_connection() as connection:
