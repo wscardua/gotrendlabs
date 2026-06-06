@@ -4101,6 +4101,7 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertContains(response, "não podem fingir ser humanos")
                     self.assertContains(response, "contas oficiais automatizadas")
                     self.assertContains(response, "Segredos de integração")
+                    self.assertNotContains(response, "O MVP ainda está evoluindo")
                     self.assertNotContains(response, subcategory_notice)
                     self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
@@ -4242,13 +4243,67 @@ class WebSmokeTests(TransactionTestCase):
                 self.assertContains(response, "Mercados")
                 self.assertContains(response, "Badges")
                 self.assertContains(response, "Ranking")
-                self.assertContains(response, "← Feed")
+                self.assertContains(response, "← Voltar")
+                self.assertContains(response, "data-context-back")
                 self.assertContains(response, 'class="footer"')
                 self.assertContains(response, "Rede social para prever eventos")
                 self.assertContains(response, "GT₵ educativa")
                 self.assertContains(response, cta)
                 if route == reverse("login"):
                     self.assertContains(response, "Lembrar meu acesso neste dispositivo")
+
+    def test_profile_handle_renders_fixed_at_prefix_and_submits_normalized_value(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="@profilehandle", email="profile-handle@example.com", password="testpass123", first_name="Profile Handle")
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        profile_payload = {
+            "user": {
+                "id": user.id,
+                "handle": "@profilehandle",
+                "email": user.email,
+                "display_name": user.first_name,
+                "preferred_language": "pt-br",
+            },
+            "reputation": {},
+            "birth_date": "",
+            "sex": "",
+            "bio": "",
+        }
+        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+            response = self.client.get(reverse("profile"))
+
+        self.assertContains(response, '<div class="handle-field"><span aria-hidden="true">@</span><input', html=False)
+        self.assertContains(response, 'value="profilehandle"')
+        self.assertContains(response, "O prefixo @ é fixo")
+
+        updated_payload = {**profile_payload, "user": {**profile_payload["user"], "handle": "@newhandle"}}
+        with patch("profiles.views.update_me", return_value=updated_payload) as update_mock, patch("profiles.views.get_me", return_value=updated_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+            response = self.client.post(
+                reverse("profile"),
+                {
+                    "action": "update_profile",
+                    "display_name": "Profile Handle",
+                    "handle": "newhandle",
+                    "email": user.email,
+                    "preferred_language": "pt-br",
+                    "birth_date": "",
+                    "sex": "",
+                    "bio": "",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(update_mock.call_args.args[1]["handle"], "@newhandle")
 
     def test_ranking_guest_card_uses_real_session_state(self):
         response = self.client.get(reverse("rankings"))
@@ -4496,6 +4551,19 @@ class WebSmokeTests(TransactionTestCase):
 
         expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
         self.assertContains(response, expected, html=True)
+
+    def test_market_card_formats_iso_close_label(self):
+        market = {
+            **get_domain_client().market("openai-gpt6-2026"),
+            "close_at": "2026-06-11T18:55:00+00:00",
+            "close_timezone": "America/Sao_Paulo",
+            "close_label": "Fecha em 2026-06-11T15:55:00 BRT",
+        }
+        with patch("core.views.get_markets", return_value=[market]):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, "Fecha em 11/06/2026 15:55 BRT")
+        self.assertNotContains(response, "2026-06-11T15:55:00")
 
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
         market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}
@@ -5618,6 +5686,12 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Carregar mais")
         self.assertContains(response, "reason=llm_error")
         self.assertContains(response, "Detalhe", count=10)
+        self.assertContains(response, "Comentário")
+        self.assertContains(response, "Tentativa de publicar um comentário oficial identificado como IA.")
+        self.assertContains(response, "Ignorada")
+        self.assertContains(response, "Falhou")
+        self.assertContains(response, "Timeout no provedor IA")
+        self.assertContains(response, "A chamada ao provedor de IA demorou além do limite operacional.")
 
     def test_admin_ai_agent_action_detail_has_context_and_pretty_payload(self):
         session = self.client.session
@@ -5657,6 +5731,15 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Contexto")
         self.assertContains(response, "Prompt")
         self.assertContains(response, "Payload resumido")
+        self.assertContains(response, "Comentário criado")
+        self.assertContains(response, "Um comentário oficial foi publicado e registrado com vínculo ao mercado.")
+        self.assertContains(response, "Executada")
+        self.assertContains(response, "Código do tipo")
+        self.assertContains(response, "comment")
+        self.assertContains(response, "Código do status")
+        self.assertContains(response, "created")
+        self.assertContains(response, "Código do motivo")
+        self.assertContains(response, "comment_created")
         self.assertContains(response, "&quot;confidence&quot;: 0.68")
         self.assertContains(response, "vencedor-grupo-c-copa-2026")
 

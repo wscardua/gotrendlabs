@@ -10,6 +10,8 @@ from django.utils.crypto import constant_time_compare
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, mark_notifications_read, track_market_share
 from accounts.session import api_login_required
@@ -66,6 +68,43 @@ def _market_thumb_fallback(market):
     return "OR"
 
 
+def _parse_market_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _timezone_short_label(timezone_name):
+    return "BRT" if timezone_name == "America/Sao_Paulo" else (timezone_name or "UTC")
+
+
+def _market_close_datetime_label(value, timezone_name):
+    parsed = _parse_market_datetime(value)
+    if not parsed:
+        return ""
+    try:
+        target_timezone = ZoneInfo(timezone_name or "UTC")
+    except ZoneInfoNotFoundError:
+        target_timezone = ZoneInfo("UTC")
+        timezone_name = "UTC"
+    if not parsed.tzinfo:
+        parsed = parsed.replace(tzinfo=ZoneInfo("UTC"))
+    localized = parsed.astimezone(target_timezone)
+    return f"Fecha em {localized.strftime('%d/%m/%Y %H:%M')} {_timezone_short_label(timezone_name)}"
+
+
+def _market_public_close_label(market):
+    label = (market.get("close_label") or "").strip()
+    if label and "T" not in label:
+        return label
+    return _market_close_datetime_label(market.get("close_at"), market.get("close_timezone")) or label
+
+
 def _hydrate_market_visuals(markets):
     local_by_slug = {market["slug"]: market for market in local_markets()}
     hydrated = []
@@ -111,6 +150,7 @@ def _hydrate_market_visuals(markets):
             "viewer_has_favorite": bool(market.get("viewer_has_favorite")),
             "viewer_has_like": bool(market.get("viewer_has_like")),
             "comment_count": int(market.get("comment_count") or 0),
+            "close_label": _market_public_close_label(market) or market.get("close_label", ""),
         }
         for market in hydrated
     ]

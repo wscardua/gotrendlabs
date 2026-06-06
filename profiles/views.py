@@ -24,9 +24,10 @@ def _load_more_limit(raw_limit, total, step=LOAD_MORE_STEP):
 
 def _profile_form_initial(profile_data):
     user = profile_data.get("user") or {}
+    handle = (user.get("handle", "") or "").lstrip("@")
     return {
         "display_name": user.get("display_name", ""),
-        "handle": user.get("handle", ""),
+        "handle": handle,
         "email": user.get("email", ""),
         "preferred_language": user.get("preferred_language", "pt-br"),
         "birth_date": profile_data.get("birth_date") or "",

@@ -99,9 +99,9 @@
             <td>{{ action.created_at|slice:":16" }}</td>
             <td>{{ action.agent_name|default:"sistema" }}</td>
             <td>{{ action.market_slug|default:"-" }}</td>
-            <td>{{ action.action_type }}</td>
-            <td>{{ action.status }}</td>
-            <td>{{ action.reason|default:"-" }}</td>
+            <td><strong>{{ action.action_type_label }}</strong><small>{{ action.action_type_help }}</small></td>
+            <td><span class="tag {{ action.status_class }}">{{ action.status_label }}</span><small>{{ action.status_help }}</small></td>
+            <td><strong>{{ action.reason_label }}</strong><small>{{ action.reason_help }}</small></td>
             <td><a class="btn small ghost" href="{% url 'admin-ops-ai-agent-action-detail' action.id %}">Detalhe</a></td>
           </tr>
         {% empty %}

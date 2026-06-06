@@ -778,6 +778,32 @@ h3 {
   border-top: 0;
 }
 
+.handle-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fffaf0;
+  overflow: hidden;
+}
+
+.handle-field span {
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 12px;
+  border-right: 1px solid var(--line);
+  color: var(--green-2);
+  font-weight: 850;
+}
+
+.field .handle-field input {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .form-heading {
   display: grid;
   gap: 4px;
@@ -3329,6 +3355,14 @@ input[type="range"] {
 
 .dashboard-table td {
   overflow-wrap: anywhere;
+}
+
+.dashboard-table td small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 .resolution-audit-hero {
@@ -7349,6 +7383,21 @@ body[data-theme="dark"] .profile-section,
 body[data-theme="dark"] .profile-edit-section,
 body[data-theme="dark"] .profile-edit-form {
   border-color: rgba(218, 230, 219, 0.20);
+}
+
+body[data-theme="dark"] .handle-field {
+  border-color: rgba(218, 230, 219, 0.16);
+  background: rgba(218, 230, 219, 0.07);
+}
+
+body[data-theme="dark"] .handle-field span {
+  border-color: rgba(218, 230, 219, 0.16);
+  color: #8beaa6;
+}
+
+body[data-theme="dark"] .field .handle-field input {
+  border: 0;
+  background: transparent;
 }
 
 body[data-theme="dark"] .comment-login-mark,

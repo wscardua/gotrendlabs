@@ -1,5 +1,11 @@
 # Change Log de Specs
 
+## 2026-06-06
+
+- registrada evolução de `FEAT-AUTH-001` para prefixo `@` fixo no identificador editável e retorno contextual `← Voltar` com fallback seguro.
+- registrada evolução de `FEAT-AIAGENT-001` para auditoria administrativa com rótulos e explicações de tipo, status e motivo, preservando códigos técnicos.
+- atualizado `frontend-web.md` para fechamento legível em cards de mercado e remoção de ISO cru em labels públicos.
+
 ## 2026-06-05
 
 - registrada evolução de `FEAT-NOTIFY-001` para emails transacionais com `EmailTemplate`, `EmailDelivery`, `EmailConfirmationToken`, templates editáveis no Admin Ops, daemon de outbox e guarda de sandbox SES.

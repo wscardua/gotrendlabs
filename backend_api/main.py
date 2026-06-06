@@ -933,6 +933,25 @@ def _datetime_label(value, timezone_name):
     return f"{localized.strftime('%d/%m/%Y %H:%M')} {timezone_name or 'UTC'}"
 
 
+def _timezone_short_label(timezone_name):
+    return "BRT" if timezone_name == "America/Sao_Paulo" else (timezone_name or "UTC")
+
+
+def _public_close_label(close_at, timezone_name, close_label, status_value):
+    label = (close_label or "").strip()
+    if label and "T" not in label:
+        return label
+    if close_at:
+        try:
+            target_timezone = ZoneInfo(timezone_name or "UTC")
+        except ZoneInfoNotFoundError:
+            target_timezone = timezone.utc
+            timezone_name = "UTC"
+        localized = close_at.astimezone(target_timezone) if close_at.tzinfo else close_at.replace(tzinfo=timezone.utc).astimezone(target_timezone)
+        return f"Fecha em {localized.strftime('%d/%m/%Y %H:%M')} {_timezone_short_label(timezone_name)}"
+    return _market_status_label(status_value)
+
+
 def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order ASC, m.id ASC"):
     cursor.execute(
         f"""
@@ -1206,7 +1225,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "total_volume_gtl": public_metrics["total_volume_gtl"],
         "source": row["source"],
         "closes_in": _short_close_label(row["close_at"]) or row["closes_in"],
-        "close_label": row["close_label"] or _market_status_label(row["status"]),
+        "close_label": _public_close_label(row["close_at"], row["close_timezone"], row["close_label"], row["status"]),
         "thumb": row["thumb"],
         "thumb_color": row["thumb_color"],
         "image_url": _public_image_url(row["image_url"]) if filter_public_image else (row["image_url"] or ""),

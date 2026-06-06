@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-06 — Polimento de experiência e auditoria
+
+- Perfil autenticado passou a renderizar `@` como prefixo fixo do identificador, aceitando edição apenas do nome do handle e preservando normalização backend.
+- Retorno contextual público passou de `← Feed` para `← Voltar`, usando origem local confiável quando disponível e fallback para o feed.
+- Política de uso removeu a seção pública “O MVP ainda está evoluindo.”, mantendo a versão vigente.
+- Cards de mercado passaram a expor fechamento em formato legível e a normalizar labels ISO vindos da API/fallback local.
+- Auditoria IA no Admin Ops passou a explicar tipo, status e motivo no browse e detalhe, preservando códigos técnicos no detalhe operacional.
+
 ## 2026-06-05 — FEAT-AUTH-001 navegação administrativa
 
 - Entrada administrativa no chip do usuário passou de `Admin` para `Painel Administrativo`, aparece como primeira ação para staff/superusers e recebe sinalização visual própria de acesso restrito.

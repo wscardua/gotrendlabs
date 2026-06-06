@@ -5,16 +5,16 @@
   <section class="panel system-log-detail-shell">
     {% if admin_error %}<div class="admin-alert risk">{{ admin_error }}</div>{% endif %}
     {% if action %}
-      <div class="system-log-hero {% if action.status == 'failed' %}is-risk{% elif action.status == 'skipped' %}is-warn{% else %}is-safe{% endif %}">
+      <div class="system-log-hero {% if action.status_class == 'risk' %}is-risk{% elif action.status_class == 'warn' %}is-warn{% else %}is-safe{% endif %}">
         <div class="system-log-hero-main">
           <a class="context-back" href="{% url 'admin-ops-ai-agents' %}">← Auditoria IA</a>
           <span class="eyebrow">Agentes oficiais</span>
           <h1 class="large-title">Ação #{{ action.id }}</h1>
-          <p>{{ action.reason|default:"Registro operacional de uma decisão do ciclo IA." }}</p>
+          <p>{{ action.reason_label }}. {{ action.reason_help }}</p>
         </div>
         <div class="system-log-hero-aside">
-          <span class="system-log-level">{{ action.status }}</span>
-          <span>{{ action.action_type }}</span>
+          <span class="system-log-level">{{ action.status_label }}</span>
+          <span>{{ action.action_type_label }}</span>
           {% if action.agent_name %}<span>{{ action.agent_name }}</span>{% endif %}
         </div>
       </div>
@@ -22,13 +22,13 @@
       <div class="system-log-summary-grid">
         <article>
           <span>Status</span>
-          <strong>{{ action.status }}</strong>
-          <small>{{ action.created_at|slice:":16" }}</small>
+          <strong>{{ action.status_label }}</strong>
+          <small>{{ action.status_help }}</small>
         </article>
         <article>
           <span>Tipo</span>
-          <strong>{{ action.action_type }}</strong>
-          <small>ação do ciclo IA</small>
+          <strong>{{ action.action_type_label }}</strong>
+          <small>{{ action.action_type_help }}</small>
         </article>
         <article>
           <span>Agente</span>
@@ -50,9 +50,14 @@
                 <span class="eyebrow">Motivo</span>
                 <h2>Resultado da ação</h2>
               </div>
-              <span class="tag {% if action.status == 'created' %}safe{% elif action.status == 'failed' %}risk{% else %}warn{% endif %}">{{ action.status }}</span>
+              <span class="tag {{ action.status_class }}">{{ action.status_label }}</span>
             </div>
-            <p class="system-log-message">{{ action.reason|default:"Sem motivo registrado." }}</p>
+            <p class="system-log-message"><strong>{{ action.reason_label }}</strong><br>{{ action.reason_help }}</p>
+            <dl class="system-log-facts">
+              <div><dt>Código do tipo</dt><dd><code>{{ action.action_type }}</code></dd></div>
+              <div><dt>Código do status</dt><dd><code>{{ action.status }}</code></dd></div>
+              <div><dt>Código do motivo</dt><dd><code>{{ action.reason_code|default:"-" }}</code></dd></div>
+            </dl>
           </section>
 
           <section class="system-log-panel">

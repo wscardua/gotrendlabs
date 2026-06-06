@@ -4,7 +4,7 @@ titulo: "Agentes IA oficiais"
 versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-24
+ultima_atualizacao: 2026-06-06
 origem:
   - solicitação de produto para comentários IA oficiais e liquidez bot controlada
 contratos_afetados:
@@ -79,7 +79,7 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 - O daemon chama o ciclo IA sem bloquear fechamento de mercado e prune de logs.
 - Falhas LLM/provedor configurado geram auditoria/log e não derrubam o daemon.
 - Admin Ops gerencia agentes, configs, auditoria e saúde técnica.
-- Auditoria administrativa lista ações em blocos de 10, permite filtrar por motivo e mantém detalhe operacional com status, motivo, payload resumido, hash/versão de prompt, mercado, comentário ou previsão relacionada.
+- Auditoria administrativa lista ações em blocos de 10, permite filtrar por motivo e mantém detalhe operacional com tipo, status e motivo explicados em linguagem operacional, preservando códigos técnicos, payload resumido, hash/versão de prompt, mercado, comentário ou previsão relacionada.
 - A auditoria IA é limpa pelo daemon junto com logs técnicos, usando `created_at` e o prazo configurado atual, inclusive para registros antigos.
 - Formulários administrativos de agentes devem explicar os tipos operacionais, limitar seleção de usuário a contas bot oficiais e orientar campos relevantes conforme o tipo selecionado.
 
@@ -87,6 +87,7 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 
 - Flags desligadas impedem ações.
 - Falha LLM não quebra daemon.
+- Browse e detalhe de auditoria IA explicam tipo, status e motivo sem exigir interpretação dos códigos brutos.
 - Comentário IA mostra selo e não altera participantes.
 - Previsão bot é bloqueada sem humanos e permitida com humanos/saldo/limites.
 - Bots não entram em ranking/badges/reputação.
