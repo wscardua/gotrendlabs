@@ -49,9 +49,10 @@
 - Cards da home/feed e detalhe público do mercado devem exibir `event` junto de categoria e subcategoria; a UI não infere evento localmente quando o domínio não serializa o campo.
 - `category_notice`, `subcategory_notice` e `event_notice` devem ser exibidos como alerta informativo abaixo de `Critério de resolução` no detalhe/ticket de previsão quando preenchidos, preservando quebras de linha e escapando HTML; cards da home/feed não exibem esses avisos.
 - Curtidas no card representam engajamento público do mercado e são separadas de favoritos pessoais e de likes/dislikes em comentários.
-- Páginas públicas fora da home devem expor retorno compacto para o feed dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags, evitando barra global solta entre header e conteúdo.
+- Páginas públicas fora da home devem expor retorno compacto `← Voltar` dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags; quando houver origem local confiável, volta para a página chamadora, com fallback para o feed.
 - O rodapé público deve priorizar Institucional, Produto, Confiança e Suporte; links de conta, mercados recorrentes e Admin Ops pertencem à navegação principal ou ao chip autenticado.
 - A navegação pública principal deve expor `Sugerir mercado` para visitantes e usuários autenticados, apontando para o fluxo de sugestão existente com suporte a envio guest.
+- A tela de sugestão deve carregar categorias a partir de `GET /taxonomy` e renderizar somente categorias ativas; Django pode usar fallback local read-only da mesma taxonomia em desenvolvimento.
 - A entrada de Admin Ops no chip do usuário só pode renderizar quando o contexto autenticado indicar `is_staff` ou `is_superuser`.
 - Em desenvolvimento local, a camada Django pode degradar para leitura local quando a FastAPI ainda não foi reiniciada após mudança de rota, mas não deve criar, moderar, reagir, creditar, converter, resolver ou executar qualquer mutação crítica localmente.
 - Em fallback local de sugestão/feedback guest, o Django deve validar reCAPTCHA server-side antes de persistir localmente.
@@ -59,7 +60,10 @@
 - O ranking público deve renderizar `handle` como identificação do usuário e nunca exibir recorte pessoal fictício para visitantes.
 - A tela autenticada de perfil deve manter a edição básica inline na própria `/profile/`, evitando rota separada para alteração de dados pessoais.
 - A tela autenticada de perfil deve preencher campos com dados reais retornados por `/users/me`, priorizando `gotrendlabs_user_profiles.display_name` para o nome editável.
+- A tela autenticada de perfil deve renderizar o prefixo `@` do identificador como parte fixa da UI, permitindo edição apenas do nome do handle e enviando valor normalizado ao backend.
 - A UI de perfil não deve exibir dados privados em blocos públicos/resumo; email, data de nascimento, sexo e bio aparecem somente como campos editáveis do usuário autenticado.
+- A indicação bonificada deve aparecer como componente contextual na carteira e no perfil autenticado, usando o código retornado por `/users/me/referral`; a UI não calcula elegibilidade nem concede bônus.
+- Quando um visitante chega com `?ref=...`, o Django pode preservar o código em sessão e enviá-lo no cadastro; links sociais de mercado/resultado para usuário autenticado podem carregar `ref`, mas a validação e crédito permanecem no backend.
 - O ticket de previsão deve iniciar sem opção marcada, orientar a seleção explícita e usar controle nativo obrigatório para impedir confirmação ambígua.
 - Usuário autenticado sem saldo disponível deve ver o ticket em estado de leitura, com indicação de saldo indisponível e CTA para wallet.
 - A página pública de badges renderiza o catálogo vindo da API; quando houver sessão, exibe estado pessoal retornado pelo domínio sem calcular elegibilidade no template.
@@ -70,6 +74,7 @@
 - Cards sociais usam URL pública configurável para que crawlers de redes consigam ler `og:image`; em host local a UI deve indicar que o preview externo não é rastreável.
 - Compartilhamento de badge conquistada pode gerar URL pública com token opaco de conquista, sem expor id, email ou handle no query string.
 - Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags, evento e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.
+- Cards de mercado devem exibir fechamento em formato legível localizado, evitando ISO cru em labels como `Fecha em 2026-06-11T15:55:00 BRT`.
 - Cards de mercado sem imagem devem exibir fallback visual legível com iniciais derivadas de categoria/subcategoria/evento/título no feed e nas imagens sociais.
 - O detalhe público do mercado deve exibir a mesma thumbnail/fallback visual junto do título, mantendo o texto do mercado renderizado separadamente em HTML.
 - Usuários autenticados veem sino de notificações com contador de não lidas, dropdown das últimas notificações e ação para marcar todas como lidas; visitantes podem ver affordance desabilitada, sem navegação para login.

@@ -4,7 +4,7 @@ titulo: "Autenticação e sessão"
 versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-05
+ultima_atualizacao: 2026-06-06
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -31,6 +31,7 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - aceite obrigatório da política de uso no cadastro
 - página pública de política de uso e leitura em modal no fluxo de cadastro
 - proteção anti-abuso com reCAPTCHA v2 checkbox no cadastro quando configurado
+- cadastro por link de indicação opcional, com bônus educativo ao indicador quando validado pelo backend
 - login por credencial ou provedor social
 - criação e validação de sessão
 - logout
@@ -63,7 +64,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - idioma preferencial acompanha a sessão
 - cadastro sem aceite da política de uso é rejeitado
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
-- telas de login, cadastro e recuperação de senha mantêm navegação pública para feed/mercados, badges e ranking, alternância de tema, rodapé público e retorno compacto `← Feed` no primeiro painel de conteúdo
+- telas de login, cadastro e recuperação de senha mantêm navegação pública para feed/mercados, badges e ranking, alternância de tema, rodapé público e retorno compacto `← Voltar` no primeiro painel de conteúdo, usando origem local confiável quando existir e fallback para o feed
 - rodapé público mantém links institucionais, produto, confiança e suporte; links de conta, mercados e operações administrativas não aparecem no rodapé
 - link `Painel Administrativo` aparece apenas no chip do usuário autenticado quando o contexto indica `is_staff` ou `is_superuser`, como primeira ação e com sinalização visual de acesso restrito
 - login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
@@ -74,8 +75,10 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`), mesmo enquanto OAuth real permanecer como placeholder
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
+- cadastro iniciado por `?ref=` preserva o código de indicação e o envia à FastAPI; código inválido não bloqueia criação de conta
 - perfil autenticado exibe reputação em cards e mantém edição de dados na própria tela de perfil, sem rota separada
 - perfil autenticado usa `gotrendlabs_user_profiles.display_name` como fonte principal do nome editável; `gotrendlabs_users.first_name` permanece apenas como fallback/compatibilidade
+- perfil autenticado mantém o prefixo `@` do identificador como fixo na UI; o usuário edita apenas o nome do handle e o backend continua normalizando/preservando `@`
 - `birth_date`, `sex`, email e bio são privados ao usuário autenticado e não aparecem no perfil público
 - exclusão lógica desativa login e sessões sem apagar dados físicos
 - Admin Ops lista usuários, abre detalhe operacional amplo e exibe badges adquiridas para suporte
@@ -86,6 +89,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 ## Regras de domínio
 
 - um usuário deve possuir identidade única no domínio
+- identificadores públicos de usuário devem manter o prefixo `@`, inclusive após edição de perfil
 - cada sessão precisa ser validável e revogável
 - login social não pode gerar duplicidade silenciosa de contas
 - aceite de política de uso deve guardar data e versão aceita
@@ -102,6 +106,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - confirmação de email usa hash de token, expiração e uso único
 - reenvio de confirmação exige autenticação e respeita limite simples de frequência
 - staff, superuser e robôs internos não ficam bloqueados pelo login limitado
+- indicação bonificada exige indicador comum ativo, valor configurado no Admin Ops, recompensa idempotente por convidado e crédito auditável em ledger sem reputação, badge ou ranking
 
 ## Responsabilidades por camada
 
@@ -153,12 +158,13 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - login limitado para usuário sem email confirmado e bloqueio de ações sensíveis
 - fluxo de aceite obrigatório da política de uso
 - renderização de política de uso pública e modal de política no cadastro
-- renderização de navegação pública, alternância de tema, rodapé público e retorno compacto `← Feed` em login/cadastro/recuperação de senha
+- renderização de navegação pública, alternância de tema, rodapé público e retorno compacto `← Voltar` em login/cadastro/recuperação de senha
 - renderização do rodapé público sem links de conta/admin e renderização condicional de `Painel Administrativo` no chip apenas para staff/superuser
 - renderização de botões sociais iconizados para Google, Facebook e X em login/cadastro, com rótulos acessíveis e contrato placeholder sem OAuth real
 - login com lembrar acesso mantém sessão prolongada e login sem essa opção preserva expiração padrão
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
 - fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
+- fluxo de cadastro com código de indicação válido, inválido e bônus desativado
 - fluxo de edição de perfil na própria página autenticada
 - regressão para `/profile/` renderizar dados reais de `gotrendlabs_user_profiles`, incluindo `display_name`, `bio`, `birth_date` e `sex`
 - fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público
@@ -179,10 +185,11 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - usuário recebe link de recuperação por email sem que a resposta pública revele o link
 - usuário recém-cadastrado consegue entrar em modo limitado e confirma email por link expirável para liberar ações sensíveis
 - usuário consegue abrir a política de uso no cadastro sem sair do fluxo
-- visitantes em login/cadastro/recuperação de senha conseguem voltar para mercados pelo `← Feed`, alternar tema, acessar mercados, badges e ranking pela navegação pública e consultar links do rodapé público
+- visitantes em login/cadastro/recuperação de senha conseguem voltar para a página chamadora local pelo `← Voltar`, com fallback para mercados/feed, alternar tema, acessar mercados, badges e ranking pela navegação pública e consultar links do rodapé público
 - visitantes e usuários comuns não veem Admin Ops no rodapé nem no chip do usuário; staff e superusers veem `Painel Administrativo` no topo do chip autenticado com sinalização de acesso restrito
 - visitantes em login/cadastro veem os provedores sociais iniciais como ícones acessíveis para Google, Facebook e X
 - cadastro protegido exige conclusão do reCAPTCHA quando configurado
+- cadastro com indicação válida credita somente o indicador em GT₵ educativa e não altera reputação do indicador nem do convidado
 - sessão inválida é tratada corretamente
 - idioma preferencial é respeitado após autenticação
 - usuário autenticado consegue editar dados pessoais sem sair da tela de perfil

@@ -2,6 +2,7 @@ import json
 from decimal import Decimal, ROUND_DOWN
 from functools import lru_cache
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
 from django.http import Http404
@@ -81,6 +82,29 @@ def _short_close_label(close_at):
     if days >= 1:
         return f"{days}d"
     return f"{max(1, seconds // 3600)}h"
+
+
+def _timezone_short_label(timezone_name):
+    return "BRT" if timezone_name == "America/Sao_Paulo" else (timezone_name or "UTC")
+
+
+def _close_datetime_label(close_at, timezone_name):
+    if not close_at:
+        return ""
+    try:
+        target_timezone = ZoneInfo(timezone_name or "UTC")
+    except ZoneInfoNotFoundError:
+        target_timezone = ZoneInfo("UTC")
+        timezone_name = "UTC"
+    localized = close_at.astimezone(target_timezone) if close_at.tzinfo else close_at.replace(tzinfo=timezone.utc).astimezone(target_timezone)
+    return f"Fecha em {localized.strftime('%d/%m/%Y %H:%M')} {_timezone_short_label(timezone_name)}"
+
+
+def _public_close_label(close_at, close_timezone, close_label, status):
+    label = (close_label or "").strip()
+    if label and "T" not in label:
+        return label
+    return _close_datetime_label(close_at, close_timezone) or _market_status_label(status)
 
 
 def _sparkline_paths(points, *, width=220, height=44, pad=4):
@@ -177,7 +201,7 @@ def _local_market_response(market):
         "participants": market.participants,
         "source": market.source,
         "closes_in": _short_close_label(market.close_at) or market.closes_in,
-        "close_label": market.close_label or _market_status_label(market.status),
+        "close_label": _public_close_label(market.close_at, market.close_timezone, market.close_label, market.status),
         "thumb": market.thumb,
         "thumb_color": market.thumb_color,
         "image_url": market.image_url,

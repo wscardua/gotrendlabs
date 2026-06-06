@@ -49,6 +49,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - saldo e extrato são consistentes
 - saldo é exibido por projeção operacional reconciliável com ledger
 - usuário consegue entender a origem de cada lançamento
+- extrato autenticado exibe rótulos humanos para tipo e direção, sem mostrar códigos técnicos como `prediction_payout` ou `reward_referral` na carteira educativa
 - extrato usa `Carregar mais` em lotes cumulativos de 10 lançamentos
 
 ## Regras de domínio

@@ -5,9 +5,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>GoTrendLabs | Criar conta</title>
-  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260604-home-top-breathing">
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260606-referral-card-air">
   {% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}
-  <script src="{% static 'js/gotrendlabs.js' %}?v=20260521-choice-polish" defer></script>
+  <script src="{% static 'js/gotrendlabs.js' %}?v=20260606-referral-card-air" defer></script>
 </head>
 <body>
   <header class="topbar">
@@ -122,6 +122,8 @@
         <form class="form-grid" method="post">
           {% csrf_token %}
           {% if form.non_field_errors %}<div class="field full"><div class="tag risk">{{ form.non_field_errors|join:", " }}</div></div>{% endif %}
+          {{ form.referral_code }}
+          {% if referral_code %}<div class="field full"><div class="invite-register-note"><strong>Convite ativo</strong><span>Se este cadastro for concluído, o indicador recebe bônus educativo em GT₵.</span></div></div>{% endif %}
           <div class="field full"><label for="{{ form.display_name.id_for_label }}">Nome público</label><input id="{{ form.display_name.id_for_label }}" name="{{ form.display_name.name }}" value="{{ form.display_name.value|default:'' }}" autocomplete="name">{% if form.display_name.errors %}<small>{{ form.display_name.errors|join:", " }}</small>{% endif %}</div>
           <div class="field full"><label for="{{ form.email.id_for_label }}">Email</label><input id="{{ form.email.id_for_label }}" name="{{ form.email.name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email">{% if form.email.errors %}<small>{{ form.email.errors|join:", " }}</small>{% endif %}</div>
           <div class="field full"><label for="{{ form.language.id_for_label }}">Idioma</label><select id="{{ form.language.id_for_label }}" name="{{ form.language.name }}"><option value="pt-br" {% if form.language.value == "pt-br" or not form.language.value %}selected{% endif %}>PT-BR</option><option value="en" {% if form.language.value == "en" %}selected{% endif %}>EN</option></select></div>

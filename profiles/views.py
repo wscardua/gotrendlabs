@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 
 from accounts.api_client import AuthAPIError, get_activity, get_badge_catalog, get_badges, get_me, get_rankings, request_account_deletion, update_me
 from accounts.forms import ProfileForm
+from accounts.referrals import referral_card_context
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, clear_auth_session, is_authenticated, store_auth_session
 
@@ -24,9 +25,10 @@ def _load_more_limit(raw_limit, total, step=LOAD_MORE_STEP):
 
 def _profile_form_initial(profile_data):
     user = profile_data.get("user") or {}
+    handle = (user.get("handle", "") or "").lstrip("@")
     return {
         "display_name": user.get("display_name", ""),
-        "handle": user.get("handle", ""),
+        "handle": handle,
         "email": user.get("email", ""),
         "preferred_language": user.get("preferred_language", "pt-br"),
         "birth_date": profile_data.get("birth_date") or "",
@@ -105,6 +107,7 @@ def profile(request):
             "profile_success": profile_success,
             "badges": badges,
             "activity": activity,
+            "referral": referral_card_context(request, token),
         },
     )
 

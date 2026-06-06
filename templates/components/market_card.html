@@ -34,6 +34,7 @@
     <div class="mini-stats">
       <span>{{ market.volume_gtl }} reservados</span>
       <span>{{ market.participants }}</span>
+      {% if market.close_label and market.close_label != market.status_label %}<span>{{ market.close_label }}</span>{% endif %}
       <span>Fonte: {{ market.source }}</span>
     </div>
   </div>

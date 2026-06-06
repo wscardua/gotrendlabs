@@ -1,8 +1,23 @@
 from django.conf import settings
 from django.shortcuts import redirect
+import re
 
 from accounts.session import USER_KEY
 from core.platform_config import maintenance_enabled
+
+
+class ReferralCaptureMiddleware:
+    SESSION_KEY = "pending_referral_code"
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.method in {"GET", "HEAD"}:
+            code = re.sub(r"[^A-Za-z0-9]", "", request.GET.get("ref", ""))[:32]
+            if code:
+                request.session[self.SESSION_KEY] = code.upper()
+        return self.get_response(request)
 
 
 class MaintenanceModeMiddleware:

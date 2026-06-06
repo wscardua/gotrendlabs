@@ -536,6 +536,77 @@ def _audit_pagination(audit_data):
     return audit_data
 
 
+AI_ACTION_TYPE_COPY = {
+    "comment": ("Comentário", "Tentativa de publicar um comentário oficial identificado como IA."),
+    "prediction": ("Previsão bot", "Tentativa de reservar GT₵ por uma conta oficial automatizada."),
+    "cycle": ("Ciclo IA", "Registro global do ciclo operacional dos agentes IA."),
+}
+
+AI_ACTION_STATUS_COPY = {
+    "created": ("Executada", "A ação foi concluída e gerou registro de domínio.", "safe"),
+    "skipped": ("Ignorada", "A ação foi pulada por regra operacional, limite ou configuração.", "warn"),
+    "failed": ("Falhou", "A ação tentou executar, mas encontrou erro ou validação impeditiva.", "risk"),
+}
+
+AI_ACTION_REASON_COPY = {
+    "ai_agents_disabled": ("Agentes IA desativados", "O kill switch geral de agentes IA está desligado."),
+    "ai_commenting_disabled": ("Comentários IA desativados", "A configuração permite agentes, mas bloqueia criação de comentários."),
+    "ai_paused": ("IA pausada", "A operação IA está pausada até o fim da janela configurada."),
+    "ai_predictions_disabled": ("Previsões bot desativadas", "A configuração permite agentes, mas bloqueia previsões automatizadas."),
+    "agent_daily_comment_limit": ("Limite diário do agente", "Este agente já atingiu o limite diário de comentários."),
+    "agent_daily_prediction_limit": ("Limite diário do agente", "Este agente já atingiu o limite diário de previsões bot."),
+    "comment_attempt_limit_reached": ("Limite de tentativas", "O ciclo atingiu o máximo de mercados avaliados para comentário."),
+    "comment_created": ("Comentário criado", "Um comentário oficial foi publicado e registrado com vínculo ao mercado."),
+    "comment_validation_failed": ("Comentário reprovado", "A resposta da IA não passou na validação segura antes da publicação."),
+    "cycle_completed": ("Ciclo concluído", "O ciclo IA terminou e registrou seu resumo operacional."),
+    "cycle_error": ("Erro no ciclo", "O ciclo IA falhou durante a execução global."),
+    "global_daily_comment_limit": ("Limite global de comentários", "A plataforma já atingiu o limite diário global de comentários IA."),
+    "global_daily_prediction_limit": ("Limite global de previsões", "A plataforma já atingiu o limite diário global de previsões bot."),
+    "llm_error": ("Erro no provedor IA", "A chamada ao provedor de IA falhou ou retornou erro."),
+    "llm_error_timeout": ("Timeout no provedor IA", "A chamada ao provedor de IA demorou além do limite operacional."),
+    "llm_should_publish_false": ("IA recomendou não publicar", "A IA avaliou o mercado e indicou que o comentário não deveria ser publicado."),
+    "no_active_analyst_agent": ("Sem analista ativo", "Não há agente analista ativo elegível para comentar."),
+    "no_active_liquidity_agent": ("Sem liquidez ativa", "Não há agente de liquidez ativo elegível para prever."),
+    "no_eligible_market": ("Sem mercado elegível", "Nenhum mercado aberto atendeu às regras do ciclo para essa ação."),
+    "no_human_participants": ("Sem participantes humanos", "Previsões bot exigem participação humana mínima antes de agir."),
+    "prediction_created": ("Previsão bot criada", "Uma previsão automatizada foi criada respeitando limites e saldo."),
+}
+
+
+def _ai_copy(mapping, value, fallback_help):
+    label, help_text, *rest = mapping.get(value, (value or "-", fallback_help))
+    payload = {"label": label, "help": help_text}
+    if rest:
+        payload["class"] = rest[0]
+    return payload
+
+
+def _enrich_ai_action(action):
+    if not action:
+        return action
+    action_type = action.get("action_type") or ""
+    action_status = action.get("status") or ""
+    reason = action.get("reason") or ""
+    type_copy = _ai_copy(AI_ACTION_TYPE_COPY, action_type, "Tipo técnico da ação IA.")
+    status_copy = _ai_copy(AI_ACTION_STATUS_COPY, action_status, "Status técnico da ação IA.")
+    reason_copy = _ai_copy(AI_ACTION_REASON_COPY, reason, "Motivo técnico registrado pelo ciclo IA.")
+    return {
+        **action,
+        "action_type_label": type_copy["label"],
+        "action_type_help": type_copy["help"],
+        "status_label": status_copy["label"],
+        "status_help": status_copy["help"],
+        "status_class": status_copy.get("class", "warn"),
+        "reason_label": reason_copy["label"],
+        "reason_help": reason_copy["help"],
+        "reason_code": reason,
+    }
+
+
+def _enrich_ai_actions(actions):
+    return [_enrich_ai_action(action) for action in actions]
+
+
 def _backend_health_context():
     try:
         payload = get_backend_health()
@@ -605,7 +676,10 @@ def config(request):
     )
     economy_form = EconomyConfigForm(
         request.POST or None,
-        initial={"wallet_recharge_min_balance_gtl": site_config.wallet_recharge_min_balance_gtl},
+        initial={
+            "wallet_recharge_min_balance_gtl": site_config.wallet_recharge_min_balance_gtl,
+            "referral_bonus_gtl": site_config.referral_bonus_gtl,
+        },
         prefix="economy",
     )
     daemon_form = DaemonConfigForm(
@@ -662,6 +736,7 @@ def config(request):
         for field, value in email_form.cleaned_data.items():
             setattr(site_config, field, value)
         site_config.wallet_recharge_min_balance_gtl = economy_form.cleaned_data["wallet_recharge_min_balance_gtl"]
+        site_config.referral_bonus_gtl = economy_form.cleaned_data["referral_bonus_gtl"]
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
@@ -810,6 +885,7 @@ def ai_agents(request):
     else:
         error = ""
     visible_actions, action_pagination = _slice_load_more(request, action_data.get("actions", []))
+    visible_actions = _enrich_ai_actions(visible_actions)
     action_data = {**action_data, "actions": visible_actions}
     return render(
         request,
@@ -918,6 +994,7 @@ def ai_agent_action_detail(request, action_id):
         error = ""
     payload_pretty = ""
     if action:
+        action = _enrich_ai_action(action)
         payload_pretty = json.dumps(action.get("payload_summary") or {}, ensure_ascii=False, indent=2)
     return render(request, "admin_ops/ai_agent_action_detail.html", {"action": action, "payload_pretty": payload_pretty, "admin_error": error})
 

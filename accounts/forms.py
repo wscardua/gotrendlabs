@@ -36,6 +36,7 @@ class RegisterForm(forms.Form):
     language = forms.ChoiceField(label="Idioma", choices=(("pt-br", "PT-BR"), ("en", "EN")))
     password = forms.CharField(label="Senha", widget=forms.PasswordInput)
     terms_accepted = forms.BooleanField(label="Aceito a política de uso", required=True)
+    referral_code = forms.CharField(required=False, max_length=32, widget=forms.HiddenInput)
 
     def clean_email(self):
         return self.cleaned_data["email"]
@@ -56,7 +57,7 @@ class ProfileForm(forms.Form):
     )
 
     display_name = forms.CharField(label="Nome", max_length=150)
-    handle = forms.CharField(label="Identificador", max_length=150)
+    handle = forms.CharField(label="Identificador", max_length=149)
     email = forms.EmailField(label="Email")
     preferred_language = forms.ChoiceField(label="Idioma", choices=(("pt-br", "PT-BR"), ("en", "EN")))
     birth_date = forms.DateField(label="Data de nascimento", required=False, widget=forms.DateInput(attrs={"type": "date"}))
@@ -65,7 +66,9 @@ class ProfileForm(forms.Form):
 
     def clean_handle(self):
         value = self.cleaned_data["handle"].strip().lstrip("@")
-        return f"@{value}" if value else value
+        if not value:
+            raise forms.ValidationError("Informe o identificador sem alterar o prefixo @.")
+        return f"@{value}"
 
     def clean_birth_date(self):
         value = self.cleaned_data["birth_date"]

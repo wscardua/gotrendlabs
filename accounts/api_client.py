@@ -102,6 +102,10 @@ def get_ledger(token):
     return _request("GET", "/users/me/ledger", token=token)
 
 
+def get_referral(token):
+    return _request("GET", "/users/me/referral", token=token)
+
+
 def get_wallet_recharge_requests(token):
     return _request("GET", "/users/me/wallet/recharge-requests", token=token)
 
@@ -116,6 +120,10 @@ def get_badges(token):
 
 def get_badge_catalog(token=None):
     return _request("GET", "/badges", token=token)["badges"]
+
+
+def get_taxonomy():
+    return _request("GET", "/taxonomy")
 
 
 def get_activity(token):

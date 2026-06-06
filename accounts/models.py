@@ -209,6 +209,41 @@ class WalletRechargeRequest(models.Model):
         ]
 
 
+class ReferralCode(models.Model):
+    referrer = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="referral_code")
+    code = models.CharField(max_length=32, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gotrendlabs_referral_codes"
+        indexes = [
+            models.Index(fields=["code"]),
+        ]
+
+
+class ReferralReward(models.Model):
+    referrer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="referral_rewards_sent")
+    invitee = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="referral_reward_received")
+    reward_gtl = models.PositiveIntegerField()
+    ledger_entry = models.OneToOneField(
+        WalletLedgerEntry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="referral_reward",
+    )
+    rewarded_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "gotrendlabs_referral_rewards"
+        indexes = [
+            models.Index(fields=["referrer", "-created_at"]),
+            models.Index(fields=["invitee"]),
+        ]
+
+
 class UserBadge(models.Model):
     STATUS_CHOICES = (("earned", "Earned"), ("locked", "Locked"))
 

@@ -10,15 +10,17 @@ from django.utils.crypto import constant_time_compare
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
+from datetime import datetime
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, mark_notifications_read, track_market_share
+from accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, get_referral, get_taxonomy, mark_notifications_read, track_market_share
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, is_authenticated
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from core.domain_client import get_domain_client, local_market, local_markets
 from core.platform_config import load_platform_config
 from core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
-from markets.models import Market, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
+from markets.models import Market, MarketCategory, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
 from accounts.models import UserBadgeAward, UserProfile, UserReputation
 
 
@@ -66,6 +68,43 @@ def _market_thumb_fallback(market):
     return "OR"
 
 
+def _parse_market_datetime(value):
+    if not value:
+        return None
+    if isinstance(value, datetime):
+        return value
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _timezone_short_label(timezone_name):
+    return "BRT" if timezone_name == "America/Sao_Paulo" else (timezone_name or "UTC")
+
+
+def _market_close_datetime_label(value, timezone_name):
+    parsed = _parse_market_datetime(value)
+    if not parsed:
+        return ""
+    try:
+        target_timezone = ZoneInfo(timezone_name or "UTC")
+    except ZoneInfoNotFoundError:
+        target_timezone = ZoneInfo("UTC")
+        timezone_name = "UTC"
+    if not parsed.tzinfo:
+        parsed = parsed.replace(tzinfo=ZoneInfo("UTC"))
+    localized = parsed.astimezone(target_timezone)
+    return f"Fecha em {localized.strftime('%d/%m/%Y %H:%M')} {_timezone_short_label(timezone_name)}"
+
+
+def _market_public_close_label(market):
+    label = (market.get("close_label") or "").strip()
+    if label and "T" not in label:
+        return label
+    return _market_close_datetime_label(market.get("close_at"), market.get("close_timezone")) or label
+
+
 def _hydrate_market_visuals(markets):
     local_by_slug = {market["slug"]: market for market in local_markets()}
     hydrated = []
@@ -111,6 +150,7 @@ def _hydrate_market_visuals(markets):
             "viewer_has_favorite": bool(market.get("viewer_has_favorite")),
             "viewer_has_like": bool(market.get("viewer_has_like")),
             "comment_count": int(market.get("comment_count") or 0),
+            "close_label": _market_public_close_label(market) or market.get("close_label", ""),
         }
         for market in hydrated
     ]
@@ -202,6 +242,17 @@ def _track_market_share(slug):
         return bool(updated)
     except DatabaseError:
         return False
+
+
+def _share_referral_query(request):
+    if not is_authenticated(request):
+        return None
+    try:
+        referral = get_referral(auth_token(request))
+    except AuthAPIError:
+        return None
+    code = referral.get("code") if referral.get("enabled") else ""
+    return {"ref": code} if code else None
 
 
 def _earned_badge(request, code):
@@ -351,9 +402,28 @@ def use_policy(request):
     return render(request, "core/use_policy.html")
 
 
+def _suggestion_category_options():
+    try:
+        taxonomy = get_taxonomy()
+        categories = [
+            {"name": category.get("name", ""), "slug": category.get("slug", "")}
+            for category in taxonomy.get("categories", [])
+            if category.get("name") and not category.get("is_blocked")
+        ]
+        if categories:
+            return categories
+    except AuthAPIError:
+        pass
+    return [
+        {"name": category.name, "slug": category.slug}
+        for category in MarketCategory.objects.filter(is_blocked=False).order_by("name")
+    ]
+
+
 def suggestion(request):
     error = ""
     form_data = {}
+    category_options = _suggestion_category_options()
     if request.method == "POST":
         payload = {
             "guest_name": request.POST.get("guest_name", ""),
@@ -382,6 +452,7 @@ def suggestion(request):
                         {
                             "form_error": error,
                             "form_data": form_data,
+                            "category_options": category_options,
                             "recaptcha_enabled": settings.RECAPTCHA_ENABLED and not is_authenticated(request),
                             "recaptcha_site_key": settings.RECAPTCHA_SITE_KEY,
                         },
@@ -405,6 +476,7 @@ def suggestion(request):
         {
             "form_error": error,
             "form_data": form_data,
+            "category_options": category_options,
             "recaptcha_enabled": settings.RECAPTCHA_ENABLED and not is_authenticated(request),
             "recaptcha_site_key": settings.RECAPTCHA_SITE_KEY,
         },
@@ -469,7 +541,7 @@ def feedback(request):
 
 def share_market(request, slug):
     market = _load_share_market(slug)
-    share = market_share_context(request, market)
+    share = market_share_context(request, market, query=_share_referral_query(request))
     share["track_url"] = reverse("share-market-track", args=[slug])
     return render(request, "core/share_market.html", {"market": market, "share": share})
 
@@ -483,7 +555,7 @@ def share_market_image(request, slug):
 def share_result(request, slug):
     market = _load_share_market(slug)
     viewer = _share_viewer(request)
-    share = result_share_context(request, market, viewer)
+    share = result_share_context(request, market, viewer, query=_share_referral_query(request))
     share["track_url"] = reverse("share-market-track", args=[slug])
     return render(request, "core/share_result.html", {"market": market, "share": share, "share_viewer": viewer})
 

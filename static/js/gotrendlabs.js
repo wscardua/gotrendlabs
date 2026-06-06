@@ -21,6 +21,26 @@ $$("[data-theme-toggle]").forEach((button) => {
 
 syncThemeButtons();
 
+$$("[data-context-back]").forEach((link) => {
+  let safeReferrer = "";
+  try {
+    const referrer = document.referrer ? new URL(document.referrer) : null;
+    if (referrer && referrer.origin === window.location.origin && referrer.href !== window.location.href) {
+      safeReferrer = `${referrer.pathname}${referrer.search}${referrer.hash}`;
+    }
+  } catch (error) {
+    safeReferrer = "";
+  }
+  if (safeReferrer) {
+    link.href = safeReferrer;
+    link.addEventListener("click", (event) => {
+      if (window.history.length <= 1) return;
+      event.preventDefault();
+      window.history.back();
+    });
+  }
+});
+
 $$("[data-menu-chip]").forEach((chip) => {
   const button = $("[data-menu-button]", chip);
   if (!button) return;

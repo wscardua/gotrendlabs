@@ -22,7 +22,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from accounts.models import AuthEvent, BadgeDefinition, BadgeRule, PasswordResetToken, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from accounts.models import AuthEvent, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
@@ -1039,7 +1039,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     """
                     INSERT INTO gotrendlabs_site_config
                         (
-                            singleton_key, wallet_recharge_min_balance_gtl, daemon_stale_after_minutes, daemon_missing_after_minutes,
+                            singleton_key, wallet_recharge_min_balance_gtl, referral_bonus_gtl, daemon_stale_after_minutes, daemon_missing_after_minutes,
                             system_log_retention_days, ai_audit_retention_days,
                             email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
                             default_from_email, default_reply_to_email,
@@ -1052,7 +1052,7 @@ class BackendAuthAPITests(TransactionTestCase):
                             updated_by_id, updated_at
                         )
                     VALUES (
-                        1, 100, 5, 15, 90, 90, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
+                        1, 100, 200, 5, 15, 90, 90, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
                         1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
                     )
@@ -1731,6 +1731,8 @@ class BackendAuthAPITests(TransactionTestCase):
         ledger = client.get("/users/me/ledger", headers=headers)
         self.assertEqual(ledger.status_code, 200)
         self.assertEqual(ledger.json()["entries"][0]["entry_type"], "grant_initial")
+        self.assertEqual(ledger.json()["entries"][0]["entry_type_label"], "Crédito inicial")
+        self.assertEqual(ledger.json()["entries"][0]["direction_label"], "Entrada")
         self.assertEqual(WalletLedgerEntry.objects.filter(user__username="@usercore", entry_type="grant_initial").count(), 1)
 
         badges = client.get("/users/me/badges", headers=headers)
@@ -1769,6 +1771,109 @@ class BackendAuthAPITests(TransactionTestCase):
 
         invalid = client.get("/users/me", headers={"Authorization": "Bearer invalid"})
         self.assertEqual(invalid.status_code, 401)
+
+    def test_referral_bonus_credits_referrer_on_invited_register(self):
+        SiteConfig.objects.update_or_create(singleton_key=1, defaults={"referral_bonus_gtl": 180})
+        client = TestClient(app)
+        referrer = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Referral Owner",
+                "email": "referral-owner@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(referrer.status_code, 201)
+        referrer_id = referrer.json()["user"]["id"]
+        referrer_headers = {"Authorization": f"Bearer {referrer.json()['session']['token']}"}
+
+        referral = client.get("/users/me/referral", headers=referrer_headers)
+        self.assertEqual(referral.status_code, 200)
+        self.assertTrue(referral.json()["enabled"])
+        self.assertEqual(referral.json()["bonus_gtl"], 180)
+        code = referral.json()["code"]
+        self.assertTrue(ReferralCode.objects.filter(referrer_id=referrer_id, code=code).exists())
+
+        invited = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Invited User",
+                "email": "invited-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+                "referral_code": code.lower(),
+            },
+        )
+        self.assertEqual(invited.status_code, 201)
+        invitee_id = invited.json()["user"]["id"]
+
+        self.assertEqual(WalletBalance.objects.get(user_id=referrer_id).available_gtl, 2180)
+        self.assertEqual(WalletBalance.objects.get(user_id=invitee_id).available_gtl, 2000)
+        referrer_ledger = client.get("/users/me/ledger", headers=referrer_headers)
+        self.assertEqual(referrer_ledger.status_code, 200)
+        self.assertEqual(referrer_ledger.json()["entries"][0]["entry_type"], "reward_referral")
+        self.assertEqual(referrer_ledger.json()["entries"][0]["entry_type_label"], "Bônus por indicação")
+        self.assertEqual(referrer_ledger.json()["entries"][0]["direction_label"], "Entrada")
+        reward_entry = WalletLedgerEntry.objects.get(user_id=referrer_id, entry_type="reward_referral")
+        self.assertEqual(reward_entry.amount, 180)
+        self.assertEqual(reward_entry.description, "Bônus por indicação validada")
+        reward = ReferralReward.objects.get(referrer_id=referrer_id, invitee_id=invitee_id)
+        self.assertEqual(reward.ledger_entry_id, reward_entry.id)
+        self.assertIsNotNone(reward.rewarded_at)
+        self.assertFalse(WalletLedgerEntry.objects.filter(user_id=invitee_id, entry_type="reward_referral").exists())
+
+    def test_referral_code_invalid_or_disabled_does_not_block_register(self):
+        client = TestClient(app)
+        invalid = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Invalid Referral",
+                "email": "invalid-referral@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+                "referral_code": "MISSINGCODE",
+            },
+        )
+        self.assertEqual(invalid.status_code, 201)
+        self.assertFalse(ReferralReward.objects.filter(invitee_id=invalid.json()["user"]["id"]).exists())
+
+        SiteConfig.objects.update_or_create(singleton_key=1, defaults={"referral_bonus_gtl": 0})
+        owner = client.post(
+            "/auth/register",
+            json={"display_name": "Disabled Referral Owner", "email": "disabled-referral-owner@example.com", "password": "testpass123", "terms_accepted": True},
+        )
+        headers = {"Authorization": f"Bearer {owner.json()['session']['token']}"}
+        referral = client.get("/users/me/referral", headers=headers)
+        self.assertEqual(referral.status_code, 200)
+        self.assertFalse(referral.json()["enabled"])
+
+    def test_referral_link_is_available_to_staff_users(self):
+        SiteConfig.objects.update_or_create(singleton_key=1, defaults={"referral_bonus_gtl": 150})
+        client = TestClient(app)
+        response = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Referral Staff",
+                "email": "referral-staff@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        user_id = response.json()["user"]["id"]
+        get_user_model().objects.filter(id=user_id).update(is_staff=True)
+        headers = {"Authorization": f"Bearer {response.json()['session']['token']}"}
+
+        referral = client.get("/users/me/referral", headers=headers)
+        self.assertEqual(referral.status_code, 200)
+        self.assertTrue(referral.json()["enabled"])
+        self.assertEqual(referral.json()["bonus_gtl"], 150)
+        self.assertTrue(ReferralCode.objects.filter(referrer_id=user_id, code=referral.json()["code"]).exists())
 
     def test_email_confirmation_outbox_blocks_sensitive_actions_until_confirmed(self):
         site_config = SiteConfig.get_solo()
@@ -2379,6 +2484,32 @@ class BackendAuthAPITests(TransactionTestCase):
                 },
             )
             self.assertEqual(blocked_feedback.status_code, 422)
+
+    def test_public_taxonomy_exposes_active_categories_and_suggestion_requires_one(self):
+        blocked = MarketCategory.objects.create(name="Bloqueada", slug="bloqueada", is_blocked=True, blocked_reason="fora de uso")
+        MarketSubcategory.objects.create(category=blocked, name="Geral", slug="geral", is_blocked=False)
+        client = TestClient(app)
+
+        taxonomy = client.get("/taxonomy")
+        self.assertEqual(taxonomy.status_code, 200)
+        category_names = [category["name"] for category in taxonomy.json()["categories"]]
+        self.assertIn("IA", category_names)
+        self.assertNotIn("Bloqueada", category_names)
+
+        invalid = client.post(
+            "/suggestions",
+            json={
+                "guest_name": "Visitante",
+                "guest_email": "visitante-categoria@example.com",
+                "question": "Mercado de categoria inexistente deveria entrar?",
+                "category": "Categoria inexistente",
+                "kind": "binary",
+                "suggested_source": "Fonte pública",
+                "rationale": "Teste de categoria.",
+            },
+        )
+        self.assertEqual(invalid.status_code, 422)
+        self.assertIn("categoria ativa", invalid.json()["detail"].lower())
 
     def test_recaptcha_not_required_for_authenticated_queue_items(self):
         client = TestClient(app)
@@ -3846,6 +3977,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     INSERT INTO gotrendlabs_site_config (
                         singleton_key,
                         wallet_recharge_min_balance_gtl,
+                        referral_bonus_gtl,
                         daemon_stale_after_minutes,
                         daemon_missing_after_minutes,
                         system_log_retention_days,
@@ -3885,7 +4017,7 @@ class BackendAuthAPITests(TransactionTestCase):
                         updated_at
                     )
                     VALUES (
-                        1, 10000, 5, 15, 90, 90, false, '', 587, '', true, false, 10, '', '',
+                        1, 10000, 200, 5, 15, 90, 90, false, '', 587, '', true, false, 10, '', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
                         1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
                     )
@@ -4101,6 +4233,7 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertContains(response, "não podem fingir ser humanos")
                     self.assertContains(response, "contas oficiais automatizadas")
                     self.assertContains(response, "Segredos de integração")
+                    self.assertNotContains(response, "O MVP ainda está evoluindo")
                     self.assertNotContains(response, subcategory_notice)
                     self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
@@ -4206,6 +4339,57 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Primeira previsão")
         self.assertContains(response, "GTL Credits não representam dinheiro real")
 
+    def test_register_preserves_referral_code_from_query_string(self):
+        response = self.client.get(f"{reverse('register')}?ref=abc-123")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Convite ativo")
+        self.assertContains(response, "o indicador recebe bônus educativo em GT₵")
+        self.assertContains(response, 'name="referral_code" value="ABC123"', html=False)
+        self.assertEqual(self.client.session["pending_referral_code"], "ABC123")
+
+    def test_wallet_and_profile_show_referral_card_for_authenticated_user(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="@referralweb", email="referral-web@example.com", password="testpass123", first_name="Referral Web")
+        WalletBalance.objects.update_or_create(user=user, defaults={"available_gtl": 2000, "locked_gtl": 0, "total_earned_gtl": 0})
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        referral_payload = {"enabled": True, "code": "WEBREF123", "bonus_gtl": 200, "reason": "ok"}
+        profile_payload = {
+            "user": {
+                "id": user.id,
+                "handle": user.username,
+                "email": user.email,
+                "display_name": user.first_name,
+                "preferred_language": "pt-br",
+            },
+            "reputation": {},
+            "birth_date": "",
+            "sex": "",
+            "bio": "",
+        }
+
+        with patch("wallet.views.get_ledger", return_value={"wallet": {"available_gtl": 2000, "locked_gtl": 0, "total_earned_gtl": 0}, "entries": []}), patch("wallet.views.get_me", return_value={"reputation": {}}), patch("wallet.views.get_wallet_recharge_requests", return_value={"requests": []}), patch("accounts.referrals.get_referral", return_value=referral_payload):
+            wallet_response = self.client.get(reverse("wallet"))
+        self.assertContains(wallet_response, "Convide alguém")
+        self.assertContains(wallet_response, "200 GT₵")
+        self.assertContains(wallet_response, f"{reverse('register')}?ref=WEBREF123")
+        self.assertContains(wallet_response, "data-copy-share")
+
+        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]), patch("accounts.referrals.get_referral", return_value=referral_payload):
+            profile_response = self.client.get(reverse("profile"))
+        self.assertContains(profile_response, "Convide alguém")
+        self.assertContains(profile_response, f"{reverse('register')}?ref=WEBREF123")
+
     def test_register_ticket_uses_most_viewed_market(self):
         api_market = get_domain_client().market("openai-gpt6-2026")
         lower = {**api_market, "slug": "lower-signup", "title": "Mercado menos visitado", "view_count": 2}
@@ -4242,13 +4426,67 @@ class WebSmokeTests(TransactionTestCase):
                 self.assertContains(response, "Mercados")
                 self.assertContains(response, "Badges")
                 self.assertContains(response, "Ranking")
-                self.assertContains(response, "← Feed")
+                self.assertContains(response, "← Voltar")
+                self.assertContains(response, "data-context-back")
                 self.assertContains(response, 'class="footer"')
                 self.assertContains(response, "Rede social para prever eventos")
                 self.assertContains(response, "GT₵ educativa")
                 self.assertContains(response, cta)
                 if route == reverse("login"):
                     self.assertContains(response, "Lembrar meu acesso neste dispositivo")
+
+    def test_profile_handle_renders_fixed_at_prefix_and_submits_normalized_value(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="@profilehandle", email="profile-handle@example.com", password="testpass123", first_name="Profile Handle")
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        profile_payload = {
+            "user": {
+                "id": user.id,
+                "handle": "@profilehandle",
+                "email": user.email,
+                "display_name": user.first_name,
+                "preferred_language": "pt-br",
+            },
+            "reputation": {},
+            "birth_date": "",
+            "sex": "",
+            "bio": "",
+        }
+        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+            response = self.client.get(reverse("profile"))
+
+        self.assertContains(response, '<div class="handle-field"><span aria-hidden="true">@</span><input', html=False)
+        self.assertContains(response, 'value="profilehandle"')
+        self.assertContains(response, "O prefixo @ é fixo")
+
+        updated_payload = {**profile_payload, "user": {**profile_payload["user"], "handle": "@newhandle"}}
+        with patch("profiles.views.update_me", return_value=updated_payload) as update_mock, patch("profiles.views.get_me", return_value=updated_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+            response = self.client.post(
+                reverse("profile"),
+                {
+                    "action": "update_profile",
+                    "display_name": "Profile Handle",
+                    "handle": "newhandle",
+                    "email": user.email,
+                    "preferred_language": "pt-br",
+                    "birth_date": "",
+                    "sex": "",
+                    "bio": "",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(update_mock.call_args.args[1]["handle"], "@newhandle")
 
     def test_ranking_guest_card_uses_real_session_state(self):
         response = self.client.get(reverse("rankings"))
@@ -4496,6 +4734,19 @@ class WebSmokeTests(TransactionTestCase):
 
         expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
         self.assertContains(response, expected, html=True)
+
+    def test_market_card_formats_iso_close_label(self):
+        market = {
+            **get_domain_client().market("openai-gpt6-2026"),
+            "close_at": "2026-06-11T18:55:00+00:00",
+            "close_timezone": "America/Sao_Paulo",
+            "close_label": "Fecha em 2026-06-11T15:55:00 BRT",
+        }
+        with patch("core.views.get_markets", return_value=[market]):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, "Fecha em 11/06/2026 15:55 BRT")
+        self.assertNotContains(response, "2026-06-11T15:55:00")
 
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
         market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}
@@ -5117,6 +5368,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Preset AWS SES")
             self.assertContains(response, "Enviar teste sandbox")
             self.assertContains(response, "Saldo máximo para solicitar")
+            self.assertContains(response, "Bônus por indicação validada")
             self.assertContains(response, "Purge de logs e auditoria IA")
             self.assertContains(response, 'name="retention-system_log_retention_days"')
             self.assertContains(response, 'name="retention-ai_audit_retention_days"')
@@ -5141,6 +5393,7 @@ class WebSmokeTests(TransactionTestCase):
                     "maintenance-maintenance_enabled": "on",
                     "maintenance-maintenance_message": "Voltamos logo depois da janela operacional.",
                     "economy-wallet_recharge_min_balance_gtl": "150",
+                    "economy-referral_bonus_gtl": "180",
                     "daemon-daemon_stale_after_minutes": "7",
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "45",
@@ -5172,6 +5425,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.default_from_email, "no-reply@example.com")
             self.assertEqual(site_config.default_reply_to_email, "support@example.com")
             self.assertEqual(site_config.wallet_recharge_min_balance_gtl, 150)
+            self.assertEqual(site_config.referral_bonus_gtl, 180)
             self.assertEqual(site_config.daemon_stale_after_minutes, 7)
             self.assertEqual(site_config.daemon_missing_after_minutes, 21)
             self.assertEqual(site_config.system_log_retention_days, 45)
@@ -5248,6 +5502,7 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "maintenance-maintenance_message": "",
                     "economy-wallet_recharge_min_balance_gtl": "150",
+                    "economy-referral_bonus_gtl": "180",
                     "daemon-daemon_stale_after_minutes": "7",
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "0",
@@ -5335,6 +5590,7 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "maintenance-maintenance_message": "",
                     "economy-wallet_recharge_min_balance_gtl": "100",
+                    "economy-referral_bonus_gtl": "200",
                     "daemon-daemon_stale_after_minutes": "6",
                     "daemon-daemon_missing_after_minutes": "18",
                     "retention-system_log_retention_days": "90",
@@ -5413,6 +5669,7 @@ class WebSmokeTests(TransactionTestCase):
                 {
                     "maintenance-maintenance_message": "Manutenção rápida.",
                     "economy-wallet_recharge_min_balance_gtl": "100",
+                    "economy-referral_bonus_gtl": "200",
                     "daemon-daemon_stale_after_minutes": "5",
                     "daemon-daemon_missing_after_minutes": "15",
                     "retention-system_log_retention_days": "90",
@@ -5618,6 +5875,12 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Carregar mais")
         self.assertContains(response, "reason=llm_error")
         self.assertContains(response, "Detalhe", count=10)
+        self.assertContains(response, "Comentário")
+        self.assertContains(response, "Tentativa de publicar um comentário oficial identificado como IA.")
+        self.assertContains(response, "Ignorada")
+        self.assertContains(response, "Falhou")
+        self.assertContains(response, "Timeout no provedor IA")
+        self.assertContains(response, "A chamada ao provedor de IA demorou além do limite operacional.")
 
     def test_admin_ai_agent_action_detail_has_context_and_pretty_payload(self):
         session = self.client.session
@@ -5657,6 +5920,15 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Contexto")
         self.assertContains(response, "Prompt")
         self.assertContains(response, "Payload resumido")
+        self.assertContains(response, "Comentário criado")
+        self.assertContains(response, "Um comentário oficial foi publicado e registrado com vínculo ao mercado.")
+        self.assertContains(response, "Executada")
+        self.assertContains(response, "Código do tipo")
+        self.assertContains(response, "comment")
+        self.assertContains(response, "Código do status")
+        self.assertContains(response, "created")
+        self.assertContains(response, "Código do motivo")
+        self.assertContains(response, "comment_created")
         self.assertContains(response, "&quot;confidence&quot;: 0.68")
         self.assertContains(response, "vencedor-grupo-c-copa-2026")
 
@@ -5771,6 +6043,20 @@ class WebSmokeTests(TransactionTestCase):
         suggestion_response = self.client.get(reverse("suggestion"))
         self.assertContains(suggestion_response, "Sugerir mercado")
         self.assertContains(suggestion_response, f'class="nav-link active" href="{reverse("suggestion")}"')
+
+    def test_suggestion_form_uses_taxonomy_categories(self):
+        taxonomy_payload = {
+            "categories": [
+                {"name": "Ciência", "slug": "ciencia", "is_blocked": False, "subcategories": []},
+                {"name": "Arquivada", "slug": "arquivada", "is_blocked": True, "subcategories": []},
+            ]
+        }
+        with patch("core.views.get_taxonomy", return_value=taxonomy_payload):
+            response = self.client.get(reverse("suggestion"))
+
+        self.assertContains(response, '<option value="Ciência"', html=False)
+        self.assertNotContains(response, '<option value="Arquivada"', html=False)
+        self.assertNotContains(response, '<option value="Negócios"', html=False)
 
     def test_database_config_prefers_fastapi_postgres_environment(self):
         with patch.dict(
@@ -7227,8 +7513,10 @@ class WebSmokeTests(TransactionTestCase):
             {
                 "entry_id": index,
                 "entry_type": "manual_adjustment",
+                "entry_type_label": "Ajuste administrativo",
                 "amount": index,
                 "direction": "credit",
+                "direction_label": "Entrada",
                 "description": f"Movimentação {index}",
                 "reference_type": "test",
                 "reference_id": str(index),
@@ -7260,6 +7548,9 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(first_page, "Movimentação 1")
             self.assertContains(first_page, "Movimentação 10")
             self.assertNotContains(first_page, "Movimentação 11")
+            self.assertContains(first_page, "Ajuste administrativo")
+            self.assertContains(first_page, "Entrada 1 GT₵")
+            self.assertNotContains(first_page, "manual_adjustment")
             self.assertContains(first_page, "mostrando 10 de 12")
             self.assertContains(first_page, "Carregar mais")
             self.assertContains(first_page, "?ledger_limit=20")

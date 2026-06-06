@@ -11,6 +11,7 @@ class RegisterPayload(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     terms_accepted: bool = False
     recaptcha_token: str = ""
+    referral_code: str = Field(default="", max_length=32)
 
 
 class LoginPayload(BaseModel):
@@ -134,8 +135,10 @@ class WalletResponse(BaseModel):
 class LedgerEntryResponse(BaseModel):
     entry_id: int
     entry_type: str
+    entry_type_label: str = ""
     amount: int
     direction: str
+    direction_label: str = ""
     description: str
     reference_type: str
     reference_id: str
@@ -146,6 +149,13 @@ class LedgerEntryResponse(BaseModel):
 class LedgerResponse(BaseModel):
     wallet: WalletResponse
     entries: List[LedgerEntryResponse]
+
+
+class ReferralResponse(BaseModel):
+    code: str = ""
+    bonus_gtl: int = 0
+    enabled: bool = False
+    reason: str = ""
 
 
 class WalletRechargeRequestResponse(BaseModel):

@@ -23,8 +23,8 @@
           <strong>{% if smtp_secret_configured %}Configurado{% else %}Ausente{% endif %}</strong>
         </div>
         <div>
-          <span>Piso recarga</span>
-          <strong>{{ site_config.wallet_recharge_min_balance_gtl }} GT₵</strong>
+          <span>Economia</span>
+          <strong>{{ site_config.wallet_recharge_min_balance_gtl }} / {{ site_config.referral_bonus_gtl }} GT₵</strong>
         </div>
         <div>
           <span>Daemon</span>
@@ -125,20 +125,27 @@
         <div class="config-panel-head">
           <div>
             <span class="eyebrow">Economia educativa</span>
-            <h2>Recarga de wallet</h2>
-            <p>Define quando o usuário pode entrar na fila de recarga educativa. A aprovação e o valor final continuam sob decisão administrativa.</p>
+            <h2>Carteira e indicação</h2>
+            <p>Define recarga educativa e bônus de aquisição creditado ao indicador quando uma conta é criada por convite válido.</p>
           </div>
-          <span class="config-status is-on">{{ site_config.wallet_recharge_min_balance_gtl }} GT₵</span>
+          <span class="config-status is-on">{{ site_config.referral_bonus_gtl }} GT₵ por indicação</span>
         </div>
         <div class="config-controls">
-          <label class="field compact-field">
-            <span>Saldo máximo para solicitar</span>
-            {{ economy_form.wallet_recharge_min_balance_gtl }}
-            {% if economy_form.wallet_recharge_min_balance_gtl.errors %}<small>{{ economy_form.wallet_recharge_min_balance_gtl.errors|join:", " }}</small>{% endif %}
-          </label>
+          <div class="config-form-grid">
+            <label class="field compact-field">
+              <span>Saldo máximo para solicitar recarga</span>
+              {{ economy_form.wallet_recharge_min_balance_gtl }}
+              {% if economy_form.wallet_recharge_min_balance_gtl.errors %}<small>{{ economy_form.wallet_recharge_min_balance_gtl.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Bônus por indicação validada</span>
+              {{ economy_form.referral_bonus_gtl }}
+              {% if economy_form.referral_bonus_gtl.errors %}<small>{{ economy_form.referral_bonus_gtl.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
           <div class="config-meta">
             <span>Regra ativa</span>
-            <strong>Usuários com saldo disponível até {{ site_config.wallet_recharge_min_balance_gtl }} GT₵ podem solicitar recarga.</strong>
+            <strong>Usuários com saldo disponível até {{ site_config.wallet_recharge_min_balance_gtl }} GT₵ podem solicitar recarga; indicação válida credita {{ site_config.referral_bonus_gtl }} GT₵ ao indicador.</strong>
           </div>
         </div>
       </section>

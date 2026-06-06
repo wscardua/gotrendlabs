@@ -5,6 +5,7 @@ from django.db import models
 class SiteConfig(models.Model):
     singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
     wallet_recharge_min_balance_gtl = models.PositiveIntegerField(default=100)
+    referral_bonus_gtl = models.PositiveIntegerField(default=200)
     daemon_stale_after_minutes = models.PositiveIntegerField(default=5)
     daemon_missing_after_minutes = models.PositiveIntegerField(default=15)
     system_log_retention_days = models.PositiveIntegerField(default=90)
