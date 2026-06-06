@@ -8,10 +8,12 @@ import os
 from pathlib import Path
 import re
 from tempfile import TemporaryDirectory
+from io import BytesIO
 import unicodedata
 from urllib.parse import quote, urlparse
 
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.contrib.staticfiles import finders
 from django.test import TestCase, TransactionTestCase, override_settings
@@ -22,7 +24,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from accounts.models import AuthEvent, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
 from backend_api.db import get_connection
@@ -37,15 +39,18 @@ from backend_api.daemon_services import _locked_markets_message
 from backend_api.main import app
 from backend_api.main import _ensure_user_core
 from backend_api.main import _record_wallet_entry
+from backend_api.main import _clear_rate_limits
+from backend_api.security import hash_token, issue_token
 from config.recaptcha import RecaptchaError
 from communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate
 from communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
 from core.domain_client import get_domain_client
 from core.platform_config import load_platform_config, save_platform_config
 from core.social_share import public_badge_share_token
+from admin_ops.views import _safe_image_content
 from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback, UserNotification
 from system_logs.models import SystemLog
-from system_logs.services import log_system_event
+from system_logs.services import request_headers, sanitize_context, log_system_event
 
 
 def _fixture_slug(value):
@@ -166,6 +171,142 @@ class FixtureDomainClientTests(TestCase):
 
         with patch("accounts.api_client._request", return_value={"markets": [{"slug": "legacy", "volume_gtl": "1355 GTL"}]}):
             self.assertEqual(api_get_markets()[0]["volume_gtl"], "1355 GT₵")
+
+
+class SecurityHardeningTests(TransactionTestCase):
+    def _api_token_for(self, user):
+        token = issue_token()
+        AuthSession.objects.create(
+            user=user,
+            token_hash=hash_token(token),
+            last_seen_at=timezone.now(),
+            expires_at=timezone.now() + timedelta(days=1),
+        )
+        return token
+
+    def test_request_header_and_context_redaction_covers_sensitive_values(self):
+        headers = request_headers(
+            {
+                "Authorization": "Bearer secret-token",
+                "Cookie": "sessionid=secret",
+                "X-Request-ID": "req-123",
+            }
+        )
+        self.assertEqual(headers["Authorization"], "[REDACTED]")
+        self.assertEqual(headers["Cookie"], "[REDACTED]")
+        self.assertEqual(headers["X-Request-ID"], "req-123")
+
+        context = sanitize_context({"password": "pw", "nested": {"api_key": "key", "safe": "value"}})
+        self.assertEqual(context["password"], "[REDACTED]")
+        self.assertEqual(context["nested"]["api_key"], "[REDACTED]")
+        self.assertEqual(context["nested"]["safe"], "value")
+
+    def test_fastapi_rate_limit_blocks_repeated_login_attempts(self):
+        _clear_rate_limits()
+        client = TestClient(app)
+        with patch.dict(os.environ, {"GOTRENDLABS_RATE_LIMITS_ENABLED": "1"}):
+            for _ in range(10):
+                response = client.post("/auth/login", json={"email": "rate@example.com", "password": "wrong"})
+                self.assertNotEqual(response.status_code, 429)
+            blocked = client.post("/auth/login", json={"email": "rate@example.com", "password": "wrong"})
+        self.assertEqual(blocked.status_code, 429)
+        _clear_rate_limits()
+
+    def test_fastapi_rate_limit_blocks_repeated_register_and_password_reset_attempts(self):
+        _clear_rate_limits()
+        client = TestClient(app)
+        with patch.dict(os.environ, {"GOTRENDLABS_RATE_LIMITS_ENABLED": "1"}):
+            for _ in range(10):
+                response = client.post(
+                    "/auth/register",
+                    json={
+                        "display_name": "Rate Register",
+                        "email": "rate-register@example.com",
+                        "password": "testpass123",
+                        "terms_accepted": True,
+                    },
+                )
+                self.assertNotEqual(response.status_code, 429)
+            blocked_register = client.post(
+                "/auth/register",
+                json={
+                    "display_name": "Rate Register",
+                    "email": "rate-register@example.com",
+                    "password": "testpass123",
+                    "terms_accepted": True,
+                },
+            )
+            for _ in range(5):
+                response = client.post("/auth/password-reset/request", json={"email": "reset-rate@example.com"})
+                self.assertNotEqual(response.status_code, 429)
+            blocked_reset = client.post("/auth/password-reset/request", json={"email": "reset-rate@example.com"})
+        self.assertEqual(blocked_register.status_code, 429)
+        self.assertEqual(blocked_reset.status_code, 429)
+        _clear_rate_limits()
+
+    def test_login_next_redirect_rejects_external_url(self):
+        auth_response = {
+            "session": {"token": "session-token"},
+            "user": {"id": 1, "username": "@safe", "is_staff": False},
+        }
+        with patch("accounts.views.login_user", return_value=auth_response):
+            response = self.client.post(
+                f"{reverse('login')}?next=https://evil.example/phish",
+                {"email": "safe@example.com", "password": "testpass123"},
+            )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("home"))
+
+    def test_safe_image_upload_rejects_non_image_and_rewrites_valid_image_to_png(self):
+        bad_upload = SimpleUploadedFile("badge.svg", b"<svg><script>alert(1)</script></svg>", content_type="image/svg+xml")
+        with self.assertRaisesMessage(ValueError, "Arquivo de imagem inválido."):
+            _safe_image_content(bad_upload, prefix="badge")
+
+        image_bytes = BytesIO()
+        from PIL import Image
+
+        Image.new("RGB", (8, 8), "red").save(image_bytes, format="JPEG")
+        good_upload = SimpleUploadedFile("badge.jpg", image_bytes.getvalue(), content_type="image/jpeg")
+        filename, content = _safe_image_content(good_upload, prefix="badge")
+        self.assertEqual(filename, "badge.png")
+        self.assertTrue(content.read().startswith(b"\x89PNG"))
+
+    def test_wallet_and_admin_api_respect_session_identity_and_staff_roles(self):
+        User = get_user_model()
+        owner = User.objects.create_user(username="@walletowner", email="wallet-owner@example.com", password="testpass123", email_confirmed_at=timezone.now())
+        other = User.objects.create_user(username="@walletother", email="wallet-other@example.com", password="testpass123", email_confirmed_at=timezone.now())
+        staff = User.objects.create_user(username="@walletstaff", email="wallet-staff@example.com", password="testpass123", is_staff=True, email_confirmed_at=timezone.now())
+        superuser = User.objects.create_user(
+            username="@walletsuper",
+            email="wallet-super@example.com",
+            password="testpass123",
+            is_staff=True,
+            is_superuser=True,
+            email_confirmed_at=timezone.now(),
+        )
+        WalletBalance.objects.update_or_create(user=owner, defaults={"available_gtl": 777, "locked_gtl": 0, "total_earned_gtl": 777})
+        WalletBalance.objects.update_or_create(user=other, defaults={"available_gtl": 123, "locked_gtl": 0, "total_earned_gtl": 123})
+        client = TestClient(app)
+
+        owner_wallet = client.get("/users/me/wallet", headers={"Authorization": f"Bearer {self._api_token_for(owner)}"})
+        other_wallet = client.get("/users/me/wallet", headers={"Authorization": f"Bearer {self._api_token_for(other)}"})
+        common_admin = client.get("/admin/users", headers={"Authorization": f"Bearer {self._api_token_for(owner)}"})
+        staff_admin = client.get("/admin/users", headers={"Authorization": f"Bearer {self._api_token_for(staff)}"})
+        super_admin = client.get("/admin/users", headers={"Authorization": f"Bearer {self._api_token_for(superuser)}"})
+
+        self.assertEqual(owner_wallet.status_code, 200)
+        self.assertEqual(other_wallet.status_code, 200)
+        self.assertEqual(owner_wallet.json()["available_gtl"] - other_wallet.json()["available_gtl"], 654)
+        self.assertEqual(common_admin.status_code, 403)
+        self.assertEqual(staff_admin.status_code, 200)
+        self.assertEqual(super_admin.status_code, 200)
+
+    def test_caddy_media_headers_disable_sniffing_and_active_content(self):
+        caddyfile = (Path(settings.BASE_DIR) / "deploy" / "production" / "Caddyfile").read_text(encoding="utf-8")
+        self.assertIn("handle_path /media/*", caddyfile)
+        self.assertIn("X-Content-Type-Options nosniff", caddyfile)
+        self.assertIn("Content-Security-Policy", caddyfile)
+        self.assertIn("default-src 'none'", caddyfile)
 
 
 class BackendAuthAPITests(TransactionTestCase):

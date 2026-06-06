@@ -21,7 +21,7 @@ from accounts.api_client import (
     unfavorite_market,
     unlike_market,
 )
-from accounts.session import auth_token, auth_user, is_authenticated
+from accounts.session import auth_token, auth_user, is_authenticated, login_url_with_next, safe_redirect_url
 from core.domain_client import local_market
 from markets.models import CommentReaction, Market, MarketComment, MarketFavorite, MarketLike, MarketOption, Prediction
 
@@ -282,7 +282,7 @@ def prediction_preview(request, slug):
 @require_POST
 def confirm_prediction(request, slug):
     if not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={reverse('market-detail', args=[slug])}")
+        return redirect(login_url_with_next(request, reverse("market-detail", args=[slug])))
 
     data = {
         "option_id": request.POST.get("option_id"),
@@ -314,7 +314,7 @@ def confirm_prediction(request, slug):
 @require_POST
 def submit_comment(request, slug):
     if not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={reverse('market-detail', args=[slug])}")
+        return redirect(login_url_with_next(request, reverse("market-detail", args=[slug])))
 
     data = {
         "body": request.POST.get("body", ""),
@@ -340,7 +340,7 @@ def submit_comment(request, slug):
 @require_POST
 def comment_reaction(request, slug, comment_id):
     if not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={reverse('market-detail', args=[slug])}")
+        return redirect(login_url_with_next(request, reverse("market-detail", args=[slug])))
     reaction = request.POST.get("reaction")
     current = request.POST.get("current_reaction")
     if reaction not in {"like", "dislike"}:
@@ -358,7 +358,7 @@ def comment_reaction(request, slug, comment_id):
 @require_POST
 def favorite_toggle(request, slug):
     if not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={request.POST.get('next') or reverse('home')}")
+        return redirect(login_url_with_next(request, request.POST.get("next")))
     should_unfavorite = request.POST.get("current_favorite") == "true"
     if should_unfavorite:
         action = unfavorite_market
@@ -370,16 +370,16 @@ def favorite_toggle(request, slug):
     except AuthAPIError as exc:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({"ok": False, "error": str(exc)}, status=400 if exc.status_code != 401 else 401)
-        return redirect(request.POST.get("next") or reverse("home"))
+        return redirect(safe_redirect_url(request, request.POST.get("next"), reverse("home")))
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({"ok": True, "slug": slug, "favorited": favorited})
-    return redirect(request.POST.get("next") or reverse("home"))
+    return redirect(safe_redirect_url(request, request.POST.get("next"), reverse("home")))
 
 
 @require_POST
 def like_toggle(request, slug):
     if not is_authenticated(request):
-        return redirect(f"{reverse('login')}?next={request.POST.get('next') or reverse('home')}")
+        return redirect(login_url_with_next(request, request.POST.get("next")))
     should_unlike = request.POST.get("current_like") == "true"
     if should_unlike:
         action = unlike_market
@@ -392,7 +392,7 @@ def like_toggle(request, slug):
     except AuthAPIError as exc:
         if request.headers.get("x-requested-with") == "XMLHttpRequest":
             return JsonResponse({"ok": False, "error": str(exc)}, status=400 if exc.status_code != 401 else 401)
-        return redirect(request.POST.get("next") or reverse("home"))
+        return redirect(safe_redirect_url(request, request.POST.get("next"), reverse("home")))
     if request.headers.get("x-requested-with") == "XMLHttpRequest":
         return JsonResponse({"ok": True, "slug": slug, "liked": liked, "like_count": like_count})
-    return redirect(request.POST.get("next") or reverse("home"))
+    return redirect(safe_redirect_url(request, request.POST.get("next"), reverse("home")))

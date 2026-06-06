@@ -82,7 +82,7 @@ cp .env.prod.example .env.prod
 nano .env.prod
 ```
 
-Configure `.env.prod` com dominio, `DJANGO_SECRET_KEY`, endpoints do RDS, usuarios e senhas. Nao commite `.env.prod`.
+Configure `.env.prod` com dominio, `DJANGO_SECRET_KEY`, endpoints do RDS, usuarios e senhas. Mantenha `GOTRENDLABS_RATE_LIMITS_ENABLED=1` em producao; a aplicacao tambem liga o rate limit por padrao fora dos testes, mas a chave explicita evita ambiguidade operacional. Nao commite `.env.prod`.
 
 Na EC2 provisionada, `Docker Engine`, `Docker Compose plugin`, `git`, `curl`, `ca-certificates`, `unzip`, `AWS CLI v2`, `SSM Agent`, `CloudWatch Agent` e `postgresql-client` ja foram instalados e validados via SSM. Antes do primeiro deploy da aplicacao, crie `/opt/gotrendlabs/.env.prod` fora do Git com os valores reais do Secrets Manager e Parameter Store.
 

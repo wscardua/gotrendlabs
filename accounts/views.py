@@ -7,7 +7,7 @@ from django.utils.dateparse import parse_datetime
 
 from accounts.api_client import AuthAPIError, confirm_email, confirm_password_reset, get_markets, get_session, login_user, logout_user, register_user, request_password_reset, resend_email_confirmation
 from accounts.forms import LoginForm, PasswordResetConfirmForm, PasswordResetRequestForm, RegisterForm
-from accounts.session import USER_KEY, auth_token, clear_auth_session, is_authenticated, store_auth_session
+from accounts.session import USER_KEY, auth_token, clear_auth_session, is_authenticated, safe_redirect_url, store_auth_session
 from core.middleware import ReferralCaptureMiddleware
 from core.domain_client import local_markets
 
@@ -86,7 +86,7 @@ def login_view(request):
                 request.session.set_expiry(REMEMBER_ME_SESSION_AGE)
             else:
                 request.session.set_expiry(None)
-            return redirect(request.GET.get("next") or reverse("home"))
+            return redirect(safe_redirect_url(request, request.GET.get("next"), reverse("home")))
     return render(request, "accounts/login.html", {"form": form})
 
 
@@ -187,7 +187,7 @@ def email_confirmation_resend_view(request):
         messages.error(request, str(exc))
     else:
         messages.success(request, response.get("message") or "Novo link enviado.")
-    return redirect(request.GET.get("next") or "home")
+    return redirect(safe_redirect_url(request, request.GET.get("next"), reverse("home")))
 
 
 def logout_view(request):

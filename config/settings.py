@@ -6,8 +6,30 @@ from config.env import load_env_file
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_env_file(BASE_DIR / ".env")
 
+def env_flag(name, default=False):
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    return value.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def env_int(name, default):
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-gotrendlabs-django-fixtures")
-DEBUG = os.environ.get("DJANGO_DEBUG", "1").strip().lower() in {"1", "true", "yes", "on"}
+DEBUG = env_flag("DJANGO_DEBUG", True)
+PRODUCTION_MODE = os.environ.get("GOTRENDLABS_ENV", "").strip().lower() in {"prod", "production"} or not DEBUG
+if PRODUCTION_MODE and (
+    not os.environ.get("DJANGO_SECRET_KEY")
+    or SECRET_KEY == "dev-only-gotrendlabs-django-fixtures"
+    or len(set(SECRET_KEY)) < 8
+    or len(SECRET_KEY) < 50
+):
+    raise RuntimeError("DJANGO_SECRET_KEY must be a long, random value outside development.")
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.environ.get("GOTRENDLABS_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
@@ -103,9 +125,19 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "0").strip().lower() in {"1", "true", "yes", "on"}
-SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "0").strip().lower() in {"1", "true", "yes", "on"}
-CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "0").strip().lower() in {"1", "true", "yes", "on"}
+SECURE_SSL_REDIRECT = env_flag("DJANGO_SECURE_SSL_REDIRECT", PRODUCTION_MODE)
+SESSION_COOKIE_SECURE = env_flag("DJANGO_SESSION_COOKIE_SECURE", PRODUCTION_MODE)
+CSRF_COOKIE_SECURE = env_flag("DJANGO_CSRF_COOKIE_SECURE", PRODUCTION_MODE)
+SESSION_COOKIE_HTTPONLY = True
+CSRF_COOKIE_HTTPONLY = env_flag("DJANGO_CSRF_COOKIE_HTTPONLY", False)
+SESSION_COOKIE_SAMESITE = os.environ.get("DJANGO_SESSION_COOKIE_SAMESITE", "Lax")
+CSRF_COOKIE_SAMESITE = os.environ.get("DJANGO_CSRF_COOKIE_SAMESITE", "Lax")
+SECURE_HSTS_SECONDS = env_int("DJANGO_SECURE_HSTS_SECONDS", 31536000 if PRODUCTION_MODE else 0)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_flag("DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS", PRODUCTION_MODE)
+SECURE_HSTS_PRELOAD = env_flag("DJANGO_SECURE_HSTS_PRELOAD", PRODUCTION_MODE)
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_REFERRER_POLICY = os.environ.get("DJANGO_SECURE_REFERRER_POLICY", "same-origin")
+X_FRAME_OPTIONS = os.environ.get("DJANGO_X_FRAME_OPTIONS", "DENY")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"

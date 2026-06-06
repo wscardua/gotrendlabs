@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-06-06 — Auditoria de seguranca local
+
+- Autenticacao/sessao passaram a ter hardening automatico em modo producao, redirects `next` validados como locais e rate limit in-memory nos endpoints publicos sensiveis.
+- Admin Ops passou a validar uploads de imagem por conteudo real, limitar tamanho e regravar PNG antes de persistir em `media`.
+- Caddy passou a servir `/media/*` com `nosniff`, CSP restritiva e cache curto; relatório `docs/security-audit-2026-06-06.md` registra achados, evidencias e pendencias.
+
 ## 2026-06-06 — FEAT-OPSLOG-001 cadência do daemon em produção
 
 - Docker Compose de produção passou a executar `run_gotrendlabs_daemon` com intervalo de 300 segundos.

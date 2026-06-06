@@ -45,6 +45,8 @@ def verify_recaptcha_response(token, remote_ip=None):
         raise RecaptchaError("Confirme que você não é um robô.")
     if not secret:
         raise RecaptchaError("reCAPTCHA não configurado no servidor.")
+    if urllib.parse.urlsplit(VERIFY_URL).scheme.lower() not in {"http", "https"}:
+        raise RecaptchaError("Endpoint de reCAPTCHA inválido.")
 
     payload = {"secret": secret, "response": token}
     if remote_ip:
@@ -56,7 +58,7 @@ def verify_recaptcha_response(token, remote_ip=None):
         method="POST",
     )
     try:
-        with urllib.request.urlopen(request, timeout=5) as response:
+        with urllib.request.urlopen(request, timeout=5) as response:  # nosec B310
             result = json.loads(response.read().decode())
     except (urllib.error.URLError, json.JSONDecodeError) as exc:
         raise RecaptchaError("Não foi possível validar o reCAPTCHA. Tente novamente.") from exc

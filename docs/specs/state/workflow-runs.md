@@ -45,6 +45,30 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Retomada: quando production access for aprovado, ativar `GOTRENDLABS_SES_PRODUCTION_ACCESS=1`, revisar allowlist e validar envio real para destinatário operacional
 - Reversão lógica: desativar `email_enabled`, parar o daemon de envio ou marcar templates inativos, preservando outbox para auditoria
 
+## WFLOW-20260606-SECURITY-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AUTH-001`, `FEAT-OPSLOG-001`, `FEAT-MARKET-001`, `infra-deploy-mvp`
+- Objetivo: executar auditoria local de seguranca e endurecer endpoints publicos, redirects, uploads Admin Ops, headers de media e defaults de producao sem alterar regras funcionais de dominio
+- Etapa atual: concluido; auditoria local registrada em `docs/security-audit-2026-06-06.md`, hardening aplicado, specs/state alinhados e `.env.prod.example` explicita `GOTRENDLABS_RATE_LIMITS_ENABLED=1`
+- Artefatos afetados:
+  - `backend_api/main.py`
+  - `config/settings.py`
+  - `accounts/`, `core/views.py`, `markets/views.py`
+  - `admin_ops/views.py`
+  - `deploy/production/Caddyfile`, `.env.prod.example`, `deploy/production/README.md`
+  - `tests/test_web_smoke.py`
+  - `docs/security-audit-2026-06-06.md`
+  - `docs/specs/state/`
+- Bloqueios: atualizacao de dependencias vulneraveis segue pendente porque o indice local de pacotes ainda nao disponibiliza versoes corrigidas de Pillow/Starlette/python-dotenv
+- Iniciado em: 2026-06-06
+- Atualizado em: 2026-06-06
+- Encerrado em: 2026-06-06
+- Retomada: substituir rate limit em memoria por store distribuido quando houver multiplas instancias, atualizar dependencias assim que o indice permitir e acompanhar alertas de scanner no CI
+- Reversão lógica: desligar temporariamente `GOTRENDLABS_RATE_LIMITS_ENABLED=0` apenas em contingencia, manter `DJANGO_DEBUG=0` e reverter validacao de upload/redirects somente por PR corretiva com teste
+- Evidências de validação: `manage.py check`, `check --deploy` com variaveis de producao, `tests.test_web_smoke.SecurityHardeningTests` com 7 testes OK, suite `tests.test_web_smoke --keepdb` com 150 testes OK, Bandit sem achados High e `pip-audit` registrando pendencias de pacote sem versao corrigida disponivel no indice local
+
 ## Modelo
 
 ```md

@@ -8,11 +8,19 @@
 	encode gzip
 
 	handle_path /static/* {
+		header {
+			X-Content-Type-Options nosniff
+		}
 		root * /srv/static
 		file_server
 	}
 
 	handle_path /media/* {
+		header {
+			X-Content-Type-Options nosniff
+			Content-Security-Policy "default-src 'none'; img-src 'self' data:; media-src 'self'; style-src 'unsafe-inline'; sandbox"
+			Cache-Control "public, max-age=3600"
+		}
 		root * /srv/media
 		file_server
 	}
