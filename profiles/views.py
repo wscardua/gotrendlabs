@@ -2,6 +2,7 @@ from django.shortcuts import redirect, render
 
 from accounts.api_client import AuthAPIError, get_activity, get_badge_catalog, get_badges, get_me, get_rankings, request_account_deletion, update_me
 from accounts.forms import ProfileForm
+from accounts.referrals import referral_card_context
 from accounts.session import api_login_required
 from accounts.session import auth_token, auth_user, clear_auth_session, is_authenticated, store_auth_session
 
@@ -106,6 +107,7 @@ def profile(request):
             "profile_success": profile_success,
             "badges": badges,
             "activity": activity,
+            "referral": referral_card_context(request, token),
         },
     )
 

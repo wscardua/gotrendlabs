@@ -17,7 +17,7 @@
     <table class="table">
       <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>GT₵</th></tr>
       {% for row in entries %}
-        <tr><td>{{ row.created_at|slice:":10" }}</td><td>{{ row.description }}</td><td>{{ row.entry_type }}</td><td>{{ row.direction }} {{ row.amount }} GT₵</td></tr>
+        <tr><td>{{ row.created_at|slice:":10" }}</td><td>{{ row.description }}</td><td>{{ row.entry_type_label|default:row.entry_type }}</td><td>{{ row.direction_label|default:row.direction }} {{ row.amount }} GT₵</td></tr>
       {% empty %}
         <tr><td colspan="4">Nenhum lançamento encontrado.</td></tr>
       {% endfor %}
@@ -34,6 +34,7 @@
     {% endif %}
   </section>
   <aside class="side-stack">
+    {% include "components/referral_card.html" %}
     <div class="side-card recharge-card">
       <div class="recharge-card-head">
         <div>

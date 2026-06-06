@@ -5,6 +5,8 @@ from ipaddress import ip_address as parse_ip_address
 import os
 import json
 import re
+import secrets
+import string
 import time
 from typing import Optional
 import unicodedata
@@ -77,6 +79,7 @@ from backend_api.schemas import (
     QueueReviewPayload,
     RankingResponse,
     RegisterPayload,
+    ReferralResponse,
     SessionContextResponse,
     SuggestionRewardPayload,
     SystemLogListResponse,
@@ -778,6 +781,165 @@ def _record_wallet_entry(
                 },
                 idempotency_key=f"wallet.credited:{user_id}:{entry_id}",
             )
+    return entry_id
+
+
+REFERRAL_CODE_ALPHABET = string.ascii_uppercase + string.digits
+
+LEDGER_ENTRY_TYPE_LABELS = {
+    "grant_initial": "Crédito inicial",
+    "prediction_stake_lock": "Crédito reservado",
+    "prediction_refund": "Crédito devolvido",
+    "prediction_payout": "Ganho por acerto",
+    "prediction_loss": "Previsão encerrada",
+    "prediction_payout_reversal": "Estorno de ganho",
+    "prediction_resolution_relock": "Crédito reservado novamente",
+    "manual_adjustment": "Ajuste administrativo",
+    "reward_feedback": "Recompensa por feedback",
+    "reward_suggestion": "Recompensa por sugestão",
+    "reward_referral": "Bônus por indicação",
+    "educational_recharge": "Recarga educativa",
+}
+
+LEDGER_DIRECTION_LABELS = {
+    "credit": "Entrada",
+    "debit": "Saída",
+    "lock": "Reserva",
+    "release": "Liberação",
+    "settle": "Baixa",
+}
+
+
+def _humanize_code(value):
+    return " ".join(part for part in (value or "").replace("_", " ").split()).capitalize()
+
+
+def _ledger_entry_response(row):
+    entry_type = row["entry_type"]
+    direction = row["direction"]
+    return {
+        "entry_id": row["id"],
+        "entry_type": entry_type,
+        "entry_type_label": LEDGER_ENTRY_TYPE_LABELS.get(entry_type, _humanize_code(entry_type)),
+        "amount": row["amount"],
+        "direction": direction,
+        "direction_label": LEDGER_DIRECTION_LABELS.get(direction, _humanize_code(direction)),
+        "description": row["description"],
+        "reference_type": row["reference_type"],
+        "reference_id": row["reference_id"],
+        "created_at": row["created_at"].isoformat(),
+        "created_by": row["created_by_id"],
+    }
+
+
+def _normalize_referral_code(value):
+    return re.sub(r"[^A-Z0-9]", "", (value or "").strip().upper())[:32]
+
+
+def _new_referral_code():
+    return "".join(secrets.choice(REFERRAL_CODE_ALPHABET) for _ in range(10))
+
+
+def _site_referral_bonus(cursor):
+    cursor.execute("SELECT referral_bonus_gtl FROM gotrendlabs_site_config WHERE singleton_key = 1")
+    row = cursor.fetchone()
+    return int(row["referral_bonus_gtl"] if row and row["referral_bonus_gtl"] is not None else 200)
+
+
+def _is_referral_eligible_user(user):
+    return bool(
+        user
+        and user.get("account_status") == "active"
+        and not user.get("is_bot")
+    )
+
+
+def _ensure_referral_code(cursor, user):
+    if not _is_referral_eligible_user(user):
+        return ""
+    cursor.execute("SELECT code FROM gotrendlabs_referral_codes WHERE referrer_id = %s", (user["id"],))
+    row = cursor.fetchone()
+    if row:
+        return row["code"]
+    for _attempt in range(20):
+        code = _new_referral_code()
+        cursor.execute(
+            """
+            INSERT INTO gotrendlabs_referral_codes (referrer_id, code, created_at, updated_at)
+            VALUES (%s, %s, %s, %s)
+            ON CONFLICT DO NOTHING
+            RETURNING code
+            """,
+            (user["id"], code, datetime.now(timezone.utc), datetime.now(timezone.utc)),
+        )
+        row = cursor.fetchone()
+        if row:
+            return row["code"]
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Não foi possível criar código de indicação.")
+
+
+def _referral_response(cursor, user):
+    bonus_gtl = _site_referral_bonus(cursor)
+    if not _is_referral_eligible_user(user):
+        return {"code": "", "bonus_gtl": bonus_gtl, "enabled": False, "reason": "Indicação bonificada disponível apenas para usuários ativos."}
+    if bonus_gtl <= 0:
+        return {"code": "", "bonus_gtl": 0, "enabled": False, "reason": "Bônus de indicação desativado no Admin Ops."}
+    code = _ensure_referral_code(cursor, user)
+    return {"code": code, "bonus_gtl": bonus_gtl, "enabled": True, "reason": "Compartilhe seu link para receber GT₵ quando a pessoa criar conta."}
+
+
+def _award_referral_bonus(cursor, referral_code, invitee_id):
+    code = _normalize_referral_code(referral_code)
+    if not code:
+        return None
+    reward_gtl = _site_referral_bonus(cursor)
+    if reward_gtl <= 0:
+        return None
+    cursor.execute(
+        """
+        SELECT u.id, u.username, u.first_name, u.email, u.preferred_language, u.date_joined, u.last_login,
+               u.account_status, u.is_staff, u.is_superuser, u.is_bot, u.email_confirmed_at
+        FROM gotrendlabs_referral_codes c
+        JOIN gotrendlabs_users u ON u.id = c.referrer_id
+        WHERE upper(c.code) = %s
+          AND u.is_active = true
+          AND u.account_status = 'active'
+        """,
+        (code,),
+    )
+    referrer = cursor.fetchone()
+    if not _is_referral_eligible_user(referrer) or referrer["id"] == invitee_id:
+        return None
+    cursor.execute(
+        """
+        INSERT INTO gotrendlabs_referral_rewards (referrer_id, invitee_id, reward_gtl, ledger_entry_id, rewarded_at, created_at)
+        VALUES (%s, %s, %s, NULL, NULL, %s)
+        ON CONFLICT (invitee_id) DO NOTHING
+        RETURNING id
+        """,
+        (referrer["id"], invitee_id, reward_gtl, datetime.now(timezone.utc)),
+    )
+    reward = cursor.fetchone()
+    if not reward:
+        return None
+    entry_id = _record_wallet_entry(
+        cursor,
+        referrer["id"],
+        entry_type="reward_referral",
+        amount=reward_gtl,
+        direction="credit",
+        description="Bônus por indicação validada",
+        reference_type="referral_reward",
+        reference_id=str(reward["id"]),
+    )
+    cursor.execute(
+        """
+        UPDATE gotrendlabs_referral_rewards
+        SET ledger_entry_id = %s, rewarded_at = %s
+        WHERE id = %s
+        """,
+        (entry_id, datetime.now(timezone.utc), reward["id"]),
+    )
     return entry_id
 
 
@@ -1566,20 +1728,7 @@ def _ledger_entries(cursor, user_id, limit=10):
         """,
         (user_id, limit),
     )
-    return [
-        {
-            "entry_id": row["id"],
-            "entry_type": row["entry_type"],
-            "amount": row["amount"],
-            "direction": row["direction"],
-            "description": row["description"],
-            "reference_type": row["reference_type"],
-            "reference_id": row["reference_id"],
-            "created_at": row["created_at"].isoformat(),
-            "created_by": row["created_by_id"],
-        }
-        for row in cursor.fetchall()
-    ]
+    return [_ledger_entry_response(row) for row in cursor.fetchall()]
 
 
 def _admin_user_detail(cursor, user_id):
@@ -2481,6 +2630,47 @@ def _taxonomy_response(cursor):
     return {"categories": categories}
 
 
+def _public_taxonomy_response(cursor):
+    taxonomy = _taxonomy_response(cursor)
+    categories = []
+    for category in taxonomy["categories"]:
+        if category.get("is_blocked"):
+            continue
+        categories.append(
+            {
+                **category,
+                "subcategories": [
+                    {
+                        **subcategory,
+                        "events": [event for event in subcategory.get("events", []) if not event.get("is_blocked")],
+                    }
+                    for subcategory in category.get("subcategories", [])
+                    if not subcategory.get("is_blocked")
+                ],
+            }
+        )
+    return {"categories": categories}
+
+
+def _suggestion_category_name(cursor, category_value):
+    value = (category_value or "").strip()
+    if not value:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Categoria é obrigatória.")
+    cursor.execute(
+        """
+        SELECT name
+        FROM gotrendlabs_market_categories
+        WHERE is_blocked = false
+          AND (lower(name) = lower(%s) OR lower(slug) = lower(%s))
+        """,
+        (value, value),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Selecione uma categoria ativa cadastrada.")
+    return row["name"]
+
+
 def _ranking_categories(cursor):
     cursor.execute(
         """
@@ -2876,6 +3066,13 @@ def list_badges(authorization: str = Header(default="")):
             return {"badges": _badge_rows(cursor, user_id=viewer["id"] if viewer else None)}
 
 
+@app.get("/taxonomy", response_model=AdminTaxonomyResponse)
+def get_public_taxonomy():
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            return _public_taxonomy_response(cursor)
+
+
 @app.post("/markets/{slug}/comments", response_model=CommentResponse, status_code=status.HTTP_201_CREATED)
 def create_comment(slug: str, payload: CommentCreatePayload, authorization: str = Header(default="")):
     with get_connection() as connection:
@@ -3151,6 +3348,7 @@ def create_suggestion(payload: MarketSuggestionPayload, request: Request, author
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
             if not user:
                 _ensure_recaptcha(payload.recaptcha_token, request)
+            category_name = _suggestion_category_name(cursor, payload.category)
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
@@ -3165,7 +3363,7 @@ def create_suggestion(payload: MarketSuggestionPayload, request: Request, author
                     "" if user else payload.guest_name.strip(),
                     "" if user else str(payload.guest_email or "").lower(),
                     payload.question.strip(),
-                    payload.category.strip(),
+                    category_name,
                     payload.subcategory.strip(),
                     payload.kind,
                     payload.suggested_source.strip(),
@@ -5570,7 +5768,7 @@ def register(payload: RegisterPayload, request: Request):
                 raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email já está em uso.")
 
             now = datetime.now(timezone.utc)
-            cursor.execute("SELECT email_enabled FROM gotrendlabs_site_config WHERE singleton_key = 1")
+            cursor.execute("SELECT email_enabled, referral_bonus_gtl FROM gotrendlabs_site_config WHERE singleton_key = 1")
             site_config = cursor.fetchone()
             email_confirmation_required = bool(site_config and site_config["email_enabled"])
             handle = _unique_handle(cursor, payload.display_name)
@@ -5599,6 +5797,7 @@ def register(payload: RegisterPayload, request: Request):
             )
             user = cursor.fetchone()
             _ensure_user_core(cursor, user["id"], display_name=payload.display_name.strip())
+            _award_referral_bonus(cursor, payload.referral_code, user["id"])
             session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "register", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
             if email_confirmation_required:
@@ -6019,21 +6218,16 @@ def get_my_ledger(authorization: str = Header(default="")):
                 """,
                 (user["id"],),
             )
-            entries = [
-                {
-                    "entry_id": row["id"],
-                    "entry_type": row["entry_type"],
-                    "amount": row["amount"],
-                    "direction": row["direction"],
-                    "description": row["description"],
-                    "reference_type": row["reference_type"],
-                    "reference_id": row["reference_id"],
-                    "created_at": row["created_at"].isoformat(),
-                    "created_by": row["created_by_id"],
-                }
-                for row in cursor.fetchall()
-            ]
+            entries = [_ledger_entry_response(row) for row in cursor.fetchall()]
             return {"wallet": wallet, "entries": entries}
+
+
+@app.get("/users/me/referral", response_model=ReferralResponse)
+def get_my_referral(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _referral_response(cursor, user)
 
 
 @app.get("/users/me/badges", response_model=list[BadgeResponse])

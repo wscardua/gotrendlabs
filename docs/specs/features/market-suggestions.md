@@ -122,6 +122,8 @@ Itens enviados entram na fila operacional para revisão por staff.
 - medir volume, taxa de aproveitamento, backlog, itens recompensados e conversões em rascunho
 - registrar ações administrativas em `gotrendlabs_admin_events`: `suggestion.review`, `suggestion.convert_draft`, `suggestion.reward`, `feedback.review`, `feedback.reward`
 - eventos de domínio `suggestion.submitted` e `feedback.submitted` permanecem previstos; emissão assíncrona dedicada fica pendente
+- tela pública/autenticada de sugestão deve carregar categorias ativas da taxonomia administrada; categorias bloqueadas não aparecem no formulário
+- backend deve rejeitar sugestão com categoria inexistente ou bloqueada, preservando a categoria canônica no item de fila
 
 ## Testes esperados
 

@@ -1,0 +1,21 @@
+{% if referral.enabled %}
+<div class="side-card referral-card">
+  <div class="referral-card-head">
+    <div>
+      <span class="recharge-label">Indicação</span>
+      <h3>Convide alguém</h3>
+    </div>
+    <div class="referral-token" aria-hidden="true">GT₵</div>
+  </div>
+  <p class="recharge-copy">Compartilhe seu link. Quando a pessoa criar conta por ele, você recebe bônus educativo na carteira.</p>
+  <div class="referral-bonus">
+    <span>Bônus atual</span>
+    <strong>{{ referral.bonus_gtl }} GT₵</strong>
+  </div>
+  <div class="referral-link-box" aria-label="Link de indicação">{{ referral.url }}</div>
+  <div class="referral-actions">
+    <button class="btn primary" type="button" data-copy-share data-share-text="{{ referral.url }}">Copiar link</button>
+    <button class="btn ghost" type="button" data-share-native data-share-title="GoTrendLabs" data-share-text="Participe da GoTrendLabs comigo." data-share-url="{{ referral.url }}">Compartilhar</button>
+  </div>
+</div>
+{% endif %}

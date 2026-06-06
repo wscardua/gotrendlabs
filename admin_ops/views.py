@@ -676,7 +676,10 @@ def config(request):
     )
     economy_form = EconomyConfigForm(
         request.POST or None,
-        initial={"wallet_recharge_min_balance_gtl": site_config.wallet_recharge_min_balance_gtl},
+        initial={
+            "wallet_recharge_min_balance_gtl": site_config.wallet_recharge_min_balance_gtl,
+            "referral_bonus_gtl": site_config.referral_bonus_gtl,
+        },
         prefix="economy",
     )
     daemon_form = DaemonConfigForm(
@@ -733,6 +736,7 @@ def config(request):
         for field, value in email_form.cleaned_data.items():
             setattr(site_config, field, value)
         site_config.wallet_recharge_min_balance_gtl = economy_form.cleaned_data["wallet_recharge_min_balance_gtl"]
+        site_config.referral_bonus_gtl = economy_form.cleaned_data["referral_bonus_gtl"]
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]

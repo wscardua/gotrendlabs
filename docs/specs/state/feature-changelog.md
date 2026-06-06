@@ -8,6 +8,20 @@
 - Cards de mercado passaram a expor fechamento em formato legível e a normalizar labels ISO vindos da API/fallback local.
 - Auditoria IA no Admin Ops passou a explicar tipo, status e motivo no browse e detalhe, preservando códigos técnicos no detalhe operacional.
 
+## 2026-06-06 — FEAT-AUTH-001 / FEAT-WALLET-001 indicação bonificada
+
+- Cadastro FastAPI passou a aceitar `referral_code` opcional e creditar `reward_referral` ao indicador comum ativo quando a conta convidada é criada por código válido.
+- Criadas tabelas `gotrendlabs_referral_codes` e `gotrendlabs_referral_rewards` para código estável, recompensa idempotente por convidado e vínculo com ledger.
+- Admin Ops Config ganhou `referral_bonus_gtl`, com default `200 GT₵` e valor `0` como bônus desativado.
+- Carteira e perfil autenticado passaram a renderizar card contextual de indicação com link copiável/compartilhável; compartilhamentos de mercado/resultado por usuário logado podem carregar `ref`.
+- Django captura `?ref=` em sessão e preserva o código até o cadastro, sem criar página isolada de convite.
+
+## 2026-06-06 — FEAT-SUGGEST-001 taxonomia na sugestão
+
+- Tela pública/autenticada de sugerir mercado passou a carregar categorias ativas da taxonomia administrada em Admin Ops, com fallback local de desenvolvimento.
+- FastAPI passou a expor `GET /taxonomy` sem exigir staff, retornando apenas taxonomia ativa para formulários públicos.
+- `POST /suggestions` passou a validar a categoria contra categorias ativas cadastradas e preservar o nome canônico no item da fila editorial.
+
 ## 2026-06-05 — FEAT-AUTH-001 navegação administrativa
 
 - Entrada administrativa no chip do usuário passou de `Admin` para `Painel Administrativo`, aparece como primeira ação para staff/superusers e recebe sinalização visual própria de acesso restrito.

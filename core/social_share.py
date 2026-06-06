@@ -53,7 +53,7 @@ def build_share_context(request, *, kind, title, description, text, image_view_n
     }
 
 
-def market_share_context(request, market):
+def market_share_context(request, market, query=None):
     title = str(market.get("title", "Mercado GoTrendLabs"))
     volume_label = currency_label(market.get("volume_gtl", 0))
     description = (
@@ -69,10 +69,11 @@ def market_share_context(request, market):
         text=text,
         image_view_name="share-market-image",
         image_args=[market.get("slug")],
+        query=query,
     )
 
 
-def result_share_context(request, market, viewer):
+def result_share_context(request, market, viewer, query=None):
     if viewer.get("is_authenticated"):
         title = f"{viewer.get('name', 'Usuario')} compartilhou um resultado no GoTrendLabs."
         description = (
@@ -92,6 +93,7 @@ def result_share_context(request, market, viewer):
         text=text,
         image_view_name="share-result-image",
         image_args=[market.get("slug")],
+        query=query,
     )
 
 

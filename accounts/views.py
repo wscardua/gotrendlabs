@@ -8,6 +8,7 @@ from django.utils.dateparse import parse_datetime
 from accounts.api_client import AuthAPIError, confirm_email, confirm_password_reset, get_markets, get_session, login_user, logout_user, register_user, request_password_reset, resend_email_confirmation
 from accounts.forms import LoginForm, PasswordResetConfirmForm, PasswordResetRequestForm, RegisterForm
 from accounts.session import USER_KEY, auth_token, clear_auth_session, is_authenticated, store_auth_session
+from core.middleware import ReferralCaptureMiddleware
 from core.domain_client import local_markets
 
 
@@ -92,7 +93,8 @@ def login_view(request):
 def register_view(request):
     if is_authenticated(request):
         return redirect("home")
-    form = RegisterForm(request.POST or None)
+    referral_code = request.session.get(ReferralCaptureMiddleware.SESSION_KEY, "")
+    form = RegisterForm(request.POST or None, initial={"referral_code": referral_code})
     if request.method == "POST" and form.is_valid():
         payload = form.cleaned_data.copy()
         payload["recaptcha_token"] = request.POST.get("g-recaptcha-response", "")
@@ -106,6 +108,7 @@ def register_view(request):
         except forms.ValidationError as exc:
             form.add_error(None, exc)
         else:
+            request.session.pop(ReferralCaptureMiddleware.SESSION_KEY, None)
             store_auth_session(request, response)
             return redirect("home")
     return render(
@@ -116,6 +119,7 @@ def register_view(request):
             "recaptcha_enabled": settings.RECAPTCHA_ENABLED,
             "recaptcha_site_key": settings.RECAPTCHA_SITE_KEY,
             "signup_market": _popular_signup_market(),
+            "referral_code": referral_code,
         },
     )
 

@@ -36,6 +36,7 @@ class RegisterForm(forms.Form):
     language = forms.ChoiceField(label="Idioma", choices=(("pt-br", "PT-BR"), ("en", "EN")))
     password = forms.CharField(label="Senha", widget=forms.PasswordInput)
     terms_accepted = forms.BooleanField(label="Aceito a política de uso", required=True)
+    referral_code = forms.CharField(required=False, max_length=32, widget=forms.HiddenInput)
 
     def clean_email(self):
         return self.cleaned_data["email"]

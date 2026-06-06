@@ -52,6 +52,7 @@
 - Páginas públicas fora da home devem expor retorno compacto `← Voltar` dentro do primeiro painel de conteúdo, na mesma linha do primeiro rótulo/eyebrow/tags; quando houver origem local confiável, volta para a página chamadora, com fallback para o feed.
 - O rodapé público deve priorizar Institucional, Produto, Confiança e Suporte; links de conta, mercados recorrentes e Admin Ops pertencem à navegação principal ou ao chip autenticado.
 - A navegação pública principal deve expor `Sugerir mercado` para visitantes e usuários autenticados, apontando para o fluxo de sugestão existente com suporte a envio guest.
+- A tela de sugestão deve carregar categorias a partir de `GET /taxonomy` e renderizar somente categorias ativas; Django pode usar fallback local read-only da mesma taxonomia em desenvolvimento.
 - A entrada de Admin Ops no chip do usuário só pode renderizar quando o contexto autenticado indicar `is_staff` ou `is_superuser`.
 - Em desenvolvimento local, a camada Django pode degradar para leitura local quando a FastAPI ainda não foi reiniciada após mudança de rota, mas não deve criar, moderar, reagir, creditar, converter, resolver ou executar qualquer mutação crítica localmente.
 - Em fallback local de sugestão/feedback guest, o Django deve validar reCAPTCHA server-side antes de persistir localmente.
@@ -61,6 +62,8 @@
 - A tela autenticada de perfil deve preencher campos com dados reais retornados por `/users/me`, priorizando `gotrendlabs_user_profiles.display_name` para o nome editável.
 - A tela autenticada de perfil deve renderizar o prefixo `@` do identificador como parte fixa da UI, permitindo edição apenas do nome do handle e enviando valor normalizado ao backend.
 - A UI de perfil não deve exibir dados privados em blocos públicos/resumo; email, data de nascimento, sexo e bio aparecem somente como campos editáveis do usuário autenticado.
+- A indicação bonificada deve aparecer como componente contextual na carteira e no perfil autenticado, usando o código retornado por `/users/me/referral`; a UI não calcula elegibilidade nem concede bônus.
+- Quando um visitante chega com `?ref=...`, o Django pode preservar o código em sessão e enviá-lo no cadastro; links sociais de mercado/resultado para usuário autenticado podem carregar `ref`, mas a validação e crédito permanecem no backend.
 - O ticket de previsão deve iniciar sem opção marcada, orientar a seleção explícita e usar controle nativo obrigatório para impedir confirmação ambígua.
 - Usuário autenticado sem saldo disponível deve ver o ticket em estado de leitura, com indicação de saldo indisponível e CTA para wallet.
 - A página pública de badges renderiza o catálogo vindo da API; quando houver sessão, exibe estado pessoal retornado pelo domínio sem calcular elegibilidade no template.

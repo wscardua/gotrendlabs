@@ -29,8 +29,10 @@
 - `entry_id`
 - `user_id`
 - `entry_type`
+- `entry_type_label`
 - `amount`
 - `direction`
+- `direction_label`
 - `reference_type`
 - `reference_id`
 - `created_at`
@@ -47,6 +49,7 @@
 ## Regras
 
 - O saldo exibido deve ser conciliável com o ledger.
+- Contratos de leitura para usuário final devem expor `entry_type_label` e `direction_label` em linguagem clara, preservando `entry_type` e `direction` para rastreabilidade técnica.
 - Leituras frequentes de saldo devem usar `gotrendlabs_wallet_balances`.
 - Em caso de divergência, `gotrendlabs_wallet_ledger` vence e a projeção deve ser reconstruída.
 - Ajustes manuais exigem operador e justificativa.

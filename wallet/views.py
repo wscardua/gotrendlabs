@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.shortcuts import redirect, render
 
 from accounts.api_client import AuthAPIError, create_wallet_recharge_request, get_ledger, get_me, get_wallet_recharge_requests
+from accounts.referrals import referral_card_context
 from accounts.session import api_login_required
 from accounts.session import auth_token
 from admin_ops.models import SiteConfig
@@ -58,6 +59,7 @@ def wallet_home(request):
         "pending_recharge_request": next((item for item in recharge_requests if item.get("status") == "pending"), None),
         "recharge_min_balance": recharge_min_balance,
         "recharge_eligible": recharge_eligible,
+        "referral": referral_card_context(request, token),
     }
     return render(request, "wallet/wallet.html", context)
 

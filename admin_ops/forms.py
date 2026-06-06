@@ -62,6 +62,12 @@ class EconomyConfigForm(forms.Form):
         max_value=1000000,
         initial=100,
     )
+    referral_bonus_gtl = forms.IntegerField(
+        label="Bônus por indicação validada",
+        min_value=0,
+        max_value=1000000,
+        initial=200,
+    )
 
 
 class DaemonConfigForm(forms.Form):

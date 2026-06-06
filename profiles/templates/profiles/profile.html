@@ -66,6 +66,7 @@
   </section>
   <aside class="side-stack">
     <div class="side-card"><h3>Histórico recente</h3>{% for item in activity %}<p>{{ item.title }}</p>{% empty %}<p>Nenhuma atividade recente.</p>{% endfor %}{% if not can_access_admin_ops %}<a class="btn primary" href="{% url 'share-result' 'tiktok-resolvido-2026' %}">Compartilhar previsão</a>{% endif %}</div>
+    {% include "components/referral_card.html" %}
     <div class="side-card account-delete-card"><h3>Excluir conta</h3><p>A exclusão é lógica: o histórico é preservado para auditoria, mas login e uso normal ficam bloqueados.</p><form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_account"><label><input type="checkbox" name="confirm_delete"> Confirma a exclusão da minha conta</label><button class="btn danger" type="submit">Excluir conta</button></form></div>
   </aside>
 </main>
