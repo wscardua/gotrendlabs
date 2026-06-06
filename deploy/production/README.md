@@ -196,6 +196,7 @@ O daemon de `communications` tambem aplica essa fronteira no app:
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.
+- O container `daemon` roda `run_gotrendlabs_daemon` a cada 300 segundos; mantenha os limites do Dashboard Admin Ops com folga operacional, por padrão 7 minutos para `Atrasado` e 21 minutos para `Sem sinal`.
 - O RDS deve aceitar `5432` somente a partir do security group da EC2.
 - O acesso administrativo ao banco deve usar tunel SSM pela EC2, nao public access no RDS.
 - A role OIDC do GitHub Actions esta restrita ao repositorio `wscardua/gotrendlabs` e ao branch `main`.

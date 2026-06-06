@@ -3743,8 +3743,8 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             daemon_status = daemon_dashboard_status(
                 cursor,
                 now=now,
-                stale_after_minutes=int(site_config["daemon_stale_after_minutes"] or 5) if site_config else 5,
-                missing_after_minutes=int(site_config["daemon_missing_after_minutes"] or 15) if site_config else 15,
+                stale_after_minutes=int(site_config["daemon_stale_after_minutes"] or 7) if site_config else 7,
+                missing_after_minutes=int(site_config["daemon_missing_after_minutes"] or 21) if site_config else 21,
             )
             ai_health = ai_health_summary(cursor, now=now)
             return {

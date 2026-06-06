@@ -63,7 +63,7 @@
 - `GET /health` deve permanecer disponível como healthcheck público read-only e pode ser consumido pelo Admin Ops para indicar se a Backend API está online, sem autenticação e sem efeitos colaterais.
 - O resumo do Dashboard deve usar somente agregações SQL/contagens e janela fixa de 7 dias para métricas recentes, sem recalcular reputação, payout, probabilidade ou regras de domínio.
 - O bloco `system` deve refletir manutenção via JSON runtime, SMTP via `gotrendlabs_site_config` mais segredo em ambiente, reCAPTCHA por ambiente, logs técnicos recentes por severidade e status do daemon por heartbeat recente.
-- Status do daemon deve usar `gotrendlabs_site_config.daemon_stale_after_minutes` para `Atrasado` e `gotrendlabs_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `5` e `15` quando a configuração não existir.
+- Status do daemon deve usar `gotrendlabs_site_config.daemon_stale_after_minutes` para `Atrasado` e `gotrendlabs_site_config.daemon_missing_after_minutes` para `Sem sinal`, com defaults `7` e `21` quando a configuração não existir.
 - `GET /stats` deve expor métricas públicas de leitura para a home, incluindo mercados abertos, previsões totais, `GT₵` distribuídas e `GT₵` movimentadas, sem efeitos colaterais.
 - `distributed_gtl` em `/stats` é agregado a partir de créditos do ledger de wallet de usuários comuns, excluindo `staff` e `superuser`; `moved_gtl` é agregado a partir de stakes de previsões registradas.
 - Respostas públicas de moeda podem entregar labels prontos para apresentação com `GT₵`, preservando nomes técnicos `_gtl` nos contratos.

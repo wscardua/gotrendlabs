@@ -38,7 +38,7 @@
 - Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.
 - Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP, reCAPTCHA e status do daemon; não recalculam reputação, payout, probabilidade ou regra de domínio.
 - Dashboard exibe o daemon como `Ativo`, `Atrasado` ou `Sem sinal` a partir do heartbeat calculado pela FastAPI, sem consultar processos locais no Django.
-- Limites de status do daemon são configurados em Admin Ops Config por `daemon_stale_after_minutes` e `daemon_missing_after_minutes`; o limite de sem sinal deve ser maior que o limite de atraso.
+- Limites de status do daemon são configurados em Admin Ops Config por `daemon_stale_after_minutes` e `daemon_missing_after_minutes`; o limite de sem sinal deve ser maior que o limite de atraso, com defaults de 7 e 21 minutos para a cadência de produção de 300 segundos.
 - Dashboard deve manter contraste legível em modo escuro para KPIs, blocos de saúde, linhas métricas, tabelas e alertas.
 - Mercado e taxonomia possuem primeira fatia real via FastAPI/Postgres.
 - Endpoints administrativos cobrem listagem, criação, edição, publicação e cancelamento lógico de mercados.

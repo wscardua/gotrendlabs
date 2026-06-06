@@ -2,6 +2,7 @@
 
 ## 2026-06-06
 
+- registrada evolução de `FEAT-OPSLOG-001` para daemon de produção com intervalo de 300 segundos e defaults de saúde 7/21 minutos no Dashboard Admin Ops.
 - registrada evolução de `FEAT-SUGGEST-001` para categoria de sugestão baseada na taxonomia ativa administrada, endpoint público `GET /taxonomy` e validação backend contra categoria inexistente/bloqueada.
 - registrada evolução de `FEAT-AUTH-001` e `FEAT-WALLET-001` para indicação bonificada com código opcional no cadastro, ledger `reward_referral`, configuração `referral_bonus_gtl` no Admin Ops e UI contextual em carteira/perfil.
 - registrada evolução de `FEAT-AUTH-001` para prefixo `@` fixo no identificador editável e retorno contextual `← Voltar` com fallback seguro.
