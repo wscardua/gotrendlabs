@@ -255,8 +255,8 @@ def import_site_config(data, admin):
         singleton_key=payload.get("singleton_key", 1),
         defaults={
             "wallet_recharge_min_balance_gtl": payload.get("wallet_recharge_min_balance_gtl", 100),
-            "daemon_stale_after_minutes": payload.get("daemon_stale_after_minutes", 5),
-            "daemon_missing_after_minutes": payload.get("daemon_missing_after_minutes", 15),
+            "daemon_stale_after_minutes": payload.get("daemon_stale_after_minutes", 7),
+            "daemon_missing_after_minutes": payload.get("daemon_missing_after_minutes", 21),
             "email_enabled": payload.get("email_enabled", False),
             "smtp_host": payload.get("smtp_host", ""),
             "smtp_port": payload.get("smtp_port", 587),

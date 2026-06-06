@@ -75,13 +75,13 @@ class DaemonConfigForm(forms.Form):
         label="Minutos até status atrasado",
         min_value=1,
         max_value=1440,
-        initial=5,
+        initial=7,
     )
     daemon_missing_after_minutes = forms.IntegerField(
         label="Minutos até status sem sinal",
         min_value=2,
         max_value=10080,
-        initial=15,
+        initial=21,
     )
 
     def clean(self):

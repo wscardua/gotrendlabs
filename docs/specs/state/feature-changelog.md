@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-06-06 — FEAT-OPSLOG-001 cadência do daemon em produção
+
+- Docker Compose de produção passou a executar `run_gotrendlabs_daemon` com intervalo de 300 segundos.
+- Defaults de saúde do daemon passaram para 7 minutos até `Atrasado` e 21 minutos até `Sem sinal`, mantendo folga para ciclos de 5 minutos com IA, prune, emails e fechamento de mercados.
+- Specs de scheduler/deploy passaram a documentar a cadência operacional e os limites padrão do Dashboard Admin Ops.
+
 ## 2026-06-06 — Polimento de experiência e auditoria
 
 - Perfil autenticado passou a renderizar `@` como prefixo fixo do identificador, aceitando edição apenas do nome do handle e preservando normalização backend.
