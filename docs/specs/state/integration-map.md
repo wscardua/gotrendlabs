@@ -13,6 +13,7 @@
 - `FEAT-NOTIFY-001` depende de eventos do domínio, preferências de idioma, configuração SMTP em `gotrendlabs_site_config` e segredo de envio em ambiente/secret manager
 - `FEAT-I18N-001` é transversal às demais features
 - `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
+- `FEAT-MOBILE-001` depende de `FEAT-AUTH-001`, `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-PRED-001`, `FEAT-WALLET-001`, `FEAT-COMMENT-001`, `FEAT-REP-001` e contratos FastAPI/OpenAPI para operar como cliente mobile sem regra crítica local
 
 ## Contratos com maior reutilização
 
@@ -48,6 +49,9 @@
 - Workflow `.github/workflows/deploy.yml` roda testes em `main` e esta preparado para disparar `ops/deploy/production/deploy.sh` via SSM quando os secrets/variables do GitHub e `.env.prod` da EC2 estiverem configurados.
 - `FEAT-AIAGENT-001` integra `apps/api/backend_api/agent_services.py` ao daemon operacional, usa `gotrendlabs_site_config` para flags/limites/retenção de auditoria, `gotrendlabs_ai_agents` para personas oficiais, `gotrendlabs_ai_agent_actions` para auditoria e exclui bots de ranking/badges/reputação pública.
 - Admin Ops consome contratos staff de mercado para busca textual no browse e detalhe de participantes por mercado, mantendo Django como camada de exibição e FastAPI/backend como fonte das métricas humano/bot/total.
+- `FEAT-MOBILE-001` integra o futuro app Flutter em `apps/mobile` à FastAPI como cliente JSON, reutilizando inicialmente `GET /markets`, `GET /markets/{slug}`, `GET /taxonomy`, `GET /stats`, contratos autenticados de sessão/usuário, favoritos, curtidas, comentários, preview/criação de previsão, wallet, ranking e badges.
+- No emulador Android, o mobile consome a API local por `http://10.0.2.2:8001`; `127.0.0.1` dentro do emulador aponta para o próprio dispositivo emulado.
+- A estratégia de autenticação persistente mobile ainda é decisão pendente antes de implementar login durável, especialmente se o contrato atual estiver otimizado para cookie web.
 
 ## Skills técnicas por stack
 
@@ -55,6 +59,11 @@
 - `gotrendlabs-fastapi-domain`: domínio, contratos, autenticação, endpoints e regras centrais
 - `gotrendlabs-postgres-modeling`: modelagem relacional, ledger, integridade, índices e rastreabilidade
 - `gotrendlabs-ops-scheduler-communications`: jobs temporizados, eventos, emails, observabilidade operacional e fluxos assíncronos
+- `gotrendlabs-mobile-architect`: arquitetura Flutter, navegação, estado, ambiente Android e fronteiras mobile/FastAPI
+- `gotrendlabs-mobile-api-contract-guard`: contratos FastAPI, OpenAPI, auth, payloads e erros consumidos pelo app mobile
+- `gotrendlabs-mobile-flutter-implementer`: implementação Flutter em `apps/mobile` guiada por specs
+- `gotrendlabs-mobile-test-strategy`: testes unitários, widget, repository, integration, smoke Android e QA visual mobile
+- `gotrendlabs-mobile-ux-designer`: UX/UI dark-first, componentes, telas e aderência às referências visuais fornecidas sem cópia literal
 
 ## Skills de produto e curadoria
 
@@ -65,6 +74,7 @@
 - `gotrendlabs-workflow-governor`: abre, acompanha, retoma, bloqueia, conclui, cancela ou substitui workflows que tocam múltiplos documentos
 - `gotrendlabs-software-architect`: define arquitetura, segurança, módulos, riscos, ADRs e desenho técnico para mudanças relevantes
 - `gotrendlabs-test-engineer`: implementa, revisa e executa testes concretos de backend, frontend, contratos, integração e fluxos
+- `gotrendlabs-mobile-docs-governor`: mantém docs, status, changelog, workflow, integration map, README e memória sincronizados para mobile
 
 ## Documentos de workflow
 

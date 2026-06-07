@@ -1,5 +1,12 @@
 # Change Log de Specs
 
+## 2026-06-07
+
+- criadas specs iniciais de mobile Flutter: `mobile-flutter.md`, `mobile-api-contracts.md`, `mobile-mvp.md`, `mobile-ux.md` e `mobile-acceptance.md`.
+- registrada direção visual mobile dark-first inspirada nas imagens fornecidas pelo usuário, com cards fortes de mercado, detalhe com hero, abas `Visao geral`/`Comunidade`, bottom navigation e bottom sheets, sem copiar identidade de terceiros.
+- adicionadas skills mobile locais para arquitetura, UX, contratos API, testes, implementação Flutter e governança docs/memória.
+- atualizado status operacional, integration map, known gaps e README mobile para refletir que as specs existem, mas o projeto Flutter ainda não foi criado.
+
 ## 2026-06-06
 
 - registrada evolução de `FEAT-OPSLOG-001` para daemon de produção com intervalo de 300 segundos e defaults de saúde 7/21 minutos no Dashboard Admin Ops.
