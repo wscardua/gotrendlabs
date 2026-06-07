@@ -66,7 +66,7 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 
 ## Prompts e LLM
 
-- Template base obrigatório fica em `backend_api/agent_prompts.py`.
+- Template base obrigatório fica em `apps/api/backend_api/agent_prompts.py`.
 - Persona e estilo editáveis ficam em `gotrendlabs_ai_agents`.
 - Backend monta prompt final com template seguro, persona, mercado, comentários recentes e limites de config.
 - Responses API usa `{ai_llm_base_url}/responses` e saída estruturada JSON.

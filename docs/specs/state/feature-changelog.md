@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-06-07 — Organização da FastAPI em `apps/api`
+
+- Pacote FastAPI movido de `backend_api/` para `apps/api/backend_api/`, preservando a autoridade de domínio e sem alterar contratos funcionais.
+- Imports internos, comandos de daemon/suporte, testes e patches passaram a usar o namespace `apps.api.backend_api`.
+- Comando local passou a usar `python -m uvicorn apps.api.backend_api.main:app`; Compose de produção aponta para `uvicorn apps.api.backend_api.main:app`.
+- README, specs de arquitetura, integração e skills locais foram alinhados ao novo caminho.
+
 ## 2026-06-06 — Auditoria de seguranca local
 
 - Autenticacao/sessao passaram a ter hardening automatico em modo producao, redirects `next` validados como locais e rate limit in-memory nos endpoints publicos sensiveis.

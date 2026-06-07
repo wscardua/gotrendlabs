@@ -4,7 +4,7 @@ Fonte canônica das skills do GoTrendLabs. Essas skills orientam agentes de IA a
 
 ## Organização do repo
 
-- Os caminhos de runtime vigentes continuam no topo do repo enquanto a migração física não acontecer: `backend_api/`, apps Django, `templates/`, `static/`, `deploy/`, `docker/` e `scripts/ops/`.
+- A FastAPI vive em `apps/api/backend_api/`; apps Django, `templates/`, `static/`, `deploy/`, `docker/` e `scripts/ops/` continuam nos caminhos atuais ate suas migracoes físicas.
 - A estrutura alvo é documentada em `apps/api/`, `apps/web/`, `apps/mobile/`, `ops/` e `packages/contracts/`.
 - `apps/mobile/` é apenas reserva nesta fase; não há spec Flutter nem projeto mobile ainda.
 - `tools/skills/gotrendlabs/` permanece na raiz como ferramenta de desenvolvimento e governança do monorepo inteiro.

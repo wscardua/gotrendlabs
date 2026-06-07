@@ -16,14 +16,14 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, status
 
-from backend_api.admin_events import record_admin_event
-from backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
-from backend_api.badge_engine import BadgeAwardEngine
-from backend_api.db import get_connection
-from backend_api.daemon_services import daemon_dashboard_status
-from backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, issue_email_confirmation, public_url
-from backend_api.market_lifecycle_engine import MarketLifecycleEngine
-from backend_api.schemas import (
+from apps.api.backend_api.admin_events import record_admin_event
+from apps.api.backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
+from apps.api.backend_api.badge_engine import BadgeAwardEngine
+from apps.api.backend_api.db import get_connection
+from apps.api.backend_api.daemon_services import daemon_dashboard_status
+from apps.api.backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, issue_email_confirmation, public_url
+from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
+from apps.api.backend_api.schemas import (
     AdminCategoryPayload,
     AdminBadgeListResponse,
     AdminBadgePayload,
@@ -92,7 +92,7 @@ from backend_api.schemas import (
     WalletRechargeRequestListResponse,
     WalletRechargeRequestResponse,
 )
-from backend_api.security import check_password, hash_token, issue_token, make_password
+from apps.api.backend_api.security import check_password, hash_token, issue_token, make_password
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
 

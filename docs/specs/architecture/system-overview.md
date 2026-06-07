@@ -17,7 +17,7 @@ Definir fronteiras estáveis entre as camadas do GoTrendLabs para que a implemen
 ## Organização do monorepo
 
 - `apps/api/`, `apps/web/` e `apps/mobile/` são a estrutura alvo para organizar produtos executáveis por camada.
-- Nesta fase de fundação, o runtime continua nos caminhos atuais: `backend_api/`, apps Django no topo, `templates/`, `static/`, `deploy/`, `docker/` e `scripts/ops/`.
+- O runtime FastAPI fica em `apps/api/backend_api/`; apps Django, `templates/`, `static/`, `deploy/`, `docker/` e `scripts/ops/` continuam nos caminhos atuais ate suas migracoes próprias.
 - `apps/mobile/` fica apenas reservado; specs técnicas e projeto Flutter serão iniciados em outra feature.
 - `tools/skills/gotrendlabs/` permanece na raiz como ferramenta de governança e implementação do repositório inteiro.
 - `ops/` e `packages/contracts/` são reservas para migrações futuras de operação e contratos compartilháveis.

@@ -11,7 +11,7 @@ Use esta skill quando a tarefa principal estiver na camada de domínio e API em 
 
 Centralizar regras críticas do produto em serviços e endpoints claros, auditáveis e alinhados às specs técnicas.
 
-Nesta fase da reorganizacao, o runtime FastAPI continua em `backend_api/`; `apps/api/` e `apps/api/backend_api/` sao estrutura alvo para uma migracao futura separada.
+O runtime FastAPI vive em `apps/api/backend_api/`; use `apps.api.backend_api` para imports e `python -m uvicorn apps.api.backend_api.main:app` para execucao local.
 
 ## Fluxo padrão
 

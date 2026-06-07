@@ -27,20 +27,20 @@ from accounts.api_client import AuthAPIError, get_market as api_get_market, get_
 from accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from accounts.session import TOKEN_KEY, USER_KEY
 from admin_ops.models import SiteConfig
-from backend_api.db import get_connection
-from backend_api.db import database_config
+from apps.api.backend_api.db import get_connection
+from apps.api.backend_api.db import database_config
 from agents.models import AiAgent, AiAgentAction
-from backend_api.agent_prompts import build_comment_prompt
-from backend_api.agent_services import _safe_comment_text, ai_health_summary, run_ai_agent_cycle
-from backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
-from backend_api.badge_engine import BadgeAwardEngine
-from backend_api.daemon_services import AUTO_CANCEL_NO_HUMANS_NOTE, AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_operational_records, prune_expired_system_logs
-from backend_api.daemon_services import _locked_markets_message
-from backend_api.main import app
-from backend_api.main import _ensure_user_core
-from backend_api.main import _record_wallet_entry
-from backend_api.main import _clear_rate_limits
-from backend_api.security import hash_token, issue_token
+from apps.api.backend_api.agent_prompts import build_comment_prompt
+from apps.api.backend_api.agent_services import _safe_comment_text, ai_health_summary, run_ai_agent_cycle
+from apps.api.backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
+from apps.api.backend_api.badge_engine import BadgeAwardEngine
+from apps.api.backend_api.daemon_services import AUTO_CANCEL_NO_HUMANS_NOTE, AUTO_CLOSE_NOTE, close_due_auto_markets, daemon_dashboard_status, prune_expired_operational_records, prune_expired_system_logs
+from apps.api.backend_api.daemon_services import _locked_markets_message
+from apps.api.backend_api.main import app
+from apps.api.backend_api.main import _ensure_user_core
+from apps.api.backend_api.main import _record_wallet_entry
+from apps.api.backend_api.main import _clear_rate_limits
+from apps.api.backend_api.security import hash_token, issue_token
 from config.recaptcha import RecaptchaError
 from communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate
 from communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
@@ -1399,7 +1399,7 @@ class BackendAuthAPITests(TransactionTestCase):
         bot = User.objects.create_user(username="@gotrendlabs_ai_test", email="gotrendlabs-ai-test@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Test")
         AiAgent.objects.create(name="GoTrendLabs AI Test", agent_type="analyst", user=bot, is_active=True)
 
-        with patch("backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("llm down")):
+        with patch("apps.api.backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("llm down")):
             with get_connection() as connection:
                 with connection.cursor() as cursor:
                     summary = run_ai_agent_cycle(cursor, now=timezone.now())
@@ -1487,7 +1487,7 @@ class BackendAuthAPITests(TransactionTestCase):
         second.save(update_fields=["view_count"])
 
         with patch(
-            "backend_api.agent_services.request_market_comment",
+            "apps.api.backend_api.agent_services.request_market_comment",
             side_effect=[
                 {"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": ["thin_signal"]},
                 {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []},
@@ -1521,7 +1521,7 @@ class BackendAuthAPITests(TransactionTestCase):
         second.save(update_fields=["view_count"])
 
         with patch(
-            "backend_api.agent_services.request_market_comment",
+            "apps.api.backend_api.agent_services.request_market_comment",
             side_effect=[
                 {"comment": "eu apostei nesse mercado", "should_publish": True, "confidence": 0.5, "risk_flags": []},
                 {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.8, "risk_flags": []},
@@ -1546,7 +1546,7 @@ class BackendAuthAPITests(TransactionTestCase):
         bot = User.objects.create_user(username="@gotrendlabs_ai_timeout", email="gotrendlabs-ai-timeout@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Timeout")
         AiAgent.objects.create(name="GoTrendLabs AI Timeout", agent_type="analyst", user=bot, is_active=True)
 
-        with patch("backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("timeout")) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", side_effect=AgentLLMError("timeout")) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
@@ -1568,7 +1568,7 @@ class BackendAuthAPITests(TransactionTestCase):
         bot = User.objects.create_user(username="@gotrendlabs_ai_attempt_limit", email="gotrendlabs-ai-attempt-limit@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Attempt Limit")
         AiAgent.objects.create(name="GoTrendLabs AI Attempt Limit", agent_type="analyst", user=bot, is_active=True)
 
-        with patch("backend_api.agent_services.request_market_comment", return_value={"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": []}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
@@ -1621,7 +1621,7 @@ class BackendAuthAPITests(TransactionTestCase):
         MarketOption.objects.create(market=eligible, label="SIM", probability_exact=50, display_order=1)
         MarketOption.objects.create(market=eligible, label="NAO", probability_exact=50, display_order=2)
 
-        with patch("backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
             summary = self._run_ai_cycle_for_test(now=now)
 
         self.assertEqual(llm.call_count, 1)
@@ -1652,7 +1652,7 @@ class BackendAuthAPITests(TransactionTestCase):
             "ai_openai_timeout_seconds": 20,
             "ai_openai_max_retries": 0,
         }
-        with patch.dict(os.environ, {"AWS_BEARER_TOKEN_BEDROCK": "bedrock-test-key"}), patch("backend_api.agent_llm.httpx.post", return_value=FakeResponse()) as post:
+        with patch.dict(os.environ, {"AWS_BEARER_TOKEN_BEDROCK": "bedrock-test-key"}), patch("apps.api.backend_api.agent_llm.httpx.post", return_value=FakeResponse()) as post:
             result = request_market_comment(config=config, prompt="teste")
 
         self.assertTrue(result["should_publish"])
@@ -2586,7 +2586,7 @@ class BackendAuthAPITests(TransactionTestCase):
     def test_recaptcha_blocks_register_and_guest_queue_when_required(self):
         client = TestClient(app)
 
-        with patch("backend_api.main.verify_recaptcha_response", side_effect=RecaptchaError("Confirme que você não é um robô.")):
+        with patch("apps.api.backend_api.main.verify_recaptcha_response", side_effect=RecaptchaError("Confirme que você não é um robô.")):
             blocked_register = client.post(
                 "/auth/register",
                 json={
@@ -2667,7 +2667,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(user_register.status_code, 201)
         headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
 
-        with patch("backend_api.main.verify_recaptcha_response", side_effect=AssertionError("CAPTCHA should not run for authenticated queue items")):
+        with patch("apps.api.backend_api.main.verify_recaptcha_response", side_effect=AssertionError("CAPTCHA should not run for authenticated queue items")):
             suggestion = client.post(
                 "/suggestions",
                 headers=headers,

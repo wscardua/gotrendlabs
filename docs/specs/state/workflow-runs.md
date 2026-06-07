@@ -2,6 +2,28 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260607-FASTAPI-LAYOUT-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `backend-api`, `repo-layout`
+- Objetivo: mover fisicamente o runtime FastAPI para `apps/api/backend_api/` como segunda etapa da reorganização do monorepo
+- Etapa atual: concluido; pacote FastAPI movido, imports e patches atualizados para `apps.api.backend_api`, comando `uvicorn` local/producao alinhado, specs/skills/docs atualizados e validação local concluida
+- Artefatos afetados:
+  - `apps/api/backend_api/`
+  - `deploy/production/docker-compose.yml`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/architecture/backend-api.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Encerrado em: 2026-06-07
+- Retomada: próxima reorganização deve mover `ops/` ou iniciar a preparação da camada web, sem misturar com mudanças funcionais
+- Reversão lógica: restaurar o pacote para `backend_api/`, reverter imports para `backend_api.*` e voltar o comando de produção para `uvicorn backend_api.main:app`
+- Evidências de validação: `manage.py check`, import direto `from apps.api.backend_api.main import app`, suite `manage.py test --keepdb` com 150 testes OK, `python -m uvicorn apps.api.backend_api.main:app --port 8011`, `GET /health` OK e `/docs` 200
+
 ## WFLOW-20260605-001
 
 - Tipo: `change-feature`

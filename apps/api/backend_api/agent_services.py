@@ -4,8 +4,8 @@ import json
 import os
 import re
 
-from backend_api.agent_llm import AgentLLMError, request_market_comment
-from backend_api.agent_prompts import PROMPT_TEMPLATE_VERSION, build_comment_prompt, template_hash
+from apps.api.backend_api.agent_llm import AgentLLMError, request_market_comment
+from apps.api.backend_api.agent_prompts import PROMPT_TEMPLATE_VERSION, build_comment_prompt, template_hash
 
 
 INITIAL_REPUTATION = 100

@@ -5,8 +5,8 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException, status
 
-from backend_api.badge_engine import BadgeAwardEngine
-from backend_api.email_outbox import enqueue_user_email, public_url
+from apps.api.backend_api.badge_engine import BadgeAwardEngine
+from apps.api.backend_api.email_outbox import enqueue_user_email, public_url
 
 
 INITIAL_REPUTATION = 100
