@@ -26,9 +26,9 @@ from django.contrib.auth import get_user_model
 from django.db import connection, transaction
 from django.utils.dateparse import parse_date, parse_datetime
 
-from accounts.models import BadgeDefinition, BadgeRule, UserBadgeAward, UserProfile, UserReputation, WalletBalance, WalletLedgerEntry
-from admin_ops.models import SiteConfig
-from markets.models import (
+from apps.web.django.accounts.models import BadgeDefinition, BadgeRule, UserBadgeAward, UserProfile, UserReputation, WalletBalance, WalletLedgerEntry
+from apps.web.django.admin_ops.models import SiteConfig
+from apps.web.django.markets.models import (
     AdminEvent,
     CommentReaction,
     Market,
@@ -42,7 +42,7 @@ from markets.models import (
     Prediction,
     ProductFeedback,
 )
-from system_logs.models import SystemLog
+from apps.web.django.system_logs.models import SystemLog
 
 
 BLOCKING_TABLES = [

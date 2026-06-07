@@ -1511,3 +1511,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-05-24
 - Retomada: se reset por email real for priorizado, integrar communications/SMTP em vez de expor apenas link operacional
 - Reversão lógica: ocultar a ação `password_reset` no detalhe de usuário e voltar o filtro da home para não carregar `user_summary` de operadores
+
+## WFLOW-20260607-DJANGO-APPS-LAYOUT-001
+
+- Tipo: `architecture-change`
+- Status: `concluido`
+- Feature alvo: reorganizacao do monorepo GoTrendLabs
+- Objetivo: mover apps Django para `apps/web/django/`, preservando `AppConfig.label`, migrations e comandos locais
+- Etapa atual: concluido; codigo, docs, skills, checks, collectstatic e suite Django validados em 2026-06-07
+- Artefatos afetados:
+  - `apps/web/django/`
+  - `config/`
+  - `apps/api/backend_api/`
+  - `ops/scripts/`
+  - `tests/test_web_smoke.py`
+  - `README.md`
+  - `docs/specs/architecture/`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Retomada: abrir PR, acompanhar CI/deploy e fazer smoke pos-merge
+- Reversão lógica: restaurar apps Django para a raiz mantendo os imports novos fora do merge, se alguma incompatibilidade de import path for encontrada

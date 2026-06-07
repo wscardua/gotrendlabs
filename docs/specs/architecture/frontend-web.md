@@ -25,8 +25,8 @@
 ## Guardrails
 
 - Toda ação mutável relevante deve passar pelo `backend-api`.
-- Templates compartilhados ficam em `apps/web/templates/` e assets compartilhados ficam em `apps/web/static/`.
-- A futura reorganização dos apps Django deve preservar migrations, `AppConfig.label`, imports e comandos locais.
+- Apps Django ficam em `apps/web/django/`, templates compartilhados ficam em `apps/web/templates/` e assets compartilhados ficam em `apps/web/static/`.
+- Apps Django devem preservar migrations, `AppConfig.label`, imports e comandos locais quando houver reorganizacao estrutural.
 - Textos de interface devem estar preparados para `pt-BR` e `en`.
 - Qualquer regra de exibição condicionada por estado de mercado deve depender de estados vindos do contrato de domínio.
 - Comentários no detalhe do mercado exibem o autor como handle iniciado por `@`.

@@ -11,7 +11,7 @@ Use esta skill quando a tarefa principal estiver na camada de apresentação e o
 
 Implementar páginas, componentes server-rendered, interações HTMX, estados locais simples e telas administrativas sem mover lógica crítica para a UI.
 
-Nesta fase da reorganizacao, templates compartilhados e assets vivem em `apps/web/`; os apps Django continuam nos caminhos atuais ate uma feature de migracao fisica com preservacao de labels e migrations.
+Na reorganizacao vigente, apps Django vivem em `apps/web/django/`, templates compartilhados em `apps/web/templates/` e assets em `apps/web/static/`. Preserve `AppConfig.label`, migrations e nomes de tabela historicos.
 
 ## Fluxo padrão
 

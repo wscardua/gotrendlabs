@@ -4,12 +4,12 @@ from django.conf.urls.static import static
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import path
 
-from accounts import views as account_views
-from admin_ops import views as admin_ops_views
-from core import views as core_views
-from markets import views as market_views
-from profiles import views as profile_views
-from wallet import views as wallet_views
+from apps.web.django.accounts import views as account_views
+from apps.web.django.admin_ops import views as admin_ops_views
+from apps.web.django.core import views as core_views
+from apps.web.django.markets import views as market_views
+from apps.web.django.profiles import views as profile_views
+from apps.web.django.wallet import views as wallet_views
 
 urlpatterns = [
     path("", core_views.home, name="home"),

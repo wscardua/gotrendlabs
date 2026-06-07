@@ -4,7 +4,7 @@ from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.agent_services import run_ai_agent_cycle
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
-from system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
+from apps.web.django.system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
 
 
 AUTO_CLOSE_NOTE = "Fechamento automático pelo daemon."
@@ -201,7 +201,7 @@ def run_daemon_cycle(now=None):
         locked_markets = close_due_auto_markets(now=now)
         pruned_details = prune_expired_operational_records(now=now)
         pruned_logs = pruned_details["total"]
-        from communications.services import process_due_email_deliveries
+        from apps.web.django.communications.services import process_due_email_deliveries
 
         email_summary = process_due_email_deliveries(now=now)
     except Exception as exc:

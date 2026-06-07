@@ -16,10 +16,7 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 
 - `config/`: settings, URLs e WSGI/ASGI do Django.
 - `apps/api/backend_api/`: app FastAPI, schemas Pydantic, seguranca e conexao Postgres.
-- `accounts/`: usuario customizado, formularios, sessao Django e telas de login/cadastro.
-- `markets/`: modelos de mercado, opcoes, previsoes, comentarios e servicos locais.
-- `core/`: feed, paginas publicas, fallback de dominio e context processors.
-- `admin_ops/`: painel operacional customizado para mercados, taxonomia, filas e moderacao.
+- `apps/web/django/`: apps Django (`accounts`, `markets`, `core`, `admin_ops`, `wallet`, `profiles`, `agents`, `communications` e `system_logs`) com labels historicos preservados.
 - `apps/web/templates/`: templates compartilhados da camada web Django.
 - `apps/web/static/`: assets compartilhados da camada web Django.
 - `docs/specs/`: fonte principal de arquitetura, features, fluxos e criterios de aceite.
@@ -27,10 +24,10 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 
 ### Estrutura alvo do monorepo
 
-A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI, operacao, templates e assets web ja vivem nos caminhos novos; os apps Django continuam nos caminhos historicos ate uma migracao propria.
+A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI, operacao, apps Django, templates e assets web ja vivem nos caminhos novos; os labels Django historicos continuam preservados para nao renomear tabelas nem quebrar migrations.
 
 - `apps/api/`: casa da FastAPI e da autoridade de dominio do produto.
-- `apps/web/`: casa dos templates e assets compartilhados da web; apps Django serao migrados separadamente quando for seguro preservar labels e migrations.
+- `apps/web/`: casa da web Django, incluindo apps em `apps/web/django/`, templates compartilhados e assets.
 - `apps/mobile/`: reserva para o futuro frontend mobile; nenhum projeto Flutter ou spec tecnica mobile e criado nesta fase.
 - `packages/contracts/`: reserva para OpenAPI/clientes gerados quando houver consumidor real e validacao definida.
 - `ops/`: deploy de producao, scripts operacionais e estado Docker local ignorado pelo Git.

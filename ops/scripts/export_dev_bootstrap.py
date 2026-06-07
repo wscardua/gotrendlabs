@@ -25,9 +25,9 @@ django.setup()
 from django.conf import settings
 from django.contrib.auth import get_user_model
 
-from accounts.models import BadgeDefinition, UserBadgeAward, UserProfile, UserReputation, WalletBalance, WalletLedgerEntry
-from admin_ops.models import SiteConfig
-from markets.models import Market, MarketCategory, MarketOption, MarketSubcategory
+from apps.web.django.accounts.models import BadgeDefinition, UserBadgeAward, UserProfile, UserReputation, WalletBalance, WalletLedgerEntry
+from apps.web.django.admin_ops.models import SiteConfig
+from apps.web.django.markets.models import Market, MarketCategory, MarketOption, MarketSubcategory
 
 
 ADMIN_USERNAME = "@admin"

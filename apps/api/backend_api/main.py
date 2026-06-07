@@ -94,7 +94,7 @@ from apps.api.backend_api.schemas import (
 )
 from apps.api.backend_api.security import check_password, hash_token, issue_token, make_password
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
-from system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
+from apps.web.django.system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
 
 SESSION_TTL = timedelta(days=14)
 PASSWORD_RESET_TTL = timedelta(hours=1)
