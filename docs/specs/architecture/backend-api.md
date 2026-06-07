@@ -18,8 +18,8 @@
 
 ## Requisitos estruturais
 
-- Nesta fase de fundação, o runtime FastAPI continua em `backend_api/`; `apps/api/` é apenas a estrutura alvo documentada para migração futura.
-- A futura migração para `apps/api/backend_api/` deve atualizar imports, comandos `uvicorn`, deploy, testes e documentação na mesma feature.
+- O runtime FastAPI fica em `apps/api/backend_api/`.
+- O comando local deve usar `python -m uvicorn apps.api.backend_api.main:app`; produção deve apontar o Uvicorn para `apps.api.backend_api.main:app`.
 - Todas as mutações relevantes devem ser auditáveis.
 - Estados de mercado devem ser explícitos e consistentes.
 - Regras de saldo devem usar ledger, não apenas campo de total agregado.

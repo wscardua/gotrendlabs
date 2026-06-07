@@ -46,7 +46,7 @@
 - Infra AWS base de producao foi provisionada em `us-east-1` com EC2 `t4g.micro`, RDS PostgreSQL 16 `db.t4g.micro`, VPC dedicada, SSM, CloudWatch minimo, Parameter Store, Secrets Manager e role OIDC restrita para GitHub Actions no branch `main`; o workflow de deploy agora faz preflight de variables/secrets e valida `aws sts get-caller-identity` antes do `ssm send-command`.
 - Acesso administrativo ao RDS usa tunel SSM pela EC2; o RDS permanece privado e aceita `5432` somente do security group da EC2.
 - Workflow `.github/workflows/deploy.yml` roda testes em `main` e esta preparado para disparar `deploy/production/deploy.sh` via SSM quando os secrets/variables do GitHub e `.env.prod` da EC2 estiverem configurados.
-- `FEAT-AIAGENT-001` integra `backend_api/agent_services.py` ao daemon operacional, usa `gotrendlabs_site_config` para flags/limites/retenção de auditoria, `gotrendlabs_ai_agents` para personas oficiais, `gotrendlabs_ai_agent_actions` para auditoria e exclui bots de ranking/badges/reputação pública.
+- `FEAT-AIAGENT-001` integra `apps/api/backend_api/agent_services.py` ao daemon operacional, usa `gotrendlabs_site_config` para flags/limites/retenção de auditoria, `gotrendlabs_ai_agents` para personas oficiais, `gotrendlabs_ai_agent_actions` para auditoria e exclui bots de ranking/badges/reputação pública.
 - Admin Ops consome contratos staff de mercado para busca textual no browse e detalhe de participantes por mercado, mantendo Django como camada de exibição e FastAPI/backend como fonte das métricas humano/bot/total.
 
 ## Skills técnicas por stack

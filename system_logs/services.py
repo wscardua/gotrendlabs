@@ -9,7 +9,7 @@ from ipaddress import ip_address as parse_ip_address
 
 from psycopg import errors
 
-from backend_api.db import get_connection
+from apps.api.backend_api.db import get_connection
 
 
 DEFAULT_RETENTION_DAYS = 90

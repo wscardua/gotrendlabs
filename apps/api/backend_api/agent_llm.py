@@ -4,7 +4,7 @@ import time
 
 import httpx
 
-from backend_api.agent_prompts import COMMENT_JSON_SCHEMA
+from apps.api.backend_api.agent_prompts import COMMENT_JSON_SCHEMA
 
 
 class AgentLLMError(Exception):

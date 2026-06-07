@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 import json
 import os
 
-from backend_api.security import hash_token, issue_token
+from apps.api.backend_api.security import hash_token, issue_token
 
 
 EMAIL_CONFIRMATION_TTL = timedelta(hours=48)

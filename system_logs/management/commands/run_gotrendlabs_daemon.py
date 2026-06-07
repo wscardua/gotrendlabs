@@ -2,7 +2,7 @@ import time
 
 from django.core.management.base import BaseCommand
 
-from backend_api.daemon_services import run_daemon_cycle
+from apps.api.backend_api.daemon_services import run_daemon_cycle
 
 
 class Command(BaseCommand):
