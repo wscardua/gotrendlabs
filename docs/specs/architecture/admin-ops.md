@@ -13,7 +13,7 @@
 - Ações sensíveis devem registrar operador, justificativa e momento.
 - O painel principal pode oferecer UX específica, mas não deve burlar validações centrais.
 - A FastAPI é a autoridade das operações administrativas de domínio; o Django Admin Ops é camada web consumidora.
-- Na reorganização do monorepo, Admin Ops continua parte da camada web Django; `apps/web/` é estrutura alvo futura e não muda as responsabilidades nesta fase.
+- Na reorganização do monorepo, Admin Ops continua parte da camada web Django em `apps/web/django/admin_ops/` e não muda suas responsabilidades.
 - Rotas administrativas exigem sessão válida de usuário `is_staff=true`.
 - Ações de fila operacional devem preservar estado concluído como informação auditável e impedir novo envio da mesma ação.
 

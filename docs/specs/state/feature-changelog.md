@@ -926,6 +926,11 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## Sistema documental e skills
 
+### 2026-06-07 - v0.7
+- apps Django movidos para `apps/web/django/`, preservando `AppConfig.label` historico e migrations existentes
+- README, arquitetura web/admin/system overview e skills locais atualizados para a nova estrutura vigente
+- status de implementação: `concluida`
+
 ### 2026-05-17 - v0.3
 - adicionada skill `gotrendlabs-workflow-governor`
 - adicionados templates em `docs/specs/workflows/`

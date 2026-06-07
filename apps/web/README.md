@@ -2,16 +2,14 @@
 
 Diretorio da camada web Django do GoTrendLabs.
 
-Nesta fase da reorganizacao, templates compartilhados e assets estaticos ja vivem aqui:
+Estrutura vigente:
 
+- `apps/web/django/`: apps Django do produto (`accounts`, `core`, `markets`, `admin_ops`, `wallet`, `profiles`, `agents`, `communications` e `system_logs`).
 - `apps/web/templates/`
 - `apps/web/static/`
 
-Os apps Django continuam nos caminhos historicos por enquanto:
+`config/` permanece na raiz como entrada Django para settings, URLs e WSGI/ASGI.
 
-- `config/`
-- apps Django no topo do repo, como `accounts/`, `core/`, `markets/`, `admin_ops/`, `wallet/`, `profiles/`, `agents/`, `communications/` e `system_logs/`
-
-Uma migracao futura dos apps Django para `apps/web/django/` so deve acontecer com preservacao explicita de `AppConfig.label`, imports e migrations.
+Os apps em `apps/web/django/` preservam `AppConfig.label` historico para manter migrations e nomes de tabela estaveis.
 
 Guardrail: Django renderiza web/Admin Ops e consome contratos; regra critica de dominio continua na FastAPI.

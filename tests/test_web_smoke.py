@@ -23,13 +23,13 @@ from django.utils import timezone
 from fastapi.testclient import TestClient
 from unittest.mock import patch
 
-from accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
-from accounts.session import TOKEN_KEY, USER_KEY
-from admin_ops.models import SiteConfig
+from apps.web.django.accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
+from apps.web.django.accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from apps.web.django.accounts.session import TOKEN_KEY, USER_KEY
+from apps.web.django.admin_ops.models import SiteConfig
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.db import database_config
-from agents.models import AiAgent, AiAgentAction
+from apps.web.django.agents.models import AiAgent, AiAgentAction
 from apps.api.backend_api.agent_prompts import build_comment_prompt
 from apps.api.backend_api.agent_services import _safe_comment_text, ai_health_summary, run_ai_agent_cycle
 from apps.api.backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
@@ -42,15 +42,15 @@ from apps.api.backend_api.main import _record_wallet_entry
 from apps.api.backend_api.main import _clear_rate_limits
 from apps.api.backend_api.security import hash_token, issue_token
 from config.recaptcha import RecaptchaError
-from communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate
-from communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
-from core.domain_client import get_domain_client
-from core.platform_config import load_platform_config, save_platform_config
-from core.social_share import public_badge_share_token
-from admin_ops.views import _safe_image_content
-from markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback, UserNotification
-from system_logs.models import SystemLog
-from system_logs.services import request_headers, sanitize_context, log_system_event
+from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate
+from apps.web.django.communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
+from apps.web.django.core.domain_client import get_domain_client
+from apps.web.django.core.platform_config import load_platform_config, save_platform_config
+from apps.web.django.core.social_share import public_badge_share_token
+from apps.web.django.admin_ops.views import _safe_image_content
+from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback, UserNotification
+from apps.web.django.system_logs.models import SystemLog
+from apps.web.django.system_logs.services import request_headers, sanitize_context, log_system_event
 
 
 def _fixture_slug(value):
@@ -116,7 +116,7 @@ def _seed_test_markets():
 
 
 def _seed_test_badges():
-    badge_seed = importlib.import_module("accounts.migrations.0009_badgedefinition_userbadgeaward_badgerule_and_more")
+    badge_seed = importlib.import_module("apps.web.django.accounts.migrations.0009_badgedefinition_userbadgeaward_badgerule_and_more")
     for item in badge_seed.DEFAULT_BADGES:
         badge, _ = BadgeDefinition.objects.update_or_create(
             code=item["code"],
@@ -166,10 +166,10 @@ class FixtureDomainClientTests(TestCase):
         self.assertGreaterEqual(len(market["options"]), 2)
 
     def test_api_client_normalizes_legacy_gtl_volume_labels(self):
-        with patch("accounts.api_client._request", return_value={"slug": "legacy", "volume_gtl": "1355 GTL"}):
+        with patch("apps.web.django.accounts.api_client._request", return_value={"slug": "legacy", "volume_gtl": "1355 GTL"}):
             self.assertEqual(api_get_market("legacy")["volume_gtl"], "1355 GT₵")
 
-        with patch("accounts.api_client._request", return_value={"markets": [{"slug": "legacy", "volume_gtl": "1355 GTL"}]}):
+        with patch("apps.web.django.accounts.api_client._request", return_value={"markets": [{"slug": "legacy", "volume_gtl": "1355 GTL"}]}):
             self.assertEqual(api_get_markets()[0]["volume_gtl"], "1355 GT₵")
 
 
@@ -249,7 +249,7 @@ class SecurityHardeningTests(TransactionTestCase):
             "session": {"token": "session-token"},
             "user": {"id": 1, "username": "@safe", "is_staff": False},
         }
-        with patch("accounts.views.login_user", return_value=auth_response):
+        with patch("apps.web.django.accounts.views.login_user", return_value=auth_response):
             response = self.client.post(
                 f"{reverse('login')}?next=https://evil.example/phish",
                 {"email": "safe@example.com", "password": "testpass123"},
@@ -1350,7 +1350,7 @@ class BackendAuthAPITests(TransactionTestCase):
     def test_daemon_management_commands_use_backend_services(self):
         out = StringIO()
         with patch(
-            "system_logs.management.commands.run_gotrendlabs_daemon.run_daemon_cycle",
+            "apps.web.django.system_logs.management.commands.run_gotrendlabs_daemon.run_daemon_cycle",
             return_value={"locked_markets": [{"slug": "x"}], "pruned_logs": 3, "pruned_log_details": {"system_logs": 2, "ai_agent_actions": 1}},
         ) as cycle:
             call_command("run_gotrendlabs_daemon", "--once", stdout=out)
@@ -1361,7 +1361,7 @@ class BackendAuthAPITests(TransactionTestCase):
 
         out = StringIO()
         with patch(
-            "system_logs.management.commands.prune_system_logs.prune_expired_operational_records",
+            "apps.web.django.system_logs.management.commands.prune_system_logs.prune_expired_operational_records",
             return_value={"system_logs": 3, "ai_agent_actions": 2, "total": 5},
         ) as prune:
             call_command("prune_system_logs", stdout=out)
@@ -4457,7 +4457,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
 
-        with patch("system_logs.middleware.log_system_event") as log_mock:
+        with patch("apps.web.django.system_logs.middleware.log_system_event") as log_mock:
             response = self.client.get(reverse("rankings"), HTTP_X_REQUEST_ID="django-session-user-log")
 
         self.assertEqual(response.status_code, 200)
@@ -4519,14 +4519,14 @@ class WebSmokeTests(TransactionTestCase):
             "bio": "",
         }
 
-        with patch("wallet.views.get_ledger", return_value={"wallet": {"available_gtl": 2000, "locked_gtl": 0, "total_earned_gtl": 0}, "entries": []}), patch("wallet.views.get_me", return_value={"reputation": {}}), patch("wallet.views.get_wallet_recharge_requests", return_value={"requests": []}), patch("accounts.referrals.get_referral", return_value=referral_payload):
+        with patch("apps.web.django.wallet.views.get_ledger", return_value={"wallet": {"available_gtl": 2000, "locked_gtl": 0, "total_earned_gtl": 0}, "entries": []}), patch("apps.web.django.wallet.views.get_me", return_value={"reputation": {}}), patch("apps.web.django.wallet.views.get_wallet_recharge_requests", return_value={"requests": []}), patch("apps.web.django.accounts.referrals.get_referral", return_value=referral_payload):
             wallet_response = self.client.get(reverse("wallet"))
         self.assertContains(wallet_response, "Convide alguém")
         self.assertContains(wallet_response, "200 GT₵")
         self.assertContains(wallet_response, f"{reverse('register')}?ref=WEBREF123")
         self.assertContains(wallet_response, "data-copy-share")
 
-        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]), patch("accounts.referrals.get_referral", return_value=referral_payload):
+        with patch("apps.web.django.profiles.views.get_me", return_value=profile_payload), patch("apps.web.django.profiles.views.get_badges", return_value=[]), patch("apps.web.django.profiles.views.get_activity", return_value=[]), patch("apps.web.django.accounts.referrals.get_referral", return_value=referral_payload):
             profile_response = self.client.get(reverse("profile"))
         self.assertContains(profile_response, "Convide alguém")
         self.assertContains(profile_response, f"{reverse('register')}?ref=WEBREF123")
@@ -4538,7 +4538,7 @@ class WebSmokeTests(TransactionTestCase):
         draft = {**api_market, "slug": "draft-signup", "title": "Rascunho mais visitado", "status": "draft", "status_label": "Rascunho", "view_count": 120}
         canceled = {**api_market, "slug": "canceled-signup", "title": "Mercado cancelado mais visitado", "status": "canceled", "status_label": "Cancelado", "view_count": 99}
 
-        with patch("accounts.views.get_markets", return_value=[lower, draft, canceled, viewed]), patch("accounts.views.local_markets", return_value=[]):
+        with patch("apps.web.django.accounts.views.get_markets", return_value=[lower, draft, canceled, viewed]), patch("apps.web.django.accounts.views.local_markets", return_value=[]):
             response = self.client.get(reverse("register"))
 
         self.assertContains(response, "Mercado preferido no cadastro")
@@ -4552,7 +4552,7 @@ class WebSmokeTests(TransactionTestCase):
         older = {**api_market, "slug": "older-signup", "title": "Mercado antigo sem visualizações", "view_count": 0, "created_at": "2026-05-17T12:00:00+00:00"}
         newer = {**api_market, "slug": "newer-signup", "title": "Mercado novo sem visualizações", "view_count": 0, "created_at": "2026-05-19T12:00:00+00:00"}
 
-        with patch("accounts.views.get_markets", return_value=[older, newer]), patch("accounts.views.local_markets", return_value=[]):
+        with patch("apps.web.django.accounts.views.get_markets", return_value=[older, newer]), patch("apps.web.django.accounts.views.local_markets", return_value=[]):
             response = self.client.get(reverse("register"))
 
         self.assertContains(response, "Mercado novo sem visualizações")
@@ -4603,7 +4603,7 @@ class WebSmokeTests(TransactionTestCase):
             "sex": "",
             "bio": "",
         }
-        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+        with patch("apps.web.django.profiles.views.get_me", return_value=profile_payload), patch("apps.web.django.profiles.views.get_badges", return_value=[]), patch("apps.web.django.profiles.views.get_activity", return_value=[]):
             response = self.client.get(reverse("profile"))
 
         self.assertContains(response, '<div class="handle-field"><span aria-hidden="true">@</span><input', html=False)
@@ -4611,7 +4611,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "O prefixo @ é fixo")
 
         updated_payload = {**profile_payload, "user": {**profile_payload["user"], "handle": "@newhandle"}}
-        with patch("profiles.views.update_me", return_value=updated_payload) as update_mock, patch("profiles.views.get_me", return_value=updated_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+        with patch("apps.web.django.profiles.views.update_me", return_value=updated_payload) as update_mock, patch("apps.web.django.profiles.views.get_me", return_value=updated_payload), patch("apps.web.django.profiles.views.get_badges", return_value=[]), patch("apps.web.django.profiles.views.get_activity", return_value=[]):
             response = self.client.post(
                 reverse("profile"),
                 {
@@ -4657,11 +4657,11 @@ class WebSmokeTests(TransactionTestCase):
         api_market["options"] = [{**option, "id": index} for index, option in enumerate(api_market["options"], start=1)]
         result = {"stake_amount": 80, "potential_payout": 160}
 
-        with patch("markets.views.create_prediction", return_value=result), patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.create_prediction", return_value=result), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
             self.assertContains(response, "Previsão registrada")
 
-        with patch("markets.views.create_prediction", side_effect=AuthAPIError("Você já registrou uma previsão neste mercado.", 409)), patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.create_prediction", side_effect=AuthAPIError("Você já registrou uma previsão neste mercado.", 409)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
             self.assertContains(response, "Você já registrou uma previsão neste mercado.", status_code=400)
 
@@ -4684,7 +4684,7 @@ class WebSmokeTests(TransactionTestCase):
 
         api_market = get_domain_client().market("openai-gpt6-2026")
         api_market["options"] = [{**row, "id": option.id if row["label"] == "SIM" else row.get("id", option.id + 1)} for row in api_market["options"]]
-        with patch("markets.views.create_prediction", side_effect=AuthAPIError("Serviço de autenticação indisponível.", None)), patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.create_prediction", side_effect=AuthAPIError("Serviço de autenticação indisponível.", None)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(reverse("prediction-confirm", args=["openai-gpt6-2026"]), {"option_id": option.id, "stake_amount": 80})
 
         self.assertContains(response, "Serviço de autenticação indisponível.", status_code=400)
@@ -4710,7 +4710,7 @@ class WebSmokeTests(TransactionTestCase):
         api_market = get_domain_client().market("openai-gpt6-2026")
         self.assertNotIn("id", api_market["options"][0])
 
-        with patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label=api_market["options"][0]["label"])
@@ -4756,7 +4756,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         api_market["options"] = [{**option, "id": index} for index, option in enumerate(api_market["options"], start=1)]
 
-        with patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         self.assertContains(response, "Resultado oficial")
@@ -4805,7 +4805,7 @@ class WebSmokeTests(TransactionTestCase):
             }
         ]
 
-        with patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
         self.assertContains(response, "Comentário vindo da API.")
         self.assertContains(response, "detail-comment-count")
@@ -4814,16 +4814,16 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, 'aria-label="Curtir comentário"')
         self.assertContains(response, 'aria-label="Discordar do comentário"')
 
-        with patch("markets.views.create_comment", return_value=api_market["comments"][0]) as create_comment:
+        with patch("apps.web.django.markets.views.create_comment", return_value=api_market["comments"][0]) as create_comment:
             response = self.client.post(reverse("comment-submit", args=["openai-gpt6-2026"]), {"body": "Novo comentário"})
             self.assertEqual(response.status_code, 302)
             create_comment.assert_called_once()
 
-        with patch("markets.views.create_comment", side_effect=AuthAPIError("Comentário não pode ficar vazio.", 422)), patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.create_comment", side_effect=AuthAPIError("Comentário não pode ficar vazio.", 422)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(reverse("comment-submit", args=["openai-gpt6-2026"]), {"body": " "})
             self.assertContains(response, "Comentário não pode ficar vazio.", status_code=400)
 
-        with patch("markets.views.react_to_comment", return_value=api_market["comments"][0]) as react:
+        with patch("apps.web.django.markets.views.react_to_comment", return_value=api_market["comments"][0]) as react:
             response = self.client.post(
                 reverse("comment-reaction", args=["openai-gpt6-2026", 12]),
                 {"reaction": "dislike", "current_reaction": "like"},
@@ -4831,7 +4831,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 302)
             react.assert_called_once_with("comment-token", 12, "dislike")
 
-        with patch("markets.views.clear_comment_reaction", return_value=api_market["comments"][0]) as clear:
+        with patch("apps.web.django.markets.views.clear_comment_reaction", return_value=api_market["comments"][0]) as clear:
             response = self.client.post(
                 reverse("comment-reaction", args=["openai-gpt6-2026", 12]),
                 {"reaction": "like", "current_reaction": "like"},
@@ -4849,7 +4849,7 @@ class WebSmokeTests(TransactionTestCase):
         api_market.pop("sparkline_series", None)
         api_market.pop("sparkline_path", None)
 
-        with patch("core.views.get_markets", return_value=[api_market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[api_market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, "sparkline-card")
@@ -4859,7 +4859,7 @@ class WebSmokeTests(TransactionTestCase):
     def test_market_card_renders_thumbnail_image_when_available(self):
         market = get_domain_client().market("openai-gpt6-2026")
         market["image_url"] = "/media/market_thumbnails/test-thumb.jpg"
-        with patch("core.views.get_markets", return_value=[market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(
@@ -4870,7 +4870,7 @@ class WebSmokeTests(TransactionTestCase):
 
     def test_market_card_title_links_to_market_detail(self):
         market = get_domain_client().market("openai-gpt6-2026")
-        with patch("core.views.get_markets", return_value=[market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
         expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
@@ -4883,7 +4883,7 @@ class WebSmokeTests(TransactionTestCase):
             "close_timezone": "America/Sao_Paulo",
             "close_label": "Fecha em 2026-06-11T15:55:00 BRT",
         }
-        with patch("core.views.get_markets", return_value=[market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, "Fecha em 11/06/2026 15:55 BRT")
@@ -4892,7 +4892,7 @@ class WebSmokeTests(TransactionTestCase):
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
         market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}
 
-        with patch("core.views.get_markets", return_value=[market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             guest_response = self.client.get(reverse("home"))
         self.assertNotContains(guest_response, 'data-filter="predicted"')
         self.assertNotContains(guest_response, 'data-filter="favorited"')
@@ -4923,9 +4923,9 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
         with (
-            patch("core.views.get_markets", return_value=[market]) as get_markets,
-            patch("core.views.get_me", side_effect=AuthAPIError("off")),
-            patch("core.views.get_badges", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.views.get_markets", return_value=[market]) as get_markets,
+            patch("apps.web.django.core.views.get_me", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.views.get_badges", side_effect=AuthAPIError("off")),
         ):
             auth_response = self.client.get(reverse("home"))
 
@@ -4971,7 +4971,7 @@ class WebSmokeTests(TransactionTestCase):
         )
         market = {**get_domain_client().market("openai-gpt6-2026"), "comment_count": 3}
 
-        with patch("core.views.get_markets", return_value=[market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             guest_response = self.client.get(reverse("home"))
         self.assertContains(guest_response, 'data-market-comments="3"')
         self.assertContains(guest_response, "market-comment-count")
@@ -4993,10 +4993,10 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
         with (
-            patch("core.views.get_markets", return_value=[market]),
-            patch("core.views.get_me", side_effect=AuthAPIError("off")),
-            patch("core.views.get_badges", side_effect=AuthAPIError("off")),
-            patch("core.context_processors.get_notifications", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.views.get_markets", return_value=[market]),
+            patch("apps.web.django.core.views.get_me", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.views.get_badges", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.context_processors.get_notifications", side_effect=AuthAPIError("off")),
         ):
             auth_response = self.client.get(reverse("home"))
         self.assertContains(auth_response, "notification-button")
@@ -5007,7 +5007,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(auth_response, "Marcar lidas")
         self.assertContains(auth_response, "3 notificações não lidas")
 
-        with patch("core.views.mark_notifications_read", side_effect=AuthAPIError("off")):
+        with patch("apps.web.django.core.views.mark_notifications_read", side_effect=AuthAPIError("off")):
             response = self.client.post(reverse("notifications-read-all"), {"next": reverse("home")})
         self.assertRedirects(response, reverse("home"))
         self.assertFalse(UserNotification.objects.filter(recipient=user, is_read=False).exists())
@@ -5045,9 +5045,9 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
 
         with (
-            patch("core.views.get_markets", return_value=[api_market]),
-            patch("core.views.get_me", side_effect=AuthAPIError("off")),
-            patch("core.views.get_badges", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.views.get_markets", return_value=[api_market]),
+            patch("apps.web.django.core.views.get_me", side_effect=AuthAPIError("off")),
+            patch("apps.web.django.core.views.get_badges", side_effect=AuthAPIError("off")),
         ):
             response = self.client.get(reverse("home"))
 
@@ -5120,7 +5120,7 @@ class WebSmokeTests(TransactionTestCase):
             for index in range(1, 20)
         ]
 
-        with patch("core.views.get_markets", return_value=markets):
+        with patch("apps.web.django.core.views.get_markets", return_value=markets):
             response = self.client.get(reverse("home"))
 
         html = response.content.decode()
@@ -5154,7 +5154,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
 
-        with patch("markets.views.favorite_market", return_value={"viewer_has_favorite": True}) as favorite:
+        with patch("apps.web.django.markets.views.favorite_market", return_value={"viewer_has_favorite": True}) as favorite:
             response = self.client.post(
                 reverse("market-favorite-toggle", args=["openai-gpt6-2026"]),
                 {"current_favorite": "false", "next": reverse("home")},
@@ -5164,7 +5164,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(response.json(), {"ok": True, "slug": "openai-gpt6-2026", "favorited": True})
         favorite.assert_called_once_with("favorite-token", "openai-gpt6-2026")
 
-        with patch("markets.views.unfavorite_market", return_value={"viewer_has_favorite": False}) as unfavorite:
+        with patch("apps.web.django.markets.views.unfavorite_market", return_value={"viewer_has_favorite": False}) as unfavorite:
             response = self.client.post(
                 reverse("market-favorite-toggle", args=["openai-gpt6-2026"]),
                 {"current_favorite": "true", "next": reverse("home")},
@@ -5191,7 +5191,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
 
-        with patch("markets.views.like_market", return_value={"viewer_has_like": True, "market_like_count": 12}) as like:
+        with patch("apps.web.django.markets.views.like_market", return_value={"viewer_has_like": True, "market_like_count": 12}) as like:
             response = self.client.post(
                 reverse("market-like-toggle", args=["openai-gpt6-2026"]),
                 {"current_like": "false", "next": reverse("home")},
@@ -5201,7 +5201,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(response.json(), {"ok": True, "slug": "openai-gpt6-2026", "liked": True, "like_count": 12})
         like.assert_called_once_with("like-token", "openai-gpt6-2026")
 
-        with patch("markets.views.unlike_market", return_value={"viewer_has_like": False, "market_like_count": 11}) as unlike:
+        with patch("apps.web.django.markets.views.unlike_market", return_value={"viewer_has_like": False, "market_like_count": 11}) as unlike:
             response = self.client.post(
                 reverse("market-like-toggle", args=["openai-gpt6-2026"]),
                 {"current_like": "true", "next": reverse("home")},
@@ -5222,7 +5222,7 @@ class WebSmokeTests(TransactionTestCase):
             "thumb_color": "",
             "image_url": "",
         }
-        with patch("core.views.get_markets", return_value=[market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, 'style="--thumb:#d8ece2"')
@@ -5236,7 +5236,7 @@ class WebSmokeTests(TransactionTestCase):
             "status_label": "Cancelado",
         }
 
-        with patch("core.views.get_markets", return_value=[open_market, canceled_market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[open_market, canceled_market]):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, open_market["title"])
@@ -5260,7 +5260,7 @@ class WebSmokeTests(TransactionTestCase):
                 "earned_at": "2026-05-19T00:00:00+00:00",
             }
         ]
-        with patch("core.views.get_badge_catalog", return_value=badges) as catalog_mock:
+        with patch("apps.web.django.core.views.get_badge_catalog", return_value=badges) as catalog_mock:
             response = self.client.get(reverse("badges"))
             self.assertContains(response, "Membro fundador")
             self.assertContains(response, "Entrar para ver progresso")
@@ -5279,7 +5279,7 @@ class WebSmokeTests(TransactionTestCase):
             "preferred_language": "pt-br",
         }
         session.save()
-        with patch("core.views.get_badge_catalog", return_value=badges) as catalog_mock:
+        with patch("apps.web.django.core.views.get_badge_catalog", return_value=badges) as catalog_mock:
             response = self.client.get(reverse("badges"))
             self.assertContains(response, "Conquistada")
             self.assertContains(response, "Compartilhar")
@@ -5319,7 +5319,7 @@ class WebSmokeTests(TransactionTestCase):
             "preferred_language": "pt-br",
         }
         session.save()
-        with patch("core.views.get_badges", return_value=earned_badges) as badges_mock:
+        with patch("apps.web.django.core.views.get_badges", return_value=earned_badges) as badges_mock:
             response = self.client.get(reverse("share-badge", args=["founding_member"]))
             self.assertContains(response, "Badge Viewer conquistou Membro fundador")
             self.assertContains(response, "Conquistas públicas em previsões com resolução auditável")
@@ -5345,17 +5345,17 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Voltar às badges")
             badges_mock.assert_called_with("badge-token")
 
-        with patch("core.views.get_badges", return_value=earned_badges):
+        with patch("apps.web.django.core.views.get_badges", return_value=earned_badges):
             response = self.client.get(reverse("share-badge-image", args=["founding_member"]))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response["Content-Type"], "image/png")
             self.assertGreater(len(response.content), 1000)
 
-        with patch("core.views.get_badges", return_value=earned_badges):
+        with patch("apps.web.django.core.views.get_badges", return_value=earned_badges):
             response = self.client.get(reverse("share-badge", args=["top_10"]))
             self.assertRedirects(response, reverse("badges"))
 
-        with patch("core.views.get_badges", return_value=earned_badges):
+        with patch("apps.web.django.core.views.get_badges", return_value=earned_badges):
             response = self.client.get(reverse("share-badge-image", args=["top_10"]))
             self.assertRedirects(response, reverse("badges"))
 
@@ -5392,7 +5392,7 @@ class WebSmokeTests(TransactionTestCase):
         market = get_domain_client().market("openai-gpt6-2026")
         resolved_market = {**market, "slug": "resolved-api", "status": "resolved", "title": "Resultado vindo da API", "primary_outcome": "SIM"}
 
-        with patch("core.views.get_market", return_value=market):
+        with patch("apps.web.django.core.views.get_market", return_value=market):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
             self.assertContains(response, "GoTrendLabs")
             self.assertContains(response, "testserver/share/market/openai-gpt6-2026")
@@ -5422,17 +5422,17 @@ class WebSmokeTests(TransactionTestCase):
             "thumb_color": "",
             "image_url": "",
         }
-        with patch("core.views.get_market", return_value=empty_thumb_market):
+        with patch("apps.web.django.core.views.get_market", return_value=empty_thumb_market):
             response = self.client.get(reverse("share-market", args=["empty-thumb-share"]))
             self.assertContains(response, '<span class="badge-icon">MO</span>', html=True)
 
-        with patch("core.views.get_market", return_value=market):
+        with patch("apps.web.django.core.views.get_market", return_value=market):
             response = self.client.get(reverse("share-market-image", args=["openai-gpt6-2026"]))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response["Content-Type"], "image/png")
             self.assertGreater(len(response.content), 1000)
 
-        with patch("core.views.get_market", return_value=resolved_market):
+        with patch("apps.web.django.core.views.get_market", return_value=resolved_market):
             response = self.client.get(reverse("share-result", args=["resolved-api"]))
             self.assertContains(response, "GoTrendLabs")
             self.assertContains(response, "Resultado vindo da API")
@@ -5454,7 +5454,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, reverse("share-market-track", args=["resolved-api"]))
             self.assertNotContains(response, "Ver perfil")
 
-        with patch("core.views.get_market", return_value=resolved_market):
+        with patch("apps.web.django.core.views.get_market", return_value=resolved_market):
             response = self.client.get(reverse("share-result-image", args=["resolved-api"]))
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response["Content-Type"], "image/png")
@@ -5466,13 +5466,13 @@ class WebSmokeTests(TransactionTestCase):
         market.share_count = 0
         market.save(update_fields=["view_count", "share_count"])
 
-        with patch("markets.views.track_market_view", side_effect=AuthAPIError("offline")):
+        with patch("apps.web.django.markets.views.track_market_view", side_effect=AuthAPIError("offline")):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
         self.assertEqual(response.status_code, 200)
         market.refresh_from_db()
         self.assertEqual(market.view_count, 1)
 
-        with patch("core.views.track_market_share", side_effect=AuthAPIError("offline")):
+        with patch("apps.web.django.core.views.track_market_share", side_effect=AuthAPIError("offline")):
             response = self.client.post(reverse("share-market-track", args=["openai-gpt6-2026"]))
         self.assertEqual(response.status_code, 200)
         market.refresh_from_db()
@@ -5673,8 +5673,8 @@ class WebSmokeTests(TransactionTestCase):
         site_config.save()
 
         out = StringIO()
-        smtp_context = patch("admin_ops.management.commands.send_smtp_test_email.smtplib.SMTP")
-        ssl_context = patch("admin_ops.management.commands.send_smtp_test_email.ssl.create_default_context", return_value="tls-context")
+        smtp_context = patch("apps.web.django.admin_ops.management.commands.send_smtp_test_email.smtplib.SMTP")
+        ssl_context = patch("apps.web.django.admin_ops.management.commands.send_smtp_test_email.ssl.create_default_context", return_value="tls-context")
         with override_settings(GOTRENDLABS_SMTP_PASSWORD="smtp-secret", GOTRENDLABS_SMTP_API_KEY=""), smtp_context as smtp_cls, ssl_context:
             smtp = smtp_cls.return_value.__enter__.return_value
             call_command("send_smtp_test_email", "--to", "success@simulator.amazonses.com", stdout=out)
@@ -5909,7 +5909,7 @@ class WebSmokeTests(TransactionTestCase):
             "personality_prompt": "",
             "comment_style": "",
         }
-        with patch("admin_ops.views.admin_get_users", return_value=user_payload) as users_mock, patch("admin_ops.views.admin_create_ai_agent", return_value=created_agent) as create_mock:
+        with patch("apps.web.django.admin_ops.views.admin_get_users", return_value=user_payload) as users_mock, patch("apps.web.django.admin_ops.views.admin_create_ai_agent", return_value=created_agent) as create_mock:
             response = self.client.get(reverse("admin-ops-ai-agent-new"))
             self.assertContains(response, "Comenta mercados")
             self.assertContains(response, "Testa previsão bot")
@@ -6006,7 +6006,7 @@ class WebSmokeTests(TransactionTestCase):
             }
             for index in range(1, 13)
         ]
-        with patch("admin_ops.views.admin_get_ai_agents", return_value={"agents": [], "health": {}}), patch("admin_ops.views.admin_get_ai_agent_actions", return_value={"actions": actions, "health": {}}) as actions_mock:
+        with patch("apps.web.django.admin_ops.views.admin_get_ai_agents", return_value={"agents": [], "health": {}}), patch("apps.web.django.admin_ops.views.admin_get_ai_agent_actions", return_value={"actions": actions, "health": {}}) as actions_mock:
             response = self.client.get(reverse("admin-ops-ai-agent-actions") + "?reason=llm_error")
 
         self.assertEqual(response.status_code, 200)
@@ -6052,7 +6052,7 @@ class WebSmokeTests(TransactionTestCase):
             "prediction_id": None,
             "created_at": "2026-05-23T10:00:00+00:00",
         }
-        with patch("admin_ops.views.admin_get_ai_agent_action", return_value=action):
+        with patch("apps.web.django.admin_ops.views.admin_get_ai_agent_action", return_value=action):
             response = self.client.get(reverse("admin-ops-ai-agent-action-detail", args=[7]))
 
         self.assertEqual(response.status_code, 200)
@@ -6192,7 +6192,7 @@ class WebSmokeTests(TransactionTestCase):
                 {"name": "Arquivada", "slug": "arquivada", "is_blocked": True, "subcategories": []},
             ]
         }
-        with patch("core.views.get_taxonomy", return_value=taxonomy_payload):
+        with patch("apps.web.django.core.views.get_taxonomy", return_value=taxonomy_payload):
             response = self.client.get(reverse("suggestion"))
 
         self.assertContains(response, '<option value="Ciência"', html=False)
@@ -6232,7 +6232,7 @@ class WebSmokeTests(TransactionTestCase):
         session[USER_KEY] = {"id": 1, "handle": "@admin", "display_name": "Admin", "preferred_language": "pt-br", "is_staff": True}
         session.save()
 
-        with patch("admin_ops.views.admin_get_markets", side_effect=AuthAPIError("offline")):
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", side_effect=AuthAPIError("offline")):
             response = self.client.get(reverse("admin-ops-markets"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Popularidade")
@@ -6242,7 +6242,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, "<small>Views</small><strong>12</strong>", html=True)
         self.assertNotContains(response, "<small>Shares</small><strong>3</strong>", html=True)
 
-        with patch("admin_ops.views.admin_get_market", return_value={
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value={
             "slug": market.slug,
             "title": market.title,
             "summary": market.summary,
@@ -6270,7 +6270,7 @@ class WebSmokeTests(TransactionTestCase):
             "view_count": 12,
             "share_count": 3,
             "options": [],
-        }), patch("admin_ops.views.admin_get_taxonomy", return_value={"categories": []}):
+        }), patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value={"categories": []}):
             response = self.client.get(reverse("admin-ops-market-edit", args=[market.slug]))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Popularidade operacional")
@@ -6285,7 +6285,7 @@ class WebSmokeTests(TransactionTestCase):
         public_result_url = "https://share.gotrendlabs.example/share/result/resolved-api/"
         public_result_image_url = "https://share.gotrendlabs.example/share/result/resolved-api/image/"
 
-        with patch("core.views.get_market", return_value=market):
+        with patch("apps.web.django.core.views.get_market", return_value=market):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
             self.assertContains(response, public_market_url)
             self.assertContains(response, public_market_image_url)
@@ -6299,7 +6299,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "https://www.facebook.com/sharer/sharer.php")
             self.assertContains(response, "https://www.linkedin.com/sharing/share-offsite/")
 
-        with patch("core.views.get_market", return_value=resolved_market):
+        with patch("apps.web.django.core.views.get_market", return_value=resolved_market):
             response = self.client.get(reverse("share-result", args=["resolved-api"]))
             self.assertContains(response, public_result_url)
             self.assertContains(response, public_result_image_url)
@@ -6491,9 +6491,9 @@ class WebSmokeTests(TransactionTestCase):
         }
 
         with (
-            patch("admin_ops.views.get_backend_health", return_value={"status": "ok"}) as health_mock,
-            patch("admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary) as dashboard_mock,
-            patch("admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock,
+            patch("apps.web.django.admin_ops.views.get_backend_health", return_value={"status": "ok"}) as health_mock,
+            patch("apps.web.django.admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary) as dashboard_mock,
+            patch("apps.web.django.admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock,
         ):
             response = self.client.get(reverse("admin-ops-dashboard"))
             self.assertContains(response, "Mercado admin API")
@@ -6573,8 +6573,8 @@ class WebSmokeTests(TransactionTestCase):
             "auth_events": [{"event_type": "login_success", "email": "operated@example.com", "provider": "", "ip_address": "127.0.0.1", "user_agent": "test", "created_at": "2026-05-19T00:00:00+00:00"}],
             "admin_events": [],
         }
-        with patch("admin_ops.views.admin_get_users", return_value=user_data) as users_mock, patch("admin_ops.views.admin_get_user", return_value=user_detail), patch(
-            "admin_ops.views.admin_request_user_password_reset",
+        with patch("apps.web.django.admin_ops.views.admin_get_users", return_value=user_data) as users_mock, patch("apps.web.django.admin_ops.views.admin_get_user", return_value=user_detail), patch(
+            "apps.web.django.admin_ops.views.admin_request_user_password_reset",
             return_value={"message": "Se o email existir, enviaremos instruções.", "reset_url": "http://testserver/password-reset/confirm/admin-token/"},
         ) as reset_mock:
             response = self.client.get(reverse("admin-ops-users"))
@@ -6632,7 +6632,7 @@ class WebSmokeTests(TransactionTestCase):
             "page_size": 10,
             "total": 120,
         }
-        with patch("admin_ops.views.admin_get_system_logs", return_value=log_payload) as logs_mock, patch("admin_ops.views.admin_get_system_log", return_value=log_payload["logs"][0]), patch("admin_ops.views.admin_get_users", return_value=user_data) as log_users_mock:
+        with patch("apps.web.django.admin_ops.views.admin_get_system_logs", return_value=log_payload) as logs_mock, patch("apps.web.django.admin_ops.views.admin_get_system_log", return_value=log_payload["logs"][0]), patch("apps.web.django.admin_ops.views.admin_get_users", return_value=user_data) as log_users_mock:
             response = self.client.get(reverse("admin-ops-system-logs"))
             self.assertContains(response, "Logs do sistema")
             self.assertContains(response, "Troubleshooting")
@@ -6692,7 +6692,7 @@ class WebSmokeTests(TransactionTestCase):
                 }
             ]
         }
-        with patch("admin_ops.views.admin_get_badges", return_value=badge_data), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
+        with patch("apps.web.django.admin_ops.views.admin_get_badges", return_value=badge_data), patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-badges"))
             self.assertContains(response, "Membro fundador")
             self.assertContains(response, "badge-browse-thumb")
@@ -6740,7 +6740,7 @@ class WebSmokeTests(TransactionTestCase):
                 return {"markets": [resolved_market], "counts": {"locked": 1, "resolved": 1}}
             return market_data
 
-        with patch("admin_ops.views.admin_get_markets", side_effect=resolution_markets):
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", side_effect=resolution_markets):
             response = self.client.get(reverse("admin-ops-resolution"))
             self.assertContains(response, "Mercado fechado API")
             self.assertContains(response, "Mercado resolvido API")
@@ -6752,7 +6752,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "18/05/2026 09:00 America/Sao_Paulo")
             self.assertContains(response, "Aguardando decisão")
 
-        with patch("admin_ops.views.admin_get_market", return_value=locked_market):
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value=locked_market):
             response = self.client.get(reverse("admin-ops-resolution-market-action", args=["locked-api", "resolve"]))
             self.assertContains(response, '<option value="" selected>Selecione o resultado</option>', html=True)
             self.assertContains(response, 'type="datetime-local"', html=False)
@@ -6760,7 +6760,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, '<option value="America/Sao_Paulo" selected>America/Sao_Paulo</option>', html=False)
             self.assertContains(response, '<span class="required-marker">Obrigatório</span>', html=True, count=5)
 
-        with patch("admin_ops.views.admin_get_market", return_value=locked_market), patch("admin_ops.views.admin_resolve_market", return_value={**locked_market, "status": "resolved", "title": "Mercado fechado API"}) as resolve_mock:
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value=locked_market), patch("apps.web.django.admin_ops.views.admin_resolve_market", return_value={**locked_market, "status": "resolved", "title": "Mercado fechado API"}) as resolve_mock:
             response = self.client.post(
                 reverse("admin-ops-resolution-market-action", args=["locked-api", "resolve"]),
                 {
@@ -6812,7 +6812,7 @@ class WebSmokeTests(TransactionTestCase):
             ],
             "pagination": {"limit": 1, "offset": 0, "total": 2},
         }
-        with patch("admin_ops.views.admin_get_market", return_value=resolved_market), patch("admin_ops.views.admin_get_market_resolution_audit", return_value=audit_payload) as audit_mock:
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value=resolved_market), patch("apps.web.django.admin_ops.views.admin_get_market_resolution_audit", return_value=audit_payload) as audit_mock:
             response = self.client.get(f"{reverse('admin-ops-resolution-market-action', args=['resolved-api', 'audit'])}?limit=1&offset=0")
             self.assertContains(response, "Auditoria da resolução")
             self.assertContains(response, "Resultado aplicado")
@@ -6825,7 +6825,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Próxima")
             audit_mock.assert_called_once_with("staff-token", "resolved-api", limit=1, offset=0)
 
-        with patch("admin_ops.views.admin_get_market", return_value=resolved_market), patch("admin_ops.views.admin_get_market_resolution_audit", return_value={**audit_payload, "pagination": {"limit": 10, "offset": 0, "total": 20}}) as audit_mock:
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value=resolved_market), patch("apps.web.django.admin_ops.views.admin_get_market_resolution_audit", return_value={**audit_payload, "pagination": {"limit": 10, "offset": 0, "total": 20}}) as audit_mock:
             response = self.client.get(reverse("admin-ops-resolution-market-action", args=["resolved-api", "audit"]))
             self.assertContains(response, "1-10 de 20")
             self.assertContains(response, "?limit=10&offset=10")
@@ -6860,13 +6860,13 @@ class WebSmokeTests(TransactionTestCase):
             ],
             "counts": {},
         }
-        with patch("admin_ops.views.admin_get_queues", return_value=queue_data):
+        with patch("apps.web.django.admin_ops.views.admin_get_queues", return_value=queue_data):
             response = self.client.get(reverse("admin-ops-moderation"))
             self.assertContains(response, "Apple app IA")
             self.assertContains(response, "Critério confuso")
             self.assertContains(response, "Abrir fila")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-taxonomy"))
             self.assertContains(response, "Categorias e subcategorias")
             self.assertContains(response, "data-taxonomy-browser")
@@ -6936,7 +6936,7 @@ class WebSmokeTests(TransactionTestCase):
                 },
             ],
         }
-        with patch("admin_ops.views.admin_get_market", return_value=api_market), patch("admin_ops.views.admin_get_market_participants", return_value=participant_payload), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value=api_market), patch("apps.web.django.admin_ops.views.admin_get_market_participants", return_value=participant_payload), patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-market-edit", args=["openai-gpt6-2026"]))
             self.assertContains(response, "Mercado admin API")
             self.assertContains(response, "Participantes do mercado")
@@ -7003,9 +7003,9 @@ class WebSmokeTests(TransactionTestCase):
             "admin_notes": "Salvar como fechamento manual",
         }
         with (
-            patch("admin_ops.views.admin_get_market", return_value=posted_market),
-            patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data),
-            patch("admin_ops.views.admin_update_market", return_value={**posted_market, "auto_close_enabled": False}) as update_market,
+            patch("apps.web.django.admin_ops.views.admin_get_market", return_value=posted_market),
+            patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data),
+            patch("apps.web.django.admin_ops.views.admin_update_market", return_value={**posted_market, "auto_close_enabled": False}) as update_market,
         ):
             response = self.client.post(reverse("admin-ops-market-edit", args=["openai-gpt6-2026"]), post_payload)
             self.assertEqual(response.status_code, 302)
@@ -7020,7 +7020,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(sent_payload["options"][0]["probability_exact"], 72.0721)
 
         readonly_market = {**posted_market, "status": "resolved", "status_label": "Resolvido", "resolved_at": "2026-05-18T12:00:00+00:00", "winning_option_id": 11}
-        with patch("admin_ops.views.admin_get_market", return_value=readonly_market), patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
+        with patch("apps.web.django.admin_ops.views.admin_get_market", return_value=readonly_market), patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data):
             response = self.client.get(reverse("admin-ops-market-edit", args=["openai-gpt6-2026"]))
             self.assertContains(response, "Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar.")
             self.assertContains(response, "<fieldset", html=False)
@@ -7061,7 +7061,7 @@ class WebSmokeTests(TransactionTestCase):
             }
             for index in range(1, 13)
         ]
-        with patch("admin_ops.views.admin_get_users", return_value={"users": users, "counts": {"total": 12}}):
+        with patch("apps.web.django.admin_ops.views.admin_get_users", return_value={"users": users, "counts": {"total": 12}}):
             first_page = self.client.get(reverse("admin-ops-users"))
             self.assertContains(first_page, "mostrando 10 de 12")
             self.assertContains(first_page, "Carregar mais")
@@ -7086,7 +7086,7 @@ class WebSmokeTests(TransactionTestCase):
             }
             for index in range(1, 13)
         ]
-        with patch("admin_ops.views.admin_get_markets", return_value={"markets": markets, "counts": {"open": 12}}):
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value={"markets": markets, "counts": {"open": 12}}):
             first_page = self.client.get(reverse("admin-ops-markets"))
             self.assertContains(first_page, "mostrando 10 de 12")
             self.assertContains(first_page, "Carregar mais")
@@ -7116,7 +7116,7 @@ class WebSmokeTests(TransactionTestCase):
                 return {"markets": resolution_markets, "counts": {"locked": 12}}
             return {"markets": [], "counts": {"resolved": 0}}
 
-        with patch("admin_ops.views.admin_get_markets", side_effect=resolution_markets_payload):
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", side_effect=resolution_markets_payload):
             first_page = self.client.get(reverse("admin-ops-resolution"))
             self.assertContains(first_page, "mostrando 10 de 12")
             self.assertContains(first_page, "Carregar mais")
@@ -7141,7 +7141,7 @@ class WebSmokeTests(TransactionTestCase):
             }
             for index in range(1, 13)
         ]
-        with patch("admin_ops.views.admin_get_queues", return_value={"items": queue_items, "counts": {}}), patch("admin_ops.views.admin_get_comments", return_value={"comments": []}):
+        with patch("apps.web.django.admin_ops.views.admin_get_queues", return_value={"items": queue_items, "counts": {}}), patch("apps.web.django.admin_ops.views.admin_get_comments", return_value={"comments": []}):
             first_page = self.client.get(f"{reverse('admin-ops-moderation')}?order=created_asc")
             self.assertContains(first_page, "mostrando 10 de 12")
             self.assertContains(first_page, "Carregar mais")
@@ -7181,7 +7181,7 @@ class WebSmokeTests(TransactionTestCase):
             page_size = int(filters.get("page_size") or 10)
             return {"logs": logs[:page_size], "counts": {"total": 12}, "page": 1, "page_size": page_size, "total": 12}
 
-        with patch("admin_ops.views.admin_get_system_logs", side_effect=logs_payload), patch("admin_ops.views.admin_get_users", return_value={"users": []}):
+        with patch("apps.web.django.admin_ops.views.admin_get_system_logs", side_effect=logs_payload), patch("apps.web.django.admin_ops.views.admin_get_users", return_value={"users": []}):
             first_page = self.client.get(reverse("admin-ops-system-logs"))
             self.assertContains(first_page, "10")
             self.assertContains(first_page, "de 12 registros filtrados")
@@ -7206,7 +7206,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
 
-        with patch("admin_ops.views.admin_get_markets", side_effect=AuthAPIError("Serviço da API retornou erro interno.", 500)):
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", side_effect=AuthAPIError("Serviço da API retornou erro interno.", 500)):
             response = self.client.get(reverse("admin-ops-markets"))
 
         self.assertNotContains(response, "OpenAI anuncia GPT-6")
@@ -7237,8 +7237,8 @@ class WebSmokeTests(TransactionTestCase):
         }
 
         with (
-            patch("admin_ops.views.get_backend_health", side_effect=AuthAPIError("Health indisponível.", None)),
-            patch("admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary),
+            patch("apps.web.django.admin_ops.views.get_backend_health", side_effect=AuthAPIError("Health indisponível.", None)),
+            patch("apps.web.django.admin_ops.views.admin_get_dashboard_summary", return_value=dashboard_summary),
         ):
             response = self.client.get(reverse("admin-ops-dashboard"))
 
@@ -7260,7 +7260,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
 
-        with patch("core.views.create_suggestion", return_value={"id": 1}) as create_suggestion:
+        with patch("apps.web.django.core.views.create_suggestion", return_value={"id": 1}) as create_suggestion:
             response = self.client.post(
                 reverse("suggestion"),
                 {
@@ -7275,7 +7275,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response["Location"], reverse("home"))
             create_suggestion.assert_called_once()
 
-        with patch("core.views.create_feedback", return_value={"id": 2}) as create_feedback:
+        with patch("apps.web.django.core.views.create_feedback", return_value={"id": 2}) as create_feedback:
             response = self.client.post(
                 reverse("feedback"),
                 {
@@ -7360,7 +7360,7 @@ class WebSmokeTests(TransactionTestCase):
             ]
         }
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_create_category", return_value=taxonomy_data) as create_category:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_create_category", return_value=taxonomy_data) as create_category:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {"action": "create_category", "name": "Ciência", "slug": "ciencia", "notice": "Aviso de ciência"},
@@ -7368,7 +7368,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             create_category.assert_called_once_with("staff-token", {"name": "Ciência", "slug": "ciencia", "notice": "Aviso de ciência"})
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_update_category", return_value=taxonomy_data) as update_category:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_update_category", return_value=taxonomy_data) as update_category:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {
@@ -7386,7 +7386,7 @@ class WebSmokeTests(TransactionTestCase):
                 {"name": "Inteligência Artificial", "slug": "ia", "notice": "Aviso atualizado de IA"},
             )
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_create_subcategory", return_value=taxonomy_data) as create_subcategory:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_create_subcategory", return_value=taxonomy_data) as create_subcategory:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {
@@ -7400,7 +7400,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             create_subcategory.assert_called_once_with("staff-token", "ia", {"name": "Agentes", "slug": "agentes", "notice": "Aviso de agentes"})
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_update_subcategory", return_value=taxonomy_data) as update_subcategory:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_update_subcategory", return_value=taxonomy_data) as update_subcategory:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {
@@ -7420,17 +7420,17 @@ class WebSmokeTests(TransactionTestCase):
                 {"name": "Modelos fundacionais", "slug": "modelos-fundacionais", "notice": "Aviso atualizado de modelos"},
             )
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_block_category", return_value=taxonomy_data) as block_category:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_block_category", return_value=taxonomy_data) as block_category:
             response = self.client.post(reverse("admin-ops-taxonomy"), {"action": "block_category", "category_slug": "ia", "block_note": "Congelar uso"})
             self.assertEqual(response.status_code, 200)
             block_category.assert_called_once_with("staff-token", "ia", "Congelar uso")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_unblock_category", return_value=taxonomy_data) as unblock_category:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_unblock_category", return_value=taxonomy_data) as unblock_category:
             response = self.client.post(reverse("admin-ops-taxonomy"), {"action": "unblock_category", "category_slug": "ia", "block_note": "Reativar uso"})
             self.assertEqual(response.status_code, 200)
             unblock_category.assert_called_once_with("staff-token", "ia", "Reativar uso")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_block_subcategory", return_value=taxonomy_data) as block_subcategory:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_block_subcategory", return_value=taxonomy_data) as block_subcategory:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {"action": "block_subcategory", "category_slug": "ia", "subcategory_slug": "modelos", "block_note": "Bloquear sub"},
@@ -7438,7 +7438,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             block_subcategory.assert_called_once_with("staff-token", "ia", "modelos", "Bloquear sub")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_unblock_subcategory", return_value=taxonomy_data) as unblock_subcategory:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_unblock_subcategory", return_value=taxonomy_data) as unblock_subcategory:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {"action": "unblock_subcategory", "category_slug": "ia", "subcategory_slug": "modelos", "block_note": "Desbloquear sub"},
@@ -7446,7 +7446,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             unblock_subcategory.assert_called_once_with("staff-token", "ia", "modelos", "Desbloquear sub")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_create_event", return_value=taxonomy_data) as create_event:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_create_event", return_value=taxonomy_data) as create_event:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {
@@ -7461,7 +7461,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             create_event.assert_called_once_with("staff-token", "ia", "modelos", {"name": "GPT-6", "slug": "gpt-6", "notice": "Aviso do GPT-6"})
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_update_event", return_value=taxonomy_data) as update_event:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_update_event", return_value=taxonomy_data) as update_event:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {
@@ -7483,7 +7483,7 @@ class WebSmokeTests(TransactionTestCase):
                 {"name": "Geral IA", "slug": "geral-ia", "notice": "Aviso atualizado"},
             )
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_block_event", return_value=taxonomy_data) as block_event:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_block_event", return_value=taxonomy_data) as block_event:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {"action": "block_event", "category_slug": "ia", "subcategory_slug": "modelos", "event_slug": "geral", "block_note": "Bloquear evento"},
@@ -7491,7 +7491,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             block_event.assert_called_once_with("staff-token", "ia", "modelos", "geral", "Bloquear evento")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_unblock_event", return_value=taxonomy_data) as unblock_event:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_unblock_event", return_value=taxonomy_data) as unblock_event:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {"action": "unblock_event", "category_slug": "ia", "subcategory_slug": "modelos", "event_slug": "geral", "block_note": "Desbloquear evento"},
@@ -7499,7 +7499,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             unblock_event.assert_called_once_with("staff-token", "ia", "modelos", "geral", "Desbloquear evento")
 
-        with patch("admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("admin_ops.views.admin_delete_event", return_value=taxonomy_data) as delete_event:
+        with patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value=taxonomy_data), patch("apps.web.django.admin_ops.views.admin_delete_event", return_value=taxonomy_data) as delete_event:
             response = self.client.post(
                 reverse("admin-ops-taxonomy"),
                 {"action": "delete_event", "category_slug": "ia", "subcategory_slug": "modelos", "event_slug": "geral"},
@@ -7534,12 +7534,12 @@ class WebSmokeTests(TransactionTestCase):
             "created_at": "2026-05-18T12:00:00+00:00",
         }
 
-        with patch("admin_ops.views.admin_get_comments", return_value={"comments": [comment_payload]}):
+        with patch("apps.web.django.admin_ops.views.admin_get_comments", return_value={"comments": [comment_payload]}):
             response = self.client.get(reverse("admin-ops-moderation") + "?kind=comment")
             self.assertContains(response, "Comentário para moderação.")
             self.assertContains(response, "Comentários")
 
-        with patch("admin_ops.views.admin_get_comments", return_value={"comments": [comment_payload]}), patch("admin_ops.views.admin_moderate_comment", return_value={**comment_payload, "status": "hidden"}) as moderate:
+        with patch("apps.web.django.admin_ops.views.admin_get_comments", return_value={"comments": [comment_payload]}), patch("apps.web.django.admin_ops.views.admin_moderate_comment", return_value={**comment_payload, "status": "hidden"}) as moderate:
             response = self.client.post(
                 reverse("admin-ops-queue-item-action", args=["comment", 77, "review"]),
                 {"status": "hidden", "note": "Ocultar."},
@@ -7573,15 +7573,15 @@ class WebSmokeTests(TransactionTestCase):
             ]
         }
 
-        with patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_me", return_value={"reputation": {}}), patch(
-            "wallet.views.get_wallet_recharge_requests", return_value=recharge_requests
+        with patch("apps.web.django.wallet.views.get_ledger", return_value=ledger_payload), patch("apps.web.django.wallet.views.get_me", return_value={"reputation": {}}), patch(
+            "apps.web.django.wallet.views.get_wallet_recharge_requests", return_value=recharge_requests
         ):
             response = self.client.get(reverse("wallet"))
             self.assertContains(response, "Em análise")
             self.assertContains(response, "Histórico")
             self.assertContains(response, "últimas 3")
 
-        with patch("wallet.views.create_wallet_recharge_request", return_value={"id": 13}) as create_recharge:
+        with patch("apps.web.django.wallet.views.create_wallet_recharge_request", return_value={"id": 13}) as create_recharge:
             response = self.client.post(reverse("wallet-recharge-request"))
             self.assertEqual(response.status_code, 302)
             create_recharge.assert_called_once_with("api-token")
@@ -7614,13 +7614,13 @@ class WebSmokeTests(TransactionTestCase):
             "admin_note": "",
             "reward_gtl": None,
         }
-        with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}):
+        with patch("apps.web.django.admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}):
             response = self.client.get(reverse("admin-ops-moderation") + "?kind=wallet_recharge")
             self.assertContains(response, "Recarga")
             self.assertContains(response, "Solicitação de recarga educativa")
 
-        with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
-            "admin_ops.views.admin_approve_wallet_recharge", return_value={**queue_item, "status": "approved", "reward_gtl": 300}
+        with patch("apps.web.django.admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
+            "apps.web.django.admin_ops.views.admin_approve_wallet_recharge", return_value={**queue_item, "status": "approved", "reward_gtl": 300}
         ) as approve:
             response = self.client.post(
                 reverse("admin-ops-queue-item-action", args=["wallet_recharge", 12, "review"]),
@@ -7629,8 +7629,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 302)
             approve.assert_called_once_with("staff-token", 12, 300, "Recarga aprovada.")
 
-        with patch("admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
-            "admin_ops.views.admin_reject_wallet_recharge", return_value={**queue_item, "status": "rejected"}
+        with patch("apps.web.django.admin_ops.views.admin_get_queues", return_value={"items": [queue_item], "counts": {"wallet_recharge": {"pending": 1}}}), patch(
+            "apps.web.django.admin_ops.views.admin_reject_wallet_recharge", return_value={**queue_item, "status": "rejected"}
         ) as reject:
             response = self.client.post(
                 reverse("admin-ops-queue-item-action", args=["wallet_recharge", 12, "review"]),
@@ -7682,8 +7682,8 @@ class WebSmokeTests(TransactionTestCase):
             ]
         }
 
-        with patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_me", return_value={"reputation": {}}), patch(
-            "wallet.views.get_wallet_recharge_requests", return_value=recharge_payload
+        with patch("apps.web.django.wallet.views.get_ledger", return_value=ledger_payload), patch("apps.web.django.wallet.views.get_me", return_value={"reputation": {}}), patch(
+            "apps.web.django.wallet.views.get_wallet_recharge_requests", return_value=recharge_payload
         ):
             first_page = self.client.get(reverse("wallet"))
             self.assertContains(first_page, "Movimentação 1")
@@ -7746,7 +7746,7 @@ class WebSmokeTests(TransactionTestCase):
         user = User.objects.create_user(username="@localtheme", email="local-theme@example.com", password="pass", first_name="Local Theme")
         UserReputation.objects.create(user=user, reputation_score=100, accuracy_indicator="0%")
 
-        with patch("profiles.views.get_rankings", side_effect=AuthAPIError("off")):
+        with patch("apps.web.django.profiles.views.get_rankings", side_effect=AuthAPIError("off")):
             response = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos")
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "off")
@@ -7763,7 +7763,7 @@ class WebSmokeTests(TransactionTestCase):
             "selected_subcategory": "modelos",
         }
 
-        with patch("profiles.views.get_rankings", return_value=payload):
+        with patch("apps.web.django.profiles.views.get_rankings", return_value=payload):
             response = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos")
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "@apirow")
@@ -7795,7 +7795,7 @@ class WebSmokeTests(TransactionTestCase):
             "selected_subcategory": "",
         }
 
-        with patch("profiles.views.get_rankings", return_value=payload):
+        with patch("apps.web.django.profiles.views.get_rankings", return_value=payload):
             response = self.client.get(reverse("rankings"))
             self.assertContains(response, "@badgerow")
             self.assertContains(response, 'class="ranking-user-badges"')
@@ -7826,7 +7826,7 @@ class WebSmokeTests(TransactionTestCase):
             "selected_event": "geral",
         }
 
-        with patch("profiles.views.get_rankings", return_value=payload):
+        with patch("apps.web.django.profiles.views.get_rankings", return_value=payload):
             first_page = self.client.get(f"{reverse('rankings')}?category=ia&subcategory=modelos&event=geral")
             self.assertContains(first_page, "@rank1")
             self.assertContains(first_page, "@rank10")
@@ -7891,7 +7891,7 @@ class WebSmokeTests(TransactionTestCase):
             ],
         }
 
-        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]):
+        with patch("apps.web.django.profiles.views.get_me", return_value=profile_payload), patch("apps.web.django.profiles.views.get_badges", return_value=[]), patch("apps.web.django.profiles.views.get_activity", return_value=[]):
             response = self.client.get(reverse("profile"))
             self.assertContains(response, "@apiviewer")
             self.assertContains(response, "#1")
@@ -7923,7 +7923,7 @@ class WebSmokeTests(TransactionTestCase):
                 "status": "locked",
             },
         ]
-        with patch("profiles.views.get_me", return_value=profile_payload), patch("profiles.views.get_badges", return_value=profile_badges), patch("profiles.views.get_activity", return_value=[]):
+        with patch("apps.web.django.profiles.views.get_me", return_value=profile_payload), patch("apps.web.django.profiles.views.get_badges", return_value=profile_badges), patch("apps.web.django.profiles.views.get_activity", return_value=[]):
             response = self.client.get(reverse("profile"))
             badge_grid = response.content.decode().split('<div class="badge-grid badge-grid-profile">', 1)[1].split("</div>\n  </section>", 1)[0]
             self.assertContains(response, "badge-card earned")
@@ -7937,16 +7937,16 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Previsões resolvidas")
 
         with patch(
-            "wallet.views.get_me",
+            "apps.web.django.wallet.views.get_me",
             return_value={**profile_payload, "reputation": {**profile_payload["reputation"], "reputation_score": 117}},
-        ), patch("wallet.views.get_ledger", return_value=ledger_payload), patch("wallet.views.get_wallet_recharge_requests", return_value={"requests": []}):
+        ), patch("apps.web.django.wallet.views.get_ledger", return_value=ledger_payload), patch("apps.web.django.wallet.views.get_wallet_recharge_requests", return_value={"requests": []}):
             response = self.client.get(reverse("wallet"))
             self.assertContains(response, "2000 GT₵")
             self.assertContains(response, "117")
             self.assertContains(response, "grant_initial")
 
         with patch(
-            "profiles.views.get_rankings",
+            "apps.web.django.profiles.views.get_rankings",
             return_value={
                 "rows": [
                     {
@@ -8024,7 +8024,7 @@ class WebSmokeTests(TransactionTestCase):
             "sex": "other",
         }
 
-        with patch("profiles.views.get_me", return_value=updated_payload), patch("profiles.views.get_badges", return_value=[]), patch("profiles.views.get_activity", return_value=[]), patch("profiles.views.update_me", return_value=updated_payload) as update_mock:
+        with patch("apps.web.django.profiles.views.get_me", return_value=updated_payload), patch("apps.web.django.profiles.views.get_badges", return_value=[]), patch("apps.web.django.profiles.views.get_activity", return_value=[]), patch("apps.web.django.profiles.views.update_me", return_value=updated_payload) as update_mock:
             response = self.client.post(
                 reverse("profile"),
                 {
@@ -8048,7 +8048,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Editar dados")
             self.assertContains(response, "account-delete-card")
 
-        with patch("profiles.views.request_account_deletion", return_value={}) as delete_mock:
+        with patch("apps.web.django.profiles.views.request_account_deletion", return_value={}) as delete_mock:
             response = self.client.post(reverse("profile"), {"action": "delete_account", "confirm_delete": "on"})
             self.assertRedirects(response, reverse("home"))
             delete_mock.assert_called_once_with("api-token")
@@ -8138,7 +8138,7 @@ class WebSmokeTests(TransactionTestCase):
             "title": "Mercado vindo da API",
         }
 
-        with patch("core.views.get_markets", return_value=[api_market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[api_market]):
             response = self.client.get(reverse("home"))
             self.assertContains(response, "Mercado vindo da API")
             self.assertContains(response, "Feedback/suporte")
@@ -8147,7 +8147,7 @@ class WebSmokeTests(TransactionTestCase):
         low_like_market = {**api_market, "slug": "low-like-api", "title": "Mercado com poucas curtidas", "is_featured": False, "market_like_count": 1, "view_count": 1, "created_at": "2026-05-18T12:00:00+00:00"}
         resolved_liked_market = {**api_market, "slug": "resolved-liked-api", "title": "Resolvido com curtidas", "status": "resolved", "is_featured": False, "market_like_count": 99, "view_count": 99, "created_at": "2026-05-19T12:00:00+00:00"}
         canceled_liked_market = {**api_market, "slug": "canceled-liked-api", "title": "Cancelado com curtidas", "status": "canceled", "is_featured": False, "market_like_count": 100, "view_count": 100, "created_at": "2026-05-20T12:00:00+00:00"}
-        with patch("core.views.get_markets", return_value=[low_like_market, resolved_liked_market, canceled_liked_market, liked_market]):
+        with patch("apps.web.django.core.views.get_markets", return_value=[low_like_market, resolved_liked_market, canceled_liked_market, liked_market]):
             response = self.client.get(reverse("home"))
             self.assertNotContains(response, '<aside class="watch-card">')
             self.assertNotContains(response, "Inteligência coletiva")
@@ -8192,15 +8192,15 @@ class WebSmokeTests(TransactionTestCase):
             )[1]
             self.assertNotIn("Cancelado com curtidas", market_list)
 
-        with patch("markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
             self.assertContains(response, "Mercado vindo da API")
 
-        with patch("core.views.get_market", return_value=api_market):
+        with patch("apps.web.django.core.views.get_market", return_value=api_market):
             response = self.client.get(reverse("share-market", args=["openai-gpt6-2026"]))
             self.assertContains(response, "Mercado vindo da API")
 
-        with patch("core.views.get_markets", side_effect=AuthAPIError("api off")):
+        with patch("apps.web.django.core.views.get_markets", side_effect=AuthAPIError("api off")):
             response = self.client.get(reverse("home"))
             self.assertContains(response, "OpenAI anuncia GPT-6")
 
@@ -8216,7 +8216,7 @@ class WebSmokeTests(TransactionTestCase):
             "session": {"token": "api-token", "expires_at": "2026-06-01T00:00:00+00:00"},
         }
 
-        with patch("accounts.views.register_user", return_value=auth_response) as register_user:
+        with patch("apps.web.django.accounts.views.register_user", return_value=auth_response) as register_user:
             response = self.client.post(
                 reverse("register"),
                 {
@@ -8231,10 +8231,10 @@ class WebSmokeTests(TransactionTestCase):
         self.assertRedirects(response, reverse("home"))
         self.assertEqual(register_user.call_args.args[0]["recaptcha_token"], "captcha-token")
 
-        with patch("accounts.views.logout_user", return_value={}):
+        with patch("apps.web.django.accounts.views.logout_user", return_value={}):
             self.client.get(reverse("logout"))
 
-        with patch("accounts.views.login_user", return_value=auth_response) as login_user:
+        with patch("apps.web.django.accounts.views.login_user", return_value=auth_response) as login_user:
             response = self.client.post(
                 reverse("login"),
                 {"email": "carol@gotrendlabs.com.br", "password": "testpass123"},
@@ -8243,10 +8243,10 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(login_user.call_args.args[0], {"email": "carol@gotrendlabs.com.br", "password": "testpass123"})
         self.assertLess(self.client.session.get_expiry_age(), 60 * 60 * 24 * 30)
 
-        with patch("accounts.views.logout_user", return_value={}):
+        with patch("apps.web.django.accounts.views.logout_user", return_value={}):
             self.client.get(reverse("logout"))
 
-        with patch("accounts.views.login_user", return_value=auth_response):
+        with patch("apps.web.django.accounts.views.login_user", return_value=auth_response):
             response = self.client.post(
                 reverse("login"),
                 {"email": "carol@gotrendlabs.com.br", "password": "testpass123", "remember_me": "on"},
@@ -8256,7 +8256,7 @@ class WebSmokeTests(TransactionTestCase):
 
     def test_prediction_preview_partial_renders(self):
         option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
-        with patch("markets.views.preview_prediction", return_value={"estimated_return": 240}):
+        with patch("apps.web.django.markets.views.preview_prediction", return_value={"estimated_return": 240}):
             response = self.client.post(
                 reverse("prediction-preview", args=["openai-gpt6-2026"]),
                 {"choice": "SIM", "amount": "120", "option_id": option.id},
