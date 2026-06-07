@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 
 class TrustScreen extends StatelessWidget {
   const TrustScreen({super.key});
@@ -20,8 +21,10 @@ class TrustScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [_PolicyTab(), _ConceptsTab(), _SecurityTab()],
+        body: const GtlScreen(
+          child: TabBarView(
+            children: [_PolicyTab(), _ConceptsTab(), _SecurityTab()],
+          ),
         ),
       ),
     );
@@ -159,11 +162,14 @@ class _InfoList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        Text(title, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 8),
-        Text(subtitle),
+        GtlEditorialHeader(
+          kicker: 'Confiança',
+          title: title,
+          body: subtitle,
+          icon: Icons.shield_outlined,
+        ),
         const SizedBox(height: 14),
         for (final item in items) _InfoCard(item: item),
       ],
@@ -190,9 +196,10 @@ class _InfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GtlSurface(
+        color: GtlColors.surfaceGlass,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -200,7 +207,7 @@ class _InfoCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: GtlColors.accentBlue.withValues(alpha: 0.12),
                 border: Border.all(color: GtlColors.border),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(GtlRadii.medium),
               ),
               child: Padding(
                 padding: const EdgeInsets.all(10),

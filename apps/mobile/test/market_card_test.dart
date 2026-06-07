@@ -42,9 +42,34 @@ void main() {
     expect(find.byIcon(Icons.auto_graph), findsOneWidget);
     expect(find.text('BR'), findsNothing);
   });
+
+  testWidgets('MarketCompactCard shows viewer favorite and position badges', (
+    tester,
+  ) async {
+    final market = _market(favorite: true, prediction: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: MarketCompactCard(
+            market: market,
+            api: ApiClient(tokenStore: MemoryTokenStore()),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Posição'), findsOneWidget);
+    expect(find.text('Favorito'), findsOneWidget);
+  });
 }
 
-Market _market({String category = 'Tecnologia', String thumb = 'GT'}) {
+Market _market({
+  String category = 'Tecnologia',
+  String thumb = 'GT',
+  bool favorite = false,
+  bool prediction = false,
+}) {
   return Market.fromJson({
     'slug': 'mercado-teste',
     'title': 'O mercado teste ficará aberto?',
@@ -70,6 +95,8 @@ Market _market({String category = 'Tecnologia', String thumb = 'GT'}) {
     'thumb_color': '#35A7FF',
     'summary': 'Resumo',
     'resolution_criteria': 'Critério',
+    'viewer_has_favorite': favorite,
+    'viewer_has_prediction': prediction,
     'options': [],
   });
 }

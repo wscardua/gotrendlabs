@@ -69,7 +69,8 @@ Com backend local ativo:
 7. Voltar para lista.
 8. Abrir aba `Mercados`.
 9. Aplicar filtro de categoria.
-10. Abrir uma acao autenticada como visitante e ver CTA de login.
+10. Alternar recortes `Todos`, `Favoritos` e `Posições`.
+11. Abrir uma acao autenticada como visitante e ver CTA de login.
 
 ## Fluxo autenticado
 
@@ -86,6 +87,10 @@ Quando houver usuario de teste:
 9. Chamar preview.
 10. Confirmar previsao.
 11. Ver saldo/estado atualizado pela resposta da API.
+12. Ver o mercado favoritado no recorte `Favoritos`.
+13. Ver o mercado com previsão no recorte `Posições`.
+14. Ver atalhos de `Sua mesa` na tela `Hoje` quando houver favoritos ou posições.
+15. Abrir `Sobre` e conferir versão/build, saúde da API e diagnóstico seguro sem endereço de endpoint.
 
 ## Fluxo de previsao bloqueada
 
@@ -132,6 +137,8 @@ Deve validar:
 - `MarketHeroCard`
 - `MarketCompactCard`
 - `MarketMetricPanel`
+- recortes `Favoritos` e `Posições` em `MarketsScreen`
+- `AboutScreen`
 - `PredictionTicket`
 - `CommentItem`
 - estados `loading`, `empty`, `error` e `unauthenticated`
@@ -188,6 +195,11 @@ Antes de considerar a UI pronta:
 - testar mercado resolvido
 - testar erro de rede
 - testar tema dark como padrao
+- confirmar que tema, app shell, cards, detalhe, ticket, wallet, ranking, alertas, busca, perfil, badges e bottom sheets usam o mesmo design system dark-first/editorial, sem cards genéricos ou estados soltos
+- confirmar que `Mercados` permite alternar `Todos`, `Favoritos` e `Posições`, com estados vazios claros quando não houver itens
+- confirmar que `Hoje` exibe `Sua mesa` para usuário autenticado com favoritos/posições e abre `Mercados` no recorte escolhido
+- confirmar que cards sinalizam `Favorito` e `Sua posição` quando a API retornar os flags do usuário autenticado
+- confirmar que `Sobre` aparece no menu e perfil, mostra versão/build, saúde da API e copia diagnóstico sem token, senha, segredo, ID interno ou endereço de API
 - comparar contra a direcao das referencias visuais fornecidas pelo usuario: card destaque, detalhe com hero, abas, painel de metricas e bottom navigation
 
 ## Criterios de aceite finais do MVP

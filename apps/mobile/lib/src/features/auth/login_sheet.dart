@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import 'auth_controller.dart';
 
 Future<void> showLoginSheet(BuildContext context) {
@@ -10,7 +11,7 @@ Future<void> showLoginSheet(BuildContext context) {
     isScrollControlled: true,
     backgroundColor: GtlColors.surfaceElevated,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(GtlRadii.large)),
     ),
     builder: (context) => const LoginSheet(),
   );
@@ -60,20 +61,17 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    _register ? 'Criar conta' : 'Entrar',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  icon: const Icon(Icons.close),
-                  tooltip: 'Fechar',
-                ),
-              ],
+            GtlEditorialHeader(
+              kicker: 'Conta GoTrendLabs',
+              title: _register ? 'Criar conta' : 'Entrar',
+              body:
+                  'Sessão para prever, comentar, acompanhar wallet e construir reputação.',
+              trailing: IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+                tooltip: 'Fechar',
+              ),
+              icon: Icons.account_circle_outlined,
             ),
             const SizedBox(height: 12),
             SegmentedButton<bool>(
