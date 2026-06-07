@@ -8,7 +8,10 @@
         <h1 class="large-title">Mercados ativos e rascunhos</h1>
         <p class="muted">Gerencie contratos publicados, rascunhos e cancelamentos usados no feed público.</p>
       </div>
-      <a class="btn primary" href="{% url 'admin-ops-market-new' %}">Criar mercado</a>
+      <div class="section-actions">
+        <a class="btn" href="{% url 'admin-ops-contracts' %}">Painel de contratos</a>
+        <a class="btn primary" href="{% url 'admin-ops-market-new' %}">Criar mercado</a>
+      </div>
     </div>
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     <form class="admin-filter-form market-search-form" method="get" role="search">

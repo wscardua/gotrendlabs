@@ -60,6 +60,7 @@ urlpatterns = [
     path("admin-ops/ai-agents/<int:agent_id>/edit/", admin_ops_views.ai_agent_form, name="admin-ops-ai-agent-edit"),
     path("admin-ops/ai-agent-actions/<int:action_id>/", admin_ops_views.ai_agent_action_detail, name="admin-ops-ai-agent-action-detail"),
     path("admin-ops/markets/", admin_ops_views.markets, name="admin-ops-markets"),
+    path("admin-ops/contracts/", admin_ops_views.contracts, name="admin-ops-contracts"),
     path("admin-ops/users/", admin_ops_views.users, name="admin-ops-users"),
     path("admin-ops/users/<int:user_id>/", admin_ops_views.user_detail, name="admin-ops-user-detail"),
     path("admin-ops/logs/", admin_ops_views.system_logs, name="admin-ops-system-logs"),

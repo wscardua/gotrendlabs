@@ -48,6 +48,7 @@
 - Catálogo, regra executável e concessão de badges são autoridade do backend; Admin Ops e frontend apenas consomem contratos.
 - A `BadgeAwardEngine` deve aplicar recorte `category/subcategory/event` em previsões resolvidas e comentários; sugestões aprovadas só entram em regras por evento quando o fluxo passar a registrar evento.
 - `GET /admin/markets` deve suportar ordenações operacionais por popularidade (`views_desc` e `shares_desc`) usando os contadores persistidos do mercado.
+- O dashboard administrativo de contratos deve reutilizar `GET /admin/markets` e os campos já expostos (`created_at`, `close_at`, `resolved_at`, status e taxonomia), sem novo endpoint FastAPI obrigatório nesta fatia.
 - `GET /admin/users` deve suportar busca por email/handle/nome, filtros por status/papel e ordenações operacionais por criação, último login, saldo e reputação.
 - `GET /admin/users` deve suportar filtro `bot=yes|no` e retornar `is_bot` apenas em contratos administrativos.
 - `GET /admin/users/{user_id}` deve expor detalhe operacional amplo para staff, incluindo perfil privado, wallet, ledger recente, reputação, previsões, comentários, sugestões, feedback, sessões, eventos de auth, eventos administrativos e badges adquiridas.
