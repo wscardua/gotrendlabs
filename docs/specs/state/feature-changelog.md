@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-06-07 — Organização de templates e assets web em `apps/web`
+
+- Templates compartilhados foram movidos de `templates/` para `apps/web/templates/`.
+- Assets compartilhados foram movidos de `static/` para `apps/web/static/`.
+- `TEMPLATES["DIRS"]` e `STATICFILES_DIRS` passaram a apontar para os novos caminhos.
+- Apps Django permanecem nos caminhos históricos nesta fatia para preservar labels, imports e migrations.
+
 ## 2026-06-07 — Organização operacional em `ops/`
 
 - Deploy de produção foi movido de `deploy/production/` para `ops/deploy/production/`, mantendo Compose, Caddyfile, runbook e `deploy.sh` juntos.

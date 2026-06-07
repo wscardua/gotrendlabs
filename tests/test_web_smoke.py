@@ -5056,7 +5056,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, 'data-market-liked="true"')
 
     def test_market_filter_javascript_supports_open_and_view_based_trending(self):
-        script = (settings.BASE_DIR / "static/js/gotrendlabs.js").read_text()
+        script = (settings.BASE_DIR / "apps" / "web" / "static" / "js" / "gotrendlabs.js").read_text()
 
         self.assertIn("views: parseNumber(card.dataset.marketViews)", script)
         self.assertIn('mode === "likes"', script)
@@ -5085,7 +5085,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertIn('headers: {"X-Requested-With": "XMLHttpRequest"}', script)
         self.assertIn("syncMarketFavorite(payload.slug || form.dataset.marketSlug", script)
         self.assertIn("syncMarketLike(payload.slug || form.dataset.marketSlug", script)
-        styles = (settings.BASE_DIR / "static/css/gotrendlabs.css").read_text()
+        styles = (settings.BASE_DIR / "apps" / "web" / "static" / "css" / "gotrendlabs.css").read_text()
         self.assertIn('[data-market-list][data-market-filter-mode="closing"] [data-market-card]:not([data-market-status="locked"])', styles)
         self.assertIn('[data-market-list][data-market-filter-mode="favorited"] [data-market-card][data-market-favorited="false"]', styles)
         self.assertIn(".market-favorite-button", styles)
