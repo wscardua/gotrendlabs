@@ -19,6 +19,7 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 - `apps/web/django/`: apps Django (`accounts`, `markets`, `core`, `admin_ops`, `wallet`, `profiles`, `agents`, `communications` e `system_logs`) com labels historicos preservados.
 - `apps/web/templates/`: templates compartilhados da camada web Django.
 - `apps/web/static/`: assets compartilhados da camada web Django.
+- `packages/contracts/openapi/gotrendlabs-api.json`: snapshot OpenAPI versionado da FastAPI.
 - `docs/specs/`: fonte principal de arquitetura, features, fluxos e criterios de aceite.
 - `tools/skills/gotrendlabs/`: skills locais usadas para orientar implementacao por camada.
 
@@ -29,7 +30,7 @@ A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI, operacao
 - `apps/api/`: casa da FastAPI e da autoridade de dominio do produto.
 - `apps/web/`: casa da web Django, incluindo apps em `apps/web/django/`, templates compartilhados e assets.
 - `apps/mobile/`: reserva para o futuro frontend mobile; nenhum projeto Flutter ou spec tecnica mobile e criado nesta fase.
-- `packages/contracts/`: reserva para OpenAPI/clientes gerados quando houver consumidor real e validacao definida.
+- `packages/contracts/`: snapshot OpenAPI versionado e futura casa de clientes gerados quando houver consumidor real.
 - `ops/`: deploy de producao, scripts operacionais e estado Docker local ignorado pelo Git.
 - `docs/audits/`: relatorios de auditoria e seguranca.
 - `tools/`: ferramentas de desenvolvimento e skills locais do repositorio inteiro.
@@ -122,6 +123,18 @@ python manage.py test
 ```
 
 Os testes cobrem contratos de API, renderizacao web, fallback local de desenvolvimento, Admin Ops, wallet, comentarios, previsoes e fluxos autenticados.
+
+Valide o snapshot OpenAPI versionado:
+
+```bash
+python packages/contracts/export_openapi.py --check
+```
+
+Quando alterar endpoints, payloads ou schemas da FastAPI, regenere o contrato no mesmo PR:
+
+```bash
+python packages/contracts/export_openapi.py
+```
 
 ## Deploy MVP em EC2
 

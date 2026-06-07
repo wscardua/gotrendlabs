@@ -29,7 +29,7 @@ Proteger a separação entre frontend web, futuro mobile, backend, banco, schedu
 - `scheduler-jobs` executa automações temporais, não cria regra nova.
 - `communications` reage a eventos, não duplica elegibilidade de domínio.
 - `admin-ops` opera o sistema, mas não substitui contratos do backend.
-- `apps/api/backend_api/` é o runtime FastAPI; `apps/web/django/` concentra apps Django com labels historicos preservados; `apps/web/templates/` e `apps/web/static/` concentram templates/assets web; `ops/` concentra deploy, scripts e Docker local; `apps/mobile/` e `packages/contracts/` seguem reservados para migrações futuras.
+- `apps/api/backend_api/` é o runtime FastAPI; `apps/web/django/` concentra apps Django com labels historicos preservados; `apps/web/templates/` e `apps/web/static/` concentram templates/assets web; `packages/contracts/openapi/` versiona o snapshot OpenAPI; `ops/` concentra deploy, scripts e Docker local; `apps/mobile/` segue reservado para migração futura.
 - Mudanças de fronteira devem atualizar workflow e decisões.
 
 ## Entradas principais

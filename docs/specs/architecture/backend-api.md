@@ -20,6 +20,8 @@
 
 - O runtime FastAPI fica em `apps/api/backend_api/`.
 - O comando local deve usar `python -m uvicorn apps.api.backend_api.main:app`; produção deve apontar o Uvicorn para `apps.api.backend_api.main:app`.
+- O snapshot OpenAPI versionado fica em `packages/contracts/openapi/gotrendlabs-api.json` e deve ser atualizado com `python packages/contracts/export_openapi.py` sempre que endpoints, payloads ou schemas mudarem.
+- O CI deve validar `python packages/contracts/export_openapi.py --check` antes dos testes para evitar contratos desatualizados.
 - Todas as mutações relevantes devem ser auditáveis.
 - Estados de mercado devem ser explícitos e consistentes.
 - Regras de saldo devem usar ledger, não apenas campo de total agregado.

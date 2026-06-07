@@ -42,6 +42,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Validate OpenAPI contract snapshot
+        run: python packages/contracts/export_openapi.py --check
+
       - name: Run test suite
         env:
           POSTGRES_DB: gotrendlabs
