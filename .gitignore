@@ -6,8 +6,12 @@ db.sqlite3
 .coverage
 .env
 .env.prod
+notes.md
 .DS_Store
 docker/postgres/data/
 ops/docker/postgres/data/
 .runtime/
 staticfiles/
+.git.broken-*/
+.git.partial-copy-failed-*/
+docs/mockups/site-v*/XX*
