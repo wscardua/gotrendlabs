@@ -302,7 +302,7 @@ class SecurityHardeningTests(TransactionTestCase):
         self.assertEqual(super_admin.status_code, 200)
 
     def test_caddy_media_headers_disable_sniffing_and_active_content(self):
-        caddyfile = (Path(settings.BASE_DIR) / "deploy" / "production" / "Caddyfile").read_text(encoding="utf-8")
+        caddyfile = (Path(settings.BASE_DIR) / "ops" / "deploy" / "production" / "Caddyfile").read_text(encoding="utf-8")
         self.assertIn("handle_path /media/*", caddyfile)
         self.assertIn("X-Content-Type-Options nosniff", caddyfile)
         self.assertIn("Content-Security-Policy", caddyfile)

@@ -4,7 +4,7 @@ set -euo pipefail
 APP_DIR="${APP_DIR:-/opt/gotrendlabs}"
 BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-}"
-COMPOSE_FILE="deploy/production/docker-compose.yml"
+COMPOSE_FILE="ops/deploy/production/docker-compose.yml"
 ENV_FILE=".env.prod"
 
 if [[ ! -d "$APP_DIR/.git" ]]; then

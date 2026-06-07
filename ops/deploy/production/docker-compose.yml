@@ -5,7 +5,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     env_file:
-      - ../../.env.prod
+      - ../../../.env.prod
     ports:
       - "80:80"
       - "443:443"
@@ -13,7 +13,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
       - caddy_config:/config
-      - ../../.runtime/caddy-certs:/etc/caddy/certs:ro
+      - ../../../.runtime/caddy-certs:/etc/caddy/certs:ro
       - staticfiles:/srv/static:ro
       - mediafiles:/srv/media:ro
     depends_on:
@@ -21,12 +21,12 @@ services:
 
   django:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: Dockerfile
     restart: unless-stopped
     command: uvicorn config.asgi:application --host 0.0.0.0 --port 8000
     env_file:
-      - ../../.env.prod
+      - ../../../.env.prod
     volumes:
       - staticfiles:/app/staticfiles
       - mediafiles:/app/media
@@ -36,24 +36,24 @@ services:
 
   fastapi:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: Dockerfile
     restart: unless-stopped
     command: uvicorn apps.api.backend_api.main:app --host 0.0.0.0 --port 8001
     env_file:
-      - ../../.env.prod
+      - ../../../.env.prod
     volumes:
       - mediafiles:/app/media:ro
       - runtime:/app/.runtime
 
   daemon:
     build:
-      context: ../..
+      context: ../../..
       dockerfile: Dockerfile
     restart: unless-stopped
     command: python manage.py run_gotrendlabs_daemon --interval-seconds 300
     env_file:
-      - ../../.env.prod
+      - ../../../.env.prod
     volumes:
       - runtime:/app/.runtime
     depends_on:

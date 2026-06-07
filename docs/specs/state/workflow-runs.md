@@ -2,6 +2,30 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260607-OPS-LAYOUT-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `infra-deploy-mvp`, `repo-layout`
+- Objetivo: mover deploy, scripts e Docker local para `ops/` como terceira etapa da reorganização do monorepo
+- Etapa atual: concluido; deploy de produção movido para `ops/deploy/production/`, scripts operacionais movidos para `ops/scripts/`, Compose local atualizado para `ops/docker/postgres/data/` e README/specs/skills/testes alinhados
+- Artefatos afetados:
+  - `ops/deploy/production/`
+  - `ops/scripts/`
+  - `ops/docker/README.md`
+  - `docker-compose.yml`
+  - `.github/workflows/deploy.yml`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/state/feature-changelog.md`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Encerrado em: 2026-06-07
+- Retomada: próxima reorganização deve preparar a camada web Django com cuidado para preservar labels, migrations, templates e static
+- Reversão lógica: restaurar `deploy/production/`, `scripts/ops/` e `docker/postgres/data/` como caminhos oficiais e reverter referências em workflow, Compose, docs e testes
+- Evidências de validação: `manage.py check`, `docker compose config --quiet`, `docker compose -f ops/deploy/production/docker-compose.yml config --quiet --no-env-resolution` e suite `manage.py test --keepdb` com 150 testes OK
+
 ## WFLOW-20260607-FASTAPI-LAYOUT-001
 
 - Tipo: `change-feature`
@@ -11,7 +35,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Etapa atual: concluido; pacote FastAPI movido, imports e patches atualizados para `apps.api.backend_api`, comando `uvicorn` local/producao alinhado, specs/skills/docs atualizados e validação local concluida
 - Artefatos afetados:
   - `apps/api/backend_api/`
-  - `deploy/production/docker-compose.yml`
+  - `ops/deploy/production/docker-compose.yml`
   - `tests/test_web_smoke.py`
   - `docs/specs/architecture/backend-api.md`
   - `docs/specs/state/feature-changelog.md`
@@ -33,7 +57,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Etapa atual: concluído; identidades SES `gotrendlabs.com.br`/`.com` verificadas, segredo SMTP instalado na produção, teste sandbox validado, production access solicitado e negado no caso `178067031900201`, recurso manual enviado pelo console AWS, comando de teste SMTP, runbook e specs atualizados em 2026-06-05
 - Artefatos afetados:
   - `admin_ops/management/commands/send_smtp_test_email.py`
-  - `deploy/production/README.md`
+  - `ops/deploy/production/README.md`
   - `tests/test_web_smoke.py`
   - `docs/specs/`
 - Bloqueios: production access do SES foi negado, reenvio imediato por CLI retornou `ConflictException`, a conta sem Premium Support não permite acompanhar/responder ao caso via Support API e o recurso manual enviado pelo console AWS aguarda nova resposta
@@ -79,7 +103,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `config/settings.py`
   - `accounts/`, `core/views.py`, `markets/views.py`
   - `admin_ops/views.py`
-  - `deploy/production/Caddyfile`, `.env.prod.example`, `deploy/production/README.md`
+  - `ops/deploy/production/Caddyfile`, `.env.prod.example`, `ops/deploy/production/README.md`
   - `tests/test_web_smoke.py`
   - `docs/audits/security-audit-2026-06-06.md`
   - `docs/specs/state/`
@@ -121,7 +145,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Artefatos afetados:
   - `backend_api/`, `accounts/`, `markets/`, `admin_ops/`, `agents/`, `system_logs/`
   - `templates/`, `static/css/gotrendlabs.css`, `static/js/gotrendlabs.js`, `static/brand/`
-  - `deploy/production/`, `.github/workflows/deploy.yml`, `.env.example`, `.env.prod.example`
+  - `ops/deploy/production/`, `.github/workflows/deploy.yml`, `.env.example`, `.env.prod.example`
   - `docs/specs/`, `tools/skills/gotrendlabs/`
 - Bloqueios: nenhum
 - Iniciado em: 2026-06-04
@@ -224,7 +248,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `Dockerfile`
   - `.dockerignore`
   - `.env.prod.example`
-  - `deploy/production/`
+  - `ops/deploy/production/`
   - `config/settings.py`
   - `README.md`
   - `docs/specs/spec_prediction_social_market_pt.md`
@@ -234,7 +258,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-05-20
 - Atualizado em: 2026-05-20
 - Encerrado em: 2026-05-20
-- Retomada: configurar EC2/RDS reais, preencher `.env.prod` fora do Git, apontar DNS e executar `deploy/production/deploy.sh`
+- Retomada: configurar EC2/RDS reais, preencher `.env.prod` fora do Git, apontar DNS e executar `ops/deploy/production/deploy.sh`
 - Reversão lógica: remover artefatos de deploy de producao e voltar settings para defaults locais, preservando specs/ADR como decisão substituída
 
 ## WFLOW-20260521-001
@@ -245,8 +269,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Objetivo: provisionar a base AWS real do MVP com EC2 ARM, RDS PostgreSQL privado, SSM, CloudWatch minimo, segredos/configuracao e role OIDC para GitHub Actions
 - Etapa atual: concluido
 - Artefatos afetados:
-  - `deploy/production/README.md`
-  - `deploy/production/deploy.sh`
+  - `ops/deploy/production/README.md`
+  - `ops/deploy/production/deploy.sh`
   - `.github/workflows/deploy.yml`
   - `docs/specs/decisions/ADR-0003-ec2-compose-rds-mvp.md`
   - `docs/specs/state/`
@@ -266,7 +290,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Etapa atual: concluido
 - Artefatos afetados:
   - `.github/workflows/deploy.yml`
-  - `deploy/production/README.md`
+  - `ops/deploy/production/README.md`
   - `docs/specs/state/workflow-runs.md`
   - `docs/specs/state/feature-changelog.md`
   - `docs/specs/state/implementation-status.md`
@@ -1212,8 +1236,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Objetivo: criar fluxo one-off idempotente para popular PRD com dados editoriais bons de DEV, admin inicial, wallet conciliada, badges com mídia e site config
 - Etapa atual: concluído; PRD populado com `@admin`, wallet conciliada, 10 badges com mídia, site config, 27 mercados editoriais, 65 opções e 47 arquivos de mídia; snapshot RDS pré-import `gotrendlabs-prod-before-bootstrap-20260521215807`; senha de `admin@gotrendlabs.com.br` resetada e validada, parâmetros temporários de senha removidos do SSM
 - Artefatos afetados:
-  - `scripts/ops/export_dev_bootstrap.py`
-  - `scripts/ops/import_prod_bootstrap.py`
+  - `ops/scripts/export_dev_bootstrap.py`
+  - `ops/scripts/import_prod_bootstrap.py`
   - `docs/specs/state/`
 - Bloqueios: nenhum
 - Iniciado em: 2026-05-21
