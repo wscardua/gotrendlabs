@@ -10,6 +10,7 @@ notes.md
 .DS_Store
 docker/postgres/data/
 ops/docker/postgres/data/
+ops/docker/postgres/data.empty-*/
 .runtime/
 staticfiles/
 .git.broken-*/

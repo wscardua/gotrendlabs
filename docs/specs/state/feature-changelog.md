@@ -1,5 +1,21 @@
 # Feature Changelog
 
+## 2026-06-07 — FEAT-MOBILE-001 specs e skills mobile
+
+- Criadas specs iniciais do app Flutter Android: arquitetura, contratos FastAPI, MVP, UX dark-first e critérios de aceite.
+- A UX mobile incorpora as imagens de inspiração fornecidas pelo usuário como direção de padrões, sem copiar marca, naming, textos ou layout literal.
+- Criadas skills locais para governança mobile: arquitetura, UX, contratos API, testes, implementação Flutter e docs/memória.
+- `apps/mobile/README.md`, `tools/skills/gotrendlabs/README.md`, status, integration map, known gaps e workflow foram alinhados.
+- Status de implementação: `nao_iniciada`; o ambiente Flutter/Android está preparado, mas o projeto Flutter ainda não foi criado.
+
+## 2026-06-07 — Dashboard administrativo de contratos
+
+- Admin Ops ganhou tela `Contratos` em `/admin-ops/contracts/`, com linha do tempo read-only para organizar mercados ativos e pendentes.
+- A timeline usa `created_at` como início, `close_at` como fechamento previsto, `resolved_at` quando existir e linha pontilhada para o dia atual.
+- A leitura operacional foi refinada para painel de fases (`Criação`, `Operação`, `Fechamento`, `Resolução`) com legenda no topo, marcos de trilho diferenciando passado/hoje/futuro, alerta visual para fechamento próximo/atrasado e carregamento em blocos de 10.
+- A tela reutiliza `GET /admin/markets`, sem novo endpoint FastAPI, migration ou entidade de domínio.
+- Specs de Admin Ops e Backend API foram alinhadas para documentar o uso operacional do contrato administrativo existente.
+
 ## 2026-06-07 — Organização de templates e assets web em `apps/web`
 
 - Templates compartilhados foram movidos de `templates/` para `apps/web/templates/`.

@@ -2,7 +2,7 @@ from pathlib import Path
 from io import BytesIO
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.conf import settings
@@ -111,6 +111,13 @@ BADGE_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "badge_images",
 LOAD_MORE_STEP = 10
 MAX_UPLOAD_IMAGE_BYTES = 5 * 1024 * 1024
 ALLOWED_UPLOAD_FORMATS = {"JPEG", "PNG", "WEBP"}
+CONTRACT_TIMELINE_STATUSES = ("draft", "scheduled", "open", "locked")
+CONTRACT_TIMELINE_STATUS_LABELS = {
+    "draft": "Rascunhos",
+    "scheduled": "Agendados",
+    "open": "Abertos",
+    "locked": "Fechados",
+}
 
 EMAIL_DELIVERY_STATUS_LABELS = {
     "queued": "Na fila",
@@ -273,6 +280,228 @@ def _slice_load_more(request, items):
     limit = _normalized_load_more_limit(request.GET.get("limit"))
     visible_items = items[:limit]
     return visible_items, _load_more_context(request, total, len(visible_items), limit)
+
+
+def _parse_contract_timeline_datetime(value):
+    parsed = _parse_datetime(value)
+    if not parsed:
+        return None
+    if timezone.is_naive(parsed):
+        parsed = timezone.make_aware(parsed, ZoneInfo("UTC"))
+    return parsed
+
+
+def _contract_timeline_label(value):
+    if not value:
+        return ""
+    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
+
+
+def _contract_timeline_position(value, starts_at, span_seconds):
+    if not value or span_seconds <= 0:
+        return 0
+    offset = (value - starts_at).total_seconds()
+    return round(max(0, min(100, (offset / span_seconds) * 100)), 1)
+
+
+def _contract_timeline_marker_context(label, value, today):
+    if not value:
+        return {"label": label, "time_label": "", "time_class": "future"}
+    if timezone.localtime(value).date() == timezone.localtime(today).date():
+        time_label = "Agora"
+        time_class = "now"
+    elif value < today:
+        time_label = "Passado"
+        time_class = "past"
+    else:
+        time_label = "Futuro"
+        time_class = "future"
+    return {
+        "label": f"{label}: {time_label.lower()}",
+        "time_label": time_label,
+        "time_class": time_class,
+    }
+
+
+def _contract_timeline_phase_context(row, today):
+    status = row["market"].get("status") or "draft"
+    close_at = row["close_at"]
+    resolved_at = row["resolved_at"]
+    close_is_past = bool(close_at and close_at <= today)
+    close_is_soon = bool(close_at and today < close_at <= today + timedelta(days=3))
+    labels = {
+        "draft": ("Preparação", "Rascunho pronto para revisar"),
+        "scheduled": ("Agendado", "Contrato aguardando operação"),
+        "open": ("Em operação", "Recebendo previsões até o fechamento"),
+        "locked": ("Em apuração", "Fechado, aguardando resolução"),
+    }
+    current_label, current_note = labels.get(status, ("Operacional", "Acompanhar próximo marco"))
+    phases = [
+        {
+            "label": "Criação",
+            "state": "done",
+            "date_label": _contract_timeline_label(row["starts_at"]),
+            "note": "Contrato criado",
+        },
+        {
+            "label": "Operação",
+            "state": "active" if status == "open" and not close_is_past else "done" if status == "locked" or close_is_past else "pending",
+            "date_label": "em curso" if status == "open" and not close_is_past else "concluída" if status == "locked" or close_is_past else "aguardando",
+            "note": "Janela de previsões",
+        },
+        {
+            "label": "Fechamento",
+            "state": "done" if status == "locked" or resolved_at else "active" if close_is_past else "pending",
+            "date_label": _contract_timeline_label(close_at) or "sem data",
+            "note": "Prazo vencido" if close_is_past and status != "locked" else "Fechamento próximo" if close_is_soon else "Prazo do mercado",
+            "urgency": "overdue" if close_is_past and status != "locked" else "soon" if close_is_soon else "",
+            "alert_label": "Atrasado" if close_is_past and status != "locked" else "Próximo" if close_is_soon else "",
+        },
+        {
+            "label": "Resolução",
+            "state": "done" if resolved_at else "active" if status == "locked" else "pending",
+            "date_label": _contract_timeline_label(resolved_at) or "pendente",
+            "note": "Resultado auditável",
+        },
+    ]
+    first_pending_index = next((index for index, phase in enumerate(phases) if phase["state"] == "pending"), None)
+    for index, phase in enumerate(phases):
+        if phase["state"] == "done":
+            phase["time_label"] = "Passado"
+        elif phase["state"] == "active":
+            phase["time_label"] = "Agora"
+        elif first_pending_index == index:
+            phase["time_label"] = "Próxima"
+        else:
+            phase["time_label"] = "Futuro"
+    return {
+        "current_phase_label": current_label,
+        "current_phase_note": current_note,
+        "current_phase_class": status,
+        "phase_steps": phases,
+    }
+
+
+def _build_contract_timeline(markets, *, today=None):
+    today = today or timezone.now()
+    parsed_rows = []
+    for market in markets:
+        status = market.get("status") or ""
+        if status not in CONTRACT_TIMELINE_STATUSES:
+            continue
+        starts_at = _parse_contract_timeline_datetime(market.get("created_at"))
+        if not starts_at:
+            continue
+        close_at = _parse_contract_timeline_datetime(market.get("close_at"))
+        resolved_at = _parse_contract_timeline_datetime(market.get("resolved_at"))
+        ends_at = resolved_at or close_at or starts_at
+        parsed_rows.append(
+            {
+                "market": market,
+                "starts_at": starts_at,
+                "close_at": close_at,
+                "resolved_at": resolved_at,
+                "ends_at": ends_at,
+            }
+        )
+
+    if not parsed_rows:
+        return {
+            "rows": [],
+            "axis_ticks": [],
+            "today_position": None,
+            "has_today": False,
+            "starts_at_label": "",
+            "ends_at_label": "",
+            "total": 0,
+        }
+
+    starts_at = min(row["starts_at"] for row in parsed_rows)
+    ends_at = max(row["ends_at"] for row in parsed_rows)
+    if ends_at <= starts_at:
+        ends_at = starts_at + timedelta(days=1)
+    span_seconds = (ends_at - starts_at).total_seconds()
+
+    axis_ticks = []
+    for index in range(5):
+        tick_at = starts_at + timedelta(seconds=span_seconds * index / 4)
+        axis_ticks.append(
+            {
+                "position": _contract_timeline_position(tick_at, starts_at, span_seconds),
+                "label": timezone.localtime(tick_at).strftime("%d/%m"),
+            }
+        )
+
+    today_position = None
+    if starts_at <= today <= ends_at:
+        today_position = _contract_timeline_position(today, starts_at, span_seconds)
+
+    rows = []
+    for row in parsed_rows:
+        market = row["market"]
+        starts_at_position = _contract_timeline_position(row["starts_at"], starts_at, span_seconds)
+        ends_at_position = _contract_timeline_position(row["ends_at"], starts_at, span_seconds)
+        close_at_position = _contract_timeline_position(row["close_at"], starts_at, span_seconds) if row["close_at"] else None
+        resolved_at_position = _contract_timeline_position(row["resolved_at"], starts_at, span_seconds) if row["resolved_at"] else None
+        phase_context = _contract_timeline_phase_context(row, today)
+        if today <= row["starts_at"]:
+            progress_end_position = starts_at_position
+        elif today >= row["ends_at"]:
+            progress_end_position = ends_at_position
+        else:
+            progress_end_position = _contract_timeline_position(today, starts_at, span_seconds)
+        rows.append(
+            {
+                "market": market,
+                "status_class": market.get("status") or "draft",
+                **phase_context,
+                "starts_at_label": _contract_timeline_label(row["starts_at"]),
+                "close_at_label": _contract_timeline_label(row["close_at"]),
+                "resolved_at_label": _contract_timeline_label(row["resolved_at"]),
+                "bar_left": starts_at_position,
+                "bar_width": max(1.4, ends_at_position - starts_at_position),
+                "bar_progress_width": max(0, progress_end_position - starts_at_position),
+                "markers": [
+                    {
+                        **_contract_timeline_marker_context("Criação", row["starts_at"], today),
+                        "position": starts_at_position,
+                        "class": "start",
+                    },
+                    *(
+                        [
+                            {
+                                **_contract_timeline_marker_context("Fechamento", row["close_at"], today),
+                                "position": close_at_position,
+                                "class": "close",
+                            }
+                        ]
+                        if close_at_position is not None
+                        else []
+                    ),
+                    *(
+                        [
+                            {
+                                **_contract_timeline_marker_context("Resolução", row["resolved_at"], today),
+                                "position": resolved_at_position,
+                                "class": "resolved",
+                            }
+                        ]
+                        if resolved_at_position is not None
+                        else []
+                    ),
+                ],
+            }
+        )
+
+    return {
+        "rows": rows,
+        "axis_ticks": axis_ticks,
+        "today_position": today_position,
+        "has_today": today_position is not None,
+        "starts_at_label": _contract_timeline_label(starts_at),
+        "ends_at_label": _contract_timeline_label(ends_at),
+        "total": len(rows),
+    }
 
 
 def _parse_datetime(value):
@@ -1047,6 +1276,39 @@ def markets(request):
             "active_status": status_filter,
             "active_order": active_order,
             "search_query": search_query,
+        },
+    )
+
+
+@admin_api_required
+def contracts(request):
+    requested_status = request.GET.get("status") or ""
+    status_filter = requested_status if requested_status in CONTRACT_TIMELINE_STATUSES else ""
+    search_query = request.GET.get("q") or ""
+    try:
+        market_data = admin_get_markets(auth_token(request), status=status_filter, q=search_query, order="created_asc")
+    except AuthAPIError as exc:
+        market_data = {"markets": [], "counts": {}}
+        error = str(exc)
+    else:
+        error = ""
+    timeline = _build_contract_timeline(market_data.get("markets", []))
+    visible_rows, contract_pagination = _slice_load_more(request, timeline.get("rows", []))
+    timeline = {**timeline, "rows": visible_rows}
+    return render(
+        request,
+        "admin_ops/contracts.html",
+        {
+            "timeline": timeline,
+            "contract_pagination": contract_pagination,
+            "market_data": market_data,
+            "admin_error": error,
+            "active_status": status_filter,
+            "search_query": search_query,
+            "status_filters": [
+                {"value": value, "label": label, "count": market_data.get("counts", {}).get(value, 0)}
+                for value, label in CONTRACT_TIMELINE_STATUS_LABELS.items()
+            ],
         },
     )
 

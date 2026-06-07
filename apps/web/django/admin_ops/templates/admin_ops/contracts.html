@@ -1,0 +1,144 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Contratos{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section class="panel contracts-panel">
+    <div class="section-head contracts-head">
+      <div>
+        <span class="eyebrow">Mercados administrativos</span>
+        <h1 class="large-title">Painel de contratos</h1>
+        <p class="muted">Acompanhe a fase de cada mercado ativo ou pendente sem sair da operação.</p>
+      </div>
+      <div class="section-actions">
+        <a class="btn ghost" href="{% url 'admin-ops-markets' %}">Mercados</a>
+        <a class="btn primary" href="{% url 'admin-ops-market-new' %}">Criar mercado</a>
+      </div>
+    </div>
+
+    {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
+
+    <div class="contracts-control-bar">
+      <form class="admin-filter-form contracts-filter-form" method="get" role="search">
+        {% if active_status %}<input type="hidden" name="status" value="{{ active_status }}">{% endif %}
+        <label class="field">
+          <span>Buscar contrato</span>
+          <input type="search" name="q" value="{{ search_query }}" placeholder="Nome, slug, categoria ou evento">
+        </label>
+        <button class="btn small" type="submit">Filtrar</button>
+        {% if search_query %}<a class="btn small ghost" href="{% url 'admin-ops-contracts' %}{% if active_status %}?status={{ active_status }}{% endif %}">Limpar</a>{% endif %}
+      </form>
+
+      <div class="filters contracts-filters">
+        <a class="filter {% if not active_status %}active{% endif %}" href="{% url 'admin-ops-contracts' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}">Ativos e pendentes</a>
+        {% for item in status_filters %}
+          <a class="filter {% if active_status == item.value %}active{% endif %}" href="{% url 'admin-ops-contracts' %}?status={{ item.value }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">{{ item.label }} {{ item.count|default:0 }}</a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="contracts-summary-strip" aria-label="Resumo do painel de contratos">
+      <div>
+        <span>Contratos carregados</span>
+        <strong>{{ contract_pagination.visible_count }} de {{ contract_pagination.total }}</strong>
+      </div>
+      <div>
+        <span>Janela operacional</span>
+        <strong>{{ timeline.starts_at_label|default:"-" }}</strong>
+        <small>até {{ timeline.ends_at_label|default:"-" }}</small>
+      </div>
+      <div>
+        <span>Hoje</span>
+        <strong>{% if timeline.has_today %}na janela{% else %}fora da janela{% endif %}</strong>
+        <small>Marcador pontilhado quando a data aparece no recorte.</small>
+      </div>
+    </div>
+
+    {% if timeline.rows %}
+      <div class="contracts-reference" aria-label="Legenda do painel">
+        <strong>Legenda</strong>
+        <span><i class="legend-bar"></i> janela do contrato</span>
+        <span><i class="legend-dot marker-time-past"></i> marco passado</span>
+        <span><i class="legend-dot marker-time-now"></i> marco hoje</span>
+        <span><i class="legend-dot marker-time-future"></i> marco futuro</span>
+        <span><i class="legend-today"></i> hoje</span>
+        <span><i class="phase-dot legend-done"></i> passado</span>
+        <span><i class="phase-dot legend-active"></i> agora</span>
+        <span><i class="phase-dot legend-pending"></i> futuro</span>
+      </div>
+
+      <div class="contracts-board" aria-label="Fases dos contratos administrativos">
+        <div class="contracts-board-head">
+          <span>Mercado</span>
+          <span>Fases</span>
+          <span>Datas</span>
+        </div>
+
+        {% for row in timeline.rows %}
+          <article class="contract-row status-{{ row.status_class }}">
+            <div class="contract-market">
+              <div class="contract-title-line">
+                <a href="{% url 'admin-ops-market-edit' row.market.slug %}">{{ row.market.title }}</a>
+                <span class="contract-phase-chip phase-{{ row.current_phase_class }}">{{ row.current_phase_label }}</span>
+              </div>
+              <p>{{ row.market.category }} / {{ row.market.subcategory }} / {{ row.market.event }}</p>
+              <small>{{ row.current_phase_note }}</small>
+            </div>
+
+            <div class="contract-flow" aria-label="Fases do mercado">
+              <div class="contract-date-rail" aria-label="Linha compacta de datas">
+                {% if timeline.has_today %}
+                  <span class="contracts-today-line row-line" style="left: {{ timeline.today_position }}%;" aria-label="Hoje"></span>
+                {% endif %}
+                <span class="contracts-bar" style="left: {{ row.bar_left }}%; width: {{ row.bar_width }}%;"></span>
+                <span class="contracts-bar-progress" style="left: {{ row.bar_left }}%; width: {{ row.bar_progress_width }}%;" aria-hidden="true"></span>
+                {% for marker in row.markers %}
+                  <span class="contracts-marker marker-{{ marker.class }} marker-time-{{ marker.time_class }}" style="left: {{ marker.position }}%;" title="{{ marker.label }}" aria-label="{{ marker.label }}"></span>
+                {% endfor %}
+              </div>
+
+              <div class="contract-phases">
+                {% for phase in row.phase_steps %}
+                  <div class="contract-phase phase-state-{{ phase.state }}{% if phase.urgency %} phase-urgency-{{ phase.urgency }}{% endif %}">
+                    <span class="phase-dot" aria-hidden="true"></span>
+                    <span class="phase-label">{{ phase.label }}</span>
+                    {% if phase.alert_label %}<b class="phase-alert">{{ phase.alert_label }}</b>{% endif %}
+                    <em>{{ phase.time_label }}</em>
+                    <strong>{{ phase.date_label }}</strong>
+                    <small>{{ phase.note }}</small>
+                  </div>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="contract-dates">
+              <span class="tag">{{ row.market.status_label }}</span>
+              <dl>
+                <div>
+                  <dt>Criação</dt>
+                  <dd>{{ row.starts_at_label }}</dd>
+                </div>
+                {% if row.close_at_label %}
+                  <div>
+                    <dt>Fechamento</dt>
+                    <dd>{{ row.close_at_label }}</dd>
+                  </div>
+                {% endif %}
+                <div>
+                  <dt>Resolução</dt>
+                  <dd>{{ row.resolved_at_label|default:"pendente" }}</dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+      {% include "admin_ops/partials/load_more.html" with pagination=contract_pagination label="Mais contratos" %}
+    {% else %}
+      <div class="market-empty">
+        <h2>Nenhum contrato para a linha do tempo.</h2>
+        <p>Quando houver mercados ativos ou pendentes com data de criação válida, eles aparecerão aqui.</p>
+      </div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

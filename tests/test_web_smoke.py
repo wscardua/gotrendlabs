@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from io import StringIO
 import importlib
@@ -6276,6 +6276,141 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Popularidade operacional")
         self.assertContains(response, "12 visualizações · 3 compartilhamentos")
 
+    def test_admin_contracts_timeline_uses_active_market_contract_dates(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "staffuser",
+            "email": "staff-user@example.com",
+            "display_name": "Staff User",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        def market(slug, title, status, created_at, close_at=None, resolved_at=None):
+            return {
+                "slug": slug,
+                "title": title,
+                "status": status,
+                "status_label": {
+                    "draft": "Rascunho",
+                    "scheduled": "Agendado",
+                    "open": "Aberto",
+                    "locked": "Fechado",
+                    "resolved": "Resolvido",
+                    "canceled": "Cancelado",
+                }[status],
+                "category": "IA",
+                "subcategory": "Modelos",
+                "event": "Geral",
+                "created_at": created_at,
+                "close_at": close_at,
+                "resolved_at": resolved_at,
+            }
+
+        market_data = {
+            "markets": [
+                market("draft-contract", "Contrato em rascunho", "draft", "2026-06-01T00:00:00+00:00", "2026-06-08T00:00:00+00:00"),
+                market("scheduled-contract", "Contrato agendado", "scheduled", "2026-06-02T00:00:00+00:00", "2026-06-09T00:00:00+00:00"),
+                market("open-contract", "Contrato aberto", "open", "2026-06-03T00:00:00+00:00", "2026-06-11T00:00:00+00:00"),
+                market("locked-contract", "Contrato em apuração", "locked", "2026-06-04T00:00:00+00:00", "2026-06-10T00:00:00+00:00"),
+                market("resolved-contract", "Contrato resolvido", "resolved", "2026-05-20T00:00:00+00:00", "2026-05-30T00:00:00+00:00", "2026-06-01T00:00:00+00:00"),
+                market("canceled-contract", "Contrato cancelado", "canceled", "2026-05-21T00:00:00+00:00", "2026-05-29T00:00:00+00:00"),
+            ],
+            "counts": {"draft": 1, "scheduled": 1, "open": 1, "locked": 1, "resolved": 1, "canceled": 1},
+        }
+        fixed_today = datetime.fromisoformat("2026-06-06T00:00:00+00:00")
+
+        with (
+            patch("apps.web.django.admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock,
+            patch("apps.web.django.admin_ops.views.timezone.now", return_value=fixed_today),
+        ):
+            response = self.client.get(reverse("admin-ops-contracts"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Painel de contratos")
+        self.assertContains(response, "Contrato em rascunho")
+        self.assertContains(response, "Contrato agendado")
+        self.assertContains(response, "Contrato aberto")
+        self.assertContains(response, "Contrato em apuração")
+        self.assertNotContains(response, "Contrato resolvido")
+        self.assertNotContains(response, "Contrato cancelado")
+        self.assertContains(response, "Contratos carregados")
+        self.assertContains(response, "4 de 4")
+        self.assertContains(response, "Legenda")
+        html = response.content.decode()
+        self.assertLess(html.find("Legenda"), html.find("Contrato em rascunho"))
+        self.assertContains(response, "Criação")
+        self.assertContains(response, "Operação")
+        self.assertContains(response, "Fechamento")
+        self.assertContains(response, "Resolução")
+        self.assertContains(response, "Em operação")
+        self.assertContains(response, "Passado")
+        self.assertContains(response, "Agora")
+        self.assertContains(response, "Próxima")
+        self.assertContains(response, "Futuro")
+        self.assertContains(response, "contracts-bar-progress")
+        self.assertContains(response, "marker-time-past")
+        self.assertContains(response, "marker-time-future")
+        self.assertContains(response, "Fechamento próximo")
+        self.assertContains(response, "phase-urgency-soon")
+        self.assertContains(response, "Próximo")
+        self.assertContains(response, "Hoje")
+        self.assertContains(response, reverse("admin-ops-market-edit", args=["open-contract"]))
+        self.assertNotContains(response, 'class="panel admin-menu"')
+        markets_mock.assert_called_once_with("staff-token", status="", q="", order="created_asc")
+        timeline = response.context["timeline"]
+        self.assertEqual(timeline["total"], 4)
+        self.assertEqual(timeline["rows"][0]["market"]["slug"], "draft-contract")
+        self.assertEqual(timeline["rows"][0]["starts_at_label"].split()[0], "31/05/2026")
+        self.assertEqual(timeline["rows"][0]["phase_steps"][2]["urgency"], "soon")
+        self.assertEqual(timeline["rows"][0]["phase_steps"][2]["alert_label"], "Próximo")
+        self.assertEqual(timeline["rows"][2]["current_phase_label"], "Em operação")
+        self.assertEqual([phase["time_label"] for phase in timeline["rows"][2]["phase_steps"]], ["Passado", "Agora", "Próxima", "Futuro"])
+        self.assertGreater(timeline["rows"][2]["bar_progress_width"], 0)
+        self.assertEqual([marker["time_class"] for marker in timeline["rows"][2]["markers"]], ["past", "future"])
+        self.assertEqual(timeline["rows"][3]["phase_steps"][3]["state"], "active")
+        self.assertEqual(timeline["rows"][3]["phase_steps"][3]["time_label"], "Agora")
+        self.assertAlmostEqual(timeline["today_position"], 50.0)
+
+        paginated_market_data = {
+            "markets": [
+                market(
+                    f"contract-page-{index}",
+                    f"Contrato paginado {index}",
+                    "open",
+                    f"2026-06-{index:02d}T00:00:00+00:00",
+                    f"2026-06-{index + 8:02d}T00:00:00+00:00",
+                )
+                for index in range(1, 13)
+            ],
+            "counts": {"open": 12},
+        }
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value=paginated_market_data):
+            response = self.client.get(reverse("admin-ops-contracts"))
+        self.assertContains(response, "10 de 12")
+        self.assertContains(response, "Carregar mais")
+        self.assertContains(response, "Contrato paginado 10")
+        self.assertNotContains(response, "Contrato paginado 11")
+
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value=paginated_market_data):
+            response = self.client.get(f"{reverse('admin-ops-contracts')}?limit=20")
+        self.assertContains(response, "12 de 12")
+        self.assertContains(response, "Contrato paginado 11")
+        self.assertNotContains(response, "Carregar mais")
+
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock:
+            response = self.client.get(f"{reverse('admin-ops-contracts')}?status=open&q=contrato")
+        self.assertEqual(response.status_code, 200)
+        markets_mock.assert_called_once_with("staff-token", status="open", q="contrato", order="created_asc")
+
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value={"markets": [], "counts": {}}):
+            response = self.client.get(reverse("admin-ops-contracts"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nenhum contrato para a linha do tempo.")
+
     @override_settings(PUBLIC_SHARE_BASE_URL="https://share.gotrendlabs.example")
     def test_share_links_use_configured_public_origin(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -6340,6 +6475,7 @@ class WebSmokeTests(TransactionTestCase):
             reverse("admin-ops-dashboard"),
             reverse("admin-ops-config"),
             reverse("admin-ops-markets"),
+            reverse("admin-ops-contracts"),
             reverse("admin-ops-users"),
             reverse("admin-ops-user-detail", args=[1]),
             reverse("admin-ops-system-logs"),

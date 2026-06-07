@@ -78,6 +78,9 @@
 - Browse de mercados administrativos filtra por status via query string e mantém contadores globais por status.
 - Browse de mercados administrativos exibe `view_count` e `share_count` como indicadores compactos de popularidade operacional e permite ordenar por padrão, mais visualizados ou mais compartilhados.
 - Browse de mercados administrativos permite busca textual por parte do título/slug/resumo, exibe participantes humanos/bots/total operacional e preserva filtros ao carregar mais resultados.
+- Dashboard de contratos em Admin Ops exibe painel read-only para mercados `draft`, `scheduled`, `open` e `locked`, usando `created_at` como início, `close_at` como fechamento previsto, `resolved_at` quando existir e uma linha pontilhada para o dia atual no trilho temporal de cada mercado.
+- Dashboard de contratos organiza cada mercado em fases explícitas (`Criação`, `Operação`, `Fechamento`, `Resolução`), com marcação de passado/agora/próxima/futuro, legenda antes da lista, carregamento cumulativo em blocos de 10 e alerta visual no card de `Fechamento` quando o prazo está próximo ou atrasado.
+- Dashboard de contratos consome o contrato administrativo de mercados existente e calcula escala/posições apenas na camada Django; não cria nova entidade de domínio nem edita contratos inline.
 - Browses principais de usuários, mercados, resolução, filas e logs usam `Carregar mais` em blocos cumulativos de 10 itens, preservando filtros aplicados.
 - Browse de mercados administrativos deve degradar para leitura local em Postgres quando a FastAPI administrativa estiver indisponível ou retornar erro transitório, evitando bloquear a operação de visualização.
 - Browse de mercados administrativos deve manter a ação primária focada em `Editar/visualizar`; acesso à página pública fica no editor do mercado, não na tabela de listagem.

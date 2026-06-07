@@ -2,6 +2,59 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260607-MOBILE-SPECS-SKILLS-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`, `future-mobile`
+- Objetivo: criar specs e skills locais para iniciar o app Flutter Android do GoTrendLabs com design mobile inspirado nas referências fornecidas pelo usuário e governança docs/memória
+- Etapa atual: concluido; specs mobile criadas, skills mobile adicionadas, README mobile atualizado, estado/changelog/integration map/known gaps alinhados e projeto Flutter mantido como próxima etapa
+- Artefatos afetados:
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/features/mobile-mvp.md`
+  - `docs/specs/features/mobile-ux.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/change-log-specs.md`
+  - `docs/specs/state/integration-map.md`
+  - `docs/specs/state/known-gaps.md`
+  - `apps/mobile/README.md`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum para specs; antes de login persistente falta decisão técnica de autenticação mobile segura
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Encerrado em: 2026-06-07
+- Retomada: revisar specs com o usuário e criar o projeto Flutter em `apps/mobile` quando aprovado
+- Reversão lógica: remover as specs/skills mobile criadas nesta fatia e restaurar `apps/mobile/README.md` como reserva sem spec Flutter
+- Evidências de validação: revisão documental contra skills mobile, arquitetura existente e referências visuais fornecidas; sem testes executáveis porque não houve código Flutter
+
+## WFLOW-20260607-ADMIN-CONTRACTS-TIMELINE-001
+
+- Tipo: `change-feature`
+- Status: `em_validacao`
+- Feature alvo: `FEAT-MARKET-001`, `admin-ops`
+- Objetivo: adicionar painel administrativo read-only para organização operacional de contratos/mercados ativos e pendentes
+- Etapa atual: implementação local concluída; aguardando publicação via PR e validação do workflow de produção
+- Artefatos afetados:
+  - `apps/web/django/admin_ops/views.py`
+  - `apps/web/django/admin_ops/templates/admin_ops/contracts.html`
+  - `apps/web/django/admin_ops/templates/admin_ops/markets.html`
+  - `apps/web/static/css/gotrendlabs.css`
+  - `config/urls.py`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/architecture/admin-ops.md`
+  - `docs/specs/architecture/backend-api.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Retomada: após aprovação, abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e atualizar este registro para `concluido` ou `bloqueado`
+- Reversão lógica: remover rota `/admin-ops/contracts/`, botão no browse de mercados, helper de timeline no Django, template/CSS do painel e teste focado
+- Evidências de validação local: `manage.py check`, `makemigrations --check --dry-run`, teste focado `tests.test_web_smoke.WebSmokeTests.test_admin_contracts_timeline_uses_active_market_contract_dates`, render manual com API mockada e `git diff --check`
+
 ## WFLOW-20260607-WEB-ASSETS-LAYOUT-001
 
 - Tipo: `change-feature`
