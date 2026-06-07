@@ -6193,6 +6193,18 @@ def get_my_wallet_recharge_requests(authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
+            wallet = _wallet_summary(cursor, user["id"])
+            cursor.execute(
+                """
+                SELECT wallet_recharge_min_balance_gtl
+                FROM gotrendlabs_site_config
+                WHERE singleton_key = 1
+                """
+            )
+            site_config = cursor.fetchone()
+            min_balance = int(
+                site_config["wallet_recharge_min_balance_gtl"] if site_config else 100
+            )
             cursor.execute(
                 """
                 SELECT id, status, amount_gtl, admin_note, created_at, reviewed_at
@@ -6203,7 +6215,14 @@ def get_my_wallet_recharge_requests(authorization: str = Header(default="")):
                 """,
                 (user["id"],),
             )
-            return {"requests": [_wallet_recharge_public_response(row) for row in cursor.fetchall()]}
+            return {
+                "requests": [
+                    _wallet_recharge_public_response(row) for row in cursor.fetchall()
+                ],
+                "available_gtl": wallet["available_gtl"],
+                "min_balance_gtl": min_balance,
+                "eligible": wallet["available_gtl"] <= min_balance,
+            }
 
 
 @app.post("/users/me/wallet/recharge-requests", response_model=WalletRechargeRequestResponse, status_code=status.HTTP_201_CREATED)

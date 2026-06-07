@@ -22,8 +22,51 @@ final marketDetailProvider = FutureProvider.family<Market, String>((
   return ref.read(marketsRepositoryProvider).detail(slug);
 });
 
+class RankingFilters {
+  const RankingFilters({
+    this.category = '',
+    this.subcategory = '',
+    this.event = '',
+  });
+
+  final String category;
+  final String subcategory;
+  final String event;
+
+  @override
+  bool operator ==(Object other) {
+    return other is RankingFilters &&
+        other.category == category &&
+        other.subcategory == subcategory &&
+        other.event == event;
+  }
+
+  @override
+  int get hashCode => Object.hash(category, subcategory, event);
+}
+
+final rankingPayloadProvider =
+    FutureProvider.family<Map<String, dynamic>, RankingFilters>((
+      ref,
+      filters,
+    ) async {
+      return ref
+          .read(apiClientProvider)
+          .getMap(
+            '/rankings',
+            query: {
+              if (filters.category.isNotEmpty) 'category': filters.category,
+              if (filters.subcategory.isNotEmpty)
+                'subcategory': filters.subcategory,
+              if (filters.event.isNotEmpty) 'event': filters.event,
+            },
+          );
+    });
+
 final rankingProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final json = await ref.read(apiClientProvider).getMap('/rankings');
+  final json = await ref.watch(
+    rankingPayloadProvider(const RankingFilters()).future,
+  );
   return ((json['rows'] as List<dynamic>?) ?? <dynamic>[])
       .whereType<Map>()
       .map((item) => Map<String, dynamic>.from(item))

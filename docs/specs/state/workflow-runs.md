@@ -1628,3 +1628,25 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-06-07
 - Retomada: abrir PR, acompanhar CI/deploy e fazer smoke pos-merge
 - Reversão lógica: remover snapshot/versionador e voltar `packages/contracts/` para estado reservado, mantendo a documentação viva da FastAPI em `/docs`
+
+## WFLOW-20260607-MOBILE-ANDROID-MVP-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: implementar o MVP Android Flutter consumindo a FastAPI como fonte da verdade
+- Etapa atual: concluido; app Flutter, ajustes de contrato, docs, testes, build Android debug e smoke em emulador validados em 2026-06-07
+- Artefatos afetados:
+  - `apps/mobile/`
+  - `apps/api/backend_api/`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/`
+  - `tests/test_web_smoke.py`
+- Bloqueios: nenhum para o MVP Android local
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Encerrado em: 2026-06-07
+- Retomada: ampliar QA autenticado real em emulador, avaliar refresh token/offline/push/iOS e consolidar cliente gerado quando contratos estabilizarem
+- Reversão lógica: ocultar entrada mobile/reverter `apps/mobile`, manter contratos backend compatíveis de recarga como extensao segura, e preservar docs para retomada futura

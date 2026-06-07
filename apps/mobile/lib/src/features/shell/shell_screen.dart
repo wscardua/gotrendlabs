@@ -5,6 +5,7 @@ import '../../theme.dart';
 import '../alerts/alerts_screen.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
+import '../info/trust_screen.dart';
 import '../markets/markets_screen.dart';
 import '../profile/badges_screen.dart';
 import '../profile/profile_screen.dart';
@@ -87,6 +88,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
               if (value == 'feedback') {
                 showFeedbackSheet(context);
               }
+              if (value == 'trust') {
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (_) => const TrustScreen()));
+              }
               if (value == 'logout') {
                 ref.read(authControllerProvider.notifier).logout();
               }
@@ -113,6 +119,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen> {
                 child: ListTile(
                   leading: Icon(Icons.workspace_premium_outlined),
                   title: Text('Badges'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'trust',
+                child: ListTile(
+                  leading: Icon(Icons.shield_outlined),
+                  title: Text('Política e segurança'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

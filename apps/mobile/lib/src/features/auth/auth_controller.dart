@@ -109,6 +109,7 @@ class AuthController extends Notifier<AuthState> {
     ref.invalidate(badgesProvider);
     ref.invalidate(badgeCatalogProvider);
     ref.invalidate(referralProvider);
+    ref.invalidate(walletRechargeRequestsProvider);
   }
 }
 
@@ -172,4 +173,22 @@ final ledgerProvider = FutureProvider<Map<String, dynamic>>((ref) async {
     return <String, dynamic>{};
   }
   return ref.read(apiClientProvider).getMap('/users/me/ledger');
+});
+
+final walletRechargeRequestsProvider = FutureProvider<Map<String, dynamic>>((
+  ref,
+) async {
+  ref.watch(authControllerProvider);
+  final auth = ref.read(authControllerProvider);
+  if (!auth.isAuthenticated) {
+    return <String, dynamic>{
+      'requests': <dynamic>[],
+      'available_gtl': 0,
+      'min_balance_gtl': 100,
+      'eligible': false,
+    };
+  }
+  return ref
+      .read(apiClientProvider)
+      .getMap('/users/me/wallet/recharge-requests');
 });

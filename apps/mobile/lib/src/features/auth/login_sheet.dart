@@ -29,6 +29,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   final _password = TextEditingController();
   bool _register = false;
   bool _acceptedTerms = false;
+  String? _localError;
 
   @override
   void dispose() {
@@ -81,8 +82,10 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
                 ButtonSegment(value: true, label: Text('Cadastro')),
               ],
               selected: {_register},
-              onSelectionChanged: (value) =>
-                  setState(() => _register = value.first),
+              onSelectionChanged: (value) => setState(() {
+                _register = value.first;
+                _localError = null;
+              }),
             ),
             const SizedBox(height: 16),
             if (_register) ...[
@@ -115,10 +118,10 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
                 title: const Text('Aceito a política de uso da GoTrendLabs'),
               ),
             ],
-            if (auth.error != null) ...[
+            if (_localError != null || auth.error != null) ...[
               const SizedBox(height: 12),
               Text(
-                auth.error!,
+                _localError ?? auth.error!,
                 style: const TextStyle(color: GtlColors.accentRed),
               ),
             ],
@@ -146,6 +149,12 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   Future<void> _submit() async {
     final email = _email.text.trim();
     final password = _password.text;
+    final localError = _validateForm(email, password);
+    if (localError != null) {
+      setState(() => _localError = localError);
+      return;
+    }
+    setState(() => _localError = null);
     if (_register) {
       await ref
           .read(authControllerProvider.notifier)
@@ -156,9 +165,13 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   }
 
   Future<void> _recoverPassword() async {
-    await ref
-        .read(authControllerProvider.notifier)
-        .requestPasswordReset(_email.text.trim());
+    final email = _email.text.trim();
+    if (!_isValidEmail(email)) {
+      setState(() => _localError = 'Informe um email válido.');
+      return;
+    }
+    setState(() => _localError = null);
+    await ref.read(authControllerProvider.notifier).requestPasswordReset(email);
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -168,5 +181,25 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
         ),
       );
     }
+  }
+
+  String? _validateForm(String email, String password) {
+    if (!_isValidEmail(email)) {
+      return 'Informe um email válido.';
+    }
+    if (password.isEmpty) {
+      return 'Informe sua senha.';
+    }
+    if (_register && _name.text.trim().isEmpty) {
+      return 'Informe um nome público.';
+    }
+    if (_register && !_acceptedTerms) {
+      return 'Aceite a política de uso para criar sua conta.';
+    }
+    return null;
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
   }
 }

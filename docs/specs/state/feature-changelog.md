@@ -9,8 +9,13 @@
 - Wallet, perfil, ranking, badges e alertas foram implementados como leitura da API.
 - Perfil mobile passou a expor catalogo de badges, imagens de badges via `/media`, convite por referral, atalhos com icones para wallet/ranking/sair e forms de suporte/sugestao alinhados a web.
 - Sugestao de mercado mobile passou a carregar categorias ativas de `GET /taxonomy`; feedback mobile passou a usar as opcoes publicas da web sem seletor de prioridade.
-- Cards de mercado mobile passaram a resolver midia pelo web base e a exibir a `thumb` cadastrada tambem quando houver thumbnail.
-- Validações locais: `flutter analyze`, `flutter test`, `flutter doctor -v` e build Android debug.
+- Cards de mercado mobile passaram a resolver midia pelo web base, sem gerar iniciais locais de categoria nem sobrepor `thumb` quando `image_url` existir; fallback visual permanece apenas de apresentacao.
+- Ticket de previsao mobile passou a espelhar o preview web com `Opcao escolhida`, `Credito possivel se acertar` e `Credito reservado`, atualizando o retorno via `/prediction-preview` com debounce ao selecionar opcao ou mover o controle.
+- Wallet mobile ganhou recarga controlada com elegibilidade, pendencia, historico e solicitacao por `/users/me/wallet/recharge-requests`; o contrato passou a expor `available_gtl`, `min_balance_gtl` e `eligible`, mantendo o `POST` como autoridade de dominio.
+- Ranking mobile passou a carregar filtros de categoria, subcategoria e evento a partir de `/rankings`, como na web.
+- Mobile passou a expor `Politica de uso`, `Conceitos` e `Seguranca` em tela publica de confianca, acessivel pelo menu e perfil.
+- Mensagens de erro mobile passaram a traduzir validacoes FastAPI comuns para copy final, evitando payload tecnico na UI.
+- Validações locais: `flutter analyze`, `flutter test`, `flutter doctor -v`, `flutter build apk --debug`, `python manage.py check`, teste backend focado e `packages/contracts/export_openapi.py --check`.
 
 ## 2026-06-07 — FEAT-MOBILE-001 specs e skills mobile
 

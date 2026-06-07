@@ -267,52 +267,10 @@ class _MarketImage extends StatelessWidget {
             errorWidget: (context, url, error) =>
                 _FallbackMarketArt(market: market),
           ),
-          if (market.thumb.trim().isNotEmpty)
-            Positioned(
-              top: 10,
-              right: 10,
-              child: _MarketThumbBadge(market: market),
-            ),
         ],
       );
     }
     return _FallbackMarketArt(market: market);
-  }
-}
-
-class _MarketThumbBadge extends StatelessWidget {
-  const _MarketThumbBadge({required this.market});
-
-  final Market market;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: _hexColor(market.thumbColor).withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.26),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Text(
-          market.thumb,
-          maxLines: 1,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w900,
-            fontSize: 12,
-          ),
-        ),
-      ),
-    );
   }
 }
 
@@ -357,19 +315,23 @@ class _FallbackMarketArt extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: EdgeInsets.symmetric(
-                    horizontal: compact ? 12 : 20,
-                    vertical: compact ? 8 : 14,
+                    horizontal: compact ? 10 : 18,
+                    vertical: compact ? 10 : 18,
                   ),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      market.thumb.isEmpty
-                          ? _initials(market.category)
-                          : market.thumb,
-                      maxLines: 1,
-                      style: textStyle,
-                    ),
-                  ),
+                  child: market.thumb.trim().isEmpty
+                      ? Icon(
+                          Icons.auto_graph,
+                          color: Colors.white.withValues(alpha: 0.86),
+                          size: compact ? 28 : 46,
+                        )
+                      : FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            market.thumb,
+                            maxLines: 1,
+                            style: textStyle,
+                          ),
+                        ),
                 ),
               ),
             ),
@@ -456,12 +418,4 @@ Color _hexColor(String value) {
   final normalized = value.replaceFirst('#', '');
   final parsed = int.tryParse('FF$normalized', radix: 16);
   return Color(parsed ?? 0xFF11151B);
-}
-
-String _initials(String value) {
-  final clean = value.trim();
-  if (clean.isEmpty) {
-    return 'GT';
-  }
-  return clean.substring(0, clean.length < 2 ? 1 : 2).toUpperCase();
 }

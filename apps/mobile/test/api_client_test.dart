@@ -34,6 +34,31 @@ void main() {
     expect(badges, hasLength(1));
     expect((badges.first as Map)['code'], 'founder');
   });
+
+  test('ApiFailure hides raw validation payloads', () {
+    final failure = ApiFailure.fromObject(
+      DioException(
+        requestOptions: RequestOptions(path: '/auth/login'),
+        response: Response<Object?>(
+          requestOptions: RequestOptions(path: '/auth/login'),
+          statusCode: 422,
+          data: {
+            'detail': [
+              {
+                'type': 'value_error',
+                'loc': ['body', 'email'],
+                'msg': 'value is not a valid email address',
+                'input': '',
+                'ctx': {'reason': 'An email address must have an @-sign.'},
+              },
+            ],
+          },
+        ),
+      ),
+    );
+
+    expect(failure.message, 'Informe um email válido.');
+  });
 }
 
 class _Adapter implements HttpClientAdapter {

@@ -168,15 +168,22 @@ Antes de considerar a UI pronta:
 - testar fonte ampliada
 - testar textos longos de mercado
 - testar imagem ausente
-- testar fallback iconizado de mercado quando `image_url` vier vazio
+- testar fallback iconizado/neutro de mercado quando `image_url` e `thumb` vierem vazios, sem iniciais geradas a partir da categoria
 - confirmar que `thumb` cadastrado aparece tambem quando houver thumbnail de mercado
+- confirmar que `thumb` cadastrado nao aparece sobreposto quando `image_url` de mercado estiver disponivel
+- confirmar que o ticket de previsao replica o preview web com `Opcao escolhida`, `Credito possivel se acertar` e `Credito reservado`, atualizando o retorno pelo backend ao mover o controle
+- confirmar que a wallet mostra recarga controlada com elegibilidade, pendencia, historico e criacao via API
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
 - confirmar que suporte/feedback e sugestao de mercado estao acessiveis no menu com icones
+- confirmar que politica de uso, conceitos e seguranca estao acessiveis no menu e perfil
 - confirmar que sugestao de mercado carrega categorias ativas da taxonomia
 - confirmar que feedback usa as opcoes da web sem seletor de prioridade
 - confirmar que compartilhamento aparece no hero ao lado de favoritar/curtir
 - confirmar que o detalhe nao repete o titulo do mercado logo abaixo do hero
+- confirmar que o ticket de previsao aparece antes do criterio de resolucao no detalhe
+- confirmar que erros de validacao aparecem em linguagem final, sem payload tecnico da API
+- confirmar que ranking permite filtrar por categoria, subcategoria e evento como na web
 - testar mercado sem comentarios
 - testar mercado resolvido
 - testar erro de rede

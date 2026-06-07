@@ -168,9 +168,7 @@ class ApiFailure implements Exception {
     }
     if (error is DioException) {
       final statusCode = error.response?.statusCode ?? 0;
-      final detail = error.response?.data is Map
-          ? (error.response?.data as Map)['detail']?.toString()
-          : null;
+      final detail = _detailMessage(error.response?.data);
       if (error.type == DioExceptionType.connectionTimeout ||
           error.type == DioExceptionType.receiveTimeout ||
           error.type == DioExceptionType.connectionError) {
@@ -187,6 +185,10 @@ class ApiFailure implements Exception {
       }
       if (statusCode == 409 || statusCode == 422) {
         final lower = (detail ?? '').toLowerCase();
+        final validationMessage = _validationMessage(lower);
+        if (validationMessage != null) {
+          return ApiFailure('validation', validationMessage);
+        }
         if (lower.contains('saldo')) {
           return ApiFailure(
             'insufficient_balance',
@@ -207,6 +209,60 @@ class ApiFailure implements Exception {
       return ApiFailure('server', detail ?? 'Falha inesperada da API.');
     }
     return ApiFailure('server', 'Falha inesperada.');
+  }
+
+  static String? _detailMessage(Object? data) {
+    if (data is! Map) {
+      return null;
+    }
+    final detail = data['detail'];
+    if (detail is String) {
+      return detail;
+    }
+    if (detail is List) {
+      return detail.map(_detailItemMessage).whereType<String>().join(' ');
+    }
+    if (detail is Map) {
+      return _detailItemMessage(detail);
+    }
+    return detail?.toString();
+  }
+
+  static String? _detailItemMessage(Object? item) {
+    if (item is Map) {
+      final loc = (item['loc'] as List?)?.join('.') ?? '';
+      final msg = item['msg']?.toString() ?? '';
+      final reason = item['ctx'] is Map
+          ? (item['ctx'] as Map)['reason']?.toString() ?? ''
+          : '';
+      return '$loc $msg $reason'.trim();
+    }
+    return item?.toString();
+  }
+
+  static String? _validationMessage(String lower) {
+    if (lower.contains('email') && lower.contains('@')) {
+      return 'Informe um email válido.';
+    }
+    if (lower.contains('email') && lower.contains('valid')) {
+      return 'Informe um email válido.';
+    }
+    if (lower.contains('body.email')) {
+      return 'Informe um email válido.';
+    }
+    if (lower.contains('terms') || lower.contains('política')) {
+      return 'Aceite a política de uso para criar sua conta.';
+    }
+    if (lower.contains('field required') || lower.contains('missing')) {
+      return 'Preencha os campos obrigatórios.';
+    }
+    if (lower.contains('password') || lower.contains('senha')) {
+      return 'Revise a senha informada.';
+    }
+    if (lower.contains('value_error') || lower.contains('loc:')) {
+      return 'Revise os dados informados.';
+    }
+    return null;
   }
 
   @override

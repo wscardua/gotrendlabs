@@ -8,6 +8,7 @@ import '../../core/formatters.dart';
 import '../../theme.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
+import '../info/trust_screen.dart';
 import 'badges_screen.dart';
 import '../ranking/ranking_screen.dart';
 import '../support/contribution_sheets.dart';
@@ -112,6 +113,16 @@ class ProfileScreen extends ConsumerWidget {
                           onPressed: () => showFeedbackSheet(context),
                           icon: const Icon(Icons.support_agent),
                           label: const Text('Suporte/feedback'),
+                        ),
+                        const SizedBox(height: 8),
+                        OutlinedButton.icon(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const TrustScreen(),
+                            ),
+                          ),
+                          icon: const Icon(Icons.shield_outlined),
+                          label: const Text('Política, conceitos e segurança'),
                         ),
                       ],
                     );

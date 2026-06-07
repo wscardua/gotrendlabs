@@ -193,6 +193,7 @@ Endpoints esperados:
 Requisitos mobile:
 
 - preview sempre calculado pela API
+- app pode chamar preview de forma reativa ao selecionar opcao ou mover o controle de GT₵, com debounce, sem calcular retorno localmente
 - criacao exige usuario autenticado, opcao explicita e stake valido
 - duplicidade de previsao, saldo insuficiente e mercado fechado devem gerar erro mapeavel
 - resposta de sucesso deve retornar saldo atualizado e snapshot de probabilidade
@@ -219,13 +220,16 @@ Requisitos mobile:
 
 Endpoints esperados:
 
-- saldo autenticado
-- extrato autenticado
-- solicitacao de recarga educativa quando contrato estiver disponivel
+- `GET /users/me/wallet`
+- `GET /users/me/ledger`
+- `GET /users/me/wallet/recharge-requests`
+- `POST /users/me/wallet/recharge-requests`
 
 Requisitos mobile:
 
 - saldo e extrato sao leitura da API
+- recarga controlada usa `available_gtl`, `min_balance_gtl`, `eligible` e `requests` retornados pela API
+- app mostra pendencia e historico, mas o `POST` continua sendo a autoridade para elegibilidade, duplicidade e email confirmado
 - labels humanos devem evitar codigos tecnicos de ledger
 - `GTL` ou `GT₵` deve ser tratado como moeda educativa, sem copy de dinheiro real, saque ou investimento
 
