@@ -7,8 +7,8 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 - Django 4.2 para paginas publicas, areas autenticadas e Admin Ops customizado.
 - FastAPI para contratos de dominio, autenticacao, mercados, previsoes, comentarios, filas e operacoes administrativas.
 - PostgreSQL 16 para usuarios, sessoes, mercados, opcoes, previsoes, wallet, comentarios e trilha operacional.
-- HTMX e JavaScript leve em `static/js/gotrendlabs.js` para interacoes parciais e estado local simples.
-- CSS proprio em `static/css/gotrendlabs.css`, com suporte a dark mode via `localStorage`.
+- HTMX e JavaScript leve em `apps/web/static/js/gotrendlabs.js` para interacoes parciais e estado local simples.
+- CSS proprio em `apps/web/static/css/gotrendlabs.css`, com suporte a dark mode via `localStorage`.
 
 ## Estrutura
 
@@ -20,15 +20,17 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 - `markets/`: modelos de mercado, opcoes, previsoes, comentarios e servicos locais.
 - `core/`: feed, paginas publicas, fallback de dominio e context processors.
 - `admin_ops/`: painel operacional customizado para mercados, taxonomia, filas e moderacao.
+- `apps/web/templates/`: templates compartilhados da camada web Django.
+- `apps/web/static/`: assets compartilhados da camada web Django.
 - `docs/specs/`: fonte principal de arquitetura, features, fluxos e criterios de aceite.
 - `tools/skills/gotrendlabs/`: skills locais usadas para orientar implementacao por camada.
 
 ### Estrutura alvo do monorepo
 
-A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI e operacao ja vivem nos caminhos novos; a camada web Django continua nos caminhos historicos ate uma migracao propria.
+A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI, operacao, templates e assets web ja vivem nos caminhos novos; os apps Django continuam nos caminhos historicos ate uma migracao propria.
 
 - `apps/api/`: casa da FastAPI e da autoridade de dominio do produto.
-- `apps/web/`: reserva para a futura casa da web Django, templates e assets; hoje Django, `templates/` e `static/` continuam nos caminhos atuais.
+- `apps/web/`: casa dos templates e assets compartilhados da web; apps Django serao migrados separadamente quando for seguro preservar labels e migrations.
 - `apps/mobile/`: reserva para o futuro frontend mobile; nenhum projeto Flutter ou spec tecnica mobile e criado nesta fase.
 - `packages/contracts/`: reserva para OpenAPI/clientes gerados quando houver consumidor real e validacao definida.
 - `ops/`: deploy de producao, scripts operacionais e estado Docker local ignorado pelo Git.

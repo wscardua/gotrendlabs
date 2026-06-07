@@ -1,14 +1,17 @@
 # Web
 
-Diretorio reservado para a futura organizacao da camada web Django do GoTrendLabs.
+Diretorio da camada web Django do GoTrendLabs.
 
-Nesta fase de fundacao, Django, templates e assets continuam nos caminhos atuais:
+Nesta fase da reorganizacao, templates compartilhados e assets estaticos ja vivem aqui:
+
+- `apps/web/templates/`
+- `apps/web/static/`
+
+Os apps Django continuam nos caminhos historicos por enquanto:
 
 - `config/`
 - apps Django no topo do repo, como `accounts/`, `core/`, `markets/`, `admin_ops/`, `wallet/`, `profiles/`, `agents/`, `communications/` e `system_logs/`
-- `templates/`
-- `static/`
 
-Quando a migracao fisica acontecer, templates e static poderao ser movidos para `apps/web/` e os apps Django so devem ser movidos com preservacao explicita de `AppConfig.label` e migrations.
+Uma migracao futura dos apps Django para `apps/web/django/` so deve acontecer com preservacao explicita de `AppConfig.label`, imports e migrations.
 
 Guardrail: Django renderiza web/Admin Ops e consome contratos; regra critica de dominio continua na FastAPI.

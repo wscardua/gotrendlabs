@@ -2,6 +2,29 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260607-WEB-ASSETS-LAYOUT-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `frontend-web`, `repo-layout`
+- Objetivo: mover templates e assets compartilhados da web para `apps/web/` sem mover apps Django
+- Etapa atual: concluido; `templates/` movido para `apps/web/templates/`, `static/` movido para `apps/web/static/`, settings/docs/skills atualizados e apps Django preservados nos caminhos historicos
+- Artefatos afetados:
+  - `apps/web/templates/`
+  - `apps/web/static/`
+  - `config/settings.py`
+  - `README.md`
+  - `docs/specs/architecture/frontend-web.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Encerrado em: 2026-06-07
+- Retomada: próxima reorganização web deve avaliar se vale mover apps Django para `apps/web/django/`, preservando `AppConfig.label`, migrations e imports
+- Reversão lógica: mover `apps/web/templates/` de volta para `templates/`, `apps/web/static/` de volta para `static/` e restaurar `TEMPLATES["DIRS"]`/`STATICFILES_DIRS`
+- Evidências de validação: `manage.py check`, `manage.py findstatic css/gotrendlabs.css js/gotrendlabs.js brand/gtl-logo.svg`, suite `manage.py test --keepdb` com 150 testes OK e `manage.py collectstatic --noinput`
+
 ## WFLOW-20260607-OPS-LAYOUT-001
 
 - Tipo: `change-feature`

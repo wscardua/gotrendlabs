@@ -11,7 +11,7 @@ Use esta skill quando a tarefa principal estiver na camada de apresentação e o
 
 Implementar páginas, componentes server-rendered, interações HTMX, estados locais simples e telas administrativas sem mover lógica crítica para a UI.
 
-Nesta fase da reorganizacao, a camada Django continua nos caminhos atuais; `apps/web/` e a estrutura alvo do monorepo devem ser tratados como documentacao preparatoria ate uma feature de migracao fisica.
+Nesta fase da reorganizacao, templates compartilhados e assets vivem em `apps/web/`; os apps Django continuam nos caminhos atuais ate uma feature de migracao fisica com preservacao de labels e migrations.
 
 ## Fluxo padrão
 
