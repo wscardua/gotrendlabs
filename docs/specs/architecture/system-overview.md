@@ -21,7 +21,7 @@ Definir fronteiras estáveis entre as camadas do GoTrendLabs para que a implemen
 - Os apps Django vivem em `apps/web/django/` e preservam `AppConfig.label` historico para manter migrations e tabelas estaveis.
 - `apps/mobile/` fica apenas reservado; specs técnicas e projeto Flutter serão iniciados em outra feature.
 - `tools/skills/gotrendlabs/` permanece na raiz como ferramenta de governança e implementação do repositório inteiro.
-- `ops/` concentra deploy, scripts operacionais e Docker local; `packages/contracts/` permanece como reserva para contratos compartilháveis.
+- `ops/` concentra deploy, scripts operacionais e Docker local; `packages/contracts/` versiona o snapshot OpenAPI da FastAPI e permanece como futura casa de clientes gerados.
 
 ## Princípios
 

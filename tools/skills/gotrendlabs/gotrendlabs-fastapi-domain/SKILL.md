@@ -30,6 +30,7 @@ O runtime FastAPI vive em `apps/api/backend_api/`; use `apps.api.backend_api` pa
 - Erros precisam ser consistentes para web, admin, futuro mobile e operação.
 - Regras de saldo, reputação e estados de mercado não devem ficar espalhadas.
 - Mudanças de shape em payloads exigem revisão de contratos e testes.
+- Mudanças de endpoints, payloads ou schemas devem regenerar `packages/contracts/openapi/gotrendlabs-api.json` com `python packages/contracts/export_openapi.py` e passar no `--check`.
 - Se a implementação exigir regra nova, atualizar spec antes de concluir.
 
 ## Entradas principais

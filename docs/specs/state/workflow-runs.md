@@ -1533,3 +1533,23 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-06-07
 - Retomada: abrir PR, acompanhar CI/deploy e fazer smoke pos-merge
 - Reversão lógica: restaurar apps Django para a raiz mantendo os imports novos fora do merge, se alguma incompatibilidade de import path for encontrada
+
+## WFLOW-20260607-OPENAPI-CONTRACTS-001
+
+- Tipo: `architecture-change`
+- Status: `concluido`
+- Feature alvo: contratos OpenAPI versionados para web/mobile futuro
+- Objetivo: versionar o snapshot OpenAPI da FastAPI e validar sincronismo em CI antes de novos clientes
+- Etapa atual: concluido; snapshot, exportador, docs, skills, CI, checks e suite Django validados em 2026-06-07
+- Artefatos afetados:
+  - `packages/contracts/`
+  - `apps/api/backend_api/main.py`
+  - `.github/workflows/deploy.yml`
+  - `README.md`
+  - `docs/specs/architecture/`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: nenhum
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Retomada: abrir PR, acompanhar CI/deploy e fazer smoke pos-merge
+- Reversão lógica: remover snapshot/versionador e voltar `packages/contracts/` para estado reservado, mantendo a documentação viva da FastAPI em `/docs`

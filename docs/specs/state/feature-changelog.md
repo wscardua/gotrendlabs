@@ -926,6 +926,13 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 
 ## Sistema documental e skills
 
+### 2026-06-07 - v0.8
+- adicionado snapshot OpenAPI versionado em `packages/contracts/openapi/gotrendlabs-api.json`
+- adicionado exportador/verificador `packages/contracts/export_openapi.py`
+- CI passou a validar o snapshot com `python packages/contracts/export_openapi.py --check` antes da suite
+- README, specs de arquitetura e skills locais atualizados para a política de contratos
+- status de implementação: `concluida`
+
 ### 2026-06-07 - v0.7
 - apps Django movidos para `apps/web/django/`, preservando `AppConfig.label` historico e migrations existentes
 - README, arquitetura web/admin/system overview e skills locais atualizados para a nova estrutura vigente
