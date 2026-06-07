@@ -1,7 +1,7 @@
 interface:
   display_name: "GoTrendLabs Django Web"
   short_description: "Django, HTMX, Alpine e admin"
-  default_prompt: "Use $gotrendlabs-django-web para implementar a camada web do GoTrendLabs com Django, HTMX, Alpine.js e i18n, respeitando os contratos e a arquitetura."
+  default_prompt: "Use $gotrendlabs-django-web para implementar a camada web do GoTrendLabs com Django, HTMX, Alpine.js e i18n, respeitando contratos, a autoridade da FastAPI e a estrutura alvo apps/web sem assumir migração física já concluída."
 
 policy:
   allow_implicit_invocation: true

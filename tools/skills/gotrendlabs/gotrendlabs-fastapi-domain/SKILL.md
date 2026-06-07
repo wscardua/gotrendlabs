@@ -11,6 +11,8 @@ Use esta skill quando a tarefa principal estiver na camada de domínio e API em 
 
 Centralizar regras críticas do produto em serviços e endpoints claros, auditáveis e alinhados às specs técnicas.
 
+Nesta fase da reorganizacao, o runtime FastAPI continua em `backend_api/`; `apps/api/` e `apps/api/backend_api/` sao estrutura alvo para uma migracao futura separada.
+
 ## Fluxo padrão
 
 1. Verificar workflow de implementação aberto quando houver mudança multi-documento.
@@ -25,7 +27,7 @@ Centralizar regras críticas do produto em serviços e endpoints claros, auditá
 
 - O backend é a fonte principal da verdade.
 - Contratos devem ser explícitos e previsíveis.
-- Erros precisam ser consistentes para UI, admin e operação.
+- Erros precisam ser consistentes para web, admin, futuro mobile e operação.
 - Regras de saldo, reputação e estados de mercado não devem ficar espalhadas.
 - Mudanças de shape em payloads exigem revisão de contratos e testes.
 - Se a implementação exigir regra nova, atualizar spec antes de concluir.

@@ -1,7 +1,7 @@
 interface:
   display_name: "GoTrendLabs FastAPI Domain"
   short_description: "Domínio, auth e endpoints FastAPI"
-  default_prompt: "Use $gotrendlabs-fastapi-domain para implementar regras de domínio e endpoints do GoTrendLabs em FastAPI/Python, preservando contratos e auditabilidade."
+  default_prompt: "Use $gotrendlabs-fastapi-domain para implementar regras de domínio e endpoints do GoTrendLabs em FastAPI/Python, preservando contratos para web/admin/futuro mobile, auditabilidade e a autoridade do backend."
 
 policy:
   allow_implicit_invocation: true

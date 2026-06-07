@@ -11,6 +11,8 @@ Use esta skill quando a tarefa principal estiver na camada de apresentação e o
 
 Implementar páginas, componentes server-rendered, interações HTMX, estados locais simples e telas administrativas sem mover lógica crítica para a UI.
 
+Nesta fase da reorganizacao, a camada Django continua nos caminhos atuais; `apps/web/` e a estrutura alvo do monorepo devem ser tratados como documentacao preparatoria ate uma feature de migracao fisica.
+
 ## Fluxo padrão
 
 1. Verificar workflow de implementação aberto quando houver mudança multi-documento.
@@ -28,6 +30,7 @@ Implementar páginas, componentes server-rendered, interações HTMX, estados lo
 - Não hardcode textos críticos; respeite `pt-BR` e `en`.
 - HTMX serve para atualização parcial; Alpine.js serve para estado local simples.
 - O admin Django é suporte e operação, não atalho para burlar regras do domínio.
+- O futuro mobile tambem deve consumir os mesmos contratos de dominio; nao introduza regra critica em frontend para alinhar telas.
 - Mudança visual que altera comportamento deve voltar para a spec antes de fechar.
 
 ## Entradas principais

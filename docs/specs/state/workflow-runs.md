@@ -51,7 +51,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-AUTH-001`, `FEAT-OPSLOG-001`, `FEAT-MARKET-001`, `infra-deploy-mvp`
 - Objetivo: executar auditoria local de seguranca e endurecer endpoints publicos, redirects, uploads Admin Ops, headers de media e defaults de producao sem alterar regras funcionais de dominio
-- Etapa atual: concluido; auditoria local registrada em `docs/security-audit-2026-06-06.md`, hardening aplicado, specs/state alinhados e `.env.prod.example` explicita `GOTRENDLABS_RATE_LIMITS_ENABLED=1`
+- Etapa atual: concluido; auditoria local registrada em `docs/audits/security-audit-2026-06-06.md`, hardening aplicado, specs/state alinhados e `.env.prod.example` explicita `GOTRENDLABS_RATE_LIMITS_ENABLED=1`
 - Artefatos afetados:
   - `backend_api/main.py`
   - `config/settings.py`
@@ -59,7 +59,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `admin_ops/views.py`
   - `deploy/production/Caddyfile`, `.env.prod.example`, `deploy/production/README.md`
   - `tests/test_web_smoke.py`
-  - `docs/security-audit-2026-06-06.md`
+  - `docs/audits/security-audit-2026-06-06.md`
   - `docs/specs/state/`
 - Bloqueios: atualizacao de dependencias vulneraveis segue pendente porque o indice local de pacotes ainda nao disponibiliza versoes corrigidas de Pillow/Starlette/python-dotenv
 - Iniciado em: 2026-06-06
