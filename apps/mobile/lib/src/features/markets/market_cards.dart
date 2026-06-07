@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/api_client.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import 'market_models.dart';
 import 'sparkline_painter.dart';
 
@@ -16,74 +17,124 @@ class MarketHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => context.push('/markets/${market.slug}'),
-      child: Container(
-        height: 318,
-        clipBehavior: Clip.antiAlias,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: GtlColors.border),
-          color: GtlColors.surface,
-        ),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _MarketImage(market: market, api: api),
-            const DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Color(0xD9050608),
-                    Color(0xFF050608),
-                  ],
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(GtlRadii.large),
+        onTap: () => context.push('/markets/${market.slug}'),
+        child: Ink(
+          height: 334,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(GtlRadii.large),
+            border: Border.all(color: GtlColors.borderStrong),
+            color: GtlColors.surface,
+            boxShadow: GtlShadows.glow(
+              _statusColor(market),
+              opacity: market.isOpen ? 0.18 : 0.10,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(GtlRadii.large),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                _MarketImage(market: market, api: api),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withValues(alpha: 0.08),
+                        Colors.black.withValues(alpha: 0.24),
+                        const Color(0xF2050608),
+                      ],
+                      stops: const [0.0, 0.42, 1.0],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+                Positioned(
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: Container(
+                    width: 112,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerRight,
+                        end: Alignment.centerLeft,
+                        colors: [
+                          _statusColor(market).withValues(alpha: 0.20),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(18),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _Chip(label: market.category),
-                      _Chip(
-                        label: market.statusLabel,
-                        color: _statusColor(market),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          GtlPill(
+                            label: market.category.isEmpty
+                                ? 'Mercado'
+                                : market.category,
+                            icon: Icons.category_outlined,
+                          ),
+                          GtlPill(
+                            label: market.statusLabel,
+                            icon: market.isOpen
+                                ? Icons.radio_button_checked
+                                : Icons.lock_clock,
+                            color: _statusColor(market),
+                            filled: true,
+                          ),
+                          ..._viewerPills(market),
+                        ],
+                      ),
+                      const Spacer(),
+                      Text(
+                        market.title,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          _ProbabilityPill(label: market.probabilityLabel),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                _HeroMeta(
+                                  icon: Icons.savings_outlined,
+                                  label: market.volumeLabel,
+                                ),
+                                _HeroMeta(
+                                  icon: Icons.groups_2_outlined,
+                                  label:
+                                      '${market.humanParticipants} participantes',
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const Spacer(),
-                  Text(
-                    market.title,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.headlineSmall?.copyWith(height: 1.04),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      _ProbabilityPill(label: market.probabilityLabel),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          '${market.volumeLabel} · ${market.humanParticipants} participantes',
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -98,25 +149,53 @@ class MarketCompactCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GtlSurface(
+        padding: EdgeInsets.zero,
+        color: GtlColors.surfaceGlass,
         onTap: () => context.push('/markets/${market.slug}'),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              SizedBox(
-                width: 86,
-                height: 86,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: _MarketImage(market: market, api: api),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 104,
+              height: 118,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(GtlRadii.medium),
+                ),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    _MarketImage(market: market, api: api),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.56),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 8,
+                      bottom: 8,
+                      child: GtlPill(
+                        label: market.statusLabel,
+                        color: _statusColor(market),
+                        filled: true,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -124,8 +203,13 @@ class MarketCompactCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                            market.category,
-                            style: Theme.of(context).textTheme.labelMedium,
+                            market.category.isEmpty
+                                ? 'Mercado'
+                                : market.category.toUpperCase(),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: GtlColors.accentCyan),
                           ),
                         ),
                         _ProbabilityPill(
@@ -139,17 +223,42 @@ class MarketCompactCard extends StatelessWidget {
                       market.title,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleMedium?.copyWith(height: 1.08),
                     ),
+                    if (_viewerPills(market).isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: _viewerPills(market, dense: true),
+                      ),
+                    ],
                     const SizedBox(height: 10),
-                    Text(
-                      '${market.volumeLabel} · ${market.commentCount} comentários · ${market.closeLabel}',
+                    Wrap(
+                      spacing: 10,
+                      runSpacing: 5,
+                      children: [
+                        _InlineMetric(
+                          icon: Icons.savings_outlined,
+                          label: market.volumeLabel,
+                        ),
+                        _InlineMetric(
+                          icon: Icons.forum_outlined,
+                          label: '${market.commentCount}',
+                        ),
+                        _InlineMetric(
+                          icon: Icons.timer_outlined,
+                          label: market.closeLabel,
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -164,60 +273,77 @@ class MarketMetricPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final metrics = [
-      ('Probabilidade', market.probabilityLabel),
-      ('Volume GT₵', market.volumeLabel),
-      ('Participantes', market.humanParticipants.toString()),
-      ('Comentários', market.commentCount.toString()),
-      ('Encerra em', market.closesIn.isEmpty ? 'fim' : market.closesIn),
-      ('Status', market.statusLabel),
-    ];
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: GridView.count(
-          crossAxisCount: 2,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          childAspectRatio: 2.15,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          children: [
-            for (final metric in metrics)
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: GtlColors.surfaceElevated,
-                  border: Border.all(color: GtlColors.border),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        metric.$1.toUpperCase(),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                      const SizedBox(height: 4),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          metric.$2,
-                          maxLines: 1,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
+      (
+        'Probabilidade',
+        market.probabilityLabel,
+        Icons.stacked_line_chart,
+        GtlColors.accentGreen,
       ),
+      (
+        'Volume GT₵',
+        market.volumeLabel,
+        Icons.savings_outlined,
+        GtlColors.accentBlue,
+      ),
+      (
+        'Participantes',
+        market.humanParticipants.toString(),
+        Icons.groups_2_outlined,
+        GtlColors.accentCyan,
+      ),
+      (
+        'Comentários',
+        market.commentCount.toString(),
+        Icons.forum_outlined,
+        GtlColors.accentViolet,
+      ),
+      (
+        'Encerra em',
+        market.closesIn.isEmpty ? 'fim' : market.closesIn,
+        Icons.timer_outlined,
+        GtlColors.accentYellow,
+      ),
+      ('Status', market.statusLabel, Icons.flag_outlined, _statusColor(market)),
+    ];
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      padding: const EdgeInsets.all(14),
+      child: Column(
+        children: [
+          for (var index = 0; index < metrics.length; index += 2) ...[
+            SizedBox(
+              height: 124,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(child: _MetricFromRecord(metric: metrics[index])),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _MetricFromRecord(metric: metrics[index + 1]),
+                  ),
+                ],
+              ),
+            ),
+            if (index < metrics.length - 2) const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _MetricFromRecord extends StatelessWidget {
+  const _MetricFromRecord({required this.metric});
+
+  final (String, String, IconData, Color) metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return GtlMetricTile(
+      label: metric.$1,
+      value: metric.$2,
+      icon: metric.$3,
+      color: metric.$4,
     );
   }
 }
@@ -229,19 +355,20 @@ class MarketSparklineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Consenso', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 10),
-            SparklinePath(path: market.sparklinePath),
-            const SizedBox(height: 8),
-            Text(compactText(market.summary, max: 160)),
-          ],
-        ),
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const GtlSectionTitle(
+            title: 'Consenso',
+            subtitle: 'Histórico compacto da leitura pública',
+          ),
+          const SizedBox(height: 12),
+          SparklinePath(path: market.sparklinePath),
+          const SizedBox(height: 10),
+          Text(compactText(market.summary, max: 160)),
+        ],
       ),
     );
   }
@@ -257,17 +384,12 @@ class _MarketImage extends StatelessWidget {
   Widget build(BuildContext context) {
     final image = api.resolveUrl(market.imageUrl);
     if (image.isNotEmpty) {
-      return Stack(
-        fit: StackFit.expand,
-        children: [
-          CachedNetworkImage(
-            imageUrl: image,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => _FallbackMarketArt(market: market),
-            errorWidget: (context, url, error) =>
-                _FallbackMarketArt(market: market),
-          ),
-        ],
+      return CachedNetworkImage(
+        imageUrl: image,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => _FallbackMarketArt(market: market),
+        errorWidget: (context, url, error) =>
+            _FallbackMarketArt(market: market),
       );
     }
     return _FallbackMarketArt(market: market);
@@ -287,7 +409,11 @@ class _FallbackMarketArt extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [color.withValues(alpha: 0.8), GtlColors.surface],
+          colors: [
+            color.withValues(alpha: 0.88),
+            GtlColors.surfaceInk,
+            GtlColors.surface,
+          ],
         ),
       ),
       child: LayoutBuilder(
@@ -307,10 +433,10 @@ class _FallbackMarketArt extends StatelessWidget {
               padding: const EdgeInsets.all(10),
               child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.16),
-                  borderRadius: BorderRadius.circular(999),
+                  color: Colors.black.withValues(alpha: 0.20),
+                  borderRadius: BorderRadius.circular(GtlRadii.pill),
                   border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: Colors.white.withValues(alpha: 0.16),
                   ),
                 ),
                 child: Padding(
@@ -342,27 +468,51 @@ class _FallbackMarketArt extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  const _Chip({required this.label, this.color});
+class _HeroMeta extends StatelessWidget {
+  const _HeroMeta({required this.icon, required this.label});
 
+  final IconData icon;
   final String label;
-  final Color? color;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: (color ?? GtlColors.surfaceElevated).withValues(alpha: 0.82),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: GtlColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Text(
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 15, color: GtlColors.textSecondary),
+        const SizedBox(width: 5),
+        Text(
           label,
-          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: GtlColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
+      ],
+    );
+  }
+}
+
+class _InlineMetric extends StatelessWidget {
+  const _InlineMetric({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: GtlColors.muted),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: Theme.of(
+            context,
+          ).textTheme.bodySmall?.copyWith(color: GtlColors.textSecondary),
+        ),
+      ],
     );
   }
 }
@@ -377,10 +527,10 @@ class _ProbabilityPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: GtlColors.accentGreen.withValues(alpha: 0.16),
-        borderRadius: BorderRadius.circular(999),
+        color: GtlColors.accentGreen.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(GtlRadii.pill),
         border: Border.all(
-          color: GtlColors.accentGreen.withValues(alpha: 0.56),
+          color: GtlColors.accentGreen.withValues(alpha: 0.62),
         ),
       ),
       child: Padding(
@@ -412,6 +562,31 @@ Color _statusColor(Market market) {
     return GtlColors.accentYellow;
   }
   return GtlColors.surfaceElevated;
+}
+
+List<Widget> _viewerPills(Market market, {bool dense = false}) {
+  final pills = <Widget>[];
+  if (market.viewerHasPrediction) {
+    pills.add(
+      GtlPill(
+        label: dense ? 'Posição' : 'Sua posição',
+        icon: dense ? null : Icons.stacked_line_chart,
+        color: GtlColors.accentGreen,
+        filled: true,
+      ),
+    );
+  }
+  if (market.viewerHasFavorite) {
+    pills.add(
+      GtlPill(
+        label: dense ? 'Favorito' : 'Favorito',
+        icon: dense ? null : Icons.bookmark,
+        color: GtlColors.accentYellow,
+        filled: true,
+      ),
+    );
+  }
+  return pills;
 }
 
 Color _hexColor(String value) {

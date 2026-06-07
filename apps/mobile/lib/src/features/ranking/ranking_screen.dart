@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import '../markets/markets_providers.dart';
 
 class RankingScreen extends ConsumerStatefulWidget {
@@ -28,66 +29,72 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
     final ranking = ref.watch(rankingPayloadProvider(filters));
     return Scaffold(
       appBar: AppBar(title: const Text('Ranking')),
-      body: ranking.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) =>
-            Center(child: Text(ApiFailure.fromObject(error).message)),
-        data: (payload) {
-          final rows = _listOfMaps(payload['rows']);
-          final categories = _listOfMaps(payload['categories']);
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                'Quem se destaca nas previsões?',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 12),
-              _RankingFiltersCard(
-                categories: categories,
-                category: _category,
-                subcategory: _subcategory,
-                event: _event,
-                onCategory: (value) => setState(() {
-                  _category = value;
-                  _subcategory = '';
-                  _event = '';
-                }),
-                onSubcategory: (value) => setState(() {
-                  _subcategory = value;
-                  _event = '';
-                }),
-                onEvent: (value) => setState(() => _event = value),
-                onClear: () => setState(() {
-                  _category = '';
-                  _subcategory = '';
-                  _event = '';
-                }),
-              ),
-              const SizedBox(height: 12),
-              if (rows.isEmpty)
-                const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Text(
-                      'Ainda não há previsões resolvidas para este recorte.',
+      body: GtlScreen(
+        child: ranking.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => GtlStatePanel(
+            icon: Icons.cloud_off,
+            title: 'Ranking indisponível',
+            body: ApiFailure.fromObject(error).message,
+            color: GtlColors.accentYellow,
+          ),
+          data: (payload) {
+            final rows = _listOfMaps(payload['rows']);
+            final categories = _listOfMaps(payload['categories']);
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              children: [
+                const GtlEditorialHeader(
+                  kicker: 'Reputação pública',
+                  title: 'Ranking',
+                  body: 'Quem se destaca nas previsões resolvidas?',
+                  icon: Icons.leaderboard_outlined,
+                ),
+                const SizedBox(height: 12),
+                _RankingFiltersCard(
+                  categories: categories,
+                  category: _category,
+                  subcategory: _subcategory,
+                  event: _event,
+                  onCategory: (value) => setState(() {
+                    _category = value;
+                    _subcategory = '';
+                    _event = '';
+                  }),
+                  onSubcategory: (value) => setState(() {
+                    _subcategory = value;
+                    _event = '';
+                  }),
+                  onEvent: (value) => setState(() => _event = value),
+                  onClear: () => setState(() {
+                    _category = '';
+                    _subcategory = '';
+                    _event = '';
+                  }),
+                ),
+                const SizedBox(height: 12),
+                if (rows.isEmpty)
+                  const GtlSurface(
+                    child: GtlEditorialHeader(
+                      kicker: 'Recorte vazio',
+                      title: 'Sem previsões resolvidas',
+                      body:
+                          'Ainda não há previsões resolvidas para este recorte.',
+                      icon: Icons.hourglass_empty,
                     ),
-                  ),
-                )
-              else
-                for (final row in rows) _RankingRowCard(row: row),
-              const SizedBox(height: 12),
-              const Card(
-                child: Padding(
-                  padding: EdgeInsets.all(16),
+                  )
+                else
+                  for (final row in rows) _RankingRowCard(row: row),
+                const SizedBox(height: 12),
+                const GtlSurface(
                   child: Text(
                     'O ranking considera previsões já resolvidas. Acertos em perguntas difíceis e previsões antecipadas pesam mais.',
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -145,50 +152,48 @@ class _RankingFiltersCard extends StatelessWidget {
         ),
     ];
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Filtros', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              initialValue: _containsValue(categoryItems, category)
-                  ? category
-                  : '',
-              decoration: const InputDecoration(labelText: 'Categoria'),
-              items: categoryItems,
-              onChanged: (value) => onCategory(value ?? ''),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              initialValue: _containsValue(subcategoryItems, subcategory)
-                  ? subcategory
-                  : '',
-              decoration: const InputDecoration(labelText: 'Subcategoria'),
-              items: subcategoryItems,
-              onChanged: category.isEmpty
-                  ? null
-                  : (value) => onSubcategory(value ?? ''),
-            ),
-            const SizedBox(height: 10),
-            DropdownButtonFormField<String>(
-              initialValue: _containsValue(eventItems, event) ? event : '',
-              decoration: const InputDecoration(labelText: 'Evento'),
-              items: eventItems,
-              onChanged: category.isEmpty || subcategory.isEmpty
-                  ? null
-                  : (value) => onEvent(value ?? ''),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: onClear,
-              icon: const Icon(Icons.public),
-              label: const Text('Global'),
-            ),
-          ],
-        ),
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const GtlSectionTitle(title: 'Filtros', subtitle: 'Recorte público'),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            initialValue: _containsValue(categoryItems, category)
+                ? category
+                : '',
+            decoration: const InputDecoration(labelText: 'Categoria'),
+            items: categoryItems,
+            onChanged: (value) => onCategory(value ?? ''),
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: _containsValue(subcategoryItems, subcategory)
+                ? subcategory
+                : '',
+            decoration: const InputDecoration(labelText: 'Subcategoria'),
+            items: subcategoryItems,
+            onChanged: category.isEmpty
+                ? null
+                : (value) => onSubcategory(value ?? ''),
+          ),
+          const SizedBox(height: 10),
+          DropdownButtonFormField<String>(
+            initialValue: _containsValue(eventItems, event) ? event : '',
+            decoration: const InputDecoration(labelText: 'Evento'),
+            items: eventItems,
+            onChanged: category.isEmpty || subcategory.isEmpty
+                ? null
+                : (value) => onEvent(value ?? ''),
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: onClear,
+            icon: const Icon(Icons.public),
+            label: const Text('Global'),
+          ),
+        ],
       ),
     );
   }
@@ -228,9 +233,10 @@ class _RankingRowCard extends StatelessWidget {
     final handle = row['handle']?.toString() ?? '';
     final rawDisplayName = row['display_name']?.toString().trim() ?? '';
     final displayName = rawDisplayName.isNotEmpty ? rawDisplayName : handle;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: GtlSurface(
+        color: GtlColors.surfaceGlass,
         child: Row(
           children: [
             CircleAvatar(
@@ -284,9 +290,9 @@ class _MiniMetric extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: GtlColors.surfaceElevated,
+        color: GtlColors.surfaceInk,
         border: Border.all(color: GtlColors.border),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(GtlRadii.small),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),

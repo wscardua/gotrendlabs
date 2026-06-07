@@ -1,5 +1,17 @@
 # Feature Changelog
 
+## 2026-06-07 — FEAT-MOBILE-001 refresh visual Android
+
+- App Flutter Android recebeu refresh visual dark-first/editorial no tema, shell, cards de mercado, detalhe, ticket de previsão, comunidade, wallet, ranking, alertas, busca, perfil, badges, confiança e bottom sheets.
+- Adicionada camada compartilhada de componentes visuais mobile para headers editoriais, superfícies, métricas, pills, skeletons e estados vazios/erro.
+- Tela `Mercados` passou a ter recortes `Todos`, `Favoritos` e `Posições`, filtrando pelos flags autenticados `viewer_has_favorite` e `viewer_has_prediction` retornados pela FastAPI.
+- Tela `Hoje` passou a exibir `Sua mesa` para usuários autenticados com atalhos para posições, favoritos e mercados com posição em fechamento, sem criar regra de domínio local.
+- Cards de mercado passaram a sinalizar quando o usuário já possui posição ou favorito naquele mercado.
+- Adicionada tela mobile `Sobre`, acessível pelo menu e pelo perfil, com versão/build, saúde da API, dados mínimos da sessão e cópia de diagnóstico sem token, segredo ou endereço de API.
+- A mudança é somente UX/UI: contratos FastAPI, OpenAPI, autenticação e regras críticas de domínio permanecem inalterados e autoritativos no backend.
+- Critérios de QA visual mobile foram atualizados para exigir consistência do design system nas telas principais e secundárias.
+- Status de implementação: `parcial`.
+
 ## 2026-06-07 — FEAT-MOBILE-001 MVP Flutter Android
 
 - Criado projeto Flutter em `apps/mobile` para Android, com tema dark-first GoTrendLabs e bottom navigation `Hoje`, `Insights`, `Mercados`, `Alertas`, `Busca`.

@@ -5,24 +5,30 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260607-MOBILE-ANDROID-MVP-001
 
 - Tipo: `new-feature`
-- Status: `em_validacao`
+- Status: `em_publicacao`
 - Feature alvo: `FEAT-MOBILE-001`, `future-mobile`
-- Objetivo: implementar MVP Flutter Android do GoTrendLabs como cliente da FastAPI, com feed, detalhe, auth, previsão, comentários, wallet, perfil, ranking, badges e alertas
-- Etapa atual: implementação local criada; aguardando validação no emulador Android e eventual publicação via PR
+- Objetivo: implementar e polir o app Flutter Android do GoTrendLabs como cliente da FastAPI, com design dark-first editorial, feed, detalhe, auth, previsão, comentários, wallet, perfil, ranking, badges, alertas, busca, áreas pessoais e tela `Sobre`
+- Etapa atual: implementação local validada; docs/specs reconciliados; aguardando aprovação do usuário para abrir PR em português, mergear em `main` e acompanhar o workflow de produção quando disparado
 - Artefatos afetados:
   - `apps/mobile/`
+  - `apps/mobile/lib/src/ui/`
+  - `apps/mobile/lib/src/features/info/about_screen.dart`
+  - `apps/mobile/test/about_screen_test.dart`
+  - `apps/mobile/test/markets_screen_test.dart`
   - `docs/specs/architecture/mobile-api-contracts.md`
   - `docs/specs/state/implementation-status.md`
   - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/integration-map.md`
   - `docs/specs/state/known-gaps.md`
+  - `docs/specs/testing/mobile-acceptance.md`
   - `apps/mobile/README.md`
-- Bloqueios: nenhum para build/testes locais; QA visual completo de textos longos, imagem ausente, mercado resolvido e fluxo autenticado real ainda fica pendente antes de concluir o MVP
+- Bloqueios: nenhum local; PR, merge e monitoramento de produção dependem de aprovação explícita do usuário
 - Iniciado em: 2026-06-07
 - Atualizado em: 2026-06-07
 - Encerrado em: pendente
-- Retomada: validar fluxo autenticado real com usuário de teste, preview/previsão/wallet e ampliar QA visual antes de fechar o MVP
-- Reversão lógica: remover o projeto Flutter de `apps/mobile`, restaurar README mobile como reserva e reverter status/changelog/workflow desta fatia
-- Evidências de validação local: `flutter doctor -v` com Android toolchain válido e alerta apenas de iOS/Xcode/CocoaPods; `flutter analyze` sem issues; `flutter test` com 4 testes OK; após preencher o cache do Gradle wrapper, `flutter build apk --debug` gerou `build/app/outputs/flutter-apk/app-debug.apk`; `flutter run -d emulator-5554 --dart-define=GTL_API_BASE_URL=http://10.0.2.2:8001` abriu o app no `gotrendlabs_pixel`, carregou mercados da FastAPI na tela `Hoje`, abriu detalhe e aba `Comunidade`; screenshots temporárias capturadas em `/tmp/gotrendlabs-mobile-home-fixed.png`, `/tmp/gotrendlabs-mobile-detail-fixed.png` e `/tmp/gotrendlabs-mobile-community.png`
+- Retomada: após aprovação, stage/commit, push da branch `feature/mobile-android-design-refresh`, abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e atualizar este registro para `concluido` ou `bloqueado`
+- Reversão lógica: reverter o refresh visual em `apps/mobile`, remover a tela `Sobre`, filtros pessoais e componentes compartilhados novos, restaurar README/status/changelog/acceptance/integration map/workflow desta fatia e manter os contratos FastAPI sem alteração
+- Evidências de validação local: `flutter pub get`; `flutter analyze` sem issues; `flutter test` com 16 testes OK; `flutter build apk --debug` gerou APK debug com aviso não bloqueante do Kotlin Gradle Plugin transitivo em `package_info_plus`/`share_plus`; APK instalado no `emulator-5554`; smoke visual em emulador para `Hoje`, `Mercados`, detalhe, alertas e `Sobre`; `Sobre` exibe apenas saúde da API, versão/build, pacote/plataforma e dados seguros da conta, sem endereço de API/web, token, segredo ou ID interno; contratos OpenAPI e regras de domínio permanecem inalterados
 
 ## WFLOW-20260607-MOBILE-SPECS-SKILLS-001
 

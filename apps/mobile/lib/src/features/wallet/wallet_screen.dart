@@ -5,6 +5,7 @@ import '../../core/api_client.dart';
 import '../../core/formatters.dart';
 import '../../core/providers.dart';
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
 
@@ -23,97 +24,114 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
     final auth = ref.watch(authControllerProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Wallet')),
-      body: !auth.isAuthenticated
-          ? _AuthRequired(onLogin: () => showLoginSheet(context))
-          : ref
-                .watch(ledgerProvider)
-                .when(
-                  loading: () =>
-                      const Center(child: CircularProgressIndicator()),
-                  error: (error, stack) =>
-                      Center(child: Text(error.toString())),
-                  data: (ledger) {
-                    final wallet = Map<String, dynamic>.from(
-                      (ledger['wallet'] as Map?) ?? const {},
-                    );
-                    final entries =
-                        (ledger['entries'] as List<dynamic>?) ?? <dynamic>[];
-                    final recharge = ref.watch(walletRechargeRequestsProvider);
-                    return ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(18),
+      body: GtlScreen(
+        child: !auth.isAuthenticated
+            ? _AuthRequired(onLogin: () => showLoginSheet(context))
+            : ref
+                  .watch(ledgerProvider)
+                  .when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, stack) =>
+                        Center(child: Text(error.toString())),
+                    data: (ledger) {
+                      final wallet = Map<String, dynamic>.from(
+                        (ledger['wallet'] as Map?) ?? const {},
+                      );
+                      final entries =
+                          (ledger['entries'] as List<dynamic>?) ?? <dynamic>[];
+                      final recharge = ref.watch(
+                        walletRechargeRequestsProvider,
+                      );
+                      return ListView(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                        children: [
+                          GtlSurface(
+                            glowColor: GtlColors.accentCyan,
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('Saldo educativo'),
-                                const SizedBox(height: 8),
+                                const GtlEditorialHeader(
+                                  kicker: 'Wallet',
+                                  title: 'Saldo educativo',
+                                  body:
+                                      'GT₵ não representa dinheiro real, depósito, saque ou investimento.',
+                                  icon: Icons.account_balance_wallet_outlined,
+                                ),
+                                const SizedBox(height: 16),
                                 Text(
                                   formatGtl(safeInt(wallet['available_gtl'])),
                                   style: Theme.of(
                                     context,
                                   ).textTheme.displaySmall,
                                 ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Bloqueado: ${formatGtl(safeInt(wallet['locked_gtl']))}',
-                                ),
-                                const SizedBox(height: 8),
-                                const Text(
-                                  'GT₵ não representa dinheiro real, depósito, saque ou investimento.',
+                                const SizedBox(height: 10),
+                                GtlMetricTile(
+                                  label: 'Crédito reservado',
+                                  value: formatGtl(
+                                    safeInt(wallet['locked_gtl']),
+                                  ),
+                                  icon: Icons.lock_clock,
+                                  color: GtlColors.accentYellow,
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                        const SizedBox(height: 12),
-                        recharge.when(
-                          loading: () => const _RechargeLoadingCard(),
-                          error: (error, stack) =>
-                              _RechargeErrorCard(message: error.toString()),
-                          data: (data) => _RechargeCard(
-                            data: data,
-                            requesting: _requestingRecharge,
-                            onRequest: _requestRecharge,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Extrato',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        if (entries.isEmpty)
-                          const Card(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: Text('Sem lançamentos recentes.'),
+                          const SizedBox(height: 12),
+                          recharge.when(
+                            loading: () => const _RechargeLoadingCard(),
+                            error: (error, stack) =>
+                                _RechargeErrorCard(message: error.toString()),
+                            data: (data) => _RechargeCard(
+                              data: data,
+                              requesting: _requestingRecharge,
+                              onRequest: _requestRecharge,
                             ),
-                          )
-                        else
-                          for (final entry in entries.take(20))
-                            Card(
-                              child: ListTile(
-                                title: Text(
-                                  (entry as Map)['entry_type_label']
-                                          ?.toString() ??
-                                      entry['entry_type']?.toString() ??
-                                      'Movimento',
-                                ),
-                                subtitle: Text(
-                                  entry['description']?.toString() ?? '',
-                                ),
-                                trailing: Text(
-                                  formatGtl(safeInt(entry['amount'])),
+                          ),
+                          const SizedBox(height: 12),
+                          const GtlSectionTitle(
+                            title: 'Extrato',
+                            subtitle:
+                                'Movimentos recentes conciliados pela API',
+                          ),
+                          const SizedBox(height: 8),
+                          if (entries.isEmpty)
+                            const GtlSurface(
+                              child: GtlEditorialHeader(
+                                kicker: 'Histórico',
+                                title: 'Sem lançamentos recentes',
+                                body:
+                                    'Quando houver reservas, resultados ou recargas, eles aparecem aqui.',
+                                icon: Icons.receipt_long,
+                              ),
+                            )
+                          else
+                            for (final entry in entries.take(20))
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 10),
+                                child: GtlSurface(
+                                  padding: EdgeInsets.zero,
+                                  child: ListTile(
+                                    title: Text(
+                                      (entry as Map)['entry_type_label']
+                                              ?.toString() ??
+                                          entry['entry_type']?.toString() ??
+                                          'Movimento',
+                                    ),
+                                    subtitle: Text(
+                                      entry['description']?.toString() ?? '',
+                                    ),
+                                    trailing: Text(
+                                      formatGtl(safeInt(entry['amount'])),
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                      ],
-                    );
-                  },
-                ),
+                        ],
+                      );
+                    },
+                  ),
+      ),
     );
   }
 
@@ -169,112 +187,110 @@ class _RechargeCard extends StatelessWidget {
     final available = safeInt(data['available_gtl']);
     final minBalance = safeInt(data['min_balance_gtl'], 100);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Fila Admin Ops'),
-                      SizedBox(height: 4),
-                      Text(
-                        'Recarga controlada',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Crédito livre'),
+                    Text('Fila Admin Ops'),
+                    SizedBox(height: 4),
                     Text(
-                      formatGtl(available),
-                      style: Theme.of(context).textTheme.titleMedium,
+                      'Recarga controlada',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              'Crédito educativo sob revisão administrativa, disponível quando seu crédito livre estiver em até ${formatGtl(minBalance)}.',
-            ),
-            const SizedBox(height: 12),
-            const Row(
-              children: [
-                _RechargeStep(number: '1', label: 'Solicitação'),
-                _RechargeStep(number: '2', label: 'Revisão'),
-                _RechargeStep(number: '3', label: 'Crédito'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (pending != null) ...[
-              _RechargeStateBox(
-                title: 'Status',
-                value: 'Em análise',
-                secondaryTitle: 'Enviada',
-                secondaryValue:
-                    pending['created_at_label']?.toString() ?? 'Agora',
               ),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                onPressed: null,
-                icon: const Icon(Icons.hourglass_top),
-                label: const Text('Em análise'),
-              ),
-            ] else if (!eligible) ...[
-              _RechargeStateBox(
-                title: 'Elegibilidade',
-                value: 'Crédito acima do limite',
-                secondaryTitle: 'Limite atual',
-                secondaryValue: formatGtl(minBalance),
-              ),
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                onPressed: null,
-                icon: const Icon(Icons.lock_outline),
-                label: const Text('Recarga indisponível'),
-              ),
-            ] else ...[
-              FilledButton.icon(
-                onPressed: requesting ? null : onRequest,
-                icon: requesting
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.add_card_outlined),
-                label: const Text('Solicitar recarga educativa'),
-              ),
-            ],
-            if (requests.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  const Expanded(child: Text('Histórico')),
+                  const Text('Crédito livre'),
                   Text(
-                    'últimas 3',
-                    style: Theme.of(context).textTheme.labelMedium,
+                    formatGtl(available),
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                 ],
               ),
-              const SizedBox(height: 8),
-              for (final request in requests.take(3))
-                _RechargeHistoryRow(request: request),
             ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'Crédito educativo sob revisão administrativa, disponível quando seu crédito livre estiver em até ${formatGtl(minBalance)}.',
+          ),
+          const SizedBox(height: 12),
+          const Row(
+            children: [
+              _RechargeStep(number: '1', label: 'Solicitação'),
+              _RechargeStep(number: '2', label: 'Revisão'),
+              _RechargeStep(number: '3', label: 'Crédito'),
+            ],
+          ),
+          const SizedBox(height: 12),
+          if (pending != null) ...[
+            _RechargeStateBox(
+              title: 'Status',
+              value: 'Em análise',
+              secondaryTitle: 'Enviada',
+              secondaryValue:
+                  pending['created_at_label']?.toString() ?? 'Agora',
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.hourglass_top),
+              label: const Text('Em análise'),
+            ),
+          ] else if (!eligible) ...[
+            _RechargeStateBox(
+              title: 'Elegibilidade',
+              value: 'Crédito acima do limite',
+              secondaryTitle: 'Limite atual',
+              secondaryValue: formatGtl(minBalance),
+            ),
+            const SizedBox(height: 10),
+            FilledButton.icon(
+              onPressed: null,
+              icon: const Icon(Icons.lock_outline),
+              label: const Text('Recarga indisponível'),
+            ),
+          ] else ...[
+            FilledButton.icon(
+              onPressed: requesting ? null : onRequest,
+              icon: requesting
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.add_card_outlined),
+              label: const Text('Solicitar recarga educativa'),
+            ),
           ],
-        ),
+          if (requests.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                const Expanded(child: Text('Histórico')),
+                Text(
+                  'últimas 3',
+                  style: Theme.of(context).textTheme.labelMedium,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            for (final request in requests.take(3))
+              _RechargeHistoryRow(request: request),
+          ],
+        ],
       ),
     );
   }
@@ -301,8 +317,8 @@ class _RechargeStep extends StatelessWidget {
       child: DecoratedBox(
         decoration: BoxDecoration(
           border: Border.all(color: GtlColors.border),
-          borderRadius: BorderRadius.circular(8),
-          color: GtlColors.surfaceElevated,
+          borderRadius: BorderRadius.circular(GtlRadii.medium),
+          color: GtlColors.surfaceInk,
         ),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
@@ -336,8 +352,8 @@ class _RechargeStateBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: GtlColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(8),
+        color: GtlColors.surfaceInk,
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
         border: Border.all(color: GtlColors.border),
       ),
       child: Padding(
@@ -427,12 +443,7 @@ class _RechargeLoadingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
-      child: Padding(
-        padding: EdgeInsets.all(16),
-        child: Center(child: CircularProgressIndicator()),
-      ),
-    );
+    return const GtlSurface(child: Center(child: CircularProgressIndicator()));
   }
 }
 
@@ -443,14 +454,8 @@ class _RechargeErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Text(
-          message,
-          style: const TextStyle(color: GtlColors.accentRed),
-        ),
-      ),
+    return GtlSurface(
+      child: Text(message, style: const TextStyle(color: GtlColors.accentRed)),
     );
   }
 }
@@ -462,20 +467,12 @@ class _AuthRequired extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.lock_outline, color: GtlColors.accentYellow),
-            const SizedBox(height: 12),
-            const Text('Entre para ver saldo educativo, extrato e perfil.'),
-            const SizedBox(height: 12),
-            FilledButton(onPressed: onLogin, child: const Text('Entrar')),
-          ],
-        ),
-      ),
+    return GtlStatePanel(
+      icon: Icons.lock_outline,
+      title: 'Wallet protegida',
+      body: 'Entre para ver saldo educativo, extrato e perfil.',
+      color: GtlColors.accentYellow,
+      action: FilledButton(onPressed: onLogin, child: const Text('Entrar')),
     );
   }
 }

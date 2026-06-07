@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
+import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import 'support_providers.dart';
 
@@ -17,6 +19,10 @@ Future<void> showFeedbackSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    backgroundColor: GtlColors.surfaceElevated,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(GtlRadii.large)),
+    ),
     builder: (_) => const _FeedbackSheet(),
   );
 }
@@ -25,6 +31,10 @@ Future<void> showSuggestionSheet(BuildContext context) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
+    backgroundColor: GtlColors.surfaceElevated,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(GtlRadii.large)),
+    ),
     builder: (_) => const _SuggestionSheet(),
   );
 }
@@ -343,19 +353,15 @@ class _ContributionScaffold extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      title,
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
+              GtlEditorialHeader(
+                kicker: 'Contribuição',
+                title: title,
+                body: 'Envie para a fila FastAPI/Admin Ops, sem lógica local.',
+                trailing: IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+                icon: Icons.outgoing_mail,
               ),
               const SizedBox(height: 10),
               ...children,

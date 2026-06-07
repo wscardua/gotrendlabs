@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
 import 'market_models.dart';
@@ -48,33 +49,40 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
         ? ''
         : 'Este mercado está ${market.statusLabel.toLowerCase()} e não aceita novas previsões.';
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'Ticket de previsão',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Escolha uma opção explicitamente. O preview e a criação vêm da FastAPI.',
-            ),
-            const SizedBox(height: 12),
-            for (final option in market.options)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: ChoiceChip(
-                  selected: _optionId == option.id,
-                  onSelected: blocked
-                      ? null
-                      : (_) => _selectOption(option.id, auth.isAuthenticated),
-                  label: Row(
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      glowColor: GtlColors.accentBlue,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const GtlEditorialHeader(
+            kicker: 'Ação educativa',
+            title: 'Ticket de previsão',
+            body:
+                'Escolha uma opção explicitamente. O preview e a criação vêm da FastAPI.',
+            icon: Icons.trending_up,
+          ),
+          const SizedBox(height: 14),
+          for (final option in market.options)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ChoiceChip(
+                selected: _optionId == option.id,
+                onSelected: blocked
+                    ? null
+                    : (_) => _selectOption(option.id, auth.isAuthenticated),
+                avatar: Icon(
+                  _optionId == option.id
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  size: 18,
+                ),
+                label: SizedBox(
+                  width: double.infinity,
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(
+                      Expanded(
                         child: Text(
                           option.label,
                           overflow: TextOverflow.ellipsis,
@@ -86,67 +94,84 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
                   ),
                 ),
               ),
-            if (blocked) ...[
-              const SizedBox(height: 8),
-              Text(
-                blockedMessage,
-                style: const TextStyle(color: GtlColors.accentYellow),
-              ),
-            ] else ...[
-              const SizedBox(height: 2),
-              Row(
+            ),
+          if (blocked) ...[
+            const SizedBox(height: 12),
+            GtlSurface(
+              color: GtlColors.accentYellow.withValues(alpha: 0.10),
+              borderColor: GtlColors.accentYellow.withValues(alpha: 0.34),
+              child: Row(
                 children: [
-                  const Text('Crédito reservado'),
+                  const Icon(Icons.lock_clock, color: GtlColors.accentYellow),
+                  const SizedBox(width: 10),
                   Expanded(
-                    child: Slider(
-                      min: 1,
-                      max: 500,
-                      divisions: 499,
-                      value: _stake.toDouble(),
-                      label: formatGtl(_stake),
-                      onChanged: (value) =>
-                          _setStake(value.round(), auth.isAuthenticated),
+                    child: Text(
+                      blockedMessage,
+                      style: const TextStyle(color: GtlColors.accentYellow),
                     ),
-                  ),
-                  SizedBox(
-                    width: 78,
-                    child: Text(formatGtl(_stake), textAlign: TextAlign.end),
                   ),
                 ],
               ),
-              _PredictionPreviewPanel(
-                selectedLabel: selectedOption?.label ?? 'Selecione',
-                stake: _stake,
-                preview: _preview,
-                busy: _previewBusy,
+            ),
+          ] else ...[
+            const SizedBox(height: 2),
+            GtlSurface(
+              color: GtlColors.surfaceInk,
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    children: [
+                      const Expanded(child: Text('Crédito reservado')),
+                      Text(
+                        formatGtl(_stake),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                    ],
+                  ),
+                  Slider(
+                    min: 1,
+                    max: 500,
+                    divisions: 499,
+                    value: _stake.toDouble(),
+                    label: formatGtl(_stake),
+                    onChanged: (value) =>
+                        _setStake(value.round(), auth.isAuthenticated),
+                  ),
+                ],
               ),
-              if (_error != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  _error!,
-                  style: const TextStyle(color: GtlColors.accentRed),
-                ),
-              ],
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                onPressed: _busy
-                    ? null
-                    : () => _handleAction(auth.isAuthenticated),
-                icon: _busy
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.trending_up),
-                label: Text(
-                  auth.isAuthenticated
-                      ? 'Pré-visualizar e confirmar'
-                      : 'Entrar para prever',
-                ),
-              ),
+            ),
+            const SizedBox(height: 10),
+            _PredictionPreviewPanel(
+              selectedLabel: selectedOption?.label ?? 'Selecione',
+              stake: _stake,
+              preview: _preview,
+              busy: _previewBusy,
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: const TextStyle(color: GtlColors.accentRed)),
             ],
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: _busy
+                  ? null
+                  : () => _handleAction(auth.isAuthenticated),
+              icon: _busy
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.trending_up),
+              label: Text(
+                auth.isAuthenticated
+                    ? 'Pré-visualizar e confirmar'
+                    : 'Entrar para prever',
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -274,7 +299,9 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
       context: context,
       backgroundColor: GtlColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(GtlRadii.large),
+        ),
       ),
       builder: (context) => Padding(
         padding: const EdgeInsets.all(20),
@@ -282,20 +309,19 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Confirmar previsão',
-              style: Theme.of(context).textTheme.titleLarge,
+            const GtlEditorialHeader(
+              kicker: 'Confirmação',
+              title: 'Confirmar previsão',
+              body:
+                  'A API vai validar saldo, status do mercado e duplicidade antes de registrar.',
+              icon: Icons.verified_outlined,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 14),
             _PredictionPreviewPanel(
               selectedLabel: selectedOption?.label ?? 'Selecione',
               stake: _stake,
               preview: _preview,
               busy: false,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'A API vai validar saldo, status do mercado e duplicidade antes de registrar.',
             ),
             const SizedBox(height: 18),
             FilledButton.icon(
@@ -356,30 +382,23 @@ class _PredictionPreviewPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: GtlColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: GtlColors.border),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          children: [
-            _PreviewRow(label: 'Opção escolhida', value: selectedLabel),
-            const Divider(height: 16),
-            _PreviewRow(
-              label: 'Crédito possível se acertar',
-              value: busy
-                  ? 'Atualizando...'
-                  : preview == null
-                  ? '-'
-                  : formatGtl(preview!.estimatedReturn),
-            ),
-            const Divider(height: 16),
-            _PreviewRow(label: 'Crédito reservado', value: formatGtl(stake)),
-          ],
-        ),
+    return GtlSurface(
+      color: GtlColors.surfaceInk,
+      child: Column(
+        children: [
+          _PreviewRow(label: 'Opção escolhida', value: selectedLabel),
+          const Divider(height: 18),
+          _PreviewRow(
+            label: 'Crédito possível se acertar',
+            value: busy
+                ? 'Atualizando...'
+                : preview == null
+                ? '-'
+                : formatGtl(preview!.estimatedReturn),
+          ),
+          const Divider(height: 18),
+          _PreviewRow(label: 'Crédito reservado', value: formatGtl(stake)),
+        ],
       ),
     );
   }

@@ -7,6 +7,7 @@ import '../../core/api_client.dart';
 import '../../core/environment.dart';
 import '../../core/providers.dart';
 import '../../theme.dart';
+import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 
 class BadgesScreen extends ConsumerWidget {
@@ -18,23 +19,42 @@ class BadgesScreen extends ConsumerWidget {
     final api = ref.watch(apiClientProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Badges')),
-      body: badges.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) =>
-            Center(child: Text(ApiFailure.fromObject(error).message)),
-        data: (items) {
-          if (items.isEmpty) {
-            return const Center(child: Text('Nenhuma badge cadastrada ainda.'));
-          }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: items.length,
-            itemBuilder: (context, index) {
-              final badge = Map<String, dynamic>.from(items[index] as Map);
-              return _BadgeCard(badge: badge, api: api);
-            },
-          );
-        },
+      body: GtlScreen(
+        child: badges.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, stack) => GtlStatePanel(
+            icon: Icons.cloud_off,
+            title: 'Badges indisponíveis',
+            body: ApiFailure.fromObject(error).message,
+            color: GtlColors.accentYellow,
+          ),
+          data: (items) {
+            if (items.isEmpty) {
+              return const GtlStatePanel(
+                icon: Icons.workspace_premium_outlined,
+                title: 'Nenhuma badge cadastrada',
+                body: 'O catálogo aparecerá aqui quando houver badges ativas.',
+              );
+            }
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              children: [
+                const GtlEditorialHeader(
+                  kicker: 'Reputação visual',
+                  title: 'Badges',
+                  body: 'Conquistas públicas vindas do backend.',
+                  icon: Icons.workspace_premium_outlined,
+                ),
+                const SizedBox(height: 14),
+                for (final item in items)
+                  _BadgeCard(
+                    badge: Map<String, dynamic>.from(item as Map),
+                    api: api,
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -52,10 +72,10 @@ class _BadgeCard extends StatelessWidget {
     final name = badge['name']?.toString() ?? 'Badge';
     final description = badge['description']?.toString() ?? '';
     final rule = badge['rule_description']?.toString() ?? '';
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GtlSurface(
+        color: GtlColors.surfaceGlass,
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -135,7 +155,7 @@ class BadgeArt extends StatelessWidget {
     final earned = status == 'earned';
     if (imageUrl.isNotEmpty) {
       return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
         child: CachedNetworkImage(
           imageUrl: imageUrl,
           width: size,
@@ -162,8 +182,8 @@ class _BadgeFallback extends StatelessWidget {
       decoration: BoxDecoration(
         color: earned
             ? GtlColors.accentGreen.withValues(alpha: 0.16)
-            : GtlColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(8),
+            : GtlColors.surfaceInk,
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
         border: Border.all(color: GtlColors.border),
       ),
       child: SizedBox.square(
@@ -188,7 +208,7 @@ class _BadgeStatus extends StatelessWidget {
       decoration: BoxDecoration(
         color: (earned ? GtlColors.accentGreen : GtlColors.surfaceElevated)
             .withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(GtlRadii.pill),
         border: Border.all(
           color: earned
               ? GtlColors.accentGreen.withValues(alpha: 0.6)
