@@ -2,6 +2,28 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260607-MOBILE-ANDROID-MVP-001
+
+- Tipo: `new-feature`
+- Status: `em_validacao`
+- Feature alvo: `FEAT-MOBILE-001`, `future-mobile`
+- Objetivo: implementar MVP Flutter Android do GoTrendLabs como cliente da FastAPI, com feed, detalhe, auth, previsão, comentários, wallet, perfil, ranking, badges e alertas
+- Etapa atual: implementação local criada; aguardando validação no emulador Android e eventual publicação via PR
+- Artefatos afetados:
+  - `apps/mobile/`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/known-gaps.md`
+  - `apps/mobile/README.md`
+- Bloqueios: nenhum para build/testes locais; QA visual completo de textos longos, imagem ausente, mercado resolvido e fluxo autenticado real ainda fica pendente antes de concluir o MVP
+- Iniciado em: 2026-06-07
+- Atualizado em: 2026-06-07
+- Encerrado em: pendente
+- Retomada: validar fluxo autenticado real com usuário de teste, preview/previsão/wallet e ampliar QA visual antes de fechar o MVP
+- Reversão lógica: remover o projeto Flutter de `apps/mobile`, restaurar README mobile como reserva e reverter status/changelog/workflow desta fatia
+- Evidências de validação local: `flutter doctor -v` com Android toolchain válido e alerta apenas de iOS/Xcode/CocoaPods; `flutter analyze` sem issues; `flutter test` com 4 testes OK; após preencher o cache do Gradle wrapper, `flutter build apk --debug` gerou `build/app/outputs/flutter-apk/app-debug.apk`; `flutter run -d emulator-5554 --dart-define=GTL_API_BASE_URL=http://10.0.2.2:8001` abriu o app no `gotrendlabs_pixel`, carregou mercados da FastAPI na tela `Hoje`, abriu detalhe e aba `Comunidade`; screenshots temporárias capturadas em `/tmp/gotrendlabs-mobile-home-fixed.png`, `/tmp/gotrendlabs-mobile-detail-fixed.png` e `/tmp/gotrendlabs-mobile-community.png`
+
 ## WFLOW-20260607-MOBILE-SPECS-SKILLS-001
 
 - Tipo: `new-feature`

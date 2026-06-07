@@ -1,5 +1,17 @@
 # Feature Changelog
 
+## 2026-06-07 — FEAT-MOBILE-001 MVP Flutter Android
+
+- Criado projeto Flutter em `apps/mobile` para Android, com tema dark-first GoTrendLabs e bottom navigation `Hoje`, `Insights`, `Mercados`, `Alertas`, `Busca`.
+- Feed, browse, busca e detalhe de mercado consomem a FastAPI local; o emulador usa `http://10.0.2.2:8001`.
+- Auth mobile v1 usa Bearer simples retornado pela FastAPI e armazenado em secure storage, sem refresh token nesta fatia.
+- Favoritos, curtidas, comentários, preview e criação de previsão chamam apenas endpoints backend; o app não calcula saldo, probabilidade, payout, reputação, badges ou resolução como fonte de verdade.
+- Wallet, perfil, ranking, badges e alertas foram implementados como leitura da API.
+- Perfil mobile passou a expor catalogo de badges, imagens de badges via `/media`, convite por referral, atalhos com icones para wallet/ranking/sair e forms de suporte/sugestao alinhados a web.
+- Sugestao de mercado mobile passou a carregar categorias ativas de `GET /taxonomy`; feedback mobile passou a usar as opcoes publicas da web sem seletor de prioridade.
+- Cards de mercado mobile passaram a resolver midia pelo web base e a exibir a `thumb` cadastrada tambem quando houver thumbnail.
+- Validações locais: `flutter analyze`, `flutter test`, `flutter doctor -v` e build Android debug.
+
 ## 2026-06-07 — FEAT-MOBILE-001 specs e skills mobile
 
 - Criadas specs iniciais do app Flutter Android: arquitetura, contratos FastAPI, MVP, UX dark-first e critérios de aceite.
