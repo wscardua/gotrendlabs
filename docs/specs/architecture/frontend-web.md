@@ -25,6 +25,8 @@
 ## Guardrails
 
 - Toda ação mutável relevante deve passar pelo `backend-api`.
+- A camada web continua nos caminhos atuais nesta fase; `apps/web/` é apenas a estrutura alvo documentada para migração futura.
+- A futura reorganização de templates, static e apps Django deve preservar migrations, `AppConfig.label`, `TEMPLATES["DIRS"]`, `STATICFILES_DIRS` e comandos locais.
 - Textos de interface devem estar preparados para `pt-BR` e `en`.
 - Qualquer regra de exibição condicionada por estado de mercado deve depender de estados vindos do contrato de domínio.
 - Comentários no detalhe do mercado exibem o autor como handle iniciado por `@`.

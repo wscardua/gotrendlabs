@@ -9,7 +9,7 @@ Use esta skill quando a tarefa exigir decidir onde uma responsabilidade deve viv
 
 ## Objetivo
 
-Proteger a separação entre frontend, backend, banco, scheduler, comunicações e admin.
+Proteger a separação entre frontend web, futuro mobile, backend, banco, scheduler, comunicações e admin.
 
 ## Fluxo padrão
 
@@ -23,11 +23,13 @@ Proteger a separação entre frontend, backend, banco, scheduler, comunicações
 ## Regras
 
 - `frontend-web` não calcula regras críticas.
+- `future-mobile` será cliente e também não calcula regras críticas.
 - `backend-api` é a fonte da verdade do domínio.
 - `database` persiste; não decide política de produto sozinho.
 - `scheduler-jobs` executa automações temporais, não cria regra nova.
 - `communications` reage a eventos, não duplica elegibilidade de domínio.
 - `admin-ops` opera o sistema, mas não substitui contratos do backend.
+- `apps/api/`, `apps/web/`, `apps/mobile/`, `ops/` e `packages/contracts/` são estrutura alvo; enquanto o runtime não for movido, preservar comandos e caminhos atuais.
 - Mudanças de fronteira devem atualizar workflow e decisões.
 
 ## Entradas principais

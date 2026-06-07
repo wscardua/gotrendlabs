@@ -5,7 +5,7 @@
 - Ser a fonte principal da verdade do domínio.
 - Autenticar usuários e emitir/validar sessão.
 - Emitir e validar tokens de recuperação de senha de uso único.
-- Expor contratos JSON consumidos pelo frontend e pelo admin.
+- Expor contratos JSON consumidos pelo frontend web, pelo admin e pelo futuro cliente mobile.
 - Centralizar regras de mercado, previsão, stake, wallet, indicação, reputação, ranking e resolução.
 - Validar reCAPTCHA server-side nos fluxos públicos protegidos quando configurado.
 - Emitir eventos de negócio consumidos por `communications` e `scheduler-jobs`.
@@ -18,6 +18,8 @@
 
 ## Requisitos estruturais
 
+- Nesta fase de fundação, o runtime FastAPI continua em `backend_api/`; `apps/api/` é apenas a estrutura alvo documentada para migração futura.
+- A futura migração para `apps/api/backend_api/` deve atualizar imports, comandos `uvicorn`, deploy, testes e documentação na mesma feature.
 - Todas as mutações relevantes devem ser auditáveis.
 - Estados de mercado devem ser explícitos e consistentes.
 - Regras de saldo devem usar ledger, não apenas campo de total agregado.

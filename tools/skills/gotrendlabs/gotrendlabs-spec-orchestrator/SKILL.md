@@ -24,7 +24,8 @@ Conduzir a execução da feature a partir dos documentos corretos, mantendo depe
 ## Regras
 
 - Não assuma comportamento fora do que está documentado.
-- Respeite os limites entre `frontend-web`, `backend-api`, `database`, `scheduler-jobs`, `communications` e `admin-ops`.
+- Respeite os limites entre `frontend-web`, futuro mobile, `backend-api`, `database`, `scheduler-jobs`, `communications` e `admin-ops`.
+- Trate `apps/api/`, `apps/web/`, `apps/mobile/`, `ops/` e `packages/contracts/` como estrutura alvo quando o runtime ainda estiver nos caminhos vigentes.
 - Se a spec estiver desatualizada, interrompa a improvisação e proponha ajuste documental primeiro.
 - Não marque workflow como concluído sem validar `workflow-checklists.md`.
 

@@ -12,6 +12,8 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 
 ## Estrutura
 
+### Estrutura vigente
+
 - `config/`: settings, URLs e WSGI/ASGI do Django.
 - `backend_api/`: app FastAPI, schemas Pydantic, seguranca e conexao Postgres.
 - `accounts/`: usuario customizado, formularios, sessao Django e telas de login/cadastro.
@@ -20,6 +22,20 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 - `admin_ops/`: painel operacional customizado para mercados, taxonomia, filas e moderacao.
 - `docs/specs/`: fonte principal de arquitetura, features, fluxos e criterios de aceite.
 - `tools/skills/gotrendlabs/`: skills locais usadas para orientar implementacao por camada.
+
+### Estrutura alvo do monorepo
+
+Esta feature cria a fundacao da reorganizacao sem mover runtime critico. Os caminhos atuais acima continuam validos ate migracoes fisicas futuras.
+
+- `apps/api/`: reserva para a futura casa da FastAPI; hoje o runtime continua em `backend_api/`.
+- `apps/web/`: reserva para a futura casa da web Django, templates e assets; hoje Django, `templates/` e `static/` continuam nos caminhos atuais.
+- `apps/mobile/`: reserva para o futuro frontend mobile; nenhum projeto Flutter ou spec tecnica mobile e criado nesta fase.
+- `packages/contracts/`: reserva para OpenAPI/clientes gerados quando houver consumidor real e validacao definida.
+- `ops/`: reserva para a futura organizacao de deploy, Docker e scripts; hoje `deploy/`, `docker/` e `scripts/ops/` continuam vigentes.
+- `docs/audits/`: relatorios de auditoria e seguranca.
+- `tools/`: ferramentas de desenvolvimento e skills locais do repositorio inteiro.
+
+Guardrail arquitetural: FastAPI concentra dominio, inteligencia, IA, wallet, reputacao, badges, resolucao, auditoria e integracoes. Django web/Admin Ops e o futuro mobile sao clientes desses contratos e nao devem duplicar regra critica.
 
 ## Setup local
 
@@ -138,7 +154,9 @@ Antes de alterar comportamento, consulte:
 
 Skills locais uteis:
 
+- `tools/skills/gotrendlabs/gotrendlabs-architecture-guard/SKILL.md`
 - `tools/skills/gotrendlabs/gotrendlabs-django-web/SKILL.md`
+- `tools/skills/gotrendlabs/gotrendlabs-fastapi-domain/SKILL.md`
 - `tools/skills/gotrendlabs/gotrendlabs-test-strategy/SKILL.md`
 - `tools/skills/gotrendlabs/gotrendlabs-postgres-modeling/SKILL.md`
 - `tools/skills/gotrendlabs/gotrendlabs-software-architect/SKILL.md`
