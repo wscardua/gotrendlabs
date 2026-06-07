@@ -3,7 +3,7 @@ id: FEAT-MOBILE-001
 titulo: "MVP mobile Flutter"
 versao: 0.1
 status_spec: draft
-status_impl: nao_iniciada
+status_impl: parcial
 ultima_atualizacao: 2026-06-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
@@ -50,6 +50,8 @@ Entregar a primeira experiencia Android do GoTrendLabs para descoberta de mercad
 - wallet resumida e extrato
 - perfil autenticado
 - ranking e badges em leitura
+- suporte/feedback via fila FastAPI existente
+- sugestao de mercados via fila FastAPI existente
 - central de alertas in-app sem push nativo
 - governanca documental por skills mobile locais antes de cada fatia de implementacao
 
@@ -189,8 +191,12 @@ Perfil no MVP:
 - nome publico e handle
 - reputacao
 - badges conquistadas
+- catalogo de badges com imagens e estado de conquista
 - estatisticas resumidas quando contrato existir
 - acesso a configuracoes basicas
+- acesso a convite/indicacao quando backend habilitar
+- acesso a suporte/feedback
+- acesso a sugestao de mercado
 
 ## Regras de dominio
 
@@ -199,6 +205,8 @@ Perfil no MVP:
 - probabilidade exibida usa contrato da API
 - saldo e extrato usam ledger/projecao da API
 - reputacao, ranking e badges sao leitura da API
+- imagens de mercado/badges usam `image_url`/`thumb` retornados pela API, com fallback visual apenas de apresentacao
+- feedback e sugestoes sao enviados para filas do backend; revisao, recompensa e conversao em mercado ficam no backend/Admin Ops
 - visitantes podem explorar, mas mutacoes autenticadas exigem login
 
 ## Metricas de produto

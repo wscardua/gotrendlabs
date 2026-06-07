@@ -171,6 +171,9 @@ class WalletRechargeRequestResponse(BaseModel):
 
 class WalletRechargeRequestListResponse(BaseModel):
     requests: List[WalletRechargeRequestResponse]
+    available_gtl: int = 0
+    min_balance_gtl: int = 100
+    eligible: bool = False
 
 
 class AdminUserResponse(BaseModel):

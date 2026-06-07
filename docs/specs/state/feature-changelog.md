@@ -1,5 +1,22 @@
 # Feature Changelog
 
+## 2026-06-07 — FEAT-MOBILE-001 MVP Flutter Android
+
+- Criado projeto Flutter em `apps/mobile` para Android, com tema dark-first GoTrendLabs e bottom navigation `Hoje`, `Insights`, `Mercados`, `Alertas`, `Busca`.
+- Feed, browse, busca e detalhe de mercado consomem a FastAPI local; o emulador usa `http://10.0.2.2:8001`.
+- Auth mobile v1 usa Bearer simples retornado pela FastAPI e armazenado em secure storage, sem refresh token nesta fatia.
+- Favoritos, curtidas, comentários, preview e criação de previsão chamam apenas endpoints backend; o app não calcula saldo, probabilidade, payout, reputação, badges ou resolução como fonte de verdade.
+- Wallet, perfil, ranking, badges e alertas foram implementados como leitura da API.
+- Perfil mobile passou a expor catalogo de badges, imagens de badges via `/media`, convite por referral, atalhos com icones para wallet/ranking/sair e forms de suporte/sugestao alinhados a web.
+- Sugestao de mercado mobile passou a carregar categorias ativas de `GET /taxonomy`; feedback mobile passou a usar as opcoes publicas da web sem seletor de prioridade.
+- Cards de mercado mobile passaram a resolver midia pelo web base, sem gerar iniciais locais de categoria nem sobrepor `thumb` quando `image_url` existir; fallback visual permanece apenas de apresentacao.
+- Ticket de previsao mobile passou a espelhar o preview web com `Opcao escolhida`, `Credito possivel se acertar` e `Credito reservado`, atualizando o retorno via `/prediction-preview` com debounce ao selecionar opcao ou mover o controle.
+- Wallet mobile ganhou recarga controlada com elegibilidade, pendencia, historico e solicitacao por `/users/me/wallet/recharge-requests`; o contrato passou a expor `available_gtl`, `min_balance_gtl` e `eligible`, mantendo o `POST` como autoridade de dominio.
+- Ranking mobile passou a carregar filtros de categoria, subcategoria e evento a partir de `/rankings`, como na web.
+- Mobile passou a expor `Politica de uso`, `Conceitos` e `Seguranca` em tela publica de confianca, acessivel pelo menu e perfil.
+- Mensagens de erro mobile passaram a traduzir validacoes FastAPI comuns para copy final, evitando payload tecnico na UI.
+- Validações locais: `flutter analyze`, `flutter test`, `flutter doctor -v`, `flutter build apk --debug`, `python manage.py check`, teste backend focado e `packages/contracts/export_openapi.py --check`.
+
 ## 2026-06-07 — FEAT-MOBILE-001 specs e skills mobile
 
 - Criadas specs iniciais do app Flutter Android: arquitetura, contratos FastAPI, MVP, UX dark-first e critérios de aceite.

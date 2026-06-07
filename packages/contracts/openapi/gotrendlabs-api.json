@@ -4237,6 +4237,21 @@
       },
       "WalletRechargeRequestListResponse": {
         "properties": {
+          "available_gtl": {
+            "default": 0,
+            "title": "Available Gtl",
+            "type": "integer"
+          },
+          "eligible": {
+            "default": false,
+            "title": "Eligible",
+            "type": "boolean"
+          },
+          "min_balance_gtl": {
+            "default": 100,
+            "title": "Min Balance Gtl",
+            "type": "integer"
+          },
           "requests": {
             "items": {
               "$ref": "#/components/schemas/WalletRechargeRequestResponse"

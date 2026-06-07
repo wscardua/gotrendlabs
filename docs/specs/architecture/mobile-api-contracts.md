@@ -3,7 +3,7 @@ id: ARCH-MOBILE-API-001
 titulo: "Contratos API para mobile"
 versao: 0.1
 status_spec: draft
-status_impl: nao_iniciada
+status_impl: parcial
 ultima_atualizacao: 2026-06-07
 origem:
   - docs/specs/architecture/backend-api.md
@@ -32,9 +32,12 @@ O mobile deve consumir a FastAPI como cliente JSON. Sempre que um endpoint ja at
 
 ## Base URL local
 
-- Emulador Android: `http://10.0.2.2:8001`
+- Emulador Android API: `http://10.0.2.2:8001`
+- Emulador Android web/media: `http://10.0.2.2:8000`
 - Aparelho fisico na mesma rede: `http://<ip-do-mac>:8001`
 - Chrome/web local: `http://127.0.0.1:8001`
+
+Para o emulador renderizar imagens em `/media/...`, o Django local precisa escutar em host acessivel ao emulador e aceitar `10.0.2.2` em `GOTRENDLABS_ALLOWED_HOSTS`; caso contrario thumbnails de mercado e badges caem no fallback visual mesmo com `image_url` correto na API.
 
 ## Contratos de leitura publica
 
@@ -119,6 +122,7 @@ Uso no mobile:
 - filtros de mercado
 - filtros de ranking
 - descoberta por categoria/subcategoria/evento
+- seletor de categoria em `Sugerir mercado`, usando o nome canonico retornado pela API
 
 Itens bloqueados logicamente nao devem aparecer para selecao publica.
 
@@ -154,13 +158,14 @@ Requisitos mobile:
 
 Se a autenticacao atual estiver orientada a cookie web, uma decisao tecnica deve definir a estrategia mobile antes de implementar login persistente.
 
-Decisao pendente antes da implementacao autenticada:
+Decisao v1 para a implementacao autenticada:
 
-- confirmar se o contrato mobile usara cookie de sessao, bearer token, par token/refresh ou outro mecanismo
-- definir armazenamento seguro no Flutter
-- definir expiracao, renovacao, logout e revogacao
-- mapear compatibilidade com `GET /users/me`
-- atualizar OpenAPI, specs de auth e testes de mobile quando a estrategia for escolhida
+- usar Bearer simples retornado em `AuthResponse.session.token`
+- persistir token no Flutter com secure storage
+- restaurar sessao por `GET /auth/session`
+- encerrar sessao por `POST /auth/logout`
+- usar a expiracao existente em `AuthResponse.session.expires_at`
+- deixar refresh token, renovacao automatica e revogacao avancada para etapa futura
 
 ### Favoritos e curtidas de mercado
 
@@ -188,6 +193,7 @@ Endpoints esperados:
 Requisitos mobile:
 
 - preview sempre calculado pela API
+- app pode chamar preview de forma reativa ao selecionar opcao ou mover o controle de GT₵, com debounce, sem calcular retorno localmente
 - criacao exige usuario autenticado, opcao explicita e stake valido
 - duplicidade de previsao, saldo insuficiente e mercado fechado devem gerar erro mapeavel
 - resposta de sucesso deve retornar saldo atualizado e snapshot de probabilidade
@@ -214,13 +220,16 @@ Requisitos mobile:
 
 Endpoints esperados:
 
-- saldo autenticado
-- extrato autenticado
-- solicitacao de recarga educativa quando contrato estiver disponivel
+- `GET /users/me/wallet`
+- `GET /users/me/ledger`
+- `GET /users/me/wallet/recharge-requests`
+- `POST /users/me/wallet/recharge-requests`
 
 Requisitos mobile:
 
 - saldo e extrato sao leitura da API
+- recarga controlada usa `available_gtl`, `min_balance_gtl`, `eligible` e `requests` retornados pela API
+- app mostra pendencia e historico, mas o `POST` continua sendo a autoridade para elegibilidade, duplicidade e email confirmado
 - labels humanos devem evitar codigos tecnicos de ledger
 - `GTL` ou `GT₵` deve ser tratado como moeda educativa, sem copy de dinheiro real, saque ou investimento
 
@@ -228,16 +237,45 @@ Requisitos mobile:
 
 Endpoints esperados:
 
-- ranking publico global e por taxonomia
-- catalogo publico de badges
-- estado autenticado de badges conquistadas
+- `GET /rankings`
+- `GET /badges`
+- `GET /users/me/badges`
 - compartilhamento de badge conquistada quando disponivel
 
 Requisitos mobile:
 
 - staff, superuser e bots nao aparecem no ranking publico
 - app nao calcula elegibilidade de badge
+- imagens de badge em `/media/...` sao resolvidas contra o web/public base, nao contra a FastAPI
 - compartilhamento nao altera reputacao, wallet ou ranking
+
+### Indicacao
+
+Endpoint esperado:
+
+- `GET /users/me/referral`
+
+Requisitos mobile:
+
+- app apenas exibe e compartilha o codigo/link retornado pelo backend
+- bonus, habilitacao, razao de bloqueio e credito ficam sob autoridade backend/Admin Ops
+
+### Sugestoes e feedback
+
+Endpoints esperados:
+
+- `POST /suggestions`
+- `POST /feedback`
+
+Requisitos mobile:
+
+- formulario mobile envia payload JSON para a FastAPI
+- sugestao de mercado usa categorias ativas de `GET /taxonomy`
+- feedback usa as mesmas opcoes publicas da web e envia `severity=medium` como compatibilidade de contrato
+- usuario autenticado nao informa nome/email de visitante
+- visitante identificado informa nome/email quando o backend exigir
+- app nao aprova sugestao, nao converte sugestao em mercado e nao calcula recompensa
+- app nao recompensa feedback; status, revisao e creditos ficam no backend/Admin Ops
 
 ## Erros padronizados para UX
 

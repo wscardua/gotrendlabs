@@ -4181,6 +4181,9 @@ class BackendAuthAPITests(TransactionTestCase):
         my_recharges = client.get("/users/me/wallet/recharge-requests", headers=user_headers)
         self.assertEqual(my_recharges.status_code, 200)
         self.assertEqual(my_recharges.json()["requests"][0]["id"], recharge_id)
+        self.assertEqual(my_recharges.json()["min_balance_gtl"], 10000)
+        self.assertTrue(my_recharges.json()["eligible"])
+        self.assertIn("available_gtl", my_recharges.json())
 
         common_queue = client.get("/admin/queues", headers=user_headers)
         self.assertEqual(common_queue.status_code, 403)

@@ -3,7 +3,7 @@ id: TEST-MOBILE-001
 titulo: "Criterios de aceite mobile"
 versao: 0.1
 status_spec: draft
-status_impl: nao_iniciada
+status_impl: parcial
 ultima_atualizacao: 2026-06-07
 origem:
   - docs/specs/testing/test-strategy.md
@@ -64,11 +64,12 @@ Com backend local ativo:
 2. Ver tela `Hoje`.
 3. Ver ao menos um mercado vindo da API.
 4. Abrir detalhe de mercado.
-5. Alternar entre `Visao geral` e `Comunidade`.
-6. Voltar para lista.
-7. Abrir aba `Mercados`.
-8. Aplicar filtro de categoria.
-9. Abrir uma acao autenticada como visitante e ver CTA de login.
+5. Ver acoes de favoritar, curtir e compartilhar no detalhe.
+6. Alternar entre `Visao geral` e `Comunidade`.
+7. Voltar para lista.
+8. Abrir aba `Mercados`.
+9. Aplicar filtro de categoria.
+10. Abrir uma acao autenticada como visitante e ver CTA de login.
 
 ## Fluxo autenticado
 
@@ -144,12 +145,18 @@ Deve validar:
 - favoritos/curtidas
 - comentarios
 - wallet
+- badges autenticadas em resposta de lista na raiz
+- suporte/feedback
+- sugestao de mercado
 
 ### Integration tests
 
 - feed -> detalhe -> voltar
 - visitante tenta prever -> login CTA
 - login -> detalhe -> preview de previsao
+- perfil -> badges/reputacao/ranking
+- menu -> suporte/feedback
+- menu -> sugerir mercado
 - erro de API -> retry
 
 ## QA visual
@@ -161,6 +168,22 @@ Antes de considerar a UI pronta:
 - testar fonte ampliada
 - testar textos longos de mercado
 - testar imagem ausente
+- testar fallback iconizado/neutro de mercado quando `image_url` e `thumb` vierem vazios, sem iniciais geradas a partir da categoria
+- confirmar que `thumb` cadastrado aparece tambem quando houver thumbnail de mercado
+- confirmar que `thumb` cadastrado nao aparece sobreposto quando `image_url` de mercado estiver disponivel
+- confirmar que o ticket de previsao replica o preview web com `Opcao escolhida`, `Credito possivel se acertar` e `Credito reservado`, atualizando o retorno pelo backend ao mover o controle
+- confirmar que a wallet mostra recarga controlada com elegibilidade, pendencia, historico e criacao via API
+- confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
+- confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
+- confirmar que suporte/feedback e sugestao de mercado estao acessiveis no menu com icones
+- confirmar que politica de uso, conceitos e seguranca estao acessiveis no menu e perfil
+- confirmar que sugestao de mercado carrega categorias ativas da taxonomia
+- confirmar que feedback usa as opcoes da web sem seletor de prioridade
+- confirmar que compartilhamento aparece no hero ao lado de favoritar/curtir
+- confirmar que o detalhe nao repete o titulo do mercado logo abaixo do hero
+- confirmar que o ticket de previsao aparece antes do criterio de resolucao no detalhe
+- confirmar que erros de validacao aparecem em linguagem final, sem payload tecnico da API
+- confirmar que ranking permite filtrar por categoria, subcategoria e evento como na web
 - testar mercado sem comentarios
 - testar mercado resolvido
 - testar erro de rede

@@ -3,7 +3,7 @@ id: ARCH-MOBILE-001
 titulo: "Arquitetura mobile Flutter"
 versao: 0.1
 status_spec: draft
-status_impl: nao_iniciada
+status_impl: parcial
 ultima_atualizacao: 2026-06-07
 origem:
   - docs/specs/architecture/system-overview.md

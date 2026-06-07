@@ -32,7 +32,7 @@ if PRODUCTION_MODE and (
     raise RuntimeError("DJANGO_SECRET_KEY must be a long, random value outside development.")
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("GOTRENDLABS_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
+    for host in os.environ.get("GOTRENDLABS_ALLOWED_HOSTS", "127.0.0.1,localhost,10.0.2.2").split(",")
     if host.strip()
 ]
 CSRF_TRUSTED_ORIGINS = [
