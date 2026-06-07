@@ -134,6 +134,9 @@ jobs:
               \"export REPO_URL='$REPO_URL'\",
               \"if [ ! -d '$APP_DIR/.git' ]; then mkdir -p '$APP_DIR'; git clone --branch '$BRANCH' '$REPO_URL' '$APP_DIR'; fi\",
               \"cd '$APP_DIR'\",
+              \"git fetch origin '$BRANCH'\",
+              \"git checkout '$BRANCH'\",
+              \"git pull --ff-only origin '$BRANCH'\",
               \"bash ops/deploy/production/deploy.sh\"
             ]" \
             --query "Command.CommandId" \
