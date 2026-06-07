@@ -8,7 +8,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `infra-deploy-mvp`, `repo-layout`
 - Objetivo: mover deploy, scripts e Docker local para `ops/` como terceira etapa da reorganização do monorepo
-- Etapa atual: concluido; deploy de produção movido para `ops/deploy/production/`, scripts operacionais movidos para `ops/scripts/`, Compose local atualizado para `ops/docker/postgres/data/` e README/specs/skills/testes alinhados
+- Etapa atual: concluido; deploy de produção movido para `ops/deploy/production/`, scripts operacionais movidos para `ops/scripts/`, Compose local atualizado para `ops/docker/postgres/data/`, README/specs/skills/testes alinhados e workflow SSM ajustado para atualizar o checkout remoto antes de chamar o script movido
 - Artefatos afetados:
   - `ops/deploy/production/`
   - `ops/scripts/`
@@ -24,7 +24,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Encerrado em: 2026-06-07
 - Retomada: próxima reorganização deve preparar a camada web Django com cuidado para preservar labels, migrations, templates e static
 - Reversão lógica: restaurar `deploy/production/`, `scripts/ops/` e `docker/postgres/data/` como caminhos oficiais e reverter referências em workflow, Compose, docs e testes
-- Evidências de validação: `manage.py check`, `docker compose config --quiet`, `docker compose -f ops/deploy/production/docker-compose.yml config --quiet --no-env-resolution` e suite `manage.py test --keepdb` com 150 testes OK
+- Evidências de validação: `manage.py check`, `docker compose config --quiet`, `docker compose -f ops/deploy/production/docker-compose.yml config --quiet --no-env-resolution`, suite `manage.py test --keepdb` com 150 testes OK e correção pós-merge para o checkout SSM antigo que ainda não continha `ops/deploy/production/deploy.sh`
 
 ## WFLOW-20260607-FASTAPI-LAYOUT-001
 

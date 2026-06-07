@@ -6,6 +6,7 @@
 - Scripts operacionais foram movidos de `scripts/ops/` para `ops/scripts/`.
 - Compose local passou a reservar estado Postgres em `ops/docker/postgres/data/`, mantendo o diretório ignorado pelo Git e preservando dados locais antigos fora da migração.
 - Workflow GitHub Actions, README, specs, skills e testes passaram a apontar para os novos caminhos operacionais.
+- GitHub Actions passou a atualizar o checkout remoto na EC2 antes de chamar o script em `ops/deploy/production/`, cobrindo a transição em que o checkout existente ainda não tinha o caminho novo.
 
 ## 2026-06-07 — Organização da FastAPI em `apps/api`
 
