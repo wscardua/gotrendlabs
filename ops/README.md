@@ -1,11 +1,9 @@
 # Ops
 
-Diretorio reservado para a futura organizacao de deploy, Docker e scripts operacionais.
+Diretorio de deploy, Docker local e scripts operacionais do GoTrendLabs.
 
-Nesta fase de fundacao, os caminhos vigentes continuam:
+- `ops/deploy/production/`: Compose, Caddyfile, runbook e script de deploy da EC2.
+- `ops/scripts/`: utilitarios operacionais manuais.
+- `ops/docker/`: espaco reservado para estado local ignorado pelo Git, como dados de Postgres de desenvolvimento.
 
-- `deploy/production/`
-- `docker/`
-- `scripts/ops/`
-
-Quando a migracao fisica acontecer, esses caminhos poderao ser movidos para `ops/` em uma feature separada, com atualizacao de Dockerfile, compose, GitHub Actions, deploy docs e comandos operacionais.
+Arquivos de entrada do produto, como `Dockerfile`, `docker-compose.yml`, `.env.example`, `.env.prod.example`, `requirements.txt` e `manage.py`, continuam na raiz enquanto forem usados diretamente por desenvolvimento local, CI ou deploy.

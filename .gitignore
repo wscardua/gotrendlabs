@@ -8,5 +8,6 @@ db.sqlite3
 .env.prod
 .DS_Store
 docker/postgres/data/
+ops/docker/postgres/data/
 .runtime/
 staticfiles/

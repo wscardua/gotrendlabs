@@ -25,13 +25,13 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 
 ### Estrutura alvo do monorepo
 
-Esta feature cria a fundacao da reorganizacao sem mover runtime critico. Os caminhos atuais acima continuam validos ate migracoes fisicas futuras.
+A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI e operacao ja vivem nos caminhos novos; a camada web Django continua nos caminhos historicos ate uma migracao propria.
 
 - `apps/api/`: casa da FastAPI e da autoridade de dominio do produto.
 - `apps/web/`: reserva para a futura casa da web Django, templates e assets; hoje Django, `templates/` e `static/` continuam nos caminhos atuais.
 - `apps/mobile/`: reserva para o futuro frontend mobile; nenhum projeto Flutter ou spec tecnica mobile e criado nesta fase.
 - `packages/contracts/`: reserva para OpenAPI/clientes gerados quando houver consumidor real e validacao definida.
-- `ops/`: reserva para a futura organizacao de deploy, Docker e scripts; hoje `deploy/`, `docker/` e `scripts/ops/` continuam vigentes.
+- `ops/`: deploy de producao, scripts operacionais e estado Docker local ignorado pelo Git.
 - `docs/audits/`: relatorios de auditoria e seguranca.
 - `tools/`: ferramentas de desenvolvimento e skills locais do repositorio inteiro.
 
@@ -126,7 +126,7 @@ Os testes cobrem contratos de API, renderizacao web, fallback local de desenvolv
 
 ## Deploy MVP em EC2
 
-O deploy de producao fica em `deploy/production/` e usa Docker Compose na EC2 para subir Caddy, Django, FastAPI e o daemon operacional. O PostgreSQL de producao deve ser gerenciado fora do Compose, por exemplo em Amazon RDS.
+O deploy de producao fica em `ops/deploy/production/` e usa Docker Compose na EC2 para subir Caddy, Django, FastAPI e o daemon operacional. O PostgreSQL de producao deve ser gerenciado fora do Compose, por exemplo em Amazon RDS.
 
 A base AWS de producao foi provisionada em `us-east-1` com EC2 ARM gerenciada por SSM, RDS PostgreSQL privado, CloudWatch minimo, Secrets Manager/Parameter Store e role OIDC para GitHub Actions. O deploy automatico ainda depende da criacao segura de `.env.prod` fora do Git na EC2.
 
@@ -134,12 +134,12 @@ Arquivos principais:
 
 - `Dockerfile`: imagem da aplicacao.
 - `.env.prod.example`: modelo de variaveis de producao sem segredos reais.
-- `deploy/production/docker-compose.yml`: servicos de producao.
-- `deploy/production/Caddyfile`: HTTPS automatico e proxy reverso.
-- `deploy/production/deploy.sh`: fluxo de deploy na EC2.
+- `ops/deploy/production/docker-compose.yml`: servicos de producao.
+- `ops/deploy/production/Caddyfile`: HTTPS automatico e proxy reverso.
+- `ops/deploy/production/deploy.sh`: fluxo de deploy na EC2.
 - `.github/workflows/deploy.yml`: testes em `main` e deploy futuro via SSM.
 
-Consulte `deploy/production/README.md` para a instalacao inicial e os comandos de deploy.
+Consulte `ops/deploy/production/README.md` para a instalacao inicial e os comandos de deploy.
 
 ## Specs e skills
 

@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-06-07 — Organização operacional em `ops/`
+
+- Deploy de produção foi movido de `deploy/production/` para `ops/deploy/production/`, mantendo Compose, Caddyfile, runbook e `deploy.sh` juntos.
+- Scripts operacionais foram movidos de `scripts/ops/` para `ops/scripts/`.
+- Compose local passou a reservar estado Postgres em `ops/docker/postgres/data/`, mantendo o diretório ignorado pelo Git e preservando dados locais antigos fora da migração.
+- Workflow GitHub Actions, README, specs, skills e testes passaram a apontar para os novos caminhos operacionais.
+
 ## 2026-06-07 — Organização da FastAPI em `apps/api`
 
 - Pacote FastAPI movido de `backend_api/` para `apps/api/backend_api/`, preservando a autoridade de domínio e sem alterar contratos funcionais.

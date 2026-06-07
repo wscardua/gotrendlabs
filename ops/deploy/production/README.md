@@ -56,9 +56,9 @@ psql "host=gotrendlabs-prod-db.cinqq6ymy9in.us-east-1.rds.amazonaws.com port=543
 ## Arquivos
 
 - `Dockerfile`: receita da imagem da aplicacao, mantida na raiz do repo.
-- `deploy/production/docker-compose.yml`: servicos de producao para a EC2.
-- `deploy/production/Caddyfile`: HTTPS automatico e proxy reverso para Django.
-- `deploy/production/deploy.sh`: fluxo idempotente para primeira instalacao (`git clone`) e deploys seguintes (`git pull`), com build, migrations, static files e restart.
+- `ops/deploy/production/docker-compose.yml`: servicos de producao para a EC2.
+- `ops/deploy/production/Caddyfile`: HTTPS automatico e proxy reverso para Django.
+- `ops/deploy/production/deploy.sh`: fluxo idempotente para primeira instalacao (`git clone`) e deploys seguintes (`git pull`), com build, migrations, static files e restart.
 - `.env.prod.example`: modelo de variaveis de producao sem segredos reais.
 
 ## Primeira instalacao na EC2
@@ -89,19 +89,19 @@ Na EC2 provisionada, `Docker Engine`, `Docker Compose plugin`, `git`, `curl`, `c
 ## Primeiro deploy
 
 ```bash
-APP_DIR=/opt/gotrendlabs BRANCH=main ./deploy/production/deploy.sh
+APP_DIR=/opt/gotrendlabs BRANCH=main ./ops/deploy/production/deploy.sh
 ```
 
 ## Deploys seguintes
 
 ```bash
-APP_DIR=/opt/gotrendlabs BRANCH=main ./deploy/production/deploy.sh
+APP_DIR=/opt/gotrendlabs BRANCH=main ./ops/deploy/production/deploy.sh
 ```
 
 Para bootstrap remoto via GitHub Actions ou SSM, o script tambem aceita:
 
 ```bash
-APP_DIR=/opt/gotrendlabs BRANCH=main REPO_URL=https://github.com/OWNER/REPO.git ./deploy/production/deploy.sh
+APP_DIR=/opt/gotrendlabs BRANCH=main REPO_URL=https://github.com/OWNER/REPO.git ./ops/deploy/production/deploy.sh
 ```
 
 ## GitHub Actions
@@ -181,7 +181,7 @@ Fluxo seguro:
 6. Preencher no Admin Ops os parametros SMTP nao sensiveis e validar com:
 
 ```bash
-docker compose -f deploy/production/docker-compose.yml run --rm django \
+docker compose -f ops/deploy/production/docker-compose.yml run --rm django \
   python manage.py send_smtp_test_email --to success@simulator.amazonses.com
 ```
 
