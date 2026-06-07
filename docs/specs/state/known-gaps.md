@@ -1,5 +1,6 @@
 # Known Gaps
 
+- FEAT-MOBILE-001 possui specs iniciais, skills locais e ambiente Flutter/Android preparado, mas o projeto Flutter ainda não foi criado em `apps/mobile`; antes de login persistente, falta decisão técnica para autenticação mobile segura (cookie vs token/refresh), armazenamento seguro, expiração, renovação e revogação.
 - Fórmula de probabilidade agregada básica está implementada para previsão/stake; ainda falta decisão para amortecer peso de reputação e evitar concentração futura.
 - Fórmula MVP de reputação foi fechada para resolução manual; ainda falta avaliar amortecimento futuro e impacto de concentração.
 - Política MVP de cancelamento foi fechada como refund total; ainda falta comunicação transacional assíncrona ao usuário.
