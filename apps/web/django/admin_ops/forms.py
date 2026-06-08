@@ -55,6 +55,40 @@ class EmailTemplateForm(forms.Form):
     is_active = forms.BooleanField(label="Ativo", required=False, initial=True)
 
 
+class PushTemplateForm(forms.Form):
+    mode = forms.ChoiceField(label="Envio deste evento", choices=(("off", "Não enviar push"), ("immediate", "Enviar imediatamente"), ("digest", "Digest (futuro)")))
+    policy_active = forms.BooleanField(label="Evento habilitado para push", required=False, initial=True)
+    default_user_enabled = forms.BooleanField(label="Usuários recebem por padrão", required=False, initial=True)
+    title = forms.CharField(label="Título", max_length=120)
+    body = forms.CharField(label="Corpo", widget=forms.Textarea(attrs={"rows": 5}))
+    is_active = forms.BooleanField(label="Template ativo", required=False, initial=True)
+
+
+class PushTestDeliveryForm(forms.Form):
+    device_id = forms.ChoiceField(label="Dispositivo")
+    event_type = forms.ChoiceField(label="Tipo de teste")
+    title = forms.CharField(label="Título", max_length=120, initial="Teste de push")
+    body = forms.CharField(
+        label="Corpo",
+        max_length=240,
+        initial="Mensagem de teste do GoTrendLabs.",
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def __init__(self, *args, devices=None, event_types=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        device_choices = []
+        for device in devices or []:
+            username = getattr(device.user, "username", "") or getattr(device.user, "email", "") or f"user={device.user_id}"
+            label = device.device_label or f"{device.platform} #{device.id}"
+            version = f" · app {device.app_version}" if device.app_version else ""
+            device_choices.append((str(device.id), f"#{device.id} · {username} · {label}{version}"))
+        self.fields["device_id"].choices = device_choices
+        self.fields["event_type"].choices = [("admin_push_test", "Teste administrativo")] + [
+            (event_type, f"Teste como {event_type}") for event_type in event_types or []
+        ]
+
+
 class EconomyConfigForm(forms.Form):
     wallet_recharge_min_balance_gtl = forms.IntegerField(
         label="Saldo máximo para solicitar recarga",

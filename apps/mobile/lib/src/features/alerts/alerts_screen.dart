@@ -6,6 +6,7 @@ import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
+import '../push/push_controller.dart';
 
 class AlertsScreen extends ConsumerWidget {
   const AlertsScreen({super.key});
@@ -46,6 +47,8 @@ class AlertsScreen extends ConsumerWidget {
               body: 'Favoritos, previsões e resoluções em um só fluxo.',
             ),
             const SizedBox(height: 12),
+            _PushStatusPanel(ref: ref),
+            const SizedBox(height: 12),
             if (items.isEmpty)
               const GtlSurface(
                 child: GtlEditorialHeader(
@@ -73,6 +76,64 @@ class AlertsScreen extends ConsumerWidget {
                 ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _PushStatusPanel extends StatelessWidget {
+  const _PushStatusPanel({required this.ref});
+
+  final WidgetRef ref;
+
+  @override
+  Widget build(BuildContext context) {
+    final push = ref.watch(pushControllerProvider);
+    final activeDevices = push.devices
+        .where((device) => device.isActive && device.pushEnabled)
+        .length;
+    final isNoop = push.status == 'noop' || push.status == 'idle';
+    return GtlSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GtlEditorialHeader(
+            kicker: 'Push mobile',
+            title: isNoop
+                ? 'Preparado para Firebase'
+                : activeDevices > 0
+                    ? 'Dispositivo registrado'
+                    : 'Sem dispositivo ativo',
+            body: isNoop
+                ? 'A interface está pronta, mas o provider Firebase ainda não foi configurado.'
+                : push.error.isNotEmpty
+                    ? push.error
+                    : 'Você pode consultar e revogar dispositivos sem sair da central de alertas.',
+            icon: Icons.notifications_active_outlined,
+          ),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => ref.read(pushControllerProvider.notifier).load(),
+                icon: const Icon(Icons.sync),
+                label: const Text('Atualizar push'),
+              ),
+              for (final device in push.devices.where(
+                (device) => device.isActive && device.pushEnabled,
+              ))
+                OutlinedButton.icon(
+                  onPressed: () => ref
+                      .read(pushControllerProvider.notifier)
+                      .revokeDevice(device.id),
+                  icon: const Icon(Icons.notifications_off_outlined),
+                  label: Text('Revogar ${device.platform}'),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

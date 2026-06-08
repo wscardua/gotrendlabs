@@ -20,6 +20,7 @@ Definir eventos produzidos pelo domínio e consumidos por subsistemas como comun
 - `badge.awarded`
 - `notification.created`
 - `email.delivery_queued`
+- `push.delivery_queued`
 
 ## Eventos administrativos persistidos
 
@@ -53,3 +54,5 @@ Esses eventos são registrados em `gotrendlabs_admin_events` nas primeiras fatia
 - `market.locked`, `market.resolved`, `wallet.credited` e `badge.awarded` podem persistir notificações in-app para destinatários humanos diretamente afetados antes do event bus dedicado.
 - `notification.created` representa persistência de inbox in-app e usa `source_key` idempotente por destinatário, sem envio externo obrigatório.
 - `email.delivery_queued` representa persistência da outbox transacional e usa `idempotency_key` única, sem garantir envio SMTP imediato.
+- `push.delivery_queued` representa persistência da outbox mobile por `UserNotification` e dispositivo, sem garantir envio FCM imediato.
+- Push mobile só pode ser derivado de `notification.created`; política por evento decide se a notificação persistida vira push imediato, digest futuro ou nenhum envio.

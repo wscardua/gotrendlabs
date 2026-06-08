@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/markets/market_detail_screen.dart';
+import 'features/profile/badges_screen.dart';
 import 'features/shell/shell_screen.dart';
+import 'features/wallet/wallet_screen.dart';
 import 'theme.dart';
 
 class GoTrendLabsApp extends ConsumerWidget {
@@ -21,6 +23,14 @@ class GoTrendLabsApp extends ConsumerWidget {
               path: 'markets/:slug',
               builder: (context, state) =>
                   MarketDetailScreen(slug: state.pathParameters['slug'] ?? ''),
+            ),
+            GoRoute(
+              path: 'wallet',
+              builder: (context, state) => const WalletScreen(),
+            ),
+            GoRoute(
+              path: 'badges',
+              builder: (context, state) => const BadgesScreen(),
             ),
           ],
         ),

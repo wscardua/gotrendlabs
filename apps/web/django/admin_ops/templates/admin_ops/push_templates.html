@@ -1,0 +1,153 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Política de Push{% endblock %}
+{% block content %}
+<main class="shell admin-layout admin-config-page">
+  <section>
+    <div class="config-hero">
+      <div>
+        <span class="eyebrow">Communications · push mobile</span>
+        <h1 class="large-title">Política de Push</h1>
+        <p>Gerencie elegibilidade por evento, textos curtos e preview seguro. Segredos Firebase ficam somente no ambiente/secret manager.</p>
+      </div>
+      <div class="config-health-strip" aria-label="Resumo do push">
+        <div><span>Push</span><strong>{% if push_runtime.enabled %}Ligado{% else %}Desligado{% endif %}</strong></div>
+        <div><span>Provider</span><strong>{{ push_runtime.provider }}</strong></div>
+        <div><span>Dry-run</span><strong>{% if push_runtime.dry_run %}Ativo{% else %}Inativo{% endif %}</strong></div>
+        <div><span>Segredo FCM</span><strong>{% if push_runtime.fcm_secret_configured %}Configurado{% else %}Ausente{% endif %}</strong></div>
+      </div>
+    </div>
+    <nav class="email-policy-tabs" aria-label="Política de push">
+      <a class="active" href="{% url 'admin-ops-push-templates' %}">
+        <strong>Templates</strong>
+        <span>Eventos e texto PT-BR</span>
+      </a>
+      <a href="{% url 'admin-ops-push-delivery-logs' %}">
+        <strong>Logs de envio</strong>
+        <span>Outbox, dry-run e falhas</span>
+      </a>
+    </nav>
+    {% if messages %}
+      {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
+    {% endif %}
+    {% if selected %}
+      {{ template_sample_context|json_script:"push-template-samples" }}
+      <div class="email-template-layout">
+        <aside class="email-template-list" aria-label="Push templates disponíveis">
+          <div class="email-template-list-head">
+            <strong>Eventos mobile</strong>
+            <span>Somente PT-BR nesta versão</span>
+          </div>
+          {% for template in templates %}
+            <a class="{% if selected.event_type == template.event_type %}active{% endif %}" href="{% url 'admin-ops-push-template-edit' template.event_type %}">
+              <strong>{{ template.event_type }}</strong>
+              <span>{% if template.is_active %}Ativo{% else %}Inativo{% endif %}</span>
+            </a>
+          {% endfor %}
+        </aside>
+        <form class="admin-config-surface email-template-editor" method="post" data-push-template-editor>
+          {% csrf_token %}
+          <section class="email-template-compose">
+            <div class="email-template-main">
+              <div class="email-template-titlebar">
+                <div>
+                  <span class="eyebrow">Push · {{ selected.locale|upper }}</span>
+                  <h2>{{ selected.event_type }}</h2>
+                  <p>{{ template_description }}</p>
+                </div>
+              </div>
+              <div class="config-controls">
+                <label class="field compact-field">
+                  <span>Envio deste evento</span>
+                  {{ form.mode }}
+                  <small>Define o que acontece quando uma notificação in-app deste evento é criada.</small>
+                </label>
+                <label class="config-switch-row email-template-enable-row">
+                  {{ form.policy_active }}
+                  <span>
+                    <span class="email-template-state {% if policy.is_active %}is-on{% endif %}">Evento: {% if policy.is_active %}Habilitado{% else %}Bloqueado{% endif %}</span>
+                    <strong>Este evento pode gerar push</strong>
+                    <small>Desligue para impedir push deste evento, mesmo que o modo esteja como envio imediato.</small>
+                  </span>
+                </label>
+                <label class="config-switch-row email-template-enable-row">
+                  {{ form.default_user_enabled }}
+                  <span>
+                    <span class="email-template-state {% if policy.default_user_enabled %}is-on{% endif %}">Inicial: {% if policy.default_user_enabled %}Ligado{% else %}Desligado{% endif %}</span>
+                    <strong>Padrão para novos usuários</strong>
+                    <small>Define como a preferência deste evento começa no app. Ligado: a pessoa começa recebendo. Desligado: começa sem receber. Se ela mudar depois, a escolha dela substitui este padrão.</small>
+                  </span>
+                </label>
+                <label class="config-switch-row email-template-enable-row">
+                  {{ form.is_active }}
+                  <span>
+                    <span class="email-template-state {% if selected.is_active %}is-on{% endif %}">Texto: {% if selected.is_active %}Publicado{% else %}Fallback{% endif %}</span>
+                    <strong>Usar este texto personalizado</strong>
+                    <small>Desligue para ignorar este texto salvo e usar o fallback seguro definido no código.</small>
+                  </span>
+                </label>
+                <label class="field full">
+                  <span>Título</span>
+                  {{ form.title }}
+                  {% if form.title.errors %}<small>{{ form.title.errors|join:", " }}</small>{% endif %}
+                </label>
+                <label class="field full">
+                  <span>Corpo</span>
+                  {{ form.body }}
+                  {% if form.body.errors %}<small>{{ form.body.errors|join:", " }}</small>{% endif %}
+                </label>
+                <div class="notice">
+                  <strong>Fallback do código</strong><br>
+                  Se o texto personalizado ficar desligado ou ausente, o backend usa:
+                  <br><span>Título: {{ template_fallback.title }}</span>
+                  <br><span>Corpo: {{ template_fallback.body }}</span>
+                </div>
+                <div class="email-template-actions">
+                  <button class="btn ghost" type="button" data-push-preview-open>Visualizar push</button>
+                  <button class="btn primary" type="submit">Salvar política</button>
+                </div>
+              </div>
+            </div>
+            <aside class="email-template-vars" aria-label="Variáveis disponíveis">
+              <span class="eyebrow">Variáveis disponíveis</span>
+              <p>Clique em uma variável para inserir no campo em edição. O preview usa valores de exemplo e não dispara envio.</p>
+              {% if template_variables %}
+                <div class="email-variable-list">
+                  {% for name, description, example, sample in template_variables %}
+                    <div class="email-variable-row">
+                      <button class="email-variable-token" type="button" data-push-var-token="{{ example }}">
+                        {% templatetag openvariable %} {{ name }} {% templatetag closevariable %}
+                      </button>
+                      <span>{{ description }}</span>
+                      <small>Exemplo: {{ sample }}</small>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% else %}
+                <div class="notice red">Nenhuma variável documentada para este template.</div>
+              {% endif %}
+            </aside>
+          </section>
+        </form>
+      </div>
+      <dialog class="email-preview-dialog" data-push-preview-dialog aria-label="Visualização do push">
+        <div class="email-preview-shell push-preview-shell">
+          <header class="email-preview-head">
+            <div>
+              <span class="eyebrow">Preview local</span>
+              <strong data-push-preview-title>Título</strong>
+              <small>Simulação local com valores seguros.</small>
+            </div>
+            <button class="btn small ghost" type="button" data-push-preview-close>Fechar</button>
+          </header>
+          <div class="push-preview-card">
+            <strong data-push-preview-card-title></strong>
+            <span data-push-preview-card-body></span>
+          </div>
+        </div>
+      </dialog>
+    {% else %}
+      <div class="notice red">Nenhum template de push cadastrado.</div>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

@@ -1,10 +1,10 @@
 ---
 id: FEAT-NOTIFY-001
 titulo: "Notificações e email"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-05
+ultima_atualizacao: 2026-06-08
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -18,6 +18,7 @@ impacta:
   - backend-api
   - communications
   - database
+  - future-mobile
 aprovacao: pendente
 ---
 
@@ -41,17 +42,23 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 - configuração operacional SMTP não sensível no Admin Ops
 - área Admin Ops `Politica de Emails` com edição de templates PT-BR e logs de entrega da outbox
 - infraestrutura SMTP SES em `us-east-1` com identidades de domínio verificadas por DKIM
+- base de push mobile por FCM, iniciando com provider `none`/dry-run/noop desligado por padrão
+- políticas e templates de push editáveis no Admin Ops por evento, sem segredos
+- outbox `PushDelivery` drenada pelo daemon, sempre derivada de `UserNotification`
+- endpoints autenticados para registrar, listar e revogar dispositivos de push e preferências do usuário
 
 ## Escopo excluído
 
 - automação de marketing complexa
 - newsletter
-- push mobile
 - armazenamento de senha/API key SMTP no banco ou na interface administrativa
+- armazenamento de credenciais Firebase no banco, Git ou Admin Ops
 - feed em tempo real/websocket de notificações
 - concessão de production access do SES
 - bounce/complaint webhooks
 - editor visual avançado de email
+- envio FCM real até existir projeto Firebase, credenciais e aprovação operacional explícita
+- configuração APNs direta fora do Firebase
 
 ## Fluxo do usuário
 
@@ -63,6 +70,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 
 - eventos de domínio disparam comunicações elegíveis
 - emails transacionais são enfileirados em outbox antes do envio SMTP
+- push mobile é enfileirado em outbox antes de qualquer tentativa de entrega
 - ações sociais geram notificações in-app sem duplicidade por evento de origem
 - créditos recebidos, badges conquistadas e mudanças relevantes em mercados participados geram notificações in-app
 - usuários podem marcar todas as notificações in-app como lidas
@@ -85,13 +93,35 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - eventos operacionais/sistêmicos podem notificar o próprio usuário quando o destinatário é o beneficiário direto, como créditos e badges
 - `user.email_confirmation`, `account.password_reset`, `market.locked`, `market.resolved` e `wallet.credited` criam entregas idempotentes em `EmailDelivery`
 - a resposta pública de recuperação de senha não expõe o link; o link é enviado apenas pelo template transacional
+- toda push notification nasce de uma `UserNotification` persistida
+- nem toda `UserNotification` vira push; `PushEventPolicy` define `off`, `immediate` ou `digest`
+- nesta fase, `digest` existe como contrato/configuração, mas não dispara envio agrupado
+- `market_resolved`, `market_locked`, `wallet_credit`, `badge_awarded`, `market_comment` e `comment_like` são imediatos por padrão
+- `market_prediction` e `market_like` ficam desligados por padrão
+- templates padrão de push devem ser curtos, discretos e seguros:
+  - `market_resolved`: "Resultado publicado" / "`{{ market_title }}` foi resolvido. Abra o app para ver o resultado."
+  - `market_locked`: "Mercado em apuração" / "`{{ market_title }}` fechou para novas previsões"
+  - `wallet_credit`: "Carteira atualizada" / "Sua carteira educativa foi atualizada. Confira no app."
+  - `badge_awarded`: "Nova badge" / "Você desbloqueou `{{ badge_name }}`."
+  - `market_comment`: "Novo comentário" / "`{{ actor_handle }}` comentou em `{{ market_title }}`"
+  - `comment_like`: "Curtida no comentário" / "`{{ actor_handle }}` curtiu seu comentário."
+  - `market_prediction`: "Nova previsão no mercado" / "`{{ actor_handle }}` fez uma previsão em `{{ market_title }}`"
+  - `market_like`: "Mercado curtido" / "`{{ actor_handle }}` curtiu `{{ market_title }}`"
+- logout normal no app mobile não revoga push automaticamente
+- usuário pode revogar dispositivo ou desativar preferências de push
+- tokens rejeitados pelo provedor devem desativar o dispositivo automaticamente
+- payload de push contém apenas IDs, rota e `event_type`; dados sensíveis são buscados na FastAPI ao abrir o app
+- Admin Ops deve exibir o fallback seguro do código ao lado do template editável, para o operador entender o texto usado quando o template salvo estiver inativo ou ausente
+- Admin Ops pode criar teste manual escolhendo um `PushDevice` ativo; o teste cria `UserNotification` e `PushDelivery`, respeita flags/provider atuais e nunca renderiza o token bruto
+- Dashboard Admin Ops deve exibir saúde de push mobile com estado de configuração, devices ativos, fila pendente/vencida e entregas/falhas recentes, apontando para os logs de `PushDelivery`
 
 ## Responsabilidades por camada
 
 - `backend-api`: emitir eventos e contexto
-- `communications`: selecionar template, idioma, renderizar conteúdo, registrar entrega e enviar por SMTP
+- `communications`: selecionar template, idioma, renderizar conteúdo, registrar entrega e enviar por SMTP/push provider quando habilitado
 - `database`: trilha de envio quando necessário e inbox persistida de notificações in-app
 - `frontend-web`: sino, contador de não lidas, dropdown de últimas notificações e ação de marcar lidas
+- `future-mobile`: registra token após autenticação quando houver provider real, exibe controles de revogação/preferência e refaz fetch na FastAPI ao abrir push
 
 ## Dados e persistência
 
@@ -101,8 +131,14 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - `communications_emaildelivery`: outbox com destinatário, template, contexto, status, tentativas, próximo retry, erro, timestamps e chave de idempotência
 - `communications_emailconfirmationtoken`: hash de token, expiração, uso único e auditoria mínima
 - `gotrendlabs_user_notifications`: destinatário, ator, mercado, comentário, tipo, chave de origem, título, corpo, estado de leitura, metadata e data
+- `gotrendlabs_push_devices`: usuário, provider, plataforma, token, hash, metadados de app, flags de atividade/revogação/invalidação e timestamps
+- `gotrendlabs_push_event_policies`: evento, modo, default de usuário, prioridade, template e variáveis permitidas
+- `gotrendlabs_push_templates`: título/corpo por evento/idioma, ativo e variáveis permitidas
+- `gotrendlabs_push_deliveries`: outbox idempotente por notificação/dispositivo, payload seguro, status, tentativas, erro e provider message id
+- `gotrendlabs_push_preferences`: opt-in/opt-out global ou por evento
 - configuração SMTP singleton: ativo, host, porta, usuário, TLS/SSL, timeout, remetente e reply-to
 - identidades SES verificadas para `gotrendlabs.com.br` e `gotrendlabs.com`; credencial SMTP dedicada é mantida fora do banco e da interface
+- flags de push vêm do ambiente: `GOTRENDLABS_PUSH_ENABLED`, `GOTRENDLABS_PUSH_PROVIDER`, `GOTRENDLABS_PUSH_DRY_RUN` e segredo futuro `GOTRENDLABS_FCM_CREDENTIALS_JSON`
 
 ## Contratos afetados
 
@@ -123,6 +159,9 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - Admin Ops mostra todas as variáveis disponíveis por template, com nome, descrição, exemplo de uso e valor de exemplo.
 - Admin Ops permite visualizar localmente o email HTML renderizado com valores de exemplo, sem salvar alteração nem disparar envio.
 - Dashboard/daemon reportam resumo do processamento de email por ciclo
+- Admin Ops permite editar políticas/templates de push por evento, com variáveis permitidas e preview seguro.
+- Admin Ops lista entregas `PushDelivery` com filtros por status/evento/provider, sem renderizar token de dispositivo nem segredo.
+- Dashboard/daemon reportam resumo do processamento de push por ciclo, incluindo sinal de fila pendente, dry-run, falhas recentes, tokens inválidos e devices ativos.
 
 ## Testes esperados
 
@@ -137,6 +176,14 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - verificação de idioma correto
 - validação de configuração SMTP, incluindo bloqueio de TLS e SSL simultâneos
 - validação operacional do comando de teste SMTP sem expor segredo nem gravar credencial sensível
+- registro autenticado, listagem e revogação de `PushDevice`
+- preferências globais e por evento bloqueando enfileiramento
+- outbox de push criada apenas quando existe `UserNotification` nova e política imediata
+- defaults `market_prediction`/`market_like` desligados
+- daemon marcando provider `none` como `dry_run` e tokens inválidos como `invalid_token`
+- payload de push sem email, token, ledger, valores de wallet ou segredo
+- Dashboard Admin Ops exibindo saúde de push sem expor token, payload sensível ou segredo FCM
+- Flutter noop sem registrar token antes/depois da autenticação quando Firebase não está configurado
 
 ## Critérios de aceite
 
@@ -146,6 +193,10 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - staff consegue visualizar e editar templates PT-BR por chave, incluindo variáveis disponíveis e preview HTML local
 - operador consegue validar SMTP sandbox com SES usando configuração persistida e segredo vindo do ambiente
 - enquanto SES estiver em sandbox, destinatários reais não verificados são suprimidos pelo daemon
+- provider `none`/dry-run permite validar a outbox sem envio real
+- Admin Ops controla políticas/templates de push sem expor credenciais
+- Admin Ops mostra saúde de push no Dashboard e permite navegar para logs de entrega quando houver fila/falha
+- app mobile está preparado para registrar/revogar dispositivos quando Firebase for configurado, mas permanece noop nesta fase
 
 ## Impacto de mudança
 

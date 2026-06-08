@@ -10,8 +10,8 @@
   <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml">
   <meta name="theme-color" content="#F4F2E9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
-  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260607-contracts-close-alert">
-  <script src="{% static 'js/gotrendlabs.js' %}?v=20260605-email-template-preview" defer></script>
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260608-push-polish">
+  <script src="{% static 'js/gotrendlabs.js' %}?v=20260608-push-polish" defer></script>
 </head>
 <body>
   <header class="topbar admin-topbar">
@@ -28,6 +28,7 @@
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>
         <a class="nav-link {% if 'email-' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-email-templates' %}">Politica de Emails</a>
+        <a class="nav-link {% if 'push-' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-push-templates' %}">Push mobile</a>
         <a class="nav-link {% if 'ai-agent' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-ai-agents' %}">Agentes IA</a>
         <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-users' %}">Usuários</a>
         <a class="nav-link {% if 'taxonomy' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>

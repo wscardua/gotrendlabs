@@ -163,6 +163,10 @@ GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST = {
     for email in os.environ.get("GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST", "success@simulator.amazonses.com").split(",")
     if email.strip()
 }
+GOTRENDLABS_PUSH_ENABLED = env_flag("GOTRENDLABS_PUSH_ENABLED", False)
+GOTRENDLABS_PUSH_PROVIDER = os.environ.get("GOTRENDLABS_PUSH_PROVIDER", "none").strip().lower()
+GOTRENDLABS_PUSH_DRY_RUN = env_flag("GOTRENDLABS_PUSH_DRY_RUN", True)
+GOTRENDLABS_FCM_CREDENTIALS_JSON = os.environ.get("GOTRENDLABS_FCM_CREDENTIALS_JSON", "")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 AWS_BEARER_TOKEN_BEDROCK = os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "")
 

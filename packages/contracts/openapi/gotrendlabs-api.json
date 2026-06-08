@@ -3289,6 +3289,224 @@
         "title": "PublicUserResponse",
         "type": "object"
       },
+      "PushDeviceListResponse": {
+        "properties": {
+          "devices": {
+            "items": {
+              "$ref": "#/components/schemas/PushDeviceResponse"
+            },
+            "title": "Devices",
+            "type": "array"
+          }
+        },
+        "title": "PushDeviceListResponse",
+        "type": "object"
+      },
+      "PushDeviceRegisterPayload": {
+        "properties": {
+          "app_version": {
+            "default": "",
+            "maxLength": 40,
+            "title": "App Version",
+            "type": "string"
+          },
+          "build_number": {
+            "default": "",
+            "maxLength": 40,
+            "title": "Build Number",
+            "type": "string"
+          },
+          "device_label": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Device Label",
+            "type": "string"
+          },
+          "platform": {
+            "maxLength": 20,
+            "title": "Platform",
+            "type": "string"
+          },
+          "provider": {
+            "default": "fcm",
+            "maxLength": 20,
+            "title": "Provider",
+            "type": "string"
+          },
+          "token": {
+            "maxLength": 4096,
+            "minLength": 8,
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "platform",
+          "token"
+        ],
+        "title": "PushDeviceRegisterPayload",
+        "type": "object"
+      },
+      "PushDeviceResponse": {
+        "properties": {
+          "app_version": {
+            "default": "",
+            "title": "App Version",
+            "type": "string"
+          },
+          "build_number": {
+            "default": "",
+            "title": "Build Number",
+            "type": "string"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "device_label": {
+            "default": "",
+            "title": "Device Label",
+            "type": "string"
+          },
+          "disabled_reason": {
+            "default": "",
+            "title": "Disabled Reason",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "last_registered_at": {
+            "title": "Last Registered At",
+            "type": "string"
+          },
+          "platform": {
+            "title": "Platform",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          },
+          "provider_invalidated_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Invalidated At"
+          },
+          "push_enabled": {
+            "title": "Push Enabled",
+            "type": "boolean"
+          },
+          "revoked_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revoked At"
+          },
+          "updated_at": {
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "provider",
+          "platform",
+          "is_active",
+          "push_enabled",
+          "last_registered_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "PushDeviceResponse",
+        "type": "object"
+      },
+      "PushPreferenceListResponse": {
+        "properties": {
+          "global_enabled": {
+            "default": true,
+            "title": "Global Enabled",
+            "type": "boolean"
+          },
+          "preferences": {
+            "items": {
+              "$ref": "#/components/schemas/PushPreferenceResponse"
+            },
+            "title": "Preferences",
+            "type": "array"
+          }
+        },
+        "title": "PushPreferenceListResponse",
+        "type": "object"
+      },
+      "PushPreferenceResponse": {
+        "properties": {
+          "default_user_enabled": {
+            "title": "Default User Enabled",
+            "type": "boolean"
+          },
+          "event_type": {
+            "title": "Event Type",
+            "type": "string"
+          },
+          "mode": {
+            "title": "Mode",
+            "type": "string"
+          },
+          "push_enabled": {
+            "title": "Push Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "event_type",
+          "mode",
+          "push_enabled",
+          "default_user_enabled"
+        ],
+        "title": "PushPreferenceResponse",
+        "type": "object"
+      },
+      "PushPreferenceUpdatePayload": {
+        "properties": {
+          "global_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Global Enabled"
+          },
+          "preferences": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "title": "Preferences",
+            "type": "object"
+          }
+        },
+        "title": "PushPreferenceUpdatePayload",
+        "type": "object"
+      },
       "QueueItemResponse": {
         "properties": {
           "admin_note": {
@@ -9599,6 +9817,231 @@
           }
         },
         "summary": "Mark My Notifications Read"
+      }
+    },
+    "/users/me/push-devices": {
+      "get": {
+        "operationId": "list_my_push_devices_users_me_push_devices_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDeviceListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List My Push Devices"
+      },
+      "post": {
+        "operationId": "register_my_push_device_users_me_push_devices_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushDeviceRegisterPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDeviceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register My Push Device"
+      }
+    },
+    "/users/me/push-devices/{device_id}": {
+      "delete": {
+        "operationId": "revoke_my_push_device_users_me_push_devices__device_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "device_id",
+            "required": true,
+            "schema": {
+              "title": "Device Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushDeviceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke My Push Device"
+      }
+    },
+    "/users/me/push-preferences": {
+      "get": {
+        "operationId": "get_my_push_preferences_users_me_push_preferences_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPreferenceListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get My Push Preferences"
+      },
+      "patch": {
+        "operationId": "update_my_push_preferences_users_me_push_preferences_patch",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PushPreferenceUpdatePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PushPreferenceListResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update My Push Preferences"
       }
     },
     "/users/me/referral": {

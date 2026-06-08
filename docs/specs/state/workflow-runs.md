@@ -2,6 +2,28 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260608-MOBILE-PUSH-NOTIFICATIONS-001
+
+- Tipo: `new-feature`
+- Status: `em_publicacao`
+- Feature alvo: `FEAT-NOTIFY-001`, `FEAT-MOBILE-001`, `communications`, `future-mobile`
+- Objetivo: iniciar push notifications mobile com FCM como arquitetura alvo, começando por provider `none`/dry-run/noop desligado por padrão
+- Etapa atual: implementação local validada; specs, backend outbox, Admin Ops com saúde de push no Dashboard, endpoints FastAPI, Flutter noop/fake-token local e testes foram adicionados; aguardando aprovação do usuário para commit, PR em português, merge em `main` e acompanhamento do workflow de produção quando disparado
+- Artefatos afetados:
+  - `apps/web/django/communications/`
+  - `apps/api/backend_api/`
+  - `apps/web/django/admin_ops/`
+  - `apps/mobile/lib/src/features/push/`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `docs/specs/`
+- Bloqueios: envio FCM real depende de projeto Firebase, credencial fora do Git/Admin Ops, dependências Flutter Firebase e aprovação operacional explícita
+- Iniciado em: 2026-06-08
+- Atualizado em: 2026-06-08
+- Encerrado em: pendente
+- Retomada: após aprovação, stage/commit, push da branch `feature/mobile-push-notifications`, abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` se disparado e atualizar este registro para `concluido` ou `bloqueado`
+- Reversão lógica: remover modelos/migration/serviços/endpoints/admin/templates push, retirar Flutter `features/push`, restaurar OpenAPI/specs/state e manter `gotrendlabs_user_notifications`/email intactos
+- Evidências de validação local: `manage.py check`; `manage.py makemigrations --check --dry-run`; `packages/contracts/export_openapi.py --check`; suíte Django completa `manage.py test --keepdb` com 155 testes OK; `flutter analyze`; `flutter test`; testes focados de push/Admin Ops/dashboard; `git diff --check`; FastAPI/Django locais reiniciados e `/admin-ops/` renderizou `Push mobile` em Saúde técnica; emulador Android `emulator-5554` executou o app com `GTL_PUSH_FAKE_TOKEN` e registrou `PushDevice` local em `gotrendlabs_push_devices`
+
 ## WFLOW-20260608-MOBILE-IOS-SIMULATOR-001
 
 - Tipo: `change-feature`

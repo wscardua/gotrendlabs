@@ -193,6 +193,17 @@ O daemon de `communications` tambem aplica essa fronteira no app:
 - `GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST=success@simulator.amazonses.com` permite testes controlados enquanto o SES estiver em sandbox.
 - Depois da aprovacao do SES, ativar `GOTRENDLABS_SES_PRODUCTION_ACCESS=1`, reiniciar os containers e executar novo teste operacional antes de liberar fluxos de produto.
 
+## Push mobile
+
+Push mobile usa Firebase Cloud Messaging como arquitetura alvo para Android e iOS, mas a primeira fase de produção deve permanecer desligada/noop:
+
+- `GOTRENDLABS_PUSH_ENABLED=0` mantém a outbox sem enfileirar novas entregas.
+- `GOTRENDLABS_PUSH_PROVIDER=none` evita chamadas externas.
+- `GOTRENDLABS_PUSH_DRY_RUN=1` permite validar daemon/outbox quando a flag geral for ligada em ambiente controlado.
+- `GOTRENDLABS_FCM_CREDENTIALS_JSON` fica reservado para credencial futura em ambiente/secret manager; nunca salve esse valor no banco, Admin Ops ou Git.
+
+Ao ativar FCM real no futuro, atualize `/opt/gotrendlabs/.env.prod`, recrie `django`, `fastapi` e `daemon`, e valide com um dispositivo operacional antes de liberar eventos para usuários.
+
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.

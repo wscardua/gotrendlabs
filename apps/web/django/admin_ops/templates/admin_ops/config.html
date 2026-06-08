@@ -93,6 +93,37 @@
       <section class="config-section">
         <div class="config-panel-head">
           <div>
+            <span class="eyebrow">Communications</span>
+            <h2>Push mobile</h2>
+            <p>Flags e credenciais ficam fora do banco. Admin Ops controla políticas e templates, nunca segredos Firebase.</p>
+          </div>
+          <span class="config-status {% if push_runtime.enabled %}is-on{% endif %}">
+            {% if push_runtime.enabled %}Ativo{% else %}Inativo{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <div class="config-secret-card">
+            <span>Provider</span>
+            <strong>{{ push_runtime.provider }}</strong>
+            <small>Use <code>GOTRENDLABS_PUSH_PROVIDER=none|fcm</code>. A primeira fase fica em <code>none</code> por padrão.</small>
+          </div>
+          <div class="config-secret-card">
+            <span>Dry-run</span>
+            <strong>{% if push_runtime.dry_run %}Ativo{% else %}Inativo{% endif %}</strong>
+            <small><code>GOTRENDLABS_PUSH_DRY_RUN=1</code> permite validar outbox sem envio real.</small>
+          </div>
+          <div class="config-secret-card">
+            <span>Segredo FCM</span>
+            <strong>{% if push_runtime.fcm_secret_configured %}Configurado por ambiente{% else %}Não configurado{% endif %}</strong>
+            <small>Use <code>GOTRENDLABS_FCM_CREDENTIALS_JSON</code> ou secret manager no futuro. O valor não é exibido nem salvo no banco.</small>
+          </div>
+          <a class="btn ghost" href="{% url 'admin-ops-push-templates' %}">Abrir política de push</a>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
             <span class="eyebrow">Retenção operacional</span>
             <h2>Purge de logs e auditoria IA</h2>
             <p>Define quantos dias de histórico técnico e auditoria dos agentes IA são preservados antes da limpeza do daemon.</p>

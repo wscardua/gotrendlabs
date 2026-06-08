@@ -95,13 +95,22 @@ from apps.web.django.admin_ops.forms import (
     MaintenanceConfigForm,
     MarketResolutionForm,
     QueueReviewForm,
+    PushTestDeliveryForm,
+    PushTemplateForm,
     RetentionConfigForm,
     SiteEmailConfigForm,
     WalletRechargeApprovalForm,
     WalletRechargeRejectForm,
 )
 from apps.web.django.admin_ops.models import SiteConfig
-from apps.web.django.communications.models import EmailDelivery, EmailTemplate
+from apps.web.django.communications.models import EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushEventPolicy, PushTemplate
+from apps.web.django.communications.push_services import (
+    DEFAULT_PUSH_TEMPLATES,
+    create_test_push_delivery,
+    default_policy_for_event,
+    process_due_push_deliveries,
+    push_runtime_config,
+)
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
 from PIL import Image, UnidentifiedImageError
 
@@ -133,6 +142,27 @@ EMAIL_DELIVERY_STATUS_CLASSES = {
     "sent": "safe",
     "failed": "risk",
     "suppressed": "warn",
+}
+
+
+PUSH_DELIVERY_STATUS_LABELS = {
+    "queued": "Na fila",
+    "sending": "Enviando",
+    "sent": "Enviado",
+    "failed": "Falhou",
+    "suppressed": "Bloqueado",
+    "dry_run": "Dry-run",
+    "invalid_token": "Token inválido",
+}
+
+PUSH_DELIVERY_STATUS_CLASSES = {
+    "queued": "warn",
+    "sending": "warn",
+    "sent": "safe",
+    "failed": "risk",
+    "suppressed": "warn",
+    "dry_run": "safe",
+    "invalid_token": "risk",
 }
 
 
@@ -233,6 +263,74 @@ def _email_delivery_row(delivery):
         "template_key": delivery.template_key,
         "event_type": delivery.event_type,
         "subject": delivery.subject,
+        "attempt_count": delivery.attempt_count,
+        "max_attempts": delivery.max_attempts,
+        "last_error": delivery.last_error,
+        "idempotency_key": delivery.idempotency_key,
+    }
+
+
+PUSH_VARIABLE_SAMPLES = {
+    "notification_id": "123",
+    "event_type": "market_resolved",
+    "actor_handle": "@ana",
+    "market_slug": "bitcoin-acima-120k-2026",
+    "market_title": "Bitcoin fecha acima de US$ 120 mil em 2026?",
+    "comment_id": "42",
+    "badge_code": "first_resolution",
+    "badge_name": "Primeira resolução",
+    "route": "/markets/bitcoin-acima-120k-2026",
+}
+
+
+def _push_template_help(template):
+    event_type = template.event_type if template else ""
+    default = DEFAULT_PUSH_TEMPLATES.get(event_type, {})
+    variables = [
+        (name, "Variável segura para template/payload de push", f"{{{{ {name} }}}}", PUSH_VARIABLE_SAMPLES.get(name, "exemplo"))
+        for name in default.get("allowed_variables", [])
+    ]
+    return {
+        "description": "Template curto de push mobile. O payload enviado ao app contém apenas IDs, rota e tipo de evento.",
+        "variables": variables,
+        "fallback": {
+            "title": default.get("title", "GoTrendLabs"),
+            "body": default.get("body", ""),
+        },
+    }
+
+
+def _push_template_sample_context(template):
+    return {name: sample for name, _description, _token, sample in _push_template_help(template)["variables"]}
+
+
+def _push_delivery_counts():
+    counts = {status: 0 for status in PUSH_DELIVERY_STATUS_LABELS}
+    for row in PushDelivery.objects.values("status").annotate(total=Count("id")):
+        counts[row["status"]] = row["total"]
+    counts["total"] = sum(counts.values())
+    return counts
+
+
+def _push_delivery_row(delivery):
+    device = delivery.device
+    user = device.user
+    return {
+        "id": delivery.id,
+        "created_at": _email_delivery_label(delivery.created_at),
+        "updated_at": _email_delivery_label(delivery.updated_at),
+        "last_attempt_at": _email_delivery_label(delivery.last_attempt_at),
+        "next_attempt_at": _email_delivery_label(delivery.next_attempt_at),
+        "sent_at": _email_delivery_label(delivery.sent_at),
+        "status": delivery.status,
+        "status_label": PUSH_DELIVERY_STATUS_LABELS.get(delivery.status, delivery.status),
+        "status_class": PUSH_DELIVERY_STATUS_CLASSES.get(delivery.status, "warn"),
+        "event_type": delivery.event_type,
+        "provider": delivery.provider,
+        "platform": device.platform,
+        "recipient_label": user.username or user.email,
+        "template_key": delivery.template_key,
+        "title": delivery.title,
         "attempt_count": delivery.attempt_count,
         "max_attempts": delivery.max_attempts,
         "last_error": delivery.last_error,
@@ -1021,6 +1119,7 @@ def config(request):
             "llm_secret_configured": llm_secret_configured,
             "llm_secret_name": llm_secret_name,
             "llm_provider": llm_provider,
+            "push_runtime": push_runtime_config(),
         },
     )
 
@@ -1114,6 +1213,150 @@ def email_delivery_logs(request):
             "template_keys": template_keys,
             "pagination": _load_more_context(request, total, len(visible_deliveries), limit),
             "total_filtered": total,
+        },
+    )
+
+
+@admin_api_required
+def push_templates(request, event_type=None):
+    templates = PushTemplate.objects.filter(locale="pt-br").order_by("event_type")
+    selected = templates.filter(event_type=event_type).first() if event_type else templates.first()
+    if event_type and not selected and templates.exists():
+        return redirect("admin-ops-push-templates")
+    if not selected:
+        return render(request, "admin_ops/push_templates.html", {"templates": [], "selected": None, "form": None})
+    policy_defaults = default_policy_for_event(selected.event_type)
+    policy_defaults.pop("event_type", None)
+    policy, _created = PushEventPolicy.objects.get_or_create(
+        event_type=selected.event_type,
+        defaults=policy_defaults,
+    )
+    template_help = _push_template_help(selected)
+    form = PushTemplateForm(
+        request.POST or None,
+        initial={
+            "mode": policy.mode,
+            "policy_active": policy.is_active,
+            "default_user_enabled": policy.default_user_enabled,
+            "title": selected.title,
+            "body": selected.body,
+            "is_active": selected.is_active,
+        },
+    )
+    if request.method == "POST" and form.is_valid():
+        policy.mode = form.cleaned_data["mode"]
+        policy.is_active = form.cleaned_data["policy_active"]
+        policy.default_user_enabled = form.cleaned_data["default_user_enabled"]
+        policy.template_key = selected.event_type
+        policy.allowed_variables = [name for name, _description, _token, _sample in template_help["variables"]]
+        policy.save()
+        selected.title = form.cleaned_data["title"].strip()
+        selected.body = form.cleaned_data["body"].strip()
+        selected.is_active = form.cleaned_data["is_active"]
+        selected.allowed_variables = policy.allowed_variables
+        selected.updated_by = _admin_model_user(request)
+        selected.save()
+        messages.success(request, "Política de push atualizada.")
+        return redirect("admin-ops-push-template-edit", event_type=selected.event_type)
+    return render(
+        request,
+        "admin_ops/push_templates.html",
+        {
+            "templates": templates,
+            "selected": selected,
+            "policy": policy,
+            "form": form,
+            "template_description": template_help["description"],
+            "template_variables": template_help["variables"],
+            "template_fallback": template_help["fallback"],
+            "template_sample_context": _push_template_sample_context(selected),
+            "push_runtime": push_runtime_config(),
+        },
+    )
+
+
+@admin_api_required
+def push_delivery_logs(request):
+    event_types = list(PushTemplate.objects.filter(locale="pt-br").order_by("event_type").values_list("event_type", flat=True))
+    test_devices = list(
+        PushDevice.objects.select_related("user")
+        .filter(is_active=True, push_enabled=True, revoked_at__isnull=True, provider_invalidated_at__isnull=True)
+        .order_by("-last_registered_at", "-id")[:100]
+    )
+    test_form = PushTestDeliveryForm(
+        request.POST or None,
+        devices=test_devices,
+        event_types=event_types,
+    )
+    if request.method == "POST":
+        if test_form.is_valid():
+            device_id = int(test_form.cleaned_data["device_id"])
+            device = next((item for item in test_devices if item.id == device_id), None)
+            if not device:
+                messages.error(request, "Dispositivo indisponível para teste.")
+            else:
+                delivery = create_test_push_delivery(
+                    device=device,
+                    event_type=test_form.cleaned_data["event_type"],
+                    title=test_form.cleaned_data["title"].strip(),
+                    body=test_form.cleaned_data["body"].strip(),
+                )
+                process_due_push_deliveries(limit=1)
+                delivery.refresh_from_db()
+                status_label = PUSH_DELIVERY_STATUS_LABELS.get(delivery.status, delivery.status)
+                messages.success(request, f"Teste criado para o dispositivo #{device.id}. Resultado: {status_label}.")
+                return redirect("admin-ops-push-delivery-logs")
+        else:
+            messages.error(request, "Revise os campos do teste de push.")
+    filters = {
+        "q": request.GET.get("q") or "",
+        "status": request.GET.get("status") or "",
+        "event_type": request.GET.get("event_type") or "",
+        "provider": request.GET.get("provider") or "",
+        "from": request.GET.get("from") or "",
+        "to": request.GET.get("to") or "",
+    }
+    deliveries = PushDelivery.objects.select_related("device", "device__user", "notification").order_by("-created_at", "-id")
+    if filters["q"]:
+        deliveries = deliveries.filter(
+            Q(event_type__icontains=filters["q"])
+            | Q(template_key__icontains=filters["q"])
+            | Q(title__icontains=filters["q"])
+            | Q(idempotency_key__icontains=filters["q"])
+            | Q(last_error__icontains=filters["q"])
+            | Q(device__user__username__icontains=filters["q"])
+            | Q(device__user__email__icontains=filters["q"])
+        )
+    if filters["status"] in PUSH_DELIVERY_STATUS_LABELS:
+        deliveries = deliveries.filter(status=filters["status"])
+    if filters["event_type"]:
+        deliveries = deliveries.filter(event_type=filters["event_type"])
+    if filters["provider"]:
+        deliveries = deliveries.filter(provider=filters["provider"])
+    start_at = _email_delivery_datetime(filters["from"])
+    end_at = _email_delivery_datetime(filters["to"])
+    if start_at:
+        deliveries = deliveries.filter(created_at__gte=start_at)
+    if end_at:
+        deliveries = deliveries.filter(created_at__lte=end_at)
+
+    total = deliveries.count()
+    limit = _normalized_load_more_limit(request.GET.get("limit"))
+    visible_deliveries = list(deliveries[:limit])
+    return render(
+        request,
+        "admin_ops/push_delivery_logs.html",
+        {
+            "deliveries": [_push_delivery_row(delivery) for delivery in visible_deliveries],
+            "filters": filters,
+            "counts": _push_delivery_counts(),
+            "status_labels": PUSH_DELIVERY_STATUS_LABELS,
+            "event_types": event_types,
+            "test_form": test_form,
+            "test_devices_count": len(test_devices),
+            "pagination": _load_more_context(request, total, len(visible_deliveries), limit),
+            "total_filtered": total,
+            "push_runtime": push_runtime_config(),
         },
     )
 

@@ -172,6 +172,9 @@ Deve validar:
 - menu -> suporte/feedback
 - menu -> sugerir mercado
 - erro de API -> retry
+- push noop nao registra token
+- token fake registra dispositivo apos autenticacao
+- revoke explicito chama `DELETE /users/me/push-devices/{device_id}`
 
 ## QA visual
 
@@ -197,6 +200,10 @@ Antes de considerar a UI pronta:
 - confirmar que o detalhe nao repete o titulo do mercado logo abaixo do hero
 - confirmar que o ticket de previsao aparece antes do criterio de resolucao no detalhe
 - confirmar que erros de validacao aparecem em linguagem final, sem payload tecnico da API
+- confirmar que a seção de push em Alertas/Perfil mostra estado preparado/noop quando Firebase não está configurado
+- confirmar que logout normal não revoga dispositivo de push
+- confirmar que revogação de dispositivo ocorre apenas por ação explícita
+- confirmar que payloads de push abrem rotas e refazem fetch na FastAPI quando FCM real for habilitado
 - confirmar que ranking permite filtrar por categoria, subcategoria e evento como na web
 - testar mercado sem comentarios
 - testar mercado resolvido

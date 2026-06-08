@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- registrada evolução de `FEAT-NOTIFY-001` para push mobile com provider `none`/dry-run, policies/templates/preferências, outbox `PushDelivery`, endpoints FastAPI e Flutter noop.
 - atualizada arquitetura mobile para refletir estrutura iOS gerada em `apps/mobile/ios`, mantendo Android como MVP já validado e iOS Simulator como preparação local.
 - atualizados contratos de base URL mobile para separar Android emulator (`10.0.2.2`), iOS Simulator/Chrome local (`127.0.0.1`) e aparelho físico (`<ip-do-mac>`).
 - atualizados critérios de aceite mobile para simulação iOS local com Xcode completo, CocoaPods, device iOS listado por `flutter devices` e bases locais via `127.0.0.1`.
