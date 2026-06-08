@@ -4,7 +4,7 @@ titulo: "Contratos API para mobile"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-07
+ultima_atualizacao: 2026-06-08
 origem:
   - docs/specs/architecture/backend-api.md
   - packages/contracts/openapi/gotrendlabs-api.json
@@ -34,10 +34,14 @@ O mobile deve consumir a FastAPI como cliente JSON. Sempre que um endpoint ja at
 
 - Emulador Android API: `http://10.0.2.2:8001`
 - Emulador Android web/media: `http://10.0.2.2:8000`
+- iOS Simulator API: `http://127.0.0.1:8001`
+- iOS Simulator web/media: `http://127.0.0.1:8000`
 - Aparelho fisico na mesma rede: `http://<ip-do-mac>:8001`
 - Chrome/web local: `http://127.0.0.1:8001`
 
 Para o emulador renderizar imagens em `/media/...`, o Django local precisa escutar em host acessivel ao emulador e aceitar `10.0.2.2` em `GOTRENDLABS_ALLOWED_HOSTS`; caso contrario thumbnails de mercado e badges caem no fallback visual mesmo com `image_url` correto na API.
+
+No iOS Simulator, `127.0.0.1` aponta para o Mac host, portanto o app pode usar os mesmos hosts locais de Django/FastAPI usados pelo navegador durante smoke tests.
 
 ## Contratos de leitura publica
 

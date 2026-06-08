@@ -1,5 +1,12 @@
 # Change Log de Specs
 
+## 2026-06-08
+
+- atualizada arquitetura mobile para refletir estrutura iOS gerada em `apps/mobile/ios`, mantendo Android como MVP já validado e iOS Simulator como preparação local.
+- atualizados contratos de base URL mobile para separar Android emulator (`10.0.2.2`), iOS Simulator/Chrome local (`127.0.0.1`) e aparelho físico (`<ip-do-mac>`).
+- atualizados critérios de aceite mobile para simulação iOS local com Xcode completo, CocoaPods, device iOS listado por `flutter devices` e bases locais via `127.0.0.1`.
+- atualizado estado operacional de FEAT-MOBILE-001 para remover iOS Simulator dos gaps e manter TestFlight/App Store, push, offline e QA visual amplo como pendências futuras.
+
 ## 2026-06-07
 
 - criadas specs iniciais de mobile Flutter: `mobile-flutter.md`, `mobile-api-contracts.md`, `mobile-mvp.md`, `mobile-ux.md` e `mobile-acceptance.md`.

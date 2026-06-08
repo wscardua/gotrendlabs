@@ -4,7 +4,7 @@ titulo: "Criterios de aceite mobile"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-07
+ultima_atualizacao: 2026-06-08
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -35,6 +35,13 @@ Deve passar:
 - `flutter test`
 
 Alerta de Xcode/CocoaPods nao bloqueia Android MVP.
+
+Para simulacao iOS local, tambem deve passar:
+
+- `flutter doctor -v` com Xcode completo ativo
+- CocoaPods disponivel
+- `flutter devices` listando um iOS Simulator
+- app executado com bases locais via `127.0.0.1`
 
 ## Revisao por skills
 

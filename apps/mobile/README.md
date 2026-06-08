@@ -1,6 +1,6 @@
 # Mobile
 
-Cliente Flutter Android do GoTrendLabs.
+Cliente Flutter mobile do GoTrendLabs. O MVP validado hoje e Android; a estrutura iOS existe para preparacao de simulador, mas depende de Xcode completo ativo no Mac.
 
 O app roda como cliente da FastAPI e usa `http://10.0.2.2:8001` como API local padrao no emulador Android. Imagens de mercado e badges em `/media/...` usam a web local em `http://10.0.2.2:8000`, portanto o Django local precisa aceitar `10.0.2.2` em `GOTRENDLABS_ALLOWED_HOSTS` e escutar em host acessivel pelo emulador.
 
@@ -10,6 +10,14 @@ Para trocar as bases locais:
 flutter run \
   --dart-define=GTL_API_BASE_URL=http://10.0.2.2:8001 \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=http://10.0.2.2:8000
+```
+
+No iOS Simulator, as bases locais do Mac devem usar `127.0.0.1`:
+
+```bash
+flutter run -d ios \
+  --dart-define=GTL_API_BASE_URL=http://127.0.0.1:8001 \
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=http://127.0.0.1:8000
 ```
 
 Specs principais:
@@ -44,3 +52,5 @@ flutter analyze
 flutter test
 flutter build apk --debug
 ```
+
+Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.

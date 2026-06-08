@@ -1,6 +1,6 @@
 # Known Gaps
 
-- FEAT-MOBILE-001 possui projeto Flutter Android inicial em `apps/mobile` com auth Bearer simples e token em secure storage; smoke no emulador validou abertura, feed, detalhe e comunidade como visitante; ainda faltam fluxo autenticado real com usuário de teste, QA visual ampliado, refresh token/revogação avançada, push nativo, offline completo, deep links e publicação em loja.
+- FEAT-MOBILE-001 possui projeto Flutter mobile em `apps/mobile` com auth Bearer simples e token em secure storage; smoke no emulador Android validou abertura, feed, detalhe e comunidade como visitante, e smoke no iOS Simulator validou abertura/carregamento local no iPhone 17 e iPhone 17 Pro Max; ainda faltam fluxo autenticado real com usuário de teste, QA visual ampliado, refresh token/revogação avançada, push nativo, offline completo, deep links, TestFlight/App Store e publicação em loja.
 - Fórmula de probabilidade agregada básica está implementada para previsão/stake; ainda falta decisão para amortecer peso de reputação e evitar concentração futura.
 - Fórmula MVP de reputação foi fechada para resolução manual; ainda falta avaliar amortecimento futuro e impacto de concentração.
 - Política MVP de cancelamento foi fechada como refund total; ainda falta comunicação transacional assíncrona ao usuário.
