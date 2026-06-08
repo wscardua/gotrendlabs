@@ -52,6 +52,7 @@
 - `FEAT-MOBILE-001` integra o app Flutter em `apps/mobile` à FastAPI como cliente JSON, reutilizando `GET /markets`, `GET /markets/{slug}`, `GET /taxonomy`, `GET /stats`, `GET /health`, contratos autenticados de sessão/usuário, favoritos, curtidas, comentários, preview/criação de previsão, wallet/recarga, ranking, badges e alertas; flags autenticados como `viewer_has_favorite` e `viewer_has_prediction` alimentam recortes pessoais no app sem recalcular domínio no cliente.
 - A tela mobile `Sobre` pode consultar a saúde da API e dados seguros da sessão, mas não deve expor endereços de API/web, tokens, segredos ou ID interno do usuário na UI nem no diagnóstico copiado.
 - No emulador Android, o mobile consome a API local por `http://10.0.2.2:8001`; `127.0.0.1` dentro do emulador aponta para o próprio dispositivo emulado.
+- No iOS Simulator, o mobile consome a API/web local do Mac por `http://127.0.0.1:8001` e `http://127.0.0.1:8000`, mantendo o mesmo contrato FastAPI e apenas trocando a base local por plataforma.
 - A estratégia de autenticação persistente mobile ainda é decisão pendente antes de implementar login durável, especialmente se o contrato atual estiver otimizado para cookie web.
 
 ## Skills técnicas por stack

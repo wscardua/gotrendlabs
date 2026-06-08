@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-06-08 — FEAT-MOBILE-001 suporte iOS Simulator
+
+- Gerada estrutura iOS Flutter em `apps/mobile/ios`, mantendo o app como cliente da FastAPI e sem alterar contratos, OpenAPI ou regras críticas de domínio.
+- `.metadata` passou a registrar Android e iOS como plataformas do projeto mobile.
+- README e specs mobile passaram a documentar que o iOS Simulator usa `127.0.0.1` para acessar FastAPI/Django locais, enquanto o emulador Android continua usando `10.0.2.2`.
+- Critérios de aceite passaram a separar Android MVP de simulação iOS local, exigindo Xcode completo, CocoaPods e device iOS listado por `flutter devices`.
+- Validação local confirmou `flutter doctor -v` sem issues, app abrindo no iPhone 17 e iPhone 17 Pro Max Simulator e telas carregando dados da API local.
+- Homologação iOS ampla, TestFlight, App Store, push nativo e QA visual completo seguem fora desta entrega.
+
 ## 2026-06-07 — FEAT-MOBILE-001 refresh visual Android
 
 - App Flutter Android recebeu refresh visual dark-first/editorial no tema, shell, cards de mercado, detalhe, ticket de previsão, comunidade, wallet, ranking, alertas, busca, perfil, badges, confiança e bottom sheets.

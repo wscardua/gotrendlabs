@@ -2,6 +2,33 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260608-MOBILE-IOS-SIMULATOR-001
+
+- Tipo: `change-feature`
+- Status: `em_publicacao`
+- Feature alvo: `FEAT-MOBILE-001`, `future-mobile`
+- Objetivo: preparar o app Flutter mobile para iOS Simulator sem alterar contratos FastAPI nem regras de domínio
+- Etapa atual: estrutura iOS gerada em `apps/mobile/ios`, Xcode/CocoaPods validados localmente, app executado no iPhone Simulator com bases locais via `127.0.0.1` e aguardando aprovação do usuário para abrir PR em português, mergear em `main` e acompanhar `GoTrendLabs CI and Deploy` quando disparado
+- Artefatos afetados:
+  - `apps/mobile/ios/`
+  - `apps/mobile/.metadata`
+  - `apps/mobile/README.md`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/change-log-specs.md`
+  - `docs/specs/state/integration-map.md`
+  - `docs/specs/state/known-gaps.md`
+- Bloqueios: nenhum local; PR, merge e monitoramento de produção dependem de aprovação explícita do usuário
+- Iniciado em: 2026-06-08
+- Atualizado em: 2026-06-08
+- Encerrado em: pendente
+- Retomada: após aprovação, stage/commit, push da branch `codex/mobile-ios-simulator-support`, abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` se disparado e atualizar este registro para `concluido` ou `bloqueado`
+- Reversão lógica: remover `apps/mobile/ios/`, retirar a plataforma iOS de `.metadata`, restaurar README/specs/state para escopo Android-only e manter contratos FastAPI inalterados
+- Evidências de validação local: `flutter doctor -v` sem issues com Xcode 26.5 e CocoaPods 1.16.2; `flutter analyze` sem issues; `flutter test` com 16 testes OK; `flutter run -d 53BDA0A2-23E9-4F01-A468-593A2AF0C8A8 --dart-define=GTL_API_BASE_URL=http://127.0.0.1:8001 --dart-define=GTL_PUBLIC_WEB_BASE_URL=http://127.0.0.1:8000` abriu o app no iPhone 17 Simulator; `flutter run -d 207EDA52-ED42-4CCB-AD4E-35F0CAE5A29C` abriu o app no iPhone 17 Pro Max Simulator; screenshots confirmaram a tela mobile carregando dados locais da API
+
 ## WFLOW-20260607-MOBILE-ANDROID-MVP-001
 
 - Tipo: `new-feature`

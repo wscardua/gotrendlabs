@@ -4,7 +4,7 @@ titulo: "Arquitetura mobile Flutter"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-07
+ultima_atualizacao: 2026-06-08
 origem:
   - docs/specs/architecture/system-overview.md
   - apps/mobile/README.md
@@ -24,12 +24,13 @@ aprovacao: pendente
 
 ## Objetivo
 
-Definir a primeira arquitetura do app Flutter Android do GoTrendLabs, mantendo o mobile como cliente da FastAPI e preservando as fronteiras de dominio existentes.
+Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o mobile como cliente da FastAPI e preservando as fronteiras de dominio existentes.
 
 ## Escopo incluido
 
 - projeto Flutter em `apps/mobile`
 - suporte inicial a Android
+- estrutura iOS gerada para preparacao de simulador local
 - consumo dos contratos publicos e autenticados da FastAPI
 - sessao/token, preferencias locais e cache leve no dispositivo
 - navegacao mobile para feed, detalhe de mercado, previsao, comentarios, wallet, perfil, ranking/badges e alertas
@@ -37,7 +38,7 @@ Definir a primeira arquitetura do app Flutter Android do GoTrendLabs, mantendo o
 
 ## Escopo excluido
 
-- iOS nesta primeira etapa
+- homologacao iOS/TestFlight/App Store nesta primeira etapa
 - logica critica de dominio no app
 - calculo local autoritativo de probabilidade, saldo, payout, reputacao, ranking, badges ou resolucao
 - modo offline completo
@@ -89,6 +90,8 @@ O projeto Flutter deve nascer em `apps/mobile` e manter a organizacao abaixo com
 - Android SDK em `/Users/williamsca/Library/Android/sdk`.
 - Emulador local inicial: `gotrendlabs_pixel`.
 - No emulador Android, a API local do Mac deve ser acessada por `http://10.0.2.2:8001`, nao por `127.0.0.1`.
+- No iOS Simulator, a API local do Mac deve ser acessada por `http://127.0.0.1:8001`.
+- Simulacao iOS exige Xcode completo ativo e CocoaPods disponivel.
 - O Django web local pode continuar em `http://127.0.0.1:8000`; o mobile nao deve depender dele para regras de dominio.
 
 ## Configuracao de ambiente
