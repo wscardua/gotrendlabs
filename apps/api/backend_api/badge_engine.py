@@ -165,6 +165,7 @@ class BadgeAwardEngine:
                 (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
             VALUES (%s, NULL, NULL, NULL, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
             ON CONFLICT (recipient_id, source_key) DO NOTHING
+            RETURNING id
             """,
             (
                 user_id,
@@ -176,6 +177,12 @@ class BadgeAwardEngine:
                 datetime.now(timezone.utc),
             ),
         )
+        created = cursor.fetchone()
+        if created:
+            from apps.web.django.communications.push_services import enqueue_push_for_notification
+
+            notification_id = created["id"] if isinstance(created, dict) else created[0]
+            enqueue_push_for_notification(cursor, notification_id)
 
     @classmethod
     def _prediction_rule_count(cls, cursor, user_id, rule_type, category="", subcategory="", event=""):

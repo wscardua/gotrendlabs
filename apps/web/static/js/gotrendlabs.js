@@ -1077,3 +1077,59 @@ $$("[data-email-template-editor]").forEach((form) => {
     }
   });
 });
+
+$$("[data-push-template-editor]").forEach((form) => {
+  let activeField = null;
+  const sampleNode = $("#push-template-samples");
+  const samples = sampleNode ? JSON.parse(sampleNode.textContent || "{}") : {};
+  const titleField = $('[name="title"]', form);
+  const bodyField = $('[name="body"]', form);
+  const previewDialog = $("[data-push-preview-dialog]");
+  const previewTitle = $("[data-push-preview-title]");
+  const cardTitle = $("[data-push-preview-card-title]");
+  const cardBody = $("[data-push-preview-card-body]");
+
+  [titleField, bodyField].forEach((field) => {
+    field?.addEventListener("focus", () => {
+      activeField = field;
+    });
+  });
+
+  $$("[data-push-var-token]").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const token = button.dataset.pushVarToken || "";
+      const target = activeField || bodyField || titleField;
+      if (!insertAtCursor(target, token)) {
+        try {
+          await navigator.clipboard.writeText(token);
+        } catch (_error) {
+        }
+      }
+    });
+  });
+
+  $("[data-push-preview-open]")?.addEventListener("click", () => {
+    const renderedTitle = renderEmailTemplatePreview(titleField?.value || "", samples) || "GoTrendLabs";
+    const renderedBody = renderEmailTemplatePreview(bodyField?.value || "", samples);
+    if (previewTitle) previewTitle.textContent = renderedTitle;
+    if (cardTitle) cardTitle.textContent = renderedTitle;
+    if (cardBody) cardBody.textContent = renderedBody;
+    if (previewDialog?.showModal) {
+      previewDialog.showModal();
+    } else {
+      previewDialog?.setAttribute("open", "open");
+    }
+  });
+
+  $("[data-push-preview-close]")?.addEventListener("click", () => {
+    previewDialog?.close?.();
+    previewDialog?.removeAttribute("open");
+  });
+
+  previewDialog?.addEventListener("click", (event) => {
+    if (event.target === previewDialog) {
+      previewDialog.close?.();
+      previewDialog.removeAttribute("open");
+    }
+  });
+});

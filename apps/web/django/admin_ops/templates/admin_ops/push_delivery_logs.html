@@ -1,0 +1,171 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Logs de Push{% endblock %}
+{% block content %}
+<main class="shell admin-layout user-directory-page email-policy-page">
+  <section class="panel user-directory">
+    <div class="user-directory-head">
+      <div>
+        <span class="eyebrow">Communications · push outbox</span>
+        <h1 class="large-title">Política de Push</h1>
+        <p class="muted">Acompanhe entregas mobile, tentativas do daemon, dry-run e tokens inválidos sem expor credenciais, token do dispositivo ou payload sensível.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-push-delivery-logs' %}">Atualizar</a>
+    </div>
+
+    <nav class="email-policy-tabs" aria-label="Política de push">
+      <a href="{% url 'admin-ops-push-templates' %}">
+        <strong>Templates</strong>
+        <span>Eventos e texto PT-BR</span>
+      </a>
+      <a class="active" href="{% url 'admin-ops-push-delivery-logs' %}">
+        <strong>Logs de envio</strong>
+        <span>Outbox, dry-run e falhas</span>
+      </a>
+    </nav>
+    {% if messages %}
+      {% for message in messages %}<div class="notice {% if message.tags == 'success' %}green{% elif message.tags == 'error' %}red{% else %}warn{% endif %}">{{ message }}</div>{% endfor %}
+    {% endif %}
+
+    <div class="user-summary-strip email-delivery-summary" aria-label="Resumo dos pushes">
+      <div><span>Total</span><strong>{{ counts.total|default:0 }}</strong></div>
+      <div><span>Na fila</span><strong>{{ counts.queued|default:0 }}</strong></div>
+      <div><span>Dry-run</span><strong>{{ counts.dry_run|default:0 }}</strong></div>
+      <div><span>Falhas</span><strong>{{ counts.failed|default:0 }}</strong></div>
+      <div><span>Inválidos</span><strong>{{ counts.invalid_token|default:0 }}</strong></div>
+    </div>
+
+    <div class="notice {% if push_runtime.enabled %}green{% else %}red{% endif %}">
+      Push {% if push_runtime.enabled %}habilitado{% else %}desligado{% endif %}; provider {{ push_runtime.provider }}; dry-run {% if push_runtime.dry_run %}ativo{% else %}inativo{% endif %}; segredo FCM {% if push_runtime.fcm_secret_configured %}configurado{% else %}ausente{% endif %}.
+    </div>
+
+    <form class="push-test-panel" method="post">
+      {% csrf_token %}
+      <div class="push-test-copy">
+        <div>
+          <span class="eyebrow">Teste manual</span>
+          <strong>Enviar teste para dispositivo</strong>
+          <p>Escolha um dispositivo ativo. O token bruto não aparece; o resultado entra nos logs.</p>
+        </div>
+        {% if not test_devices_count %}
+          <span class="tag risk">Sem dispositivos</span>
+        {% endif %}
+      </div>
+      {% if test_devices_count %}
+        <div class="push-test-grid">
+          <label class="field full">
+            <span>Dispositivo</span>
+            {{ test_form.device_id }}
+            {% if test_form.device_id.errors %}<small>{{ test_form.device_id.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field compact-field">
+            <span>Tipo de teste</span>
+            {{ test_form.event_type }}
+          </label>
+          <label class="field">
+            <span>Título</span>
+            {{ test_form.title }}
+            {% if test_form.title.errors %}<small>{{ test_form.title.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field full">
+            <span>Corpo</span>
+            {{ test_form.body }}
+            {% if test_form.body.errors %}<small>{{ test_form.body.errors|join:", " }}</small>{% endif %}
+          </label>
+          <div class="push-test-actions">
+            <button class="btn primary" type="submit">Criar teste</button>
+          </div>
+        </div>
+      {% else %}
+        <div class="notice red">Nenhum dispositivo ativo para teste. Registre um device no app antes de enviar.</div>
+      {% endif %}
+    </form>
+
+    <form class="user-filter-panel email-delivery-filter" method="get">
+      <label class="user-search-field">
+        <span>Busca</span>
+        <input type="search" name="q" value="{{ filters.q }}" placeholder="Evento, usuário, idempotência, erro">
+      </label>
+      <label>
+        <span>Status</span>
+        <select name="status">
+          <option value="">Todos</option>
+          {% for status, label in status_labels.items %}
+            <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Evento</span>
+        <select name="event_type">
+          <option value="">Todos</option>
+          {% for event_type in event_types %}
+            <option value="{{ event_type }}" {% if filters.event_type == event_type %}selected{% endif %}>{{ event_type }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Provider</span>
+        <select name="provider">
+          <option value="">Todos</option>
+          <option value="fcm" {% if filters.provider == "fcm" %}selected{% endif %}>fcm</option>
+        </select>
+      </label>
+      <label>
+        <span>De</span>
+        <input type="datetime-local" name="from" value="{{ filters.from }}">
+      </label>
+      <label>
+        <span>Até</span>
+        <input type="datetime-local" name="to" value="{{ filters.to }}">
+      </label>
+      <div class="user-filter-actions">
+        <button class="btn small primary" type="submit">Aplicar</button>
+        <a class="btn small ghost" href="{% url 'admin-ops-push-delivery-logs' %}">Limpar</a>
+      </div>
+    </form>
+
+    <div class="system-log-pagination-bar">
+      <div class="user-result-meta">
+        <strong>{{ pagination.visible_count }}</strong>
+        <span>de {{ total_filtered }} entregas filtradas</span>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="table compact-table email-delivery-table">
+        <tr>
+          <th>Quando</th>
+          <th>Status</th>
+          <th>Usuário</th>
+          <th>Evento</th>
+          <th>Tentativas</th>
+          <th>Resultado</th>
+        </tr>
+        {% for delivery in deliveries %}
+          <tr>
+            <td>{{ delivery.created_at }}<br><small>Atualizado {{ delivery.updated_at }}</small></td>
+            <td><span class="tag {{ delivery.status_class }}">{{ delivery.status_label }}</span></td>
+            <td>{{ delivery.recipient_label }}<br><small>{{ delivery.provider }} · {{ delivery.platform }}</small></td>
+            <td><code>{{ delivery.event_type }}</code><br><small>{{ delivery.template_key }}</small></td>
+            <td>{{ delivery.attempt_count }}/{{ delivery.max_attempts }}<br><small>Próxima {{ delivery.next_attempt_at }}</small></td>
+            <td>
+              {% if delivery.sent_at != "-" %}
+                <strong>Finalizado em {{ delivery.sent_at }}</strong>
+              {% elif delivery.last_error %}
+                <strong>{{ delivery.last_error|truncatechars:110 }}</strong>
+              {% else %}
+                <span class="muted">{{ delivery.title|default:"Aguardando processamento"|truncatechars:110 }}</span>
+              {% endif %}
+              <br><small title="{{ delivery.idempotency_key }}">{{ delivery.idempotency_key|truncatechars:64 }}</small>
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">Nenhuma entrega encontrada.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    {% include "admin_ops/partials/load_more.html" with pagination=pagination label="Mais entregas" %}
+  </section>
+</main>
+{% endblock %}

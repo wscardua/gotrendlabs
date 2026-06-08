@@ -75,6 +75,11 @@ from apps.api.backend_api.schemas import (
     PredictionPreviewResponse,
     ProfileUpdatePayload,
     ProductFeedbackPayload,
+    PushDeviceListResponse,
+    PushDeviceRegisterPayload,
+    PushDeviceResponse,
+    PushPreferenceListResponse,
+    PushPreferenceUpdatePayload,
     QueueItemResponse,
     PublicUserProfileResponse,
     QueueListResponse,
@@ -2055,6 +2060,105 @@ def _notification_rows(cursor, recipient_id, *, limit=10):
     return {"unread_count": int(unread["total"] or 0), "notifications": notifications}
 
 
+PUSH_EVENT_TYPES = (
+    "market_resolved",
+    "market_locked",
+    "wallet_credit",
+    "badge_awarded",
+    "market_comment",
+    "comment_like",
+    "market_prediction",
+    "market_like",
+)
+
+
+def _push_device_response(row):
+    return {
+        "id": row["id"],
+        "provider": row["provider"],
+        "platform": row["platform"],
+        "app_version": row["app_version"] or "",
+        "build_number": row["build_number"] or "",
+        "device_label": row["device_label"] or "",
+        "is_active": bool(row["is_active"]),
+        "push_enabled": bool(row["push_enabled"]),
+        "revoked_at": row["revoked_at"].isoformat() if row["revoked_at"] else None,
+        "provider_invalidated_at": row["provider_invalidated_at"].isoformat() if row["provider_invalidated_at"] else None,
+        "disabled_reason": row["disabled_reason"] or "",
+        "last_registered_at": row["last_registered_at"].isoformat(),
+        "created_at": row["created_at"].isoformat(),
+        "updated_at": row["updated_at"].isoformat(),
+    }
+
+
+def _push_devices(cursor, user_id):
+    cursor.execute(
+        """
+        SELECT id, provider, platform, app_version, build_number, device_label, is_active, push_enabled,
+               revoked_at, provider_invalidated_at, disabled_reason, last_registered_at, created_at, updated_at
+        FROM gotrendlabs_push_devices
+        WHERE user_id = %s
+        ORDER BY last_registered_at DESC, id DESC
+        """,
+        (user_id,),
+    )
+    return {"devices": [_push_device_response(row) for row in cursor.fetchall()]}
+
+
+def _push_policy_rows(cursor):
+    cursor.execute(
+        """
+        SELECT event_type, mode, default_user_enabled
+        FROM gotrendlabs_push_event_policies
+        WHERE event_type = ANY(%s)
+        ORDER BY priority, event_type
+        """,
+        (list(PUSH_EVENT_TYPES),),
+    )
+    rows = {row["event_type"]: row for row in cursor.fetchall()}
+    policies = []
+    for event_type in PUSH_EVENT_TYPES:
+        row = rows.get(event_type)
+        if row:
+            policies.append(
+                {
+                    "event_type": event_type,
+                    "mode": row["mode"],
+                    "default_user_enabled": bool(row["default_user_enabled"]),
+                }
+            )
+        else:
+            mode = "immediate" if event_type in {"market_resolved", "market_locked", "wallet_credit", "badge_awarded", "market_comment", "comment_like"} else "off"
+            policies.append({"event_type": event_type, "mode": mode, "default_user_enabled": True})
+    return policies
+
+
+def _push_preferences(cursor, user_id):
+    policies = _push_policy_rows(cursor)
+    cursor.execute(
+        """
+        SELECT event_type, push_enabled
+        FROM gotrendlabs_push_preferences
+        WHERE user_id = %s
+        """,
+        (user_id,),
+    )
+    preferences = {row["event_type"]: bool(row["push_enabled"]) for row in cursor.fetchall()}
+    global_enabled = preferences.get("", True)
+    return {
+        "global_enabled": global_enabled,
+        "preferences": [
+            {
+                "event_type": policy["event_type"],
+                "mode": policy["mode"],
+                "default_user_enabled": policy["default_user_enabled"],
+                "push_enabled": preferences.get(policy["event_type"], policy["default_user_enabled"]),
+            }
+            for policy in policies
+        ],
+    }
+
+
 def _market_participant_recipient_ids(cursor, market_id, actor_id):
     cursor.execute(
         """
@@ -2100,6 +2204,7 @@ def _create_notification(
             (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
         ON CONFLICT (recipient_id, source_key) DO NOTHING
+        RETURNING id
         """,
         (
             recipient_id,
@@ -2114,6 +2219,11 @@ def _create_notification(
             datetime.now(timezone.utc),
         ),
     )
+    created = cursor.fetchone()
+    if created:
+        from apps.web.django.communications.push_services import enqueue_push_for_notification
+
+        enqueue_push_for_notification(cursor, _row_value(created, "id", 0))
 
 
 def _notify_market_participants(cursor, *, actor, market_id, comment_id=None, event_type, source_key, title, body, metadata=None):
@@ -3788,6 +3898,9 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                 missing_after_minutes=int(site_config["daemon_missing_after_minutes"] or 21) if site_config else 21,
             )
             ai_health = ai_health_summary(cursor, now=now)
+            from apps.web.django.communications.push_services import push_dashboard_status
+
+            push_health = push_dashboard_status(cursor, now=now)
             return {
                 "markets": {
                     **market_counts,
@@ -3843,6 +3956,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "recaptcha_enabled": os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
                     **daemon_status,
                     "ai": ai_health,
+                    "push": push_health,
                 },
                 "top_markets": top_markets,
                 "recent_admin_events": recent_admin_events,
@@ -6082,6 +6196,145 @@ def mark_my_notifications_read(authorization: str = Header(default="")):
                 (datetime.now(timezone.utc), user["id"]),
             )
             return _notification_rows(cursor, user["id"])
+
+
+@app.get("/users/me/push-devices", response_model=PushDeviceListResponse)
+def list_my_push_devices(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _push_devices(cursor, user["id"])
+
+
+@app.post("/users/me/push-devices", response_model=PushDeviceResponse, status_code=status.HTTP_201_CREATED)
+def register_my_push_device(payload: PushDeviceRegisterPayload, request: Request, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            _enforce_rate_limit("push-device", _rate_limit_identity(request, user["id"], payload.provider), limit=30, window_seconds=3600)
+            now = datetime.now(timezone.utc)
+            token = payload.token.strip()
+            token_hash = hash_token(token)
+            cursor.execute(
+                """
+                UPDATE gotrendlabs_push_devices
+                SET is_active = false,
+                    push_enabled = false,
+                    revoked_at = %s,
+                    disabled_reason = 'registered_by_another_user',
+                    updated_at = %s
+                WHERE provider = %s
+                  AND token_hash = %s
+                  AND user_id <> %s
+                  AND is_active = true
+                """,
+                (now, now, payload.provider, token_hash, user["id"]),
+            )
+            cursor.execute(
+                """
+                INSERT INTO gotrendlabs_push_devices
+                    (user_id, provider, platform, token, token_hash, app_version, build_number, device_label,
+                     is_active, push_enabled, revoked_at, provider_invalidated_at, disabled_reason, last_registered_at,
+                     created_at, updated_at)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, true, true, NULL, NULL, '', %s, %s, %s)
+                ON CONFLICT (user_id, provider, token_hash)
+                DO UPDATE SET
+                    platform = EXCLUDED.platform,
+                    token = EXCLUDED.token,
+                    app_version = EXCLUDED.app_version,
+                    build_number = EXCLUDED.build_number,
+                    device_label = EXCLUDED.device_label,
+                    is_active = CASE WHEN gotrendlabs_push_devices.revoked_at IS NULL THEN true ELSE gotrendlabs_push_devices.is_active END,
+                    push_enabled = CASE WHEN gotrendlabs_push_devices.revoked_at IS NULL THEN true ELSE gotrendlabs_push_devices.push_enabled END,
+                    provider_invalidated_at = NULL,
+                    disabled_reason = CASE WHEN gotrendlabs_push_devices.revoked_at IS NULL THEN '' ELSE gotrendlabs_push_devices.disabled_reason END,
+                    last_registered_at = EXCLUDED.last_registered_at,
+                    updated_at = EXCLUDED.updated_at
+                RETURNING id, provider, platform, app_version, build_number, device_label, is_active, push_enabled,
+                          revoked_at, provider_invalidated_at, disabled_reason, last_registered_at, created_at, updated_at
+                """,
+                (
+                    user["id"],
+                    payload.provider,
+                    payload.platform,
+                    token,
+                    token_hash,
+                    payload.app_version.strip(),
+                    payload.build_number.strip(),
+                    payload.device_label.strip(),
+                    now,
+                    now,
+                    now,
+                ),
+            )
+            return _push_device_response(cursor.fetchone())
+
+
+@app.delete("/users/me/push-devices/{device_id}", response_model=PushDeviceResponse)
+def revoke_my_push_device(device_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            now = datetime.now(timezone.utc)
+            cursor.execute(
+                """
+                UPDATE gotrendlabs_push_devices
+                SET is_active = false,
+                    push_enabled = false,
+                    revoked_at = COALESCE(revoked_at, %s),
+                    disabled_reason = 'user_revoked',
+                    updated_at = %s
+                WHERE id = %s
+                  AND user_id = %s
+                RETURNING id, provider, platform, app_version, build_number, device_label, is_active, push_enabled,
+                          revoked_at, provider_invalidated_at, disabled_reason, last_registered_at, created_at, updated_at
+                """,
+                (now, now, device_id, user["id"]),
+            )
+            row = cursor.fetchone()
+            if not row:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Dispositivo de push não encontrado.")
+            return _push_device_response(row)
+
+
+@app.get("/users/me/push-preferences", response_model=PushPreferenceListResponse)
+def get_my_push_preferences(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _push_preferences(cursor, user["id"])
+
+
+@app.patch("/users/me/push-preferences", response_model=PushPreferenceListResponse)
+def update_my_push_preferences(payload: PushPreferenceUpdatePayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            now = datetime.now(timezone.utc)
+            if payload.global_enabled is not None:
+                cursor.execute(
+                    """
+                    INSERT INTO gotrendlabs_push_preferences (user_id, event_type, push_enabled, created_at, updated_at)
+                    VALUES (%s, '', %s, %s, %s)
+                    ON CONFLICT (user_id, event_type)
+                    DO UPDATE SET push_enabled = EXCLUDED.push_enabled, updated_at = EXCLUDED.updated_at
+                    """,
+                    (user["id"], payload.global_enabled, now, now),
+                )
+            allowed_events = set(PUSH_EVENT_TYPES)
+            for event_type, enabled in payload.preferences.items():
+                if event_type not in allowed_events:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"Evento de push inválido: {event_type}.")
+                cursor.execute(
+                    """
+                    INSERT INTO gotrendlabs_push_preferences (user_id, event_type, push_enabled, created_at, updated_at)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (user_id, event_type)
+                    DO UPDATE SET push_enabled = EXCLUDED.push_enabled, updated_at = EXCLUDED.updated_at
+                    """,
+                    (user["id"], event_type, bool(enabled), now, now),
+                )
+            return _push_preferences(cursor, user["id"])
 
 
 @app.patch("/users/me", response_model=UserProfileResponse)

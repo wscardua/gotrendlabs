@@ -45,6 +45,7 @@
 - Bootstrap de núcleo de usuário deve diferenciar usuário comum de operador. Usuário comum recebe perfil, reputação inicial, wallet inicial, badges e atividade pública de cadastro de forma idempotente; `staff`/`superuser` recebe apenas o mínimo operacional necessário para navegar, sem `grant_initial`, reputação pública, badges ou atividade social.
 - Cadastro pode aceitar `referral_code` opcional; quando válido e com bônus ativo em `gotrendlabs_site_config.referral_bonus_gtl`, o backend credita o indicador comum ativo via ledger `reward_referral`, registra recompensa idempotente por convidado e não altera reputação, badges ou ranking.
 - `GET /users/me/referral` deve expor código estável de indicação e bônus configurado para usuário ativo humano; contas bot não geram link bonificado.
+- `GET/POST/DELETE /users/me/push-devices` e `GET/PATCH /users/me/push-preferences` devem ser autenticados, não expor token bruto e manter logout normal separado de revogação explícita de dispositivo.
 - Catálogo, regra executável e concessão de badges são autoridade do backend; Admin Ops e frontend apenas consomem contratos.
 - A `BadgeAwardEngine` deve aplicar recorte `category/subcategory/event` em previsões resolvidas e comentários; sugestões aprovadas só entram em regras por evento quando o fluxo passar a registrar evento.
 - `GET /admin/markets` deve suportar ordenações operacionais por popularidade (`views_desc` e `shares_desc`) usando os contadores persistidos do mercado.

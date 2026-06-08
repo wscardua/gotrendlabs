@@ -442,6 +442,67 @@ class NotificationListResponse(BaseModel):
     notifications: List[NotificationResponse] = Field(default_factory=list)
 
 
+class PushDeviceRegisterPayload(BaseModel):
+    provider: str = Field(default="fcm", max_length=20)
+    platform: str = Field(max_length=20)
+    token: str = Field(min_length=8, max_length=4096)
+    app_version: str = Field(default="", max_length=40)
+    build_number: str = Field(default="", max_length=40)
+    device_label: str = Field(default="", max_length=120)
+
+    @field_validator("provider")
+    @classmethod
+    def validate_provider(cls, value):
+        if value != "fcm":
+            raise ValueError("Provedor de push inválido.")
+        return value
+
+    @field_validator("platform")
+    @classmethod
+    def validate_platform(cls, value):
+        if value not in {"android", "ios"}:
+            raise ValueError("Plataforma de push inválida.")
+        return value
+
+
+class PushDeviceResponse(BaseModel):
+    id: int
+    provider: str
+    platform: str
+    app_version: str = ""
+    build_number: str = ""
+    device_label: str = ""
+    is_active: bool
+    push_enabled: bool
+    revoked_at: Optional[str] = None
+    provider_invalidated_at: Optional[str] = None
+    disabled_reason: str = ""
+    last_registered_at: str
+    created_at: str
+    updated_at: str
+
+
+class PushDeviceListResponse(BaseModel):
+    devices: List[PushDeviceResponse] = Field(default_factory=list)
+
+
+class PushPreferenceResponse(BaseModel):
+    event_type: str
+    mode: str
+    push_enabled: bool
+    default_user_enabled: bool
+
+
+class PushPreferenceListResponse(BaseModel):
+    global_enabled: bool = True
+    preferences: List[PushPreferenceResponse] = Field(default_factory=list)
+
+
+class PushPreferenceUpdatePayload(BaseModel):
+    global_enabled: Optional[bool] = None
+    preferences: dict[str, bool] = Field(default_factory=dict)
+
+
 class MarketOptionResponse(BaseModel):
     id: int
     label: str

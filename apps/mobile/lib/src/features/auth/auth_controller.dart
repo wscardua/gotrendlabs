@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
 import '../../core/providers.dart';
+import '../push/push_controller.dart';
 import 'auth_models.dart';
 import 'auth_repository.dart';
 
@@ -27,6 +28,7 @@ class AuthController extends Notifier<AuthState> {
     try {
       final user = await repo.session();
       state = AuthState(user: user);
+      await ref.read(pushControllerProvider.notifier).syncAfterAuth();
     } catch (_) {
       await api.clearToken();
       state = const AuthState();
@@ -92,6 +94,7 @@ class AuthController extends Notifier<AuthState> {
       final result = await call();
       await api.setToken(result.session.token);
       state = AuthState(user: result.user);
+      await ref.read(pushControllerProvider.notifier).syncAfterAuth();
       _invalidateUserScopedData();
     } catch (error) {
       state = state.copyWith(

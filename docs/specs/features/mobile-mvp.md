@@ -52,14 +52,14 @@ Entregar a primeira experiencia Android do GoTrendLabs para descoberta de mercad
 - ranking e badges em leitura
 - suporte/feedback via fila FastAPI existente
 - sugestao de mercados via fila FastAPI existente
-- central de alertas in-app sem push nativo
+- central de alertas in-app com preparação noop de push mobile
 - governanca documental por skills mobile locais antes de cada fatia de implementacao
 
 ## Escopo excluido
 
 - iOS
 - publicacao em loja
-- push notification nativo
+- envio real de push notification nativo
 - compra, saque, deposito real, blockchain ou linguagem financeira
 - live updates por websocket
 - admin ops mobile
@@ -106,7 +106,7 @@ Central in-app inicial:
 - resolucoes recentes quando contrato expuser
 - convite para configurar notificacoes futuras
 
-Sem push nativo nesta etapa.
+Push real segue fora desta etapa, mas a tela pode mostrar estado preparado/noop e controles de revogação quando houver dispositivo registrado.
 
 ### Busca
 

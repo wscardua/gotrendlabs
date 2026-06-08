@@ -18,6 +18,7 @@ class Command(BaseCommand):
             result = run_daemon_cycle()
             ai = result.get("ai", {})
             email = result.get("email", {})
+            push = result.get("push", {})
             pruned = result.get("pruned_log_details", {})
             self.stdout.write(
                 self.style.SUCCESS(
@@ -32,7 +33,11 @@ class Command(BaseCommand):
                     f"AI errors {ai.get('errors', 0)}, "
                     f"email sent {email.get('sent', 0)}, "
                     f"email failed {email.get('failed', 0)}, "
-                    f"email suppressed {email.get('suppressed', 0)}."
+                    f"email suppressed {email.get('suppressed', 0)}, "
+                    f"push sent {push.get('sent', 0)}, "
+                    f"push dry-run {push.get('dry_run', 0)}, "
+                    f"push failed {push.get('failed', 0)}, "
+                    f"push suppressed {push.get('suppressed', 0)}."
                 )
             )
             if options["once"]:

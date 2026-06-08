@@ -97,6 +97,10 @@ BACKEND_API_URL=http://127.0.0.1:8001
 GOTRENDLABS_RUNTIME_CONFIG_PATH=.runtime/platform_config.json
 GOTRENDLABS_SMTP_PASSWORD=
 GOTRENDLABS_SMTP_API_KEY=
+GOTRENDLABS_PUSH_ENABLED=0
+GOTRENDLABS_PUSH_PROVIDER=none
+GOTRENDLABS_PUSH_DRY_RUN=1
+GOTRENDLABS_FCM_CREDENTIALS_JSON=
 RECAPTCHA_ENABLED=0
 RECAPTCHA_SITE_KEY=
 RECAPTCHA_SECRET_KEY=
@@ -104,7 +108,7 @@ RECAPTCHA_SECRET_KEY=
 
 `POSTGRES_*` continua disponivel como fallback local e bootstrap do container. Para runtime, prefira `DJANGO_POSTGRES_*` e `FASTAPI_POSTGRES_*` com usuarios de menor privilegio por aplicacao. O arquivo `.env.example` e apenas modelo versionado; a aplicacao le o `.env` local ou variaveis ja exportadas no ambiente.
 
-O modo manutencao do Admin Ops e salvo em `GOTRENDLABS_RUNTIME_CONFIG_PATH` para continuar funcionando sem conexao com o banco. Configuracoes SMTP nao sensiveis ficam no banco; senha/API key devem ficar somente em `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY`.
+O modo manutencao do Admin Ops e salvo em `GOTRENDLABS_RUNTIME_CONFIG_PATH` para continuar funcionando sem conexao com o banco. Configuracoes SMTP nao sensiveis ficam no banco; senha/API key devem ficar somente em `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY`. Push mobile nasce desligado com provider `none`/dry-run; credencial FCM futura deve ficar apenas em `GOTRENDLABS_FCM_CREDENTIALS_JSON` ou secret manager, nunca no Git/Admin Ops.
 
 Para ativar o reCAPTCHA v2 checkbox no cadastro e nos envios públicos de sugestão/feedback, preencha `RECAPTCHA_SITE_KEY`, `RECAPTCHA_SECRET_KEY` e use `RECAPTCHA_ENABLED=1`. A site key é pública; a secret key deve ficar apenas no ambiente do servidor.
 

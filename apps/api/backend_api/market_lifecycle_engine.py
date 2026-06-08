@@ -269,6 +269,7 @@ class MarketLifecycleEngine:
                     (recipient_id, actor_id, market_id, comment_id, event_type, source_key, title, body, is_read, read_at, metadata, created_at)
                 VALUES (%s, %s, %s, NULL, %s, %s, %s, %s, false, NULL, %s::jsonb, %s)
                 ON CONFLICT (recipient_id, source_key) DO NOTHING
+                RETURNING id
                 """,
                 (
                     recipient_id,
@@ -282,6 +283,12 @@ class MarketLifecycleEngine:
                     datetime.now(timezone.utc),
                 ),
             )
+            created = self.cursor.fetchone()
+            if created:
+                from apps.web.django.communications.push_services import enqueue_push_for_notification
+
+                notification_id = created["id"] if isinstance(created, dict) else created[0]
+                enqueue_push_for_notification(self.cursor, notification_id)
             if email_key:
                 enqueue_user_email(
                     self.cursor,

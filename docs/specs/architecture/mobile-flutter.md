@@ -1,7 +1,7 @@
 ---
 id: ARCH-MOBILE-001
 titulo: "Arquitetura mobile Flutter"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-06-08
@@ -35,6 +35,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - sessao/token, preferencias locais e cache leve no dispositivo
 - navegacao mobile para feed, detalhe de mercado, previsao, comentarios, wallet, perfil, ranking/badges e alertas
 - camada de design system mobile alinhada ao produto
+- interface noop de push mobile preparada para Firebase Cloud Messaging futuro
 
 ## Escopo excluido
 
@@ -43,7 +44,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - calculo local autoritativo de probabilidade, saldo, payout, reputacao, ranking, badges ou resolucao
 - modo offline completo
 - streaming em tempo real
-- push notification nativo ate haver contrato especifico de notificacao mobile
+- envio real de push notification ate haver projeto Firebase, credenciais e aprovacao operacional
 
 ## Principios
 
@@ -80,7 +81,8 @@ O projeto Flutter deve nascer em `apps/mobile` e manter a organizacao abaixo com
 - `lib/features/wallet/`: saldo, extrato e recarga educativa quando houver contrato consumivel.
 - `lib/features/profile/`: perfil privado, perfil publico e configuracoes basicas.
 - `lib/features/ranking/`: ranking, badges e recortes tematicos.
-- `lib/features/alerts/`: central de alertas in-app, inicialmente sem push nativo.
+- `lib/features/alerts/`: central de alertas in-app e controles de push preparado/noop.
+- `lib/features/push/`: repository/controller de push, com provider noop ate Firebase ser configurado.
 - `test/`: testes unitarios e de widgets.
 - `integration_test/`: fluxos principais em emulador.
 
@@ -103,7 +105,7 @@ O app deve ter configuracao explicita por ambiente:
 - `staging`: futuro ambiente homologado
 - `production`: dominio publico da API
 
-Segredos nao devem ser versionados no Flutter. Tokens de sessao devem usar armazenamento seguro do dispositivo quando a estrategia de auth mobile for definida.
+Segredos nao devem ser versionados no Flutter. Tokens de sessao devem usar armazenamento seguro do dispositivo quando a estrategia de auth mobile for definida. Tokens FCM so devem ser coletados/registrados apos autenticacao; na fase atual, `NoopPushTokenProvider` nao coleta token nem instala Firebase. Para QA local sem Firebase, `GTL_PUSH_FAKE_TOKEN` pode habilitar `FakePushTokenProvider` no emulador e registrar um `PushDevice` de teste apos login, sem entrega real.
 
 ## Navegacao
 
@@ -113,6 +115,7 @@ A navegacao inicial deve combinar:
 - stack navigation para detalhe de mercado, previsao, comentarios e perfil
 - modal/bottom sheet para confirmacao de previsao e mensagens de erro recuperaveis
 - rotas nomeadas para permitir deep link futuro de mercado e badge
+- rotas para payload de push em `/markets/:slug`, `/wallet` e `/badges`, sempre buscando estado real na FastAPI ao abrir
 
 Abas iniciais recomendadas:
 
@@ -137,6 +140,7 @@ O app pode usar gerenciamento de estado adequado ao Flutter, escolhido na implem
 - O app nao deve armazenar senha.
 - Token/sessao deve ficar em storage seguro quando o contrato mobile de auth for consolidado.
 - Logs locais nao podem imprimir token, senha, email privado, dados sensiveis de perfil ou payloads de recuperacao.
+- Logs locais nao podem imprimir token FCM nem payload de push bruto.
 - Erros de API devem ser convertidos em mensagens de UX sem expor stack trace.
 - Fluxos sensiveis devem tratar sessao expirada com reautenticacao clara.
 
@@ -156,7 +160,7 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 
 ## Responsabilidades por camada
 
-- `future-mobile`: UI, estado de tela, navegacao, validacoes de formulario nao autoritativas, cache leve, exibicao de contratos e envio de comandos.
+- `future-mobile`: UI, estado de tela, navegacao, validacoes de formulario nao autoritativas, cache leve, exibicao de contratos e envio de comandos; registra/revoga dispositivo de push apenas por FastAPI e apenas quando houver token real.
 - `backend-api`: autenticacao, sessao, contratos JSON, validacao de dominio, preview de previsao, mutacoes, wallet, reputacao, badges e resolucao.
 - `database`: persistencia e integridade.
 - `communications`: emails e notificacoes transacionais.
@@ -167,6 +171,7 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 - widget tests para cards de mercado, filtros, detalhe, ticket de previsao e estados vazios
 - unitarios para formatacao de GTL, datas, percentuais e mapeamento de erros
 - testes de repository com clientes HTTP mockados
+- testes de repository/controller para push noop, registro com token fake e revogacao explicita
 - integration tests para abrir feed, navegar ao detalhe e bloquear previsao de visitante
 - integration tests para login e previsao quando houver usuario fixture adequado
 
@@ -179,6 +184,8 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 - nenhuma regra critica e calculada no app como fonte de verdade
 - erros e estados vazios possuem tratamento visual consistente
 - workflow, status, changelog e integration map foram atualizados quando houver mudanca multi-documento
+- app mostra estado de push preparado/noop sem depender de Firebase
+- app em modo QA com `GTL_PUSH_FAKE_TOKEN` registra um `PushDevice` de teste apos autenticacao, sem instalar Firebase ou expor token em UI/log
 
 ## Impacto de mudanca
 

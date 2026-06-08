@@ -11,6 +11,7 @@ import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
 import '../info/about_screen.dart';
 import '../info/trust_screen.dart';
+import '../push/push_controller.dart';
 import 'badges_screen.dart';
 import '../ranking/ranking_screen.dart';
 import '../support/contribution_sheets.dart';
@@ -142,6 +143,14 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             icon: const Icon(Icons.info_outline),
                             label: const Text('Sobre'),
+                          ),
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: () => ref
+                                .read(pushControllerProvider.notifier)
+                                .load(),
+                            icon: const Icon(Icons.notifications_active_outlined),
+                            label: const Text('Atualizar notificações push'),
                           ),
                         ],
                       );

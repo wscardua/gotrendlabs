@@ -29,15 +29,16 @@
 - suporte técnico
 - filas operacionais
 - config operacional
+- politica de push mobile
 
 ## Implementação atual
 
-- Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Agentes IA, Usuários, Categorias, Badge, Mercado, Resolução, Filas e Logs; menus secundários duplicados não devem ser renderizados nas telas internas.
+- Admin Ops usa navegação principal única no topo nesta ordem: Dashboard, Config, Agentes IA, Push mobile, Usuários, Categorias, Badge, Mercado, Resolução, Filas e Logs; menus secundários duplicados não devem ser renderizados nas telas internas.
 - O topo Admin Ops possui layout próprio, separado do topo público: ações de tema/site público ficam fora da faixa rolável, e a navegação pode rolar/empilhar em larguras intermediárias sem sobrepor `Logs`.
 - Dashboard consome o contrato staff `GET /admin/dashboard-summary` da FastAPI e exibe saúde operacional da plataforma em blocos de KPIs, ação necessária, saúde técnica, engajamento, economia/reputação, top mercados e eventos administrativos recentes.
 - Dashboard exibe indicador `Backend API` em Saúde técnica a partir de uma consulta Django read-only ao `GET /health`, independente do resumo staff, para evidenciar se a API de domínio está online.
 - Dashboard não deve montar métricas por consultas locais espalhadas no Django; indisponibilidade da FastAPI deve renderizar estado operacional vazio/erro amigável sem mutação local.
-- Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP, reCAPTCHA e status do daemon; não recalculam reputação, payout, probabilidade ou regra de domínio.
+- Métricas do Dashboard são agregações operacionais de leitura, incluindo contagens de mercados, filas, usuários, previsões, comentários, wallet, badges, logs técnicos, manutenção, SMTP, reCAPTCHA, status do daemon e saúde da outbox de push; não recalculam reputação, payout, probabilidade ou regra de domínio.
 - Dashboard exibe o daemon como `Ativo`, `Atrasado` ou `Sem sinal` a partir do heartbeat calculado pela FastAPI, sem consultar processos locais no Django.
 - Limites de status do daemon são configurados em Admin Ops Config por `daemon_stale_after_minutes` e `daemon_missing_after_minutes`; o limite de sem sinal deve ser maior que o limite de atraso, com defaults de 7 e 21 minutos para a cadência de produção de 300 segundos.
 - Dashboard deve manter contraste legível em modo escuro para KPIs, blocos de saúde, linhas métricas, tabelas e alertas.
@@ -118,6 +119,12 @@
 - Config operacional fica disponível no Admin Ops logo após Dashboard e permite controlar modo manutenção e parâmetros SMTP.
 - Modo manutenção é persistido em arquivo runtime fora do banco para desviar acesso público para página estática de manutenção mesmo quando a conexão com PostgreSQL/FastAPI estiver indisponível.
 - Config SMTP persiste parâmetros não sensíveis no banco; senha/API key ficam exclusivamente em variáveis de ambiente ou secret manager.
+- Push mobile possui área operacional própria para políticas por evento, templates PT-BR e logs de entrega, sem expor tokens de dispositivo, payload sensível ou segredo Firebase.
+- Admin Ops pode exibir presença/ausência da credencial FCM futura em Config, mas não salva, edita nem renderiza o segredo; credenciais ficam exclusivamente em variáveis de ambiente ou secret manager.
+- A tela de templates de push deve mostrar o fallback seguro do código junto do texto editável para reduzir ambiguidade operacional.
+- Preview de template de push é local e limitado às variáveis permitidas do evento; variáveis não permitidas devem aparecer como erro operacional antes de salvar.
+- Logs de push permitem teste manual por dispositivo ativo, sem expor token bruto; o teste deve registrar entrega auditável e respeitar o provider/flags atuais.
+- Dashboard exibe saúde de push mobile em Saúde técnica, calculada pela FastAPI a partir de flags/provider, devices ativos, fila pendente/vencida e entregas `sent`/`dry_run`/`failed`/`invalid_token` nas últimas 24h; o card deve apontar para os logs de `PushDelivery`.
 - Admin Ops possui área de Agentes IA para listar, criar/editar agentes oficiais, revisar auditoria de ações e acompanhar saúde técnica.
 - Config operacional permite editar flags, provider/base URL/modelos, limites, cooldowns, timeout/retries, pausa global e motivo dos agentes IA; o segredo esperado do provedor (`OPENAI_API_KEY` ou `AWS_BEARER_TOKEN_BEDROCK`) é exibido apenas como presente/ausente.
 - Dashboard exibe saúde dos agentes IA com último ciclo, último sucesso, erro recente, ações 24h e estado das flags principais.

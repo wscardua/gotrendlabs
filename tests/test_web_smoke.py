@@ -42,7 +42,8 @@ from apps.api.backend_api.main import _record_wallet_entry
 from apps.api.backend_api.main import _clear_rate_limits
 from apps.api.backend_api.security import hash_token, issue_token
 from config.recaptcha import RecaptchaError
-from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate
+from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
+from apps.web.django.communications.push_services import create_test_push_delivery, process_due_push_deliveries
 from apps.web.django.communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
 from apps.web.django.core.domain_client import get_domain_client
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
@@ -624,6 +625,221 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(read_all.status_code, 200)
         self.assertEqual(read_all.json()["unread_count"], 0)
         self.assertFalse(UserNotification.objects.filter(recipient_id=first.json()["user"]["id"], is_read=False).exists())
+
+    def test_push_device_registration_preferences_and_revoke_contract(self):
+        client = TestClient(app)
+        unauthenticated = client.post(
+            "/users/me/push-devices",
+            json={"provider": "fcm", "platform": "android", "token": "fcm-token-unauth"},
+        )
+        self.assertEqual(unauthenticated.status_code, 401)
+        first = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Push User",
+                "email": "push-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        second = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Push Other",
+                "email": "push-other@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(second.status_code, 201)
+        first_headers = {"Authorization": f"Bearer {first.json()['session']['token']}"}
+        second_headers = {"Authorization": f"Bearer {second.json()['session']['token']}"}
+
+        registered = client.post(
+            "/users/me/push-devices",
+            headers=first_headers,
+            json={
+                "provider": "fcm",
+                "platform": "android",
+                "token": "fcm-token-123456",
+                "app_version": "1.0.0",
+                "build_number": "1",
+                "device_label": "Pixel test",
+            },
+        )
+        self.assertEqual(registered.status_code, 201, registered.json())
+        self.assertNotIn("token", registered.json())
+        self.assertEqual(registered.json()["platform"], "android")
+        self.assertTrue(registered.json()["is_active"])
+
+        devices = client.get("/users/me/push-devices", headers=first_headers)
+        self.assertEqual(devices.status_code, 200)
+        self.assertEqual(len(devices.json()["devices"]), 1)
+
+        blocked_revoke = client.delete(f"/users/me/push-devices/{registered.json()['id']}", headers=second_headers)
+        self.assertEqual(blocked_revoke.status_code, 404)
+        revoked = client.delete(f"/users/me/push-devices/{registered.json()['id']}", headers=first_headers)
+        self.assertEqual(revoked.status_code, 200)
+        self.assertFalse(revoked.json()["is_active"])
+        self.assertEqual(revoked.json()["disabled_reason"], "user_revoked")
+
+        preferences = client.patch(
+            "/users/me/push-preferences",
+            headers=first_headers,
+            json={"global_enabled": False, "preferences": {"market_comment": False}},
+        )
+        self.assertEqual(preferences.status_code, 200)
+        self.assertFalse(preferences.json()["global_enabled"])
+        self.assertFalse(PushPreference.objects.get(user_id=first.json()["user"]["id"], event_type="market_comment").push_enabled)
+
+    def test_push_outbox_uses_user_notification_policy_and_safe_payload(self):
+        client = TestClient(app)
+        first = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Push Wallet",
+                "email": "push-wallet@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(first.status_code, 201)
+        headers = {"Authorization": f"Bearer {first.json()['session']['token']}"}
+        client.post(
+            "/users/me/push-devices",
+            headers=headers,
+            json={"provider": "fcm", "platform": "android", "token": "fcm-token-wallet"},
+        )
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=False, GOTRENDLABS_PUSH_PROVIDER="none", GOTRENDLABS_PUSH_DRY_RUN=True):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    _record_wallet_entry(
+                        cursor,
+                        first.json()["user"]["id"],
+                        entry_type="reward_feedback",
+                        amount=25,
+                        direction="credit",
+                        description="Feedback aprovado",
+                        reference_type="feedback",
+                        reference_id="99",
+                    )
+        self.assertEqual(PushDelivery.objects.count(), 0)
+
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=True, GOTRENDLABS_PUSH_PROVIDER="none", GOTRENDLABS_PUSH_DRY_RUN=True):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    _record_wallet_entry(
+                        cursor,
+                        first.json()["user"]["id"],
+                        entry_type="reward_feedback",
+                        amount=30,
+                        direction="credit",
+                        description="Feedback aprovado novamente",
+                        reference_type="feedback",
+                        reference_id="100",
+                    )
+        delivery = PushDelivery.objects.get(event_type="wallet_credit")
+        self.assertEqual(delivery.status, "queued")
+        self.assertEqual(delivery.payload["event_type"], "wallet_credit")
+        self.assertEqual(delivery.payload["route"], "/wallet")
+        serialized_payload = json.dumps(delivery.payload)
+        self.assertNotIn("amount", serialized_payload)
+        self.assertNotIn("ledger", serialized_payload)
+        self.assertNotIn("token", serialized_payload)
+
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=True, GOTRENDLABS_PUSH_PROVIDER="none", GOTRENDLABS_PUSH_DRY_RUN=True):
+            stats = process_due_push_deliveries()
+        delivery.refresh_from_db()
+        self.assertEqual(stats["dry_run"], 1)
+        self.assertEqual(delivery.status, "dry_run")
+
+    def test_push_preferences_block_outbox_and_provider_invalidates_bad_tokens(self):
+        client = TestClient(app)
+        user = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Push Invalid",
+                "email": "push-invalid@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(user.status_code, 201)
+        headers = {"Authorization": f"Bearer {user.json()['session']['token']}"}
+        client.post(
+            "/users/me/push-devices",
+            headers=headers,
+            json={"provider": "fcm", "platform": "ios", "token": "invalid-fcm-token"},
+        )
+        client.patch("/users/me/push-preferences", headers=headers, json={"global_enabled": False})
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=True, GOTRENDLABS_PUSH_PROVIDER="none", GOTRENDLABS_PUSH_DRY_RUN=True):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    _record_wallet_entry(
+                        cursor,
+                        user.json()["user"]["id"],
+                        entry_type="reward_feedback",
+                        amount=15,
+                        direction="credit",
+                        description="Preferência desativada",
+                    )
+        self.assertEqual(PushDelivery.objects.count(), 0)
+
+        client.patch("/users/me/push-preferences", headers=headers, json={"global_enabled": True})
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=True, GOTRENDLABS_PUSH_PROVIDER="fcm", GOTRENDLABS_PUSH_DRY_RUN=False):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    _record_wallet_entry(
+                        cursor,
+                        user.json()["user"]["id"],
+                        entry_type="reward_feedback",
+                        amount=16,
+                        direction="credit",
+                        description="Token inválido",
+                    )
+            stats = process_due_push_deliveries()
+        self.assertEqual(stats["invalid_token"], 1)
+        device = PushDevice.objects.get(user_id=user.json()["user"]["id"])
+        self.assertFalse(device.is_active)
+        self.assertEqual(device.disabled_reason, "provider_invalid_token")
+
+    def test_admin_push_test_delivery_targets_registered_device_without_token_payload(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            username="@pushmanual",
+            email="push-manual@example.com",
+            password="testpass123",
+        )
+        device = PushDevice.objects.create(
+            user=user,
+            provider="fcm",
+            platform="android",
+            token="fcm-token-manual-test",
+            token_hash=hash_token("fcm-token-manual-test"),
+            device_label="Pixel manual",
+            app_version="1.0.0",
+        )
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=True, GOTRENDLABS_PUSH_PROVIDER="none", GOTRENDLABS_PUSH_DRY_RUN=True):
+            delivery = create_test_push_delivery(
+                device=device,
+                event_type="admin_push_test",
+                title="Teste de push",
+                body="Mensagem de teste do GoTrendLabs.",
+            )
+            stats = process_due_push_deliveries(limit=1)
+        delivery.refresh_from_db()
+        self.assertEqual(stats["dry_run"], 1)
+        self.assertEqual(delivery.status, "dry_run")
+        self.assertEqual(delivery.notification.recipient, user)
+        self.assertEqual(delivery.payload["event_type"], "admin_push_test")
+        self.assertEqual(delivery.payload["route"], "/alerts")
+        self.assertNotIn("fcm-token-manual-test", json.dumps(delivery.payload))
+        self.assertNotIn("token", json.dumps(delivery.payload))
 
     def test_market_popularity_api_tracks_views_and_shares(self):
         client = TestClient(app)
@@ -1210,6 +1426,51 @@ class BackendAuthAPITests(TransactionTestCase):
                     """,
                     (staff_id, now),
                 )
+                push_device = PushDevice.objects.create(
+                    user_id=staff_id,
+                    provider="fcm",
+                    platform="android",
+                    token="dashboard-push-token",
+                    token_hash=hash_token("dashboard-push-token"),
+                    device_label="Pixel dashboard",
+                    app_version="1.0.0",
+                )
+                push_notification = UserNotification.objects.create(
+                    recipient_id=staff_id,
+                    event_type="market_comment",
+                    source_key="dashboard-push-health",
+                    title="Push dashboard",
+                    body="Evento de push para saúde operacional.",
+                )
+                PushDelivery.objects.create(
+                    notification=push_notification,
+                    device=push_device,
+                    event_type="market_comment",
+                    provider="fcm",
+                    template_key="market_comment",
+                    title="Push dashboard",
+                    body="Evento de push para saúde operacional.",
+                    payload={"notification_id": str(push_notification.id), "event_type": "market_comment", "route": "/alerts"},
+                    policy_snapshot={"event_type": "market_comment", "mode": "immediate"},
+                    idempotency_key="dashboard-push-health:queued",
+                    status="queued",
+                    next_attempt_at=now - timedelta(minutes=1),
+                )
+                PushDelivery.objects.create(
+                    notification=push_notification,
+                    device=push_device,
+                    event_type="market_comment",
+                    provider="fcm",
+                    template_key="market_comment",
+                    title="Push dry-run",
+                    body="Evento de push dry-run.",
+                    payload={"notification_id": str(push_notification.id), "event_type": "market_comment", "route": "/alerts"},
+                    policy_snapshot={"event_type": "market_comment", "mode": "immediate"},
+                    idempotency_key="dashboard-push-health:dry-run",
+                    status="dry_run",
+                    next_attempt_at=now,
+                    sent_at=now,
+                )
 
         with TemporaryDirectory() as tmpdir:
             config_path = os.path.join(tmpdir, "platform_config.json")
@@ -1243,6 +1504,12 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(payload["system"]["daemon_status"], "active")
         self.assertEqual(payload["system"]["daemon_status_label"], "Ativo")
         self.assertGreaterEqual(payload["system"]["daemon_locked_markets_24h"], 1)
+        self.assertEqual(payload["system"]["push"]["status"], "disabled")
+        self.assertEqual(payload["system"]["push"]["status_label"], "Desligado")
+        self.assertGreaterEqual(payload["system"]["push"]["active_devices"], 1)
+        self.assertGreaterEqual(payload["system"]["push"]["queued"], 1)
+        self.assertGreaterEqual(payload["system"]["push"]["due"], 1)
+        self.assertGreaterEqual(payload["system"]["push"]["dry_run_24h"], 1)
         self.assertTrue(any(event["action"] == "dashboard_probe" for event in payload["recent_admin_events"]))
         self.assertTrue(any(market["slug"] == "openai-gpt6-2026" for market in payload["top_markets"]))
 
@@ -6604,6 +6871,19 @@ class WebSmokeTests(TransactionTestCase):
                 "daemon_status": "stale",
                 "daemon_status_label": "Atrasado",
                 "daemon_locked_markets_24h": 2,
+                "push": {
+                    "status": "backlog",
+                    "status_label": "Fila pendente",
+                    "status_class": "warn",
+                    "enabled": True,
+                    "provider": "none",
+                    "dry_run": True,
+                    "active_devices": 3,
+                    "queued": 4,
+                    "due": 2,
+                    "failed_24h": 1,
+                    "dry_run_24h": 6,
+                },
             },
             "top_markets": [
                 {
@@ -6646,6 +6926,11 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Daemon")
             self.assertContains(response, "Atrasado")
             self.assertContains(response, "2 fechamentos 24h")
+            self.assertContains(response, "Push mobile")
+            self.assertContains(response, "Fila pendente")
+            self.assertContains(response, "4 na fila")
+            self.assertContains(response, "1 falhas 24h")
+            self.assertContains(response, reverse("admin-ops-push-delivery-logs"))
             self.assertContains(response, reverse("admin-ops-resolution"))
             self.assertContains(response, reverse("admin-ops-users"))
             self.assertNotContains(response, 'class="panel admin-menu"')
@@ -7103,7 +7388,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "gotrendlabs.js?v=20260605-email-template-preview")
+            self.assertContains(response, "gotrendlabs.js?v=20260608-push-polish")
 
         posted_market = {
             **api_market,

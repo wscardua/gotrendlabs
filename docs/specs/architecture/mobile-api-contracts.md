@@ -264,6 +264,25 @@ Requisitos mobile:
 - app apenas exibe e compartilha o codigo/link retornado pelo backend
 - bonus, habilitacao, razao de bloqueio e credito ficam sob autoridade backend/Admin Ops
 
+### Push mobile
+
+Endpoints esperados:
+
+- `GET /users/me/push-devices`
+- `POST /users/me/push-devices`
+- `DELETE /users/me/push-devices/{device_id}`
+- `GET /users/me/push-preferences`
+- `PATCH /users/me/push-preferences`
+
+Requisitos mobile:
+
+- app so tenta registrar dispositivo apos autenticacao restaurada ou login concluido
+- logout normal nao chama revoke de dispositivo
+- revoke e desativacao de preferencias sao acoes explicitas do usuario
+- a fase atual usa provider noop e nao coleta token Firebase
+- quando FCM for configurado, token real deve ser enviado apenas para a FastAPI
+- payload de push contem apenas IDs, rota e `event_type`; o app busca o estado real na API ao abrir
+
 ### Sugestoes e feedback
 
 Endpoints esperados:

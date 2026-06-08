@@ -118,6 +118,13 @@
               <strong>{{ system.daemon_status_label|default:"Sem sinal" }}</strong>
               <small>{{ system.daemon_locked_markets_24h|default:0 }} fechamentos 24h</small>
             </a>
+            {% with push=system.push %}
+              <a class="dashboard-health-item {% if push.status_class == 'safe' %}is-safe{% elif push.status_class == 'warn' %}is-warn{% elif push.status_class == 'risk' %}is-risk{% endif %}" href="{% url 'admin-ops-push-delivery-logs' %}">
+                <span>Push mobile</span>
+                <strong>{{ push.status_label|default:"Sem dados" }}</strong>
+                <small>{{ push.queued|default:0 }} na fila · {{ push.failed_24h|default:0 }} falhas 24h · {{ push.active_devices|default:0 }} devices</small>
+              </a>
+            {% endwith %}
             <a class="dashboard-health-item {% if system.ai.status == 'active' %}is-safe{% elif system.ai.status == 'paused' or system.ai.status == 'inactive' %}is-warn{% elif system.ai.status == 'error' %}is-risk{% endif %}" href="{% url 'admin-ops-ai-agents' %}">
               <span>Agentes IA</span>
               <strong>{{ system.ai.status_label|default:"Sem sinal" }}</strong>

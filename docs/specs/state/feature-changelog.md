@@ -1,5 +1,16 @@
 # Feature Changelog
 
+## 2026-06-08 — FEAT-NOTIFY-001 / FEAT-MOBILE-001 push mobile noop
+
+- Adicionada fundação de push mobile com `PushDevice`, `PushEventPolicy`, `PushTemplate`, `PushDelivery` e `PushPreference`, mantendo toda push derivada de `gotrendlabs_user_notifications`.
+- FastAPI passou a expor endpoints autenticados para registrar/listar/revogar dispositivos e consultar/alterar preferências de push.
+- Daemon operacional passou a drenar `PushDelivery` com provider `none`/dry-run, supressão quando desligado e invalidação automática de token rejeitado.
+- Admin Ops ganhou `Política de Push` com templates/event policies por evento, fallback visível, preview seguro, logs filtráveis, teste manual por `PushDevice` e saúde de push no Dashboard sem expor token, payload sensível ou segredo FCM.
+- A saúde de push no Dashboard foi ajustada para funcionar também no processo FastAPI standalone, inicializando o contexto Django antes de consultar modelos de `communications`.
+- Flutter ganhou `features/push` com repository/controller, `NoopPushTokenProvider` e `FakePushTokenProvider` controlado por `GTL_PUSH_FAKE_TOKEN` para QA local; Firebase/dependências reais seguem fora desta fase.
+- Defaults seguros: `GOTRENDLABS_PUSH_ENABLED=0`, `GOTRENDLABS_PUSH_PROVIDER=none`, `GOTRENDLABS_PUSH_DRY_RUN=1`.
+- OpenAPI, specs mobile/communications, README e critérios de aceite foram atualizados para a fase noop/dry-run.
+
 ## 2026-06-08 — FEAT-MOBILE-001 suporte iOS Simulator
 
 - Gerada estrutura iOS Flutter em `apps/mobile/ios`, mantendo o app como cliente da FastAPI e sem alterar contratos, OpenAPI ou regras críticas de domínio.
