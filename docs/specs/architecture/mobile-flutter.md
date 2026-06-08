@@ -1,7 +1,7 @@
 ---
 id: ARCH-MOBILE-001
 titulo: "Arquitetura mobile Flutter"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-06-08
@@ -36,6 +36,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - navegacao mobile para feed, detalhe de mercado, previsao, comentarios, wallet, perfil, ranking/badges e alertas
 - camada de design system mobile alinhada ao produto
 - interface noop de push mobile preparada para Firebase Cloud Messaging futuro
+- assinatura release Android e distribuicao beta por APK no site oficial
 
 ## Escopo excluido
 
@@ -45,6 +46,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - modo offline completo
 - streaming em tempo real
 - envio real de push notification ate haver projeto Firebase, credenciais e aprovacao operacional
+- publicacao na Google Play nesta etapa
 
 ## Principios
 
@@ -95,6 +97,35 @@ O projeto Flutter deve nascer em `apps/mobile` e manter a organizacao abaixo com
 - No iOS Simulator, a API local do Mac deve ser acessada por `http://127.0.0.1:8001`.
 - Simulacao iOS exige Xcode completo ativo e CocoaPods disponivel.
 - O Django web local pode continuar em `http://127.0.0.1:8000`; o mobile nao deve depender dele para regras de dominio.
+
+## Distribuicao beta Android
+
+O primeiro canal beta Android fora da Google Play e publico e hospedado no dominio oficial. O site nao possui pagina dedicada para o app Android nesta etapa; quando existir release ativa, o rodape e as telas de acesso apontam direto para o APK ativo servido por HTTPS.
+
+Regras:
+
+- APK release precisa ser assinado para instalar/atualizar em dispositivos Android.
+- A configuracao local de assinatura fica em `apps/mobile/android/key.properties`, ignorado pelo Git.
+- O exemplo versionado fica em `apps/mobile/android/key.properties.example`.
+- Keystore, senhas e APKs gerados nunca devem ser versionados.
+- O APK beta de producao usa `GTL_API_BASE_URL=https://gotrendlabs.com.br/api`, `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` e `GTL_PUSH_FIREBASE_ENABLED=false`.
+- Push real permanece desligado no APK beta ate credencial FCM, backend e aprovacao operacional estarem fechados.
+- `/app/android/latest.json` permanece como metadado publico para uso futuro pelo app.
+- Publicacao na Google Play continua fora do escopo desta fase.
+
+Comando padrao:
+
+```bash
+flutter build apk --release \
+  --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br \
+  --dart-define=GTL_PUSH_FIREBASE_ENABLED=false
+```
+
+Referencias oficiais Android:
+
+- https://developer.android.com/guide/publishing/app-signing.html
+- https://developer.android.com/studio/publish/preparing
 
 ## Configuracao de ambiente
 

@@ -36,8 +36,9 @@
           <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Acesso seguro</span></div>
           <h1>Entre para acompanhar suas previsões e sua reputação.</h1>
           <p class="lead">Visitantes podem navegar pelos mercados públicos. A conta libera previsões, comentários, carteira educativa e reputação pessoal.</p>
+          {% include "components/app_platform_links.html" with platform_links_class="login-platform-links" platform_item_class="login-platform-pill" %}
         </div>
-        <div class="auth-note-list" aria-label="Recursos da conta">
+        <div class="auth-note-list login-note-list" aria-label="Recursos da conta">
           <div class="auth-note">
             <strong>GT₵ educativa</strong>
             <span>Crédito usado apenas dentro da experiência GoTrendLabs.</span>

@@ -2,6 +2,8 @@ from decimal import Decimal, ROUND_DOWN
 
 from django import forms
 
+from apps.web.django.admin_ops.models import MobileAppRelease
+
 
 PROBABILITY_QUANT = Decimal("0.0001")
 
@@ -87,6 +89,32 @@ class PushTestDeliveryForm(forms.Form):
         self.fields["event_type"].choices = [("admin_push_test", "Teste administrativo")] + [
             (event_type, f"Teste como {event_type}") for event_type in event_types or []
         ]
+
+
+class MobileAppReleaseForm(forms.ModelForm):
+    class Meta:
+        model = MobileAppRelease
+        fields = ["version_name", "version_code", "apk", "release_notes", "is_active"]
+        labels = {
+            "version_name": "Versão",
+            "version_code": "Código da versão",
+            "apk": "APK Android",
+            "release_notes": "Notas da versão",
+            "is_active": "Publicar como versão ativa",
+        }
+        widgets = {
+            "release_notes": forms.Textarea(attrs={"rows": 5}),
+        }
+
+    def clean_apk(self):
+        apk = self.cleaned_data.get("apk")
+        if not apk:
+            return apk
+        if not apk.name.lower().endswith(".apk"):
+            raise forms.ValidationError("Envie um arquivo .apk.")
+        if apk.size <= 0:
+            raise forms.ValidationError("O APK enviado está vazio.")
+        return apk
 
 
 class EconomyConfigForm(forms.Form):

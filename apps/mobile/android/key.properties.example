@@ -1,0 +1,4 @@
+storePassword=change-me
+keyPassword=change-me
+keyAlias=gotrendlabs-release
+storeFile=/absolute/path/to/gotrendlabs-release.jks

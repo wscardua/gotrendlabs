@@ -94,6 +94,7 @@ from apps.web.django.admin_ops.forms import (
     FeedbackRewardForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
+    MobileAppReleaseForm,
     QueueReviewForm,
     PushTestDeliveryForm,
     PushTemplateForm,
@@ -102,7 +103,7 @@ from apps.web.django.admin_ops.forms import (
     WalletRechargeApprovalForm,
     WalletRechargeRejectForm,
 )
-from apps.web.django.admin_ops.models import SiteConfig
+from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 from apps.web.django.communications.models import EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushEventPolicy, PushTemplate
 from apps.web.django.communications.push_services import (
     DEFAULT_PUSH_TEMPLATES,
@@ -1357,6 +1358,30 @@ def push_delivery_logs(request):
             "pagination": _load_more_context(request, total, len(visible_deliveries), limit),
             "total_filtered": total,
             "push_runtime": push_runtime_config(),
+        },
+    )
+
+
+@admin_api_required
+def mobile_releases(request):
+    releases = list(MobileAppRelease.objects.filter(platform="android").order_by("-published_at", "-created_at", "-id")[:25])
+    form = MobileAppReleaseForm(request.POST or None, request.FILES or None)
+    if request.method == "POST":
+        if form.is_valid():
+            release = form.save(commit=False)
+            release.platform = "android"
+            release.created_by = _admin_model_user(request)
+            release.save()
+            messages.success(request, "Release Android publicada." if release.is_active else "Release Android salva.")
+            return redirect("admin-ops-mobile-releases")
+        messages.error(request, "Revise os campos da release Android.")
+    return render(
+        request,
+        "admin_ops/mobile_releases.html",
+        {
+            "form": form,
+            "releases": releases,
+            "active_release": MobileAppRelease.active_android(),
         },
     )
 

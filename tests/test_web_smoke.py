@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
+import hashlib
 from io import StringIO
 import importlib
 import json
@@ -26,7 +27,7 @@ from unittest.mock import patch
 from apps.web.django.accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
 from apps.web.django.accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from apps.web.django.accounts.session import TOKEN_KEY, USER_KEY
-from apps.web.django.admin_ops.models import SiteConfig
+from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.db import database_config
 from apps.web.django.agents.models import AiAgent, AiAgentAction
@@ -5602,6 +5603,9 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "/media/badge_images/founding-dark.png")
             self.assertContains(response, "GoTrendLabs")
             self.assertContains(response, "testserver/share/badge/founding_member")
+            self.assertContains(response, "share-platform-links")
+            self.assertContains(response, "App Android")
+            self.assertContains(response, "App iOS")
             self.assertContains(response, "t=")
             self.assertNotContains(response, "u=50")
             self.assertContains(response, 'property="og:image"')
@@ -5671,6 +5675,9 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Opções do mercado")
             self.assertContains(response, "SIM")
             self.assertContains(response, 'class="share-cta"')
+            self.assertContains(response, "share-platform-links")
+            self.assertContains(response, "App Android")
+            self.assertContains(response, "App iOS")
             self.assertContains(response, reverse("market-detail", args=["openai-gpt6-2026"]))
             self.assertNotContains(response, "Abrir mercado")
             self.assertNotContains(response, "Entrar na previsão")
@@ -5722,6 +5729,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "https://www.facebook.com/sharer/sharer.php")
             self.assertContains(response, "https://www.linkedin.com/sharing/share-offsite/")
             self.assertContains(response, reverse("share-market-track", args=["resolved-api"]))
+            self.assertContains(response, "share-platform-links")
+            self.assertContains(response, "App iOS")
             self.assertNotContains(response, "Ver perfil")
 
         with patch("apps.web.django.core.views.get_market", return_value=resolved_market):
@@ -5747,6 +5756,196 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         market.refresh_from_db()
         self.assertEqual(market.share_count, 1)
+
+    def test_android_download_surfaces_handle_missing_active_release_without_public_page(self):
+        response = self.client.get(reverse("login"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "App Android")
+        self.assertContains(response, "Android em breve")
+        self.assertContains(response, "App iOS")
+        self.assertContains(response, "Em breve")
+        self.assertContains(response, "login-platform-links")
+        self.assertNotContains(response, "/app/android/")
+
+        removed_page_response = self.client.get("/app/android/")
+        self.assertEqual(removed_page_response.status_code, 404)
+
+        metadata_response = self.client.get(reverse("android-app-latest"))
+        self.assertEqual(metadata_response.status_code, 404)
+        self.assertEqual(metadata_response.json(), {"available": False})
+
+    def test_android_download_footer_register_and_latest_json_expose_active_release_metadata(self):
+        apk_bytes = b"gotrendlabs beta apk bytes"
+        expected_sha = hashlib.sha256(apk_bytes).hexdigest()
+
+        with TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir, MEDIA_URL="/media/"):
+            release = MobileAppRelease.objects.create(
+                version_name="1.0.0-beta.1",
+                version_code=7,
+                apk=SimpleUploadedFile(
+                    "gotrendlabs-beta.apk",
+                    apk_bytes,
+                    content_type="application/vnd.android.package-archive",
+                ),
+                release_notes="Primeira versão beta pública.",
+                is_active=True,
+            )
+
+            register_response = self.client.get(reverse("register"), HTTP_HOST="testserver")
+            self.assertEqual(register_response.status_code, 200)
+            self.assertContains(register_response, "App Android")
+            self.assertContains(register_response, "App iOS")
+            self.assertContains(register_response, "Android v1.0.0-beta.1")
+            self.assertContains(register_response, release.apk.url)
+            self.assertContains(register_response, "register-platform-links")
+            self.assertNotContains(register_response, "/app/android/")
+
+            login_response = self.client.get(reverse("login"), HTTP_HOST="testserver")
+            self.assertEqual(login_response.status_code, 200)
+            self.assertContains(login_response, "Visitantes podem navegar pelos mercados públicos")
+            self.assertContains(login_response, "login-platform-links")
+            self.assertContains(login_response, "App iOS")
+            self.assertContains(login_response, "Android v1.0.0-beta.1")
+            self.assertContains(login_response, release.apk.url)
+            self.assertNotContains(login_response, "/app/android/")
+
+            home_response = self.client.get(reverse("home"), HTTP_HOST="testserver")
+            self.assertEqual(home_response.status_code, 200)
+            self.assertContains(home_response, "footer-platform-links")
+            self.assertContains(home_response, "App iOS")
+            self.assertContains(home_response, "Android v1.0.0-beta.1")
+            self.assertContains(home_response, release.apk.url)
+            self.assertNotContains(home_response, "/app/android/")
+
+            metadata_response = self.client.get(reverse("android-app-latest"), HTTP_HOST="testserver")
+            self.assertEqual(metadata_response.status_code, 200)
+            payload = metadata_response.json()
+            self.assertTrue(payload["available"])
+            self.assertEqual(payload["version_name"], "1.0.0-beta.1")
+            self.assertEqual(payload["version_code"], 7)
+            self.assertEqual(payload["sha256"], expected_sha)
+            self.assertEqual(payload["file_size"], len(apk_bytes))
+            self.assertEqual(payload["release_notes"], "Primeira versão beta pública.")
+            self.assertIn(release.apk.url, payload["download_url"])
+
+    def test_mobile_release_admin_upload_calculates_metadata_and_keeps_one_active_release(self):
+        staff = get_user_model().objects.create_user(
+            username="@mobilestaff",
+            email="mobile-staff@example.com",
+            password="testpass123",
+            first_name="Mobile Staff",
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "mobile-staff-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        first_apk = b"first android apk"
+        second_apk = b"second android apk"
+
+        with TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir, MEDIA_URL="/media/"):
+            response = self.client.get(reverse("admin-ops-mobile-releases"))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "App Android beta")
+            self.assertContains(response, "Upload do APK")
+
+            response = self.client.post(
+                reverse("admin-ops-mobile-releases"),
+                {
+                    "version_name": "1.0.0-beta.1",
+                    "version_code": "10",
+                    "apk": SimpleUploadedFile(
+                        "gotrendlabs-1.apk",
+                        first_apk,
+                        content_type="application/vnd.android.package-archive",
+                    ),
+                    "release_notes": "Primeira beta.",
+                    "is_active": "on",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+
+            first_release = MobileAppRelease.objects.get(version_code=10)
+            self.assertEqual(first_release.platform, "android")
+            self.assertEqual(first_release.created_by, staff)
+            self.assertTrue(first_release.is_active)
+            self.assertEqual(first_release.sha256, hashlib.sha256(first_apk).hexdigest())
+            self.assertEqual(first_release.file_size, len(first_apk))
+            self.assertTrue(first_release.apk.name.startswith("app_releases/android/"))
+            self.assertTrue(first_release.apk.name.endswith(".apk"))
+
+            response = self.client.post(
+                reverse("admin-ops-mobile-releases"),
+                {
+                    "version_name": "1.0.1-beta.1",
+                    "version_code": "11",
+                    "apk": SimpleUploadedFile(
+                        "gotrendlabs-2.apk",
+                        second_apk,
+                        content_type="application/vnd.android.package-archive",
+                    ),
+                    "release_notes": "Segunda beta.",
+                    "is_active": "on",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+
+            first_release.refresh_from_db()
+            second_release = MobileAppRelease.objects.get(version_code=11)
+            self.assertFalse(first_release.is_active)
+            self.assertTrue(second_release.is_active)
+            self.assertEqual(MobileAppRelease.active_android(), second_release)
+
+    def test_mobile_release_admin_rejects_non_apk_upload(self):
+        staff = get_user_model().objects.create_user(
+            username="@mobileguard",
+            email="mobile-guard@example.com",
+            password="testpass123",
+            first_name="Mobile Guard",
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "mobile-guard-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        with TemporaryDirectory() as tmpdir, override_settings(MEDIA_ROOT=tmpdir, MEDIA_URL="/media/"):
+            response = self.client.post(
+                reverse("admin-ops-mobile-releases"),
+                {
+                    "version_name": "1.0.0-beta.1",
+                    "version_code": "10",
+                    "apk": SimpleUploadedFile("gotrendlabs.txt", b"not apk", content_type="text/plain"),
+                    "release_notes": "",
+                    "is_active": "on",
+                },
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Envie um arquivo .apk.")
+        self.assertEqual(MobileAppRelease.objects.count(), 0)
+
+    def test_production_caddy_routes_api_prefix_to_fastapi(self):
+        caddyfile = Path(settings.BASE_DIR) / "ops" / "deploy" / "production" / "Caddyfile"
+        content = caddyfile.read_text(encoding="utf-8")
+
+        self.assertIn("handle_path /api/*", content)
+        self.assertIn("reverse_proxy fastapi:8001", content)
+        self.assertLess(content.index("handle_path /api/*"), content.index("reverse_proxy django:8000"))
 
     def test_admin_config_persists_maintenance_json_and_smtp_database_config(self):
         staff = get_user_model().objects.create_user(
@@ -6753,6 +6952,7 @@ class WebSmokeTests(TransactionTestCase):
             reverse("admin-ops-badges"),
             reverse("admin-ops-badge-new"),
             reverse("admin-ops-badge-edit", args=["founding-member"]),
+            reverse("admin-ops-mobile-releases"),
             reverse("admin-ops-moderation"),
             reverse("admin-ops-resolution"),
             reverse("admin-ops-taxonomy"),

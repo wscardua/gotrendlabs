@@ -16,3 +16,7 @@ staticfiles/
 .git.broken-*/
 .git.partial-copy-failed-*/
 docs/mockups/site-v*/XX*
+apps/mobile/android/key.properties
+apps/mobile/android/*.jks
+apps/mobile/android/*.keystore
+media/app_releases/

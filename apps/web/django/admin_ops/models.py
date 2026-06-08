@@ -1,5 +1,22 @@
+import hashlib
+import re
+
 from django.conf import settings
-from django.db import models
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
+from django.db.models import Q
+from django.utils import timezone
+
+
+def _release_slug(value):
+    return re.sub(r"[^a-zA-Z0-9._-]+", "-", str(value or "").strip()).strip("-") or "release"
+
+
+def mobile_app_release_upload_to(instance, filename):
+    extension = ".apk" if str(filename or "").lower().endswith(".apk") else ""
+    version = _release_slug(instance.version_name)
+    code = _release_slug(instance.version_code)
+    return f"app_releases/{instance.platform}/gotrendlabs-{instance.platform}-{version}-{code}{extension}"
 
 
 class SiteConfig(models.Model):
@@ -69,3 +86,84 @@ class SiteConfig(models.Model):
     @property
     def is_ready_for_delivery(self):
         return bool(self.email_enabled and self.smtp_host and self.smtp_port and self.default_from_email)
+
+
+class MobileAppRelease(models.Model):
+    PLATFORM_CHOICES = (("android", "Android"),)
+
+    platform = models.CharField(max_length=20, choices=PLATFORM_CHOICES, default="android")
+    version_name = models.CharField(max_length=40)
+    version_code = models.PositiveIntegerField()
+    apk = models.FileField(upload_to=mobile_app_release_upload_to)
+    sha256 = models.CharField(max_length=64, blank=True, editable=False)
+    file_size = models.PositiveBigIntegerField(default=0, editable=False)
+    release_notes = models.TextField(blank=True)
+    is_active = models.BooleanField(default=False)
+    published_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_mobile_app_releases",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gotrendlabs_mobile_app_releases"
+        ordering = ["-published_at", "-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["platform"],
+                condition=Q(is_active=True),
+                name="uniq_active_mobile_release_per_platform",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["platform", "is_active"], name="gtl_mobrel_platform_active_idx"),
+            models.Index(fields=["platform", "version_code"], name="gtl_mobrel_plat_ver_idx"),
+        ]
+
+    def __str__(self):
+        return f"{self.get_platform_display()} {self.version_name} ({self.version_code})"
+
+    def clean(self):
+        super().clean()
+        if self.platform != "android":
+            raise ValidationError({"platform": "Apenas Android é suportado nesta fase."})
+        if self.apk and not self.apk.name.lower().endswith(".apk"):
+            raise ValidationError({"apk": "Envie um arquivo .apk."})
+
+    @classmethod
+    def active_android(cls):
+        return cls.objects.filter(platform="android", is_active=True).order_by("-published_at", "-id").first()
+
+    def save(self, *args, **kwargs):
+        if self.is_active and not self.published_at:
+            self.published_at = timezone.now()
+        with transaction.atomic():
+            if self.is_active:
+                MobileAppRelease.objects.filter(platform=self.platform, is_active=True).exclude(pk=self.pk).update(is_active=False)
+            super().save(*args, **kwargs)
+            sha256, file_size = self._calculate_file_metadata()
+            updates = {}
+            if sha256 and sha256 != self.sha256:
+                self.sha256 = sha256
+                updates["sha256"] = sha256
+            if file_size and file_size != self.file_size:
+                self.file_size = file_size
+                updates["file_size"] = file_size
+            if updates:
+                MobileAppRelease.objects.filter(pk=self.pk).update(**updates)
+
+    def _calculate_file_metadata(self):
+        if not self.apk:
+            return "", 0
+        digest = hashlib.sha256()
+        size = 0
+        with self.apk.open("rb") as apk_file:
+            for chunk in iter(lambda: apk_file.read(1024 * 1024), b""):
+                digest.update(chunk)
+                size += len(chunk)
+        return digest.hexdigest(), size

@@ -1,0 +1,111 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | App Android{% endblock %}
+{% block content %}
+<main class="shell admin-layout admin-config-page admin-mobile-release-page">
+  <section>
+    <div class="config-hero">
+      <div>
+        <span class="eyebrow">Distribuição mobile</span>
+        <h1 class="large-title">App Android beta</h1>
+        <p>Publique APKs assinados para download no site oficial sem versionar binários, keystore ou segredos no Git.</p>
+      </div>
+      <div class="config-health-strip mobile-release-strip" aria-label="Resumo das releases Android">
+        <div><span>Status</span><strong>{% if active_release %}Ativa{% else %}Em breve{% endif %}</strong></div>
+        <div><span>Versão</span><strong>{% if active_release %}v{{ active_release.version_name }}{% else %}-{% endif %}</strong></div>
+        <div><span>Code</span><strong>{% if active_release %}{{ active_release.version_code }}{% else %}-{% endif %}</strong></div>
+        <div><span>Releases</span><strong>{{ releases|length }}</strong></div>
+      </div>
+    </div>
+
+    {% if messages %}
+      {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
+    {% endif %}
+
+    <form class="admin-config-surface mobile-release-form" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="notice red">{{ form.non_field_errors|join:", " }}</div>{% endif %}
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Nova release</span>
+            <h2>Upload do APK</h2>
+            <p>Envie apenas APK release assinado. O sistema calcula SHA-256 e tamanho depois do upload.</p>
+          </div>
+          <span class="config-status {% if active_release %}is-on{% endif %}">
+            {% if active_release %}Ativa v{{ active_release.version_name }}{% else %}Sem release ativa{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <div class="config-form-grid mobile-release-version-grid">
+            <label class="field compact-field">
+              <span>Versão</span>
+              {{ form.version_name }}
+              {% if form.version_name.errors %}<small>{{ form.version_name.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Código da versão</span>
+              {{ form.version_code }}
+              {% if form.version_code.errors %}<small>{{ form.version_code.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+          <label class="field full mobile-release-file-field">
+            <span>APK Android</span>
+            {{ form.apk }}
+            {% if form.apk.errors %}<small>{{ form.apk.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field full">
+            <span>Notas da versão</span>
+            {{ form.release_notes }}
+            {% if form.release_notes.errors %}<small>{{ form.release_notes.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="config-switch-row">
+            {{ form.is_active }}
+            <span>
+              <strong>Publicar como versão ativa</strong>
+              <small>Ao ativar esta release, qualquer outra release Android ativa é desativada.</small>
+            </span>
+          </label>
+          <div class="mobile-release-actions">
+            <button class="btn primary" type="submit">Salvar release Android</button>
+            {% if active_release %}
+              <a class="btn ghost" href="{{ active_release.apk.url }}">Baixar release ativa</a>
+            {% endif %}
+          </div>
+        </div>
+      </section>
+    </form>
+
+    <section class="panel mobile-release-history">
+      <div class="section-head">
+        <div>
+          <span class="eyebrow">Histórico</span>
+          <h2>Releases Android</h2>
+        </div>
+        <a class="btn small ghost" href="{% url 'admin-ops-mobile-releases' %}">Atualizar</a>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="table compact-table mobile-release-table">
+          <tr>
+            <th>Versão</th>
+            <th>Status</th>
+            <th>Arquivo</th>
+            <th>SHA-256</th>
+            <th>Publicado</th>
+          </tr>
+          {% for release in releases %}
+            <tr>
+              <td><strong>v{{ release.version_name }}</strong><br><small>code {{ release.version_code }}</small></td>
+              <td><span class="tag {% if release.is_active %}safe{% else %}warn{% endif %}">{% if release.is_active %}Ativa{% else %}Arquivo{% endif %}</span></td>
+              <td><a class="btn small ghost" href="{{ release.apk.url }}">APK</a><br><small>{{ release.file_size|filesizeformat }}</small></td>
+              <td><code>{{ release.sha256 }}</code></td>
+              <td>{{ release.published_at|date:"d/m/Y H:i"|default:"-" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="5">Nenhuma release Android publicada.</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </section>
+  </section>
+</main>
+{% endblock %}

@@ -204,6 +204,22 @@ Push mobile usa Firebase Cloud Messaging como arquitetura alvo para Android e iO
 
 Ao ativar FCM real no futuro, atualize `/opt/gotrendlabs/.env.prod`, recrie `django`, `fastapi` e `daemon`, e valide com um dispositivo operacional antes de liberar eventos para usuários.
 
+## API publica e APK beta Android
+
+O Caddy publica a FastAPI sob o mesmo dominio oficial:
+
+- `https://gotrendlabs.com.br/api/*` roteia para `fastapi:8001` usando `handle_path`, removendo o prefixo `/api`.
+- Smokes esperados apos deploy: `/api/health`, `/api/markets`, login/auth e endpoints mobile existentes.
+
+O beta Android fora da Google Play e distribuido por Django/Admin Ops:
+
+1. Gerar APK release assinado localmente, sem commitar APK, keystore, senha ou `apps/mobile/android/key.properties`.
+2. Fazer upload em `/admin-ops/mobile-releases/`.
+3. Conferir o CTA Android no rodape/login/cadastro/compartilhamento e o JSON `/app/android/latest.json`.
+4. Baixar o APK pelo link HTTPS publico e conferir o SHA-256 com o valor exibido na pagina.
+
+Os arquivos ficam no volume de media em `MEDIA_ROOT/app_releases/android/` e sao servidos por `/media/app_releases/android/...`. Apenas uma release Android ativa deve existir por vez. Google Play e atualizacao automatica dentro do app continuam fora desta etapa.
+
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.
