@@ -23,6 +23,7 @@
         <p class="lead">{{ badge.description }}</p>
         {% if badge.rule_description %}<p>{{ badge.rule_description }}</p>{% endif %}
         <p class="share-canonical">{{ share.display_url }}</p>
+        {% include "components/app_platform_links.html" with platform_links_class="share-platform-links" platform_item_class="share-platform-pill" %}
       </div>
     </div>
     <div class="hero-actions">

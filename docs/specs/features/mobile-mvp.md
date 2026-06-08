@@ -1,7 +1,7 @@
 ---
 id: FEAT-MOBILE-001
 titulo: "MVP mobile Flutter"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-06-07
@@ -35,6 +35,12 @@ Entregar a primeira experiencia Android do GoTrendLabs para descoberta de mercad
 - usuario autenticado que acompanha previsoes, reputacao e saldo educativo
 - usuario recorrente que busca mercados por categoria e eventos relevantes
 
+## Distribuicao beta
+
+O beta Android inicial e publico, sem exigir login para baixar. Nao ha pagina dedicada para o app Android nesta etapa; o rodape do site, as telas de acesso e as paginas de compartilhamento exibem um icone/CTA Android e apontam direto para o APK ativo quando existir release publicada. Quando nao houver release ativa, os mesmos pontos mostram estado discreto "Android em breve" sem link quebrado. Ao lado do Android, a UI pode exibir `App iOS` / `iOS em breve` apenas como sinal de roadmap, sem link de download nesta etapa. O endpoint `gotrendlabs.com.br/app/android/latest.json` expoe metadados da release ativa para uso futuro pelo app.
+
+O APK deve ser gerenciado no Admin Ops, armazenado em `MEDIA_ROOT/app_releases/android/` e servido por HTTPS via `/media/app_releases/android/...`. Apenas uma release Android pode ficar ativa por vez.
+
 ## Escopo incluido
 
 - onboarding leve sem landing page extensa
@@ -53,13 +59,15 @@ Entregar a primeira experiencia Android do GoTrendLabs para descoberta de mercad
 - suporte/feedback via fila FastAPI existente
 - sugestao de mercados via fila FastAPI existente
 - central de alertas in-app com preparação noop de push mobile
+- canal publico beta Android por APK assinado no site oficial
 - governanca documental por skills mobile locais antes de cada fatia de implementacao
 
 ## Escopo excluido
 
 - iOS
-- publicacao em loja
+- publicacao em loja, Google Play, TestFlight ou App Store
 - envio real de push notification nativo
+- atualizacao automatica dentro do app
 - compra, saque, deposito real, blockchain ou linguagem financeira
 - live updates por websocket
 - admin ops mobile
@@ -176,6 +184,7 @@ Erros esperados:
 7. Implementar criacao de previsao autenticada.
 8. Implementar wallet, perfil, ranking e badges como leitura da API.
 9. Fechar testes e QA visual no emulador.
+10. Publicar APK beta assinado via Admin Ops e divulgar o link direto no rodape/login/cadastro/compartilhamento, mantendo metadados publicos em `/app/android/latest.json`.
 
 ## Wallet e perfil
 

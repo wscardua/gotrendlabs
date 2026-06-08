@@ -1,7 +1,7 @@
 ---
 id: TEST-MOBILE-001
 titulo: "Criterios de aceite mobile"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-06-08
@@ -59,9 +59,27 @@ Antes de encerrar qualquer fatia mobile:
 Deve passar:
 
 - app compila em modo debug para Android
+- app compila em modo release para Android quando `apps/mobile/android/key.properties` esta configurado localmente
+- build release falha explicitamente sem `apps/mobile/android/key.properties`
 - app abre no emulador `gotrendlabs_pixel`
 - app nao trava quando a API local esta indisponivel
 - app exibe erro recuperavel quando `http://10.0.2.2:8001` nao responde
+- APK beta de producao usa `https://gotrendlabs.com.br/api`, `https://gotrendlabs.com.br` e `GTL_PUSH_FIREBASE_ENABLED=false`
+
+## Validacao de distribuicao beta
+
+Deve passar:
+
+- nao existe pagina publica dedicada `/app/android/`
+- rodape, telas de acesso e paginas de compartilhamento renderizam estado "Android em breve" sem link quebrado quando nao ha release ativa
+- rodape, telas de acesso e paginas de compartilhamento apontam direto para o APK ativo quando ha release publicada
+- estado `iOS em breve` aparece ao lado do Android, sem link baixavel
+- `/app/android/latest.json` retorna metadados corretos da release ativa
+- Admin Ops em `/admin-ops/mobile-releases/` aceita apenas staff
+- upload Admin Ops calcula SHA-256 e tamanho do APK no servidor
+- publicar uma release Android ativa desativa a anterior
+- Caddy roteia `/api/*` para `fastapi:8001` removendo o prefixo `/api`
+- smoke em producao confirma `/api/health`, rodape/login/cadastro/compartilhamento com link direto, download HTTPS do APK e checksum do arquivo baixado
 
 ## Smoke test manual
 

@@ -22,6 +22,7 @@ from apps.web.django.core.platform_config import load_platform_config
 from apps.web.django.core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
 from apps.web.django.markets.models import Market, MarketCategory, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
 from apps.web.django.accounts.models import UserBadgeAward, UserProfile, UserReputation
+from apps.web.django.admin_ops.models import MobileAppRelease
 
 
 def _session_model_user(request):
@@ -52,6 +53,30 @@ def _verify_guest_recaptcha(request):
 
 def maintenance(request):
     return render(request, "core/maintenance.html", {"platform_config": load_platform_config()})
+
+
+def _mobile_release_context(request, release):
+    if not release:
+        return None
+    return {
+        "version_name": release.version_name,
+        "version_code": release.version_code,
+        "download_url": request.build_absolute_uri(release.apk.url),
+        "sha256": release.sha256,
+        "file_size": release.file_size,
+        "file_size_mb": round((release.file_size or 0) / (1024 * 1024), 1),
+        "release_notes": release.release_notes,
+        "published_at": release.published_at,
+    }
+
+
+def android_app_latest(request):
+    release = MobileAppRelease.active_android()
+    if not release:
+        return JsonResponse({"available": False}, status=404)
+    payload = {"available": True, **_mobile_release_context(request, release)}
+    payload["published_at"] = release.published_at.isoformat() if release.published_at else None
+    return JsonResponse(payload)
 
 
 def _market_thumb_fallback(market):

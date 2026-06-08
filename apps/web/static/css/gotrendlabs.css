@@ -5407,6 +5407,53 @@ input[type="range"] {
   gap: 12px;
 }
 
+.app-platform-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.login-platform-links,
+.register-platform-links,
+.share-platform-links {
+  margin-top: 16px;
+}
+
+.login-note-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.app-platform-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 9px 11px;
+  border: 1px solid rgba(19, 111, 74, 0.22);
+  border-radius: 999px;
+  background: rgba(19, 111, 74, 0.08);
+  color: var(--green-2);
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.app-platform-pill strong {
+  display: block;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.app-platform-pill small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1.15;
+}
+
 .signup-showcase {
   display: grid;
   grid-template-columns: minmax(280px, 0.95fr) minmax(240px, 0.75fr);
@@ -5552,6 +5599,31 @@ input[type="range"] {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.45;
+}
+
+.app-platform-pill svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.android-pill:not(.is-disabled) {
+  border-color: rgba(19, 111, 74, 0.30);
+  background: rgba(19, 111, 74, 0.08);
+}
+
+.ios-soon-link {
+  border-color: rgba(45, 94, 136, 0.22) !important;
+  background: rgba(45, 94, 136, 0.07) !important;
+  color: var(--blue) !important;
+}
+
+.app-platform-pill.is-disabled {
+  opacity: 0.68;
 }
 
 .auth-card {
@@ -7333,8 +7405,8 @@ body[data-theme="dark"] .badge-image-dark {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: minmax(260px, 1.4fr) minmax(150px, 0.8fr) minmax(180px, 1fr) minmax(150px, 0.8fr);
-  gap: 34px;
+  grid-template-columns: minmax(240px, 1.2fr) minmax(130px, 0.7fr) minmax(160px, 0.85fr) minmax(280px, 1fr);
+  gap: 28px;
   align-items: start;
 }
 
@@ -7358,6 +7430,58 @@ body[data-theme="dark"] .badge-image-dark {
   color: #3f4849;
   font-weight: 650;
   font-size: 14px;
+}
+
+.footer-platform-links {
+  display: grid;
+  grid-template-columns: repeat(2, max-content);
+  gap: 8px;
+  align-items: center;
+  width: max-content;
+  max-width: 100%;
+  margin-top: 12px;
+}
+
+.footer-platform-pill {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
+  margin-top: 0 !important;
+  padding: 8px 9px;
+  border: 1px solid rgba(19, 111, 74, 0.22);
+  border-radius: 999px;
+  background: rgba(19, 111, 74, 0.08);
+  color: var(--green-2) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.footer-platform-pill svg {
+  width: 22px;
+  height: 22px;
+}
+
+.footer-platform-pill strong {
+  font-size: 12px;
+}
+
+.footer-platform-pill small {
+  font-size: 10.5px;
+}
+
+.share-platform-links {
+  padding-top: 2px;
+}
+
+.share-platform-pill {
+  padding: 8px 10px;
+  background: rgba(240, 234, 220, 0.42);
+}
+
+.share-platform-pill svg {
+  width: 24px;
+  height: 24px;
 }
 
 .doc-page {
@@ -7526,6 +7650,59 @@ body[data-theme="dark"] .badge-image-dark {
   color: var(--muted);
   font-size: 14px;
   line-height: 1.5;
+}
+
+.admin-mobile-release-page code {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.admin-mobile-release-page .config-hero {
+  align-items: stretch;
+}
+
+.mobile-release-strip {
+  align-self: stretch;
+}
+
+.mobile-release-form {
+  margin-top: 4px;
+}
+
+.mobile-release-version-grid {
+  grid-template-columns: minmax(0, 1fr) minmax(132px, 190px);
+}
+
+.mobile-release-file-field input[type="file"] {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px;
+  border: 1px dashed rgba(19, 111, 74, 0.32);
+  border-radius: 12px;
+  background: rgba(255, 253, 247, 0.70);
+  color: var(--ink);
+}
+
+.mobile-release-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.mobile-release-history {
+  margin-top: 18px;
+}
+
+.mobile-release-table {
+  min-width: 860px;
+}
+
+.mobile-release-table code {
+  display: block;
+  max-width: 340px;
+  font-size: 12px;
+  line-height: 1.45;
 }
 
 .doc-section-actions {
@@ -8601,7 +8778,8 @@ body[data-theme="dark"] .option-editor {
 body[data-theme="dark"] .option-rule-copy,
 body[data-theme="dark"] .option-pill,
 body[data-theme="dark"] .option-line,
-body[data-theme="dark"] .checkbox-field label {
+body[data-theme="dark"] .checkbox-field label,
+body[data-theme="dark"] .app-platform-pill {
   background: rgba(12, 18, 16, 0.76);
   border-color: rgba(218, 230, 219, 0.20);
   color: #eff5ef;
@@ -9207,6 +9385,10 @@ body[data-theme="dark"] .footer {
 
 @media (max-width: 1080px) and (min-width: 981px) {
   .home-grid .market-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .auth-note-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

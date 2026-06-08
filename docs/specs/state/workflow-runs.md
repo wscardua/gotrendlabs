@@ -2,6 +2,30 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260608-ANDROID-DIRECT-DOWNLOAD-001
+
+- Tipo: `new-feature`
+- Status: `em_validacao`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: distribuir beta Android publico pelo site oficial com APK release assinado, Admin Ops de upload, CTA discreto no rodape/login/cadastro/compartilhamento, checksum publico e API mobile em `/api/*`
+- Etapa atual: implementacao local validada; smoke de producao pos-deploy e upload de APK assinado real ainda pendentes
+- Artefatos afetados:
+  - `apps/mobile/android/`
+  - `apps/mobile/README.md`
+  - `apps/web/django/admin_ops/`
+  - `apps/web/django/core/`
+  - `apps/web/templates/`
+  - `apps/web/static/css/gotrendlabs.css`
+  - `ops/deploy/production/Caddyfile`
+  - `docs/specs/`
+  - `tests/test_web_smoke.py`
+- Bloqueios: smoke de producao depende de deploy em `main` e upload de APK assinado real pelo Admin Ops
+- Iniciado em: 2026-06-08
+- Atualizado em: 2026-06-08
+- Retomada: gerar APK release com keystore real, publicar em `/admin-ops/mobile-releases/`, validar `/api/health`, rodape/login/cadastro/compartilhamento com link direto, download HTTPS e SHA-256
+- Reversao logica: remover CTA Android do rodape/login/cadastro/compartilhamento, modelo `MobileAppRelease`, tela Admin Ops e rota Caddy `/api/*`, mantendo o app mobile local intacto
+- Evidencias de validacao local: `manage.py check`; `manage.py makemigrations --check --dry-run`; testes focados de pagina Android/Admin Ops/Caddy; suite Django completa `manage.py test --keepdb` com 160 testes OK; `flutter analyze`; `flutter test`; `flutter build apk --debug`; `flutter build apk --release` falhando sem signing conforme esperado; `flutter build apk --release` com keystore temporaria local e defines de producao gerando APK assinado; segredo/keystore temporarios removidos apos validacao
+
 ## WFLOW-20260608-MOBILE-PUSH-NOTIFICATIONS-001
 
 - Tipo: `new-feature`

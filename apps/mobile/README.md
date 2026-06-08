@@ -69,4 +69,30 @@ flutter test
 flutter build apk --debug
 ```
 
+## APK beta de producao
+
+O canal beta Android fora da Google Play usa APK release assinado, publicado pelo Admin Ops e divulgado discretamente no rodape do site e nas telas de acesso. O APK, keystore, senhas e `android/key.properties` nao entram no Git.
+
+Crie o arquivo local `apps/mobile/android/key.properties` a partir de `apps/mobile/android/key.properties.example`:
+
+```properties
+storePassword=change-me
+keyPassword=change-me
+keyAlias=gotrendlabs-release
+storeFile=/absolute/path/to/gotrendlabs-release.jks
+```
+
+Build padrao do beta:
+
+```bash
+flutter build apk --release \
+  --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br \
+  --dart-define=GTL_PUSH_FIREBASE_ENABLED=false
+```
+
+O build release falha quando `android/key.properties` nao existe. Use `flutter build apk --debug` para validacao local sem assinatura release.
+
+Depois do build, suba o APK pelo Admin Ops em `/admin-ops/mobile-releases/`; o servidor calcula SHA-256 e tamanho, guarda em `MEDIA_ROOT/app_releases/android/` e publica apenas uma release Android ativa por vez. O link publico aponta direto para o arquivo ativo quando existir release. Push real permanece desligado neste beta ate FCM/backend operacional serem aprovados.
+
 Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.

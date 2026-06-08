@@ -1,5 +1,6 @@
 from apps.web.django.accounts.api_client import AuthAPIError, get_me, get_notifications, get_wallet
 from apps.web.django.accounts.session import auth_token, auth_user, is_authenticated
+from apps.web.django.admin_ops.models import MobileAppRelease
 from apps.web.django.core.domain_client import get_domain_client
 from apps.web.django.core.platform_config import maintenance_enabled
 
@@ -62,6 +63,28 @@ def session_context(request):
         "email_confirmation_required": email_confirmation_required,
         "operator_maintenance_notice": operator_maintenance_notice,
         "notifications": notifications,
+        "android_app_release": _android_app_release_context(request),
+    }
+
+
+def _android_app_release_context(request):
+    try:
+        release = MobileAppRelease.active_android()
+    except Exception:
+        release = None
+    if not release:
+        return {
+            "available": False,
+            "label": "Android em breve",
+        }
+    return {
+        "available": True,
+        "label": f"Android v{release.version_name}",
+        "version_name": release.version_name,
+        "version_code": release.version_code,
+        "download_url": request.build_absolute_uri(release.apk.url),
+        "sha256": release.sha256,
+        "file_size": release.file_size,
     }
 
 

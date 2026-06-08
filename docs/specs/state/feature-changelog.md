@@ -1,5 +1,17 @@
 # Feature Changelog
 
+## 2026-06-08 — FEAT-MOBILE-001 beta Android pelo site
+
+- Adicionado canal publico discreto para download de APK Android beta fora da Google Play, com CTA direto no rodape, nas telas de acesso e nas paginas de compartilhamento quando houver release ativa, e estado "Android em breve" quando nao houver release.
+- Adicionado estado `iOS em breve` ao lado do CTA Android, sem link de download nesta etapa.
+- Adicionado `/app/android/latest.json` com metadados da release Android ativa para uso futuro pelo app.
+- Admin Ops ganhou `/admin-ops/mobile-releases/` para upload de APK, calculo servidor-side de SHA-256/tamanho e ativacao de uma unica release Android por vez.
+- APKs ficam em `MEDIA_ROOT/app_releases/android/` e sao servidos por `/media/app_releases/android/...`; APK, keystore, senhas e `android/key.properties` permanecem fora do Git.
+- Build Android release passou a exigir signing local via `apps/mobile/android/key.properties`; o exemplo versionado fica em `key.properties.example`.
+- Caddy de producao passou a rotear `/api/*` para `fastapi:8001` removendo o prefixo `/api`.
+- Build beta documentado com `GTL_API_BASE_URL=https://gotrendlabs.com.br/api`, `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` e `GTL_PUSH_FIREBASE_ENABLED=false`.
+- Google Play, auto-update no app e envio FCM real seguem fora desta etapa.
+
 ## 2026-06-08 — FEAT-NOTIFY-001 / FEAT-MOBILE-001 push mobile noop
 
 - Adicionada fundação de push mobile com `PushDevice`, `PushEventPolicy`, `PushTemplate`, `PushDelivery` e `PushPreference`, mantendo toda push derivada de `gotrendlabs_user_notifications`.

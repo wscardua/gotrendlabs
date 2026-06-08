@@ -30,6 +30,7 @@
 - filas operacionais
 - config operacional
 - politica de push mobile
+- releases mobile Android
 
 ## Implementação atual
 
@@ -125,6 +126,8 @@
 - Preview de template de push é local e limitado às variáveis permitidas do evento; variáveis não permitidas devem aparecer como erro operacional antes de salvar.
 - Logs de push permitem teste manual por dispositivo ativo, sem expor token bruto; o teste deve registrar entrega auditável e respeitar o provider/flags atuais.
 - Dashboard exibe saúde de push mobile em Saúde técnica, calculada pela FastAPI a partir de flags/provider, devices ativos, fila pendente/vencida e entregas `sent`/`dry_run`/`failed`/`invalid_token` nas últimas 24h; o card deve apontar para os logs de `PushDelivery`.
+- Admin Ops possui `/admin-ops/mobile-releases/` para publicar APKs Android beta assinados, calcular SHA-256/tamanho no servidor, armazenar em `MEDIA_ROOT/app_releases/android/` e manter apenas uma release Android ativa.
+- A gestão de releases mobile não deve aceitar keystore, senha, `key.properties` ou credencial Firebase; esses artefatos ficam fora do Git e fora do banco.
 - Admin Ops possui área de Agentes IA para listar, criar/editar agentes oficiais, revisar auditoria de ações e acompanhar saúde técnica.
 - Config operacional permite editar flags, provider/base URL/modelos, limites, cooldowns, timeout/retries, pausa global e motivo dos agentes IA; o segredo esperado do provedor (`OPENAI_API_KEY` ou `AWS_BEARER_TOKEN_BEDROCK`) é exibido apenas como presente/ausente.
 - Dashboard exibe saúde dos agentes IA com último ciclo, último sucesso, erro recente, ações 24h e estado das flags principais.

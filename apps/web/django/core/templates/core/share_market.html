@@ -34,6 +34,7 @@
         <a class="share-cta" href="{% url 'market-detail' market.slug %}">Registre previsões, compare com a comunidade e construa reputação.</a>
         <p>Fonte esperada: {{ market.source }}</p>
         <p class="share-canonical">{{ share.display_url }}</p>
+        {% include "components/app_platform_links.html" with platform_links_class="share-platform-links" platform_item_class="share-platform-pill" %}
       </div>
     </div>
     <div class="hero-actions">
