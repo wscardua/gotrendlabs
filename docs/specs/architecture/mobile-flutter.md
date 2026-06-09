@@ -35,6 +35,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - sessao/token, preferencias locais e cache leve no dispositivo
 - navegacao mobile para feed, detalhe de mercado, previsao, comentarios, wallet, perfil, ranking/badges e alertas
 - camada de design system mobile alinhada ao produto
+- identidade nativa de launcher e splash alinhada ao site: nome exibido `GoTrendLabs`, icone derivado do simbolo de constelacao da marca e transicao de abertura em fundo escuro
 - interface noop de push mobile preparada para Firebase Cloud Messaging futuro
 - assinatura release Android e distribuicao beta por APK no site oficial
 

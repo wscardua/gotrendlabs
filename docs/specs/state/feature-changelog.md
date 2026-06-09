@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-06-08 — FEAT-MOBILE-001 identidade nativa do app
+
+- Nome exibido do app iOS ajustado para `GoTrendLabs`, removendo o sufixo técnico `Mobile` do launcher.
+- Ícones de launcher iOS e Android foram regenerados a partir do símbolo de constelação do logo do site, mantendo a marca visual alinhada ao web; no iOS, o asset catalog inclui variantes `dark` e `tinted` para evitar adaptação automática ruim do sistema.
+- Splash/launch theme Android foi alinhado ao app dark-first, substituindo a tela intermediária branca por uma abertura em fundo escuro com lockup da marca, badge de constelação, tagline e configuração Android 12+ com ícone/branding dedicados.
+- A mudança é apenas de branding nativo: contratos FastAPI, OpenAPI, autenticação, regras de domínio e distribuição beta permanecem inalterados.
+
 ## 2026-06-08 — FEAT-MOBILE-001 beta Android pelo site
 
 - Adicionado canal publico discreto para download de APK Android beta fora da Google Play, com CTA direto no rodape, nas telas de acesso e nas paginas de compartilhamento quando houver release ativa, e estado "Android em breve" quando nao houver release.
