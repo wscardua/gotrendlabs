@@ -210,6 +210,12 @@ O Caddy publica a FastAPI sob o mesmo dominio oficial:
 
 - `https://gotrendlabs.com.br/api/*` roteia para `fastapi:8001` usando `handle_path`, removendo o prefixo `/api`.
 - Smokes esperados apos deploy: `/api/health`, `/api/markets`, login/auth e endpoints mobile existentes.
+- Quando o `Caddyfile` mudar, recrie ou recarregue o servico `proxy` e confirme que o container em execucao contem o bloco novo. O arquivo no disco pode estar atualizado enquanto o Caddy ainda roda com configuracao antiga:
+
+```bash
+docker compose -f ops/deploy/production/docker-compose.yml up -d --force-recreate --no-deps proxy
+docker compose -f ops/deploy/production/docker-compose.yml exec -T proxy sh -c 'grep -n "handle_path /api" -A2 /etc/caddy/Caddyfile'
+```
 
 O beta Android fora da Google Play e distribuido por Django/Admin Ops:
 

@@ -2,13 +2,37 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260608-MOBILE-LAUNCHER-BRANDING-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: alinhar a identidade nativa do app ao site, usando nome exibido `GoTrendLabs`, icone de launcher derivado do logo de constelacao e splash Android escuro
+- Etapa atual: concluido; nome iOS, icones iOS/Android, variantes iOS `dark`/`tinted` e launch theme Android moderno com lockup/branding da marca atualizados e validados localmente em 2026-06-08
+- Artefatos afetados:
+  - `apps/mobile/ios/Runner/Info.plist`
+  - `apps/mobile/ios/Runner/Assets.xcassets/AppIcon.appiconset/`
+  - `apps/mobile/android/app/src/main/res/mipmap-*/ic_launcher.png`
+  - `apps/mobile/android/app/src/main/res/drawable*/launch_background.xml`
+  - `apps/mobile/android/app/src/main/res/drawable-nodpi/launch_*.png`
+  - `apps/mobile/android/app/src/main/res/values*/`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/state/feature-changelog.md`
+- Bloqueios: nenhum local
+- Iniciado em: 2026-06-08
+- Atualizado em: 2026-06-08
+- Encerrado em: 2026-06-08
+- Retomada: se o visual do launcher/splash for refinado novamente, gerar novas variantes `Any`, `Dark` e `Tinted` a partir da mesma marca do site e validar no iOS/Android Simulator
+- Reversao logica: restaurar `CFBundleDisplayName` anterior, icones de launcher anteriores em iOS/Android e launch theme Android padrao do Flutter
+- Evidencias de validacao local: `plutil -lint apps/mobile/ios/Runner/Info.plist`; `flutter analyze`; `flutter build apk --debug`; `flutter build ios --simulator --debug`; `assetutil --info build/ios/iphonesimulator/Runner.app/Assets.car` confirmou `UIAppearanceDark` e `Tinted`; `xcrun simctl listapps` confirmou `CFBundleDisplayName = GoTrendLabs`; app relancado no `GTL iPhone 16` com `GTL_API_BASE_URL=http://127.0.0.1:8001` e `GTL_PUBLIC_WEB_BASE_URL=http://127.0.0.1:8000`; APK debug reinstalado no `emulator-5554`, label `GoTrendLabs` confirmado via `aapt dump badging`, gaveta Android validada visualmente, launch theme escuro validado ao abrir `br.com.gotrendlabs.gotrendlabs_mobile/.MainActivity` e frames capturados confirmaram splash moderno com badge, wordmark, tagline e fundo escuro
+
 ## WFLOW-20260608-ANDROID-DIRECT-DOWNLOAD-001
 
 - Tipo: `new-feature`
-- Status: `em_validacao`
+- Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`
 - Objetivo: distribuir beta Android publico pelo site oficial com APK release assinado, Admin Ops de upload, CTA discreto no rodape/login/cadastro/compartilhamento, checksum publico e API mobile em `/api/*`
-- Etapa atual: implementacao local validada; smoke de producao pos-deploy e upload de APK assinado real ainda pendentes
+- Etapa atual: concluido; APK Android `1.0.1 (2)` assinado com a identidade nativa atual foi publicado em producao e o link HTTPS direto foi validado em 2026-06-08
 - Artefatos afetados:
   - `apps/mobile/android/`
   - `apps/mobile/README.md`
@@ -19,12 +43,15 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `ops/deploy/production/Caddyfile`
   - `docs/specs/`
   - `tests/test_web_smoke.py`
-- Bloqueios: smoke de producao depende de deploy em `main` e upload de APK assinado real pelo Admin Ops
+- Bloqueios: nenhum para o canal direto
+- Observacao operacional: a release anterior `1.0.0 (1)` foi assinada com certificado SHA-256 `5a5bf9444b9ac753a59af2514e84897179de4b3d311f42844b7eae856d89afe4`, diferente da nova chave estavel local `3b549cb758247332d5ec1cdd5522d35fb15360d240bd3974e4c4ac1d4e2be05f`; quem instalou a APK anterior pode precisar desinstalar e reinstalar uma vez
 - Iniciado em: 2026-06-08
 - Atualizado em: 2026-06-08
-- Retomada: gerar APK release com keystore real, publicar em `/admin-ops/mobile-releases/`, validar `/api/health`, rodape/login/cadastro/compartilhamento com link direto, download HTTPS e SHA-256
+- Encerrado em: 2026-06-08
+- Retomada: quando o canal for revisado, conferir `/app/android/latest.json`, rodape/login/cadastro/compartilhamento com link direto, download HTTPS, SHA-256 e smokes de API publica em `/api/health` e `/api/markets`
 - Reversao logica: remover CTA Android do rodape/login/cadastro/compartilhamento, modelo `MobileAppRelease`, tela Admin Ops e rota Caddy `/api/*`, mantendo o app mobile local intacto
 - Evidencias de validacao local: `manage.py check`; `manage.py makemigrations --check --dry-run`; testes focados de pagina Android/Admin Ops/Caddy; suite Django completa `manage.py test --keepdb` com 160 testes OK; `flutter analyze`; `flutter test`; `flutter build apk --debug`; `flutter build apk --release` falhando sem signing conforme esperado; `flutter build apk --release` com keystore temporaria local e defines de producao gerando APK assinado; segredo/keystore temporarios removidos apos validacao
+- Evidencias de validacao de producao: release ativa `1.0.1 (2)` criada em `gotrendlabs_mobile_app_releases` com arquivo `app_releases/android/gotrendlabs-android-1.0.1-2.apk`, SHA-256 `065c352e10d942d86c8665745fe91d374bd168db81377fd666c858fedbf8d186` e `file_size=55458673`; `curl -I -L https://gotrendlabs.com.br/media/app_releases/android/gotrendlabs-android-1.0.1-2.apk` retornou `HTTP/2 200`, `content-type: application/vnd.android.package-archive` e `content-length: 55458673`; download HTTPS recalculado com `shasum -a 256` retornou o mesmo SHA-256; apos recriar o container `proxy` para aplicar o `Caddyfile` versionado, `https://gotrendlabs.com.br/api/health` retornou `HTTP/2 200` com `{"status":"ok"}`, `https://gotrendlabs.com.br/api/markets` retornou JSON de mercados e `/app/android/latest.json` retornou a release ativa `1.0.1 (2)`.
 
 ## WFLOW-20260608-MOBILE-PUSH-NOTIFICATIONS-001
 
