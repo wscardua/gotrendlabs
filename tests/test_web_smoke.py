@@ -8300,7 +8300,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "gotrendlabs.js?v=20260608-push-polish")
+            self.assertContains(response, "gotrendlabs.js?v=20260611-email-preview-footer")
 
         posted_market = {
             **api_market,
