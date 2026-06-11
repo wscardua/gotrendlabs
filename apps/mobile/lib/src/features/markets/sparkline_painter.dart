@@ -3,25 +3,32 @@ import 'package:flutter/material.dart';
 import '../../theme.dart';
 
 class SparklinePath extends StatelessWidget {
-  const SparklinePath({super.key, required this.path, this.height = 42});
+  const SparklinePath({
+    super.key,
+    required this.path,
+    this.height = 42,
+    this.color = GtlColors.accentBlue,
+  });
 
   final String path;
   final double height;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       height: height,
       width: double.infinity,
-      child: CustomPaint(painter: _SparklinePainter(path)),
+      child: CustomPaint(painter: _SparklinePainter(path, color)),
     );
   }
 }
 
 class _SparklinePainter extends CustomPainter {
-  _SparklinePainter(this.rawPath);
+  _SparklinePainter(this.rawPath, this.color);
 
   final String rawPath;
+  final Color color;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -40,8 +47,13 @@ class _SparklinePainter extends CustomPainter {
     }
     final minX = points.map((p) => p.dx).reduce((a, b) => a < b ? a : b);
     final maxX = points.map((p) => p.dx).reduce((a, b) => a > b ? a : b);
-    final minY = points.map((p) => p.dy).reduce((a, b) => a < b ? a : b);
-    final maxY = points.map((p) => p.dy).reduce((a, b) => a > b ? a : b);
+    const minY = 0.0;
+    final maxY = points
+        .map((p) => p.dy)
+        .fold<double>(
+          44,
+          (current, value) => value > current ? value : current,
+        );
     Offset scale(Offset point) {
       final x = maxX == minX
           ? 0.0
@@ -58,12 +70,12 @@ class _SparklinePainter extends CustomPainter {
       path.lineTo(scaled.dx, scaled.dy);
     }
     final glow = Paint()
-      ..color = GtlColors.accentBlue.withValues(alpha: 0.2)
+      ..color = color.withValues(alpha: 0.18)
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
     final line = Paint()
-      ..color = GtlColors.accentBlue
+      ..color = color
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -83,5 +95,5 @@ class _SparklinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _SparklinePainter oldDelegate) =>
-      oldDelegate.rawPath != rawPath;
+      oldDelegate.rawPath != rawPath || oldDelegate.color != color;
 }

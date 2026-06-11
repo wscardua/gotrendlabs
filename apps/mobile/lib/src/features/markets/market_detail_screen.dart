@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
@@ -25,6 +27,29 @@ class MarketDetailScreen extends ConsumerStatefulWidget {
 
 class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
   int _tab = 0;
+  final Set<String> _trackedViewSlugs = <String>{};
+
+  Future<void> _trackMarketView(String slug) async {
+    try {
+      await ref.read(marketsRepositoryProvider).trackView(slug);
+    } catch (_) {
+      // Tracking acompanha a semântica web, mas nunca bloqueia o detalhe.
+    }
+  }
+
+  void _trackMarketViewAfterRender(String slug) {
+    if (_trackedViewSlugs.contains(slug)) {
+      return;
+    }
+    _trackedViewSlugs.add(slug);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        _trackedViewSlugs.remove(slug);
+        return;
+      }
+      unawaited(_trackMarketView(slug));
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,62 +67,69 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             color: GtlColors.accentYellow,
           ),
         ),
-        data: (market) => GtlScreen(
-          child: CustomScrollView(
-            slivers: [
-              SliverAppBar(
-                expandedHeight: 330,
-                pinned: true,
-                backgroundColor: GtlColors.background,
-                surfaceTintColor: Colors.transparent,
-                actions: [_MarketActionButtons(market: market)],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      10,
-                      MediaQuery.paddingOf(context).top + 10,
-                      10,
-                      0,
-                    ),
-                    child: MarketHeroCard(market: market, api: api),
-                  ),
-                ),
-              ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      SegmentedButton<int>(
-                        segments: const [
-                          ButtonSegment(
-                            value: 0,
-                            label: Text('Visão geral'),
-                            icon: Icon(Icons.auto_graph),
-                          ),
-                          ButtonSegment(
-                            value: 1,
-                            label: Text('Comunidade'),
-                            icon: Icon(Icons.forum_outlined),
-                          ),
-                        ],
-                        selected: {_tab},
-                        onSelectionChanged: (value) =>
-                            setState(() => _tab = value.first),
+        data: (market) {
+          _trackMarketViewAfterRender(market.slug);
+          return GtlScreen(
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 330,
+                  pinned: true,
+                  backgroundColor: GtlColors.background,
+                  surfaceTintColor: Colors.transparent,
+                  actions: [_MarketActionButtons(market: market)],
+                  flexibleSpace: FlexibleSpaceBar(
+                    background: Padding(
+                      padding: EdgeInsets.fromLTRB(
+                        10,
+                        MediaQuery.paddingOf(context).top + 10,
+                        10,
+                        0,
                       ),
-                      const SizedBox(height: 16),
-                      if (_tab == 0)
-                        _OverviewTab(market: market)
-                      else
-                        _CommunityTab(market: market),
-                    ],
+                      child: MarketHeroCard(
+                        market: market,
+                        api: api,
+                        openOnTap: false,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-        ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 18, 16, 28),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SegmentedButton<int>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 0,
+                              label: Text('Visão geral'),
+                              icon: Icon(Icons.auto_graph),
+                            ),
+                            ButtonSegment(
+                              value: 1,
+                              label: Text('Comunidade'),
+                              icon: Icon(Icons.forum_outlined),
+                            ),
+                          ],
+                          selected: {_tab},
+                          onSelectionChanged: (value) =>
+                              setState(() => _tab = value.first),
+                        ),
+                        const SizedBox(height: 16),
+                        if (_tab == 0)
+                          _OverviewTab(market: market)
+                        else
+                          _CommunityTab(market: market),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

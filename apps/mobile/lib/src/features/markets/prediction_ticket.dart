@@ -53,6 +53,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
       color: GtlColors.surfaceGlass,
       glowColor: GtlColors.accentBlue,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const GtlEditorialHeader(
@@ -297,43 +298,60 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
     final selectedOption = _selectedOption(widget.market);
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
+      isScrollControlled: true,
       backgroundColor: GtlColors.surfaceElevated,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(GtlRadii.large),
         ),
       ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const GtlEditorialHeader(
-              kicker: 'Confirmação',
-              title: 'Confirmar previsão',
-              body:
-                  'A API vai validar saldo, status do mercado e duplicidade antes de registrar.',
-              icon: Icons.verified_outlined,
-            ),
-            const SizedBox(height: 14),
-            _PredictionPreviewPanel(
-              selectedLabel: selectedOption?.label ?? 'Selecione',
-              stake: _stake,
-              preview: _preview,
-              busy: false,
-            ),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              onPressed: () => Navigator.of(context).pop(true),
-              icon: const Icon(Icons.check),
-              label: const Text('Confirmar'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Revisar'),
-            ),
-          ],
+      builder: (context) => SafeArea(
+        child: LayoutBuilder(
+          builder: (context, _) {
+            final maxHeight = MediaQuery.sizeOf(context).height * 0.86;
+            return ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: maxHeight),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  20,
+                  20,
+                  MediaQuery.viewInsetsOf(context).bottom + 20,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const GtlEditorialHeader(
+                      kicker: 'Confirmação',
+                      title: 'Confirmar previsão',
+                      body:
+                          'A API vai validar saldo, status do mercado e duplicidade antes de registrar.',
+                      icon: Icons.verified_outlined,
+                    ),
+                    const SizedBox(height: 14),
+                    _PredictionPreviewPanel(
+                      selectedLabel: selectedOption?.label ?? 'Selecione',
+                      stake: _stake,
+                      preview: _preview,
+                      busy: false,
+                    ),
+                    const SizedBox(height: 18),
+                    FilledButton.icon(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      icon: const Icon(Icons.check),
+                      label: const Text('Confirmar'),
+                    ),
+                    const SizedBox(height: 4),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Revisar'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         ),
       ),
     );

@@ -35,6 +35,23 @@ void main() {
     expect((badges.first as Map)['code'], 'founder');
   });
 
+  test('setToken can keep login only in memory', () async {
+    late RequestOptions captured;
+    final store = MemoryTokenStore();
+    final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+    dio.httpClientAdapter = _Adapter((options) {
+      captured = options;
+      return {'status': 'ok'};
+    });
+    final api = ApiClient(dio: dio, tokenStore: store);
+
+    await api.setToken('session-token', persist: false);
+    await api.getMap('/auth/session');
+
+    expect(await store.readToken(), isNull);
+    expect(captured.headers['Authorization'], 'Bearer session-token');
+  });
+
   test('ApiFailure hides raw validation payloads', () {
     final failure = ApiFailure.fromObject(
       DioException(

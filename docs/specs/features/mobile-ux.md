@@ -121,6 +121,7 @@ Card grande para destaque:
 - pergunta em ate 3 linhas no destaque
 - pill de probabilidade principal
 - volume GTL e atividade
+- prazo compacto para fechamento quando o mercado estiver aberto; no feed, usar barra de regressao/urgencia na linha inferior em vez de repetir icone de relogio no thumb, com cor evoluindo de folga para urgencia conforme o fechamento se aproxima
 - indicador de status quando locked/resolved
 
 ### MarketCompactCard
@@ -130,7 +131,8 @@ Card de lista/grid:
 - imagem no topo
 - titulo truncado com cuidado
 - pill de probabilidade
-- volume e comentarios
+- volume, comentarios e prazo compacto; o prazo deve aparecer como barra curta de regressao/urgencia no canto inferior direito, ao lado do contador de comentarios, mudando de cor conforme o tempo restante diminui
+- status fechado/resolvido visivel nos recortes que permitem estes estados
 - estado de favorito/curtida quando autenticado
 
 ### MarketMetricPanel
@@ -166,7 +168,17 @@ Controle de previsao:
 - input/stepper de stake GTL
 - preview vindo da API
 - CTA primario de confirmar
+- confirmacao em bottom sheet com `SafeArea` e area rolavel para telas fisicas compactas/fonte ampliada
 - estados bloqueados para visitante, sem saldo, previsao existente, mercado locked/resolved/canceled
+
+### ConsensusChart
+
+Grafico compacto de consenso:
+
+- usa `sparkline_series` retornado pela FastAPI
+- mostra uma linha por opcao do mercado, com legenda curta
+- preserva altura controlada para nao alongar a secao de detalhe
+- nao recalcula probabilidade, tendencia ou serie historica no app
 
 ### CommentItem
 
@@ -198,9 +210,9 @@ Objetivo: descoberta rapida.
 
 Deve priorizar:
 
-- destaque visual de 1 a 3 mercados
+- destaque visual de 1 a 3 mercados abertos
 - chips de categoria
-- secoes horizontais de tendencias
+- secoes horizontais de tendencias com mercados abertos ordenados por engajamento visual
 - resumo educativo de produto quando util
 
 Nao deve abrir com hero marketing.
@@ -227,6 +239,7 @@ Deve priorizar:
 - ciclo do mercado
 - comentario/comunidade
 - previsao com confirmacao explicita
+- paridade com o web para popularidade operacional: abrir o detalhe incrementa `view_count`, e compartilhar pelo app incrementa `share_count` sem bloquear a acao nativa
 
 ### Wallet
 
@@ -250,6 +263,19 @@ Deve priorizar:
 - badges
 - posicao real quando existir
 - historico resumido
+- ranking publico identificado pelo `@handle`, com badges compactas e overflow `+N` vindos de `GET /rankings`
+- sem controles operacionais de push; o estado de push mobile aparece em `Sobre` como item informativo de saude/configuracao do build
+
+### Alertas
+
+Objetivo: notificacoes in-app.
+
+Deve priorizar:
+
+- mercados favoritados
+- previsoes e resolucoes recentes
+- estado vazio claro
+- sem painel operacional de push; estado/configuracao de push fica em `Sobre`
 
 ## Estados de UX
 

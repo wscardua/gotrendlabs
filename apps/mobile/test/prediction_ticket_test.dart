@@ -23,7 +23,11 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: Scaffold(body: PredictionTicket(market: _market())),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PredictionTicket(market: _market()),
+            ),
+          ),
         ),
       ),
     );
@@ -71,7 +75,11 @@ void main() {
           ),
         ],
         child: MaterialApp(
-          home: Scaffold(body: PredictionTicket(market: _market())),
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PredictionTicket(market: _market()),
+            ),
+          ),
         ),
       ),
     );
@@ -90,6 +98,55 @@ void main() {
     expect(stakes.length, greaterThanOrEqualTo(2));
     expect(stakes.last, isNot(80));
     expect(find.text('${stakes.last * 2} GT₵'), findsOneWidget);
+  });
+
+  testWidgets('Prediction confirmation sheet fits compact physical screens', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(360, 560);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+    final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+    dio.httpClientAdapter = _Adapter((options) {
+      final data = Map<String, dynamic>.from(options.data as Map);
+      return {
+        'market_id': 10,
+        'option_id': data['option_id'],
+        'stake_amount': data['stake_amount'],
+        'probability_exact': 50.0,
+        'estimated_return': 160,
+      };
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          apiClientProvider.overrideWithValue(
+            ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ListView(children: [PredictionTicket(market: _market())]),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byType(ChoiceChip).first);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    await tester.drag(find.byType(ListView), const Offset(0, -360));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Pré-visualizar e confirmar'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Confirmar previsão'), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 }
 

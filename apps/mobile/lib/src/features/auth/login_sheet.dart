@@ -30,6 +30,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   final _password = TextEditingController();
   bool _register = false;
   bool _acceptedTerms = false;
+  bool _rememberLogin = true;
   String? _localError;
 
   @override
@@ -115,6 +116,15 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
                     setState(() => _acceptedTerms = value ?? false),
                 title: const Text('Aceito a política de uso da GoTrendLabs'),
               ),
+            ] else ...[
+              const SizedBox(height: 8),
+              SwitchListTile(
+                value: _rememberLogin,
+                contentPadding: EdgeInsets.zero,
+                onChanged: (value) => setState(() => _rememberLogin = value),
+                title: const Text('Lembrar login'),
+                subtitle: const Text('Mantém a sessão neste dispositivo.'),
+              ),
             ],
             if (_localError != null || auth.error != null) ...[
               const SizedBox(height: 12),
@@ -159,7 +169,9 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
           .register(_name.text.trim(), email, password, _acceptedTerms);
       return;
     }
-    await ref.read(authControllerProvider.notifier).login(email, password);
+    await ref
+        .read(authControllerProvider.notifier)
+        .login(email, password, rememberSession: _rememberLogin);
   }
 
   Future<void> _recoverPassword() async {

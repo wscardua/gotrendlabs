@@ -43,18 +43,23 @@ Specs principais:
 
 ## MVP implementado
 
-- shell dark-first editorial com bottom navigation: `Hoje`, `Insights`, `Mercados`, `Alertas`, `Busca`
+- shell dark-first editorial com bottom navigation: `Hoje`, `Ranking`, `Mercados`, `Alertas`, `Busca`, deixando `Insights` no menu superior
 - design system mobile compartilhado em `lib/src/ui/`, com surfaces, headers editoriais, pills, métricas, painéis de estado, skeletons e componentes reutilizáveis
-- feed, browse, busca e detalhe de mercado via `GET /markets` e `GET /markets/{slug}`
-- auth Bearer simples via `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout`, com token em secure storage
-- favoritos, curtidas, comentarios, preview e criacao de previsao usando apenas FastAPI
-- `Hoje` com recorte pessoal `Sua mesa` para mercados negociados e favoritos
+- feed, browse, busca e detalhe de mercado via `GET /markets` e `GET /markets/{slug}`, com abertura do detalhe incrementando `view_count` pelo mesmo endpoint de tracking usado pelo web
+- auth Bearer simples via `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout`, com `Lembrar login` ligado por padrao; token persistido em secure storage quando ligado e mantido apenas em memoria quando desligado
+- favoritos, curtidas, comentarios, compartilhamento, preview e criacao de previsao usando apenas FastAPI; compartilhar pelo app incrementa `share_count` antes de acionar o share nativo
+- `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
 - `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
-- alertas com badge de nao lidas no shell e marcacao como lido ao visualizar a tela
-- push mobile preparado com repository/controller e provider noop; Firebase/FCM real, permissões nativas e arquivos `google-services.json`/`GoogleService-Info.plist` ficam para etapa aprovada separadamente
+- cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards
+- detalhe de mercado com hero visual nao navegavel, evitando empilhar a mesma rota ao tocar na imagem
+- grafico de consenso multi-serie, usando uma linha por opcao a partir de `sparkline_series`
+- ranking mobile identificado por `@handle`, com badges compactas e overflow `+N` vindos de `/rankings`
+- alertas com badge de nao lidas no shell e marcacao como lido ao visualizar a tela, sem painel operacional de push
+- push mobile aparece em `Sobre` como item informativo de saude/configuracao do build; Firebase/FCM real, permissões nativas e arquivos `google-services.json`/`GoogleService-Info.plist` ficam para etapa aprovada separadamente
 - wallet, extrato, recarga educativa, perfil, ranking, badges, busca, confianca e alertas como leitura/acao da API
-- tela `Sobre` com versao/build, pacote/plataforma, saude da API e diagnostico seguro para suporte; a UI nao exibe enderecos de API/web, tokens, segredos nem ID interno de usuario
-- testes unitarios, widget e repository cobrindo componentes, cards, ticket, filtros pessoais e `Sobre`
+- tela `Sobre` com versao/build, pacote/plataforma, saude da API, estado informativo de push e diagnostico seguro para suporte; a UI nao exibe enderecos de API/web, tokens, segredos nem ID interno de usuario
+- splash Android e header do shell com wordmark `GoTrendLabs` e tagline alinhada logo abaixo do nome
+- testes unitarios, widget e repository cobrindo componentes, cards, ticket, filtros pessoais, ranking, push em `Sobre`, login em memoria/secure storage e `Sobre`
 
 Guardrail: o mobile sera cliente da FastAPI. Ele podera manter estado de UI, sessao/token, cache leve e preferencias locais, mas nao deve calcular saldo, payout, probabilidade, reputacao, badges, resolucao, IA ou auditoria.
 
@@ -90,6 +95,8 @@ flutter build apk --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br \
   --dart-define=GTL_PUSH_FIREBASE_ENABLED=false
 ```
+
+Versao desta fatia: `1.0.2+3`.
 
 O build release falha quando `android/key.properties` nao existe. Use `flutter build apk --debug` para validacao local sem assinatura release.
 

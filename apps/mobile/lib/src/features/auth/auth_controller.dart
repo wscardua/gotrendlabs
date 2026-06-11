@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
@@ -35,11 +37,16 @@ class AuthController extends Notifier<AuthState> {
     }
   }
 
-  Future<void> login(String email, String password) async {
+  Future<void> login(
+    String email,
+    String password, {
+    bool rememberSession = true,
+  }) async {
     await _authenticate(
       () => ref
           .read(authRepositoryProvider)
           .login(email: email, password: password),
+      rememberSession: rememberSession,
     );
   }
 
@@ -84,24 +91,31 @@ class AuthController extends Notifier<AuthState> {
     }
     await api.clearToken();
     state = const AuthState();
-    _invalidateUserScopedData();
+    _scheduleUserScopedDataInvalidation();
   }
 
-  Future<void> _authenticate(Future<AuthResult> Function() call) async {
+  Future<void> _authenticate(
+    Future<AuthResult> Function() call, {
+    bool rememberSession = true,
+  }) async {
     state = state.copyWith(busy: true, clearError: true);
     final api = ref.read(apiClientProvider);
     try {
       final result = await call();
-      await api.setToken(result.session.token);
+      await api.setToken(result.session.token, persist: rememberSession);
       state = AuthState(user: result.user);
       await ref.read(pushControllerProvider.notifier).syncAfterAuth();
-      _invalidateUserScopedData();
+      _scheduleUserScopedDataInvalidation();
     } catch (error) {
       state = state.copyWith(
         busy: false,
         error: ApiFailure.fromObject(error).message,
       );
     }
+  }
+
+  void _scheduleUserScopedDataInvalidation() {
+    unawaited(Future<void>.microtask(_invalidateUserScopedData));
   }
 
   void _invalidateUserScopedData() {

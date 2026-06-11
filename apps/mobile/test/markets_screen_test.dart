@@ -9,6 +9,47 @@ import 'package:gotrendlabs_mobile/src/features/markets/markets_screen.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
+  testWidgets('TodayScreen shows only open markets ordered by engagement', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketsProvider.overrideWith((ref) async {
+            return [
+              _market(
+                slug: 'fechado',
+                title: 'Mercado fechado não deve aparecer',
+                status: 'locked',
+                statusLabel: 'Fechado',
+              ),
+              _market(
+                slug: 'popular',
+                title: 'Mercado aberto popular',
+                participants: 20,
+                volume: 900,
+              ),
+              _market(slug: 'aberto', title: 'Mercado aberto comum'),
+            ];
+          }),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: TodayScreen()),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mercado aberto popular'), findsOneWidget);
+    expect(find.text('Mercado aberto comum'), findsOneWidget);
+    expect(find.text('Mercado fechado não deve aparecer'), findsNothing);
+  });
+
   testWidgets('MarketsScreen filters favorites and user positions', (
     tester,
   ) async {
@@ -61,6 +102,13 @@ void main() {
   });
 }
 
+class _UnauthenticatedAuthController extends AuthController {
+  @override
+  AuthState build() {
+    return const AuthState();
+  }
+}
+
 class _AuthenticatedAuthController extends AuthController {
   @override
   AuthState build() {
@@ -80,6 +128,10 @@ class _AuthenticatedAuthController extends AuthController {
 Market _market({
   required String slug,
   required String title,
+  String status = 'open',
+  String statusLabel = 'Aberto',
+  int participants = 8,
+  int volume = 120,
   bool favorite = false,
   bool prediction = false,
 }) {
@@ -90,13 +142,13 @@ Market _market({
     'subcategory': 'Apps',
     'event': 'Geral',
     'kind': 'binary',
-    'status': 'open',
-    'status_label': 'Aberto',
+    'status': status,
+    'status_label': statusLabel,
     'primary_outcome': 'SIM',
     'primary_probability': 64,
     'primary_probability_exact': 64.0,
-    'human_volume_gtl': 120,
-    'human_participants': 8,
+    'human_volume_gtl': volume,
+    'human_participants': participants,
     'comment_count': 2,
     'market_like_count': 1,
     'view_count': 10,

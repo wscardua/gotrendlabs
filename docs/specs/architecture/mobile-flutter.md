@@ -152,10 +152,12 @@ A navegacao inicial deve combinar:
 Abas iniciais recomendadas:
 
 - `Hoje`: mercados em destaque, tendencias e recortes editoriais
-- `Insights`: conteudo explicativo, agentes IA e analises quando houver contrato
+- `Ranking`: reputacao publica, handles e badges como area recorrente
 - `Mercados`: browse completo com filtros
 - `Alertas`: notificacoes in-app e eventos relevantes
 - `Busca`: busca e descoberta por categoria/evento
+
+`Insights` fica no menu superior enquanto nao houver conteudo recorrente suficiente para justificar uma aba primaria.
 
 ## Estado e cache
 

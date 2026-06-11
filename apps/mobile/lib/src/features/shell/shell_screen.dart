@@ -68,7 +68,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     );
     final pages = [
       TodayScreen(onOpenDesk: _openMarketDesk),
-      const InsightsScreen(),
+      const RankingScreen(),
       MarketsScreen(initialDeskFilter: _marketDeskFilter),
       const AlertsScreen(),
       const SearchScreen(),
@@ -76,23 +76,30 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     return Scaffold(
       appBar: AppBar(
         toolbarHeight: 72,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const GtlBrandMark(size: 44),
-                const SizedBox(width: 10),
-                Text(
-                  'GoTrendLabs',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ],
-            ),
-            Text(
-              'Preveja antes do consenso.',
-              style: Theme.of(context).textTheme.bodySmall,
+            const GtlBrandMark(size: 44),
+            const SizedBox(width: 10),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'GoTrendLabs',
+                    style: Theme.of(context).textTheme.titleLarge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    'Preveja antes do consenso.',
+                    style: Theme.of(context).textTheme.bodySmall,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -126,18 +133,15 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                   context,
                 ).push(MaterialPageRoute(builder: (_) => const WalletScreen()));
               }
-              if (value == 'ranking') {
+              if (value == 'insights') {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const RankingScreen()),
+                  MaterialPageRoute(builder: (_) => const InsightsScreen()),
                 );
               }
               if (value == 'badges') {
                 Navigator.of(
                   context,
                 ).push(MaterialPageRoute(builder: (_) => const BadgesScreen()));
-              }
-              if (value == 'suggestion') {
-                showSuggestionSheet(context);
               }
               if (value == 'feedback') {
                 showFeedbackSheet(context);
@@ -158,18 +162,10 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
             },
             itemBuilder: (context) => [
               const PopupMenuItem(
-                value: 'suggestion',
+                value: 'wallet',
                 child: ListTile(
-                  leading: Icon(Icons.add_chart),
-                  title: Text('Sugerir mercado'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'feedback',
-                child: ListTile(
-                  leading: Icon(Icons.support_agent),
-                  title: Text('Suporte/feedback'),
+                  leading: Icon(Icons.account_balance_wallet_outlined),
+                  title: Text('Wallet'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -182,26 +178,26 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                 ),
               ),
               const PopupMenuItem(
+                value: 'insights',
+                child: ListTile(
+                  leading: Icon(Icons.insights_outlined),
+                  title: Text('Insights'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'feedback',
+                child: ListTile(
+                  leading: Icon(Icons.support_agent),
+                  title: Text('Suporte'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
                 value: 'trust',
                 child: ListTile(
                   leading: Icon(Icons.shield_outlined),
                   title: Text('Política e segurança'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'wallet',
-                child: ListTile(
-                  leading: Icon(Icons.account_balance_wallet_outlined),
-                  title: Text('Wallet'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'ranking',
-                child: ListTile(
-                  leading: Icon(Icons.leaderboard_outlined),
-                  title: Text('Ranking'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -241,8 +237,8 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
             label: 'Hoje',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.insights),
-            label: 'Insights',
+            icon: Icon(Icons.leaderboard_outlined),
+            label: 'Ranking',
           ),
           const NavigationDestination(
             icon: Icon(Icons.grid_view),
@@ -376,43 +372,46 @@ class InsightsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return GtlScreen(
-      child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        children: [
-          const GtlEditorialHeader(
-            kicker: 'Leitura assistida',
-            title: 'Insights',
-            body:
-                'Comentários de IA oficial e análises aparecem aqui quando expostos pelo backend.',
-          ),
-          const SizedBox(height: 16),
-          GtlSurface(
-            glowColor: GtlColors.accentViolet,
-            child: Row(
-              children: [
-                const Icon(Icons.verified, color: GtlColors.accentViolet),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Fonte de verdade: FastAPI, agentes oficiais auditados e comentários com selo.',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          const GtlSurface(
-            child: GtlEditorialHeader(
-              kicker: 'MVP',
-              title: 'Sem provedor local',
+    return Scaffold(
+      appBar: AppBar(title: const Text('Insights')),
+      body: GtlScreen(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          children: [
+            const GtlEditorialHeader(
+              kicker: 'Leitura assistida',
+              title: 'Insights',
               body:
-                  'O app não chama LLM diretamente; quando houver insight, ele será servido pelo backend.',
-              icon: Icons.lock_outline,
+                  'Comentários de IA oficial e análises aparecem aqui quando expostos pelo backend.',
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            GtlSurface(
+              glowColor: GtlColors.accentViolet,
+              child: Row(
+                children: [
+                  const Icon(Icons.verified, color: GtlColors.accentViolet),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Fonte de verdade: FastAPI, agentes oficiais auditados e comentários com selo.',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            const GtlSurface(
+              child: GtlEditorialHeader(
+                kicker: 'MVP',
+                title: 'Sem provedor local',
+                body:
+                    'O app não chama LLM diretamente; quando houver insight, ele será servido pelo backend.',
+                icon: Icons.lock_outline,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

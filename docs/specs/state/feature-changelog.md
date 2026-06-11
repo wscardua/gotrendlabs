@@ -1,5 +1,20 @@
 # Feature Changelog
 
+## 2026-06-11 — FEAT-MOBILE-001 feed, ranking e sessão mobile
+
+- Tela `Hoje` passou a destacar apenas mercados abertos e ordenar destaque/tendências por engajamento visual usando campos já retornados por `GET /markets`, sem criar regra de domínio local.
+- Cards mobile passaram a exibir prazo restante compacto em barra de regressão/urgência na linha inferior do card, ao lado dos comentários, com cor que evolui conforme o fechamento se aproxima; o detalhe passou a usar hero não navegável, evitando empilhar a mesma rota ao tocar na imagem do mercado.
+- Confirmação de previsão passou a usar bottom sheet com `SafeArea` e área rolável para evitar overflow em aparelho físico, viewport compacto ou fonte ampliada.
+- Gráfico de consenso mobile passou a renderizar uma linha por opção usando `sparkline_series` da FastAPI.
+- Ranking mobile passou a identificar participantes por `@handle` e exibir badges compactas com overflow `+N`, reutilizando `badges` e `badges_total` de `/rankings`.
+- Ranking passou a ocupar a segunda aba da bottom navigation no lugar de `Insights`; `Insights` foi movido para o menu superior.
+- Menu superior passou a seguir a ordem Wallet, Badges, Insights, Suporte, Política e segurança, Sobre e Sair; sugestão de mercado continua acessível pelo Perfil.
+- Estado de push mobile saiu de `Perfil` e `Alertas` e passou para `Sobre` como item informativo de saúde/configuração do build; push real/FCM continua fora do escopo.
+- Mobile passou a incrementar `view_count` ao abrir o detalhe do mercado, alinhando a semântica do web; `share_count` permanece incrementado na ação real de compartilhamento.
+- Login mobile ganhou `Lembrar login` ligado por padrão; quando desligado, o token Bearer fica apenas em memória e não é persistido no secure storage.
+- Splash Android e header do shell mobile foram refinados para manter `Preveja antes do consenso.` alinhado logo abaixo de `GoTrendLabs`.
+- Versão mobile desta fatia definida como `1.0.2+3` para publicação Android beta após merge.
+
 ## 2026-06-11 — FEAT-AUTH-001 / FEAT-NOTIFY-001 login social e emails críticos
 
 - Login social deixou de ser placeholder e passou a usar OAuth real para Google, Facebook e X, com Django cuidando de start/callback e FastAPI criando/vinculando usuário, sessão e auditoria.

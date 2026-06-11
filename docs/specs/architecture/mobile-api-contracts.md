@@ -115,6 +115,24 @@ Campos minimos esperados:
 
 O app nao deve reconstruir regras de status; deve apresentar o estado vindo da API.
 
+### Tracking publico de mercado
+
+Endpoints esperados:
+
+- `POST /markets/{slug}/view`
+- `POST /markets/{slug}/share`
+
+Uso no mobile:
+
+- abrir o detalhe de mercado incrementa `view_count` apos o detalhe carregar e renderizar
+- compartilhar pelo app incrementa `share_count` antes de acionar o compartilhamento nativo
+
+Requisitos mobile:
+
+- tracking deve ser best-effort e nunca bloquear detalhe ou compartilhamento
+- web e mobile devem manter a mesma semantica operacional para popularidade
+- o app nao deve recalcular popularidade de dominio; apenas aciona os endpoints de tracking e consome contadores retornados pela API
+
 ### Taxonomia publica
 
 Endpoint esperado:
@@ -165,7 +183,9 @@ Se a autenticacao atual estiver orientada a cookie web, uma decisao tecnica deve
 Decisao v1 para a implementacao autenticada:
 
 - usar Bearer simples retornado em `AuthResponse.session.token`
-- persistir token no Flutter com secure storage
+- oferecer `Lembrar login` ligado por padrao
+- persistir token no Flutter com secure storage quando `Lembrar login` estiver ligado
+- manter token apenas em memoria e limpar persistencia local quando `Lembrar login` estiver desligado
 - restaurar sessao por `GET /auth/session`
 - encerrar sessao por `POST /auth/logout`
 - usar a expiracao existente em `AuthResponse.session.expires_at`

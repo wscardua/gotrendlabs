@@ -87,7 +87,7 @@ Com backend local ativo:
 
 1. Abrir app no emulador.
 2. Ver tela `Hoje`.
-3. Ver ao menos um mercado vindo da API.
+3. Ver ao menos um mercado aberto vindo da API em destaque/tendencias.
 4. Abrir detalhe de mercado.
 5. Ver acoes de favoritar, curtir e compartilhar no detalhe.
 6. Alternar entre `Visao geral` e `Comunidade`.
@@ -116,6 +116,8 @@ Quando houver usuario de teste:
 13. Ver o mercado com previsão no recorte `Posições`.
 14. Ver atalhos de `Sua mesa` na tela `Hoje` quando houver favoritos ou posições.
 15. Abrir `Sobre` e conferir versão/build, saúde da API e diagnóstico seguro sem endereço de endpoint.
+16. Fazer login com `Lembrar login` ligado e validar restauracao da sessao pelo token seguro.
+17. Fazer login com `Lembrar login` desligado e validar que o token nao fica persistido para reabertura futura.
 
 ## Fluxo de previsao bloqueada
 
@@ -161,10 +163,14 @@ Deve validar:
 
 - `MarketHeroCard`
 - `MarketCompactCard`
+- `TodayScreen` excluindo mercados fechados em destaque/tendencias
+- grafico de consenso multi-serie por opcao
 - `MarketMetricPanel`
 - recortes `Favoritos` e `Posições` em `MarketsScreen`
 - `AboutScreen`
 - `PredictionTicket`
+- `RankingScreen` exibindo `@handle`, badges e overflow `+N`
+- estado informativo de push em `Sobre`, ausente em Perfil e Alertas
 - `CommentItem`
 - estados `loading`, `empty`, `error` e `unauthenticated`
 
@@ -188,7 +194,7 @@ Deve validar:
 - login -> detalhe -> preview de previsao
 - perfil -> badges/reputacao/ranking
 - menu -> suporte/feedback
-- menu -> sugerir mercado
+- perfil -> sugerir mercado
 - erro de API -> retry
 - push noop nao registra token
 - token fake registra dispositivo apos autenticacao
@@ -207,22 +213,28 @@ Antes de considerar a UI pronta:
 - confirmar que `thumb` cadastrado aparece tambem quando houver thumbnail de mercado
 - confirmar que `thumb` cadastrado nao aparece sobreposto quando `image_url` de mercado estiver disponivel
 - confirmar que o ticket de previsao replica o preview web com `Opcao escolhida`, `Credito possivel se acertar` e `Credito reservado`, atualizando o retorno pelo backend ao mover o controle
+- confirmar que o bottom sheet de confirmacao de previsao nao estoura em aparelho fisico, viewport compacto ou fonte ampliada
 - confirmar que a wallet mostra recarga controlada com elegibilidade, pendencia, historico e criacao via API
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
-- confirmar que suporte/feedback e sugestao de mercado estao acessiveis no menu com icones
+- confirmar que o menu segue a ordem Wallet, Badges, Insights, Suporte, Política e segurança, Sobre e Sair quando autenticado
+- confirmar que sugestao de mercado segue acessivel pelo Perfil
 - confirmar que politica de uso, conceitos e seguranca estao acessiveis no menu e perfil
 - confirmar que sugestao de mercado carrega categorias ativas da taxonomia
 - confirmar que feedback usa as opcoes da web sem seletor de prioridade
 - confirmar que compartilhamento aparece no hero ao lado de favoritar/curtir
+- confirmar que abrir detalhe mobile incrementa `view_count` via `POST /markets/{slug}/view`
+- confirmar que compartilhar pelo app incrementa `share_count` via `POST /markets/{slug}/share`
 - confirmar que o detalhe nao repete o titulo do mercado logo abaixo do hero
 - confirmar que o ticket de previsao aparece antes do criterio de resolucao no detalhe
 - confirmar que erros de validacao aparecem em linguagem final, sem payload tecnico da API
-- confirmar que a seção de push em Alertas/Perfil mostra estado preparado/noop quando Firebase não está configurado
+- confirmar que `Sobre` mostra o estado informativo de push como item de saude/configuracao quando Firebase não está configurado
+- confirmar que Perfil e Alertas nao mostram painel operacional de push
 - confirmar que logout normal não revoga dispositivo de push
 - confirmar que revogação de dispositivo ocorre apenas por ação explícita
 - confirmar que payloads de push abrem rotas e refazem fetch na FastAPI quando FCM real for habilitado
 - confirmar que ranking permite filtrar por categoria, subcategoria e evento como na web
+- confirmar que ranking identifica usuarios pelo `@handle`, nao pelo nome publico, e mostra ate 3 badges com `+N`
 - testar mercado sem comentarios
 - testar mercado resolvido
 - testar erro de rede
@@ -230,6 +242,9 @@ Antes de considerar a UI pronta:
 - confirmar que tema, app shell, cards, detalhe, ticket, wallet, ranking, alertas, busca, perfil, badges e bottom sheets usam o mesmo design system dark-first/editorial, sem cards genéricos ou estados soltos
 - confirmar que `Mercados` permite alternar `Todos`, `Favoritos` e `Posições`, com estados vazios claros quando não houver itens
 - confirmar que `Hoje` exibe `Sua mesa` para usuário autenticado com favoritos/posições e abre `Mercados` no recorte escolhido
+- confirmar que `Hoje` nao exibe mercados fechados em destaque/tendencias e prioriza mercados abertos com mais engajamento
+- confirmar que cards exibem prazo restante compacto sem aumentar a altura atual e que a barra muda de cor conforme o fechamento se aproxima
+- confirmar que tocar no hero de imagem dentro do detalhe nao empilha a mesma tela novamente
 - confirmar que cards sinalizam `Favorito` e `Sua posição` quando a API retornar os flags do usuário autenticado
 - confirmar que `Sobre` aparece no menu e perfil, mostra versão/build, saúde da API e copia diagnóstico sem token, senha, segredo, ID interno ou endereço de API
 - comparar contra a direcao das referencias visuais fornecidas pelo usuario: card destaque, detalhe com hero, abas, painel de metricas e bottom navigation

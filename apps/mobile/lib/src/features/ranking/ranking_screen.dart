@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
+import '../../core/providers.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../markets/markets_providers.dart';
+import '../profile/badges_screen.dart';
 
 class RankingScreen extends ConsumerStatefulWidget {
   const RankingScreen({super.key});
@@ -27,6 +29,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
       event: _event,
     );
     final ranking = ref.watch(rankingPayloadProvider(filters));
+    final api = ref.watch(apiClientProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Ranking')),
       body: GtlScreen(
@@ -84,7 +87,7 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
                     ),
                   )
                 else
-                  for (final row in rows) _RankingRowCard(row: row),
+                  for (final row in rows) _RankingRowCard(row: row, api: api),
                 const SizedBox(height: 12),
                 const GtlSurface(
                   child: Text(
@@ -224,15 +227,21 @@ class _RankingFiltersCard extends StatelessWidget {
 }
 
 class _RankingRowCard extends StatelessWidget {
-  const _RankingRowCard({required this.row});
+  const _RankingRowCard({required this.row, required this.api});
 
   final Map<String, dynamic> row;
+  final ApiClient api;
 
   @override
   Widget build(BuildContext context) {
     final handle = row['handle']?.toString() ?? '';
-    final rawDisplayName = row['display_name']?.toString().trim() ?? '';
-    final displayName = rawDisplayName.isNotEmpty ? rawDisplayName : handle;
+    final handleLabel = _handleLabel(handle);
+    final strongCategory = row['strong_category']?.toString() ?? 'Geral';
+    final badges = _listOfMaps(row['badges']).take(3).toList();
+    final badgesTotal = safeInt(row['badges_total']);
+    final overflow = badgesTotal > badges.length
+        ? badgesTotal - badges.length
+        : 0;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: GtlSurface(
@@ -249,13 +258,19 @@ class _RankingRowCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    displayName.isEmpty ? 'Usuário' : displayName,
+                    handleLabel,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 3),
-                  Text(
-                    '${_handleLabel(handle)} · ${row['strong_category'] ?? 'Geral'}',
-                  ),
+                  Text(strongCategory),
+                  if (badges.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _RankingBadges(
+                      badges: badges,
+                      overflow: overflow,
+                      api: api,
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -276,6 +291,53 @@ class _RankingRowCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _RankingBadges extends StatelessWidget {
+  const _RankingBadges({
+    required this.badges,
+    required this.overflow,
+    required this.api,
+  });
+
+  final List<Map<String, dynamic>> badges;
+  final int overflow;
+  final ApiClient api;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 6,
+      runSpacing: 6,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        for (final badge in badges)
+          Tooltip(
+            message: badge['name']?.toString() ?? 'Badge',
+            child: BadgeArt(
+              badge: {...badge, 'status': 'earned'},
+              api: api,
+              size: 30,
+            ),
+          ),
+        if (overflow > 0)
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: GtlColors.surfaceInk,
+              border: Border.all(color: GtlColors.border),
+              borderRadius: BorderRadius.circular(GtlRadii.pill),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+              child: Text(
+                '+$overflow',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ),
+          ),
+      ],
     );
   }
 }

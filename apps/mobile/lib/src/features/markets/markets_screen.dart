@@ -26,10 +26,13 @@ class TodayScreen extends ConsumerWidget {
         onRetry: () => ref.invalidate(marketsProvider),
       ),
       data: (items) {
-        if (items.isEmpty) {
-          return const _EmptyState(message: 'Nenhum mercado disponível agora.');
+        final openMarkets = _successfulOpenMarkets(items);
+        if (openMarkets.isEmpty) {
+          return const _EmptyState(
+            message: 'Nenhum mercado aberto disponível agora.',
+          );
         }
-        final featured = items.take(3).toList();
+        final featured = openMarkets.take(3).toList();
         return GtlScreen(
           child: RefreshIndicator(
             onRefresh: () async => ref.invalidate(marketsProvider),
@@ -44,7 +47,11 @@ class TodayScreen extends ConsumerWidget {
                   body: 'Mercados sociais, reputação pública e GT₵ educativo.',
                 ),
                 const SizedBox(height: 18),
-                MarketHeroCard(market: featured.first, api: api),
+                MarketHeroCard(
+                  market: featured.first,
+                  api: api,
+                  showStatus: false,
+                ),
                 if (auth.isAuthenticated) ...[
                   const SizedBox(height: 16),
                   _DeskSnapshot(markets: items, onOpenDesk: onOpenDesk),
@@ -56,15 +63,23 @@ class TodayScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 12),
                 for (final market in featured.skip(1))
-                  MarketCompactCard(market: market, api: api),
+                  MarketCompactCard(
+                    market: market,
+                    api: api,
+                    showStatus: false,
+                  ),
                 const SizedBox(height: 8),
                 const GtlSectionTitle(
                   title: 'Mais mercados',
                   subtitle: 'Explore outros consensos em formação',
                 ),
                 const SizedBox(height: 12),
-                for (final market in items.skip(3).take(8))
-                  MarketCompactCard(market: market, api: api),
+                for (final market in openMarkets.skip(3).take(8))
+                  MarketCompactCard(
+                    market: market,
+                    api: api,
+                    showStatus: false,
+                  ),
               ],
             ),
           ),
@@ -229,10 +244,15 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                         child: ListView.builder(
                           padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
                           itemCount: filtered.length,
-                          itemBuilder: (context, index) => MarketCompactCard(
-                            market: filtered[index],
-                            api: api,
-                          ),
+                          itemBuilder: (context, index) {
+                            final market = filtered[index];
+                            return MarketCompactCard(
+                              market: market,
+                              api: api,
+                              showStatus:
+                                  _status.isNotEmpty || market.status != 'open',
+                            );
+                          },
                         ),
                       ),
               ),
@@ -242,6 +262,16 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       },
     );
   }
+}
+
+List<Market> _successfulOpenMarkets(List<Market> items) {
+  return items.where((market) => market.isOpen).toList()..sort((a, b) {
+    final byScore = b.engagementScore.compareTo(a.engagementScore);
+    if (byScore != 0) {
+      return byScore;
+    }
+    return a.title.compareTo(b.title);
+  });
 }
 
 enum MarketDeskFilter { all, favorites, positions }

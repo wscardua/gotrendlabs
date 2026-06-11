@@ -40,15 +40,22 @@ void main() {
     expect(find.text('Saúde da API'), findsOneWidget);
     expect(find.text('ativa'), findsOneWidget);
     expect(find.text('Operando normalmente'), findsOneWidget);
+    expect(find.text('Push mobile'), findsOneWidget);
+    expect(find.text('Não configurado'), findsOneWidget);
+    expect(
+      find.text('Firebase/FCM ainda não foi ativado neste build.'),
+      findsOneWidget,
+    );
+    expect(find.text('Push preparado'), findsNothing);
     expect(find.text('API BASE'), findsNothing);
     expect(find.text('WEB BASE'), findsNothing);
-    expect(find.text('IDENTIFICADOR'), findsOneWidget);
-    expect(find.text('ID'), findsNothing);
-    expect(find.text('@tester'), findsOneWidget);
 
     await tester.drag(find.byType(ListView), const Offset(0, -1000));
     await tester.pumpAndSettle();
 
+    expect(find.text('IDENTIFICADOR'), findsOneWidget);
+    expect(find.text('ID'), findsNothing);
+    expect(find.text('@tester'), findsOneWidget);
     expect(find.text('Copiar diagnóstico'), findsOneWidget);
   });
 }

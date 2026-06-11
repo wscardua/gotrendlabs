@@ -10,6 +10,8 @@ import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/auth_models.dart';
+import '../push/push_controller.dart';
+import '../push/push_models.dart';
 import 'trust_screen.dart';
 
 final aboutAppInfoProvider = FutureProvider<AboutAppInfo>((ref) async {
@@ -37,6 +39,10 @@ final aboutApiHealthProvider = FutureProvider<Map<String, dynamic>>((ref) {
   return ref.read(apiClientProvider).getMap('/health');
 });
 
+final aboutPushStatusProvider = FutureProvider<PushTokenSnapshot>((ref) {
+  return ref.read(pushTokenProvider).currentToken();
+});
+
 class AboutAppInfo {
   const AboutAppInfo({
     required this.appName,
@@ -62,6 +68,7 @@ class AboutScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final appInfo = ref.watch(aboutAppInfoProvider);
     final health = ref.watch(aboutApiHealthProvider);
+    final pushStatus = ref.watch(aboutPushStatusProvider);
     final auth = ref.watch(authControllerProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Sobre')),
@@ -99,6 +106,8 @@ class AboutScreen extends ConsumerWidget {
             const SizedBox(height: 12),
             _ApiSection(health: health),
             const SizedBox(height: 12),
+            _PushHealthSection(pushStatus: pushStatus),
+            const SizedBox(height: 12),
             _AccountSection(user: auth.user),
             const SizedBox(height: 12),
             _LinksSection(
@@ -110,6 +119,7 @@ class AboutScreen extends ConsumerWidget {
             _DiagnosticsSection(
               appInfo: appInfo,
               health: health,
+              pushStatus: pushStatus,
               user: auth.user,
             ),
           ],
@@ -170,6 +180,45 @@ class _ApiSection extends StatelessWidget {
         filled: true,
       ),
       children: [_InfoRow(label: 'Condição', value: healthLabel)],
+    );
+  }
+}
+
+class _PushHealthSection extends StatelessWidget {
+  const _PushHealthSection({required this.pushStatus});
+
+  final AsyncValue<PushTokenSnapshot> pushStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshot = pushStatus.maybeWhen(
+      data: (value) => value,
+      orElse: () => null,
+    );
+    final isAvailable = snapshot?.isAvailable == true;
+    final isLoading = pushStatus.isLoading && !pushStatus.hasValue;
+    final label = isLoading
+        ? 'Verificando'
+        : isAvailable
+        ? 'Token local'
+        : 'Não configurado';
+    final detail = isLoading
+        ? 'Consultando o estado local de push.'
+        : isAvailable
+        ? 'Token local disponível para QA em ${snapshot!.platform}.'
+        : _pushUnavailableMessage(snapshot?.reason ?? 'unknown');
+    return _InfoSurface(
+      title: 'Push mobile',
+      icon: Icons.notifications_none_outlined,
+      trailing: GtlPill(
+        label: label.toLowerCase(),
+        color: isAvailable ? GtlColors.accentGreen : GtlColors.accentYellow,
+        filled: true,
+      ),
+      children: [
+        _InfoRow(label: 'Estado', value: label),
+        _InfoRow(label: 'Detalhe', value: detail),
+      ],
     );
   }
 }
@@ -235,11 +284,13 @@ class _DiagnosticsSection extends ConsumerWidget {
   const _DiagnosticsSection({
     required this.appInfo,
     required this.health,
+    required this.pushStatus,
     required this.user,
   });
 
   final AsyncValue<AboutAppInfo> appInfo;
   final AsyncValue<Map<String, dynamic>> health;
+  final AsyncValue<PushTokenSnapshot> pushStatus;
   final GtlUser? user;
 
   @override
@@ -268,6 +319,10 @@ class _DiagnosticsSection extends ConsumerWidget {
       data: (value) => value,
       orElse: () => null,
     );
+    final pushSnapshot = pushStatus.maybeWhen(
+      data: (value) => value,
+      orElse: () => null,
+    );
     final lines = [
       'GoTrendLabs mobile diagnostics',
       'app_version=${info?.version ?? 'unknown'}',
@@ -275,6 +330,7 @@ class _DiagnosticsSection extends ConsumerWidget {
       'package=${info?.packageName ?? 'unknown'}',
       'platform=${info?.platform ?? _platformLabel()}',
       'api_status=${healthPayload?['status']?.toString() ?? 'unavailable'}',
+      'push_status=${_pushDiagnosticsLabel(pushSnapshot)}',
       'user_handle=${user == null ? 'guest' : _handleLabel(user!.handle)}',
       'email_confirmed=${user?.emailConfirmed.toString() ?? 'false'}',
     ];
@@ -396,4 +452,24 @@ String _handleLabel(String value) {
     return 'sem handle';
   }
   return handle.startsWith('@') ? handle : '@$handle';
+}
+
+String _pushUnavailableMessage(String reason) {
+  return switch (reason) {
+    'firebase_not_configured' =>
+      'Firebase/FCM ainda não foi ativado neste build.',
+    'fake_token_invalid' => 'Token local de QA inválido.',
+    'unknown' => 'Estado local de push indisponível.',
+    _ => reason,
+  };
+}
+
+String _pushDiagnosticsLabel(PushTokenSnapshot? snapshot) {
+  if (snapshot == null) {
+    return 'unknown';
+  }
+  if (snapshot.isAvailable) {
+    return 'available:${snapshot.platform}';
+  }
+  return snapshot.reason.isEmpty ? 'unavailable' : snapshot.reason;
 }

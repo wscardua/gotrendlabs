@@ -2,6 +2,34 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260611-MOBILE-UX-FEED-RANKING-SESSION-001
+
+- Tipo: `new-feature`
+- Status: `em_publicacao`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: implementar melhorias de feed mobile, ranking, confirmação de previsão, consenso multi-série, push informativo em `Sobre`, tracking de view/share, sessão com `Lembrar login` e APK Android beta `1.0.2+3`
+- Etapa atual: implementação local validada; docs/specs reconciliados; versão mobile `1.0.2+3` definida; aguardando aprovação do usuário para abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e publicar novo APK Android em produção
+- Artefatos afetados:
+  - `apps/mobile/`
+  - `apps/mobile/test/`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/features/mobile-mvp.md`
+  - `docs/specs/features/mobile-ux.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/integration-map.md`
+  - `docs/specs/state/known-gaps.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `apps/mobile/README.md`
+- Bloqueios: PR, merge, deploy e publicação Android dependem de aprovação explícita do usuário
+- Iniciado em: 2026-06-11
+- Atualizado em: 2026-06-11
+- Encerrado em: pendente
+- Retomada: após aprovação, stage/commit, push da branch `feature/mobile-ux-feed-ranking-session`, abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy`, publicar APK Android atualizado via canal direto e atualizar este registro para `concluido` ou `bloqueado`
+- Reversão lógica: reverter ajustes Flutter de feed/ranking/sessão/consenso/push informativo/tracking, restaurar splash/header anterior e voltar README/specs/state para o comportamento mobile anterior
+- Evidências de validação local: `flutter analyze` sem issues; `flutter test` com 35 testes OK; QA local em Android Emulator e iPhone Simulator durante a implementação; revisão documental contra `gotrendlabs-mobile-docs-governor`
+
 ## WFLOW-20260611-SOCIAL-AUTH-IMMEDIATE-EMAIL-001
 
 - Tipo: `new-feature`

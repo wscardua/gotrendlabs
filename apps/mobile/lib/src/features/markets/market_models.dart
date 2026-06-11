@@ -89,6 +89,7 @@ class Market {
     required this.likeCount,
     required this.viewCount,
     required this.shareCount,
+    required this.isFeatured,
     required this.closesIn,
     required this.closeLabel,
     required this.imageUrl,
@@ -124,6 +125,7 @@ class Market {
   final int likeCount;
   final int viewCount;
   final int shareCount;
+  final bool isFeatured;
   final String closesIn;
   final String closeLabel;
   final String imageUrl;
@@ -146,6 +148,28 @@ class Market {
   bool get isLocked => status == 'locked';
   String get probabilityLabel => formatProbability(primaryProbability);
   String get volumeLabel => formatGtl(humanVolumeGtl);
+  String get timeRemainingLabel {
+    final short = closesIn.trim();
+    if (short.isNotEmpty && short != 'fim') {
+      return short;
+    }
+    final label = closeLabel.trim();
+    if (label.isNotEmpty) {
+      return label;
+    }
+    return statusLabel;
+  }
+
+  int get engagementScore {
+    final featuredBoost = isFeatured ? 1000000 : 0;
+    return featuredBoost +
+        (humanParticipants * 1000) +
+        (humanVolumeGtl * 3) +
+        (likeCount * 120) +
+        (commentCount * 90) +
+        (shareCount * 70) +
+        viewCount;
+  }
 
   factory Market.fromJson(Map<String, dynamic> json) {
     return Market(
@@ -166,6 +190,7 @@ class Market {
       likeCount: safeInt(json['market_like_count']),
       viewCount: safeInt(json['view_count']),
       shareCount: safeInt(json['share_count']),
+      isFeatured: safeBool(json['is_featured']),
       closesIn: safeString(json['closes_in']),
       closeLabel: safeString(json['close_label']),
       imageUrl: safeString(json['image_url']),

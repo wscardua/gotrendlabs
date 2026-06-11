@@ -78,6 +78,24 @@ void main() {
 
     expect(called, isTrue);
   });
+
+  test('trackView posts to FastAPI view endpoint', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+    var called = false;
+    dio.httpClientAdapter = _Adapter((options) {
+      expect(options.method, 'POST');
+      expect(options.path, '/markets/btc-junho/view');
+      called = true;
+      return {'view_count': 5, 'share_count': 2};
+    });
+    final repo = MarketsRepository(
+      ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+    );
+
+    await repo.trackView('btc-junho');
+
+    expect(called, isTrue);
+  });
 }
 
 class _Adapter implements HttpClientAdapter {

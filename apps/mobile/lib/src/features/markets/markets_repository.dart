@@ -24,6 +24,10 @@ class MarketsRepository {
     return Market.fromJson(await _api.getMap('/markets/$slug'));
   }
 
+  Future<void> trackView(String slug) async {
+    await _api.postMap('/markets/$slug/view');
+  }
+
   Future<Market> favorite(String slug, bool enabled) async {
     final json = enabled
         ? await _api.postMap('/markets/$slug/favorite')

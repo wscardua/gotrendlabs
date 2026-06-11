@@ -176,7 +176,7 @@ Erros esperados:
 ## Ordem sugerida de implementacao
 
 1. Criar projeto Flutter em `apps/mobile` com tema, roteamento, ambiente local e bottom navigation.
-2. Implementar shell visual dark-first com abas `Hoje`, `Insights`, `Mercados`, `Alertas` e `Busca`.
+2. Implementar shell visual dark-first com abas `Hoje`, `Ranking`, `Mercados`, `Alertas` e `Busca`, mantendo `Insights` no menu superior até existir conteúdo recorrente.
 3. Consumir `GET /markets` e renderizar cards visuais de mercado.
 4. Implementar detalhe de mercado com hero, abas `Visao geral`/`Comunidade` e painel de metricas.
 5. Resolver estrategia de autenticacao mobile antes de login persistente.

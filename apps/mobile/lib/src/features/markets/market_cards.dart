@@ -10,142 +10,164 @@ import 'market_models.dart';
 import 'sparkline_painter.dart';
 
 class MarketHeroCard extends StatelessWidget {
-  const MarketHeroCard({super.key, required this.market, required this.api});
+  const MarketHeroCard({
+    super.key,
+    required this.market,
+    required this.api,
+    this.openOnTap = true,
+    this.showStatus = true,
+  });
 
   final Market market;
   final ApiClient api;
+  final bool openOnTap;
+  final bool showStatus;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
+    final card = Ink(
+      height: 334,
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(GtlRadii.large),
-        onTap: () => context.push('/markets/${market.slug}'),
-        child: Ink(
-          height: 334,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(GtlRadii.large),
-            border: Border.all(color: GtlColors.borderStrong),
-            color: GtlColors.surface,
-            boxShadow: GtlShadows.glow(
-              _statusColor(market),
-              opacity: market.isOpen ? 0.18 : 0.10,
+        border: Border.all(color: GtlColors.borderStrong),
+        color: GtlColors.surface,
+        boxShadow: GtlShadows.glow(
+          _statusColor(market),
+          opacity: market.isOpen ? 0.18 : 0.10,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(GtlRadii.large),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            _MarketImage(market: market, api: api),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.24),
+                    const Color(0xF2050608),
+                  ],
+                  stops: const [0.0, 0.42, 1.0],
+                ),
+              ),
             ),
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(GtlRadii.large),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                _MarketImage(market: market, api: api),
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.08),
-                        Colors.black.withValues(alpha: 0.24),
-                        const Color(0xF2050608),
-                      ],
-                      stops: const [0.0, 0.42, 1.0],
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    width: 112,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.centerRight,
-                        end: Alignment.centerLeft,
-                        colors: [
-                          _statusColor(market).withValues(alpha: 0.20),
-                          Colors.transparent,
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          GtlPill(
-                            label: market.category.isEmpty
-                                ? 'Mercado'
-                                : market.category,
-                            icon: Icons.category_outlined,
-                          ),
-                          GtlPill(
-                            label: market.statusLabel,
-                            icon: market.isOpen
-                                ? Icons.radio_button_checked
-                                : Icons.lock_clock,
-                            color: _statusColor(market),
-                            filled: true,
-                          ),
-                          ..._viewerPills(market),
-                        ],
-                      ),
-                      const Spacer(),
-                      Text(
-                        market.title,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.headlineMedium,
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          _ProbabilityPill(label: market.probabilityLabel),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Wrap(
-                              spacing: 8,
-                              runSpacing: 8,
-                              children: [
-                                _HeroMeta(
-                                  icon: Icons.savings_outlined,
-                                  label: market.volumeLabel,
-                                ),
-                                _HeroMeta(
-                                  icon: Icons.groups_2_outlined,
-                                  label:
-                                      '${market.humanParticipants} participantes',
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
+            Positioned(
+              top: 0,
+              right: 0,
+              bottom: 0,
+              child: Container(
+                width: 112,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.centerRight,
+                    end: Alignment.centerLeft,
+                    colors: [
+                      _statusColor(market).withValues(alpha: 0.20),
+                      Colors.transparent,
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      GtlPill(
+                        label: market.category.isEmpty
+                            ? 'Mercado'
+                            : market.category,
+                        icon: Icons.category_outlined,
+                      ),
+                      if (showStatus)
+                        GtlPill(
+                          label: market.statusLabel,
+                          icon: market.isOpen
+                              ? Icons.radio_button_checked
+                              : Icons.lock_clock,
+                          color: _statusColor(market),
+                          filled: true,
+                        ),
+                      ..._viewerPills(market),
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    market.title,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.headlineMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _ProbabilityPill(label: market.probabilityLabel),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            _HeroMeta(
+                              icon: Icons.savings_outlined,
+                              label: market.volumeLabel,
+                            ),
+                            _HeroMeta(
+                              icon: Icons.groups_2_outlined,
+                              label:
+                                  '${market.humanParticipants} participantes',
+                            ),
+                            _HeroMeta(
+                              icon: Icons.timer_outlined,
+                              label: market.timeRemainingLabel,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
+    );
+    return Material(
+      color: Colors.transparent,
+      child: openOnTap
+          ? InkWell(
+              borderRadius: BorderRadius.circular(GtlRadii.large),
+              onTap: () => context.push('/markets/${market.slug}'),
+              child: card,
+            )
+          : card,
     );
   }
 }
 
 class MarketCompactCard extends StatelessWidget {
-  const MarketCompactCard({super.key, required this.market, required this.api});
+  const MarketCompactCard({
+    super.key,
+    required this.market,
+    required this.api,
+    this.showStatus = true,
+  });
 
   final Market market;
   final ApiClient api;
+  final bool showStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -180,15 +202,16 @@ class MarketCompactCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    Positioned(
-                      left: 8,
-                      bottom: 8,
-                      child: GtlPill(
-                        label: market.statusLabel,
-                        color: _statusColor(market),
-                        filled: true,
+                    if (showStatus)
+                      Positioned(
+                        left: 8,
+                        bottom: 8,
+                        child: GtlPill(
+                          label: market.statusLabel,
+                          color: _statusColor(market),
+                          filled: true,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -236,22 +259,36 @@ class MarketCompactCard extends StatelessWidget {
                       ),
                     ],
                     const SizedBox(height: 10),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 5,
+                    Row(
                       children: [
                         _InlineMetric(
                           icon: Icons.savings_outlined,
                           label: market.volumeLabel,
                         ),
+                        const SizedBox(width: 10),
                         _InlineMetric(
                           icon: Icons.forum_outlined,
                           label: '${market.commentCount}',
                         ),
-                        _InlineMetric(
-                          icon: Icons.timer_outlined,
-                          label: market.closeLabel,
-                        ),
+                        const SizedBox(width: 8),
+                        if (showStatus)
+                          Expanded(
+                            child: _InlineMetric(
+                              icon: Icons.timer_outlined,
+                              label: market.timeRemainingLabel,
+                              flexible: true,
+                            ),
+                          )
+                        else
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.centerRight,
+                              child: _InlineTimeRail(
+                                label: market.timeRemainingLabel,
+                                progress: _timeUrgencyProgress(market),
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                   ],
@@ -365,11 +402,101 @@ class MarketSparklineCard extends StatelessWidget {
             subtitle: 'Histórico compacto da leitura pública',
           ),
           const SizedBox(height: 12),
-          SparklinePath(path: market.sparklinePath),
+          _ConsensusChart(market: market),
           const SizedBox(height: 10),
           Text(compactText(market.summary, max: 160)),
         ],
       ),
+    );
+  }
+}
+
+class _ConsensusChart extends StatelessWidget {
+  const _ConsensusChart({required this.market});
+
+  final Market market;
+
+  static const _colors = [
+    GtlColors.accentBlue,
+    GtlColors.accentGreen,
+    GtlColors.accentYellow,
+    GtlColors.accentViolet,
+    GtlColors.accentRed,
+    GtlColors.accentCyan,
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final series = market.sparklineSeries
+        .where((item) => safeString(item['path']).isNotEmpty)
+        .toList();
+    if (series.length < 2) {
+      return SparklinePath(path: market.sparklinePath, height: 56);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          height: 68,
+          child: Stack(
+            children: [
+              for (var index = 0; index < series.length; index++)
+                Positioned.fill(
+                  child: SparklinePath(
+                    path: safeString(series[index]['path']),
+                    color: _colors[index % _colors.length],
+                    height: 68,
+                  ),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          children: [
+            for (var index = 0; index < series.length; index++)
+              _SeriesLegend(
+                color: _colors[index % _colors.length],
+                label: safeString(series[index]['label'], 'Opção'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SeriesLegend extends StatelessWidget {
+  const _SeriesLegend({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(GtlRadii.pill),
+          ),
+          child: const SizedBox(width: 18, height: 4),
+        ),
+        const SizedBox(width: 5),
+        ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 96),
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -494,25 +621,93 @@ class _HeroMeta extends StatelessWidget {
 }
 
 class _InlineMetric extends StatelessWidget {
-  const _InlineMetric({required this.icon, required this.label});
+  const _InlineMetric({
+    required this.icon,
+    required this.label,
+    this.flexible = false,
+  });
 
   final IconData icon;
   final String label;
+  final bool flexible;
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: flexible
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
+      mainAxisSize: flexible ? MainAxisSize.max : MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: GtlColors.muted),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.bodySmall?.copyWith(color: GtlColors.textSecondary),
-        ),
+        if (flexible)
+          Flexible(child: _InlineMetricLabel(label: label))
+        else
+          _InlineMetricLabel(label: label),
       ],
+    );
+  }
+}
+
+class _InlineMetricLabel extends StatelessWidget {
+  const _InlineMetricLabel({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(
+        context,
+      ).textTheme.bodySmall?.copyWith(color: GtlColors.textSecondary),
+    );
+  }
+}
+
+class _InlineTimeRail extends StatelessWidget {
+  const _InlineTimeRail({required this.label, required this.progress});
+
+  final String label;
+  final double progress;
+
+  @override
+  Widget build(BuildContext context) {
+    final urgencyColor = _timeUrgencyColor(progress);
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 92),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: urgencyColor,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 36,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(GtlRadii.pill),
+              child: LinearProgressIndicator(
+                minHeight: 4,
+                value: progress,
+                backgroundColor: urgencyColor.withValues(alpha: 0.16),
+                valueColor: AlwaysStoppedAnimation<Color>(urgencyColor),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -587,6 +782,66 @@ List<Widget> _viewerPills(Market market, {bool dense = false}) {
     );
   }
   return pills;
+}
+
+double _timeUrgencyProgress(Market market) {
+  if (!market.isOpen) {
+    return 1;
+  }
+  final remainingHours = _remainingHours(market.closesIn);
+  if (remainingHours == null) {
+    return 0.24;
+  }
+  const displayWindowHours = 30 * 24;
+  final progress = 1 - (remainingHours / displayWindowHours);
+  return progress.clamp(0.08, 0.96);
+}
+
+Color _timeUrgencyColor(double progress) {
+  final normalized = progress.clamp(0.0, 1.0);
+  if (normalized < 0.48) {
+    return Color.lerp(
+      GtlColors.accentCyan,
+      GtlColors.accentGreen,
+      normalized / 0.48,
+    )!;
+  }
+  if (normalized < 0.78) {
+    return Color.lerp(
+      GtlColors.accentGreen,
+      GtlColors.accentYellow,
+      (normalized - 0.48) / 0.30,
+    )!;
+  }
+  if (normalized >= 0.94) {
+    return GtlColors.accentRed;
+  }
+  return Color.lerp(
+    GtlColors.accentYellow,
+    GtlColors.accentRed,
+    (normalized - 0.78) / 0.22,
+  )!;
+}
+
+double? _remainingHours(String value) {
+  final normalized = value.trim().toLowerCase();
+  if (normalized.isEmpty || normalized == 'fim') {
+    return null;
+  }
+  final match = RegExp(r'^(\d+(?:[,.]\d+)?)([dhm])$').firstMatch(normalized);
+  if (match == null) {
+    return null;
+  }
+  final amount = double.tryParse(match.group(1)!.replaceAll(',', '.'));
+  if (amount == null) {
+    return null;
+  }
+  return switch (match.group(2)) {
+    'd' => amount * 24,
+    'h' => amount,
+    'm' => amount / 60,
+    _ => null,
+  };
 }
 
 Color _hexColor(String value) {
