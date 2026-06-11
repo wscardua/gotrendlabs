@@ -1013,14 +1013,36 @@ function insertAtCursor(field, value) {
 $$("[data-email-template-editor]").forEach((form) => {
   let activeField = null;
   const sampleNode = $("#email-template-samples");
+  const footerNode = $("#email-template-footer");
   const samples = sampleNode ? JSON.parse(sampleNode.textContent || "{}") : {};
+  const previewFooter = footerNode ? JSON.parse(footerNode.textContent || "{}") : {};
   const subjectField = $('[name="subject"]', form);
   const textField = $('[name="body_text"]', form);
   const htmlField = $('[name="body_html"]', form);
+  const templateKey = form.dataset.emailTemplateKey || "";
+  const isFooterTemplate = templateKey === "system.transactional_footer";
   const previewDialog = $("[data-email-preview-dialog]");
   const previewBody = $("[data-email-preview-body]");
   const previewMode = $("[data-email-preview-mode]");
   const previewSubject = $("[data-email-preview-subject]");
+  const hasPreviewFooter = (value) => (
+    (value || "").includes("Este é um email transacional") ||
+    (value || "").includes("This transactional email was sent")
+  );
+  const appendHtmlPreviewFooter = (value) => {
+    const htmlFooter = previewFooter.body_html || "";
+    if (!value || !htmlFooter || isFooterTemplate || hasPreviewFooter(value)) return value;
+    const trimmed = value.trimEnd();
+    if (trimmed.endsWith("</div>")) {
+      return `${trimmed.slice(0, -6)}${htmlFooter}</div>`;
+    }
+    return `${trimmed}${htmlFooter}`;
+  };
+  const appendTextPreviewFooter = (value) => {
+    const textFooter = previewFooter.body_text || "";
+    if (!value || !textFooter || isFooterTemplate || hasPreviewFooter(value)) return value;
+    return `${value.trimEnd()}${textFooter}`;
+  };
 
   [subjectField, textField, htmlField].forEach((field) => {
     field?.addEventListener("focus", () => {
@@ -1049,13 +1071,15 @@ $$("[data-email-template-editor]").forEach((form) => {
     if (previewBody) {
       previewBody.replaceChildren();
       if (htmlSource) {
-        previewBody.innerHTML = sanitizePreviewHtml(renderEmailTemplatePreview(htmlSource, samples));
-        if (previewMode) previewMode.textContent = "Renderizando o campo Corpo HTML com valores de exemplo.";
+        const renderedHtml = renderEmailTemplatePreview(htmlSource, samples);
+        previewBody.innerHTML = sanitizePreviewHtml(appendHtmlPreviewFooter(renderedHtml));
+        if (previewMode) previewMode.textContent = "Renderizando Corpo HTML com valores de exemplo e rodapé transacional.";
       } else {
         const fallback = document.createElement("pre");
-        fallback.textContent = renderEmailTemplatePreview(textSource, samples);
+        const renderedText = renderEmailTemplatePreview(textSource, samples);
+        fallback.textContent = appendTextPreviewFooter(renderedText);
         previewBody.appendChild(fallback);
-        if (previewMode) previewMode.textContent = "Corpo HTML vazio; prévia usando Corpo texto.";
+        if (previewMode) previewMode.textContent = "Corpo HTML vazio; prévia usando Corpo texto com rodapé transacional.";
       }
     }
     if (previewDialog?.showModal) {

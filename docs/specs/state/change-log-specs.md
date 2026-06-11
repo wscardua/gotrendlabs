@@ -1,5 +1,11 @@
 # Change Log de Specs
 
+## 2026-06-11
+
+- registrada evolução de `FEAT-AUTH-001` para OAuth real em Google, Facebook e X, com vínculo seguro por identidade externa ou email verificado pelo provedor.
+- registrada política de envio imediato para emails críticos de identidade/acesso já existentes, mantendo eventos de produto e volume no daemon.
+- registrada exigência de rodapé institucional automático e customizável por template nos emails transacionais renderizados por `communications`.
+
 ## 2026-06-08
 
 - registrada evolução de `FEAT-NOTIFY-001` para push mobile com provider `none`/dry-run, policies/templates/preferências, outbox `PushDelivery`, endpoints FastAPI e Flutter noop.

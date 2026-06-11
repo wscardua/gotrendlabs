@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-06-11 — FEAT-AUTH-001 / FEAT-NOTIFY-001 login social e emails críticos
+
+- Login social deixou de ser placeholder e passou a usar OAuth real para Google, Facebook e X, com Django cuidando de start/callback e FastAPI criando/vinculando usuário, sessão e auditoria.
+- Vínculo social passou a exigir identidade externa existente ou email verificado pelo provedor para conta já existente, evitando duplicidade silenciosa e vínculo por email não confiável.
+- X OAuth2 passou a aceitar conclusão de cadastro com email informado pelo usuário quando o provedor não retorna email, criando conta limitada e disparando confirmação imediata.
+- Emails críticos de autenticação (`user.welcome` em conta nova, `user.email_confirmation` em cadastro/reenvio/mudança de email e `account.password_reset`) passaram a tentar envio imediato após commit, mantendo fallback para outbox/daemon.
+- Emails transacionais passaram a receber rodapé institucional automático no renderizador central; o conteúdo do rodapé agora é customizável pelo template especial `system.transactional_footer`, com fallback seguro no código.
+- Eventos de produto, como mercado fechado/resolvido e crédito recebido, continuam sendo drenados pelo daemon.
+
 ## 2026-06-08 — FEAT-MOBILE-001 identidade nativa do app
 
 - Nome exibido do app iOS ajustado para `GoTrendLabs`, removendo o sufixo técnico `Mobile` do launcher.

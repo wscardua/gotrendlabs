@@ -32,7 +32,8 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 
 - notificações in-app sociais persistidas para usuários autenticados
 - templates transacionais editáveis no Admin Ops por chave em PT-BR
-- email de boas-vindas com confirmação de endereço
+- email de boas-vindas para conta nova
+- email de confirmação de endereço quando necessário
 - email de recuperação de senha com link expirável
 - aviso de mercado fechado
 - aviso de mercado resolvido
@@ -70,6 +71,10 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 
 - eventos de domínio disparam comunicações elegíveis
 - emails transacionais são enfileirados em outbox antes do envio pelo provider configurado
+- emails críticos de identidade e acesso tentam envio imediato após commit, com fallback para retry do daemon; nesta fatia: confirmação de conta, reenvio de confirmação, mudança de email e recuperação de senha
+- alertas futuros de senha alterada, novo login suspeito, conta desativada e ações administrativas críticas devem seguir a mesma política de envio imediato
+- eventos de produto, digest, notificações sociais, avisos operacionais menos urgentes e envios em massa permanecem processados pelo daemon
+- todos os emails transacionais recebem rodapé institucional automático com identificação da GoTrendLabs e URL oficial
 - push mobile é enfileirado em outbox antes de qualquer tentativa de entrega
 - ações sociais geram notificações in-app sem duplicidade por evento de origem
 - créditos recebidos, badges conquistadas e mudanças relevantes em mercados participados geram notificações in-app
@@ -91,7 +96,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - ações próprias não geram auto-notificação
 - ações de usuários `is_bot=true` não disparam notificações sociais nesta versão
 - eventos operacionais/sistêmicos podem notificar o próprio usuário quando o destinatário é o beneficiário direto, como créditos e badges
-- `user.email_confirmation`, `account.password_reset`, `market.locked`, `market.resolved` e `wallet.credited` criam entregas idempotentes em `EmailDelivery`
+- `user.welcome`, `user.email_confirmation`, `account.password_reset`, `market.locked`, `market.resolved` e `wallet.credited` criam entregas idempotentes em `EmailDelivery`
 - a resposta pública de recuperação de senha não expõe o link; o link é enviado apenas pelo template transacional
 - recuperação de senha deve tentar envio imediato após o commit, mantendo retry pelo daemon apenas como fallback operacional
 - links enviados por email devem ser absolutos para funcionarem fora do navegador atual
@@ -161,6 +166,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - Admin Ops lista entregas `EmailDelivery` com filtros por status, template, destinatário e período, sem renderizar contexto/corpo com links sensíveis
 - Admin Ops mostra todas as variáveis disponíveis por template, com nome, descrição, exemplo de uso e valor de exemplo.
 - Admin Ops permite visualizar localmente o email HTML renderizado com valores de exemplo, sem salvar alteração nem disparar envio.
+- O rodapé automático dos emails transacionais é customizável pelo template especial `system.transactional_footer`; a prévia dos demais templates mostra o rodapé configurado e o envio usa fallback seguro do código quando esse template não estiver ativo.
 - Dashboard/daemon reportam resumo do processamento de email por ciclo
 - Admin Ops permite editar políticas/templates de push por evento, com variáveis permitidas e preview seguro.
 - Admin Ops lista entregas `PushDelivery` com filtros por status/evento/provider, sem renderizar token de dispositivo nem segredo.

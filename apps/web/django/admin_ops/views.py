@@ -105,6 +105,7 @@ from apps.web.django.admin_ops.forms import (
 )
 from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 from apps.web.django.communications.models import EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushEventPolicy, PushTemplate
+from apps.web.django.communications.services import TRANSACTIONAL_FOOTER_TEMPLATE_KEY, transactional_footer_preview
 from apps.web.django.communications.push_services import (
     DEFAULT_PUSH_TEMPLATES,
     create_test_push_delivery,
@@ -168,8 +169,25 @@ PUSH_DELIVERY_STATUS_CLASSES = {
 
 
 EMAIL_TEMPLATE_HELP = {
+    TRANSACTIONAL_FOOTER_TEMPLATE_KEY: {
+        "description": "Rodapé institucional anexado automaticamente a todos os emails transacionais renderizados.",
+        "variables": [
+            ("platform_name", "Nome público da plataforma", "{{ platform_name }}", "GoTrendLabs"),
+            ("platform_description", "Descrição curta institucional", "{{ platform_description }}", "Rede social de previsões educativas, consenso público e reputação auditável."),
+            ("transaction_reason", "Mensagem que identifica o caráter transacional", "{{ transaction_reason }}", "Este é um email transacional enviado por uma ação na sua conta ou participação na plataforma."),
+            ("platform_url", "URL oficial da plataforma", "{{ platform_url }}", "https://gotrendlabs.com.br"),
+        ],
+    },
+    "user.welcome": {
+        "description": "Boas-vindas para conta nova, incluindo cadastros sociais com email já verificado.",
+        "variables": [
+            ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
+            ("platform_url", "Link público da plataforma", "{{ platform_url }}", "https://gotrendlabs.com.br/"),
+            ("source", "Origem técnica do cadastro", "{{ source }}", "google"),
+        ],
+    },
     "user.email_confirmation": {
-        "description": "Boas-vindas e confirmação de email para liberar ações sensíveis da conta.",
+        "description": "Confirmação de email para liberar ações sensíveis da conta.",
         "variables": [
             ("display_name", "Nome exibido do usuário", "{{ display_name }}", "Ana Silva"),
             ("confirmation_url", "Link único de confirmação", "{{ confirmation_url }}", "https://gotrendlabs.com.br/email-confirm/confirm/exemplo/"),
@@ -1167,8 +1185,19 @@ def email_templates(request, template_id=None):
             "template_description": template_help["description"],
             "template_variables": template_help["variables"],
             "template_sample_context": _email_template_sample_context(selected),
+            "template_preview_footer": transactional_footer_preview(selected.locale),
+            "active_email_policy_tab": "footer" if selected.key == TRANSACTIONAL_FOOTER_TEMPLATE_KEY else "templates",
         },
     )
+
+
+@admin_api_required
+def email_footer_template(request):
+    footer = EmailTemplate.objects.filter(key=TRANSACTIONAL_FOOTER_TEMPLATE_KEY, locale="pt-br").first()
+    if not footer:
+        messages.error(request, "Template de rodapé transacional não encontrado.")
+        return redirect("admin-ops-email-templates")
+    return redirect("admin-ops-email-template-edit", template_id=footer.id)
 
 
 @admin_api_required

@@ -9,9 +9,10 @@ from django.conf import settings
 
 
 class AuthAPIError(Exception):
-    def __init__(self, message, status_code=None):
+    def __init__(self, message, status_code=None, detail=None):
         super().__init__(message)
         self.status_code = status_code
+        self.detail = detail
 
 
 def _http_urlopen(request, *, timeout):
@@ -46,8 +47,9 @@ def _request(method, path, payload=None, token=None, timeout=5):
             detail = None
         if isinstance(detail, list):
             detail = "; ".join(item.get("msg", str(item)) if isinstance(item, dict) else str(item) for item in detail)
+        message = detail.get("message") if isinstance(detail, dict) else detail
         fallback = "Serviço da API retornou erro interno." if exc.code >= 500 else "Não foi possível concluir a requisição."
-        raise AuthAPIError(detail or fallback, exc.code) from exc
+        raise AuthAPIError(message or fallback, exc.code, detail=detail) from exc
     except urllib.error.URLError as exc:
         raise AuthAPIError("Serviço de autenticação indisponível.") from exc
 
@@ -72,6 +74,18 @@ def register_user(data):
 
 def login_user(data):
     return _request("POST", "/auth/login", data)
+
+
+def social_auth_start(provider, data):
+    return _request("POST", f"/auth/social/{provider}/start", data)
+
+
+def social_auth_callback(provider, data):
+    return _request("POST", f"/auth/social/{provider}/callback", data)
+
+
+def social_auth_complete_email(provider, data):
+    return _request("POST", f"/auth/social/{provider}/complete-email", data)
 
 
 def request_password_reset(email):

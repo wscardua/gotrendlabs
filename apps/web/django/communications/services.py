@@ -15,9 +15,79 @@ from apps.web.django.communications.models import EmailDelivery, EmailTemplate
 
 
 RESEND_EMAILS_API_URL = "https://api.resend.com/emails"
+TRANSACTIONAL_FOOTER_TEMPLATE_KEY = "system.transactional_footer"
 
 
 DEFAULT_EMAIL_TEMPLATES = {
+    TRANSACTIONAL_FOOTER_TEMPLATE_KEY: {
+        "pt-br": {
+            "subject": "Rodapé transacional GoTrendLabs",
+            "body_text": (
+                "---\n"
+                "{{ platform_name }}\n"
+                "{{ platform_description }}\n"
+                "{{ transaction_reason }}\n"
+                "{{ platform_url }}"
+            ),
+            "body_html": (
+                "<div style=\"border-top:1px solid #dde5e2;margin-top:28px;padding-top:16px;color:#66706f;font-size:12px;line-height:1.5;\">"
+                "<p style=\"margin:0 0 6px;font-weight:700;color:#303b3a;\">{{ platform_name }}</p>"
+                "<p style=\"margin:0 0 6px;\">{{ platform_description }}</p>"
+                "<p style=\"margin:0 0 6px;\">{{ transaction_reason }}</p>"
+                "<p style=\"margin:0;\"><a href=\"{{ platform_url }}\" style=\"color:#136f4a;text-decoration:none;\">{{ platform_url }}</a></p>"
+                "</div>"
+            ),
+        },
+        "en": {
+            "subject": "GoTrendLabs transactional footer",
+            "body_text": (
+                "---\n"
+                "{{ platform_name }}\n"
+                "{{ platform_description }}\n"
+                "{{ transaction_reason }}\n"
+                "{{ platform_url }}"
+            ),
+            "body_html": (
+                "<div style=\"border-top:1px solid #dde5e2;margin-top:28px;padding-top:16px;color:#66706f;font-size:12px;line-height:1.5;\">"
+                "<p style=\"margin:0 0 6px;font-weight:700;color:#303b3a;\">{{ platform_name }}</p>"
+                "<p style=\"margin:0 0 6px;\">{{ platform_description }}</p>"
+                "<p style=\"margin:0 0 6px;\">{{ transaction_reason }}</p>"
+                "<p style=\"margin:0;\"><a href=\"{{ platform_url }}\" style=\"color:#136f4a;text-decoration:none;\">{{ platform_url }}</a></p>"
+                "</div>"
+            ),
+        },
+    },
+    "user.welcome": {
+        "pt-br": {
+            "subject": "Bem-vindo à GoTrendLabs",
+            "body_text": (
+                "Olá {{ display_name }},\n\n"
+                "Sua conta GoTrendLabs foi criada.\n\n"
+                "Você já pode acompanhar mercados públicos, sua reputação, carteira educativa e sinais da comunidade:\n"
+                "{{ platform_url }}\n\n"
+                "A GoTrendLabs é uma rede social de previsões educativas. GTL Credits não representam dinheiro real, investimento ou saque financeiro."
+            ),
+            "body_html": (
+                "<div style=\"font-family:Arial,sans-serif;line-height:1.55;color:#1f2b2b;max-width:620px;margin:0 auto;padding:24px;\">"
+                "<p style=\"margin:0 0 16px;\">Olá {{ display_name }},</p>"
+                "<h1 style=\"margin:0 0 14px;font-size:24px;line-height:1.2;color:#101413;\">Bem-vindo à GoTrendLabs</h1>"
+                "<p>Sua conta foi criada. Você já pode acompanhar mercados públicos, reputação, carteira educativa e sinais da comunidade.</p>"
+                "<p style=\"margin:24px 0;\"><a href=\"{{ platform_url }}\" style=\"display:inline-block;background:#101413;color:#fff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;\">Abrir GoTrendLabs</a></p>"
+                "<p style=\"color:#5f6b6b;font-size:14px;\">GTL Credits são educativos e usados apenas dentro da GoTrendLabs.</p>"
+                "</div>"
+            ),
+        },
+        "en": {
+            "subject": "Welcome to GoTrendLabs",
+            "body_text": (
+                "Hi {{ display_name }},\n\n"
+                "Your GoTrendLabs account has been created.\n\n"
+                "You can now follow public markets, reputation, educational wallet, and community signals:\n"
+                "{{ platform_url }}\n\n"
+                "GoTrendLabs is an educational prediction social network. GTL Credits are not real money, investments, or withdrawable funds."
+            ),
+        },
+    },
     "user.email_confirmation": {
         "pt-br": {
             "subject": "Confirme seu email e libere sua conta",
@@ -173,24 +243,87 @@ def normalize_locale(locale):
     return locale if locale in {"pt-br", "en"} else "pt-br"
 
 
-def render_template(template_key, locale, context):
+def _public_base_url():
+    return (getattr(settings, "PUBLIC_SHARE_BASE_URL", "") or "https://gotrendlabs.com.br").rstrip("/")
+
+
+def _transactional_footer_context(locale):
     locale = normalize_locale(locale)
+    base_url = _public_base_url()
+    if locale == "en":
+        return {
+            "platform_name": "GoTrendLabs",
+            "platform_description": "Educational prediction markets, public consensus, and auditable reputation.",
+            "transaction_reason": "This transactional email was sent because of an action on your account or participation on the platform.",
+            "platform_url": base_url,
+        }
+    return {
+        "platform_name": "GoTrendLabs",
+        "platform_description": "Rede social de previsões educativas, consenso público e reputação auditável.",
+        "transaction_reason": "Este é um email transacional enviado por uma ação na sua conta ou participação na plataforma.",
+        "platform_url": base_url,
+    }
+
+
+def _template_sources(template_key, locale):
     template = (
         EmailTemplate.objects.filter(key=template_key, locale=locale, is_active=True).first()
         or EmailTemplate.objects.filter(key=template_key, locale="pt-br", is_active=True).first()
     )
     defaults = DEFAULT_EMAIL_TEMPLATES.get(template_key, {})
     default = defaults.get(locale) or defaults.get("pt-br") or {"subject": template_key, "body_text": ""}
-    subject_source = template.subject if template else default["subject"]
-    body_text_source = template.body_text if template else default["body_text"]
-    body_html_source = template.body_html if template and template.body_html else default.get("body_html", "")
-    engine = Engine(debug=False, string_if_invalid="")
-    render_context = Context(context or {}, autoescape=True)
     return {
-        "subject": engine.from_string(subject_source).render(render_context).strip(),
-        "body_text": engine.from_string(body_text_source).render(render_context).strip(),
-        "body_html": engine.from_string(body_html_source).render(render_context).strip() if body_html_source else "",
+        "subject": template.subject if template else default["subject"],
+        "body_text": template.body_text if template else default["body_text"],
+        "body_html": template.body_html if template and template.body_html else default.get("body_html", ""),
     }
+
+
+def _render_source(source, context):
+    return Engine(debug=False, string_if_invalid="").from_string(source).render(Context(context or {}, autoescape=True)).strip()
+
+
+def _transactional_footer(locale, *, html=False):
+    locale = normalize_locale(locale)
+    source_key = "body_html" if html else "body_text"
+    sources = _template_sources(TRANSACTIONAL_FOOTER_TEMPLATE_KEY, locale)
+    source = sources.get(source_key) or DEFAULT_EMAIL_TEMPLATES[TRANSACTIONAL_FOOTER_TEMPLATE_KEY]["pt-br"][source_key]
+    rendered = _render_source(source, _transactional_footer_context(locale))
+    if not rendered:
+        rendered = _render_source(DEFAULT_EMAIL_TEMPLATES[TRANSACTIONAL_FOOTER_TEMPLATE_KEY]["pt-br"][source_key], _transactional_footer_context(locale))
+    return rendered if html else "\n\n" + rendered
+
+
+def transactional_footer_preview(locale):
+    return {
+        "body_text": _transactional_footer(locale, html=False),
+        "body_html": _transactional_footer(locale, html=True),
+    }
+
+
+def _with_transactional_footer(content, locale, *, html=False):
+    if not content:
+        return content
+    if "Este é um email transacional" in content or "This transactional email was sent" in content:
+        return content
+    if html and content.rstrip().endswith("</div>"):
+        return content.rstrip()[:-6] + _transactional_footer(locale, html=True) + "</div>"
+    return content.rstrip() + _transactional_footer(locale, html=html)
+
+
+def render_template(template_key, locale, context):
+    locale = normalize_locale(locale)
+    sources = _template_sources(template_key, locale)
+    rendered = {
+        "subject": _render_source(sources["subject"], context),
+        "body_text": _render_source(sources["body_text"], context),
+        "body_html": _render_source(sources["body_html"], context) if sources["body_html"] else "",
+    }
+    if template_key == TRANSACTIONAL_FOOTER_TEMPLATE_KEY:
+        return rendered
+    rendered["body_text"] = _with_transactional_footer(rendered["body_text"], locale)
+    rendered["body_html"] = _with_transactional_footer(rendered["body_html"], locale, html=True) if rendered["body_html"] else ""
+    return rendered
 
 
 def _build_message(site_config, delivery):
@@ -285,17 +418,20 @@ def _email_settings_error(site_config, secret):
     return ""
 
 
-def process_due_email_deliveries(*, limit=25, now=None):
+def process_due_email_deliveries(*, limit=25, now=None, event_types=None):
     now = now or timezone.now()
     site_config = SiteConfig.get_solo()
     secret = _email_secret(site_config)
     stats = {"sent": 0, "failed": 0, "suppressed": 0, "skipped": 0}
     with transaction.atomic():
-        deliveries = list(
-            EmailDelivery.objects.select_for_update(skip_locked=True)
-            .filter(status__in=["queued", "failed"], next_attempt_at__lte=now, attempt_count__lt=F("max_attempts"))
-            .order_by("next_attempt_at", "id")[:limit]
+        queryset = EmailDelivery.objects.select_for_update(skip_locked=True).filter(
+            status__in=["queued", "failed"],
+            next_attempt_at__lte=now,
+            attempt_count__lt=F("max_attempts"),
         )
+        if event_types:
+            queryset = queryset.filter(event_type__in=event_types)
+        deliveries = list(queryset.order_by("next_attempt_at", "id")[:limit])
         for delivery in deliveries:
             settings_error = _email_settings_error(site_config, secret)
             if settings_error:

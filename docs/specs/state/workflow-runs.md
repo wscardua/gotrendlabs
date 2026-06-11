@@ -2,6 +2,28 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260611-SOCIAL-AUTH-IMMEDIATE-EMAIL-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-AUTH-001`, `FEAT-NOTIFY-001`
+- Objetivo: implementar login social real para Google/Facebook/X, envio imediato filtrado para emails críticos de autenticação e rodapé institucional automático em emails transacionais
+- Etapa atual: concluído; branch `feature/social-login-immediate-email` criada a partir de `origin/main`, login social real, dreno imediato filtrado de emails críticos e rodapé transacional automático implementados
+- Artefatos afetados:
+  - `apps/api/backend_api/`
+  - `apps/web/django/accounts/`
+  - `apps/web/django/communications/`
+  - `docs/specs/`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `tests/test_web_smoke.py`
+- Bloqueios: credenciais OAuth informadas em chat/notes devem ser rotacionadas antes de produção e instaladas apenas via ambiente
+- Iniciado em: 2026-06-11
+- Atualizado em: 2026-06-11
+- Encerrado em: 2026-06-11
+- Retomada: instalar credenciais OAuth rotacionadas em PRD, configurar callbacks dos provedores, recriar `django`, `fastapi` e `daemon`, validar `/api/health`, login social com conta teste, cadastro/reset imediato e rodapé em novo email
+- Reversão lógica: voltar botões sociais para placeholder, remover variáveis OAuth do ambiente, manter outbox/daemon como caminho único e remover rodapé automático do renderizador
+- Evidências de validação local: `python manage.py check`; `python manage.py makemigrations --check --dry-run`; `python manage.py test --keepdb tests.test_web_smoke` com 167 testes OK; `python packages/contracts/export_openapi.py --check`; `git diff --check`
+
 ## WFLOW-20260609-RESEND-TRANSACTIONAL-EMAIL-001
 
 - Tipo: `new-feature`
