@@ -41,12 +41,8 @@ class SocialAuthCallbackPayload(BaseModel):
 
 
 class SocialAuthCompleteEmailPayload(BaseModel):
-    provider: str = Field(min_length=1, max_length=30)
-    subject: str = Field(min_length=1, max_length=255)
+    pending_token: str = Field(min_length=20, max_length=2000)
     email: EmailStr
-    display_name: str = Field(default="", max_length=150)
-    preferred_language: str = Field(default="pt-br", max_length=10)
-    referral_code: str = Field(default="", max_length=32)
 
 
 class PasswordResetRequestPayload(BaseModel):

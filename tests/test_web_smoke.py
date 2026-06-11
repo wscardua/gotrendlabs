@@ -402,20 +402,20 @@ class BackendAuthAPITests(TransactionTestCase):
             email_confirmed_at=timezone.now(),
         )
         verified_existing = SocialProfile(
-            provider="facebook",
-            subject="facebook-subject-1",
+            provider="google",
+            subject="google-subject-2",
             email="social-existing@example.com",
             email_verified=True,
             display_name="Social Existing",
         )
         with patch("apps.api.backend_api.main.fetch_social_profile", return_value=verified_existing):
             linked = client.post(
-                "/auth/social/facebook/callback",
-                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/facebook/callback/", "code": "code-2"},
+                "/auth/social/google/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-2"},
             )
         self.assertEqual(linked.status_code, 200, linked.json())
         self.assertEqual(linked.json()["user"]["id"], existing.id)
-        self.assertTrue(ExternalIdentity.objects.filter(provider="facebook", subject="facebook-subject-1", user=existing).exists())
+        self.assertTrue(ExternalIdentity.objects.filter(provider="google", subject="google-subject-2", user=existing).exists())
 
         x_profile = SocialProfile(
             provider="x",
@@ -502,6 +502,21 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(blocked.status_code, 409)
         self.assertFalse(ExternalIdentity.objects.filter(provider="google", subject="google-unverified-existing").exists())
 
+        facebook_existing = SocialProfile(
+            provider="facebook",
+            subject="facebook-untrusted-existing",
+            email=existing.email,
+            email_verified=False,
+            display_name="Social Blocked",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=facebook_existing):
+            facebook_blocked = client.post(
+                "/auth/social/facebook/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/facebook/callback/", "code": "code-facebook"},
+            )
+        self.assertEqual(facebook_blocked.status_code, 409)
+        self.assertFalse(ExternalIdentity.objects.filter(provider="facebook", subject="facebook-untrusted-existing").exists())
+
         site_config = SiteConfig.get_solo()
         site_config.email_enabled = True
         site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
@@ -561,6 +576,25 @@ class BackendAuthAPITests(TransactionTestCase):
             )
         self.assertEqual(callback.status_code, 422)
         self.assertEqual(callback.json()["detail"]["code"], "social_email_required")
+        pending_token = callback.json()["detail"]["pending_token"]
+        self.assertGreater(len(pending_token), 40)
+
+        rejected = client.post(
+            "/auth/social/x/complete-email",
+            json={
+                "provider": "x",
+                "subject": "x-no-email-subject",
+                "email": "x-forged@example.com",
+                "display_name": "Forged",
+                "preferred_language": "pt-br",
+            },
+        )
+        self.assertEqual(rejected.status_code, 422)
+        tampered = client.post(
+            "/auth/social/x/complete-email",
+            json={"pending_token": pending_token + "x", "email": "x-forged@example.com"},
+        )
+        self.assertEqual(tampered.status_code, 422)
 
         site_config = SiteConfig.get_solo()
         site_config.email_enabled = True
@@ -583,11 +617,8 @@ class BackendAuthAPITests(TransactionTestCase):
                 completed = client.post(
                     "/auth/social/x/complete-email",
                     json={
-                        "provider": "x",
-                        "subject": "x-no-email-subject",
+                        "pending_token": pending_token,
                         "email": "x-complete@example.com",
-                        "display_name": "X No Email",
-                        "preferred_language": "pt-br",
                     },
                 )
         self.assertEqual(completed.status_code, 200, completed.json())
@@ -598,6 +629,18 @@ class BackendAuthAPITests(TransactionTestCase):
         welcome = EmailDelivery.objects.get(recipient_user_id=completed.json()["user"]["id"], template_key="user.welcome")
         self.assertEqual(welcome.status, "sent")
         self.assertEqual(post.call_count, 2)
+
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=x_profile):
+            linked = client.post(
+                "/auth/social/x/callback",
+                json={
+                    "redirect_uri": "https://gotrendlabs.com.br/auth/social/x/callback/",
+                    "code": "code-no-email-again",
+                    "oauth_token_secret": "verifier",
+                },
+            )
+        self.assertEqual(linked.status_code, 200, linked.json())
+        self.assertEqual(linked.json()["user"]["email"], "x-complete@example.com")
 
     def test_system_log_model_defaults_retention_and_context(self):
         log = SystemLog.objects.create(
@@ -5167,10 +5210,7 @@ class WebSmokeTests(TransactionTestCase):
             status_code=422,
             detail={
                 "code": "social_email_required",
-                "provider": "x",
-                "subject": "x-web-subject",
-                "display_name": "X Web",
-                "preferred_language": "pt-br",
+                "pending_token": "pending-token-web-123",
             },
         )
 
@@ -5179,7 +5219,7 @@ class WebSmokeTests(TransactionTestCase):
 
         self.assertRedirects(response, reverse("social-auth-email"), fetch_redirect_response=False)
         session = self.client.session
-        self.assertEqual(session["social_email_state"]["subject"], "x-web-subject")
+        self.assertEqual(session["social_email_state"]["pending_token"], "pending-token-web-123")
         self.assertNotIn("social_auth_state", session)
 
         auth_response = {
@@ -5194,10 +5234,11 @@ class WebSmokeTests(TransactionTestCase):
             },
             "session": {"token": "x-web-token"},
         }
-        with patch("apps.web.django.accounts.views.social_auth_complete_email", return_value=auth_response):
+        with patch("apps.web.django.accounts.views.social_auth_complete_email", return_value=auth_response) as complete:
             completed = self.client.post(reverse("social-auth-email"), {"email": "x-web@example.com"})
 
         self.assertRedirects(completed, reverse("rankings"), fetch_redirect_response=False)
+        complete.assert_called_once_with("x", {"pending_token": "pending-token-web-123", "email": "x-web@example.com"})
         session = self.client.session
         self.assertEqual(session[TOKEN_KEY], "x-web-token")
         self.assertEqual(session[USER_KEY]["email"], "x-web@example.com")

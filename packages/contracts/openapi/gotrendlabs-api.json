@@ -4111,45 +4111,20 @@
       },
       "SocialAuthCompleteEmailPayload": {
         "properties": {
-          "display_name": {
-            "default": "",
-            "maxLength": 150,
-            "title": "Display Name",
-            "type": "string"
-          },
           "email": {
             "format": "email",
             "title": "Email",
             "type": "string"
           },
-          "preferred_language": {
-            "default": "pt-br",
-            "maxLength": 10,
-            "title": "Preferred Language",
-            "type": "string"
-          },
-          "provider": {
-            "maxLength": 30,
-            "minLength": 1,
-            "title": "Provider",
-            "type": "string"
-          },
-          "referral_code": {
-            "default": "",
-            "maxLength": 32,
-            "title": "Referral Code",
-            "type": "string"
-          },
-          "subject": {
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Subject",
+          "pending_token": {
+            "maxLength": 2000,
+            "minLength": 20,
+            "title": "Pending Token",
             "type": "string"
           }
         },
         "required": [
-          "provider",
-          "subject",
+          "pending_token",
           "email"
         ],
         "title": "SocialAuthCompleteEmailPayload",

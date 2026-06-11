@@ -247,10 +247,7 @@ def social_auth_callback_view(request, provider):
         if isinstance(exc.detail, dict) and exc.detail.get("code") == "social_email_required":
             request.session[SOCIAL_EMAIL_SESSION_KEY] = {
                 "provider": provider,
-                "subject": exc.detail.get("subject", ""),
-                "display_name": exc.detail.get("display_name", ""),
-                "preferred_language": exc.detail.get("preferred_language", "pt-br"),
-                "referral_code": session_state.get("referral_code", ""),
+                "pending_token": exc.detail.get("pending_token", ""),
                 "next": session_state.get("next", reverse("home")),
             }
             request.session.pop(SOCIAL_AUTH_SESSION_KEY, None)
@@ -266,18 +263,14 @@ def social_auth_callback_view(request, provider):
 
 def social_auth_email_view(request):
     pending = request.session.get(SOCIAL_EMAIL_SESSION_KEY) or {}
-    if not pending.get("provider") or not pending.get("subject"):
+    if not pending.get("provider") or not pending.get("pending_token"):
         messages.error(request, "Não foi possível encontrar o login social pendente.")
         return redirect("login")
     form = SocialEmailForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         payload = {
-            "provider": pending["provider"],
-            "subject": pending["subject"],
+            "pending_token": pending["pending_token"],
             "email": form.cleaned_data["email"],
-            "display_name": pending.get("display_name", ""),
-            "preferred_language": pending.get("preferred_language", "pt-br"),
-            "referral_code": pending.get("referral_code", ""),
         }
         try:
             response = social_auth_complete_email(pending["provider"], payload)

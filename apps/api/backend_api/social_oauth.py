@@ -177,7 +177,7 @@ def _fetch_facebook_profile(payload):
         provider="facebook",
         subject=str(profile.get("id") or ""),
         email=str(profile.get("email") or "").lower(),
-        email_verified=bool(profile.get("verified") and profile.get("email")),
+        email_verified=False,
         display_name=str(profile.get("name") or profile.get("email") or "Usuário GoTrendLabs"),
     )
 

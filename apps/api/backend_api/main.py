@@ -1,7 +1,10 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from functools import lru_cache
+import base64
+import binascii
 import hashlib
+import hmac
 import logging
 from ipaddress import ip_address as parse_ip_address
 import os
@@ -11,6 +14,7 @@ import secrets
 import string
 import sys
 import time
+from types import SimpleNamespace
 from typing import Optional
 import unicodedata
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -118,6 +122,7 @@ PROBABILITY_QUANT = Decimal("0.0001")
 REPUTATION_K_FACTOR = Decimal("10")
 TERMS_VERSION = "2026-05-17"
 IMMEDIATE_AUTH_EMAIL_EVENTS = ("account.password_reset", "user.email_confirmation", "user.welcome")
+SOCIAL_EMAIL_PENDING_TTL_SECONDS = 15 * 60
 BADGE_RULE_TYPES = {
     "founding_member",
     "resolved_predictions_count",
@@ -3104,7 +3109,12 @@ def _touch_social_identity(cursor, user_id, provider, subject, email, now):
         INSERT INTO gotrendlabs_external_identities (user_id, provider, subject, email, created_at, last_login_at)
         VALUES (%s, %s, %s, %s, %s, %s)
         ON CONFLICT (provider, subject)
-        DO UPDATE SET email = EXCLUDED.email, last_login_at = EXCLUDED.last_login_at
+        DO UPDATE SET
+            email = CASE
+                WHEN EXCLUDED.email <> '' THEN EXCLUDED.email
+                ELSE gotrendlabs_external_identities.email
+            END,
+            last_login_at = EXCLUDED.last_login_at
         """,
         (user_id, provider, subject, email or "", now, now),
     )
@@ -3116,6 +3126,65 @@ def _touch_social_identity(cursor, user_id, provider, subject, email, now):
         """,
         (provider, subject, user_id),
     )
+
+
+def _base64url_encode(value):
+    return base64.urlsafe_b64encode(value).decode().rstrip("=")
+
+
+def _base64url_decode(value):
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode((value + padding).encode())
+
+
+def _social_email_token_secret():
+    return (
+        os.environ.get("GOTRENDLABS_SOCIAL_EMAIL_TOKEN_SECRET")
+        or os.environ.get("DJANGO_SECRET_KEY")
+        or "dev-only-gotrendlabs-django-fixtures"
+    ).encode()
+
+
+def _social_email_pending_token(profile, referral_code):
+    now = int(time.time())
+    payload = {
+        "provider": profile.provider,
+        "subject": profile.subject,
+        "display_name": profile.display_name,
+        "preferred_language": profile.preferred_language or "pt-br",
+        "referral_code": referral_code or "",
+        "iat": now,
+        "exp": now + SOCIAL_EMAIL_PENDING_TTL_SECONDS,
+    }
+    body = _base64url_encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode())
+    signature = _base64url_encode(hmac.new(_social_email_token_secret(), body.encode(), hashlib.sha256).digest())
+    return f"{body}.{signature}"
+
+
+def _social_profile_from_pending_token(pending_token, email):
+    try:
+        body, signature = pending_token.split(".", 1)
+        expected = _base64url_encode(hmac.new(_social_email_token_secret(), body.encode(), hashlib.sha256).digest())
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError
+        payload = json.loads(_base64url_decode(body).decode())
+    except (ValueError, json.JSONDecodeError, UnicodeDecodeError, binascii.Error):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente inválido.")
+    if int(payload.get("exp") or 0) < int(time.time()):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente expirado.")
+    provider = str(payload.get("provider") or "")
+    subject = str(payload.get("subject") or "")
+    if provider not in {"google", "facebook", "x"} or not subject:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente inválido.")
+    profile = SocialProfile(
+        provider=provider,
+        subject=subject,
+        email=str(email).lower(),
+        email_verified=False,
+        display_name=str(payload.get("display_name") or email),
+        preferred_language=str(payload.get("preferred_language") or "pt-br"),
+    )
+    return profile, str(payload.get("referral_code") or "")
 
 
 def _create_social_user(cursor, profile, referral_code, now):
@@ -3166,18 +3235,6 @@ def _create_social_user(cursor, profile, referral_code, now):
 def _social_auth_response(cursor, profile, payload, request):
     if not profile.subject:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="O provedor social não retornou identificador de usuário.")
-    if not profile.email:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail={
-                "code": "social_email_required",
-                "message": "Informe um email para concluir o login social.",
-                "provider": profile.provider,
-                "subject": profile.subject,
-                "display_name": profile.display_name,
-                "preferred_language": profile.preferred_language,
-            },
-        )
     now = datetime.now(timezone.utc)
     should_process_email = False
     user = _social_user_by_identity(cursor, profile.provider, profile.subject)
@@ -3186,21 +3243,35 @@ def _social_auth_response(cursor, profile, payload, request):
         if not user["is_active"] or user["account_status"] != "active":
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada.")
         _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
+        cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
+        user["last_login"] = now
+        session = _create_session(cursor, user["id"], request)
+        ip_address, user_agent = _client_meta(request)
+        _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=ip_address, user_agent=user_agent)
+        return {"user": _user_response(user), "session": session}, should_process_email, is_new_user
+    if not profile.email:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "social_email_required",
+                "message": "Informe um email para concluir o login social.",
+                "pending_token": _social_email_pending_token(profile, getattr(payload, "referral_code", "")),
+            },
+        )
+    user = _social_user_by_email(cursor, profile.email)
+    if user:
+        if not user["is_active"] or user["account_status"] != "active":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada.")
+        if not profile.email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Entre com email e senha antes de vincular este provedor social.",
+            )
+        _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
     else:
-        user = _social_user_by_email(cursor, profile.email)
-        if user:
-            if not user["is_active"] or user["account_status"] != "active":
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada.")
-            if not profile.email_verified:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Entre com email e senha antes de vincular este provedor social.",
-                )
-            _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
-        else:
-            user, should_process_email = _create_social_user(cursor, profile, payload.referral_code, now)
-            is_new_user = True
-            _record_event(cursor, "register", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=_client_meta(request)[0], user_agent=_client_meta(request)[1])
+        user, should_process_email = _create_social_user(cursor, profile, getattr(payload, "referral_code", ""), now)
+        is_new_user = True
+        _record_event(cursor, "register", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=_client_meta(request)[0], user_agent=_client_meta(request)[1])
     cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
     user["last_login"] = now
     session = _create_session(cursor, user["id"], request)
@@ -3210,14 +3281,7 @@ def _social_auth_response(cursor, profile, payload, request):
 
 
 def _profile_from_complete_email_payload(payload):
-    return SocialProfile(
-        provider=payload.provider,
-        subject=payload.subject,
-        email=str(payload.email).lower(),
-        email_verified=False,
-        display_name=payload.display_name or str(payload.email),
-        preferred_language=payload.preferred_language or "pt-br",
-    )
+    return _social_profile_from_pending_token(payload.pending_token, payload.email)
 
 
 def _bearer_token(authorization):
@@ -6416,12 +6480,12 @@ def social_login_callback(provider: str, payload: SocialAuthCallbackPayload, req
 @app.post("/auth/social/{provider}/complete-email", response_model=AuthResponse)
 def social_login_complete_email(provider: str, payload: SocialAuthCompleteEmailPayload, request: Request):
     _enforce_rate_limit("social-auth-email", _rate_limit_identity(request, provider), limit=20, window_seconds=3600)
-    if provider != payload.provider:
+    profile, referral_code = _profile_from_complete_email_payload(payload)
+    if provider != profile.provider:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Provedor social inconsistente.")
-    profile = _profile_from_complete_email_payload(payload)
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            response, should_process_email, _ = _social_auth_response(cursor, profile, payload, request)
+            response, should_process_email, _ = _social_auth_response(cursor, profile, SimpleNamespace(referral_code=referral_code), request)
     if should_process_email:
         _process_immediate_auth_email_now()
     return response

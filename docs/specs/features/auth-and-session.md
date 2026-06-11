@@ -73,7 +73,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - usuário com email não confirmado pode entrar, mas ações sensíveis ficam bloqueadas até confirmar o endereço
 - alteração de email no perfil invalida a confirmação anterior e dispara novo link de confirmação quando email estiver ativo
 - login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`) e iniciam OAuth real via Django, mantendo a FastAPI como fonte de verdade do vínculo e da sessão
-- clique em login social registra aceite da política de uso vigente; email verificado pelo provedor nasce confirmado, email não verificado nasce em login limitado e recebe link de confirmação; quando o provedor não retorna email, a web solicita email antes de criar a conta limitada
+- clique em login social registra aceite da política de uso vigente; email verificado pelo provedor nasce confirmado, email não verificado nasce em login limitado e recebe link de confirmação; quando uma identidade social nova não retorna email, a FastAPI emite token pendente assinado/expirável e a web solicita email antes de criar a conta limitada
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - cadastro iniciado por `?ref=` preserva o código de indicação e o envia à FastAPI; código inválido não bloqueia criação de conta
@@ -92,8 +92,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - um usuário deve possuir identidade única no domínio
 - identificadores públicos de usuário devem manter o prefixo `@`, inclusive após edição de perfil
 - cada sessão precisa ser validável e revogável
-- login social não pode gerar duplicidade silenciosa de contas; identidade externa existente faz login direto, email existente só é vinculado automaticamente quando o provedor retornar email verificado, e email existente sem verificação confiável deve ser bloqueado com orientação para login normal
-- login social sem email do provedor não cria conta automaticamente; exige email informado pelo usuário, cria conta com email não confirmado e dispara confirmação imediata quando emails transacionais estiverem ativos
+- login social não pode gerar duplicidade silenciosa de contas; identidade externa existente faz login direto mesmo quando o provedor não retorna email, email existente só é vinculado automaticamente quando o provedor retornar email verificado, e email existente sem verificação confiável deve ser bloqueado com orientação para login normal
+- login social sem email do provedor não cria conta automaticamente; exige email informado pelo usuário junto de token pendente assinado pela FastAPI, cria conta com email não confirmado e dispara confirmação imediata quando emails transacionais estiverem ativos
 - aceite de política de uso deve guardar data e versão aceita
 - reCAPTCHA protege criação de conta contra abuso automatizado sem substituir validações de identidade, senha e aceite
 - exclusão lógica deve preservar histórico e bloquear uso normal
