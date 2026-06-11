@@ -1,7 +1,10 @@
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from functools import lru_cache
+import base64
+import binascii
 import hashlib
+import hmac
 import logging
 from ipaddress import ip_address as parse_ip_address
 import os
@@ -11,6 +14,7 @@ import secrets
 import string
 import sys
 import time
+from types import SimpleNamespace
 from typing import Optional
 import unicodedata
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -22,7 +26,7 @@ from apps.api.backend_api.agent_services import ai_health_summary, market_public
 from apps.api.backend_api.badge_engine import BadgeAwardEngine
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.daemon_services import daemon_dashboard_status
-from apps.api.backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, issue_email_confirmation, public_url
+from apps.api.backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, enqueue_welcome_email, issue_email_confirmation, public_url
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from apps.api.backend_api.schemas import (
     AdminCategoryPayload,
@@ -89,6 +93,10 @@ from apps.api.backend_api.schemas import (
     RegisterPayload,
     ReferralResponse,
     SessionContextResponse,
+    SocialAuthCallbackPayload,
+    SocialAuthCompleteEmailPayload,
+    SocialAuthStartPayload,
+    SocialAuthStartResponse,
     SuggestionRewardPayload,
     SystemLogListResponse,
     SystemLogResponse,
@@ -99,6 +107,8 @@ from apps.api.backend_api.schemas import (
     WalletRechargeRequestResponse,
 )
 from apps.api.backend_api.security import check_password, hash_token, issue_token, make_password
+from apps.api.backend_api.social_oauth import SocialOAuthError, build_social_authorization, fetch_social_profile
+from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from apps.web.django.system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
 
@@ -111,6 +121,8 @@ BASE_PREDICTION_WEIGHT = 10_000
 PROBABILITY_QUANT = Decimal("0.0001")
 REPUTATION_K_FACTOR = Decimal("10")
 TERMS_VERSION = "2026-05-17"
+IMMEDIATE_AUTH_EMAIL_EVENTS = ("account.password_reset", "user.email_confirmation", "user.welcome")
+SOCIAL_EMAIL_PENDING_TTL_SECONDS = 15 * 60
 BADGE_RULE_TYPES = {
     "founding_member",
     "resolved_predictions_count",
@@ -1768,7 +1780,7 @@ def _issue_password_reset(cursor, user, *, ip_address=None, user_agent=""):
     return reset_url
 
 
-def _process_password_reset_email_now():
+def _process_immediate_auth_email_now():
     try:
         os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
         import django
@@ -1793,9 +1805,9 @@ def _process_password_reset_email_now():
             and (settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY)
         ):
             return
-        process_due_email_deliveries(limit=10)
+        process_due_email_deliveries(limit=10, event_types=IMMEDIATE_AUTH_EMAIL_EVENTS)
     except Exception:
-        logger.exception("Password reset email immediate delivery failed.")
+        logger.exception("Immediate auth email delivery failed.")
 
 
 def _ledger_entries(cursor, user_id, limit=10):
@@ -3060,6 +3072,218 @@ def _create_session(cursor, user_id, request):
     return {"token": token, "expires_at": expires_at.isoformat()}
 
 
+def _auth_user_select():
+    return """
+        SELECT u.id, u.username, u.email, u.first_name, u.preferred_language, u.date_joined, u.last_login,
+               u.account_status, u.is_staff, u.is_active, u.email_confirmed_at
+        FROM gotrendlabs_users u
+    """
+
+
+def _social_user_by_identity(cursor, provider, subject):
+    cursor.execute(
+        f"""
+        {_auth_user_select()}
+        JOIN gotrendlabs_external_identities e ON e.user_id = u.id
+        WHERE e.provider = %s AND e.subject = %s
+        """,
+        (provider, subject),
+    )
+    return cursor.fetchone()
+
+
+def _social_user_by_email(cursor, email):
+    cursor.execute(
+        f"""
+        {_auth_user_select()}
+        WHERE lower(email) = lower(%s)
+        """,
+        (email,),
+    )
+    return cursor.fetchone()
+
+
+def _touch_social_identity(cursor, user_id, provider, subject, email, now):
+    cursor.execute(
+        """
+        INSERT INTO gotrendlabs_external_identities (user_id, provider, subject, email, created_at, last_login_at)
+        VALUES (%s, %s, %s, %s, %s, %s)
+        ON CONFLICT (provider, subject)
+        DO UPDATE SET
+            email = CASE
+                WHEN EXCLUDED.email <> '' THEN EXCLUDED.email
+                ELSE gotrendlabs_external_identities.email
+            END,
+            last_login_at = EXCLUDED.last_login_at
+        """,
+        (user_id, provider, subject, email or "", now, now),
+    )
+    cursor.execute(
+        """
+        UPDATE gotrendlabs_users
+        SET external_provider = %s, external_subject = %s
+        WHERE id = %s
+        """,
+        (provider, subject, user_id),
+    )
+
+
+def _base64url_encode(value):
+    return base64.urlsafe_b64encode(value).decode().rstrip("=")
+
+
+def _base64url_decode(value):
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode((value + padding).encode())
+
+
+def _social_email_token_secret():
+    return (
+        os.environ.get("GOTRENDLABS_SOCIAL_EMAIL_TOKEN_SECRET")
+        or os.environ.get("DJANGO_SECRET_KEY")
+        or "dev-only-gotrendlabs-django-fixtures"
+    ).encode()
+
+
+def _social_email_pending_token(profile, referral_code):
+    now = int(time.time())
+    payload = {
+        "provider": profile.provider,
+        "subject": profile.subject,
+        "display_name": profile.display_name,
+        "preferred_language": profile.preferred_language or "pt-br",
+        "referral_code": referral_code or "",
+        "iat": now,
+        "exp": now + SOCIAL_EMAIL_PENDING_TTL_SECONDS,
+    }
+    body = _base64url_encode(json.dumps(payload, separators=(",", ":"), sort_keys=True).encode())
+    signature = _base64url_encode(hmac.new(_social_email_token_secret(), body.encode(), hashlib.sha256).digest())
+    return f"{body}.{signature}"
+
+
+def _social_profile_from_pending_token(pending_token, email):
+    try:
+        body, signature = pending_token.split(".", 1)
+        expected = _base64url_encode(hmac.new(_social_email_token_secret(), body.encode(), hashlib.sha256).digest())
+        if not hmac.compare_digest(signature, expected):
+            raise ValueError
+        payload = json.loads(_base64url_decode(body).decode())
+    except (ValueError, json.JSONDecodeError, UnicodeDecodeError, binascii.Error):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente inválido.")
+    if int(payload.get("exp") or 0) < int(time.time()):
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente expirado.")
+    provider = str(payload.get("provider") or "")
+    subject = str(payload.get("subject") or "")
+    if provider not in {"google", "facebook", "x"} or not subject:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente inválido.")
+    profile = SocialProfile(
+        provider=provider,
+        subject=subject,
+        email=str(email).lower(),
+        email_verified=False,
+        display_name=str(payload.get("display_name") or email),
+        preferred_language=str(payload.get("preferred_language") or "pt-br"),
+    )
+    return profile, str(payload.get("referral_code") or "")
+
+
+def _create_social_user(cursor, profile, referral_code, now):
+    handle = _unique_handle(cursor, profile.display_name or profile.email)
+    cursor.execute("SELECT email_enabled FROM gotrendlabs_site_config WHERE singleton_key = 1")
+    site_config = cursor.fetchone()
+    should_confirm_email = bool(profile.email_verified)
+    cursor.execute(
+        """
+        INSERT INTO gotrendlabs_users
+            (password, last_login, is_superuser, username, first_name, last_name, is_staff, is_active,
+             date_joined, email, preferred_language, external_provider, external_subject,
+             terms_accepted_at, terms_version, account_status, deletion_requested_at, deactivated_at,
+             email_confirmed_at, is_bot)
+        VALUES (%s, %s, false, %s, %s, '', false, true, %s, %s, %s, %s, %s,
+                %s, %s, 'active', NULL, NULL, %s, false)
+        RETURNING id, username, email, first_name, preferred_language, date_joined, last_login, account_status, is_staff, email_confirmed_at, is_active
+        """,
+        (
+            make_password(issue_token()),
+            now,
+            handle,
+            (profile.display_name or profile.email).strip(),
+            now,
+            profile.email,
+            profile.preferred_language,
+            profile.provider,
+            profile.subject,
+            now,
+            TERMS_VERSION,
+            now if should_confirm_email else None,
+        ),
+    )
+    user = cursor.fetchone()
+    _ensure_user_core(cursor, user["id"], display_name=profile.display_name)
+    _award_referral_bonus(cursor, referral_code, user["id"])
+    _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
+    should_process_email = False
+    if site_config and site_config["email_enabled"]:
+        enqueue_welcome_email(cursor, user, source=profile.provider)
+        should_process_email = True
+        if not should_confirm_email:
+            issue_email_confirmation(cursor, user, ip_address=None, user_agent="")
+            _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"], provider=profile.provider)
+    return user, should_process_email
+
+
+def _social_auth_response(cursor, profile, payload, request):
+    if not profile.subject:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="O provedor social não retornou identificador de usuário.")
+    now = datetime.now(timezone.utc)
+    should_process_email = False
+    user = _social_user_by_identity(cursor, profile.provider, profile.subject)
+    is_new_user = False
+    if user:
+        if not user["is_active"] or user["account_status"] != "active":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada.")
+        _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
+        cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
+        user["last_login"] = now
+        session = _create_session(cursor, user["id"], request)
+        ip_address, user_agent = _client_meta(request)
+        _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=ip_address, user_agent=user_agent)
+        return {"user": _user_response(user), "session": session}, should_process_email, is_new_user
+    if not profile.email:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "social_email_required",
+                "message": "Informe um email para concluir o login social.",
+                "pending_token": _social_email_pending_token(profile, getattr(payload, "referral_code", "")),
+            },
+        )
+    user = _social_user_by_email(cursor, profile.email)
+    if user:
+        if not user["is_active"] or user["account_status"] != "active":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada.")
+        if not profile.email_verified:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Entre com email e senha antes de vincular este provedor social.",
+            )
+        _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
+    else:
+        user, should_process_email = _create_social_user(cursor, profile, getattr(payload, "referral_code", ""), now)
+        is_new_user = True
+        _record_event(cursor, "register", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=_client_meta(request)[0], user_agent=_client_meta(request)[1])
+    cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
+    user["last_login"] = now
+    session = _create_session(cursor, user["id"], request)
+    ip_address, user_agent = _client_meta(request)
+    _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=ip_address, user_agent=user_agent)
+    return {"user": _user_response(user), "session": session}, should_process_email, is_new_user
+
+
+def _profile_from_complete_email_payload(payload):
+    return _social_profile_from_pending_token(payload.pending_token, payload.email)
+
+
 def _bearer_token(authorization):
     if not authorization or not authorization.lower().startswith("bearer "):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Sessão ausente.")
@@ -3095,6 +3319,7 @@ def list_markets(
         where.append("(lower(sc.name) = lower(%s) OR lower(sc.slug) = lower(%s))")
         params.extend([subcategory, subcategory])
     where_sql = "WHERE " + " AND ".join(where)
+    should_process_email = False
     with get_connection() as connection:
         with connection.cursor() as cursor:
             viewer = _optional_current_user(cursor, authorization)
@@ -4576,7 +4801,7 @@ def admin_request_user_password_reset(user_id: int, payload: AdminUserPasswordRe
             _record_event(cursor, "password_reset_requested", user_id=target["id"], email=target["email"], ip_address=ip_address, user_agent=user_agent)
             _record_admin_event(cursor, staff["id"], "user.password_reset_request", "user", str(user_id), note)
             response = {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
-    _process_password_reset_email_now()
+    _process_immediate_auth_email_now()
     return response
 
 
@@ -5962,6 +6187,7 @@ def register(payload: RegisterPayload, request: Request):
     language = payload.language if payload.language in {"pt-br", "en"} else "pt-br"
     ip_address, user_agent = _client_meta(request)
 
+    should_process_email = False
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -6005,10 +6231,17 @@ def register(payload: RegisterPayload, request: Request):
             _award_referral_bonus(cursor, payload.referral_code, user["id"])
             session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "register", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+            if site_config and site_config["email_enabled"]:
+                enqueue_welcome_email(cursor, user, source="password")
+                should_process_email = True
             if email_confirmation_required:
                 issue_email_confirmation(cursor, user, ip_address=ip_address, user_agent=user_agent)
                 _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
-            return {"user": _user_response(user), "session": session}
+                should_process_email = True
+            response = {"user": _user_response(user), "session": session}
+    if should_process_email:
+        _process_immediate_auth_email_now()
+    return response
 
 
 @app.post("/auth/login", response_model=AuthResponse)
@@ -6062,7 +6295,7 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
                 _record_event(cursor, "password_reset_requested", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
                 should_process_email = True
     if should_process_email:
-        _process_password_reset_email_now()
+        _process_immediate_auth_email_now()
     return {"message": PASSWORD_RESET_MESSAGE, "reset_url": ""}
 
 
@@ -6071,6 +6304,7 @@ def confirm_password_reset(payload: PasswordResetConfirmPayload, request: Reques
     ip_address, user_agent = _client_meta(request)
     _enforce_rate_limit("password-reset-confirm", _rate_limit_identity(request), limit=10, window_seconds=3600)
     now = datetime.now(timezone.utc)
+    should_process_email = False
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -6179,6 +6413,9 @@ def resend_email_confirmation(request: Request, authorization: str = Header(defa
                 return {"message": "Aguarde alguns minutos antes de reenviar a confirmação."}
             issue_email_confirmation(cursor, user, ip_address=ip_address, user_agent=user_agent)
             _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+            should_process_email = True
+    if should_process_email:
+        _process_immediate_auth_email_now()
     return {"message": "Enviamos um novo link de confirmação."}
 
 
@@ -6211,11 +6448,47 @@ def logout(request: Request, authorization: str = Header(default="")):
     return None
 
 
-@app.post("/auth/social/{provider}", status_code=status.HTTP_501_NOT_IMPLEMENTED)
-def social_login(provider: str):
-    if provider not in {"google", "facebook", "x"}:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Provedor não suportado.")
-    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="Login social ainda depende da credencial OAuth do provedor.")
+@app.post("/auth/social/{provider}/start", response_model=SocialAuthStartResponse)
+def social_login_start(provider: str, payload: SocialAuthStartPayload, request: Request):
+    _enforce_rate_limit("social-auth-start", _rate_limit_identity(request, provider), limit=30, window_seconds=3600)
+    try:
+        authorization = build_social_authorization(provider, redirect_uri=payload.redirect_uri, state=payload.state)
+    except SocialOAuthError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    return {
+        "authorization_url": authorization.authorization_url,
+        "state": authorization.state,
+        "oauth_token_secret": authorization.oauth_token_secret,
+    }
+
+
+@app.post("/auth/social/{provider}/callback", response_model=AuthResponse)
+def social_login_callback(provider: str, payload: SocialAuthCallbackPayload, request: Request):
+    _enforce_rate_limit("social-auth-callback", _rate_limit_identity(request, provider), limit=30, window_seconds=3600)
+    try:
+        profile = fetch_social_profile(provider, payload)
+    except SocialOAuthError as exc:
+        raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            response, should_process_email, _ = _social_auth_response(cursor, profile, payload, request)
+    if should_process_email:
+        _process_immediate_auth_email_now()
+    return response
+
+
+@app.post("/auth/social/{provider}/complete-email", response_model=AuthResponse)
+def social_login_complete_email(provider: str, payload: SocialAuthCompleteEmailPayload, request: Request):
+    _enforce_rate_limit("social-auth-email", _rate_limit_identity(request, provider), limit=20, window_seconds=3600)
+    profile, referral_code = _profile_from_complete_email_payload(payload)
+    if provider != profile.provider:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Provedor social inconsistente.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            response, should_process_email, _ = _social_auth_response(cursor, profile, SimpleNamespace(referral_code=referral_code), request)
+    if should_process_email:
+        _process_immediate_auth_email_now()
+    return response
 
 
 @app.get("/users/me", response_model=UserProfileResponse)
@@ -6391,6 +6664,7 @@ def update_my_push_preferences(payload: PushPreferenceUpdatePayload, authorizati
 
 @app.patch("/users/me", response_model=UserProfileResponse)
 def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default="")):
+    should_process_email = False
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
@@ -6411,6 +6685,7 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
                 user["email_confirmed_at"] = None
                 issue_email_confirmation(cursor, user, ip_address=None, user_agent="")
                 _record_event(cursor, "email_confirmation_sent", user_id=user["id"], email=user["email"])
+                should_process_email = True
             if payload.handle is not None:
                 handle = _handle_seed(payload.handle)
                 if len(handle) < 2:
@@ -6444,7 +6719,10 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
                 values.append(datetime.now(timezone.utc))
                 values.append(user["id"])
                 cursor.execute(f"UPDATE gotrendlabs_user_profiles SET {', '.join(updates)} WHERE user_id = %s", values)
-            return _profile_response(cursor, user)
+            response = _profile_response(cursor, user)
+    if should_process_email:
+        _process_immediate_auth_email_now()
+    return response
 
 
 @app.post("/auth/account-deletion-request", status_code=status.HTTP_204_NO_CONTENT)

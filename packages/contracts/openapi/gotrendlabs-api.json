@@ -4058,6 +4058,122 @@
         "title": "SessionResponse",
         "type": "object"
       },
+      "SocialAuthCallbackPayload": {
+        "properties": {
+          "code": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Code",
+            "type": "string"
+          },
+          "oauth_token": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Oauth Token",
+            "type": "string"
+          },
+          "oauth_token_secret": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Oauth Token Secret",
+            "type": "string"
+          },
+          "oauth_verifier": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Oauth Verifier",
+            "type": "string"
+          },
+          "redirect_uri": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Redirect Uri",
+            "type": "string"
+          },
+          "referral_code": {
+            "default": "",
+            "maxLength": 32,
+            "title": "Referral Code",
+            "type": "string"
+          },
+          "state": {
+            "default": "",
+            "maxLength": 255,
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirect_uri"
+        ],
+        "title": "SocialAuthCallbackPayload",
+        "type": "object"
+      },
+      "SocialAuthCompleteEmailPayload": {
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "pending_token": {
+            "maxLength": 2000,
+            "minLength": 20,
+            "title": "Pending Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pending_token",
+          "email"
+        ],
+        "title": "SocialAuthCompleteEmailPayload",
+        "type": "object"
+      },
+      "SocialAuthStartPayload": {
+        "properties": {
+          "redirect_uri": {
+            "maxLength": 500,
+            "minLength": 8,
+            "title": "Redirect Uri",
+            "type": "string"
+          },
+          "state": {
+            "default": "",
+            "maxLength": 255,
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirect_uri"
+        ],
+        "title": "SocialAuthStartPayload",
+        "type": "object"
+      },
+      "SocialAuthStartResponse": {
+        "properties": {
+          "authorization_url": {
+            "title": "Authorization Url",
+            "type": "string"
+          },
+          "oauth_token_secret": {
+            "default": "",
+            "title": "Oauth Token Secret",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "authorization_url",
+          "state"
+        ],
+        "title": "SocialAuthStartResponse",
+        "type": "object"
+      },
       "SuggestionRewardPayload": {
         "properties": {
           "amount_gtl": {
@@ -8415,9 +8531,9 @@
         "summary": "Session Context"
       }
     },
-    "/auth/social/{provider}": {
+    "/auth/social/{provider}/callback": {
       "post": {
-        "operationId": "social_login_auth_social__provider__post",
+        "operationId": "social_login_callback_auth_social__provider__callback_post",
         "parameters": [
           {
             "in": "path",
@@ -8429,7 +8545,27 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialAuthCallbackPayload"
+              }
+            }
+          },
+          "required": true
+        },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
           "422": {
             "content": {
               "application/json": {
@@ -8439,17 +8575,107 @@
               }
             },
             "description": "Validation Error"
+          }
+        },
+        "summary": "Social Login Callback"
+      }
+    },
+    "/auth/social/{provider}/complete-email": {
+      "post": {
+        "operationId": "social_login_complete_email_auth_social__provider__complete_email_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialAuthCompleteEmailPayload"
+              }
+            }
           },
-          "501": {
+          "required": true
+        },
+        "responses": {
+          "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/AuthResponse"
+                }
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
-        "summary": "Social Login"
+        "summary": "Social Login Complete Email"
+      }
+    },
+    "/auth/social/{provider}/start": {
+      "post": {
+        "operationId": "social_login_start_auth_social__provider__start_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "provider",
+            "required": true,
+            "schema": {
+              "title": "Provider",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SocialAuthStartPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SocialAuthStartResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Social Login Start"
       }
     },
     "/badges": {

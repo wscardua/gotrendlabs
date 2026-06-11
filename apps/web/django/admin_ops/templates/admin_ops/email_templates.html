@@ -18,12 +18,13 @@
         {% endif %}
       </div>
     </div>
-    {% include "admin_ops/partials/email_policy_nav.html" with active_email_policy_tab="templates" %}
+    {% include "admin_ops/partials/email_policy_nav.html" with active_email_policy_tab=active_email_policy_tab %}
     {% if messages %}
       {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
     {% endif %}
     {% if selected %}
       {{ template_sample_context|json_script:"email-template-samples" }}
+      {{ template_preview_footer|json_script:"email-template-footer" }}
       <div class="email-template-layout">
         <aside class="email-template-list" aria-label="Email templates disponíveis">
           <div class="email-template-list-head">
@@ -37,7 +38,7 @@
             </a>
           {% endfor %}
         </aside>
-        <form class="admin-config-surface email-template-editor" method="post" data-email-template-editor>
+        <form class="admin-config-surface email-template-editor" method="post" data-email-template-editor data-email-template-key="{{ selected.key }}">
           {% csrf_token %}
           <section class="email-template-compose">
             <div class="email-template-main">

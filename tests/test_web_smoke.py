@@ -26,7 +26,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from apps.web.django.accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from apps.web.django.accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from apps.web.django.accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, ExternalIdentity, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from apps.web.django.accounts.session import TOKEN_KEY, USER_KEY
 from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 from apps.api.backend_api.db import get_connection
@@ -43,10 +43,11 @@ from apps.api.backend_api.main import _ensure_user_core
 from apps.api.backend_api.main import _record_wallet_entry
 from apps.api.backend_api.main import _clear_rate_limits
 from apps.api.backend_api.security import hash_token, issue_token
+from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError
 from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
 from apps.web.django.communications.push_services import create_test_push_delivery, process_due_push_deliveries
-from apps.web.django.communications.services import DEFAULT_EMAIL_TEMPLATES, process_due_email_deliveries, render_template
+from apps.web.django.communications.services import DEFAULT_EMAIL_TEMPLATES, TRANSACTIONAL_FOOTER_TEMPLATE_KEY, process_due_email_deliveries, render_template
 from apps.web.django.core.domain_client import get_domain_client
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
 from apps.web.django.core.social_share import public_badge_share_token
@@ -344,15 +345,302 @@ class BackendAuthAPITests(TransactionTestCase):
                 with connection.cursor() as cursor:
                     return ai_health_summary(cursor, now=now or timezone.now())
 
-    def test_social_auth_placeholder_supports_initial_providers(self):
+    def test_social_auth_start_builds_authorization_url_and_rejects_invalid_provider(self):
         client = TestClient(app)
 
-        for provider in ("google", "facebook", "x"):
-            response = client.post(f"/auth/social/{provider}")
-            self.assertEqual(response.status_code, 501)
+        with patch.dict(os.environ, {"GOTRENDLABS_GOOGLE_CLIENT_ID": "google-client", "GOTRENDLABS_GOOGLE_CLIENT_SECRET": "google-secret"}):
+            response = client.post(
+                "/auth/social/google/start",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "state": "state-123"},
+            )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["state"], "state-123")
+        self.assertIn("accounts.google.com", response.json()["authorization_url"])
+        self.assertIn("google-client", response.json()["authorization_url"])
 
-        unsupported = client.post("/auth/social/apple")
+        with patch.dict(os.environ, {"GOTRENDLABS_X_CONSUMER_KEY": "x-client", "GOTRENDLABS_X_CONSUMER_SECRET": "x-secret"}):
+            with patch("apps.api.backend_api.social_oauth._post_oauth1", return_value={"oauth_token": "x-token", "oauth_token_secret": "x-token-secret"}):
+                x_response = client.post(
+                    "/auth/social/x/start",
+                    json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/x/callback/", "state": "state-x"},
+                )
+        self.assertEqual(x_response.status_code, 200)
+        self.assertEqual(x_response.json()["state"], "state-x")
+        self.assertEqual(x_response.json()["oauth_token_secret"], "x-token-secret")
+        self.assertIn("api.twitter.com/oauth/authenticate", x_response.json()["authorization_url"])
+
+        unsupported = client.post("/auth/social/apple/start", json={"redirect_uri": "https://gotrendlabs.com.br/callback/", "state": "state-123"})
         self.assertEqual(unsupported.status_code, 404)
+
+    def test_social_auth_callback_creates_verified_user_and_links_existing_verified_email(self):
+        client = TestClient(app)
+        profile = SocialProfile(
+            provider="google",
+            subject="google-subject-1",
+            email="social-new@example.com",
+            email_verified=True,
+            display_name="Social New",
+            preferred_language="pt-br",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=profile):
+            response = client.post(
+                "/auth/social/google/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-1"},
+            )
+        self.assertEqual(response.status_code, 200, response.json())
+        payload = response.json()
+        self.assertTrue(payload["user"]["email_confirmed"])
+        self.assertEqual(payload["user"]["email"], "social-new@example.com")
+        self.assertTrue(ExternalIdentity.objects.filter(provider="google", subject="google-subject-1", user_id=payload["user"]["id"]).exists())
+        self.assertTrue(AuthEvent.objects.filter(user_id=payload["user"]["id"], event_type="login_success", provider="google").exists())
+
+        existing = get_user_model().objects.create_user(
+            username="@socialexisting",
+            email="social-existing@example.com",
+            password="testpass123",
+            first_name="Social Existing",
+            email_confirmed_at=timezone.now(),
+        )
+        verified_existing = SocialProfile(
+            provider="google",
+            subject="google-subject-2",
+            email="social-existing@example.com",
+            email_verified=True,
+            display_name="Social Existing",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=verified_existing):
+            linked = client.post(
+                "/auth/social/google/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-2"},
+            )
+        self.assertEqual(linked.status_code, 200, linked.json())
+        self.assertEqual(linked.json()["user"]["id"], existing.id)
+        self.assertTrue(ExternalIdentity.objects.filter(provider="google", subject="google-subject-2", user=existing).exists())
+
+        x_profile = SocialProfile(
+            provider="x",
+            subject="x-subject-1",
+            email="social-x@example.com",
+            email_verified=True,
+            display_name="Social X",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=x_profile):
+            x_linked = client.post(
+                "/auth/social/x/callback",
+                json={
+                    "redirect_uri": "https://gotrendlabs.com.br/auth/social/x/callback/",
+                    "oauth_token": "x-token",
+                    "oauth_verifier": "x-verifier",
+                    "oauth_token_secret": "x-token-secret",
+                },
+            )
+        self.assertEqual(x_linked.status_code, 200, x_linked.json())
+        self.assertEqual(x_linked.json()["user"]["email"], "social-x@example.com")
+        self.assertTrue(ExternalIdentity.objects.filter(provider="x", subject="x-subject-1").exists())
+
+    def test_verified_social_signup_sends_welcome_without_confirmation(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"welcome-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "welcome-message-123"}
+
+        client = TestClient(app)
+        profile = SocialProfile(
+            provider="google",
+            subject="google-welcome-subject",
+            email="social-welcome@example.com",
+            email_verified=True,
+            display_name="Social Welcome",
+            preferred_language="pt-br",
+        )
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"):
+            with patch("apps.api.backend_api.main.fetch_social_profile", return_value=profile):
+                with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
+                    response = client.post(
+                        "/auth/social/google/callback",
+                        json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-welcome"},
+                    )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertTrue(response.json()["user"]["email_confirmed"])
+        welcome = EmailDelivery.objects.get(recipient_user_id=response.json()["user"]["id"], template_key="user.welcome")
+        self.assertEqual(welcome.status, "sent")
+        self.assertFalse(EmailDelivery.objects.filter(recipient_user_id=response.json()["user"]["id"], template_key="user.email_confirmation").exists())
+        post.assert_called_once()
+
+    def test_social_auth_callback_blocks_unverified_existing_email_and_sends_confirmation_for_new_unverified_email(self):
+        client = TestClient(app)
+        existing = get_user_model().objects.create_user(
+            username="@socialblocked",
+            email="social-blocked@example.com",
+            password="testpass123",
+            first_name="Social Blocked",
+            email_confirmed_at=timezone.now(),
+        )
+        unverified_existing = SocialProfile(
+            provider="google",
+            subject="google-unverified-existing",
+            email=existing.email,
+            email_verified=False,
+            display_name="Social Blocked",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=unverified_existing):
+            blocked = client.post(
+                "/auth/social/google/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-3"},
+            )
+        self.assertEqual(blocked.status_code, 409)
+        self.assertFalse(ExternalIdentity.objects.filter(provider="google", subject="google-unverified-existing").exists())
+
+        facebook_existing = SocialProfile(
+            provider="facebook",
+            subject="facebook-untrusted-existing",
+            email=existing.email,
+            email_verified=False,
+            display_name="Social Blocked",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=facebook_existing):
+            facebook_blocked = client.post(
+                "/auth/social/facebook/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/facebook/callback/", "code": "code-facebook"},
+            )
+        self.assertEqual(facebook_blocked.status_code, 409)
+        self.assertFalse(ExternalIdentity.objects.filter(provider="facebook", subject="facebook-untrusted-existing").exists())
+
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"confirm-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "confirm-message-123"}
+
+        unverified_new = SocialProfile(
+            provider="google",
+            subject="google-unverified-new",
+            email="social-unverified-new@example.com",
+            email_verified=False,
+            display_name="Social Unverified",
+        )
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"):
+            with patch("apps.api.backend_api.main.fetch_social_profile", return_value=unverified_new):
+                with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
+                    response = client.post(
+                        "/auth/social/google/callback",
+                        json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-4"},
+                    )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertFalse(response.json()["user"]["email_confirmed"])
+        delivery = EmailDelivery.objects.get(recipient_user_id=response.json()["user"]["id"], template_key="user.email_confirmation")
+        self.assertEqual(delivery.status, "sent")
+        self.assertEqual(delivery.provider_message_id, "confirm-message-123")
+        welcome = EmailDelivery.objects.get(recipient_user_id=response.json()["user"]["id"], template_key="user.welcome")
+        self.assertEqual(welcome.status, "sent")
+        self.assertEqual(post.call_count, 2)
+
+    def test_social_auth_x_without_email_can_complete_with_user_email(self):
+        client = TestClient(app)
+        x_profile = SocialProfile(
+            provider="x",
+            subject="x-no-email-subject",
+            email="",
+            email_verified=False,
+            display_name="X No Email",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=x_profile):
+            callback = client.post(
+                "/auth/social/x/callback",
+                json={
+                    "redirect_uri": "https://gotrendlabs.com.br/auth/social/x/callback/",
+                    "code": "code-no-email",
+                    "oauth_token_secret": "verifier",
+                },
+            )
+        self.assertEqual(callback.status_code, 422)
+        self.assertEqual(callback.json()["detail"]["code"], "social_email_required")
+        pending_token = callback.json()["detail"]["pending_token"]
+        self.assertGreater(len(pending_token), 40)
+
+        rejected = client.post(
+            "/auth/social/x/complete-email",
+            json={
+                "provider": "x",
+                "subject": "x-no-email-subject",
+                "email": "x-forged@example.com",
+                "display_name": "Forged",
+                "preferred_language": "pt-br",
+            },
+        )
+        self.assertEqual(rejected.status_code, 422)
+        tampered = client.post(
+            "/auth/social/x/complete-email",
+            json={"pending_token": pending_token + "x", "email": "x-forged@example.com"},
+        )
+        self.assertEqual(tampered.status_code, 422)
+
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"x-confirm-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "x-confirm-message-123"}
+
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"):
+            with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
+                completed = client.post(
+                    "/auth/social/x/complete-email",
+                    json={
+                        "pending_token": pending_token,
+                        "email": "x-complete@example.com",
+                    },
+                )
+        self.assertEqual(completed.status_code, 200, completed.json())
+        self.assertFalse(completed.json()["user"]["email_confirmed"])
+        self.assertTrue(ExternalIdentity.objects.filter(provider="x", subject="x-no-email-subject", email="x-complete@example.com").exists())
+        delivery = EmailDelivery.objects.get(recipient_user_id=completed.json()["user"]["id"], template_key="user.email_confirmation")
+        self.assertEqual(delivery.status, "sent")
+        welcome = EmailDelivery.objects.get(recipient_user_id=completed.json()["user"]["id"], template_key="user.welcome")
+        self.assertEqual(welcome.status, "sent")
+        self.assertEqual(post.call_count, 2)
+
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=x_profile):
+            linked = client.post(
+                "/auth/social/x/callback",
+                json={
+                    "redirect_uri": "https://gotrendlabs.com.br/auth/social/x/callback/",
+                    "code": "code-no-email-again",
+                    "oauth_token_secret": "verifier",
+                },
+            )
+        self.assertEqual(linked.status_code, 200, linked.json())
+        self.assertEqual(linked.json()["user"]["email"], "x-complete@example.com")
 
     def test_system_log_model_defaults_retention_and_context(self):
         log = SystemLog.objects.create(
@@ -2341,6 +2629,44 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(allowed.status_code, 201, allowed.json())
 
+    def test_register_sends_welcome_and_confirmation_immediately_when_email_enabled(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"register-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "register-message-123"}
+
+        client = TestClient(app)
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"):
+            with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
+                response = client.post(
+                    "/auth/register",
+                    json={
+                        "display_name": "Welcome Register",
+                        "email": "welcome-register@example.com",
+                        "language": "pt-br",
+                        "password": "testpass123",
+                        "terms_accepted": True,
+                    },
+                )
+        self.assertEqual(response.status_code, 201, response.json())
+        user_id = response.json()["user"]["id"]
+        welcome = EmailDelivery.objects.get(recipient_user_id=user_id, template_key="user.welcome")
+        confirmation = EmailDelivery.objects.get(recipient_user_id=user_id, template_key="user.email_confirmation")
+        self.assertEqual(welcome.status, "sent")
+        self.assertEqual(confirmation.status, "sent")
+        self.assertEqual(post.call_count, 2)
+
     def test_password_reset_request_hides_public_url_and_queues_email(self):
         user = get_user_model().objects.create_user(
             username="@resetmail",
@@ -2385,9 +2711,14 @@ class BackendAuthAPITests(TransactionTestCase):
         template.subject = "Crédito: {{ amount }} GT₵"
         template.body_text = "Motivo: {{ description }}"
         template.save()
+        footer = EmailTemplate.objects.get(key=TRANSACTIONAL_FOOTER_TEMPLATE_KEY, locale="pt-br")
+        footer.body_text = "Rodapé custom {{ platform_name }} :: {{ platform_url }}"
+        footer.body_html = "<footer>Rodapé custom {{ platform_name }} :: {{ platform_url }}</footer>"
+        footer.save()
         rendered = render_template("wallet.credited", "pt-br", {"amount": 42, "description": "Teste"})
         self.assertEqual(rendered["subject"], "Crédito: 42 GT₵")
-        self.assertEqual(rendered["body_text"], "Motivo: Teste")
+        self.assertTrue(rendered["body_text"].startswith("Motivo: Teste"))
+        self.assertIn("Rodapé custom GoTrendLabs :: https://gotrendlabs.com.br", rendered["body_text"])
 
         site_config = SiteConfig.get_solo()
         site_config.email_enabled = True
@@ -2422,7 +2753,29 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(stats["sent"], 1)
         self.assertEqual(delivery.status, "sent")
         self.assertEqual(delivery.subject, "Crédito: 10 GT₵")
-        self.assertEqual(delivery.body_text, "Motivo: smtp")
+        self.assertTrue(delivery.body_text.startswith("Motivo: smtp"))
+        self.assertIn("Rodapé custom GoTrendLabs :: https://gotrendlabs.com.br", delivery.body_text)
+
+    def test_immediate_auth_email_filter_does_not_drain_product_events(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+        wallet_delivery = EmailDelivery.objects.create(
+            event_type="wallet.credited",
+            recipient_email="person@example.com",
+            template_key="wallet.credited",
+            locale="pt-br",
+            context={"display_name": "Pessoa", "amount": 10, "description": "teste", "wallet_url": "https://gotrendlabs.com.br/wallet/"},
+            idempotency_key="wallet-not-immediate",
+        )
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"), patch("apps.web.django.communications.services.httpx.post") as post:
+            stats = process_due_email_deliveries(event_types=["user.email_confirmation", "account.password_reset", "user.welcome"])
+        self.assertEqual(stats["skipped"], 1)
+        post.assert_not_called()
+        wallet_delivery.refresh_from_db()
+        self.assertEqual(wallet_delivery.status, "queued")
 
     def test_resend_email_worker_sends_payload_and_records_provider_message_id(self):
         site_config = SiteConfig.get_solo()
@@ -2465,7 +2818,9 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(call["json"]["reply_to"], "support@gotrendlabs.com.br")
         self.assertIn("Você recebeu", call["json"]["subject"])
         self.assertIn("10", call["json"]["text"])
+        self.assertIn("Este é um email transacional", call["json"]["text"])
         self.assertIn("html", call["json"])
+        self.assertIn("GoTrendLabs", call["json"]["html"])
         delivery.refresh_from_db()
         self.assertEqual(delivery.status, "sent")
         self.assertEqual(delivery.provider_message_id, "resend-message-123")
@@ -4808,6 +5163,87 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertNotContains(response, '<form class="market-like-form"')
                     self.assertNotContains(response, '<form class="market-favorite-form"')
 
+    def test_social_auth_callback_view_stores_session_and_rejects_external_next(self):
+        session = self.client.session
+        session["social_auth_state"] = {
+            "provider": "google",
+            "state": "state-ok",
+            "next": "https://evil.example/phishing",
+            "referral_code": "",
+            "oauth_token_secret": "",
+        }
+        session.save()
+        auth_response = {
+            "user": {
+                "id": 41,
+                "handle": "@socialweb",
+                "email": "social-web@example.com",
+                "display_name": "Social Web",
+                "preferred_language": "pt-br",
+                "is_staff": False,
+                "email_confirmed": True,
+            },
+            "session": {"token": "social-web-token"},
+        }
+
+        with patch("apps.web.django.accounts.views.social_auth_callback", return_value=auth_response):
+            response = self.client.get(reverse("social-auth-callback", args=["google"]), {"code": "code-ok", "state": "state-ok"})
+
+        self.assertRedirects(response, reverse("home"), fetch_redirect_response=False)
+        session = self.client.session
+        self.assertEqual(session[TOKEN_KEY], "social-web-token")
+        self.assertEqual(session[USER_KEY]["email"], "social-web@example.com")
+        self.assertNotIn("social_auth_state", session)
+
+    def test_social_auth_callback_view_prompts_for_email_when_provider_omits_it(self):
+        session = self.client.session
+        session["social_auth_state"] = {
+            "provider": "x",
+            "state": "state-x",
+            "next": reverse("rankings"),
+            "referral_code": "",
+            "oauth_token_secret": "verifier",
+        }
+        session.save()
+        error = AuthAPIError(
+            "Informe um email para concluir o login social.",
+            status_code=422,
+            detail={
+                "code": "social_email_required",
+                "pending_token": "pending-token-web-123",
+            },
+        )
+
+        with patch("apps.web.django.accounts.views.social_auth_callback", side_effect=error):
+            response = self.client.get(reverse("social-auth-callback", args=["x"]), {"code": "code-x", "state": "state-x"})
+
+        self.assertRedirects(response, reverse("social-auth-email"), fetch_redirect_response=False)
+        session = self.client.session
+        self.assertEqual(session["social_email_state"]["pending_token"], "pending-token-web-123")
+        self.assertNotIn("social_auth_state", session)
+
+        auth_response = {
+            "user": {
+                "id": 42,
+                "handle": "@xweb",
+                "email": "x-web@example.com",
+                "display_name": "X Web",
+                "preferred_language": "pt-br",
+                "is_staff": False,
+                "email_confirmed": False,
+            },
+            "session": {"token": "x-web-token"},
+        }
+        with patch("apps.web.django.accounts.views.social_auth_complete_email", return_value=auth_response) as complete:
+            completed = self.client.post(reverse("social-auth-email"), {"email": "x-web@example.com"})
+
+        self.assertRedirects(completed, reverse("rankings"), fetch_redirect_response=False)
+        complete.assert_called_once_with("x", {"pending_token": "pending-token-web-123", "email": "x-web@example.com"})
+        session = self.client.session
+        self.assertEqual(session[TOKEN_KEY], "x-web-token")
+        self.assertEqual(session[USER_KEY]["email"], "x-web@example.com")
+        self.assertNotIn("social_email_state", session)
+
     def test_prediction_ticket_starts_without_selected_option_for_authenticated_user(self):
         session = self.client.session
         session[TOKEN_KEY] = "api-token"
@@ -6187,6 +6623,54 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotIn("super-secret-smtp", str(site_config.__dict__))
 
             _seed_test_email_templates()
+            footer_template = EmailTemplate.objects.get(key=TRANSACTIONAL_FOOTER_TEMPLATE_KEY, locale="pt-br")
+            response = self.client.get(reverse("admin-ops-email-footer"))
+            self.assertRedirects(response, reverse("admin-ops-email-template-edit", args=[footer_template.id]), fetch_redirect_response=False)
+            response = self.client.get(reverse("admin-ops-email-template-edit", args=[footer_template.id]))
+            self.assertContains(response, "system.transactional_footer")
+            self.assertContains(response, "Rodapé institucional")
+            self.assertContains(response, "platform_description")
+            self.assertContains(response, "{{ transaction_reason }}")
+            nav = response.content.decode()
+            self.assertLess(nav.index("<strong>Templates</strong>"), nav.index("<strong>Rodapé</strong>"))
+            self.assertLess(nav.index("<strong>Rodapé</strong>"), nav.index("<strong>Logs de envio</strong>"))
+            response = self.client.post(
+                reverse("admin-ops-email-template-edit", args=[footer_template.id]),
+                {
+                    "subject": "Rodapé transacional editado",
+                    "body_text": "Rodapé editado {{ platform_name }}",
+                    "body_html": "<footer>Rodapé editado {{ platform_name }}</footer>",
+                    "is_active": "on",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            footer_template.refresh_from_db()
+            self.assertEqual(footer_template.body_text, "Rodapé editado {{ platform_name }}")
+            self.assertEqual(footer_template.updated_by, staff)
+
+            welcome_template = EmailTemplate.objects.get(key="user.welcome", locale="pt-br")
+            response = self.client.get(reverse("admin-ops-email-template-edit", args=[welcome_template.id]))
+            self.assertContains(response, "user.welcome")
+            self.assertContains(response, "Boas-vindas para conta nova")
+            self.assertContains(response, "platform_url")
+            self.assertContains(response, "{{ platform_url }}")
+            self.assertContains(response, "https://gotrendlabs.com.br/")
+            self.assertContains(response, "email-template-footer")
+            self.assertContains(response, "Rodap\\u00e9 editado")
+            response = self.client.post(
+                reverse("admin-ops-email-template-edit", args=[welcome_template.id]),
+                {
+                    "subject": "Boas-vindas editado {{ display_name }}",
+                    "body_text": "Acesse {{ platform_url }}",
+                    "body_html": "",
+                    "is_active": "on",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            welcome_template.refresh_from_db()
+            self.assertEqual(welcome_template.subject, "Boas-vindas editado {{ display_name }}")
+            self.assertEqual(welcome_template.updated_by, staff)
+
             template = EmailTemplate.objects.get(key="user.email_confirmation", locale="pt-br")
             response = self.client.get(reverse("admin-ops-email-template-edit", args=[template.id]))
             self.assertContains(response, "Politica de Emails")
@@ -7816,7 +8300,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "gotrendlabs.js?v=20260608-push-polish")
+            self.assertContains(response, "gotrendlabs.js?v=20260611-email-preview-footer")
 
         posted_market = {
             **api_market,

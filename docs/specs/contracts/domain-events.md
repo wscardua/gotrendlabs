@@ -50,9 +50,9 @@ Esses eventos são registrados em `gotrendlabs_admin_events` nas primeiras fatia
 - Mudanças de shape exigem versionamento do payload ou compatibilidade explícita.
 - A primeira fatia de filas operacionais persiste sugestões e feedbacks, mas a emissão assíncrona dedicada destes eventos ainda é pendente.
 - A primeira fatia de comentários persiste moderação administrativa; ações sociais persistem notificações in-app em `gotrendlabs_user_notifications`, mas `comment.created`, `comment.reacted` e eventos assíncronos equivalentes seguem pendentes até existir event bus dedicado.
-- `user.email_confirmation`, `account.password_reset`, `market.locked`, `market.resolved` e `wallet.credited` podem criar entregas transacionais idempotentes em `communications_emaildelivery` antes do event bus dedicado.
+- `user.welcome`, `user.email_confirmation`, `account.password_reset`, `market.locked`, `market.resolved` e `wallet.credited` podem criar entregas transacionais idempotentes em `communications_emaildelivery` antes do event bus dedicado.
 - `market.locked`, `market.resolved`, `wallet.credited` e `badge.awarded` podem persistir notificações in-app para destinatários humanos diretamente afetados antes do event bus dedicado.
 - `notification.created` representa persistência de inbox in-app e usa `source_key` idempotente por destinatário, sem envio externo obrigatório.
-- `email.delivery_queued` representa persistência da outbox transacional e usa `idempotency_key` única, sem garantir envio SMTP imediato.
+- `email.delivery_queued` representa persistência da outbox transacional e usa `idempotency_key` única; eventos críticos de identidade/acesso podem tentar envio imediato filtrado após commit, enquanto eventos de produto continuam dependentes do daemon.
 - `push.delivery_queued` representa persistência da outbox mobile por `UserNotification` e dispositivo, sem garantir envio FCM imediato.
 - Push mobile só pode ser derivado de `notification.created`; política por evento decide se a notificação persistida vira push imediato, digest futuro ou nenhum envio.

@@ -19,6 +19,32 @@ class LoginPayload(BaseModel):
     password: str = Field(min_length=1, max_length=128)
 
 
+class SocialAuthStartPayload(BaseModel):
+    redirect_uri: str = Field(min_length=8, max_length=500)
+    state: str = Field(default="", max_length=255)
+
+
+class SocialAuthStartResponse(BaseModel):
+    authorization_url: str
+    state: str
+    oauth_token_secret: str = ""
+
+
+class SocialAuthCallbackPayload(BaseModel):
+    redirect_uri: str = Field(min_length=8, max_length=500)
+    code: str = Field(default="", max_length=1000)
+    state: str = Field(default="", max_length=255)
+    oauth_token: str = Field(default="", max_length=1000)
+    oauth_verifier: str = Field(default="", max_length=1000)
+    oauth_token_secret: str = Field(default="", max_length=1000)
+    referral_code: str = Field(default="", max_length=32)
+
+
+class SocialAuthCompleteEmailPayload(BaseModel):
+    pending_token: str = Field(min_length=20, max_length=2000)
+    email: EmailStr
+
+
 class PasswordResetRequestPayload(BaseModel):
     email: EmailStr
 

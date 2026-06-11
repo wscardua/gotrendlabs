@@ -47,6 +47,10 @@ class RegisterForm(forms.Form):
         return password
 
 
+class SocialEmailForm(forms.Form):
+    email = forms.EmailField(label="Email")
+
+
 class ProfileForm(forms.Form):
     SEX_CHOICES = (
         ("", "Não informado"),

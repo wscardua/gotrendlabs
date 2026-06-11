@@ -8,6 +8,7 @@ from apps.api.backend_api.security import hash_token, issue_token
 EMAIL_CONFIRMATION_TTL = timedelta(hours=48)
 PASSWORD_RESET_TEMPLATE_KEY = "account.password_reset"
 EMAIL_CONFIRMATION_TEMPLATE_KEY = "user.email_confirmation"
+WELCOME_TEMPLATE_KEY = "user.welcome"
 
 
 def public_url(path):
@@ -128,6 +129,23 @@ def issue_email_confirmation(cursor, user, *, ip_address=None, user_agent=""):
         idempotency_key=f"user.email_confirmation:{user['id']}:{token_id}",
     )
     return confirmation_url
+
+
+def enqueue_welcome_email(cursor, user, *, source=""):
+    return enqueue_email(
+        cursor,
+        event_type=WELCOME_TEMPLATE_KEY,
+        user_id=user["id"],
+        recipient_email=user["email"],
+        template_key=WELCOME_TEMPLATE_KEY,
+        locale=user["preferred_language"] if user["preferred_language"] in {"pt-br", "en"} else "pt-br",
+        context={
+            "display_name": user["first_name"] or user["username"],
+            "platform_url": public_url(""),
+            "source": source,
+        },
+        idempotency_key=f"user.welcome:{user['id']}",
+    )
 
 
 def enqueue_password_reset_email(cursor, user, reset_url):

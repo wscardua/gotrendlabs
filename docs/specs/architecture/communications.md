@@ -20,7 +20,8 @@
 
 ## Eventos v1
 
-- `user.email_confirmation`: boas-vindas e link expirável de confirmação de email.
+- `user.welcome`: boas-vindas para conta nova, inclusive social com email já verificado.
+- `user.email_confirmation`: link expirável de confirmação quando a conta ainda não tem email confirmado.
 - `account.password_reset`: link expirável de recuperação de senha, sem expor `reset_url` na resposta pública.
 - `market.locked`: aviso de mercado fechado para participantes humanos.
 - `market.resolved`: aviso de mercado resolvido para participantes humanos.
@@ -33,7 +34,10 @@
 - `EmailDelivery` é a outbox idempotente de envio, com destinatário, template, contexto JSON, snapshots renderizados, status, tentativas, próximo retry, erro e data de envio.
 - `EmailConfirmationToken` guarda hash do token, expiração, uso único e auditoria mínima.
 - O daemon operacional drena entregas `queued`/`failed`, aplica retries e registra `sent`, `failed` ou `suppressed`.
-- `account.password_reset` tenta drenar a outbox imediatamente após o commit da solicitação; se o provider estiver indisponível, a entrega permanece rastreada para retry pelo daemon sem expor o link na resposta pública.
+- Emails críticos de identidade e acesso tentam drenar a outbox imediatamente após o commit da ação; nesta fatia isso inclui `user.welcome` em criação de conta, `user.email_confirmation` em criação de conta/reenvio/mudança de email e `account.password_reset`.
+- Falhas no envio imediato não devem quebrar o fluxo principal: a entrega permanece rastreada como `queued`/`failed` para retry pelo daemon e visibilidade no Admin Ops.
+- Eventos de produto e volume, como `market.locked`, `market.resolved`, `wallet.credited`, digest, notificações sociais e avisos operacionais menos urgentes, continuam drenados pelo daemon.
+- Todos os emails transacionais renderizados recebem rodapé institucional automático. O conteúdo vem do template editável `system.transactional_footer`; se ele estiver ausente/inativo, `communications` usa fallback seguro do código com identificação da GoTrendLabs, descrição curta e URL oficial.
 - Links transacionais renderizados em email devem ser absolutos, usando `GOTRENDLABS_PUBLIC_BASE_URL` ou o fallback local seguro em desenvolvimento.
 - `PushDevice` guarda tokens mobile por usuário/dispositivo, com revogação lógica e invalidação por provedor.
 - `PushEventPolicy` define `off`, `immediate` ou `digest` por evento; `digest` não envia nesta primeira fase.

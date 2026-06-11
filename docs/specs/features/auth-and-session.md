@@ -60,7 +60,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 ## Comportamento esperado
 
 - sessões inválidas redirecionam para autenticação
-- login social cria ou vincula conta de forma rastreável
+- login social cria ou vincula conta de forma rastreável para `google`, `facebook` e `x`
 - idioma preferencial acompanha a sessão
 - cadastro sem aceite da política de uso é rejeitado
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
@@ -69,10 +69,11 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - link `Painel Administrativo` aparece apenas no chip do usuário autenticado quando o contexto indica `is_staff` ou `is_superuser`, como primeira ação e com sinalização visual de acesso restrito
 - login pode prolongar a sessão no dispositivo quando o usuário marca a opção de lembrar acesso, sem salvar senha no navegador
 - login oferece recuperação de senha por email; a resposta pública não expõe o link de reset
-- cadastro com email ativo em produção cria conta em login limitado e envia boas-vindas com link de confirmação
+- cadastro com email ativo em produção cria conta em login limitado, envia boas-vindas e, quando necessário, envia link de confirmação
 - usuário com email não confirmado pode entrar, mas ações sensíveis ficam bloqueadas até confirmar o endereço
 - alteração de email no perfil invalida a confirmação anterior e dispara novo link de confirmação quando email estiver ativo
-- login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`), mesmo enquanto OAuth real permanecer como placeholder
+- login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`) e iniciam OAuth real via Django, mantendo a FastAPI como fonte de verdade do vínculo e da sessão
+- clique em login social registra aceite da política de uso vigente; email verificado pelo provedor nasce confirmado, email não verificado nasce em login limitado e recebe link de confirmação; quando uma identidade social nova não retorna email, a FastAPI emite token pendente assinado/expirável e a web solicita email antes de criar a conta limitada
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - cadastro iniciado por `?ref=` preserva o código de indicação e o envia à FastAPI; código inválido não bloqueia criação de conta
@@ -91,7 +92,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - um usuário deve possuir identidade única no domínio
 - identificadores públicos de usuário devem manter o prefixo `@`, inclusive após edição de perfil
 - cada sessão precisa ser validável e revogável
-- login social não pode gerar duplicidade silenciosa de contas
+- login social não pode gerar duplicidade silenciosa de contas; identidade externa existente faz login direto mesmo quando o provedor não retorna email, email existente só é vinculado automaticamente quando o provedor retornar email verificado, e email existente sem verificação confiável deve ser bloqueado com orientação para login normal
+- login social sem email do provedor não cria conta automaticamente; exige email informado pelo usuário junto de token pendente assinado pela FastAPI, cria conta com email não confirmado e dispara confirmação imediata quando emails transacionais estiverem ativos
 - aceite de política de uso deve guardar data e versão aceita
 - reCAPTCHA protege criação de conta contra abuso automatizado sem substituir validações de identidade, senha e aceite
 - exclusão lógica deve preservar histórico e bloquear uso normal
@@ -113,7 +115,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - `frontend-web`: formulários, telas, redirecionamento e mensagens localizadas
 - `backend-api`: autenticação, sessão, vínculo de provedor, política de acesso e contratos staff de suporte a usuários
 - `database`: usuário, credenciais externas, sessão e preferências
-- `communications`: email de boas-vindas/confirmação e recuperação de senha
+- `communications`: email de boas-vindas, confirmação e recuperação de senha
 
 ## Dados e persistência
 
@@ -151,7 +153,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 ## Testes esperados
 
 - unitários para vínculo e validação de sessão
-- integração para login social e persistência de preferência de idioma
+- integração para login social real, vínculo seguro de conta existente, criação de conta nova e persistência de preferência de idioma
 - fluxo de cadastro, login e logout
 - fluxo de recuperação de senha com solicitação, token válido, token inválido/expirado e token reutilizado
 - fluxo de confirmação de email com token válido, token inválido/expirado, uso único e reenvio
@@ -160,7 +162,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - renderização de política de uso pública e modal de política no cadastro
 - renderização de navegação pública, alternância de tema, rodapé público e retorno compacto `← Voltar` em login/cadastro/recuperação de senha
 - renderização do rodapé público sem links de conta/admin e renderização condicional de `Painel Administrativo` no chip apenas para staff/superuser
-- renderização de botões sociais iconizados para Google, Facebook e X em login/cadastro, com rótulos acessíveis e contrato placeholder sem OAuth real
+- renderização de botões sociais iconizados para Google, Facebook e X em login/cadastro, com rótulos acessíveis, rotas reais de OAuth e texto de aceite da política de uso
 - login com lembrar acesso mantém sessão prolongada e login sem essa opção preserva expiração padrão
 - prévia de cadastro seleciona mercado publicado não cancelado com mais visualizações, exclui `draft` e `canceled`, e usa mercado mais recente como desempate/fallback
 - fluxo de cadastro com reCAPTCHA ausente, inválido e válido quando habilitado
