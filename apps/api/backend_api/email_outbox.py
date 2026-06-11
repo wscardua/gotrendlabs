@@ -11,7 +11,7 @@ EMAIL_CONFIRMATION_TEMPLATE_KEY = "user.email_confirmation"
 
 
 def public_url(path):
-    base_url = os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+    base_url = (os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL") or "http://127.0.0.1:8000").rstrip("/")
     return f"{base_url}/{path.lstrip('/')}"
 
 

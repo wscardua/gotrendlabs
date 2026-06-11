@@ -20,6 +20,13 @@ def mobile_app_release_upload_to(instance, filename):
 
 
 class SiteConfig(models.Model):
+    EMAIL_PROVIDER_SMTP = "smtp"
+    EMAIL_PROVIDER_RESEND = "resend"
+    EMAIL_PROVIDER_CHOICES = (
+        (EMAIL_PROVIDER_SMTP, "SMTP"),
+        (EMAIL_PROVIDER_RESEND, "Resend"),
+    )
+
     singleton_key = models.PositiveSmallIntegerField(default=1, unique=True, editable=False)
     wallet_recharge_min_balance_gtl = models.PositiveIntegerField(default=100)
     referral_bonus_gtl = models.PositiveIntegerField(default=200)
@@ -52,6 +59,7 @@ class SiteConfig(models.Model):
     ai_paused_until = models.DateTimeField(null=True, blank=True)
     ai_pause_reason = models.TextField(blank=True, default="")
     email_enabled = models.BooleanField(default=False)
+    email_provider = models.CharField(max_length=20, choices=EMAIL_PROVIDER_CHOICES, default=EMAIL_PROVIDER_SMTP)
     smtp_host = models.CharField(max_length=255, blank=True)
     smtp_port = models.PositiveIntegerField(default=587)
     smtp_username = models.CharField(max_length=255, blank=True)
@@ -85,6 +93,8 @@ class SiteConfig(models.Model):
 
     @property
     def is_ready_for_delivery(self):
+        if self.email_provider == self.EMAIL_PROVIDER_RESEND:
+            return bool(self.email_enabled and self.default_from_email)
         return bool(self.email_enabled and self.smtp_host and self.smtp_port and self.default_from_email)
 
 

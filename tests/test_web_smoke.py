@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 import hashlib
+import httpx
 from io import StringIO
 import importlib
 import json
@@ -1220,6 +1221,17 @@ class BackendAuthAPITests(TransactionTestCase):
         token = urlparse(reset_url).path.strip("/").split("/")[-1]
         self.assertTrue(PasswordResetToken.objects.filter(user__email="reset-user@example.com", used_at__isnull=True).exists())
 
+        requested_again = client.post("/auth/password-reset/request", json={"email": "reset-user@example.com"})
+        self.assertEqual(requested_again.status_code, 200)
+        old_token = client.post("/auth/password-reset/confirm", json={"token": token, "password": "oldtoken123"})
+        self.assertEqual(old_token.status_code, 422)
+        reset_url = EmailDelivery.objects.filter(
+            recipient_user__email="reset-user@example.com",
+            template_key="account.password_reset",
+        ).order_by("-created_at").first().context["reset_url"]
+        token = urlparse(reset_url).path.strip("/").split("/")[-1]
+        self.assertEqual(PasswordResetToken.objects.filter(user__email="reset-user@example.com", used_at__isnull=True).count(), 1)
+
         invalid = client.post("/auth/password-reset/confirm", json={"token": "invalid-token-that-is-long-enough", "password": "newpass123"})
         self.assertEqual(invalid.status_code, 422)
 
@@ -1399,7 +1411,7 @@ class BackendAuthAPITests(TransactionTestCase):
                         (
                             singleton_key, wallet_recharge_min_balance_gtl, referral_bonus_gtl, daemon_stale_after_minutes, daemon_missing_after_minutes,
                             system_log_retention_days, ai_audit_retention_days,
-                            email_enabled, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
+                            email_enabled, email_provider, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
                             default_from_email, default_reply_to_email,
                             ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled, ai_llm_provider, ai_llm_base_url,
                             ai_model, ai_high_reasoning_model, ai_market_cooldown_hours, ai_max_comments_per_market_per_day,
@@ -1410,12 +1422,13 @@ class BackendAuthAPITests(TransactionTestCase):
                             updated_by_id, updated_at
                         )
                     VALUES (
-                        1, 100, 200, 5, 15, 90, 90, true, 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
+                        1, 100, 200, 5, 15, 90, 90, true, 'smtp', 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
                         1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
                     )
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
+                        email_provider = EXCLUDED.email_provider,
                         smtp_host = EXCLUDED.smtp_host,
                         smtp_port = EXCLUDED.smtp_port,
                         default_from_email = EXCLUDED.default_from_email,
@@ -2336,14 +2349,38 @@ class BackendAuthAPITests(TransactionTestCase):
             first_name="Reset Mail",
             email_confirmed_at=timezone.now(),
         )
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"reset-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "reset-message-123"}
+
         client = TestClient(app)
-        response = client.post("/auth/password-reset/request", json={"email": user.email})
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"):
+            with patch.dict(os.environ, {"GOTRENDLABS_PUBLIC_BASE_URL": ""}):
+                with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as resend_post:
+                    response = client.post("/auth/password-reset/request", json={"email": user.email})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["reset_url"], "")
         delivery = EmailDelivery.objects.get(recipient_user=user, template_key="account.password_reset")
+        self.assertEqual(delivery.status, "sent")
+        self.assertEqual(delivery.provider_message_id, "reset-message-123")
+        resend_post.assert_called_once()
         self.assertIn("/password-reset/confirm/", delivery.context["reset_url"])
+        self.assertTrue(delivery.context["reset_url"].startswith("http://127.0.0.1:8000/"))
+        self.assertIn('href="http://127.0.0.1:8000/password-reset/confirm/', delivery.body_html)
 
-    def test_email_template_rendering_and_sandbox_worker_guard(self):
+    def test_email_template_rendering_and_smtp_worker_send(self):
         template = EmailTemplate.objects.get(key="wallet.credited", locale="pt-br")
         template.subject = "Crédito: {{ amount }} GT₵"
         template.body_text = "Motivo: {{ description }}"
@@ -2354,9 +2391,11 @@ class BackendAuthAPITests(TransactionTestCase):
 
         site_config = SiteConfig.get_solo()
         site_config.email_enabled = True
-        site_config.smtp_host = "email-smtp.us-east-1.amazonaws.com"
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_SMTP
+        site_config.smtp_host = "smtp.example.com"
         site_config.smtp_port = 587
         site_config.smtp_username = "smtp-user"
+        site_config.smtp_use_tls = True
         site_config.default_from_email = "no-reply@gotrendlabs.com.br"
         site_config.save()
         delivery = EmailDelivery.objects.create(
@@ -2364,20 +2403,121 @@ class BackendAuthAPITests(TransactionTestCase):
             recipient_email="person@example.com",
             template_key="wallet.credited",
             locale="pt-br",
-            context={"amount": 10, "description": "sandbox"},
-            idempotency_key="sandbox-guard-test",
+            context={"amount": 10, "description": "smtp"},
+            idempotency_key="smtp-send-test",
         )
+        smtp_context = patch("apps.web.django.communications.services.smtplib.SMTP")
+        ssl_context = patch("apps.web.django.communications.services.ssl.create_default_context", return_value="tls-context")
         with override_settings(
             GOTRENDLABS_SMTP_PASSWORD="smtp-secret",
             GOTRENDLABS_SMTP_API_KEY="",
-            GOTRENDLABS_SES_PRODUCTION_ACCESS=False,
-            GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST=set(),
-        ):
+        ), smtp_context as smtp_cls, ssl_context:
+            smtp = smtp_cls.return_value.__enter__.return_value
             stats = process_due_email_deliveries()
+        smtp_cls.assert_called_once_with("smtp.example.com", 587, timeout=10)
+        smtp.starttls.assert_called_once_with(context="tls-context")
+        smtp.login.assert_called_once_with("smtp-user", "smtp-secret")
+        smtp.send_message.assert_called_once()
         delivery.refresh_from_db()
-        self.assertEqual(stats["suppressed"], 1)
-        self.assertEqual(delivery.status, "suppressed")
-        self.assertIn("SES sandbox guard", delivery.last_error)
+        self.assertEqual(stats["sent"], 1)
+        self.assertEqual(delivery.status, "sent")
+        self.assertEqual(delivery.subject, "Crédito: 10 GT₵")
+        self.assertEqual(delivery.body_text, "Motivo: smtp")
+
+    def test_resend_email_worker_sends_payload_and_records_provider_message_id(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.smtp_timeout_seconds = 12
+        site_config.default_from_email = "GoTrendLabs <no-reply@gotrendlabs.com.br>"
+        site_config.default_reply_to_email = "support@gotrendlabs.com.br"
+        site_config.save()
+        delivery = EmailDelivery.objects.create(
+            event_type="wallet.credited",
+            recipient_email="person@example.com",
+            template_key="wallet.credited",
+            locale="pt-br",
+            context={"display_name": "Pessoa", "amount": 10, "description": "teste", "wallet_url": "https://gotrendlabs.com.br/wallet/"},
+            idempotency_key="resend-worker-success",
+        )
+
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"resend-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "resend-message-123"}
+
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"), patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
+            stats = process_due_email_deliveries()
+
+        self.assertEqual(stats["sent"], 1)
+        post.assert_called_once()
+        call = post.call_args.kwargs
+        self.assertEqual(call["headers"]["Authorization"], "Bearer resend-secret")
+        self.assertEqual(call["headers"]["Idempotency-Key"], "resend-worker-success")
+        self.assertEqual(call["timeout"], 12)
+        self.assertEqual(call["json"]["from"], "GoTrendLabs <no-reply@gotrendlabs.com.br>")
+        self.assertEqual(call["json"]["to"], ["person@example.com"])
+        self.assertEqual(call["json"]["reply_to"], "support@gotrendlabs.com.br")
+        self.assertIn("Você recebeu", call["json"]["subject"])
+        self.assertIn("10", call["json"]["text"])
+        self.assertIn("html", call["json"])
+        delivery.refresh_from_db()
+        self.assertEqual(delivery.status, "sent")
+        self.assertEqual(delivery.provider_message_id, "resend-message-123")
+        self.assertEqual(delivery.last_error, "")
+
+    def test_resend_email_worker_retries_api_errors_and_missing_secret(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.save()
+        missing_secret_delivery = EmailDelivery.objects.create(
+            event_type="wallet.credited",
+            recipient_email="person@example.com",
+            template_key="wallet.credited",
+            locale="pt-br",
+            context={"amount": 10, "description": "missing secret"},
+            idempotency_key="resend-worker-missing-secret",
+        )
+        with override_settings(GOTRENDLABS_RESEND_API_KEY=""), patch("apps.web.django.communications.services.httpx.post") as post:
+            stats = process_due_email_deliveries()
+        self.assertEqual(stats["failed"], 1)
+        post.assert_not_called()
+        missing_secret_delivery.refresh_from_db()
+        self.assertEqual(missing_secret_delivery.status, "failed")
+        self.assertIn("GOTRENDLABS_RESEND_API_KEY", missing_secret_delivery.last_error)
+
+        failed_delivery = EmailDelivery.objects.create(
+            event_type="wallet.credited",
+            recipient_email="person@example.com",
+            template_key="wallet.credited",
+            locale="pt-br",
+            context={"amount": 10, "description": "api error"},
+            idempotency_key="resend-worker-api-error",
+        )
+
+        class ResendErrorResponse:
+            status_code = 403
+            text = '{"message":"domain not verified"}'
+
+            def raise_for_status(self):
+                request = httpx.Request("POST", "https://api.resend.com/emails")
+                response = httpx.Response(self.status_code, text=self.text, request=request)
+                response.raise_for_status()
+
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"), patch("apps.web.django.communications.services.httpx.post", return_value=ResendErrorResponse()):
+            stats = process_due_email_deliveries()
+        self.assertEqual(stats["failed"], 1)
+        failed_delivery.refresh_from_db()
+        self.assertEqual(failed_delivery.status, "failed")
+        self.assertIn("Resend API error 403", failed_delivery.last_error)
+        self.assertGreater(failed_delivery.attempt_count, 0)
 
     def test_operator_core_bootstrap_does_not_create_public_reputation_or_initial_grant(self):
         User = get_user_model()
@@ -4392,6 +4532,7 @@ class BackendAuthAPITests(TransactionTestCase):
                         system_log_retention_days,
                         ai_audit_retention_days,
                         email_enabled,
+                        email_provider,
                         smtp_host,
                         smtp_port,
                         smtp_username,
@@ -4426,7 +4567,7 @@ class BackendAuthAPITests(TransactionTestCase):
                         updated_at
                     )
                     VALUES (
-                        1, 10000, 200, 5, 15, 90, 90, false, '', 587, '', true, false, 10, '', '',
+                        1, 10000, 200, 5, 15, 90, 90, false, 'smtp', '', 587, '', true, false, 10, '', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
                         1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
                     )
@@ -5974,9 +6115,10 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("admin-ops-config"))
             self.assertContains(response, "Controles da plataforma")
             self.assertContains(response, "Segredo SMTP")
+            self.assertContains(response, "Segredo Resend")
+            self.assertContains(response, "Provedor de email")
             self.assertContains(response, "Configurado por ambiente")
-            self.assertContains(response, "Preset AWS SES")
-            self.assertContains(response, "Enviar teste sandbox")
+            self.assertContains(response, "Enviar teste Resend")
             self.assertContains(response, "Saldo máximo para solicitar")
             self.assertContains(response, "Bônus por indicação validada")
             self.assertContains(response, "Purge de logs e auditoria IA")
@@ -6009,6 +6151,7 @@ class WebSmokeTests(TransactionTestCase):
                     "retention-system_log_retention_days": "45",
                     "retention-ai_audit_retention_days": "120",
                     "email-email_enabled": "on",
+                    "email-email_provider": "smtp",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "587",
                     "email-smtp_username": "mailer@example.com",
@@ -6027,6 +6170,7 @@ class WebSmokeTests(TransactionTestCase):
 
             site_config = SiteConfig.get_solo()
             self.assertTrue(site_config.email_enabled)
+            self.assertEqual(site_config.email_provider, SiteConfig.EMAIL_PROVIDER_SMTP)
             self.assertEqual(site_config.smtp_host, "smtp.example.com")
             self.assertEqual(site_config.smtp_port, 587)
             self.assertTrue(site_config.smtp_use_tls)
@@ -6090,20 +6234,20 @@ class WebSmokeTests(TransactionTestCase):
                 template_key="wallet.credited",
                 locale="pt-br",
                 context={"wallet_url": "https://gotrendlabs.com.br/wallet/"},
-                idempotency_key="wallet.credited:sandbox-suppressed",
-                status="suppressed",
-                last_error="SES sandbox guard suppressed delivery to an unverified recipient.",
+                idempotency_key="wallet.credited:provider-failed",
+                status="failed",
+                last_error="Provider error during delivery.",
             )
             response = self.client.get(reverse("admin-ops-email-delivery-logs"))
             self.assertContains(response, "Politica de Emails")
             self.assertContains(response, "Outbox, tentativas e falhas")
             self.assertContains(response, "Enviado")
-            self.assertContains(response, "Bloqueado")
+            self.assertContains(response, "Falhou")
             self.assertContains(response, "account.password_reset")
             self.assertContains(response, "wallet.credited")
             self.assertContains(response, "account.password_reset:test-admin-log")
             self.assertNotContains(response, "password-reset/confirm/secret")
-            response = self.client.get(f"{reverse('admin-ops-email-delivery-logs')}?status=suppressed&template_key=wallet.credited&recipient=person")
+            response = self.client.get(f"{reverse('admin-ops-email-delivery-logs')}?status=failed&template_key=wallet.credited&recipient=person")
             self.assertContains(response, "person@example.com")
             self.assertNotContains(response, staff.email)
 
@@ -6117,6 +6261,7 @@ class WebSmokeTests(TransactionTestCase):
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "0",
                     "retention-ai_audit_retention_days": "3651",
+                    "email-email_provider": "smtp",
                     "email-smtp_port": "587",
                     "email-smtp_timeout_seconds": "15",
                 },
@@ -6128,48 +6273,127 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.system_log_retention_days, 45)
             self.assertEqual(site_config.ai_audit_retention_days, 120)
 
-    def test_smtp_test_command_uses_site_config_and_environment_secret(self):
+    def test_admin_config_supports_resend_provider_without_persisting_secret(self):
+        staff = get_user_model().objects.create_user(
+            username="resendconfigstaff",
+            email="resend-config-staff@example.com",
+            password="test",
+            is_staff=True,
+            first_name="Resend Config Staff",
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        with TemporaryDirectory() as tmpdir, override_settings(
+            GOTRENDLABS_RUNTIME_CONFIG_PATH=os.path.join(tmpdir, "platform_config.json"),
+            GOTRENDLABS_RESEND_API_KEY="resend-secret",
+            GOTRENDLABS_SMTP_PASSWORD="",
+            GOTRENDLABS_SMTP_API_KEY="",
+        ):
+            response = self.client.get(reverse("admin-ops-config"))
+            self.assertContains(response, "Segredo Resend")
+            self.assertContains(response, "Configurado por ambiente")
+            self.assertNotContains(response, "resend-secret")
+
+            response = self.client.post(
+                reverse("admin-ops-config"),
+                {
+                    "maintenance-maintenance_message": "",
+                    "economy-wallet_recharge_min_balance_gtl": "100",
+                    "economy-referral_bonus_gtl": "200",
+                    "daemon-daemon_stale_after_minutes": "7",
+                    "daemon-daemon_missing_after_minutes": "21",
+                    "retention-system_log_retention_days": "90",
+                    "retention-ai_audit_retention_days": "90",
+                    "email-email_enabled": "on",
+                    "email-email_provider": "resend",
+                    "email-smtp_port": "587",
+                    "email-smtp_timeout_seconds": "10",
+                    "email-default_from_email": "no-reply@gotrendlabs.com.br",
+                    "email-default_reply_to_email": "support@gotrendlabs.com.br",
+                },
+            )
+            self.assertEqual(response.status_code, 302)
+            site_config = SiteConfig.get_solo()
+            self.assertTrue(site_config.email_enabled)
+            self.assertEqual(site_config.email_provider, SiteConfig.EMAIL_PROVIDER_RESEND)
+            self.assertEqual(site_config.default_from_email, "no-reply@gotrendlabs.com.br")
+            self.assertEqual(site_config.default_reply_to_email, "support@gotrendlabs.com.br")
+            self.assertEqual(site_config.smtp_host, "")
+            self.assertNotIn("resend-secret", str(load_platform_config()))
+            self.assertNotIn("resend-secret", str(site_config.__dict__))
+
+            response = self.client.post(
+                reverse("admin-ops-config"),
+                {
+                    "maintenance-maintenance_message": "",
+                    "economy-wallet_recharge_min_balance_gtl": "100",
+                    "economy-referral_bonus_gtl": "200",
+                    "daemon-daemon_stale_after_minutes": "7",
+                    "daemon-daemon_missing_after_minutes": "21",
+                    "retention-system_log_retention_days": "90",
+                    "retention-ai_audit_retention_days": "90",
+                    "email-email_enabled": "on",
+                    "email-email_provider": "resend",
+                    "email-smtp_port": "587",
+                    "email-smtp_timeout_seconds": "10",
+                },
+            )
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Informe o email remetente padrão.")
+
+    def test_resend_test_command_uses_site_config_and_environment_secret(self):
         site_config = SiteConfig.get_solo()
         site_config.email_enabled = False
-        site_config.smtp_host = "email-smtp.us-east-1.amazonaws.com"
-        site_config.smtp_port = 587
-        site_config.smtp_username = "smtp-user"
-        site_config.smtp_use_tls = True
-        site_config.smtp_use_ssl = False
-        site_config.smtp_timeout_seconds = 12
-        site_config.default_from_email = "no-reply@gotrendlabs.com.br"
+        site_config.email_provider = SiteConfig.EMAIL_PROVIDER_RESEND
+        site_config.smtp_timeout_seconds = 9
+        site_config.default_from_email = "GoTrendLabs <no-reply@gotrendlabs.com.br>"
         site_config.default_reply_to_email = "support@gotrendlabs.com.br"
         site_config.save()
 
+        class ResendResponse:
+            status_code = 200
+            text = '{"id":"test-message-123"}'
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"id": "test-message-123"}
+
         out = StringIO()
-        smtp_context = patch("apps.web.django.admin_ops.management.commands.send_smtp_test_email.smtplib.SMTP")
-        ssl_context = patch("apps.web.django.admin_ops.management.commands.send_smtp_test_email.ssl.create_default_context", return_value="tls-context")
-        with override_settings(GOTRENDLABS_SMTP_PASSWORD="smtp-secret", GOTRENDLABS_SMTP_API_KEY=""), smtp_context as smtp_cls, ssl_context:
-            smtp = smtp_cls.return_value.__enter__.return_value
-            call_command("send_smtp_test_email", "--to", "success@simulator.amazonses.com", stdout=out)
+        with override_settings(GOTRENDLABS_RESEND_API_KEY="resend-secret"), patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
+            call_command("send_resend_test_email", "--to", "wsca@example.com", stdout=out)
 
-        smtp_cls.assert_called_once_with("email-smtp.us-east-1.amazonaws.com", 587, timeout=12)
-        smtp.starttls.assert_called_once_with(context="tls-context")
-        smtp.login.assert_called_once_with("smtp-user", "smtp-secret")
-        smtp.send_message.assert_called_once()
-        message = smtp.send_message.call_args.args[0]
-        self.assertEqual(message["From"], "no-reply@gotrendlabs.com.br")
-        self.assertEqual(message["To"], "success@simulator.amazonses.com")
-        self.assertEqual(message["Reply-To"], "support@gotrendlabs.com.br")
+        post.assert_called_once()
+        call = post.call_args.kwargs
+        self.assertEqual(call["headers"]["Authorization"], "Bearer resend-secret")
+        self.assertTrue(call["headers"]["Idempotency-Key"].startswith("admin.resend_test:"))
+        self.assertEqual(call["timeout"], 9)
+        self.assertEqual(call["json"]["from"], "GoTrendLabs <no-reply@gotrendlabs.com.br>")
+        self.assertEqual(call["json"]["to"], ["wsca@example.com"])
+        self.assertEqual(call["json"]["reply_to"], "support@gotrendlabs.com.br")
         self.assertIn("Email delivery flag is disabled", out.getvalue())
-        self.assertIn("SMTP test email sent", out.getvalue())
+        self.assertIn("Resend test email sent", out.getvalue())
+        self.assertIn("test-message-123", out.getvalue())
 
-    def test_smtp_test_command_validates_required_secret(self):
+    def test_resend_test_command_validates_required_secret(self):
         site_config = SiteConfig.get_solo()
-        site_config.smtp_host = "email-smtp.us-east-1.amazonaws.com"
-        site_config.smtp_port = 587
-        site_config.smtp_username = "smtp-user"
         site_config.default_from_email = "no-reply@gotrendlabs.com.br"
         site_config.save()
 
-        with override_settings(GOTRENDLABS_SMTP_PASSWORD="", GOTRENDLABS_SMTP_API_KEY=""):
-            with self.assertRaisesMessage(Exception, "GOTRENDLABS_SMTP_PASSWORD or GOTRENDLABS_SMTP_API_KEY"):
-                call_command("send_smtp_test_email", "--dry-run")
+        with override_settings(GOTRENDLABS_RESEND_API_KEY=""):
+            with self.assertRaisesMessage(Exception, "GOTRENDLABS_RESEND_API_KEY"):
+                call_command("send_resend_test_email", "--dry-run")
 
     def test_admin_config_persists_ai_agent_parameters(self):
         staff = get_user_model().objects.create_user(
@@ -6205,6 +6429,7 @@ class WebSmokeTests(TransactionTestCase):
                     "daemon-daemon_missing_after_minutes": "18",
                     "retention-system_log_retention_days": "90",
                     "retention-ai_audit_retention_days": "90",
+                    "email-email_provider": "smtp",
                     "email-smtp_host": "",
                     "email-smtp_port": "587",
                     "email-smtp_username": "",
@@ -6284,6 +6509,7 @@ class WebSmokeTests(TransactionTestCase):
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "90",
                     "retention-ai_audit_retention_days": "90",
+                    "email-email_provider": "smtp",
                     "email-smtp_host": "smtp.example.com",
                     "email-smtp_port": "465",
                     "email-smtp_use_tls": "on",
@@ -7066,6 +7292,8 @@ class WebSmokeTests(TransactionTestCase):
                 "logs_critical_7d": 0,
                 "admin_events_7d": 3,
                 "maintenance_enabled": True,
+                "email_provider": "resend",
+                "email_status": "pending",
                 "smtp_status": "pending",
                 "recaptcha_enabled": True,
                 "daemon_status": "stale",

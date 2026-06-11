@@ -39,9 +39,9 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 - aviso de crédito concedido
 - comunicações de feedback/sugestão quando definido
 - outbox `EmailDelivery` com idempotência, retries e trilha de falha/envio
-- configuração operacional SMTP não sensível no Admin Ops
+- configuração operacional não sensível de email no Admin Ops, com provider SMTP ou Resend
 - área Admin Ops `Politica de Emails` com edição de templates PT-BR e logs de entrega da outbox
-- infraestrutura SMTP SES em `us-east-1` com identidades de domínio verificadas por DKIM
+- envio transacional via Resend API HTTPS com domínio remetente verificado
 - base de push mobile por FCM, iniciando com provider `none`/dry-run/noop desligado por padrão
 - políticas e templates de push editáveis no Admin Ops por evento, sem segredos
 - outbox `PushDelivery` drenada pelo daemon, sempre derivada de `UserNotification`
@@ -51,10 +51,10 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 
 - automação de marketing complexa
 - newsletter
-- armazenamento de senha/API key SMTP no banco ou na interface administrativa
+- armazenamento de senha/API key SMTP ou Resend no banco ou na interface administrativa
 - armazenamento de credenciais Firebase no banco, Git ou Admin Ops
 - feed em tempo real/websocket de notificações
-- concessão de production access do SES
+- armazenamento de API key Resend no banco, Git ou Admin Ops
 - bounce/complaint webhooks
 - editor visual avançado de email
 - envio FCM real até existir projeto Firebase, credenciais e aprovação operacional explícita
@@ -69,14 +69,14 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 ## Comportamento esperado
 
 - eventos de domínio disparam comunicações elegíveis
-- emails transacionais são enfileirados em outbox antes do envio SMTP
+- emails transacionais são enfileirados em outbox antes do envio pelo provider configurado
 - push mobile é enfileirado em outbox antes de qualquer tentativa de entrega
 - ações sociais geram notificações in-app sem duplicidade por evento de origem
 - créditos recebidos, badges conquistadas e mudanças relevantes em mercados participados geram notificações in-app
 - usuários podem marcar todas as notificações in-app como lidas
 - idioma respeita preferência do usuário
 - templates ativos usam PT-BR na edição operacional desta versão, com fallback controlado no código quando necessário
-- em sandbox SES, o daemon suprime envio para destinatários comuns fora do simulator/allowlist
+- falhas de provider são registradas com retry e sem expor segredo operacional
 
 ## Regras de domínio
 
@@ -93,6 +93,8 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - eventos operacionais/sistêmicos podem notificar o próprio usuário quando o destinatário é o beneficiário direto, como créditos e badges
 - `user.email_confirmation`, `account.password_reset`, `market.locked`, `market.resolved` e `wallet.credited` criam entregas idempotentes em `EmailDelivery`
 - a resposta pública de recuperação de senha não expõe o link; o link é enviado apenas pelo template transacional
+- recuperação de senha deve tentar envio imediato após o commit, mantendo retry pelo daemon apenas como fallback operacional
+- links enviados por email devem ser absolutos para funcionarem fora do navegador atual
 - toda push notification nasce de uma `UserNotification` persistida
 - nem toda `UserNotification` vira push; `PushEventPolicy` define `off`, `immediate` ou `digest`
 - nesta fase, `digest` existe como contrato/configuração, mas não dispara envio agrupado
@@ -136,8 +138,9 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - `gotrendlabs_push_templates`: título/corpo por evento/idioma, ativo e variáveis permitidas
 - `gotrendlabs_push_deliveries`: outbox idempotente por notificação/dispositivo, payload seguro, status, tentativas, erro e provider message id
 - `gotrendlabs_push_preferences`: opt-in/opt-out global ou por evento
-- configuração SMTP singleton: ativo, host, porta, usuário, TLS/SSL, timeout, remetente e reply-to
-- identidades SES verificadas para `gotrendlabs.com.br` e `gotrendlabs.com`; credencial SMTP dedicada é mantida fora do banco e da interface
+- configuração singleton de email: ativo, provider, remetente, reply-to, timeout e, para SMTP, host, porta, usuário e TLS/SSL
+- domínio remetente Resend verificado para `gotrendlabs.com.br`; `GOTRENDLABS_RESEND_API_KEY` é mantida fora do banco e da interface
+- SMTP genérico pode ser configurado como fallback, com senha/API key mantida fora do banco e da interface
 - flags de push vêm do ambiente: `GOTRENDLABS_PUSH_ENABLED`, `GOTRENDLABS_PUSH_PROVIDER`, `GOTRENDLABS_PUSH_DRY_RUN` e segredo futuro `GOTRENDLABS_FCM_CREDENTIALS_JSON`
 
 ## Contratos afetados
@@ -152,8 +155,8 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 ## Observabilidade e operação
 
 - taxa de entrega, falha e reenvio
-- parâmetros SMTP são administráveis por staff; segredo de envio vem de variável de ambiente/secret manager
-- teste sandbox usa `success@simulator.amazonses.com` antes de production access
+- parâmetros não sensíveis de email são administráveis por staff; segredo de envio vem de variável de ambiente/secret manager
+- teste operacional Resend usa `send_resend_test_email` e exige domínio remetente verificado
 - Admin Ops permite editar assunto e corpos de templates PT-BR ativos sem revelar segredos de SMTP
 - Admin Ops lista entregas `EmailDelivery` com filtros por status, template, destinatário e período, sem renderizar contexto/corpo com links sensíveis
 - Admin Ops mostra todas as variáveis disponíveis por template, com nome, descrição, exemplo de uso e valor de exemplo.
@@ -169,13 +172,14 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - renderização de template, interpolação segura e fallback de idioma
 - confirmação de email com expiração, uso único, token inválido e reenvio limitado
 - login limitado para conta sem email confirmado e liberação após confirmação
-- outbox com idempotência, retries, estados `queued`/`sending`/`sent`/`failed`/`suppressed` e bloqueio sandbox
+- outbox com idempotência, retries, estados `queued`/`sending`/`sent`/`failed`/`suppressed` e falhas de provider
+- recuperação de senha com envio imediato quando o provider está pronto e link absoluto no template renderizado
 - criação idempotente de notificações in-app para previsão, curtida de mercado, comentário, curtida de comentário, crédito recebido, fechamento/resolução de mercado e badge recebida
 - listagem autenticada de notificações com contador de não lidas
 - marcação de todas como lidas
 - verificação de idioma correto
-- validação de configuração SMTP, incluindo bloqueio de TLS e SSL simultâneos
-- validação operacional do comando de teste SMTP sem expor segredo nem gravar credencial sensível
+- validação de configuração SMTP, incluindo bloqueio de TLS e SSL simultâneos, e de configuração Resend com remetente obrigatório
+- validação operacional do comando de teste Resend sem expor segredo nem gravar credencial sensível
 - registro autenticado, listagem e revogação de `PushDevice`
 - preferências globais e por evento bloqueando enfileiramento
 - outbox de push criada apenas quando existe `UserNotification` nova e política imediata
@@ -189,10 +193,9 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 
 - mensagens são disparadas pelos eventos corretos e no idioma esperado
 - usuários logados veem notificações sociais persistidas e podem limpar o contador de não lidas
-- staff consegue visualizar e alterar parâmetros SMTP não sensíveis sem expor senha/API key
+- staff consegue visualizar e alterar parâmetros não sensíveis de email sem expor senha/API key
 - staff consegue visualizar e editar templates PT-BR por chave, incluindo variáveis disponíveis e preview HTML local
-- operador consegue validar SMTP sandbox com SES usando configuração persistida e segredo vindo do ambiente
-- enquanto SES estiver em sandbox, destinatários reais não verificados são suprimidos pelo daemon
+- operador consegue validar Resend com domínio remetente verificado e segredo vindo do ambiente
 - provider `none`/dry-run permite validar a outbox sem envio real
 - Admin Ops controla políticas/templates de push sem expor credenciais
 - Admin Ops mostra saúde de push no Dashboard e permite navegar para logs de entrega quando houver fila/falha

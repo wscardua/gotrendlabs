@@ -1015,6 +1015,7 @@ def config(request):
         request.POST or None,
         initial={
             "email_enabled": site_config.email_enabled,
+            "email_provider": site_config.email_provider,
             "smtp_host": site_config.smtp_host,
             "smtp_port": site_config.smtp_port,
             "smtp_username": site_config.smtp_username,
@@ -1061,13 +1062,13 @@ def config(request):
         prefix="ai",
     )
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
-    if request.method == "POST" and request.POST.get("action") == "smtp_test":
+    if request.method == "POST" and request.POST.get("action") == "resend_test":
         try:
-            call_command("send_smtp_test_email")
+            call_command("send_resend_test_email")
         except Exception as exc:
-            messages.error(request, f"Teste SMTP falhou: {exc}")
+            messages.error(request, f"Teste Resend falhou: {exc}")
         else:
-            messages.success(request, "Teste SMTP enviado para o SES mailbox simulator.")
+            messages.success(request, "Teste Resend enviado.")
         return redirect("admin-ops-config")
     if (
         request.method == "POST"
@@ -1101,6 +1102,8 @@ def config(request):
         messages.success(request, "Configurações atualizadas.")
         return redirect("admin-ops-config")
     smtp_secret_configured = bool(settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY)
+    resend_secret_configured = bool(getattr(settings, "GOTRENDLABS_RESEND_API_KEY", ""))
+    email_secret_configured = resend_secret_configured if site_config.email_provider == SiteConfig.EMAIL_PROVIDER_RESEND else smtp_secret_configured
     openai_secret_configured = bool(getattr(settings, "OPENAI_API_KEY", "") or os.environ.get("OPENAI_API_KEY"))
     llm_secret_configured = bool(getattr(settings, llm_secret_name, "") or os.environ.get(llm_secret_name, "").strip())
     return render(
@@ -1116,6 +1119,8 @@ def config(request):
             "platform_config": platform_config,
             "site_config": site_config,
             "smtp_secret_configured": smtp_secret_configured,
+            "resend_secret_configured": resend_secret_configured,
+            "email_secret_configured": email_secret_configured,
             "openai_secret_configured": openai_secret_configured,
             "llm_secret_configured": llm_secret_configured,
             "llm_secret_name": llm_secret_name,

@@ -3,6 +3,7 @@ import ssl
 from datetime import timedelta
 from email.message import EmailMessage
 
+import httpx
 from django.conf import settings
 from django.db import transaction
 from django.db.models import F
@@ -11,6 +12,9 @@ from django.utils import timezone
 
 from apps.web.django.admin_ops.models import SiteConfig
 from apps.web.django.communications.models import EmailDelivery, EmailTemplate
+
+
+RESEND_EMAILS_API_URL = "https://api.resend.com/emails"
 
 
 DEFAULT_EMAIL_TEMPLATES = {
@@ -189,17 +193,6 @@ def render_template(template_key, locale, context):
     }
 
 
-def sandbox_recipient_allowed(recipient):
-    recipient = (recipient or "").strip().lower()
-    if not recipient:
-        return False
-    if getattr(settings, "GOTRENDLABS_SES_PRODUCTION_ACCESS", False):
-        return True
-    if recipient.endswith("@simulator.amazonses.com"):
-        return True
-    return recipient in getattr(settings, "GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST", set())
-
-
 def _build_message(site_config, delivery):
     rendered = render_template(delivery.template_key, delivery.locale, delivery.context)
     message = EmailMessage()
@@ -236,10 +229,66 @@ def _send_message(site_config, message, secret):
         smtp.send_message(message)
 
 
+def _resend_payload(site_config, delivery, rendered):
+    payload = {
+        "from": site_config.default_from_email,
+        "to": [delivery.recipient_email],
+        "subject": rendered["subject"],
+        "text": rendered["body_text"] or " ",
+    }
+    if rendered["body_html"]:
+        payload["html"] = rendered["body_html"]
+    if site_config.default_reply_to_email:
+        payload["reply_to"] = site_config.default_reply_to_email
+    return payload
+
+
+def _send_resend_message(site_config, delivery, rendered, secret):
+    response = httpx.post(
+        RESEND_EMAILS_API_URL,
+        headers={
+            "Authorization": f"Bearer {secret}",
+            "Content-Type": "application/json",
+            "Idempotency-Key": delivery.idempotency_key[:256],
+        },
+        json=_resend_payload(site_config, delivery, rendered),
+        timeout=site_config.smtp_timeout_seconds or 10,
+    )
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        detail = response.text[:500] if response.text else str(exc)
+        raise RuntimeError(f"Resend API error {response.status_code}: {detail}") from exc
+    data = response.json()
+    return str(data.get("id", ""))
+
+
+def _email_secret(site_config):
+    if site_config.email_provider == SiteConfig.EMAIL_PROVIDER_RESEND:
+        return settings.GOTRENDLABS_RESEND_API_KEY
+    return settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY
+
+
+def _email_settings_error(site_config, secret):
+    if not site_config.email_enabled:
+        return "Email delivery is disabled."
+    if not site_config.default_from_email:
+        return "Default sender email is missing."
+    if site_config.email_provider == SiteConfig.EMAIL_PROVIDER_RESEND:
+        if not secret:
+            return "GOTRENDLABS_RESEND_API_KEY is not configured."
+        return ""
+    if not site_config.smtp_host or not site_config.smtp_port or not site_config.smtp_username or not secret:
+        return "SMTP settings are incomplete."
+    if site_config.smtp_use_tls and site_config.smtp_use_ssl:
+        return "SMTP TLS and SSL cannot both be enabled."
+    return ""
+
+
 def process_due_email_deliveries(*, limit=25, now=None):
     now = now or timezone.now()
     site_config = SiteConfig.get_solo()
-    secret = settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY
+    secret = _email_secret(site_config)
     stats = {"sent": 0, "failed": 0, "suppressed": 0, "skipped": 0}
     with transaction.atomic():
         deliveries = list(
@@ -248,34 +297,27 @@ def process_due_email_deliveries(*, limit=25, now=None):
             .order_by("next_attempt_at", "id")[:limit]
         )
         for delivery in deliveries:
-            if not site_config.email_enabled or not site_config.is_ready_for_delivery or not site_config.smtp_username or not secret:
+            settings_error = _email_settings_error(site_config, secret)
+            if settings_error:
                 delivery.status = "failed"
-                delivery.last_error = "SMTP settings are incomplete."
+                delivery.last_error = settings_error
                 delivery.next_attempt_at = now + timedelta(minutes=30)
                 delivery.save(update_fields=["status", "last_error", "next_attempt_at", "updated_at"])
                 stats["failed"] += 1
-                continue
-            if site_config.smtp_use_tls and site_config.smtp_use_ssl:
-                delivery.status = "failed"
-                delivery.last_error = "SMTP TLS and SSL cannot both be enabled."
-                delivery.next_attempt_at = now + timedelta(minutes=30)
-                delivery.save(update_fields=["status", "last_error", "next_attempt_at", "updated_at"])
-                stats["failed"] += 1
-                continue
-            if not sandbox_recipient_allowed(delivery.recipient_email):
-                delivery.status = "suppressed"
-                delivery.last_error = "SES sandbox guard suppressed delivery to an unverified recipient."
-                delivery.save(update_fields=["status", "last_error", "updated_at"])
-                stats["suppressed"] += 1
                 continue
             delivery.status = "sending"
             delivery.last_attempt_at = now
             delivery.attempt_count += 1
             delivery.save(update_fields=["status", "last_attempt_at", "attempt_count", "updated_at"])
             try:
-                message, rendered = _build_message(site_config, delivery)
-                _send_message(site_config, message, secret)
-            except (OSError, smtplib.SMTPException) as exc:
+                rendered = render_template(delivery.template_key, delivery.locale, delivery.context)
+                provider_message_id = ""
+                if site_config.email_provider == SiteConfig.EMAIL_PROVIDER_RESEND:
+                    provider_message_id = _send_resend_message(site_config, delivery, rendered, secret)
+                else:
+                    message, rendered = _build_message(site_config, delivery)
+                    _send_message(site_config, message, secret)
+            except (OSError, smtplib.SMTPException, httpx.HTTPError, RuntimeError, ValueError) as exc:
                 delivery.status = "failed"
                 delivery.last_error = str(exc)
                 delay_minutes = min(60, 5 * max(1, delivery.attempt_count))
@@ -288,6 +330,7 @@ def process_due_email_deliveries(*, limit=25, now=None):
                 delivery.body_html = rendered["body_html"]
                 delivery.sent_at = timezone.now()
                 delivery.last_error = ""
+                delivery.provider_message_id = provider_message_id
                 stats["sent"] += 1
             delivery.save()
     if not deliveries:

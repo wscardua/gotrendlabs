@@ -2,7 +2,7 @@ from decimal import Decimal, ROUND_DOWN
 
 from django import forms
 
-from apps.web.django.admin_ops.models import MobileAppRelease
+from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 
 
 PROBABILITY_QUANT = Decimal("0.0001")
@@ -26,6 +26,7 @@ class MaintenanceConfigForm(forms.Form):
 
 class SiteEmailConfigForm(forms.Form):
     email_enabled = forms.BooleanField(label="Envio de email ativo", required=False)
+    email_provider = forms.ChoiceField(label="Provedor", choices=SiteConfig.EMAIL_PROVIDER_CHOICES, initial=SiteConfig.EMAIL_PROVIDER_SMTP)
     smtp_host = forms.CharField(label="Servidor SMTP", max_length=255, required=False)
     smtp_port = forms.IntegerField(label="Porta", min_value=1, max_value=65535, initial=587)
     smtp_username = forms.CharField(label="Usuário SMTP", max_length=255, required=False)
@@ -40,10 +41,12 @@ class SiteEmailConfigForm(forms.Form):
         if cleaned_data.get("smtp_use_tls") and cleaned_data.get("smtp_use_ssl"):
             raise forms.ValidationError("TLS e SSL não podem ficar ativos ao mesmo tempo.")
         if cleaned_data.get("email_enabled"):
+            email_provider = cleaned_data.get("email_provider") or SiteConfig.EMAIL_PROVIDER_SMTP
             required_fields = {
-                "smtp_host": "Informe o servidor SMTP.",
                 "default_from_email": "Informe o email remetente padrão.",
             }
+            if email_provider == SiteConfig.EMAIL_PROVIDER_SMTP:
+                required_fields["smtp_host"] = "Informe o servidor SMTP."
             for field, error in required_fields.items():
                 if not cleaned_data.get(field):
                     self.add_error(field, error)
