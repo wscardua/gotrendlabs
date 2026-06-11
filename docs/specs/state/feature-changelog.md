@@ -151,19 +151,18 @@
 - Cadastro e alteração de email passam a emitir link expirável de confirmação; contas não confirmadas entram em login limitado até confirmar o endereço.
 - Recuperação de senha pública passou a enfileirar email transacional e não expõe mais `reset_url` na resposta pública.
 - Fechamento/resolução de mercado para participantes humanos e créditos concedidos passam a criar entregas idempotentes na outbox.
-- Daemon operacional passou a processar `EmailDelivery` com retries, status `queued`/`sending`/`sent`/`failed`/`suppressed` e guarda para SES sandbox.
+- Daemon operacional passou a processar `EmailDelivery` com retries, status `queued`/`sending`/`sent`/`failed`/`suppressed` e registro de falhas de provider.
 - Admin Ops passou a expor `Politica de Emails`, agrupando templates PT-BR, variáveis disponíveis, preview local do email HTML e logs filtráveis de entrega da outbox sem renderizar links sensíveis.
-- Status de implementação: `parcial`; production access SES, event bus dedicado, preferências/cadência avançadas e webhooks de bounce/complaint seguem fora desta fatia.
+- Status de implementação: `parcial`; event bus dedicado, preferências/cadência avançadas e webhooks de bounce/complaint seguem fora desta fatia.
 
-## 2026-06-05 — FEAT-NOTIFY-001 SES SMTP operacional
+## 2026-06-09 — FEAT-NOTIFY-001 Resend transacional
 
-- Amazon SES foi configurado em `us-east-1` com identidades `gotrendlabs.com.br` e `gotrendlabs.com` verificadas por Easy DKIM.
-- Credencial SMTP dedicada foi criada para envio via `email-smtp.us-east-1.amazonaws.com:587`, mantendo senha somente em ambiente/secret manager.
-- Adicionado comando `send_smtp_test_email` para validar SMTP sandbox com a configuração do Admin Ops e o segredo do ambiente, sem persistir credencial sensível.
-- Produção recebeu o segredo SMTP em `.env.prod`, os parâmetros não sensíveis foram persistidos em `gotrendlabs_site_config` e o envio sandbox para o mailbox simulator do SES foi validado.
-- Solicitação de production access foi submetida ao SES em 2026-06-05 para uso transacional, mas a revisão retornou `DENIED` no caso `178067031900201`; reenvio imediato por CLI retornou `ConflictException`, recurso manual foi enviado no console AWS e a conta permanece em sandbox até nova resposta/aprovação.
-- Runbook de produção passou a documentar DNS DKIM, parâmetros SMTP não sensíveis, teste sandbox e etapa posterior de production access.
-- Status de implementação: `parcial`; envio real por `communications`, production access do SES e trilha de entrega seguem fora desta fatia.
+- `SiteConfig` passou a registrar `email_provider`, mantendo SMTP genérico como fallback e adicionando Resend como provider de email transacional.
+- `communications` passou a enviar emails via Resend API HTTPS quando selecionado, preservando outbox, templates, retries, snapshots renderizados, `provider_message_id` e `Idempotency-Key`.
+- Admin Ops passou a exibir segredo Resend separado, seletor de provedor e teste operacional `send_resend_test_email`, sem persistir ou expor `GOTRENDLABS_RESEND_API_KEY`.
+- Dashboard/Admin Summary passaram a reportar saúde de email de forma provider-aware.
+- Recuperação de senha passou a tentar envio imediato após o commit e a renderizar links absolutos no email, mantendo o daemon como fallback de retry.
+- Resend exige domínio remetente verificado no dashboard com SPF/DKIM; DMARC é recomendado. Bounce/complaint webhooks seguem fora desta fatia.
 
 ## 2026-06-05 — GoTrendLabs validação final e ajustes de produção
 

@@ -157,12 +157,7 @@ SYSTEM_LOG_RETENTION_DAYS = int(os.environ.get("SYSTEM_LOG_RETENTION_DAYS", "90"
 GOTRENDLABS_RUNTIME_CONFIG_PATH = os.environ.get("GOTRENDLABS_RUNTIME_CONFIG_PATH", str(BASE_DIR / ".runtime" / "platform_config.json"))
 GOTRENDLABS_SMTP_PASSWORD = os.environ.get("GOTRENDLABS_SMTP_PASSWORD", "")
 GOTRENDLABS_SMTP_API_KEY = os.environ.get("GOTRENDLABS_SMTP_API_KEY", "")
-GOTRENDLABS_SES_PRODUCTION_ACCESS = os.environ.get("GOTRENDLABS_SES_PRODUCTION_ACCESS", "0").strip().lower() in {"1", "true", "yes", "on"}
-GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST = {
-    email.strip().lower()
-    for email in os.environ.get("GOTRENDLABS_EMAIL_SANDBOX_ALLOWLIST", "success@simulator.amazonses.com").split(",")
-    if email.strip()
-}
+GOTRENDLABS_RESEND_API_KEY = os.environ.get("GOTRENDLABS_RESEND_API_KEY", "")
 GOTRENDLABS_PUSH_ENABLED = env_flag("GOTRENDLABS_PUSH_ENABLED", False)
 GOTRENDLABS_PUSH_PROVIDER = os.environ.get("GOTRENDLABS_PUSH_PROVIDER", "none").strip().lower()
 GOTRENDLABS_PUSH_DRY_RUN = env_flag("GOTRENDLABS_PUSH_DRY_RUN", True)

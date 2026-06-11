@@ -2,6 +2,30 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260609-RESEND-TRANSACTIONAL-EMAIL-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-NOTIFY-001`, `communications`
+- Objetivo: adicionar Resend como provider de email transacional via API HTTPS, preservando outbox, templates, retries, logs e SMTP genérico como fallback
+- Etapa atual: concluído; branch `feature/resend-transactional-email` criada a partir de `origin/main`, provider Resend implementado, integração antiga de email removida do app/docs, resíduos de banco/env limpos, reset de senha com envio imediato e links absolutos
+- Artefatos afetados:
+  - `apps/web/django/communications/`
+  - `apps/web/django/admin_ops/`
+  - `apps/api/backend_api/main.py`
+  - `config/settings.py`
+  - `.env.example`
+  - `.env.prod.example`
+  - `docs/specs/`
+  - `tests/test_web_smoke.py`
+- Bloqueios: ativação real em produção depende de instalação de `GOTRENDLABS_RESEND_API_KEY`, DNS Resend verificado e rotação da key compartilhada no chat
+- Iniciado em: 2026-06-09
+- Atualizado em: 2026-06-09
+- Encerrado em: 2026-06-09
+- Retomada: após deploy, definir provider `resend` no Admin Ops, preencher `no-reply@gotrendlabs.com.br`, instalar `GOTRENDLABS_RESEND_API_KEY` fora do Git, recriar containers e validar com `send_resend_test_email`
+- Reversão lógica: voltar `email_provider` para `smtp`, remover `GOTRENDLABS_RESEND_API_KEY` do ambiente e manter outbox/templates/SMTP existentes intactos
+- Evidências de validação local: `manage.py makemigrations --check --dry-run`; `manage.py check`; suíte completa `manage.py test --keepdb` com 163 testes OK; `git diff --check`; busca local confirmou ausência da key real Resend nos arquivos alterados
+
 ## WFLOW-20260608-MOBILE-LAUNCHER-BRANDING-001
 
 - Tipo: `change-feature`
@@ -249,51 +273,8 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Atualizado em: 2026-06-07
 - Encerrado em: 2026-06-07
 - Retomada: próxima reorganização deve mover `ops/` ou iniciar a preparação da camada web, sem misturar com mudanças funcionais
-- Reversão lógica: restaurar o pacote para `backend_api/`, reverter imports para `backend_api.*` e voltar o comando de produção para `uvicorn backend_api.main:app`
-- Evidências de validação: `manage.py check`, import direto `from apps.api.backend_api.main import app`, suite `manage.py test --keepdb` com 150 testes OK, `python -m uvicorn apps.api.backend_api.main:app --port 8011`, `GET /health` OK e `/docs` 200
-
-## WFLOW-20260605-001
-
-- Tipo: `change-feature`
-- Status: `concluido`
-- Feature alvo: `FEAT-NOTIFY-001`
-- Objetivo: configurar infraestrutura AWS SES SMTP para envio transacional sandbox da GoTrendLabs
-- Etapa atual: concluído; identidades SES `gotrendlabs.com.br`/`.com` verificadas, segredo SMTP instalado na produção, teste sandbox validado, production access solicitado e negado no caso `178067031900201`, recurso manual enviado pelo console AWS, comando de teste SMTP, runbook e specs atualizados em 2026-06-05
-- Artefatos afetados:
-  - `admin_ops/management/commands/send_smtp_test_email.py`
-  - `ops/deploy/production/README.md`
-  - `tests/test_web_smoke.py`
-  - `docs/specs/`
-- Bloqueios: production access do SES foi negado, reenvio imediato por CLI retornou `ConflictException`, a conta sem Premium Support não permite acompanhar/responder ao caso via Support API e o recurso manual enviado pelo console AWS aguarda nova resposta
-- Iniciado em: 2026-06-05
-- Atualizado em: 2026-06-05
-- Encerrado em: 2026-06-05
-- Retomada: acompanhar o caso SES `178067031900201`, publicar a branch para disponibilizar `send_smtp_test_email` no deploy e então implementar envio real em `communications`
-- Reversão lógica: desativar `email_enabled`, remover segredo do ambiente e revogar usuário IAM SMTP se a integração SES for abandonada
-
-## WFLOW-20260605-002
-
-- Tipo: `change-feature`
-- Status: `concluido`
-- Feature alvo: `FEAT-NOTIFY-001`, `FEAT-AUTH-001`
-- Objetivo: implementar emails transacionais com SES em hold, outbox + daemon, templates editáveis e confirmação de email com login limitado
-- Etapa atual: concluído; `communications` criado com templates/outbox/tokens, FastAPI enfileira emails v1, Django/Admin Ops expõe confirmação/reenvio/templates/teste SMTP, daemon processa entregas com retry e guarda sandbox, specs e testes atualizados
-- Artefatos afetados:
-  - `communications/`
-  - `backend_api/main.py`
-  - `backend_api/email_outbox.py`
-  - `backend_api/market_lifecycle_engine.py`
-  - `backend_api/daemon_services.py`
-  - `accounts/`
-  - `admin_ops/`
-  - `tests/test_web_smoke.py`
-  - `docs/specs/`
-- Bloqueios: production access do SES segue em hold/negado no caso `178067031900201`; daemon suprime destinatários comuns enquanto `GOTRENDLABS_SES_PRODUCTION_ACCESS` não estiver ativo
-- Iniciado em: 2026-06-05
-- Atualizado em: 2026-06-05
-- Encerrado em: 2026-06-05
-- Retomada: quando production access for aprovado, ativar `GOTRENDLABS_SES_PRODUCTION_ACCESS=1`, revisar allowlist e validar envio real para destinatário operacional
-- Reversão lógica: desativar `email_enabled`, parar o daemon de envio ou marcar templates inativos, preservando outbox para auditoria
+- Reversão lógica: selecionar provider `smtp` ou desabilitar `email_enabled`, mantendo outbox para auditoria.
+- Evidências de validação: `manage.py check`, `manage.py makemigrations --check --dry-run`, suite `manage.py test --keepdb`, `git diff --check`, `send_resend_test_email --dry-run` e teste real retornando erro Resend de domínio não verificado.
 
 ## WFLOW-20260606-SECURITY-001
 

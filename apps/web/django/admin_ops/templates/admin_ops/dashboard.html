@@ -103,11 +103,12 @@
               <span>Manutenção</span>
               <strong>{% if system.maintenance_enabled %}Ativa{% else %}Inativa{% endif %}</strong>
             </a>
-            <a class="dashboard-health-item {% if system.smtp_status == 'pending' %}is-warn{% endif %}" href="{% url 'admin-ops-config' %}">
-              <span>SMTP</span>
+            <a class="dashboard-health-item {% if system.email_status == 'pending' %}is-warn{% endif %}" href="{% url 'admin-ops-config' %}">
+              <span>Email</span>
               <strong>
-                {% if system.smtp_status == "ready" %}Pronto{% elif system.smtp_status == "pending" %}Pendente{% else %}Inativo{% endif %}
+                {% if system.email_status == "ready" %}Pronto{% elif system.email_status == "pending" %}Pendente{% else %}Inativo{% endif %}
               </strong>
+              <small>{{ system.email_provider|default:"smtp" }}</small>
             </a>
             <div class="dashboard-health-item">
               <span>reCAPTCHA</span>

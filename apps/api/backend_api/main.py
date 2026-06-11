@@ -2,6 +2,7 @@ from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from functools import lru_cache
 import hashlib
+import logging
 from ipaddress import ip_address as parse_ip_address
 import os
 import json
@@ -121,7 +122,7 @@ BADGE_RULE_TYPES = {
     "rewarded_feedback_count",
 }
 BADGE_TYPES = {"global", "category", "performance", "engagement"}
-PUBLIC_WEB_BASE_URL = os.environ.get("GOTRENDLABS_PUBLIC_BASE_URL", "http://127.0.0.1:8000").rstrip("/")
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
 
@@ -1748,15 +1749,53 @@ def _issue_password_reset(cursor, user, *, ip_address=None, user_agent=""):
     now = datetime.now(timezone.utc)
     cursor.execute(
         """
+        UPDATE gotrendlabs_password_reset_tokens
+        SET used_at = %s
+        WHERE user_id = %s AND used_at IS NULL
+        """,
+        (now, user["id"]),
+    )
+    cursor.execute(
+        """
         INSERT INTO gotrendlabs_password_reset_tokens
             (user_id, token_hash, created_at, expires_at, used_at, ip_address, user_agent)
         VALUES (%s, %s, %s, %s, NULL, %s, %s)
         """,
         (user["id"], hash_token(token), now, now + PASSWORD_RESET_TTL, ip_address, user_agent),
     )
-    reset_url = f"{PUBLIC_WEB_BASE_URL}/password-reset/confirm/{token}/"
+    reset_url = public_url(f"password-reset/confirm/{token}/")
     enqueue_password_reset_email(cursor, user, reset_url)
     return reset_url
+
+
+def _process_password_reset_email_now():
+    try:
+        os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
+        import django
+        from django.apps import apps as django_apps
+
+        if not django_apps.ready:
+            django.setup()
+        from django.conf import settings
+        from apps.web.django.admin_ops.models import SiteConfig
+        from apps.web.django.communications.services import process_due_email_deliveries
+
+        site_config = SiteConfig.get_solo()
+        if not site_config.email_enabled or not site_config.default_from_email:
+            return
+        if site_config.email_provider == SiteConfig.EMAIL_PROVIDER_RESEND:
+            if not getattr(settings, "GOTRENDLABS_RESEND_API_KEY", ""):
+                return
+        elif not (
+            site_config.smtp_host
+            and site_config.smtp_port
+            and site_config.smtp_username
+            and (settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY)
+        ):
+            return
+        process_due_email_deliveries(limit=10)
+    except Exception:
+        logger.exception("Password reset email immediate delivery failed.")
 
 
 def _ledger_entries(cursor, user_id, limit=10):
@@ -3871,7 +3910,7 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             ]
             cursor.execute(
                 """
-                SELECT email_enabled, smtp_host, smtp_port, default_from_email,
+                SELECT email_enabled, email_provider, smtp_host, smtp_port, default_from_email,
                        daemon_stale_after_minutes, daemon_missing_after_minutes,
                        ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled,
                        ai_llm_provider, ai_llm_base_url, ai_model, ai_max_comments_per_cycle,
@@ -3882,15 +3921,20 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             )
             site_config = cursor.fetchone()
             smtp_secret_configured = bool(os.environ.get("GOTRENDLABS_SMTP_PASSWORD") or os.environ.get("GOTRENDLABS_SMTP_API_KEY"))
-            smtp_ready = bool(
+            resend_secret_configured = bool(os.environ.get("GOTRENDLABS_RESEND_API_KEY"))
+            email_provider = (site_config["email_provider"] if site_config else "smtp") or "smtp"
+            email_secret_configured = resend_secret_configured if email_provider == "resend" else smtp_secret_configured
+            email_ready = bool(
                 site_config
                 and site_config["email_enabled"]
-                and site_config["smtp_host"]
-                and site_config["smtp_port"]
                 and site_config["default_from_email"]
-                and smtp_secret_configured
+                and email_secret_configured
+                and (
+                    email_provider == "resend"
+                    or (site_config["smtp_host"] and site_config["smtp_port"])
+                )
             )
-            smtp_status = "ready" if smtp_ready else "pending" if site_config and site_config["email_enabled"] else "inactive"
+            email_status = "ready" if email_ready else "pending" if site_config and site_config["email_enabled"] else "inactive"
             daemon_status = daemon_dashboard_status(
                 cursor,
                 now=now,
@@ -3952,7 +3996,9 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "logs_critical_7d": log_counts.get("critical", 0),
                     "admin_events_7d": admin_events_7d,
                     "maintenance_enabled": _maintenance_mode_active(),
-                    "smtp_status": smtp_status,
+                    "email_provider": email_provider,
+                    "email_status": email_status,
+                    "smtp_status": email_status,
                     "recaptcha_enabled": os.environ.get("RECAPTCHA_ENABLED", "").strip().lower() in {"1", "true", "yes", "on"},
                     **daemon_status,
                     "ai": ai_health,
@@ -4516,6 +4562,7 @@ def admin_request_user_password_reset(user_id: int, payload: AdminUserPasswordRe
     if not note:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nota operacional é obrigatória.")
     ip_address, user_agent = _client_meta(request)
+    response = None
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
@@ -4528,7 +4575,9 @@ def admin_request_user_password_reset(user_id: int, payload: AdminUserPasswordRe
             reset_url = _issue_password_reset(cursor, target, ip_address=ip_address, user_agent=user_agent)
             _record_event(cursor, "password_reset_requested", user_id=target["id"], email=target["email"], ip_address=ip_address, user_agent=user_agent)
             _record_admin_event(cursor, staff["id"], "user.password_reset_request", "user", str(user_id), note)
-            return {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
+            response = {"message": PASSWORD_RESET_MESSAGE, "reset_url": reset_url}
+    _process_password_reset_email_now()
+    return response
 
 
 @app.get("/admin/comments", response_model=CommentListResponse)
@@ -5994,7 +6043,7 @@ def login(payload: LoginPayload, request: Request):
 def request_password_reset(payload: PasswordResetRequestPayload, request: Request):
     ip_address, user_agent = _client_meta(request)
     _enforce_rate_limit("password-reset-request", _rate_limit_identity(request, payload.email), limit=5, window_seconds=3600)
-    reset_url = ""
+    should_process_email = False
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -6011,6 +6060,9 @@ def request_password_reset(payload: PasswordResetRequestPayload, request: Reques
             if user:
                 _issue_password_reset(cursor, user, ip_address=ip_address, user_agent=user_agent)
                 _record_event(cursor, "password_reset_requested", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
+                should_process_email = True
+    if should_process_email:
+        _process_password_reset_email_now()
     return {"message": PASSWORD_RESET_MESSAGE, "reset_url": ""}
 
 

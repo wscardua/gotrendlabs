@@ -16,11 +16,15 @@
         </div>
         <div>
           <span>Email</span>
-          <strong>{% if site_config.is_ready_for_delivery and smtp_secret_configured %}Pronto{% elif site_config.email_enabled %}Pendente{% else %}Inativo{% endif %}</strong>
+          <strong>{% if site_config.is_ready_for_delivery and email_secret_configured %}Pronto{% elif site_config.email_enabled %}Pendente{% else %}Inativo{% endif %}</strong>
         </div>
         <div>
-          <span>Segredo SMTP</span>
-          <strong>{% if smtp_secret_configured %}Configurado{% else %}Ausente{% endif %}</strong>
+          <span>Provedor</span>
+          <strong>{{ site_config.email_provider|default:"smtp" }}</strong>
+        </div>
+        <div>
+          <span>Segredo Resend</span>
+          <strong>{% if resend_secret_configured %}Configurado{% else %}Ausente{% endif %}</strong>
         </div>
         <div>
           <span>Economia</span>
@@ -214,11 +218,11 @@
         <div class="config-panel-head">
           <div>
             <span class="eyebrow">Communications</span>
-            <h2>Email SMTP</h2>
-            <p>Dados não sensíveis ficam em <code>gotrendlabs_site_config</code>; senha ou API key permanecem no ambiente.</p>
+            <h2>Email transacional</h2>
+            <p>Dados não sensíveis ficam em <code>gotrendlabs_site_config</code>; segredos de provedor permanecem no ambiente.</p>
           </div>
-          <span class="config-status {% if site_config.is_ready_for_delivery and smtp_secret_configured %}is-on{% endif %}">
-            {% if site_config.is_ready_for_delivery and smtp_secret_configured %}Pronto{% else %}Pendente{% endif %}
+          <span class="config-status {% if site_config.is_ready_for_delivery and email_secret_configured %}is-on{% endif %}">
+            {% if site_config.is_ready_for_delivery and email_secret_configured %}Pronto{% else %}Pendente{% endif %}
           </span>
         </div>
         <div class="config-controls">
@@ -226,21 +230,26 @@
             {{ email_form.email_enabled }}
             <span>
               <strong>Habilitar email quando communications estiver ativo</strong>
-              <small>Esta tela prepara a configuração; os disparos entram em uma etapa futura.</small>
+              <small>O daemon drena a outbox com retries e trilha operacional.</small>
             </span>
           </label>
           <div class="config-secret-card">
             <span>Segredo SMTP</span>
             <strong>{% if smtp_secret_configured %}Configurado por ambiente{% else %}Não configurado{% endif %}</strong>
-            <small>Use GOTRENDLABS_SMTP_PASSWORD ou GOTRENDLABS_SMTP_API_KEY no ambiente. O valor não é exibido nem salvo no banco.</small>
+            <small>Use apenas quando o provider SMTP estiver selecionado. O valor não é exibido nem salvo no banco.</small>
           </div>
           <div class="config-secret-card">
-            <span>Preset AWS SES</span>
-            <strong>us-east-1 · TLS 587 · DNS sandbox guard</strong>
-            <small>Host recomendado: email-smtp.us-east-1.amazonaws.com. Enquanto SES production access estiver pendente, o worker só entrega para simulator ou allowlist verificada.</small>
-            <button class="btn small ghost" type="submit" name="action" value="smtp_test">Enviar teste sandbox</button>
+            <span>Segredo Resend</span>
+            <strong>{% if resend_secret_configured %}Configurado por ambiente{% else %}Não configurado{% endif %}</strong>
+            <small>Use GOTRENDLABS_RESEND_API_KEY no ambiente. Verifique o domínio remetente no Resend antes de ativar produção.</small>
+            <button class="btn small ghost" type="submit" name="action" value="resend_test">Enviar teste Resend</button>
           </div>
           <div class="config-form-grid">
+            <label class="field full">
+              <span>Provedor de email</span>
+              {{ email_form.email_provider }}
+              {% if email_form.email_provider.errors %}<small>{{ email_form.email_provider.errors|join:", " }}</small>{% endif %}
+            </label>
             <label class="field">
               <span>Servidor SMTP</span>
               {{ email_form.smtp_host }}
