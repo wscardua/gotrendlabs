@@ -1,4 +1,8 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/environment.dart';
@@ -7,14 +11,16 @@ import 'push_models.dart';
 import 'push_repository.dart';
 
 abstract class PushTokenProvider {
-  Future<PushTokenSnapshot> currentToken();
+  Future<PushTokenSnapshot> currentToken({bool requestPermission = false});
 }
 
 class NoopPushTokenProvider implements PushTokenProvider {
   const NoopPushTokenProvider();
 
   @override
-  Future<PushTokenSnapshot> currentToken() async {
+  Future<PushTokenSnapshot> currentToken({
+    bool requestPermission = false,
+  }) async {
     return const PushTokenSnapshot.unavailable('firebase_not_configured');
   }
 }
@@ -31,7 +37,9 @@ class FakePushTokenProvider implements PushTokenProvider {
   final String deviceLabel;
 
   @override
-  Future<PushTokenSnapshot> currentToken() async {
+  Future<PushTokenSnapshot> currentToken({
+    bool requestPermission = false,
+  }) async {
     final normalizedToken = token.trim();
     final normalizedPlatform = platform.trim().toLowerCase();
     if (normalizedToken.isEmpty ||
@@ -46,22 +54,62 @@ class FakePushTokenProvider implements PushTokenProvider {
   }
 }
 
+class FirebasePushTokenProvider implements PushTokenProvider {
+  const FirebasePushTokenProvider();
+
+  @override
+  Future<PushTokenSnapshot> currentToken({
+    bool requestPermission = false,
+  }) async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        return const PushTokenSnapshot.unavailable('firebase_not_configured');
+      }
+      final messaging = FirebaseMessaging.instance;
+      if (requestPermission) {
+        final settings = await messaging.requestPermission();
+        if (settings.authorizationStatus == AuthorizationStatus.denied) {
+          return const PushTokenSnapshot.unavailable('permission_denied');
+        }
+      }
+
+      final token = (await messaging.getToken())?.trim() ?? '';
+      if (token.isEmpty) {
+        return const PushTokenSnapshot.unavailable('fcm_token_empty');
+      }
+
+      final packageInfo = await PackageInfo.fromPlatform();
+      return PushTokenSnapshot.available(
+        token: token,
+        platform: defaultTargetPlatform == TargetPlatform.iOS
+            ? 'ios'
+            : 'android',
+        appVersion: packageInfo.version,
+        buildNumber: packageInfo.buildNumber,
+        deviceLabel: packageInfo.packageName,
+      );
+    } on FirebaseException catch (error) {
+      return PushTokenSnapshot.unavailable('firebase_${error.code}');
+    } catch (_) {
+      return const PushTokenSnapshot.unavailable('firebase_unavailable');
+    }
+  }
+}
+
 final pushRepositoryProvider = Provider<PushRepository>(
   (ref) => PushRepository(ref.watch(apiClientProvider)),
 );
 
-final pushTokenProvider = Provider<PushTokenProvider>(
-  (ref) {
-    if (AppEnvironment.pushFakeToken.trim().isNotEmpty) {
-      return const FakePushTokenProvider(
-        token: AppEnvironment.pushFakeToken,
-        platform: AppEnvironment.pushFakePlatform,
-        deviceLabel: AppEnvironment.pushFakeDeviceLabel,
-      );
-    }
-    return const NoopPushTokenProvider();
-  },
-);
+final pushTokenProvider = Provider<PushTokenProvider>((ref) {
+  if (AppEnvironment.pushFakeToken.trim().isNotEmpty) {
+    return const FakePushTokenProvider(
+      token: AppEnvironment.pushFakeToken,
+      platform: AppEnvironment.pushFakePlatform,
+      deviceLabel: AppEnvironment.pushFakeDeviceLabel,
+    );
+  }
+  return const FirebasePushTokenProvider();
+});
 
 final pushControllerProvider = NotifierProvider<PushController, PushState>(
   PushController.new,
@@ -92,7 +140,9 @@ class PushController extends Notifier<PushState> {
   }
 
   Future<void> syncAfterAuth() async {
-    final tokenSnapshot = await ref.read(pushTokenProvider).currentToken();
+    final tokenSnapshot = await ref
+        .read(pushTokenProvider)
+        .currentToken(requestPermission: true);
     if (!tokenSnapshot.isAvailable) {
       state = state.copyWith(
         status: 'noop',

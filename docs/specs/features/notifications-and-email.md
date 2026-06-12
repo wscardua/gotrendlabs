@@ -43,7 +43,7 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 - configuração operacional não sensível de email no Admin Ops, com provider SMTP ou Resend
 - área Admin Ops `Politica de Emails` com edição de templates PT-BR e logs de entrega da outbox
 - envio transacional via Resend API HTTPS com domínio remetente verificado
-- base de push mobile por FCM, iniciando com provider `none`/dry-run/noop desligado por padrão
+- base de push mobile por FCM, com provider `none`/dry-run como default seguro e provider `fcm` real habilitável por ambiente
 - políticas e templates de push editáveis no Admin Ops por evento, sem segredos
 - outbox `PushDelivery` drenada pelo daemon, sempre derivada de `UserNotification`
 - endpoints autenticados para registrar, listar e revogar dispositivos de push e preferências do usuário
@@ -58,7 +58,6 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 - armazenamento de API key Resend no banco, Git ou Admin Ops
 - bounce/complaint webhooks
 - editor visual avançado de email
-- envio FCM real até existir projeto Firebase, credenciais e aprovação operacional explícita
 - configuração APNs direta fora do Firebase
 
 ## Fluxo do usuário
@@ -120,6 +119,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - payload de push contém apenas IDs, rota e `event_type`; dados sensíveis são buscados na FastAPI ao abrir o app
 - Admin Ops deve exibir o fallback seguro do código ao lado do template editável, para o operador entender o texto usado quando o template salvo estiver inativo ou ausente
 - Admin Ops pode criar teste manual escolhendo um `PushDevice` ativo; o teste cria `UserNotification` e `PushDelivery`, respeita flags/provider atuais e nunca renderiza o token bruto
+- Admin Ops possui aba `Dispositivos` em Push mobile para listar devices registrados, status, plataforma, versão/build, hash parcial do token, última atividade e contadores de entrega, sem expor token bruto
 - Dashboard Admin Ops deve exibir saúde de push mobile com estado de configuração, devices ativos, fila pendente/vencida e entregas/falhas recentes, apontando para os logs de `PushDelivery`
 
 ## Responsabilidades por camada
@@ -146,7 +146,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - configuração singleton de email: ativo, provider, remetente, reply-to, timeout e, para SMTP, host, porta, usuário e TLS/SSL
 - domínio remetente Resend verificado para `gotrendlabs.com.br`; `GOTRENDLABS_RESEND_API_KEY` é mantida fora do banco e da interface
 - SMTP genérico pode ser configurado como fallback, com senha/API key mantida fora do banco e da interface
-- flags de push vêm do ambiente: `GOTRENDLABS_PUSH_ENABLED`, `GOTRENDLABS_PUSH_PROVIDER`, `GOTRENDLABS_PUSH_DRY_RUN` e segredo futuro `GOTRENDLABS_FCM_CREDENTIALS_JSON`
+- flags de push vêm do ambiente: `GOTRENDLABS_PUSH_ENABLED`, `GOTRENDLABS_PUSH_PROVIDER`, `GOTRENDLABS_PUSH_DRY_RUN` e `GOTRENDLABS_FCM_CREDENTIALS_JSON`
 
 ## Contratos afetados
 
@@ -179,6 +179,7 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - confirmação de email com expiração, uso único, token inválido e reenvio limitado
 - login limitado para conta sem email confirmado e liberação após confirmação
 - outbox com idempotência, retries, estados `queued`/`sending`/`sent`/`failed`/`suppressed` e falhas de provider
+- processamento de push com claim transacional curto, envio FCM fora de lock longo e recuperação de entregas antigas em `sending`
 - recuperação de senha com envio imediato quando o provider está pronto e link absoluto no template renderizado
 - criação idempotente de notificações in-app para previsão, curtida de mercado, comentário, curtida de comentário, crédito recebido, fechamento/resolução de mercado e badge recebida
 - listagem autenticada de notificações com contador de não lidas
@@ -193,7 +194,8 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - daemon marcando provider `none` como `dry_run` e tokens inválidos como `invalid_token`
 - payload de push sem email, token, ledger, valores de wallet ou segredo
 - Dashboard Admin Ops exibindo saúde de push sem expor token, payload sensível ou segredo FCM
-- Flutter noop sem registrar token antes/depois da autenticação quando Firebase não está configurado
+- aba Admin Ops de dispositivos listando `PushDevice` com filtros por status/plataforma/provider, status mutuamente exclusivo, hash parcial e sem token bruto
+- Flutter não registra token quando Firebase não está configurado; quando `google-services.json` local existe, o token FCM é coletado e registrado somente após autenticação
 
 ## Critérios de aceite
 
@@ -204,8 +206,9 @@ Usuário autenticado vê um sino de notificações no topo com contador de não 
 - operador consegue validar Resend com domínio remetente verificado e segredo vindo do ambiente
 - provider `none`/dry-run permite validar a outbox sem envio real
 - Admin Ops controla políticas/templates de push sem expor credenciais
+- Admin Ops permite consultar dispositivos de push registrados sem expor token bruto
 - Admin Ops mostra saúde de push no Dashboard e permite navegar para logs de entrega quando houver fila/falha
-- app mobile está preparado para registrar/revogar dispositivos quando Firebase for configurado, mas permanece noop nesta fase
+- app mobile registra/revoga dispositivos via FastAPI quando Firebase está configurado, mantendo `GTL_PUSH_FAKE_TOKEN` como modo local sem entrega real
 
 ## Impacto de mudança
 

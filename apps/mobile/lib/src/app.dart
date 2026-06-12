@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,12 +12,21 @@ import 'features/shell/shell_screen.dart';
 import 'features/wallet/wallet_screen.dart';
 import 'theme.dart';
 
-class GoTrendLabsApp extends ConsumerWidget {
+class GoTrendLabsApp extends ConsumerStatefulWidget {
   const GoTrendLabsApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final router = GoRouter(
+  ConsumerState<GoTrendLabsApp> createState() => _GoTrendLabsAppState();
+}
+
+class _GoTrendLabsAppState extends ConsumerState<GoTrendLabsApp> {
+  late final GoRouter _router;
+  StreamSubscription<RemoteMessage>? _openedSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
@@ -32,16 +45,66 @@ class GoTrendLabsApp extends ConsumerWidget {
               path: 'badges',
               builder: (context, state) => const BadgesScreen(),
             ),
+            GoRoute(
+              path: 'alerts',
+              builder: (context, state) => const ShellScreen(initialIndex: 3),
+            ),
           ],
         ),
       ],
     );
+    _listenForPushRoutes();
+  }
 
+  @override
+  void dispose() {
+    _openedSubscription?.cancel();
+    _router.dispose();
+    super.dispose();
+  }
+
+  Future<void> _listenForPushRoutes() async {
+    if (Firebase.apps.isEmpty) {
+      return;
+    }
+    _openedSubscription = FirebaseMessaging.onMessageOpenedApp.listen(
+      _openPushRoute,
+    );
+    final initialMessage = await FirebaseMessaging.instance.getInitialMessage();
+    if (initialMessage != null) {
+      _openPushRoute(initialMessage);
+    }
+  }
+
+  void _openPushRoute(RemoteMessage message) {
+    final route = _safePushRoute(message.data['route']?.toString() ?? '');
+    if (route == null) {
+      return;
+    }
+    _router.go(route);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'GoTrendLabs',
       debugShowCheckedModeBanner: false,
       theme: buildGoTrendLabsTheme(),
-      routerConfig: router,
+      routerConfig: _router,
     );
   }
+}
+
+String? _safePushRoute(String rawRoute) {
+  final route = rawRoute.trim();
+  if (route == '/wallet' || route == '/badges' || route == '/alerts') {
+    return route;
+  }
+  if (route.startsWith('/markets/')) {
+    final slug = route.substring('/markets/'.length);
+    if (RegExp(r'^[a-z0-9][a-z0-9-]{0,119}$').hasMatch(slug)) {
+      return route;
+    }
+  }
+  return null;
 }

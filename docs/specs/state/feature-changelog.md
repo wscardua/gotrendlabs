@@ -1,5 +1,18 @@
 # Feature Changelog
 
+## 2026-06-12 — FEAT-NOTIFY-001 / FEAT-MOBILE-001 push FCM real Android
+
+- Admin Ops Push mobile ganhou aba `Dispositivos` para listar devices registrados, status, plataforma, versão/build, hash parcial do token e agregados de entrega, sem expor token bruto.
+- App Android passou a inicializar Firebase opcionalmente, aplicar `google-services` apenas quando `google-services.json` local existir e manter o arquivo fora do Git.
+- Flutter passou a coletar token FCM somente após autenticação, registrar `PushDevice` pela FastAPI, manter `GTL_PUSH_FAKE_TOKEN` para QA sem entrega real e mostrar estado seguro em `Sobre` sem expor token.
+- Android ganhou permissão `POST_NOTIFICATIONS`, canal nativo `gtl_default` e metadado default de FCM para exibir notificações em Android 8+.
+- Payloads FCM seguros agora abrem rotas permitidas (`/markets/:slug`, `/wallet`, `/badges`, `/alerts`) e o app busca o estado real na FastAPI ao abrir.
+- Daemon de `communications` passou a enviar FCM real via Firebase Admin SDK quando `GOTRENDLABS_PUSH_ENABLED=1`, provider `fcm`, dry-run desligado e `GOTRENDLABS_FCM_CREDENTIALS_JSON` estiver configurado fora do Git/Admin Ops.
+- Sender FCM grava `provider_message_id` em sucesso, agenda retry em falhas transitórias e invalida `PushDevice` quando o provedor rejeita token.
+- Processamento de `PushDelivery` passou por revisão de segurança operacional: claim em transação curta, envio FCM fora de lock longo e recuperação de entregas antigas em `sending`.
+- Contadores/filtros da aba `Dispositivos` em Admin Ops passaram a seguir status mutuamente exclusivo, alinhado ao rótulo renderizado na tabela.
+- Defaults seguros continuam `GOTRENDLABS_PUSH_ENABLED=0`, `GOTRENDLABS_PUSH_PROVIDER=none` e `GOTRENDLABS_PUSH_DRY_RUN=1`.
+
 ## 2026-06-11 — FEAT-MOBILE-001 feed, ranking e sessão mobile
 
 - Tela `Hoje` passou a destacar apenas mercados abertos e ordenar destaque/tendências por engajamento visual usando campos já retornados por `GET /markets`, sem criar regra de domínio local.

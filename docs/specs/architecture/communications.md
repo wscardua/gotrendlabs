@@ -45,6 +45,7 @@
 - `PushDelivery` é a outbox idempotente por `UserNotification` e dispositivo, drenada pelo daemon.
 - Provider `none` com dry-run marca entregas como `dry_run` sem chamada externa.
 - A saúde operacional de push é agregada para o Dashboard Admin Ops com flags/provider, devices ativos, fila pendente/vencida, entregas dry-run/enviadas, falhas recentes e tokens inválidos, sem expor token bruto ou payload sensível.
+- Admin Ops lista dispositivos de push registrados com estado operacional, app version/build, hash parcial e agregados de entrega, mas nunca renderiza token bruto.
 - O provider Resend depende de domínio remetente verificado no dashboard Resend; erros de domínio/API são registrados como falhas com retry na outbox.
 - A confirmação de email habilita login limitado: usuários recém-criados podem entrar, mas ações sensíveis continuam bloqueadas até confirmar o endereço.
 - Reenvio de confirmação possui janela mínima simples para evitar abuso.
@@ -55,7 +56,9 @@
 - `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY` mantém o segredo de envio fora do banco.
 - `GOTRENDLABS_RESEND_API_KEY` mantém a API key Resend fora do banco/Admin Ops/Git.
 - `GOTRENDLABS_PUSH_ENABLED=0`, `GOTRENDLABS_PUSH_PROVIDER=none` e `GOTRENDLABS_PUSH_DRY_RUN=1` são os defaults seguros de push.
-- `GOTRENDLABS_FCM_CREDENTIALS_JSON` fica reservado para credencial FCM futura fora do banco/Git/Admin Ops.
+- Envio FCM real exige `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON` com o service account JSON cru ou base64 fora do banco/Git/Admin Ops.
+- O daemon envia FCM via Firebase Admin SDK, grava `provider_message_id` em sucesso, agenda retry em falha transitória e invalida o `PushDevice` quando o provedor rejeita o token.
+- O daemon faz claim de `PushDelivery` em transação curta, libera locks antes da chamada externa ao FCM e recupera entregas presas em `sending` há mais de 15 minutos.
 - TLS e SSL são mutuamente exclusivos.
 - Produção usa Resend como provider transacional preferencial; SMTP permanece apenas como fallback genérico configurável.
 - O remetente operacional padrão é `no-reply@gotrendlabs.com.br`.

@@ -2,6 +2,30 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260612-MOBILE-FIREBASE-PUSH-001
+
+- Tipo: `new-feature`
+- Status: `aguardando_pr`
+- Feature alvo: `FEAT-NOTIFY-001`, `FEAT-MOBILE-001`, `communications`, `future-mobile`
+- Objetivo: implementar push mobile FCM real para Android, preservando defaults seguros, credenciais fora do Git/Admin Ops e o app como cliente da FastAPI
+- Etapa atual: implementação local concluída e validada na branch `feature/mobile-firebase-push-20260612`, com Firebase Android local, sender FCM backend fora de lock longo, canal Android, aba Admin Ops de dispositivos e docs/specs atualizados; aguardando aprovação da descrição para abrir PR
+- Artefatos afetados:
+  - `apps/mobile/`
+  - `apps/web/django/communications/`
+  - `apps/web/django/admin_ops/`
+  - `config/urls.py`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+  - `.env.example`
+  - `requirements.txt`
+- Bloqueios: validação FCM real em produção depende de instalar `GOTRENDLABS_FCM_CREDENTIALS_JSON` fora do Git/Admin Ops, ativar provider `fcm` com dry-run desligado e gerar/publicar APK Android com `google-services.json` local
+- Iniciado em: 2026-06-12
+- Atualizado em: 2026-06-12
+- Encerrado em: pendente
+- Retomada: abrir PR em português após aprovação do texto, acompanhar merge/deploy e só ativar PRD com confirmação explícita de ambiente/credencial
+- Reversão lógica: voltar Flutter para provider noop/fake-token, remover dependências Firebase mobile, canal Android, sender Firebase Admin SDK e restaurar docs/state para fase dry-run/noop mantendo outbox `PushDelivery` intacta
+- Evidências de validação local: `dart format lib test`; `git diff --check`; `flutter analyze`; `flutter test`; `flutter test test/push_controller_test.dart test/push_repository_test.dart test/about_screen_test.dart`; `flutter build apk --debug`; `.venv/bin/python manage.py check`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `RECAPTCHA_ENABLED=0 .venv/bin/python manage.py test --keepdb` com os testes focados `BackendAuthAPITests.test_fcm_provider_marks_successful_delivery_as_sent`, `test_fcm_provider_retries_transient_send_errors`, `test_push_outbox_uses_user_notification_policy_and_safe_payload`, `test_push_preferences_block_outbox_and_provider_invalidates_bad_tokens`, `WebSmokeTests.test_admin_push_devices_tab_lists_devices_without_raw_tokens` e `WebSmokeTests.test_admin_ops_requires_staff_and_renders_api_data`; teste local com service account Firebase carregada confirmou `provider=fcm`, `dry_run=False`, `fcm_secret_configured=True` sem imprimir segredo
+
 ## WFLOW-20260611-MOBILE-UX-FEED-RANKING-SESSION-001
 
 - Tipo: `new-feature`

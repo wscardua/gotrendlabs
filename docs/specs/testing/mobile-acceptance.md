@@ -64,7 +64,7 @@ Deve passar:
 - app abre no emulador `gotrendlabs_pixel`
 - app nao trava quando a API local esta indisponivel
 - app exibe erro recuperavel quando `http://10.0.2.2:8001` nao responde
-- APK beta de producao usa `https://gotrendlabs.com.br/api`, `https://gotrendlabs.com.br` e `GTL_PUSH_FIREBASE_ENABLED=false`
+- APK beta de producao usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`; FCM depende de `google-services.json` local no build e backend com provider `fcm`
 
 ## Validacao de distribuicao beta
 
@@ -196,7 +196,7 @@ Deve validar:
 - menu -> suporte/feedback
 - perfil -> sugerir mercado
 - erro de API -> retry
-- push noop nao registra token
+- sem Firebase configurado, push nao registra token real
 - token fake registra dispositivo apos autenticacao
 - revoke explicito chama `DELETE /users/me/push-devices/{device_id}`
 
@@ -232,7 +232,7 @@ Antes de considerar a UI pronta:
 - confirmar que Perfil e Alertas nao mostram painel operacional de push
 - confirmar que logout normal não revoga dispositivo de push
 - confirmar que revogação de dispositivo ocorre apenas por ação explícita
-- confirmar que payloads de push abrem rotas e refazem fetch na FastAPI quando FCM real for habilitado
+- confirmar que payloads de push abrem rotas e refazem fetch na FastAPI quando FCM real estiver habilitado
 - confirmar que ranking permite filtrar por categoria, subcategoria e evento como na web
 - confirmar que ranking identifica usuarios pelo `@handle`, nao pelo nome publico, e mostra ate 3 badges com `+N`
 - testar mercado sem comentarios

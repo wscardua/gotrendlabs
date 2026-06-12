@@ -20,7 +20,9 @@ import '../support/contribution_sheets.dart';
 import '../wallet/wallet_screen.dart';
 
 class ShellScreen extends ConsumerStatefulWidget {
-  const ShellScreen({super.key});
+  const ShellScreen({super.key, this.initialIndex = 0});
+
+  final int initialIndex;
 
   @override
   ConsumerState<ShellScreen> createState() => _ShellScreenState();
@@ -30,13 +32,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     with WidgetsBindingObserver {
   static const _notificationsRefreshInterval = Duration(seconds: 30);
 
-  int _index = 0;
+  late int _index;
   MarketDeskFilter _marketDeskFilter = MarketDeskFilter.all;
   Timer? _notificationsRefreshTimer;
 
   @override
   void initState() {
     super.initState();
+    _index = widget.initialIndex.clamp(0, 4);
     WidgetsBinding.instance.addObserver(this);
     _notificationsRefreshTimer = Timer.periodic(
       _notificationsRefreshInterval,

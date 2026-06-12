@@ -40,6 +40,10 @@ final aboutApiHealthProvider = FutureProvider<Map<String, dynamic>>((ref) {
 });
 
 final aboutPushStatusProvider = FutureProvider<PushTokenSnapshot>((ref) {
+  final auth = ref.watch(authControllerProvider);
+  if (!auth.isAuthenticated) {
+    return const PushTokenSnapshot.unavailable('authentication_required');
+  }
   return ref.read(pushTokenProvider).currentToken();
 });
 
@@ -459,6 +463,8 @@ String _pushUnavailableMessage(String reason) {
     'firebase_not_configured' =>
       'Firebase/FCM ainda não foi ativado neste build.',
     'fake_token_invalid' => 'Token local de QA inválido.',
+    'authentication_required' =>
+      'Entre na sua conta para ativar notificações neste dispositivo.',
     'unknown' => 'Estado local de push indisponível.',
     _ => reason,
   };

@@ -79,7 +79,9 @@ class _FakePushTokenProvider implements PushTokenProvider {
   final PushTokenSnapshot snapshot;
 
   @override
-  Future<PushTokenSnapshot> currentToken() async => snapshot;
+  Future<PushTokenSnapshot> currentToken({
+    bool requestPermission = false,
+  }) async => snapshot;
 }
 
 class _FakePushRepository extends PushRepository {

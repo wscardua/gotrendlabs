@@ -1098,6 +1098,76 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertFalse(device.is_active)
         self.assertEqual(device.disabled_reason, "provider_invalid_token")
 
+    def test_fcm_provider_marks_successful_delivery_as_sent(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            username="@pushfcm",
+            email="push-fcm@example.com",
+            password="testpass123",
+        )
+        device = PushDevice.objects.create(
+            user=user,
+            provider="fcm",
+            platform="android",
+            token="fcm-token-real-send",
+            token_hash=hash_token("fcm-token-real-send"),
+            device_label="Pixel FCM",
+            app_version="1.0.2",
+        )
+        delivery = create_test_push_delivery(
+            device=device,
+            event_type="admin_push_test",
+            title="Teste FCM",
+            body="Mensagem FCM do GoTrendLabs.",
+        )
+
+        with override_settings(
+            GOTRENDLABS_PUSH_ENABLED=True,
+            GOTRENDLABS_PUSH_PROVIDER="fcm",
+            GOTRENDLABS_PUSH_DRY_RUN=False,
+            GOTRENDLABS_FCM_CREDENTIALS_JSON='{"type":"service_account"}',
+        ):
+            with patch("apps.web.django.communications.push_services._send_fcm_delivery", return_value="projects/gtl/messages/123") as send:
+                stats = process_due_push_deliveries(limit=1)
+
+        delivery.refresh_from_db()
+        self.assertEqual(stats["sent"], 1)
+        self.assertEqual(delivery.status, "sent")
+        self.assertEqual(delivery.provider_message_id, "projects/gtl/messages/123")
+        send.assert_called_once()
+        self.assertNotIn("fcm-token-real-send", json.dumps(delivery.payload))
+
+    def test_fcm_provider_retries_transient_send_errors(self):
+        user_model = get_user_model()
+        user = user_model.objects.create_user(
+            username="@pushfcmfail",
+            email="push-fcm-fail@example.com",
+            password="testpass123",
+        )
+        device = PushDevice.objects.create(
+            user=user,
+            provider="fcm",
+            platform="android",
+            token="fcm-token-transient",
+            token_hash=hash_token("fcm-token-transient"),
+        )
+        delivery = create_test_push_delivery(device=device)
+
+        with override_settings(
+            GOTRENDLABS_PUSH_ENABLED=True,
+            GOTRENDLABS_PUSH_PROVIDER="fcm",
+            GOTRENDLABS_PUSH_DRY_RUN=False,
+            GOTRENDLABS_FCM_CREDENTIALS_JSON='{"type":"service_account"}',
+        ):
+            with patch("apps.web.django.communications.push_services._send_fcm_delivery", side_effect=RuntimeError("FCM unavailable")):
+                stats = process_due_push_deliveries(limit=1)
+
+        delivery.refresh_from_db()
+        self.assertEqual(stats["failed"], 1)
+        self.assertEqual(delivery.status, "failed")
+        self.assertIn("FCM unavailable", delivery.last_error)
+        self.assertGreater(delivery.next_attempt_at, timezone.now())
+
     def test_admin_push_test_delivery_targets_registered_device_without_token_payload(self):
         user_model = get_user_model()
         user = user_model.objects.create_user(
@@ -7648,6 +7718,77 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, f"u={user.id}")
         self.assertNotContains(response, "public-origin@example.com")
 
+    def test_admin_push_devices_tab_lists_devices_without_raw_tokens(self):
+        User = get_user_model()
+        user = User.objects.create_user(
+            username="@pushviewer",
+            email="push-viewer@example.com",
+            password="testpass123",
+        )
+        device = PushDevice.objects.create(
+            user=user,
+            provider="fcm",
+            platform="android",
+            token="super-secret-fcm-token",
+            token_hash=hash_token("super-secret-fcm-token"),
+            device_label="Pixel Admin",
+            app_version="1.0.2",
+            build_number="3",
+        )
+        notification = UserNotification.objects.create(
+            recipient=user,
+            event_type="admin_push_test",
+            source_key="admin-push-devices-tab",
+            title="Push device tab",
+            body="Teste de listagem de device.",
+        )
+        PushDelivery.objects.create(
+            notification=notification,
+            device=device,
+            event_type="admin_push_test",
+            provider="fcm",
+            template_key="admin_push_test",
+            title="Teste",
+            body="Teste",
+            payload={"notification_id": str(notification.id), "event_type": "admin_push_test", "route": "/alerts"},
+            policy_snapshot={"event_type": "admin_push_test"},
+            idempotency_key="admin-push-devices-tab:sent",
+            status="sent",
+            sent_at=timezone.now(),
+        )
+
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "staffuser",
+            "email": "staff-user@example.com",
+            "display_name": "Staff User",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        response = self.client.get(reverse("admin-ops-push-devices"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dispositivos")
+        self.assertContains(response, "Pixel Admin")
+        self.assertContains(response, "push-viewer@example.com")
+        self.assertContains(response, "v1.0.2")
+        self.assertContains(response, "build 3")
+        self.assertContains(response, "hash ")
+        self.assertContains(response, "1 enviadas")
+        self.assertNotContains(response, "super-secret-fcm-token")
+        self.assertContains(response, reverse("admin-ops-push-templates"))
+        self.assertContains(response, reverse("admin-ops-push-delivery-logs"))
+
+        response = self.client.get(f"{reverse('admin-ops-push-devices')}?status=active&platform=android&q=Pixel")
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Pixel Admin")
+        response = self.client.get(f"{reverse('admin-ops-push-devices')}?status=invalid")
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Pixel Admin")
+
 
     def test_admin_ops_requires_staff_and_renders_api_data(self):
         admin_routes = [
@@ -7663,6 +7804,7 @@ class WebSmokeTests(TransactionTestCase):
             reverse("admin-ops-badge-new"),
             reverse("admin-ops-badge-edit", args=["founding-member"]),
             reverse("admin-ops-mobile-releases"),
+            reverse("admin-ops-push-devices"),
             reverse("admin-ops-moderation"),
             reverse("admin-ops-resolution"),
             reverse("admin-ops-taxonomy"),
