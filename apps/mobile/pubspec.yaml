@@ -40,6 +40,8 @@ dependencies:
   cached_network_image: ^3.4.1
   share_plus: ^12.0.1
   package_info_plus: ^9.0.1
+  firebase_core: ^4.10.0
+  firebase_messaging: ^16.3.0
 
 dev_dependencies:
   flutter_test:

@@ -1,5 +1,10 @@
 # Change Log de Specs
 
+## 2026-06-12
+
+- registrada evolução de `FEAT-NOTIFY-001`/`FEAT-MOBILE-001` para push FCM real em Android com Firebase local, sender backend via Firebase Admin SDK, channel Android `gtl_default`, payloads seguros e defaults operacionais `none`/dry-run preservados.
+- registrada aba Admin Ops `Dispositivos` em Push mobile para observabilidade de `PushDevice` sem expor token bruto.
+
 ## 2026-06-11
 
 - registrada evolução de `FEAT-AUTH-001` para OAuth real em Google, Facebook e X, com vínculo seguro por identidade externa ou email verificado pelo provedor.

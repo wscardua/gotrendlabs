@@ -36,7 +36,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - navegacao mobile para feed, detalhe de mercado, previsao, comentarios, wallet, perfil, ranking/badges e alertas
 - camada de design system mobile alinhada ao produto
 - identidade nativa de launcher e splash alinhada ao site: nome exibido `GoTrendLabs`, icone derivado do simbolo de constelacao da marca e transicao de abertura em fundo escuro
-- interface noop de push mobile preparada para Firebase Cloud Messaging futuro
+- integracao Android com Firebase Cloud Messaging para registro autenticado de token e abertura segura de rotas por payload
 - assinatura release Android e distribuicao beta por APK no site oficial
 
 ## Escopo excluido
@@ -46,7 +46,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - calculo local autoritativo de probabilidade, saldo, payout, reputacao, ranking, badges ou resolucao
 - modo offline completo
 - streaming em tempo real
-- envio real de push notification ate haver projeto Firebase, credenciais e aprovacao operacional
+- entrega FCM em producao sem credencial backend em ambiente e aprovacao operacional
 - publicacao na Google Play nesta etapa
 
 ## Principios
@@ -84,8 +84,8 @@ O projeto Flutter deve nascer em `apps/mobile` e manter a organizacao abaixo com
 - `lib/features/wallet/`: saldo, extrato e recarga educativa quando houver contrato consumivel.
 - `lib/features/profile/`: perfil privado, perfil publico e configuracoes basicas.
 - `lib/features/ranking/`: ranking, badges e recortes tematicos.
-- `lib/features/alerts/`: central de alertas in-app e controles de push preparado/noop.
-- `lib/features/push/`: repository/controller de push, com provider noop ate Firebase ser configurado.
+- `lib/features/alerts/`: central de alertas in-app; payloads de push podem abrir esta aba.
+- `lib/features/push/`: repository/controller de push, com provider FCM real quando Firebase local existe e fake/noop seguro para QA.
 - `test/`: testes unitarios e de widgets.
 - `integration_test/`: fluxos principais em emulador.
 
@@ -109,8 +109,8 @@ Regras:
 - A configuracao local de assinatura fica em `apps/mobile/android/key.properties`, ignorado pelo Git.
 - O exemplo versionado fica em `apps/mobile/android/key.properties.example`.
 - Keystore, senhas e APKs gerados nunca devem ser versionados.
-- O APK beta de producao usa `GTL_API_BASE_URL=https://gotrendlabs.com.br/api`, `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` e `GTL_PUSH_FIREBASE_ENABLED=false`.
-- Push real permanece desligado no APK beta ate credencial FCM, backend e aprovacao operacional estarem fechados.
+- O APK beta de producao usa `GTL_API_BASE_URL=https://gotrendlabs.com.br/api` e `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br`.
+- Push FCM real no APK depende de `google-services.json` local no build Android e backend com `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON`.
 - `/app/android/latest.json` permanece como metadado publico para uso futuro pelo app.
 - Publicacao na Google Play continua fora do escopo desta fase.
 
@@ -119,8 +119,7 @@ Comando padrao:
 ```bash
 flutter build apk --release \
   --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
-  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br \
-  --dart-define=GTL_PUSH_FIREBASE_ENABLED=false
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
 Referencias oficiais Android:
@@ -137,7 +136,7 @@ O app deve ter configuracao explicita por ambiente:
 - `staging`: futuro ambiente homologado
 - `production`: dominio publico da API
 
-Segredos nao devem ser versionados no Flutter. Tokens de sessao devem usar armazenamento seguro do dispositivo quando a estrategia de auth mobile for definida. Tokens FCM so devem ser coletados/registrados apos autenticacao; na fase atual, `NoopPushTokenProvider` nao coleta token nem instala Firebase. Para QA local sem Firebase, `GTL_PUSH_FAKE_TOKEN` pode habilitar `FakePushTokenProvider` no emulador e registrar um `PushDevice` de teste apos login, sem entrega real.
+Segredos nao devem ser versionados no Flutter. Tokens de sessao ficam no armazenamento seguro quando `Lembrar login` estiver ligado. Tokens FCM so devem ser coletados/registrados apos autenticacao; sem `google-services.json`, o provider retorna `firebase_not_configured` e nao registra device real. Para QA local sem Firebase, `GTL_PUSH_FAKE_TOKEN` pode habilitar `FakePushTokenProvider` no emulador e registrar um `PushDevice` de teste apos login, sem entrega real.
 
 ## Navegacao
 
@@ -205,7 +204,7 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 - widget tests para cards de mercado, filtros, detalhe, ticket de previsao e estados vazios
 - unitarios para formatacao de GTL, datas, percentuais e mapeamento de erros
 - testes de repository com clientes HTTP mockados
-- testes de repository/controller para push noop, registro com token fake e revogacao explicita
+- testes de repository/controller para push sem Firebase, registro com token fake/FCM e revogacao explicita
 - integration tests para abrir feed, navegar ao detalhe e bloquear previsao de visitante
 - integration tests para login e previsao quando houver usuario fixture adequado
 
@@ -218,8 +217,9 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 - nenhuma regra critica e calculada no app como fonte de verdade
 - erros e estados vazios possuem tratamento visual consistente
 - workflow, status, changelog e integration map foram atualizados quando houver mudanca multi-documento
-- app mostra estado de push preparado/noop sem depender de Firebase
+- app mostra estado de push configurado/indisponivel sem expor token
 - app em modo QA com `GTL_PUSH_FAKE_TOKEN` registra um `PushDevice` de teste apos autenticacao, sem instalar Firebase ou expor token em UI/log
+- app Android com Firebase configurado registra token FCM apos autenticacao e abre rotas seguras por payload, sempre buscando estado real na FastAPI
 
 ## Impacto de mudanca
 

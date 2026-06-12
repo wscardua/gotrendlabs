@@ -25,6 +25,8 @@ flutter run -d emulator-5554 \
 
 Esse modo grava um device de teste em `gotrendlabs_push_devices` apos login, mas nao entrega push real.
 
+Para usar FCM real no Android local, registre o app Firebase com o package name `br.com.gotrendlabs.gotrendlabs_mobile`, baixe `google-services.json` e coloque o arquivo em `apps/mobile/android/app/google-services.json`. Esse arquivo e local, ignorado pelo Git e ativa o plugin `google-services` somente nesta maquina/build. Depois do login, o app solicita permissao de notificacao, coleta o token FCM e registra o device autenticado na FastAPI.
+
 No iOS Simulator, as bases locais do Mac devem usar `127.0.0.1`:
 
 ```bash
@@ -55,7 +57,7 @@ Specs principais:
 - grafico de consenso multi-serie, usando uma linha por opcao a partir de `sparkline_series`
 - ranking mobile identificado por `@handle`, com badges compactas e overflow `+N` vindos de `/rankings`
 - alertas com badge de nao lidas no shell e marcacao como lido ao visualizar a tela, sem painel operacional de push
-- push mobile aparece em `Sobre` como item informativo de saude/configuracao do build; Firebase/FCM real, permissões nativas e arquivos `google-services.json`/`GoogleService-Info.plist` ficam para etapa aprovada separadamente
+- push mobile usa Firebase/FCM no Android quando `google-services.json` local existe, registra token somente apos autenticacao, cria o canal Android `gtl_default`, trata tap em payloads seguros (`/markets/:slug`, `/wallet`, `/badges`, `/alerts`) e continua exibindo saude/configuracao no `Sobre`
 - wallet, extrato, recarga educativa, perfil, ranking, badges, busca, confianca e alertas como leitura/acao da API
 - tela `Sobre` com versao/build, pacote/plataforma, saude da API, estado informativo de push e diagnostico seguro para suporte; a UI nao exibe enderecos de API/web, tokens, segredos nem ID interno de usuario
 - splash Android e header do shell com wordmark `GoTrendLabs` e tagline alinhada logo abaixo do nome
@@ -92,14 +94,13 @@ Build padrao do beta:
 ```bash
 flutter build apk --release \
   --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
-  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br \
-  --dart-define=GTL_PUSH_FIREBASE_ENABLED=false
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
 Versao desta fatia: `1.0.2+3`.
 
 O build release falha quando `android/key.properties` nao existe. Use `flutter build apk --debug` para validacao local sem assinatura release.
 
-Depois do build, suba o APK pelo Admin Ops em `/admin-ops/mobile-releases/`; o servidor calcula SHA-256 e tamanho, guarda em `MEDIA_ROOT/app_releases/android/` e publica apenas uma release Android ativa por vez. O link publico aponta direto para o arquivo ativo quando existir release. Push real permanece desligado neste beta ate FCM/backend operacional serem aprovados.
+Depois do build, suba o APK pelo Admin Ops em `/admin-ops/mobile-releases/`; o servidor calcula SHA-256 e tamanho, guarda em `MEDIA_ROOT/app_releases/android/` e publica apenas uma release Android ativa por vez. O link publico aponta direto para o arquivo ativo quando existir release. Entrega FCM real depende tambem do backend em producao com `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON` configurado fora do Git/Admin Ops.
 
 Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.

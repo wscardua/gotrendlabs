@@ -58,7 +58,7 @@ O APK deve ser gerenciado no Admin Ops, armazenado em `MEDIA_ROOT/app_releases/a
 - ranking e badges em leitura
 - suporte/feedback via fila FastAPI existente
 - sugestao de mercados via fila FastAPI existente
-- central de alertas in-app com preparação noop de push mobile
+- central de alertas in-app com abertura por payload de push e registro FCM autenticado quando Firebase Android estiver configurado
 - canal publico beta Android por APK assinado no site oficial
 - governanca documental por skills mobile locais antes de cada fatia de implementacao
 
@@ -66,7 +66,7 @@ O APK deve ser gerenciado no Admin Ops, armazenado em `MEDIA_ROOT/app_releases/a
 
 - iOS
 - publicacao em loja, Google Play, TestFlight ou App Store
-- envio real de push notification nativo
+- entrega FCM em producao sem credencial backend em ambiente e aprovacao operacional
 - atualizacao automatica dentro do app
 - compra, saque, deposito real, blockchain ou linguagem financeira
 - live updates por websocket
@@ -114,7 +114,7 @@ Central in-app inicial:
 - resolucoes recentes quando contrato expuser
 - convite para configurar notificacoes futuras
 
-Push real segue fora desta etapa, mas a tela pode mostrar estado preparado/noop e controles de revogação quando houver dispositivo registrado.
+Push real Android usa FCM quando `google-services.json` existe no build e o backend está habilitado com provider `fcm`; sem Firebase, o app permanece em modo indisponível/fake-token para QA local. A tela `Sobre` mostra o estado seguro de push sem expor tokens, e revogação/preferências continuam ações explícitas via FastAPI.
 
 ### Busca
 

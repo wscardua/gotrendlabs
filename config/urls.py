@@ -60,6 +60,7 @@ urlpatterns = [
     path("admin-ops/push-policy/", admin_ops_views.push_templates, name="admin-ops-push-templates"),
     path("admin-ops/push-policy/templates/<str:event_type>/", admin_ops_views.push_templates, name="admin-ops-push-template-edit"),
     path("admin-ops/push-policy/logs/", admin_ops_views.push_delivery_logs, name="admin-ops-push-delivery-logs"),
+    path("admin-ops/push-policy/devices/", admin_ops_views.push_devices, name="admin-ops-push-devices"),
     path("admin-ops/mobile-releases/", admin_ops_views.mobile_releases, name="admin-ops-mobile-releases"),
     path("admin-ops/email-templates/", admin_ops_views.email_templates, name="admin-ops-email-templates-legacy"),
     path("admin-ops/email-templates/<int:template_id>/", admin_ops_views.email_templates, name="admin-ops-email-template-edit-legacy"),

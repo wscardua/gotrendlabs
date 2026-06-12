@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_controller.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_models.dart';
 import 'package:gotrendlabs_mobile/src/features/info/about_screen.dart';
+import 'package:gotrendlabs_mobile/src/features/push/push_controller.dart';
+import 'package:gotrendlabs_mobile/src/features/push/push_models.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
@@ -58,6 +60,42 @@ void main() {
     expect(find.text('@tester'), findsOneWidget);
     expect(find.text('Copiar diagnóstico'), findsOneWidget);
   });
+
+  testWidgets('AboutScreen does not request push token for visitors', (
+    tester,
+  ) async {
+    PackageInfo.setMockInitialValues(
+      appName: 'GoTrendLabs',
+      packageName: 'br.com.gotrendlabs.gotrendlabs_mobile',
+      version: '1.2.3',
+      buildNumber: '45',
+      buildSignature: '',
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          pushTokenProvider.overrideWithValue(_FailingPushTokenProvider()),
+          aboutApiHealthProvider.overrideWith((ref) async => {'status': 'ok'}),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const AboutScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Push mobile'), findsOneWidget);
+    expect(find.text('Não configurado'), findsOneWidget);
+    expect(
+      find.text(
+        'Entre na sua conta para ativar notificações neste dispositivo.',
+      ),
+      findsOneWidget,
+    );
+  });
 }
 
 class _AuthenticatedAuthController extends AuthController {
@@ -73,5 +111,14 @@ class _AuthenticatedAuthController extends AuthController {
         isStaff: false,
       ),
     );
+  }
+}
+
+class _FailingPushTokenProvider implements PushTokenProvider {
+  @override
+  Future<PushTokenSnapshot> currentToken({
+    bool requestPermission = false,
+  }) async {
+    throw StateError('visitor should not request push token');
   }
 }

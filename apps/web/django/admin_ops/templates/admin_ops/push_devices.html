@@ -1,0 +1,142 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Dispositivos Push{% endblock %}
+{% block content %}
+<main class="shell admin-layout user-directory-page email-policy-page">
+  <section class="panel user-directory">
+    <div class="user-directory-head">
+      <div>
+        <span class="eyebrow">Communications · push devices</span>
+        <h1 class="large-title">Política de Push</h1>
+        <p class="muted">Veja dispositivos mobile registrados, estado operacional, versão do app e últimas entregas sem expor token bruto ou credencial Firebase.</p>
+      </div>
+      <a class="btn ghost" href="{% url 'admin-ops-push-devices' %}">Atualizar</a>
+    </div>
+
+    <nav class="email-policy-tabs" aria-label="Política de push">
+      <a href="{% url 'admin-ops-push-templates' %}">
+        <strong>Templates</strong>
+        <span>Eventos e texto PT-BR</span>
+      </a>
+      <a href="{% url 'admin-ops-push-delivery-logs' %}">
+        <strong>Logs de envio</strong>
+        <span>Outbox, dry-run e falhas</span>
+      </a>
+      <a class="active" href="{% url 'admin-ops-push-devices' %}">
+        <strong>Dispositivos</strong>
+        <span>Tokens registrados e saúde</span>
+      </a>
+    </nav>
+
+    <div class="user-summary-strip email-delivery-summary" aria-label="Resumo dos dispositivos de push">
+      <div><span>Total</span><strong>{{ counts.total|default:0 }}</strong></div>
+      <div><span>Ativos</span><strong>{{ counts.active|default:0 }}</strong></div>
+      <div><span>Pausados</span><strong>{{ counts.disabled|default:0 }}</strong></div>
+      <div><span>Revogados</span><strong>{{ counts.revoked|default:0 }}</strong></div>
+      <div><span>Inválidos</span><strong>{{ counts.invalid|default:0 }}</strong></div>
+    </div>
+
+    <div class="notice {% if push_runtime.enabled %}green{% else %}red{% endif %}">
+      Push {% if push_runtime.enabled %}habilitado{% else %}desligado{% endif %}; provider {{ push_runtime.provider }}; dry-run {% if push_runtime.dry_run %}ativo{% else %}inativo{% endif %}; segredo FCM {% if push_runtime.fcm_secret_configured %}configurado{% else %}ausente{% endif %}.
+    </div>
+
+    <form class="user-filter-panel email-delivery-filter" method="get">
+      <label class="user-search-field">
+        <span>Busca</span>
+        <input type="search" name="q" value="{{ filters.q }}" placeholder="Usuário, app, build, hash ou motivo">
+      </label>
+      <label>
+        <span>Status</span>
+        <select name="status">
+          <option value="">Todos</option>
+          {% for status, label in status_labels.items %}
+            <option value="{{ status }}" {% if filters.status == status %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>
+        <span>Plataforma</span>
+        <select name="platform">
+          <option value="">Todas</option>
+          <option value="android" {% if filters.platform == "android" %}selected{% endif %}>Android</option>
+          <option value="ios" {% if filters.platform == "ios" %}selected{% endif %}>iOS</option>
+        </select>
+      </label>
+      <label>
+        <span>Provider</span>
+        <select name="provider">
+          <option value="">Todos</option>
+          <option value="fcm" {% if filters.provider == "fcm" %}selected{% endif %}>fcm</option>
+        </select>
+      </label>
+      <div class="user-filter-actions">
+        <button class="btn small primary" type="submit">Aplicar</button>
+        <a class="btn small ghost" href="{% url 'admin-ops-push-devices' %}">Limpar</a>
+      </div>
+    </form>
+
+    <div class="system-log-pagination-bar">
+      <div class="user-result-meta">
+        <strong>{{ pagination.visible_count }}</strong>
+        <span>de {{ total_filtered }} dispositivos filtrados</span>
+      </div>
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="table compact-table email-delivery-table">
+        <tr>
+          <th>Usuário</th>
+          <th>Status</th>
+          <th>Dispositivo</th>
+          <th>Registro</th>
+          <th>Entregas</th>
+          <th>Saúde</th>
+        </tr>
+        {% for device in devices %}
+          <tr>
+            <td>
+              {{ device.recipient_label }}<br>
+              <small>{{ device.recipient_email|default:"email indisponível" }}</small>
+            </td>
+            <td>
+              <span class="tag {{ device.status_class }}">{{ device.status_label }}</span><br>
+              <small>{{ device.provider }} · {{ device.platform }}</small>
+            </td>
+            <td>
+              <strong>{{ device.device_label }}</strong><br>
+              <small>v{{ device.app_version }} · build {{ device.build_number }}</small><br>
+              <small>hash {{ device.token_hash_label }}</small>
+            </td>
+            <td>
+              {{ device.last_registered_at }}<br>
+              <small>Criado {{ device.created_at }}</small><br>
+              <small>Atualizado {{ device.updated_at }}</small>
+            </td>
+            <td>
+              <strong>{{ device.deliveries_total }}</strong> total<br>
+              <small>{{ device.deliveries_sent }} enviadas · {{ device.deliveries_failed }} falhas</small><br>
+              <small>Última {{ device.last_delivery_at }}</small>
+            </td>
+            <td>
+              {% if device.provider_invalidated_at != "-" %}
+                <strong>Invalidado pelo provider</strong><br><small>{{ device.provider_invalidated_at }}</small>
+              {% elif device.revoked_at != "-" %}
+                <strong>Revogado</strong><br><small>{{ device.revoked_at }}</small>
+              {% elif device.disabled_reason %}
+                <strong>{{ device.disabled_reason }}</strong>
+              {% elif device.push_enabled %}
+                <span class="muted">Pronto para receber eventos elegíveis.</span>
+              {% else %}
+                <span class="muted">Push pausado neste dispositivo.</span>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">Nenhum dispositivo encontrado.</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+
+    {% include "admin_ops/partials/load_more.html" with pagination=pagination label="Mais dispositivos" %}
+  </section>
+</main>
+{% endblock %}

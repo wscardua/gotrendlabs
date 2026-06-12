@@ -1,4 +1,5 @@
 from datetime import timedelta
+import base64
 import json
 import os
 import uuid
@@ -9,7 +10,7 @@ import django
 from django.conf import settings
 from django.apps import apps
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Q
 from django.template import Context, Engine
 from django.utils import timezone
 
@@ -29,6 +30,7 @@ IMMEDIATE_PUSH_EVENTS = {
     "comment_like",
 }
 OFF_BY_DEFAULT_PUSH_EVENTS = {"market_prediction", "market_like"}
+PUSH_SENDING_STALE_AFTER = timedelta(minutes=15)
 
 DEFAULT_PUSH_TEMPLATES = {
     "market_resolved": {
@@ -84,6 +86,83 @@ def push_runtime_config():
         "dry_run": bool(getattr(settings, "GOTRENDLABS_PUSH_DRY_RUN", True)),
         "fcm_secret_configured": bool(getattr(settings, "GOTRENDLABS_FCM_CREDENTIALS_JSON", "")),
     }
+
+
+def _fcm_credentials_payload():
+    raw_value = (getattr(settings, "GOTRENDLABS_FCM_CREDENTIALS_JSON", "") or "").strip()
+    if not raw_value:
+        return {}
+    try:
+        return json.loads(raw_value)
+    except json.JSONDecodeError:
+        try:
+            decoded = base64.b64decode(raw_value).decode("utf-8")
+            return json.loads(decoded)
+        except (ValueError, UnicodeDecodeError, json.JSONDecodeError):
+            return {}
+
+
+def _fcm_app():
+    try:
+        import firebase_admin
+        from firebase_admin import credentials
+    except ImportError as error:
+        raise RuntimeError("firebase-admin dependency is not installed.") from error
+
+    app_name = "gotrendlabs-push"
+    try:
+        return firebase_admin.get_app(app_name)
+    except ValueError:
+        payload = _fcm_credentials_payload()
+        if not payload:
+            raise RuntimeError("FCM credentials JSON is invalid.")
+        return firebase_admin.initialize_app(credentials.Certificate(payload), name=app_name)
+
+
+def _send_fcm_delivery(delivery):
+    try:
+        from firebase_admin import messaging
+    except ImportError as error:
+        raise RuntimeError("firebase-admin dependency is not installed.") from error
+
+    app = _fcm_app()
+    payload = {str(key): str(value) for key, value in (delivery.payload or {}).items() if value is not None}
+    message = messaging.Message(
+        token=delivery.device.token,
+        notification=messaging.Notification(
+            title=(delivery.title or "GoTrendLabs")[:120],
+            body=delivery.body or "",
+        ),
+        data=payload,
+        android=messaging.AndroidConfig(
+            priority="high",
+            notification=messaging.AndroidNotification(channel_id="gtl_default"),
+        ),
+        apns=messaging.APNSConfig(
+            payload=messaging.APNSPayload(
+                aps=messaging.Aps(sound="default"),
+            ),
+        ),
+    )
+    return messaging.send(message, app=app)
+
+
+def _is_fcm_invalid_token_error(error):
+    code = (
+        getattr(error, "code", "")
+        or getattr(error, "error_code", "")
+        or getattr(error, "detail", "")
+        or error.__class__.__name__
+    )
+    text = f"{code} {error}".lower()
+    invalid_markers = (
+        "registration-token-not-registered",
+        "unregistered",
+        "invalid-registration-token",
+        "sender-id-mismatch",
+        "invalid token",
+    )
+    return any(marker in text for marker in invalid_markers)
 
 
 def push_dashboard_status(cursor, *, now=None):
@@ -450,48 +529,71 @@ def _invalidate_device(delivery, now, reason):
     delivery.device.save(update_fields=["is_active", "push_enabled", "provider_invalidated_at", "disabled_reason", "updated_at"])
 
 
-def process_due_push_deliveries(*, limit=25, now=None):
-    now = now or timezone.now()
-    config = push_runtime_config()
-    stats = {"sent": 0, "failed": 0, "suppressed": 0, "dry_run": 0, "invalid_token": 0, "skipped": 0}
+def _claim_due_push_deliveries(*, limit, now):
+    stale_before = now - PUSH_SENDING_STALE_AFTER
+    due_filter = (
+        Q(status__in=["queued", "failed"], next_attempt_at__lte=now)
+        | Q(status="sending", last_attempt_at__lte=stale_before)
+        | Q(status="sending", last_attempt_at__isnull=True)
+    )
     with transaction.atomic():
         deliveries = list(
             PushDelivery.objects.select_for_update(skip_locked=True)
             .select_related("device")
-            .filter(status__in=["queued", "failed"], next_attempt_at__lte=now, attempt_count__lt=F("max_attempts"))
+            .filter(due_filter, attempt_count__lt=F("max_attempts"))
             .order_by("next_attempt_at", "id")[:limit]
         )
         for delivery in deliveries:
             delivery.status = "sending"
             delivery.last_attempt_at = now
             delivery.save(update_fields=["status", "last_attempt_at", "updated_at"])
-            if not config["enabled"]:
-                _mark_delivery(delivery, status="suppressed", now=now, error="Push disabled by environment.")
-                stats["suppressed"] += 1
-                continue
-            if not delivery.device.is_active or not delivery.device.push_enabled:
-                _mark_delivery(delivery, status="suppressed", now=now, error="Push device is inactive.")
-                stats["suppressed"] += 1
-                continue
-            if config["provider"] == "none":
-                _mark_delivery(delivery, status="dry_run", now=now, provider_message_id=f"dry-run-{delivery.id}")
-                stats["dry_run"] += 1
-                continue
-            if config["provider"] == "fcm" and config["dry_run"]:
-                _mark_delivery(delivery, status="dry_run", now=now, provider_message_id=f"fcm-dry-run-{delivery.id}")
-                stats["dry_run"] += 1
-                continue
-            if delivery.device.token.strip().lower().startswith("invalid"):
+    return deliveries
+
+
+def process_due_push_deliveries(*, limit=25, now=None):
+    now = now or timezone.now()
+    config = push_runtime_config()
+    stats = {"sent": 0, "failed": 0, "suppressed": 0, "dry_run": 0, "invalid_token": 0, "skipped": 0}
+    deliveries = _claim_due_push_deliveries(limit=limit, now=now)
+    for delivery in deliveries:
+        if not config["enabled"]:
+            _mark_delivery(delivery, status="suppressed", now=now, error="Push disabled by environment.")
+            stats["suppressed"] += 1
+            continue
+        if not delivery.device.is_active or not delivery.device.push_enabled:
+            _mark_delivery(delivery, status="suppressed", now=now, error="Push device is inactive.")
+            stats["suppressed"] += 1
+            continue
+        if config["provider"] == "none":
+            _mark_delivery(delivery, status="dry_run", now=now, provider_message_id=f"dry-run-{delivery.id}")
+            stats["dry_run"] += 1
+            continue
+        if config["provider"] == "fcm" and config["dry_run"]:
+            _mark_delivery(delivery, status="dry_run", now=now, provider_message_id=f"fcm-dry-run-{delivery.id}")
+            stats["dry_run"] += 1
+            continue
+        if delivery.device.token.strip().lower().startswith("invalid"):
+            _invalidate_device(delivery, now, "provider_invalid_token")
+            _mark_delivery(delivery, status="invalid_token", now=now, error="Provider rejected device token.")
+            stats["invalid_token"] += 1
+            continue
+        if config["provider"] == "fcm" and not config["fcm_secret_configured"]:
+            _mark_delivery(delivery, status="failed", now=now, error="FCM credentials are not configured.")
+            stats["failed"] += 1
+            continue
+        try:
+            provider_message_id = _send_fcm_delivery(delivery)
+        except Exception as error:
+            if _is_fcm_invalid_token_error(error):
                 _invalidate_device(delivery, now, "provider_invalid_token")
                 _mark_delivery(delivery, status="invalid_token", now=now, error="Provider rejected device token.")
                 stats["invalid_token"] += 1
-                continue
-            if config["provider"] == "fcm" and not config["fcm_secret_configured"]:
-                _mark_delivery(delivery, status="failed", now=now, error="FCM credentials are not configured.")
+            else:
+                _mark_delivery(delivery, status="failed", now=now, error=str(error)[:500])
                 stats["failed"] += 1
-                continue
-            _mark_delivery(delivery, status="failed", now=now, error="FCM send is not implemented in this phase.")
-            stats["failed"] += 1
+            continue
+        _mark_delivery(delivery, status="sent", now=now, provider_message_id=provider_message_id)
+        stats["sent"] += 1
     if not deliveries:
         stats["skipped"] += 1
     return stats

@@ -11,7 +11,7 @@ from django.core.management import call_command
 from django.core.files.storage import FileSystemStorage
 from django.contrib import messages
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.shortcuts import redirect, render
 from django.utils import timezone
 
@@ -165,6 +165,40 @@ PUSH_DELIVERY_STATUS_CLASSES = {
     "suppressed": "warn",
     "dry_run": "safe",
     "invalid_token": "risk",
+}
+
+PUSH_DEVICE_STATUS_LABELS = {
+    "active": "Ativo",
+    "disabled": "Pausado",
+    "revoked": "Revogado",
+    "invalid": "Token inválido",
+    "inactive": "Inativo",
+}
+
+PUSH_DEVICE_STATUS_CLASSES = {
+    "active": "safe",
+    "disabled": "warn",
+    "revoked": "risk",
+    "invalid": "risk",
+    "inactive": "warn",
+}
+
+PUSH_DEVICE_STATUS_FILTERS = {
+    "active": Q(
+        is_active=True,
+        push_enabled=True,
+        revoked_at__isnull=True,
+        provider_invalidated_at__isnull=True,
+    ),
+    "disabled": Q(
+        is_active=True,
+        push_enabled=False,
+        revoked_at__isnull=True,
+        provider_invalidated_at__isnull=True,
+    ),
+    "revoked": Q(revoked_at__isnull=False),
+    "invalid": Q(revoked_at__isnull=True, provider_invalidated_at__isnull=False),
+    "inactive": Q(is_active=False, revoked_at__isnull=True, provider_invalidated_at__isnull=True),
 }
 
 
@@ -354,6 +388,61 @@ def _push_delivery_row(delivery):
         "max_attempts": delivery.max_attempts,
         "last_error": delivery.last_error,
         "idempotency_key": delivery.idempotency_key,
+    }
+
+
+def _push_device_status(device):
+    if device.revoked_at:
+        return "revoked"
+    if device.provider_invalidated_at:
+        return "invalid"
+    if device.is_active and device.push_enabled:
+        return "active"
+    if device.is_active and not device.push_enabled:
+        return "disabled"
+    return "inactive"
+
+
+def _push_device_counts():
+    devices = PushDevice.objects.all()
+    counts = {"total": devices.count()}
+    counts.update(
+        {
+            status: devices.filter(status_filter).count()
+            for status, status_filter in PUSH_DEVICE_STATUS_FILTERS.items()
+        }
+    )
+    return counts
+
+
+def _push_device_row(device):
+    user = device.user
+    status = _push_device_status(device)
+    return {
+        "id": device.id,
+        "recipient_label": user.username or user.email,
+        "recipient_email": user.email,
+        "provider": device.provider,
+        "platform": device.platform,
+        "status": status,
+        "status_label": PUSH_DEVICE_STATUS_LABELS.get(status, status),
+        "status_class": PUSH_DEVICE_STATUS_CLASSES.get(status, "warn"),
+        "push_enabled": device.push_enabled,
+        "is_active": device.is_active,
+        "app_version": device.app_version or "-",
+        "build_number": device.build_number or "-",
+        "device_label": device.device_label or "-",
+        "token_hash_label": f"{device.token_hash[:10]}..." if device.token_hash else "-",
+        "last_registered_at": _email_delivery_label(device.last_registered_at),
+        "created_at": _email_delivery_label(device.created_at),
+        "updated_at": _email_delivery_label(device.updated_at),
+        "revoked_at": _email_delivery_label(device.revoked_at),
+        "provider_invalidated_at": _email_delivery_label(device.provider_invalidated_at),
+        "disabled_reason": device.disabled_reason,
+        "deliveries_total": getattr(device, "deliveries_total", 0),
+        "deliveries_sent": getattr(device, "deliveries_sent", 0),
+        "deliveries_failed": getattr(device, "deliveries_failed", 0),
+        "last_delivery_at": _email_delivery_label(getattr(device, "last_delivery_at", None)),
     }
 
 
@@ -1390,6 +1479,59 @@ def push_delivery_logs(request):
             "test_form": test_form,
             "test_devices_count": len(test_devices),
             "pagination": _load_more_context(request, total, len(visible_deliveries), limit),
+            "total_filtered": total,
+            "push_runtime": push_runtime_config(),
+        },
+    )
+
+
+@admin_api_required
+def push_devices(request):
+    filters = {
+        "q": request.GET.get("q") or "",
+        "status": request.GET.get("status") or "",
+        "platform": request.GET.get("platform") or "",
+        "provider": request.GET.get("provider") or "",
+    }
+    devices = (
+        PushDevice.objects.select_related("user")
+        .annotate(
+            deliveries_total=Count("push_deliveries"),
+            deliveries_sent=Count("push_deliveries", filter=Q(push_deliveries__status="sent")),
+            deliveries_failed=Count("push_deliveries", filter=Q(push_deliveries__status__in=["failed", "invalid_token"])),
+            last_delivery_at=Max("push_deliveries__created_at"),
+        )
+        .order_by("-last_registered_at", "-id")
+    )
+    if filters["q"]:
+        devices = devices.filter(
+            Q(user__username__icontains=filters["q"])
+            | Q(user__email__icontains=filters["q"])
+            | Q(device_label__icontains=filters["q"])
+            | Q(app_version__icontains=filters["q"])
+            | Q(build_number__icontains=filters["q"])
+            | Q(token_hash__icontains=filters["q"])
+            | Q(disabled_reason__icontains=filters["q"])
+        )
+    if filters["platform"] in {"android", "ios"}:
+        devices = devices.filter(platform=filters["platform"])
+    if filters["provider"] in {"fcm"}:
+        devices = devices.filter(provider=filters["provider"])
+    if filters["status"] in PUSH_DEVICE_STATUS_FILTERS:
+        devices = devices.filter(PUSH_DEVICE_STATUS_FILTERS[filters["status"]])
+
+    total = devices.count()
+    limit = _normalized_load_more_limit(request.GET.get("limit"))
+    visible_devices = list(devices[:limit])
+    return render(
+        request,
+        "admin_ops/push_devices.html",
+        {
+            "devices": [_push_device_row(device) for device in visible_devices],
+            "filters": filters,
+            "counts": _push_device_counts(),
+            "status_labels": PUSH_DEVICE_STATUS_LABELS,
+            "pagination": _load_more_context(request, total, len(visible_devices), limit),
             "total_filtered": total,
             "push_runtime": push_runtime_config(),
         },

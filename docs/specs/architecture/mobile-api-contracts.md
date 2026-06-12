@@ -299,8 +299,8 @@ Requisitos mobile:
 - app so tenta registrar dispositivo apos autenticacao restaurada ou login concluido
 - logout normal nao chama revoke de dispositivo
 - revoke e desativacao de preferencias sao acoes explicitas do usuario
-- a fase atual usa provider noop e nao coleta token Firebase
-- quando FCM for configurado, token real deve ser enviado apenas para a FastAPI
+- quando Firebase nao esta configurado, o app nao coleta token real e pode usar `GTL_PUSH_FAKE_TOKEN` apenas para QA local sem entrega
+- quando FCM esta configurado no Android, token real e enviado apenas para a FastAPI apos autenticacao
 - payload de push contem apenas IDs, rota e `event_type`; o app busca o estado real na API ao abrir
 
 ### Sugestoes e feedback

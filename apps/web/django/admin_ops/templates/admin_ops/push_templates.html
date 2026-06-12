@@ -25,6 +25,10 @@
         <strong>Logs de envio</strong>
         <span>Outbox, dry-run e falhas</span>
       </a>
+      <a href="{% url 'admin-ops-push-devices' %}">
+        <strong>Dispositivos</strong>
+        <span>Tokens registrados e saúde</span>
+      </a>
     </nav>
     {% if messages %}
       {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}

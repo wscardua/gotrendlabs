@@ -74,7 +74,9 @@ class PushPreferenceSet {
       globalEnabled: json['global_enabled'] != false,
       preferences: rawPreferences
           .whereType<Map>()
-          .map((item) => PushPreference.fromJson(Map<String, dynamic>.from(item)))
+          .map(
+            (item) => PushPreference.fromJson(Map<String, dynamic>.from(item)),
+          )
           .toList(),
     );
   }
