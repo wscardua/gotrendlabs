@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260612-MOBILE-FIREBASE-PUSH-001
 
 - Tipo: `new-feature`
-- Status: `aguardando_pr`
+- Status: `concluido`
 - Feature alvo: `FEAT-NOTIFY-001`, `FEAT-MOBILE-001`, `communications`, `future-mobile`
 - Objetivo: implementar push mobile FCM real para Android, preservando defaults seguros, credenciais fora do Git/Admin Ops e o app como cliente da FastAPI
-- Etapa atual: implementação local concluída e validada na branch `feature/mobile-firebase-push-20260612`, com Firebase Android local, sender FCM backend fora de lock longo, canal Android, aba Admin Ops de dispositivos e docs/specs atualizados; aguardando aprovação da descrição para abrir PR
+- Etapa atual: concluído; PR #71 publicada e mergeada em `main`, GitHub Actions `GoTrendLabs CI and Deploy` verde, PRD com FCM real habilitado fora do Git/Admin Ops e APK Android beta `1.0.3 (4)` publicada com Firebase ativo
 - Artefatos afetados:
   - `apps/mobile/`
   - `apps/web/django/communications/`
@@ -18,13 +18,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/`
   - `.env.example`
   - `requirements.txt`
-- Bloqueios: validação FCM real em produção depende de instalar `GOTRENDLABS_FCM_CREDENTIALS_JSON` fora do Git/Admin Ops, ativar provider `fcm` com dry-run desligado e gerar/publicar APK Android com `google-services.json` local
+- Bloqueios: nenhum para a ativação operacional; teste ponta a ponta de recebimento ainda depende de usuário autenticado/dispositivo Android com APK `1.0.3 (4)` instalado e permissão de notificação aceita
 - Iniciado em: 2026-06-12
 - Atualizado em: 2026-06-12
-- Encerrado em: pendente
-- Retomada: abrir PR em português após aprovação do texto, acompanhar merge/deploy e só ativar PRD com confirmação explícita de ambiente/credencial
+- Encerrado em: 2026-06-12
+- Retomada: validar recebimento real no Android com usuário autenticado, acompanhar novos devices em Admin Ops e publicar nova APK apenas quando houver incremento de versão/canal
 - Reversão lógica: voltar Flutter para provider noop/fake-token, remover dependências Firebase mobile, canal Android, sender Firebase Admin SDK e restaurar docs/state para fase dry-run/noop mantendo outbox `PushDelivery` intacta
 - Evidências de validação local: `dart format lib test`; `git diff --check`; `flutter analyze`; `flutter test`; `flutter test test/push_controller_test.dart test/push_repository_test.dart test/about_screen_test.dart`; `flutter build apk --debug`; `.venv/bin/python manage.py check`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `RECAPTCHA_ENABLED=0 .venv/bin/python manage.py test --keepdb` com os testes focados `BackendAuthAPITests.test_fcm_provider_marks_successful_delivery_as_sent`, `test_fcm_provider_retries_transient_send_errors`, `test_push_outbox_uses_user_notification_policy_and_safe_payload`, `test_push_preferences_block_outbox_and_provider_invalidates_bad_tokens`, `WebSmokeTests.test_admin_push_devices_tab_lists_devices_without_raw_tokens` e `WebSmokeTests.test_admin_ops_requires_staff_and_renders_api_data`; teste local com service account Firebase carregada confirmou `provider=fcm`, `dry_run=False`, `fcm_secret_configured=True` sem imprimir segredo
+- Evidências de produção: PR #71 mergeada como `e51465e8f5894521edbaf716d0e35750dc386fe9`; GitHub Actions `GoTrendLabs CI and Deploy` run `27445681561` concluiu `test` e `deploy` com sucesso; SSM `5582a581-d8ee-4a8e-9034-b6251797c7d6` atualizou `/opt/gotrendlabs/.env.prod`, recriou `django`, `fastapi` e `daemon`, `manage.py check` passou e `push_runtime_config` retornou `enabled=True`, `provider=fcm`, `dry_run=False`, `fcm_secret_configured=True`; APK release assinada `1.0.3 (4)` com SHA-256 `88e5620dd7d6989e01b785f9c2ebee94cce11817fd4b0687681ea286da133713` foi publicada via SSM `2f08493a-2337-4507-be4c-20972982b75c`; `https://gotrendlabs.com.br/app/android/latest.json` retornou `version_name=1.0.3`, `version_code=4`, `file_size=56555211` e o mesmo SHA-256; download público da APK retornou `HTTP/2 200` e hash recalculado idêntico; `https://gotrendlabs.com.br/api/health` retornou `{"status":"ok"}`; maintenance permaneceu desligado; bucket S3 temporário de transporte foi removido
 
 ## WFLOW-20260611-MOBILE-UX-FEED-RANKING-SESSION-001
 
