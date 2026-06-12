@@ -14,6 +14,7 @@
 - Login mobile ganhou `Lembrar login` ligado por padrão; quando desligado, o token Bearer fica apenas em memória e não é persistido no secure storage.
 - Splash Android e header do shell mobile foram refinados para manter `Preveja antes do consenso.` alinhado logo abaixo de `GoTrendLabs`.
 - Versão mobile desta fatia definida como `1.0.2+3` para publicação Android beta após merge.
+- APK Android beta `1.0.2 (3)` publicada em produção no canal direto, com `/app/android/latest.json` apontando para o arquivo ativo e SHA-256 `ae52faaf0525cd22dd45da3ced89ba6f7f208864da3c7c26384e9a0b0c3337bb`.
 
 ## 2026-06-11 — FEAT-AUTH-001 / FEAT-NOTIFY-001 login social e emails críticos
 

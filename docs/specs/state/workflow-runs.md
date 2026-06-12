@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260611-MOBILE-UX-FEED-RANKING-SESSION-001
 
 - Tipo: `new-feature`
-- Status: `em_publicacao`
+- Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`
 - Objetivo: implementar melhorias de feed mobile, ranking, confirmação de previsão, consenso multi-série, push informativo em `Sobre`, tracking de view/share, sessão com `Lembrar login` e APK Android beta `1.0.2+3`
-- Etapa atual: implementação local validada; docs/specs reconciliados; versão mobile `1.0.2+3` definida; aguardando aprovação do usuário para abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e publicar novo APK Android em produção
+- Etapa atual: concluído; branch `feature/mobile-ux-feed-ranking-session` publicada, PR #70 criada, `main` atualizada para `0577280`, deploy de produção executado via SSM e APK Android beta `1.0.2 (3)` publicada em produção
 - Artefatos afetados:
   - `apps/mobile/`
   - `apps/mobile/test/`
@@ -22,13 +22,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/state/known-gaps.md`
   - `docs/specs/testing/mobile-acceptance.md`
   - `apps/mobile/README.md`
-- Bloqueios: PR, merge, deploy e publicação Android dependem de aprovação explícita do usuário
+- Bloqueios: GitHub API/Actions ficou indisponível por timeout durante o fechamento; merge foi aplicado por fast-forward via `git push` para `main` e deploy foi executado diretamente por SSM
 - Iniciado em: 2026-06-11
-- Atualizado em: 2026-06-11
-- Encerrado em: pendente
-- Retomada: após aprovação, stage/commit, push da branch `feature/mobile-ux-feed-ranking-session`, abrir PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy`, publicar APK Android atualizado via canal direto e atualizar este registro para `concluido` ou `bloqueado`
+- Atualizado em: 2026-06-12
+- Encerrado em: 2026-06-12
+- Retomada: acompanhar feedback de usuários no Android beta `1.0.2 (3)`; se precisar publicar nova APK, incrementar `version` em `apps/mobile/pubspec.yaml`, gerar release assinada com os defines de produção e publicar pelo Admin Ops/canal direto
 - Reversão lógica: reverter ajustes Flutter de feed/ranking/sessão/consenso/push informativo/tracking, restaurar splash/header anterior e voltar README/specs/state para o comportamento mobile anterior
-- Evidências de validação local: `flutter analyze` sem issues; `flutter test` com 35 testes OK; QA local em Android Emulator e iPhone Simulator durante a implementação; revisão documental contra `gotrendlabs-mobile-docs-governor`
+- Evidências de validação local: `git diff --check`; `flutter pub get`; `flutter analyze` sem issues; `flutter test` com 35 testes OK; `flutter build apk --release --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br --dart-define=GTL_PUSH_FIREBASE_ENABLED=false` gerou APK assinada com SHA-256 `ae52faaf0525cd22dd45da3ced89ba6f7f208864da3c7c26384e9a0b0c3337bb`; QA local em Android Emulator e iPhone Simulator durante a implementação; revisão documental contra `gotrendlabs-mobile-docs-governor`
+- Evidências de produção: deploy SSM `43bc0576-7521-4c1d-be4e-ccb107be40cf` concluiu `Success`, sem migrations pendentes e com containers `django`, `fastapi`, `daemon` e `proxy` recriados; release Android publicada por SSM `8bc28e39-0fd1-4306-a807-9598b5256c8f`, `https://gotrendlabs.com.br/app/android/latest.json` retornou `version_name=1.0.2`, `version_code=3`, `file_size=55753713` e SHA-256 `ae52faaf0525cd22dd45da3ced89ba6f7f208864da3c7c26384e9a0b0c3337bb`; download público de `https://gotrendlabs.com.br/media/app_releases/android/gotrendlabs-android-1.0.2-3.apk` retornou `HTTP/2 200`, `content-type: application/vnd.android.package-archive`, `content-length: 55753713` e hash recalculado idêntico; `https://gotrendlabs.com.br/api/health` retornou `{"status":"ok"}`
 
 ## WFLOW-20260611-SOCIAL-AUTH-IMMEDIATE-EMAIL-001
 
