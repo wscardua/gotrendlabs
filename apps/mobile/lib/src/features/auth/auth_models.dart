@@ -63,12 +63,14 @@ class AuthState {
   const AuthState({
     this.user,
     this.restoring = false,
+    this.sessionLocked = false,
     this.busy = false,
     this.error,
   });
 
   final GtlUser? user;
   final bool restoring;
+  final bool sessionLocked;
   final bool busy;
   final String? error;
 
@@ -77,6 +79,7 @@ class AuthState {
   AuthState copyWith({
     GtlUser? user,
     bool? restoring,
+    bool? sessionLocked,
     bool? busy,
     String? error,
     bool clearUser = false,
@@ -85,6 +88,7 @@ class AuthState {
     return AuthState(
       user: clearUser ? null : user ?? this.user,
       restoring: restoring ?? this.restoring,
+      sessionLocked: sessionLocked ?? this.sessionLocked,
       busy: busy ?? this.busy,
       error: clearError ? null : error ?? this.error,
     );

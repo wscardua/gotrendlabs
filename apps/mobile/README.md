@@ -35,6 +35,8 @@ flutter run -d ios \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=http://127.0.0.1:8000
 ```
 
+O target iOS minimo e 15.0, alinhado as dependencias mobile atuais de Firebase e autenticacao local.
+
 Specs principais:
 
 - `docs/specs/architecture/mobile-flutter.md`
@@ -49,6 +51,7 @@ Specs principais:
 - design system mobile compartilhado em `lib/src/ui/`, com surfaces, headers editoriais, pills, métricas, painéis de estado, skeletons e componentes reutilizáveis
 - feed, browse, busca e detalhe de mercado via `GET /markets` e `GET /markets/{slug}`, com abertura do detalhe incrementando `view_count` pelo mesmo endpoint de tracking usado pelo web
 - auth Bearer simples via `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout`, com `Lembrar login` ligado por padrao; token persistido em secure storage quando ligado e mantido apenas em memoria quando desligado
+- protecao local para sessao lembrada: quando `Lembrar login` esta ligado e o aparelho suporta autenticacao local, login e cadastro oferecem biometria ligada por padrao; a tela de entrada mostra `Entrar com biometria` quando ha sessao lembrada protegida; na reabertura, o app exige biometria ou senha do aparelho antes de ativar o Bearer token persistido; cancelamento deixa a sessao em estado protegido, sem chamar API autenticada nem apagar o token
 - favoritos, curtidas, comentarios, compartilhamento, preview e criacao de previsao usando apenas FastAPI; compartilhar pelo app incrementa `share_count` antes de acionar o share nativo
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
 - `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
@@ -64,6 +67,8 @@ Specs principais:
 - testes unitarios, widget e repository cobrindo componentes, cards, ticket, filtros pessoais, ranking, push em `Sobre`, login em memoria/secure storage e `Sobre`
 
 Guardrail: o mobile sera cliente da FastAPI. Ele podera manter estado de UI, sessao/token, cache leve e preferencias locais, mas nao deve calcular saldo, payout, probabilidade, reputacao, badges, resolucao, IA ou auditoria.
+
+Biometria guardrail: biometria/Face ID/Touch ID/fingerprint e senha local do aparelho protegem apenas a sessao lembrada neste dispositivo. O app nao armazena senha da conta, nao envia dado biometrico ao backend e continua validando a sessao restaurada em `/auth/session`.
 
 Push guardrail: o app so registra token de push depois de autenticado e apenas quando houver provider real. Logout normal nao revoga push; revogacao e preferencias sao acoes explicitas via FastAPI. Payloads de push devem conter apenas IDs/rota/evento e sempre buscar o estado real na API ao abrir.
 
@@ -97,7 +102,7 @@ flutter build apk --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao desta fatia: `1.0.2+3`.
+Versao desta fatia: `1.0.4+5`.
 
 O build release falha quando `android/key.properties` nao existe. Use `flutter build apk --debug` para validacao local sem assinatura release.
 

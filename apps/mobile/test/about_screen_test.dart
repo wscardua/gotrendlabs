@@ -88,7 +88,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Push mobile'), findsOneWidget);
-    expect(find.text('Não configurado'), findsOneWidget);
+    expect(find.text('Login necessário'), findsOneWidget);
     expect(
       find.text(
         'Entre na sua conta para ativar notificações neste dispositivo.',

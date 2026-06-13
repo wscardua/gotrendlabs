@@ -2,6 +2,29 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260613-MOBILE-BIOMETRIC-AUTH-001
+
+- Tipo: `new-feature`
+- Status: `em_publicacao`
+- Feature alvo: `FEAT-MOBILE-001`, `FEAT-AUTH-001`, `future-mobile`
+- Objetivo: implementar desbloqueio biométrico/local para sessão mobile lembrada no Android e iOS, sem criar endpoint novo e mantendo a FastAPI como autoridade de sessão
+- Etapa atual: branch `feature/mobile-biometric-auth` criada a partir de `origin/main` atualizado para `1d92104`; implementação Flutter/nativa e docs validados localmente, versão mobile `1.0.4+5` preparada para publicação Android beta, aguardando autorização para publicar PR em português
+- Artefatos afetados:
+  - `apps/mobile/`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `apps/mobile/README.md`
+- Bloqueios: nenhum local até o momento; smoke real de prompt biométrico depende de emulador/aparelho com biometria ou credencial local configurada
+- Iniciado em: 2026-06-13
+- Atualizado em: 2026-06-13
+- Encerrado em: pendente
+- Retomada: abrir PR em português quando autorizado, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e publicar APK Android beta `1.0.4 (5)` assinada no canal direto
+- Reversão lógica: remover `local_auth`, preferência biométrica, estado `Sessão protegida`, ajustes nativos Android/iOS e restaurar docs/state para a sessão lembrada simples
+- Evidências de validação local: `flutter pub get`; `dart format`; `flutter test test/auth_biometric_test.dart` cobrindo login, cadastro, sessão protegida, preferência desligada sem botão `Entrar com biometria` e desbloqueio sem backfill de preferência; `flutter analyze`; `flutter test` com 46 testes OK; `git diff --check`; `flutter build apk --debug` gerou `build/app/outputs/flutter-apk/app-debug.apk` com aviso não bloqueante já conhecido de Kotlin Gradle Plugin transitivo em `package_info_plus`/`share_plus`; APK debug reinstalado no `emulator-5554`; emulador confirmado com PIN ativo (`1234`) e app debug instalado; `plutil -lint apps/mobile/ios/Runner/Info.plist`; `flutter build ios --simulator --debug` passou após alinhar `IPHONEOS_DEPLOYMENT_TARGET=15.0` às dependências Firebase mobile; iOS Simulator `iPhone 17 Pro` com iOS 26.5 carregou dados locais usando `GTL_API_BASE_URL=http://127.0.0.1:8001`; `flutter build apk --release --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` gerou APK assinada `1.0.4 (5)` com SHA-256 `43f8c1184ce7c913070d9bc2c09344a70f2ed8f4c14a12749d8e688d831bc81c` e tamanho `57292069` bytes
+
 ## WFLOW-20260612-MOBILE-FIREBASE-PUSH-001
 
 - Tipo: `new-feature`

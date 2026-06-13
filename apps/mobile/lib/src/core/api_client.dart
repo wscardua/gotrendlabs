@@ -82,6 +82,12 @@ class ApiClient {
     _token = await _tokenStore.readToken();
   }
 
+  Future<String?> readStoredToken() => _tokenStore.readToken();
+
+  void activateToken(String token) {
+    _token = token;
+  }
+
   Future<void> setToken(String token, {bool persist = true}) async {
     _token = token;
     if (persist) {

@@ -31,6 +31,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   bool _register = false;
   bool _acceptedTerms = false;
   bool _rememberLogin = true;
+  bool _protectWithBiometrics = true;
   String? _localError;
 
   @override
@@ -44,6 +45,18 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
+    final biometricSupported = ref
+        .watch(biometricCapabilityProvider)
+        .maybeWhen(data: (value) => value, orElse: () => false);
+    final biometricEnabled = ref
+        .watch(biometricPreferenceProvider)
+        .maybeWhen(data: (value) => value, orElse: () => false);
+    final canUnlockRememberedSession =
+        ref
+            .watch(rememberedSessionProvider)
+            .maybeWhen(data: (value) => value, orElse: () => false) &&
+        biometricEnabled &&
+        biometricSupported;
     ref.listen(authControllerProvider, (previous, next) {
       if (next.isAuthenticated && ModalRoute.of(context)?.isCurrent == true) {
         Navigator.of(context).pop();
@@ -64,90 +77,177 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
           children: [
             GtlEditorialHeader(
               kicker: 'Conta GoTrendLabs',
-              title: _register ? 'Criar conta' : 'Entrar',
-              body:
-                  'Sessão para prever, comentar, acompanhar wallet e construir reputação.',
+              title: auth.sessionLocked
+                  ? 'Sessão protegida'
+                  : _register
+                  ? 'Criar conta'
+                  : 'Entrar',
+              body: auth.sessionLocked
+                  ? 'Confirme com biometria ou senha do aparelho para retomar sua sessão.'
+                  : 'Sessão para prever, comentar, acompanhar wallet e construir reputação.',
               trailing: IconButton(
                 onPressed: () => Navigator.of(context).pop(),
                 icon: const Icon(Icons.close),
                 tooltip: 'Fechar',
               ),
-              icon: Icons.account_circle_outlined,
+              icon: auth.sessionLocked
+                  ? Icons.lock_outline
+                  : Icons.account_circle_outlined,
             ),
-            const SizedBox(height: 12),
-            SegmentedButton<bool>(
-              segments: const [
-                ButtonSegment(value: false, label: Text('Login')),
-                ButtonSegment(value: true, label: Text('Cadastro')),
+            if (auth.sessionLocked) ...[
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: auth.busy
+                    ? null
+                    : () => ref
+                          .read(authControllerProvider.notifier)
+                          .unlockProtectedSession(),
+                icon: auth.busy
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.fingerprint),
+                label: const Text('Desbloquear sessão'),
+              ),
+              TextButton.icon(
+                onPressed: auth.busy
+                    ? null
+                    : () => ref
+                          .read(authControllerProvider.notifier)
+                          .forgetProtectedSession(),
+                icon: const Icon(Icons.logout),
+                label: const Text('Sair deste dispositivo'),
+              ),
+              if (auth.error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  auth.error!,
+                  style: const TextStyle(color: GtlColors.accentRed),
+                ),
               ],
-              selected: {_register},
-              onSelectionChanged: (value) => setState(() {
-                _register = value.first;
-                _localError = null;
-              }),
-            ),
-            const SizedBox(height: 16),
-            if (_register) ...[
-              TextField(
-                controller: _name,
-                textInputAction: TextInputAction.next,
-                decoration: const InputDecoration(labelText: 'Nome público'),
-              ),
-              const SizedBox(height: 12),
-            ],
-            TextField(
-              controller: _email,
-              keyboardType: TextInputType.emailAddress,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(labelText: 'Email'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _password,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Senha'),
-            ),
-            if (_register) ...[
-              const SizedBox(height: 8),
-              CheckboxListTile(
-                value: _acceptedTerms,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (value) =>
-                    setState(() => _acceptedTerms = value ?? false),
-                title: const Text('Aceito a política de uso da GoTrendLabs'),
-              ),
             ] else ...[
-              const SizedBox(height: 8),
-              SwitchListTile(
-                value: _rememberLogin,
-                contentPadding: EdgeInsets.zero,
-                onChanged: (value) => setState(() => _rememberLogin = value),
-                title: const Text('Lembrar login'),
-                subtitle: const Text('Mantém a sessão neste dispositivo.'),
-              ),
-            ],
-            if (_localError != null || auth.error != null) ...[
               const SizedBox(height: 12),
-              Text(
-                _localError ?? auth.error!,
-                style: const TextStyle(color: GtlColors.accentRed),
+              if (!_register && canUnlockRememberedSession) ...[
+                FilledButton.icon(
+                  onPressed: auth.busy
+                      ? null
+                      : () => ref
+                            .read(authControllerProvider.notifier)
+                            .unlockProtectedSession(),
+                  icon: auth.busy
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.fingerprint),
+                  label: const Text('Entrar com biometria'),
+                ),
+                const SizedBox(height: 12),
+              ],
+              SegmentedButton<bool>(
+                segments: const [
+                  ButtonSegment(value: false, label: Text('Login')),
+                  ButtonSegment(value: true, label: Text('Cadastro')),
+                ],
+                selected: {_register},
+                onSelectionChanged: (value) => setState(() {
+                  _register = value.first;
+                  _localError = null;
+                }),
+              ),
+              const SizedBox(height: 16),
+              if (_register) ...[
+                TextField(
+                  controller: _name,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(labelText: 'Nome público'),
+                ),
+                const SizedBox(height: 12),
+              ],
+              TextField(
+                controller: _email,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _password,
+                obscureText: true,
+                decoration: const InputDecoration(labelText: 'Senha'),
+              ),
+              if (_register) ...[
+                const SizedBox(height: 8),
+                CheckboxListTile(
+                  value: _acceptedTerms,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (value) =>
+                      setState(() => _acceptedTerms = value ?? false),
+                  title: const Text('Aceito a política de uso da GoTrendLabs'),
+                ),
+                if (biometricSupported)
+                  SwitchListTile(
+                    value: _protectWithBiometrics,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) =>
+                        setState(() => _protectWithBiometrics = value),
+                    title: const Text('Proteger sessão com biometria'),
+                    subtitle: const Text(
+                      'Na próxima abertura, use biometria ou senha do aparelho.',
+                    ),
+                  ),
+              ] else ...[
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  value: _rememberLogin,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (value) => setState(() {
+                    _rememberLogin = value;
+                    if (!value) {
+                      _protectWithBiometrics = false;
+                    } else {
+                      _protectWithBiometrics = biometricSupported;
+                    }
+                  }),
+                  title: const Text('Lembrar login'),
+                  subtitle: const Text('Mantém a sessão neste dispositivo.'),
+                ),
+                if (_rememberLogin && biometricSupported)
+                  SwitchListTile(
+                    value: _protectWithBiometrics,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (value) =>
+                        setState(() => _protectWithBiometrics = value),
+                    title: const Text('Proteger sessão com biometria'),
+                    subtitle: const Text(
+                      'Na próxima abertura, use biometria ou senha do aparelho.',
+                    ),
+                  ),
+              ],
+              if (_localError != null || auth.error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _localError ?? auth.error!,
+                  style: const TextStyle(color: GtlColors.accentRed),
+                ),
+              ],
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: auth.busy ? null : _submit,
+                icon: auth.busy
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(_register ? Icons.person_add_alt_1 : Icons.login),
+                label: Text(_register ? 'Criar e entrar' : 'Entrar'),
+              ),
+              TextButton(
+                onPressed: auth.busy ? null : _recoverPassword,
+                child: const Text('Enviar recuperação de senha'),
               ),
             ],
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: auth.busy ? null : _submit,
-              icon: auth.busy
-                  ? const SizedBox.square(
-                      dimension: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Icon(_register ? Icons.person_add_alt_1 : Icons.login),
-              label: Text(_register ? 'Criar e entrar' : 'Entrar'),
-            ),
-            TextButton(
-              onPressed: auth.busy ? null : _recoverPassword,
-              child: const Text('Enviar recuperação de senha'),
-            ),
           ],
         ),
       ),
@@ -166,12 +266,23 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
     if (_register) {
       await ref
           .read(authControllerProvider.notifier)
-          .register(_name.text.trim(), email, password, _acceptedTerms);
+          .register(
+            _name.text.trim(),
+            email,
+            password,
+            _acceptedTerms,
+            protectWithBiometrics: _protectWithBiometrics,
+          );
       return;
     }
     await ref
         .read(authControllerProvider.notifier)
-        .login(email, password, rememberSession: _rememberLogin);
+        .login(
+          email,
+          password,
+          rememberSession: _rememberLogin,
+          protectWithBiometrics: _protectWithBiometrics,
+        );
   }
 
   Future<void> _recoverPassword() async {

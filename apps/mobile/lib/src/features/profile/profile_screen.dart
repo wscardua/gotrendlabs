@@ -54,6 +54,8 @@ class ProfileScreen extends ConsumerWidget {
                             emailConfirmed: auth.user?.emailConfirmed == true,
                           ),
                           const SizedBox(height: 12),
+                          const _BiometricSettingsPanel(),
+                          const SizedBox(height: 12),
                           _ReputationPanel(reputation: reputation),
                           const SizedBox(height: 12),
                           ref
@@ -147,6 +149,61 @@ class ProfileScreen extends ConsumerWidget {
                       );
                     },
                   ),
+      ),
+    );
+  }
+}
+
+class _BiometricSettingsPanel extends ConsumerWidget {
+  const _BiometricSettingsPanel();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final auth = ref.watch(authControllerProvider);
+    final supported = ref
+        .watch(biometricCapabilityProvider)
+        .maybeWhen(data: (value) => value, orElse: () => false);
+    final enabled = ref
+        .watch(biometricPreferenceProvider)
+        .maybeWhen(data: (value) => value, orElse: () => false);
+    final hasRememberedSession = ref
+        .watch(rememberedSessionProvider)
+        .maybeWhen(data: (value) => value, orElse: () => false);
+    final canToggle = supported && hasRememberedSession && !auth.busy;
+    final subtitle = !supported
+        ? 'Este aparelho não informou biometria ou senha local compatível.'
+        : !hasRememberedSession
+        ? 'Entre com Lembrar login para proteger a próxima abertura.'
+        : 'Na próxima abertura, use biometria ou senha do aparelho.';
+
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      padding: EdgeInsets.zero,
+      child: Material(
+        type: MaterialType.transparency,
+        child: SwitchListTile(
+          value: enabled && supported,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          secondary: const Icon(Icons.fingerprint),
+          onChanged: canToggle
+              ? (value) async {
+                  await ref
+                      .read(authControllerProvider.notifier)
+                      .setBiometricProtection(value);
+                  final error = ref.read(authControllerProvider).error;
+                  if (context.mounted && error != null) {
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(error)));
+                  }
+                }
+              : null,
+          title: const Text('Proteção local'),
+          subtitle: Text(subtitle),
+        ),
       ),
     );
   }
