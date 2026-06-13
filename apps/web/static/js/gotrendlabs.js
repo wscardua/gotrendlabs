@@ -773,6 +773,7 @@ function updateBadgePreview(form) {
   const description = fieldValue(form, "description", "Descrição curta da conquista aparece aqui.");
   const rule = fieldValue(form, "rule_description", "Descrição da regra aparece aqui.");
   const isActive = $('[name="is_active"]', form)?.checked ?? true;
+  const ruleActive = $('[name="rule_active"]', form)?.checked ?? true;
   const lightUrl = fieldValue(form, "image_url", "");
   const darkUrl = fieldValue(form, "image_dark_url", "");
   const lightImage = $("[data-preview-badge-image-light]", preview);
@@ -782,7 +783,7 @@ function updateBadgePreview(form) {
   $("[data-preview-badge-name]", preview).textContent = name;
   $("[data-preview-badge-description]", preview).textContent = description;
   $("[data-preview-badge-rule]", preview).textContent = rule;
-  $("[data-preview-badge-status]", preview).textContent = isActive ? "Ativa para concessão" : "Inativa";
+  $("[data-preview-badge-status]", preview).textContent = !isActive ? "Oculta" : ruleActive ? "Ativa para concessão" : "Concessão pausada";
   preview.classList.toggle("locked", !isActive);
 
   if (lightUrl && lightImage && lightImage.dataset.localPreview !== "1") {

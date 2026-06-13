@@ -389,6 +389,7 @@ class BadgeResponse(BaseModel):
     badge_type: str = "global"
     image_url: str = ""
     image_dark_url: str = ""
+    rule_active: bool = True
     status: str
     earned_at: Optional[str] = None
     reason_snapshot: str = ""
@@ -407,6 +408,7 @@ class AdminBadgePayload(BaseModel):
     image_url: str = Field(default="", max_length=255)
     image_dark_url: str = Field(default="", max_length=255)
     is_active: bool = True
+    rule_active: Optional[bool] = None
     rule_type: str
     threshold_value: float = Field(default=1, ge=0)
     category: str = Field(default="", max_length=80)

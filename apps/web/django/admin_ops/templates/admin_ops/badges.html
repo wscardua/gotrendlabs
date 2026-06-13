@@ -13,7 +13,7 @@
     {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     <table class="table">
-      <tr><th>Badge</th><th>Status</th><th>Tipo</th><th>Regra</th><th>Recorte</th><th>Conquistas</th><th>Ações</th></tr>
+      <tr><th>Badge</th><th>Exibição</th><th>Concessão</th><th>Tipo</th><th>Regra</th><th>Recorte</th><th>Conquistas</th><th>Ações</th></tr>
       {% for badge in badge_data.badges %}
         <tr>
           <td>
@@ -31,7 +31,8 @@
               </span>
             </div>
           </td>
-          <td>{% if badge.is_active %}<span class="tag safe">Ativa</span>{% else %}<span class="tag">Inativa</span>{% endif %}</td>
+          <td>{% if badge.is_active %}<span class="tag safe">Visível</span>{% else %}<span class="tag">Oculta</span>{% endif %}</td>
+          <td>{% if badge.rule_active %}<span class="tag safe">Ativa</span>{% else %}<span class="tag warn">Pausada</span>{% endif %}</td>
           <td>{{ badge.badge_type }}</td>
           <td>{{ badge.rule_type }} · {{ badge.threshold_value }}</td>
           <td>{% if badge.category %}{{ badge.category }}{% else %}Todas{% endif %} / {% if badge.subcategory %}{{ badge.subcategory }}{% else %}Todas{% endif %} / {% if badge.event %}{{ badge.event }}{% else %}Todos{% endif %}</td>
@@ -39,7 +40,7 @@
           <td><a class="btn small" href="{% url 'admin-ops-badge-edit' badge.code %}">Editar</a></td>
         </tr>
       {% empty %}
-        <tr><td colspan="7">Nenhuma badge cadastrada.</td></tr>
+        <tr><td colspan="8">Nenhuma badge cadastrada.</td></tr>
       {% endfor %}
     </table>
   </section>

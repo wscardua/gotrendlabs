@@ -2009,6 +2009,7 @@ def _badge_initial(badge):
         "image_url": badge.get("image_url", ""),
         "image_dark_url": badge.get("image_dark_url", ""),
         "is_active": badge.get("is_active", True),
+        "rule_active": badge.get("rule_active", True),
         "rule_type": badge.get("rule_type", "resolved_predictions_count"),
         "threshold_value": badge.get("threshold_value", 1),
         "category": badge.get("category", ""),
@@ -2050,8 +2051,8 @@ def badge_form(request, mode="new", code=None):
     if request.method == "POST":
         if request.POST.get("action") == "deactivate" and code:
             try:
-                admin_deactivate_badge(token, code, request.POST.get("note") or "Desativada pelo Admin Ops.")
-                messages.success(request, "Badge desativada.")
+                admin_deactivate_badge(token, code, request.POST.get("note") or "Concessão pausada pelo Admin Ops.")
+                messages.success(request, "Novas concessões pausadas. Conquistas existentes continuam visíveis.")
                 return redirect("admin-ops-badges")
             except AuthAPIError as exc:
                 error = str(exc)
@@ -2065,7 +2066,7 @@ def badge_form(request, mode="new", code=None):
                 post_data["image_dark_url"] = BADGE_STORAGE.url(saved_name)
         except ValueError as exc:
             upload_error = str(exc)
-    initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True}
+    initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True, "rule_active": True}
     form = AdminBadgeForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
     if upload_error:
         form.add_error(None, upload_error)

@@ -57,13 +57,14 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - usuários autenticados veem seu recorte somente quando houver dados reais no ranking filtrado/global exibido
 - administradores, superusuários, bots e dados internos/dev não aparecem no ranking público
 - a tabela pública identifica participantes por handle
-- a tabela pública pode mostrar badges conquistadas antes do handle, em resumo compacto vindo da API
-- visitantes podem consultar o catálogo de badges ativas
+- a tabela pública pode mostrar badges conquistadas após o handle, em resumo compacto vindo da API
+- visitantes podem consultar o catálogo de badges visíveis, incluindo badges com concessão pausada
 - catálogo e ranking públicos não expõem badges internas/dev ou conteúdos de preview local
 - usuários autenticados veem no catálogo e no perfil quais badges já conquistaram
+- badges conquistadas permanecem como propriedade histórica do usuário: pausar novas concessões não remove a badge do catálogo, nem remove conquistas do catálogo autenticado, ranking ou compartilhamento público por token
 - usuários autenticados podem compartilhar somente badges já conquistadas, por página própria, links de redes, imagem social e cópia do link
 - links públicos de badge conquistada usam token opaco e não expõem identificador direto do usuário
-- Admin Ops pode criar, editar e desativar badges, incluindo imagem para tema claro, imagem opcional para tema escuro e descrição da regra
+- Admin Ops pode criar, editar, ocultar badges e pausar novas concessões, incluindo imagem para tema claro, imagem opcional para tema escuro e descrição da regra
 - browse inicial do Admin Ops para badges exibe o recorte de categoria/subcategoria/evento de cada regra
 - formulário administrativo de badge marca visualmente os campos obrigatórios e mantém opcionais sem marcador
 - formulário administrativo de badge exibe prévia do card público antes de salvar, respeitando a imagem do tema claro/escuro quando existir
@@ -82,12 +83,13 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - ranking temático por categoria/subcategoria é recalculado sob demanda usando apenas previsões resolvidas do recorte
 - ranking por evento é recalculado sob demanda usando apenas previsões resolvidas do evento escolhido dentro de categoria/subcategoria
 - tela pública de ranking usa `Carregar mais` em lotes cumulativos de 10 linhas, preservando filtros aplicados
-- linhas do ranking podem expor até 3 badges ativas conquistadas e `badges_total`; a UI resume excedentes como `+N`
+- linhas do ranking podem expor até 3 badges visíveis conquistadas e `badges_total`; a UI resume excedentes como `+N`, incluindo badges com concessão pausada quando o usuário já conquistou
 - usuários `is_staff`, `is_superuser`, `is_bot` ou marcados por dados internos/dev são excluídos do ranking público
 - mudanças futuras de fórmula exigem decisão técnica registrada
 - badges não alteram reputação, ranking nem wallet
 - compartilhar badge não altera reputação, ranking, wallet, ledger nem elegibilidade de outras badges
 - regra executável de badge deve ser um `rule_type` conhecido pelo backend
+- `BadgeDefinition.is_active` controla exibição pública/histórica e remoção do catálogo; `BadgeRule.is_active` controla se novas conquistas ainda podem ser concedidas
 - concessão executável de badge deve passar pela `BadgeAwardEngine`, que centraliza avaliação, persistência e idempotência
 - texto administrativo da regra é explicativo e não substitui a elegibilidade do domínio
 - concessão de badge é idempotente por usuário e definição de badge
@@ -114,7 +116,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - taxonomia para filtro de ranking
 - recortes temáticos são projeções calculadas no MVP, sem nova tabela dedicada
 - definições de badge com código, nome, descrição, tipo, imagem padrão/clara, imagem escura opcional, status e descrição pública da regra
-- regras de badge vinculadas à definição, com tipo controlado, threshold e recorte opcional de categoria/subcategoria/evento
+- regras de badge vinculadas à definição, com tipo controlado, threshold, status de concessão e recorte opcional de categoria/subcategoria/evento
 - conquistas de badge por usuário com data e snapshot do motivo, persistidas em `gotrendlabs_user_badge_awards`
 
 ## Contratos afetados
@@ -141,7 +143,8 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - integração para exibir ação de compartilhar apenas em badge conquistada de usuário autenticado
 - integração para bloquear compartilhamento de badge não conquistada
 - integração para expor link público de badge por token opaco sem vazar id/email/handle
-- integração administrativa para criar, editar e desativar badge
+- integração administrativa para criar, editar, ocultar badge e pausar novas concessões
+- regressão para pausar novas concessões sem ocultar a badge do catálogo público/autenticado e sem ocultar conquistas no ranking e compartilhamento
 - unitários/integração para concessão idempotente de cada `rule_type` MVP
 
 ## Critérios de aceite
@@ -154,6 +157,9 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - visitante consegue ver badges ativas e suas regras resumidas
 - usuário logado vê progresso real de badges no catálogo e no perfil
 - usuário logado consegue compartilhar uma conquista já persistida sem compartilhar badges bloqueadas
+- visitante e usuário sem conquista conseguem ver no catálogo badges com concessão pausada, sem receber nova conquista
+- usuário logado consegue ver e compartilhar uma conquista já persistida mesmo quando novas concessões daquela badge estiverem pausadas
+- badge com `is_active=false` sai do catálogo, ranking e compartilhamento público sem apagar a conquista persistida
 - link público de badge conquistada renderiza card social com metadados sem alterar reputação, ranking, wallet ou ledger
 - admin consegue criar badge com imagem clara, imagem escura opcional e regra controlada
 - eventos de cadastro, resolução, comentário, sugestão e feedback podem conceder badges automaticamente sem duplicidade

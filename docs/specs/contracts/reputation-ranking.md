@@ -40,8 +40,8 @@ Campos mínimos de cada linha em `rows`:
 - `reputation_score`
 - `accuracy_indicator`
 - `strong_category`
-- `badges`: lista resumida de até 3 badges ativas conquistadas pelo usuário, ordenadas por conquista mais recente.
-- `badges_total`: total de badges ativas conquistadas pelo usuário, para a UI exibir resumo como `+N`.
+- `badges`: lista resumida de até 3 badges visíveis conquistadas pelo usuário, ordenadas por conquista mais recente.
+- `badges_total`: total de badges visíveis conquistadas pelo usuário, para a UI exibir resumo como `+N`.
 
 Campos mínimos de cada item em `badges`:
 
@@ -103,6 +103,8 @@ Conquistas de usuário são persistidas em `gotrendlabs_user_badge_awards`. A ex
 - `event`
 - `is_active`
 
+`BadgeDefinition.is_active` controla se a badge e suas conquistas históricas podem aparecer publicamente. `BadgeRule.is_active` controla apenas se novas conquistas ainda podem ser concedidas pela engine.
+
 `category`, `subcategory` e `event` devem usar valores da taxonomia dinâmica exposta em `GET /admin/taxonomy` quando preenchidos pelo Admin Ops. Subcategoria só é válida junto de sua categoria; evento só é válido junto da subcategoria da mesma categoria. Os `notice` de categoria/subcategoria/evento são metadados de apresentação do mercado e não alteram elegibilidade de badges.
 
 `UserBadgeAward`:
@@ -116,8 +118,8 @@ Conquistas de usuário são persistidas em `gotrendlabs_user_badge_awards`. A ex
 
 `GET /badges`
 
-- Sem token: lista badges ativas como catálogo público.
-- Com token válido: lista badges ativas com estado pessoal do usuário.
+- Sem token: lista badges visíveis no catálogo público, incluindo badges com concessão pausada.
+- Com token válido: lista badges visíveis no catálogo público com estado pessoal do usuário, incluindo badges com concessão pausada.
 
 Resposta mínima:
 
@@ -132,6 +134,7 @@ Campos mínimos de cada badge:
 - `badge_type`
 - `image_url`
 - `image_dark_url`
+- `rule_active`: indica se a badge ainda pode ser concedida para novas conquistas
 - `status`: `earned` ou `locked`
 - `earned_at`
 - `reason_snapshot`
@@ -140,7 +143,7 @@ Campos mínimos de cada badge:
 
 - Exige sessão válida.
 - Antes de responder, o backend pode executar reconciliação leve pela `BadgeAwardEngine` para refletir conquistas recentes.
-- Retorna lista de badges ativas com status pessoal.
+- Retorna badges visíveis no catálogo público com status pessoal, incluindo badges com concessão pausada.
 
 ### Rota web de compartilhamento
 
@@ -175,12 +178,13 @@ Payload administrativo mínimo:
 - `rule_description`: opcional; quando vazio, pode usar a descrição da badge como fallback
 - `image_url`: opcional; usada como imagem padrão/tema claro
 - `image_dark_url`: opcional; usada quando a interface estiver em tema escuro
-- `is_active`: opcional com default ativo no formulário administrativo
+- `is_active`: opcional com default ativo no formulário administrativo; controla exibição da badge e de conquistas históricas
+- `rule_active`: opcional com default ativo no formulário administrativo; controla novas concessões automáticas
 - `category`: opcional; vazio significa todas as categorias
 - `subcategory`: opcional; vazio significa todas as subcategorias da categoria escolhida ou todas as subcategorias quando categoria também estiver vazia
 - `event`: opcional; vazio significa todos os eventos da subcategoria escolhida ou todos os eventos quando categoria/subcategoria também estiverem vazios
 
-O Admin Ops deve marcar visualmente os campos obrigatórios do formulário de badge e manter `code`, `rule_description`, `image_url`, `image_dark_url`, `category`, `subcategory` e `event` sem marcador de obrigatoriedade. A UI pública e o Admin Ops devem usar `image_url` como fallback quando `image_dark_url` não estiver preenchida.
+O Admin Ops deve marcar visualmente os campos obrigatórios do formulário de badge e manter `code`, `rule_description`, `image_url`, `image_dark_url`, `category`, `subcategory` e `event` sem marcador de obrigatoriedade. A UI pública e o Admin Ops devem usar `image_url` como fallback quando `image_dark_url` não estiver preenchida. A ação administrativa de pausar novas concessões deve manter `BadgeDefinition.is_active=true` e alterar apenas `BadgeRule.is_active=false`, preservando a badge no catálogo para todos, sem novas concessões. Para remover uma badge do catálogo, ranking e compartilhamento público, a operação deve ocultar a definição com `BadgeDefinition.is_active=false`; conquistas já persistidas permanecem preservadas internamente.
 
 ### Regras de concessão MVP
 

@@ -617,7 +617,8 @@ class AdminBadgeForm(forms.Form):
     image_dark_url = forms.CharField(widget=forms.HiddenInput, required=False)
     badge_image = forms.FileField(label="Imagem para tema claro", required=False)
     badge_dark_image = forms.FileField(label="Imagem para tema escuro", required=False)
-    is_active = forms.BooleanField(label="Badge ativa", required=False, initial=True)
+    is_active = forms.BooleanField(label="Exibir badge e conquistas históricas", required=False, initial=True)
+    rule_active = forms.BooleanField(label="Conceder para novas conquistas", required=False, initial=True)
     rule_type = forms.ChoiceField(label="Regra automática", choices=BADGE_RULE_CHOICES)
     threshold_value = forms.DecimalField(label="Valor mínimo/posição", min_value=Decimal("0"), max_digits=12, decimal_places=4, initial=1)
     category = forms.CharField(label="Categoria", max_length=80, required=False)
@@ -685,6 +686,7 @@ class AdminBadgeForm(forms.Form):
             "image_url": self.cleaned_data.get("image_url") or "",
             "image_dark_url": self.cleaned_data.get("image_dark_url") or "",
             "is_active": self.cleaned_data.get("is_active", False),
+            "rule_active": self.cleaned_data.get("rule_active", False),
             "rule_type": self.cleaned_data["rule_type"],
             "threshold_value": float(self.cleaned_data.get("threshold_value") or 0),
             "category": self.cleaned_data.get("category") or "",

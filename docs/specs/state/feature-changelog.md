@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-13 — FEAT-REP-001 badges conquistadas como propriedade histórica
+
+- Admin Ops separou exibição histórica (`is_active`) de novas concessões (`rule_active`) para badges.
+- A ação de pausa de badge agora interrompe somente novas concessões, preservando conquistas já registradas.
+- Catálogo público/autenticado continua exibindo badges pausadas para todos, com estado de concessão pausada quando aplicável.
+- Ranking e compartilhamento público por token continuam exibindo badges pausadas para quem já conquistou.
+- Ocultar a badge com `is_active=false` remove do catálogo, ranking e compartilhamento público sem apagar conquistas persistidas.
+
 ## 2026-06-13 — FEAT-MOBILE-001 manutenção mobile independente
 
 - Admin Ops Config ganhou controle separado de `Manutenção do app`, salvo no runtime JSON com mensagem propria, sem acoplar ao modo manutencao web.
