@@ -8,7 +8,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`, `Admin Ops`, `FastAPI public contract`
 - Objetivo: implementar manutencao mobile independente da web, controlada pelo Admin Ops, com `GET /health` enriquecido e bloqueio autoritativo da FastAPI para clientes mobile sem excecao por papel no app
-- Etapa atual: concluido localmente; branch `feature/mobile-maintenance-gate` pronta para publicacao via fluxo GitHub padrao
+- Etapa atual: concluido; PR #75 publicada e mergeada em `main`, GitHub Actions `GoTrendLabs CI and Deploy` verde e producao respondendo com o contrato `/api/health` enriquecido
 - Artefatos afetados:
   - `apps/api/backend_api/main.py`
   - `apps/web/django/admin_ops/`
@@ -21,13 +21,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/state/implementation-status.md`
   - `docs/specs/state/integration-map.md`
   - `apps/mobile/README.md`
-- Bloqueios: nenhum local; publicacao, merge, deploy e smoke PRD dependem da aprovacao do texto da PR pelo usuario
+- Bloqueios: nenhum para publicacao; validacao funcional do toggle mobile em sessao Admin Ops autenticada de producao segue como QA operacional recomendado
 - Iniciado em: 2026-06-13
 - Atualizado em: 2026-06-13
 - Encerrado em: 2026-06-13
-- Retomada: apos aprovacao, criar PR em portugues, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy`, validar `https://gotrendlabs.com.br/api/health` com campos de manutencao/checks e confirmar que o controle mobile esta disponivel no Admin Ops de producao
+- Retomada: validar o toggle `Manutenção do app` em sessao Admin Ops autenticada de producao quando houver janela operacional; acompanhar feedback do app Android/iOS para estados de backend indisponivel/degradado
 - Reversao logica: remover `mobile_maintenance_enabled`/mensagem do runtime JSON/Admin Ops, retirar middleware mobile por `X-GoTrendLabs-Client`, voltar `/health` ao contrato simples e remover o gate Flutter `features/maintenance`
 - Evidencias de validacao local: `dart format`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb` com 5 testes OK; `cd apps/mobile && flutter test test/maintenance_gate_test.dart` com 4 testes OK; `.venv/bin/python manage.py check`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test` com 50 testes OK; `git diff --check`; FastAPI e Django locais reiniciados com `.venv/bin/python`; `/health` local retornou `checks.api=ok` e `checks.database=ok`; APK debug Android atualizado foi instalado e aberto no emulador `gotrendlabs_pixel` apos wipe do AVD travado em `RUNNING_LOCKED`
+- Evidencias de producao: PR #75 mergeada como `8fe120b6816e08ed86519834b8916fc852e482d9`; GitHub Actions `GoTrendLabs CI and Deploy` run `27473013601` concluiu jobs `test` e `deploy` com sucesso; `https://gotrendlabs.com.br/api/health` retornou `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; homepage retornou `HTTP/2 200`; `https://gotrendlabs.com.br/admin-ops/config/` redirecionou para login com `HTTP/2 302`, confirmando a rota protegida em producao
 
 ## WFLOW-20260613-MOBILE-BIOMETRIC-AUTH-001
 
