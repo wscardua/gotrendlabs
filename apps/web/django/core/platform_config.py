@@ -6,6 +6,7 @@ from django.utils import timezone
 
 
 DEFAULT_MAINTENANCE_MESSAGE = "Estamos fazendo uma manutenção rápida para deixar a plataforma mais estável. Voltamos em breve."
+DEFAULT_MOBILE_MAINTENANCE_MESSAGE = "Estamos em manutenção no app para deixar sua experiência mais estável. Voltamos em breve."
 
 
 def runtime_config_path():
@@ -18,6 +19,10 @@ def default_platform_config():
         "maintenance_message": DEFAULT_MAINTENANCE_MESSAGE,
         "updated_at": "",
         "updated_by": "",
+        "mobile_maintenance_enabled": False,
+        "mobile_maintenance_message": DEFAULT_MOBILE_MAINTENANCE_MESSAGE,
+        "mobile_updated_at": "",
+        "mobile_updated_by": "",
     }
 
 
@@ -36,6 +41,8 @@ def load_platform_config():
 def save_platform_config(data):
     current = load_platform_config()
     payload = {**current, **data, "updated_at": timezone.now().isoformat()}
+    if "mobile_maintenance_enabled" in data or "mobile_maintenance_message" in data:
+        payload["mobile_updated_at"] = payload["updated_at"]
     path = runtime_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp_path = path.with_suffix(path.suffix + ".tmp")
@@ -46,3 +53,7 @@ def save_platform_config(data):
 
 def maintenance_enabled():
     return bool(load_platform_config().get("maintenance_enabled"))
+
+
+def mobile_maintenance_enabled():
+    return bool(load_platform_config().get("mobile_maintenance_enabled"))

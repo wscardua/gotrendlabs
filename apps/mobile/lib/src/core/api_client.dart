@@ -55,7 +55,10 @@ class ApiClient {
                baseUrl: baseUrl,
                connectTimeout: const Duration(seconds: 8),
                receiveTimeout: const Duration(seconds: 12),
-               headers: {'Accept': 'application/json'},
+               headers: {
+                 'Accept': 'application/json',
+                 'X-GoTrendLabs-Client': 'mobile',
+               },
              ),
            ),
        _tokenStore = tokenStore ?? SecureTokenStore(),
@@ -63,6 +66,8 @@ class ApiClient {
     _dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          options.headers.putIfAbsent('Accept', () => 'application/json');
+          options.headers.putIfAbsent('X-GoTrendLabs-Client', () => 'mobile');
           final token = _token;
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';

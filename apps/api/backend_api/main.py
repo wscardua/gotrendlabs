@@ -20,6 +20,7 @@ import unicodedata
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, status
+from fastapi.responses import JSONResponse
 
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
@@ -193,13 +194,63 @@ def _runtime_config_path():
     return os.environ.get("GOTRENDLABS_RUNTIME_CONFIG_PATH") or os.path.join(os.getcwd(), ".runtime", "platform_config.json")
 
 
-def _maintenance_mode_active():
+def _runtime_platform_config():
+    defaults = {
+        "maintenance_enabled": False,
+        "maintenance_message": "",
+        "mobile_maintenance_enabled": False,
+        "mobile_maintenance_message": "Estamos em manutenção no app para deixar sua experiência mais estável. Voltamos em breve.",
+    }
     try:
         with open(_runtime_config_path(), encoding="utf-8") as config_file:
             data = json.load(config_file)
     except (OSError, json.JSONDecodeError):
-        return False
-    return bool(data.get("maintenance_enabled"))
+        return defaults
+    if not isinstance(data, dict):
+        return defaults
+    return {**defaults, **data}
+
+
+def _maintenance_mode_active():
+    return bool(_runtime_platform_config().get("maintenance_enabled"))
+
+
+def _mobile_maintenance_mode():
+    data = _runtime_platform_config()
+    message = str(data.get("mobile_maintenance_message") or "Estamos em manutenção no app. Voltamos em breve.")
+    return {"enabled": bool(data.get("mobile_maintenance_enabled")), "message": message}
+
+
+def _is_mobile_client(request: Request):
+    return request.headers.get("x-gotrendlabs-client", "").strip().lower() == "mobile"
+
+
+def _mobile_maintenance_exempt(path):
+    return path in {"/health", "/auth/login", "/auth/session", "/auth/logout"} or path.startswith("/auth/social/")
+
+
+@app.middleware("http")
+async def mobile_maintenance_middleware(request: Request, call_next):
+    maintenance = _mobile_maintenance_mode()
+    path = request.url.path
+    if (
+        maintenance["enabled"]
+        and _is_mobile_client(request)
+        and not _mobile_maintenance_exempt(path)
+    ):
+        return JSONResponse(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            content={
+                "detail": maintenance["message"],
+                "code": "mobile_maintenance",
+                "maintenance": {
+                    "mobile_enabled": True,
+                    "mobile_message": maintenance["message"],
+                },
+            },
+            headers={"Retry-After": "300"},
+        )
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -3292,7 +3343,31 @@ def _bearer_token(authorization):
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    maintenance = _mobile_maintenance_mode()
+    checks = {"api": "ok", "database": "ok"}
+    response_status = status.HTTP_200_OK
+    overall_status = "ok"
+    try:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT 1")
+                cursor.fetchone()
+    except Exception:
+        checks["database"] = "error"
+        response_status = status.HTTP_503_SERVICE_UNAVAILABLE
+        overall_status = "degraded"
+    payload = {
+        "status": overall_status,
+        "maintenance": {
+            "web_enabled": _maintenance_mode_active(),
+            "mobile_enabled": maintenance["enabled"],
+            "mobile_message": maintenance["message"],
+        },
+        "checks": checks,
+    }
+    if response_status != status.HTTP_200_OK:
+        return JSONResponse(status_code=response_status, content=payload)
+    return payload
 
 
 @app.get("/")

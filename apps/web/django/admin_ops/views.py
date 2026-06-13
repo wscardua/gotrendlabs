@@ -94,6 +94,7 @@ from apps.web.django.admin_ops.forms import (
     FeedbackRewardForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
+    MobileMaintenanceConfigForm,
     MobileAppReleaseForm,
     QueueReviewForm,
     PushTestDeliveryForm,
@@ -1118,6 +1119,14 @@ def config(request):
         },
         prefix="maintenance",
     )
+    mobile_maintenance_form = MobileMaintenanceConfigForm(
+        request.POST or None,
+        initial={
+            "mobile_maintenance_enabled": platform_config.get("mobile_maintenance_enabled", False),
+            "mobile_maintenance_message": platform_config.get("mobile_maintenance_message", ""),
+        },
+        prefix="mobile_maintenance",
+    )
     email_form = SiteEmailConfigForm(
         request.POST or None,
         initial={
@@ -1180,6 +1189,7 @@ def config(request):
     if (
         request.method == "POST"
         and maintenance_form.is_valid()
+        and mobile_maintenance_form.is_valid()
         and email_form.is_valid()
         and economy_form.is_valid()
         and daemon_form.is_valid()
@@ -1191,6 +1201,9 @@ def config(request):
                 "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
                 "maintenance_message": maintenance_form.cleaned_data["maintenance_message"],
                 "updated_by": _admin_session_user_label(request),
+                "mobile_maintenance_enabled": mobile_maintenance_form.cleaned_data["mobile_maintenance_enabled"],
+                "mobile_maintenance_message": mobile_maintenance_form.cleaned_data["mobile_maintenance_message"],
+                "mobile_updated_by": _admin_session_user_label(request),
             }
         )
         for field, value in email_form.cleaned_data.items():
@@ -1218,6 +1231,7 @@ def config(request):
         "admin_ops/config.html",
         {
             "maintenance_form": maintenance_form,
+            "mobile_maintenance_form": mobile_maintenance_form,
             "email_form": email_form,
             "economy_form": economy_form,
             "daemon_form": daemon_form,

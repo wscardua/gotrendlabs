@@ -15,6 +15,10 @@
           <strong>{% if platform_config.maintenance_enabled %}Ativa{% else %}Inativa{% endif %}</strong>
         </div>
         <div>
+          <span>Mobile</span>
+          <strong>{% if platform_config.mobile_maintenance_enabled %}Manutenção{% else %}Liberado{% endif %}</strong>
+        </div>
+        <div>
           <span>Email</span>
           <strong>{% if site_config.is_ready_for_delivery and email_secret_configured %}Pronto{% elif site_config.email_enabled %}Pendente{% else %}Inativo{% endif %}</strong>
         </div>
@@ -53,6 +57,7 @@
       {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
     {% endif %}
     {% if maintenance_form.non_field_errors %}<div class="notice red">{{ maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if mobile_maintenance_form.non_field_errors %}<div class="notice red">{{ mobile_maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if economy_form.non_field_errors %}<div class="notice red">{{ economy_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if daemon_form.non_field_errors %}<div class="notice red">{{ daemon_form.non_field_errors|join:", " }}</div>{% endif %}
@@ -66,7 +71,7 @@
           <div>
             <span class="eyebrow">Disponibilidade</span>
             <h2>Modo manutenção</h2>
-            <p>Este estado fica fora do banco para continuar funcionando durante janelas de manutenção.</p>
+            <p>Este estado fica fora do banco para continuar funcionando durante janelas de manutenção web.</p>
           </div>
           <span class="config-status {% if platform_config.maintenance_enabled %}is-on{% endif %}">
             {% if platform_config.maintenance_enabled %}Ativo{% else %}Inativo{% endif %}
@@ -90,6 +95,39 @@
             <strong>{{ platform_config.updated_at|default:"Ainda não registrada" }}</strong>
             <span>Operador</span>
             <strong>{{ platform_config.updated_by|default:"-" }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Disponibilidade mobile</span>
+            <h2>Manutenção do app</h2>
+            <p>Controle independente do modo web. O shell público do app fica bloqueado para todos os usuários mobile.</p>
+          </div>
+          <span class="config-status {% if platform_config.mobile_maintenance_enabled %}is-on{% endif %}">
+            {% if platform_config.mobile_maintenance_enabled %}Ativo{% else %}Inativo{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <label class="config-switch-row">
+            {{ mobile_maintenance_form.mobile_maintenance_enabled }}
+            <span>
+              <strong>Desviar app mobile público</strong>
+              <small>O app consulta a saúde da API ao abrir; em manutenção, todos permanecem na tela de manutenção.</small>
+            </span>
+          </label>
+          <label class="field full">
+            <span>Mensagem mobile</span>
+            {{ mobile_maintenance_form.mobile_maintenance_message }}
+            {% if mobile_maintenance_form.mobile_maintenance_message.errors %}<small>{{ mobile_maintenance_form.mobile_maintenance_message.errors|join:", " }}</small>{% endif %}
+          </label>
+          <div class="config-meta">
+            <span>Última alteração</span>
+            <strong>{{ platform_config.mobile_updated_at|default:"Ainda não registrada" }}</strong>
+            <span>Operador</span>
+            <strong>{{ platform_config.mobile_updated_by|default:"-" }}</strong>
           </div>
         </div>
       </section>

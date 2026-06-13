@@ -53,6 +53,9 @@ class AuthController extends Notifier<AuthState> {
     final api = ref.read(apiClientProvider);
     final repo = ref.read(authRepositoryProvider);
     final storedToken = await api.readStoredToken();
+    if (!ref.mounted) {
+      return;
+    }
     if (storedToken == null || storedToken.isEmpty) {
       state = const AuthState();
       return;
@@ -60,10 +63,16 @@ class AuthController extends Notifier<AuthState> {
     final biometricEnabled = await ref
         .read(biometricPreferenceStoreProvider)
         .readEnabled();
+    if (!ref.mounted) {
+      return;
+    }
     if (forceLocalAuth || biometricEnabled) {
       final supported = await ref
           .read(biometricAuthenticatorProvider)
           .isSupported();
+      if (!ref.mounted) {
+        return;
+      }
       if (!supported) {
         state = state.copyWith(
           busy: false,
@@ -76,17 +85,32 @@ class AuthController extends Notifier<AuthState> {
       final unlocked = await _authenticateLocalDevice(
         'Desbloqueie sua sessão GoTrendLabs com biometria ou senha do aparelho.',
       );
+      if (!ref.mounted) {
+        return;
+      }
       if (!unlocked) {
         state = const AuthState(sessionLocked: true);
         return;
       }
     }
+    final currentStoredToken = await api.readStoredToken();
+    if (!ref.mounted ||
+        (!forceLocalAuth && state.busy) ||
+        currentStoredToken != storedToken) {
+      return;
+    }
     api.activateToken(storedToken);
     try {
       final user = await repo.session();
+      if (!ref.mounted || (!forceLocalAuth && state.busy)) {
+        return;
+      }
       state = AuthState(user: user);
       await ref.read(pushControllerProvider.notifier).syncAfterAuth();
     } catch (_) {
+      if (!ref.mounted) {
+        return;
+      }
       await api.clearToken();
       await ref.read(biometricPreferenceStoreProvider).writeEnabled(false);
       ref.invalidate(biometricPreferenceProvider);

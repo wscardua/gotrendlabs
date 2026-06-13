@@ -43,6 +43,36 @@ Para o emulador renderizar imagens em `/media/...`, o Django local precisa escut
 
 No iOS Simulator, `127.0.0.1` aponta para o Mac host, portanto o app pode usar os mesmos hosts locais de Django/FastAPI usados pelo navegador durante smoke tests.
 
+## Saude e manutencao mobile
+
+Endpoint esperado:
+
+- `GET /health`
+
+Uso no mobile:
+
+- checagem de boot antes de liberar o shell publico
+- diagnostico seguro na tela `Sobre`
+- fallback para tela de manutencao quando a API nao responder
+
+Campos esperados sem quebrar compatibilidade:
+
+- `status`: continua retornando `ok` quando a API esta saudavel
+- `maintenance.web_enabled`
+- `maintenance.mobile_enabled`
+- `maintenance.mobile_message`
+- `checks.api`
+- `checks.database`
+
+Requisitos mobile:
+
+- toda chamada do app envia `X-GoTrendLabs-Client: mobile`
+- quando `maintenance.mobile_enabled=true`, o app mostra tela de manutencao antes do shell publico
+- falha de rede, timeout ou status degradado tambem mostram a tela de manutencao
+- durante manutencao mobile, o shell mobile permanece bloqueado para todos os usuarios do app
+- a manutencao mobile e mais restritiva que a web: nao ha excecao por papel dentro do app
+- FastAPI e a autoridade do bloqueio e pode retornar `503` com `code=mobile_maintenance` para chamadas mobile nao isentas
+
 ## Contratos de leitura publica
 
 ### Feed de mercados
@@ -189,6 +219,7 @@ Decisao v1 para a implementacao autenticada:
 - restaurar sessao por `GET /auth/session`
 - encerrar sessao por `POST /auth/logout`
 - usar a expiracao existente em `AuthResponse.session.expires_at`
+- manter o gate mobile de manutencao baseado em `GET /health` e no bloqueio autoritativo da FastAPI, sem excecao por papel no app
 - deixar refresh token, renovacao automatica e revogacao avancada para etapa futura
 - biometria no app e apenas desbloqueio local de sessao lembrada: nao cria endpoint, nao muda OpenAPI, nao envia dado biometrico ao backend e nao substitui validacao de sessao por `GET /auth/session`
 - ao restaurar sessao protegida, o app deve ativar o Bearer token em memoria apenas apos sucesso da autenticacao local do aparelho; cancelamento deve deixar o usuario em estado `Sessao protegida`

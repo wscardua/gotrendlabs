@@ -52,6 +52,7 @@ Specs principais:
 - feed, browse, busca e detalhe de mercado via `GET /markets` e `GET /markets/{slug}`, com abertura do detalhe incrementando `view_count` pelo mesmo endpoint de tracking usado pelo web
 - auth Bearer simples via `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout`, com `Lembrar login` ligado por padrao; token persistido em secure storage quando ligado e mantido apenas em memoria quando desligado
 - protecao local para sessao lembrada: quando `Lembrar login` esta ligado e o aparelho suporta autenticacao local, login e cadastro oferecem biometria ligada por padrao; a tela de entrada mostra `Entrar com biometria` quando ha sessao lembrada protegida; na reabertura, o app exige biometria ou senha do aparelho antes de ativar o Bearer token persistido; cancelamento deixa a sessao em estado protegido, sem chamar API autenticada nem apagar o token
+- gate de manutencao mobile via `GET /health`: falha de backend, status degradado ou `maintenance.mobile_enabled=true` mostram uma tela dark-first de manutencao; o shell mobile permanece bloqueado enquanto a janela estiver ativa
 - favoritos, curtidas, comentarios, compartilhamento, preview e criacao de previsao usando apenas FastAPI; compartilhar pelo app incrementa `share_count` antes de acionar o share nativo
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
 - `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
@@ -71,6 +72,8 @@ Guardrail: o mobile sera cliente da FastAPI. Ele podera manter estado de UI, ses
 Biometria guardrail: biometria/Face ID/Touch ID/fingerprint e senha local do aparelho protegem apenas a sessao lembrada neste dispositivo. O app nao armazena senha da conta, nao envia dado biometrico ao backend e continua validando a sessao restaurada em `/auth/session`.
 
 Push guardrail: o app so registra token de push depois de autenticado e apenas quando houver provider real. Logout normal nao revoga push; revogacao e preferencias sao acoes explicitas via FastAPI. Payloads de push devem conter apenas IDs/rota/evento e sempre buscar o estado real na API ao abrir.
+
+Manutencao guardrail: o app sempre envia `X-GoTrendLabs-Client: mobile`; a FastAPI aplica o bloqueio de manutencao mobile de forma autoritativa e o Admin Ops controla esse modo separadamente da manutencao web. Nao ha entrada operacional visivel nem excecao por papel no app mobile.
 
 ## Validacao local
 
