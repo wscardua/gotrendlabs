@@ -7,6 +7,7 @@
 - O app Flutter envia `X-GoTrendLabs-Client: mobile`, checa `/health` no boot e mostra tela dark-first de manutencao quando a API falha, fica degradada ou o modo mobile esta ativo.
 - Durante manutencao mobile, FastAPI bloqueia chamadas mobile nao isentas com `503`/`code=mobile_maintenance`; nao ha excecao por staff ou superuser no app.
 - `AuthResponse` e `/auth/session` permanecem sem expor `is_superuser` no contrato publico; o gate mobile usa `GET /health` e a regra autoritativa da API.
+- APK Android beta `1.0.5 (6)` publicada em produção no canal direto, com `/app/android/latest.json` apontando para o arquivo ativo e SHA-256 `c061681f2495759cca2d2eaf38282541d4a82fd1309fefb4037f9f4ac0b2109b`.
 
 ## 2026-06-13 — FEAT-MOBILE-001 autenticação biométrica local
 
