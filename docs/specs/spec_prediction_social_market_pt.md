@@ -1274,7 +1274,7 @@ Descrição dos campos:
 - `description`: descrição curta do significado da badge.
 - `badge_type`: tipo da badge, como global, por categoria ou performance.
 - `category`: categoria associada quando a badge for temática.
-- `is_active`: indica se a badge está ativa para concessão e exibição.
+- `is_active`: indica se a badge e suas conquistas históricas podem aparecer publicamente.
 - `created_at`: data de criação da badge.
 - `updated_at`: data da última atualização da definição.
 
@@ -1324,7 +1324,7 @@ Descrição dos campos:
 - `threshold_value`: valor principal usado na condição.
 - `min_predictions`: volume mínimo exigido, quando necessário.
 - `category`: categoria vinculada à regra, quando aplicável.
-- `is_active`: indica se a regra está em vigor.
+- `is_active`: indica se a regra está em vigor para novas concessões.
 
 ---
 

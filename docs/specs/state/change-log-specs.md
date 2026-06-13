@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- registrada evolução de `FEAT-REP-001` para tratar badges conquistadas como propriedade histórica: `BadgeDefinition.is_active` controla exibição pública/histórica e `BadgeRule.is_active` controla novas concessões.
+- atualizado contrato de reputação/ranking para manter badges pausadas visíveis no catálogo público/autenticado para todos, sem novas concessões, e preservar ranking e compartilhamento público por token para quem já conquistou.
 - registrada evolucao de `FEAT-MOBILE-001` para manutencao mobile independente da web, controlada pelo Admin Ops em runtime JSON e aplicada de forma autoritativa pela FastAPI para clientes com `X-GoTrendLabs-Client: mobile`.
 - atualizado contrato mobile de `GET /health` para expor `maintenance.web_enabled`, `maintenance.mobile_enabled`, `maintenance.mobile_message`, `checks.api` e `checks.database`, com status degradado quando o backend nao estiver saudavel.
 - registrado que a manutencao mobile nao possui entrada operacional visivel nem excecao por papel no app; usuarios publicos, staff e superusers permanecem bloqueados no shell mobile durante a janela.

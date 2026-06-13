@@ -94,11 +94,12 @@
           </select>
           {% if form.event.errors %}<small>{{ form.event.errors|join:", " }}</small>{% endif %}
         </div>
-        <label class="toggle-row full">{{ form.is_active }} <span>Badge ativa para exibição e concessão</span></label>
+        <label class="toggle-row full">{{ form.is_active }} <span>Exibir badge e conquistas históricas</span></label>
+        <label class="toggle-row full">{{ form.rule_active }} <span>Conceder para novas conquistas</span></label>
         <div class="actions full">
           <button class="btn primary" type="submit" name="action" value="save">Salvar badge</button>
-          {% if mode != "new" and badge.is_active %}
-            <button class="btn danger" type="submit" name="action" value="deactivate">Desativar</button>
+          {% if mode != "new" and badge.is_active and badge.rule_active %}
+            <button class="btn danger" type="submit" name="action" value="deactivate">Pausar novas concessões</button>
           {% endif %}
         </div>
       </form>
@@ -123,7 +124,7 @@
           <strong data-preview-badge-name>{{ form.name.value|default:"Nome da badge" }}</strong>
           <span data-preview-badge-description>{{ form.description.value|default:"Descrição curta da conquista aparece aqui." }}</span>
           <small data-preview-badge-rule>{{ form.rule_description.value|default:"Descrição da regra aparece aqui." }}</small>
-          <span class="badge-status" data-preview-badge-status>{% if form.is_active.value %}Ativa para concessão{% else %}Inativa{% endif %}</span>
+          <span class="badge-status" data-preview-badge-status>{% if not form.is_active.value %}Oculta{% elif form.rule_active.value %}Ativa para concessão{% else %}Concessão pausada{% endif %}</span>
         </div>
       </article>
       <div class="ticket-note">A prévia usa o mesmo card da área pública. Imagens locais aparecem antes de salvar.</div>

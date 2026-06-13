@@ -2485,6 +2485,8 @@ class BackendAuthAPITests(TransactionTestCase):
                 image_dark_url=f"/media/badge_images/ranking-active-{index}-dark.png",
                 is_active=True,
             )
+            if index == 4:
+                BadgeRule.objects.create(badge=badge, rule_type="comments_count", threshold_value=1, is_active=False)
             UserBadgeAward.objects.create(user=user, badge=badge, awarded_at=base_time + timedelta(minutes=index), reason_snapshot="ranking:test")
         inactive_badge = BadgeDefinition.objects.create(
             code="ranking_inactive",
@@ -3184,7 +3186,67 @@ class BackendAuthAPITests(TransactionTestCase):
 
         deactivated = client.post("/admin/badges/one-comment/deactivate", headers=staff_headers, json={"note": "pausar"})
         self.assertEqual(deactivated.status_code, 200)
-        self.assertFalse(deactivated.json()["is_active"])
+        self.assertTrue(deactivated.json()["is_active"])
+        self.assertFalse(deactivated.json()["rule_active"])
+
+        public_after_pause = client.get("/badges")
+        self.assertEqual(public_after_pause.status_code, 200)
+        public_paused = next(badge for badge in public_after_pause.json()["badges"] if badge["code"] == "one-comment")
+        self.assertEqual(public_paused["status"], "locked")
+        self.assertFalse(public_paused["rule_active"])
+
+        personal_without_award = client.get("/users/me/badges", headers=user_headers)
+        self.assertEqual(personal_without_award.status_code, 200)
+        paused_without_award = next(badge for badge in personal_without_award.json() if badge["code"] == "one-comment")
+        self.assertEqual(paused_without_award["status"], "locked")
+        self.assertFalse(paused_without_award["rule_active"])
+
+        awarded_user = get_user_model().objects.get(email="badge-user@example.com")
+        paused_badge = BadgeDefinition.objects.get(code="one-comment")
+        UserBadgeAward.objects.create(user=awarded_user, badge=paused_badge, awarded_at=timezone.now(), reason_snapshot="Histórico preservado.")
+
+        personal_with_award = client.get("/users/me/badges", headers=user_headers)
+        self.assertEqual(personal_with_award.status_code, 200)
+        paused_award = next(badge for badge in personal_with_award.json() if badge["code"] == "one-comment")
+        self.assertEqual(paused_award["status"], "earned")
+        self.assertFalse(paused_award["rule_active"])
+
+        legacy_update_without_rule_state = client.patch(
+            "/admin/badges/one-comment",
+            headers=staff_headers,
+            json={
+                "name": "Comentador legado",
+                "description": "Comentou em um mercado.",
+                "rule_description": "Publique pelo menos 1 comentário visível.",
+                "badge_type": "engagement",
+                "image_url": "",
+                "image_dark_url": "",
+                "is_active": True,
+                "rule_type": "comments_count",
+                "threshold_value": 1,
+            },
+        )
+        self.assertEqual(legacy_update_without_rule_state.status_code, 200)
+        self.assertFalse(legacy_update_without_rule_state.json()["rule_active"])
+
+        explicit_reactivation = client.patch(
+            "/admin/badges/one-comment",
+            headers=staff_headers,
+            json={
+                "name": "Comentador reativado",
+                "description": "Comentou em um mercado.",
+                "rule_description": "Publique pelo menos 1 comentário visível.",
+                "badge_type": "engagement",
+                "image_url": "",
+                "image_dark_url": "",
+                "is_active": True,
+                "rule_active": True,
+                "rule_type": "comments_count",
+                "threshold_value": 1,
+            },
+        )
+        self.assertEqual(explicit_reactivation.status_code, 200)
+        self.assertTrue(explicit_reactivation.json()["rule_active"])
 
     def test_badge_awards_are_idempotent_for_automatic_rules(self):
         client = TestClient(app)
@@ -3229,6 +3291,23 @@ class BackendAuthAPITests(TransactionTestCase):
                     VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', 'Geral', true, now(), now())
                     """,
                     (event_badge_id,),
+                )
+                cursor.execute(
+                    """
+                    INSERT INTO gotrendlabs_badge_definitions
+                        (code, name, description, rule_description, badge_type, image_url, image_dark_url, is_active, created_at, updated_at)
+                    VALUES ('auto-comment-paused', 'Comentou Pausada', 'Fez um comentário para regra pausada.', 'Regra pausada nao concede.', 'engagement', '', '', true, now(), now())
+                    RETURNING id
+                    """
+                )
+                paused_badge_id = cursor.fetchone()["id"]
+                cursor.execute(
+                    """
+                    INSERT INTO gotrendlabs_badge_rules
+                        (badge_id, rule_type, threshold_value, category, subcategory, is_active, created_at, updated_at)
+                    VALUES (%s, 'comments_count', 1, 'IA', 'Modelos', false, now(), now())
+                    """,
+                    (paused_badge_id,),
                 )
                 cursor.execute(
                     """
@@ -3280,6 +3359,17 @@ class BackendAuthAPITests(TransactionTestCase):
                 awarded_by_code = {row["code"]: row["total"] for row in cursor.fetchall()}
                 self.assertEqual(awarded_by_code["auto-comment-event"], 1)
                 self.assertEqual(awarded_by_code["auto-comment-wrong-event"], 0)
+                cursor.execute(
+                    """
+                    SELECT COUNT(*) AS total
+                    FROM gotrendlabs_user_badge_awards a
+                    JOIN gotrendlabs_users u ON u.id = a.user_id
+                    JOIN gotrendlabs_badge_definitions b ON b.id = a.badge_id
+                    WHERE u.email = 'badge-auto@example.com'
+                      AND b.code = 'auto-comment-paused'
+                    """
+                )
+                self.assertEqual(cursor.fetchone()["total"], 0)
 
     def test_rankings_filter_category_subcategory_recalculates_theme(self):
         client = TestClient(app)
@@ -6311,11 +6401,26 @@ class WebSmokeTests(TransactionTestCase):
                 "image_dark_url": "/media/badge_images/founding-dark.png",
                 "status": "earned",
                 "earned_at": "2026-05-19T00:00:00+00:00",
+                "rule_active": True,
+            },
+            {
+                "code": "one_comment",
+                "name": "Um comentário",
+                "description": "Comentou em um mercado.",
+                "rule_description": "Concessão temporariamente pausada.",
+                "badge_type": "engagement",
+                "image_url": "",
+                "image_dark_url": "",
+                "status": "locked",
+                "earned_at": None,
+                "rule_active": False,
             }
         ]
         with patch("apps.web.django.core.views.get_badge_catalog", return_value=badges) as catalog_mock:
             response = self.client.get(reverse("badges"))
             self.assertContains(response, "Membro fundador")
+            self.assertContains(response, "Um comentário")
+            self.assertContains(response, "Concessão pausada")
             self.assertContains(response, "Entrar para ver progresso")
             self.assertContains(response, "/media/badge_images/founding.png")
             self.assertContains(response, "/media/badge_images/founding-dark.png")
@@ -6425,6 +6530,7 @@ class WebSmokeTests(TransactionTestCase):
             rule_description="Criar conta na fase inicial.",
             image_url="/media/badge_images/founding_member.png",
         )
+        BadgeRule.objects.create(badge=badge, rule_type="founding_member", threshold_value=1, is_active=False)
         UserBadgeAward.objects.create(user=user, badge=badge, awarded_at=timezone.now(), reason_snapshot="Criar conta.")
         token = public_badge_share_token(user.id, "public_founder")
 
@@ -6443,6 +6549,12 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "image/png")
         self.assertGreater(len(response.content), 1000)
+
+        badge.is_active = False
+        badge.save(update_fields=["is_active", "updated_at"])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse("login"), response["Location"])
 
     def test_market_and_result_share_pages_expose_social_cards(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -8640,6 +8752,68 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "disabled", html=False)
             self.assertNotContains(response, "Salvar alterações")
             self.assertNotContains(response, "Cancelar mercado")
+
+    def test_admin_badge_form_sends_unchecked_rule_active_false(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "staffuser",
+            "email": "staff-user@example.com",
+            "display_name": "Staff User",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+
+        badge = {
+            "code": "founding-member",
+            "name": "Membro fundador",
+            "description": "Entrou cedo.",
+            "rule_description": "Criar conta.",
+            "badge_type": "global",
+            "image_url": "/media/badge_images/founding.png",
+            "image_dark_url": "",
+            "is_active": True,
+            "rule_type": "founding_member",
+            "threshold_value": 1,
+            "category": "",
+            "subcategory": "",
+            "event": "",
+            "rule_active": True,
+            "awards_count": 3,
+        }
+        payload = {
+            "action": "save",
+            "code": "founding-member",
+            "name": "Membro fundador",
+            "description": "Entrou cedo.",
+            "rule_description": "Criar conta.",
+            "badge_type": "global",
+            "image_url": "/media/badge_images/founding.png",
+            "image_dark_url": "",
+            "is_active": "on",
+            "rule_type": "founding_member",
+            "threshold_value": "1",
+            "category": "",
+            "subcategory": "",
+            "event": "",
+        }
+
+        with (
+            patch("apps.web.django.admin_ops.views.admin_get_badges", return_value={"badges": [badge]}),
+            patch("apps.web.django.admin_ops.views.admin_get_taxonomy", return_value={"categories": []}),
+            patch("apps.web.django.admin_ops.views.admin_update_badge", return_value={**badge, "rule_active": False}) as update_badge,
+        ):
+            response = self.client.post(reverse("admin-ops-badge-edit", args=["founding-member"]), payload)
+
+        self.assertRedirects(response, reverse("admin-ops-badge-edit", args=["founding-member"]), fetch_redirect_response=False)
+        update_badge.assert_called_once()
+        self.assertEqual(update_badge.call_args.args[0], "staff-token")
+        self.assertEqual(update_badge.call_args.args[1], "founding-member")
+        sent_payload = update_badge.call_args.args[2]
+        self.assertTrue(sent_payload["is_active"])
+        self.assertFalse(sent_payload["rule_active"])
 
     def test_admin_list_pages_use_load_more_blocks_of_ten(self):
         session = self.client.session

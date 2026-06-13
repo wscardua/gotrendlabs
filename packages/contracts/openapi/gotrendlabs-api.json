@@ -496,6 +496,17 @@
             "title": "Name",
             "type": "string"
           },
+          "rule_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rule Active"
+          },
           "rule_description": {
             "default": "",
             "maxLength": 255,
@@ -2039,6 +2050,11 @@
             "default": "",
             "title": "Reason Snapshot",
             "type": "string"
+          },
+          "rule_active": {
+            "default": true,
+            "title": "Rule Active",
+            "type": "boolean"
           },
           "rule_description": {
             "default": "",

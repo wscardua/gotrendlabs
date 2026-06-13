@@ -583,6 +583,7 @@ def _badge_response(row):
         "badge_type": row["badge_type"] or "global",
         "image_url": row["image_url"] or "",
         "image_dark_url": row["image_dark_url"] or "",
+        "rule_active": bool(row["rule_active"]),
         "status": "earned" if row["awarded_at"] else "locked",
         "earned_at": row["awarded_at"].isoformat() if row["awarded_at"] else None,
         "reason_snapshot": row["reason_snapshot"] or "",
@@ -606,16 +607,20 @@ def _badge_rows(cursor, user_id=None, include_inactive=False):
     cursor.execute(
         f"""
         SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
+               r.is_active AS rule_active,
                {award_select}
         FROM gotrendlabs_badge_definitions b
+        JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
         {award_join}
         {active_sql}
         ORDER BY (CASE WHEN a.awarded_at IS NULL THEN 1 ELSE 0 END) ASC, a.awarded_at ASC NULLS LAST, b.name ASC, b.code ASC
         """ if user_id else
         f"""
         SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
+               r.is_active AS rule_active,
                {award_select}
         FROM gotrendlabs_badge_definitions b
+        JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
         {active_sql}
         ORDER BY b.name ASC, b.code ASC
         """,
@@ -5839,7 +5844,7 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
                 """
                 INSERT INTO gotrendlabs_badge_rules
                     (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, true, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     badge_id,
@@ -5848,6 +5853,7 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
                     payload.category.strip(),
                     payload.subcategory.strip(),
                     payload.event.strip(),
+                    True if payload.rule_active is None else payload.rule_active,
                     now,
                     now,
                 ),
@@ -5863,7 +5869,15 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
             staff = _current_staff_user(cursor, authorization)
             badge_type, rule_type = _validate_badge_payload(payload)
             _validate_badge_taxonomy(cursor, payload)
-            cursor.execute("SELECT id FROM gotrendlabs_badge_definitions WHERE code = %s", (code,))
+            cursor.execute(
+                """
+                SELECT b.id, r.is_active AS rule_active
+                FROM gotrendlabs_badge_definitions b
+                JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
+                WHERE b.code = %s
+                """,
+                (code,),
+            )
             badge = cursor.fetchone()
             if not badge:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
@@ -5901,7 +5915,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
                     category = %s,
                     subcategory = %s,
                     event = %s,
-                    is_active = true,
+                    is_active = %s,
                     updated_at = %s
                 WHERE badge_id = %s
                 """,
@@ -5911,6 +5925,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
                     payload.category.strip(),
                     payload.subcategory.strip(),
                     payload.event.strip(),
+                    badge["rule_active"] if payload.rule_active is None else payload.rule_active,
                     now,
                     badge["id"],
                 ),
@@ -5929,9 +5944,8 @@ def admin_deactivate_badge(code: str, payload: AdminMarketActionPayload, authori
             if not badge:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
             now = datetime.now(timezone.utc)
-            cursor.execute("UPDATE gotrendlabs_badge_definitions SET is_active = false, updated_at = %s WHERE id = %s", (now, badge["id"]))
             cursor.execute("UPDATE gotrendlabs_badge_rules SET is_active = false, updated_at = %s WHERE badge_id = %s", (now, badge["id"]))
-            _record_admin_event(cursor, staff["id"], "badge.deactivate", "badge", code, payload.note)
+            _record_admin_event(cursor, staff["id"], "badge.concession.pause", "badge", code, payload.note)
             return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
 
 

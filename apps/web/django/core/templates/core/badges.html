@@ -31,6 +31,8 @@
                 <span class="badge-status earned">Conquistada</span>
                 {% if not is_guest %}<a class="badge-share-link" href="{% url 'share-badge' badge.code %}">Compartilhar</a>{% endif %}
               </div>
+            {% elif badge.rule_active == False %}
+              <span class="badge-status">Concessão pausada</span>
             {% elif is_guest %}
               <span class="badge-status">Para conquistar</span>
             {% else %}

@@ -54,6 +54,8 @@
                 <span class="badge-status earned">Conquistada</span>
                 <a class="badge-share-link" href="{% url 'share-badge' badge.code %}">Compartilhar</a>
               </div>
+            {% elif badge.rule_active == False %}
+              <span class="badge-status">Concessão pausada</span>
             {% else %}
               <span class="badge-status">Bloqueada</span>
             {% endif %}
