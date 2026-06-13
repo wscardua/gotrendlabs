@@ -7,7 +7,7 @@
 - Login sheet passou a oferecer `Proteger sessão com biometria` ligada por padrão no login e cadastro quando o aparelho suporta autenticação local; quando há sessão lembrada protegida, a tela de entrada mostra `Entrar com biometria`; Perfil ganhou o controle `Proteção local` para ativar/desativar a preferência neste dispositivo.
 - Android passou a declarar `USE_BIOMETRIC`, usar `FlutterFragmentActivity`, `minSdk >= 24` e tema AppCompat para o diálogo biométrico; iOS ganhou `NSFaceIDUsageDescription`.
 - A mudança não cria endpoint, não altera OpenAPI e não envia dados biométricos ao backend; `/auth/session` continua validando a sessão restaurada.
-- Versão mobile desta fatia definida como `1.0.4+5` para publicação Android beta após merge.
+- APK Android beta `1.0.4 (5)` publicada em produção no canal direto, com `/app/android/latest.json` apontando para o arquivo ativo e SHA-256 `43f8c1184ce7c913070d9bc2c09344a70f2ed8f4c14a12749d8e688d831bc81c`.
 
 ## 2026-06-12 — FEAT-NOTIFY-001 / FEAT-MOBILE-001 push FCM real Android
 
