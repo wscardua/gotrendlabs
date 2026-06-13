@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-13 — FEAT-MOBILE-001 manutenção mobile independente
+
+- Admin Ops Config ganhou controle separado de `Manutenção do app`, salvo no runtime JSON com mensagem propria, sem acoplar ao modo manutencao web.
+- FastAPI passou a enriquecer `GET /health` com `maintenance.mobile_enabled`, `maintenance.mobile_message`, `checks.api` e `checks.database`, mantendo `status: ok` quando saudavel e retornando degradado quando o banco falha.
+- O app Flutter envia `X-GoTrendLabs-Client: mobile`, checa `/health` no boot e mostra tela dark-first de manutencao quando a API falha, fica degradada ou o modo mobile esta ativo.
+- Durante manutencao mobile, FastAPI bloqueia chamadas mobile nao isentas com `503`/`code=mobile_maintenance`; nao ha excecao por staff ou superuser no app.
+- `AuthResponse` e `/auth/session` permanecem sem expor `is_superuser` no contrato publico; o gate mobile usa `GET /health` e a regra autoritativa da API.
+
 ## 2026-06-13 — FEAT-MOBILE-001 autenticação biométrica local
 
 - App mobile ganhou proteção local para sessões lembradas: com `Lembrar login` ligado e suporte do aparelho, a biometria vem ligada por padrão no login e a reabertura exige biometria ou senha do aparelho antes de ativar o Bearer token persistido.

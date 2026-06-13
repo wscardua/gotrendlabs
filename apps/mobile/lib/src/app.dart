@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'features/markets/market_detail_screen.dart';
+import 'features/maintenance/maintenance_gate.dart';
 import 'features/profile/badges_screen.dart';
 import 'features/shell/shell_screen.dart';
 import 'features/wallet/wallet_screen.dart';
@@ -91,6 +92,8 @@ class _GoTrendLabsAppState extends ConsumerState<GoTrendLabsApp> {
       debugShowCheckedModeBanner: false,
       theme: buildGoTrendLabsTheme(),
       routerConfig: _router,
+      builder: (context, child) =>
+          MaintenanceGate(child: child ?? const SizedBox.shrink()),
     );
   }
 }

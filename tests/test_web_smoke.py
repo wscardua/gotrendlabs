@@ -42,7 +42,7 @@ from apps.api.backend_api.main import app
 from apps.api.backend_api.main import _ensure_user_core
 from apps.api.backend_api.main import _record_wallet_entry
 from apps.api.backend_api.main import _clear_rate_limits
-from apps.api.backend_api.security import hash_token, issue_token
+from apps.api.backend_api.security import hash_token, issue_token, make_password
 from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError
 from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
@@ -311,6 +311,141 @@ class SecurityHardeningTests(TransactionTestCase):
         self.assertIn("X-Content-Type-Options nosniff", caddyfile)
         self.assertIn("Content-Security-Policy", caddyfile)
         self.assertIn("default-src 'none'", caddyfile)
+
+
+class MobileMaintenanceGateTests(TransactionTestCase):
+    def _runtime_path(self):
+        return Path(self._tmp.name) / "platform_config.json"
+
+    def setUp(self):
+        super().setUp()
+        self._tmp = TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.env_patch = patch.dict(os.environ, {"GOTRENDLABS_RUNTIME_CONFIG_PATH": str(self._runtime_path())})
+        self.env_patch.start()
+        self.addCleanup(self.env_patch.stop)
+        self.client_api = TestClient(app)
+
+    def _user(self, email, *, is_staff=False, is_superuser=False):
+        User = get_user_model()
+        return User.objects.create(
+            username=email,
+            email=email,
+            first_name=email.split("@", 1)[0],
+            password=make_password("testpass123"),
+            is_staff=is_staff or is_superuser,
+            is_superuser=is_superuser,
+            is_active=True,
+            account_status="active",
+            email_confirmed_at=timezone.now(),
+        )
+
+    def _token_for(self, user):
+        token = issue_token()
+        AuthSession.objects.create(
+            user=user,
+            token_hash=hash_token(token),
+            last_seen_at=timezone.now(),
+            expires_at=timezone.now() + timedelta(days=1),
+        )
+        return token
+
+    def test_platform_config_defaults_and_mobile_save(self):
+        with override_settings(GOTRENDLABS_RUNTIME_CONFIG_PATH=str(self._runtime_path())):
+            defaults = load_platform_config()
+            self.assertFalse(defaults["mobile_maintenance_enabled"])
+            self.assertIn("app", defaults["mobile_maintenance_message"])
+
+            saved = save_platform_config(
+                {
+                    "mobile_maintenance_enabled": True,
+                    "mobile_maintenance_message": "Janela mobile em andamento.",
+                    "mobile_updated_by": "@ops",
+                }
+            )
+
+            self.assertTrue(saved["mobile_maintenance_enabled"])
+            self.assertEqual(saved["mobile_maintenance_message"], "Janela mobile em andamento.")
+            self.assertEqual(saved["mobile_updated_by"], "@ops")
+            self.assertTrue(saved["mobile_updated_at"])
+
+    def test_health_reports_mobile_maintenance(self):
+        self._runtime_path().write_text(
+            json.dumps(
+                {
+                    "mobile_maintenance_enabled": True,
+                    "mobile_maintenance_message": "App em manutenção.",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.client_api.get("/health")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "ok")
+        self.assertEqual(response.json()["checks"]["api"], "ok")
+        self.assertEqual(response.json()["checks"]["database"], "ok")
+        self.assertTrue(response.json()["maintenance"]["mobile_enabled"])
+        self.assertEqual(response.json()["maintenance"]["mobile_message"], "App em manutenção.")
+
+    def test_health_reports_degraded_when_database_check_fails(self):
+        with patch("apps.api.backend_api.main.get_connection", side_effect=Exception("database unavailable")):
+            response = self.client_api.get("/health")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["status"], "degraded")
+        self.assertEqual(response.json()["checks"]["api"], "ok")
+        self.assertEqual(response.json()["checks"]["database"], "error")
+
+    def test_auth_responses_do_not_expose_superuser_flag(self):
+        user = self._user("root@example.com", is_superuser=True)
+
+        login = self.client_api.post("/auth/login", json={"email": user.email, "password": "testpass123"})
+        token = login.json()["session"]["token"]
+        session = self.client_api.get("/auth/session", headers={"Authorization": f"Bearer {token}"})
+
+        self.assertEqual(login.status_code, 200)
+        self.assertNotIn("is_superuser", login.json()["user"])
+        self.assertEqual(session.status_code, 200)
+        self.assertNotIn("is_superuser", session.json()["user"])
+
+    def test_mobile_maintenance_blocks_public_staff_and_superuser(self):
+        staff = self._user("staff@example.com", is_staff=True)
+        superuser = self._user("super@example.com", is_superuser=True)
+        staff_token = self._token_for(staff)
+        superuser_token = self._token_for(superuser)
+        self._runtime_path().write_text(
+            json.dumps(
+                {
+                    "mobile_maintenance_enabled": True,
+                    "mobile_maintenance_message": "App em manutenção.",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        public_response = self.client_api.get("/markets", headers={"X-GoTrendLabs-Client": "mobile"})
+        staff_response = self.client_api.get(
+            "/markets",
+            headers={
+                "X-GoTrendLabs-Client": "mobile",
+                "Authorization": f"Bearer {staff_token}",
+            },
+        )
+        superuser_response = self.client_api.get(
+            "/markets",
+            headers={
+                "X-GoTrendLabs-Client": "mobile",
+                "Authorization": f"Bearer {superuser_token}",
+            },
+        )
+
+        self.assertEqual(public_response.status_code, 503)
+        self.assertEqual(public_response.json()["code"], "mobile_maintenance")
+        self.assertEqual(staff_response.status_code, 503)
+        self.assertEqual(superuser_response.status_code, 503)
+        self.assertEqual(superuser_response.json()["code"], "mobile_maintenance")
 
 
 class BackendAuthAPITests(TransactionTestCase):

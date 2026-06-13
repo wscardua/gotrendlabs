@@ -50,6 +50,7 @@ void main() {
 
     expect(await store.readToken(), isNull);
     expect(captured.headers['Authorization'], 'Bearer session-token');
+    expect(captured.headers['X-GoTrendLabs-Client'], 'mobile');
   });
 
   test('ApiFailure hides raw validation payloads', () {

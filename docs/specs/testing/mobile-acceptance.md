@@ -64,6 +64,9 @@ Deve passar:
 - app abre no emulador `gotrendlabs_pixel`
 - app nao trava quando a API local esta indisponivel
 - app exibe erro recuperavel quando `http://10.0.2.2:8001` nao responde
+- app consulta `GET /health` ao abrir e mostra tela de manutencao quando a API falha, fica degradada ou retorna `maintenance.mobile_enabled=true`
+- tela de manutencao mobile segue o design dark-first, tem mensagem operacional e `Tentar novamente`, sem entrada operacional visivel
+- em manutencao mobile, usuarios publicos, staff e superusers permanecem bloqueados no shell mobile
 - APK beta de producao usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`; FCM depende de `google-services.json` local no build e backend com provider `fcm`
 
 ## Validacao de distribuicao beta
@@ -121,6 +124,17 @@ Quando houver usuario de teste:
 18. Ativar `Proteger sessao com biometria`, fechar/reabrir o app e validar que a sessao so restaura apos biometria ou senha do aparelho.
 19. Cancelar o desbloqueio local e validar que o app nao chama endpoint autenticado, nao apaga o token persistido e mostra `Sessao protegida` com acoes de desbloquear ou sair deste dispositivo.
 20. Validar que cadastro com protecao local ligada por padrao tambem salva a preferencia e que a tela de entrada mostra `Entrar com biometria` quando houver sessao lembrada protegida.
+
+## Fluxo de manutencao mobile
+
+Deve validar:
+
+- Admin Ops Config salva `Manutenção do app` independentemente do modo manutencao web
+- `/health` retorna `maintenance.mobile_enabled` e `maintenance.mobile_message`
+- app com backend indisponivel mostra a tela de manutencao, sem crash
+- app com manutencao mobile ativa mostra a tela de manutencao antes do shell
+- usuarios publicos, staff e superusers permanecem na tela de manutencao, sem entrada operacional visivel
+- sessao lembrada protegida continua exigindo biometria/senha local apenas quando o backend voltar a um estado saudavel
 
 ## Fluxo de previsao bloqueada
 

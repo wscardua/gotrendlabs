@@ -24,6 +24,22 @@ class MaintenanceConfigForm(forms.Form):
         return message
 
 
+class MobileMaintenanceConfigForm(forms.Form):
+    mobile_maintenance_enabled = forms.BooleanField(label="Modo manutenção mobile ativo", required=False)
+    mobile_maintenance_message = forms.CharField(
+        label="Mensagem mobile",
+        max_length=280,
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def clean_mobile_maintenance_message(self):
+        message = (self.cleaned_data.get("mobile_maintenance_message") or "").strip()
+        if self.cleaned_data.get("mobile_maintenance_enabled") and not message:
+            raise forms.ValidationError("Informe a mensagem exibida no app mobile.")
+        return message
+
+
 class SiteEmailConfigForm(forms.Form):
     email_enabled = forms.BooleanField(label="Envio de email ativo", required=False)
     email_provider = forms.ChoiceField(label="Provedor", choices=SiteConfig.EMAIL_PROVIDER_CHOICES, initial=SiteConfig.EMAIL_PROVIDER_SMTP)

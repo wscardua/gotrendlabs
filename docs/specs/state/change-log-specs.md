@@ -1,5 +1,11 @@
 # Change Log de Specs
 
+## 2026-06-13
+
+- registrada evolucao de `FEAT-MOBILE-001` para manutencao mobile independente da web, controlada pelo Admin Ops em runtime JSON e aplicada de forma autoritativa pela FastAPI para clientes com `X-GoTrendLabs-Client: mobile`.
+- atualizado contrato mobile de `GET /health` para expor `maintenance.web_enabled`, `maintenance.mobile_enabled`, `maintenance.mobile_message`, `checks.api` e `checks.database`, com status degradado quando o backend nao estiver saudavel.
+- registrado que a manutencao mobile nao possui entrada operacional visivel nem excecao por papel no app; usuarios publicos, staff e superusers permanecem bloqueados no shell mobile durante a janela.
+
 ## 2026-06-12
 
 - registrada evolução de `FEAT-NOTIFY-001`/`FEAT-MOBILE-001` para push FCM real em Android com Firebase local, sender backend via Firebase Admin SDK, channel Android `gtl_default`, payloads seguros e defaults operacionais `none`/dry-run preservados.
