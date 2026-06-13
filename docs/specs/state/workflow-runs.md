@@ -8,7 +8,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-REP-001`, `Admin Ops`, `FastAPI public contract`
 - Objetivo: separar exibição pública/histórica de badges da concessão automática, garantindo que badges pausadas continuem no catálogo visível para todos, sem novas concessões, e que conquistas persistidas continuem compartilháveis e presentes no ranking enquanto a badge estiver visível
-- Etapa atual: concluido localmente; aguardando fluxo padrão de PR/publicação
+- Etapa atual: publicado em `main` e validado em produção
 - Artefatos afetados:
   - `apps/api/backend_api/`
   - `apps/web/django/admin_ops/`
@@ -25,9 +25,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-06-13
 - Atualizado em: 2026-06-13
 - Encerrado em: 2026-06-13
-- Retomada: publicar via fluxo padrão GitHub após validação local e aprovação da descrição da PR
+- Retomada: evolução futura pode adicionar filtros administrativos por estado de catálogo/concessão ou ações dedicadas de reexibição, preservando a separação `is_active`/`rule_active`
 - Reversão lógica: voltar `POST /admin/badges/{code}/deactivate` a ocultar definição e regra, remover `rule_active` do payload administrativo e restaurar filtros públicos para exigir badge ativa e regra ativa no catálogo
 - Evidencias de validacao local: testes focados de badges/ranking/compartilhamento e catálogo pausado visível com `.venv/bin/python manage.py test --keepdb tests.test_web_smoke.BackendAuthAPITests.test_badge_catalog_public_personalized_and_admin_contracts tests.test_web_smoke.BackendAuthAPITests.test_badge_awards_are_idempotent_for_automatic_rules tests.test_web_smoke.BackendAuthAPITests.test_rankings_include_recent_active_badges tests.test_web_smoke.WebSmokeTests.test_public_badges_page_renders_for_guest_and_authenticated_user tests.test_web_smoke.WebSmokeTests.test_public_badge_share_link_is_unique_to_awarded_user`; regressao do checkbox Admin Ops com `.venv/bin/python manage.py test --keepdb tests.test_web_smoke.WebSmokeTests.test_admin_badge_form_sends_unchecked_rule_active_false`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test --keepdb tests.test_web_smoke` com 180 testes OK
+- Evidencias de publicacao: PR #78 mergeada em `main` por squash (`65f8d3d6bdbaa414c73e616015347576a21adc7a`); GitHub Actions `GoTrendLabs CI and Deploy` run `27478757690` concluiu com jobs `test` e `deploy` em sucesso; smoke PRD confirmou `https://gotrendlabs.com.br/`, `/badges/`, `/api/health` e `/api/badges` com HTTP 200, `health.status=ok`, `checks.api=ok`, `checks.database=ok` e payload público de badges contendo `rule_active`.
 
 ## WFLOW-20260613-MOBILE-MAINTENANCE-GATE-001
 
