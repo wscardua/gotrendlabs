@@ -201,16 +201,17 @@ class _PushHealthSection extends StatelessWidget {
     );
     final isAvailable = snapshot?.isAvailable == true;
     final isLoading = pushStatus.isLoading && !pushStatus.hasValue;
+    final reason = snapshot?.reason ?? 'unknown';
     final label = isLoading
         ? 'Verificando'
         : isAvailable
         ? 'Token local'
-        : 'Não configurado';
+        : _pushUnavailableLabel(reason);
     final detail = isLoading
         ? 'Consultando o estado local de push.'
         : isAvailable
         ? 'Token local disponível para QA em ${snapshot!.platform}.'
-        : _pushUnavailableMessage(snapshot?.reason ?? 'unknown');
+        : _pushUnavailableMessage(reason);
     return _InfoSurface(
       title: 'Push mobile',
       icon: Icons.notifications_none_outlined,
@@ -467,6 +468,14 @@ String _pushUnavailableMessage(String reason) {
       'Entre na sua conta para ativar notificações neste dispositivo.',
     'unknown' => 'Estado local de push indisponível.',
     _ => reason,
+  };
+}
+
+String _pushUnavailableLabel(String reason) {
+  return switch (reason) {
+    'authentication_required' => 'Login necessário',
+    'permission_denied' => 'Permissão negada',
+    _ => 'Não configurado',
   };
 }
 

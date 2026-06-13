@@ -33,6 +33,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - estrutura iOS gerada para preparacao de simulador local
 - consumo dos contratos publicos e autenticados da FastAPI
 - sessao/token, preferencias locais e cache leve no dispositivo
+- desbloqueio local da sessao lembrada com biometria ou senha do aparelho no Android/iOS
 - navegacao mobile para feed, detalhe de mercado, previsao, comentarios, wallet, perfil, ranking/badges e alertas
 - camada de design system mobile alinhada ao produto
 - identidade nativa de launcher e splash alinhada ao site: nome exibido `GoTrendLabs`, icone derivado do simbolo de constelacao da marca e transicao de abertura em fundo escuro
@@ -54,6 +55,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - `backend-api` e a fonte de verdade para dominio, sessao, wallet, reputacao, probabilidade, previsao, comentarios e resolucao.
 - `future-mobile` apresenta dados, coleta intencoes do usuario e envia comandos para a FastAPI.
 - O app pode manter estado local de UI, filtros, tema, token/sessao, cache de leitura e preferencias de idioma.
+- O app pode exigir autenticacao local do aparelho para liberar uma sessao ja lembrada, sem substituir login, senha, token ou autorizacao da FastAPI.
 - Qualquer numero exibido com implicacao de dominio deve vir do contrato da API ou ser marcado como preview visual nao autoritativo.
 - Fallback local mutavel e proibido para previsao, stake, wallet, reputacao, resolucao, badges e auditoria.
 
@@ -97,6 +99,7 @@ O projeto Flutter deve nascer em `apps/mobile` e manter a organizacao abaixo com
 - No emulador Android, a API local do Mac deve ser acessada por `http://10.0.2.2:8001`, nao por `127.0.0.1`.
 - No iOS Simulator, a API local do Mac deve ser acessada por `http://127.0.0.1:8001`.
 - Simulacao iOS exige Xcode completo ativo e CocoaPods disponivel.
+- O target iOS minimo do app e 15.0 por compatibilidade com Firebase mobile e autenticacao local.
 - O Django web local pode continuar em `http://127.0.0.1:8000`; o mobile nao deve depender dele para regras de dominio.
 
 ## Distribuicao beta Android
@@ -172,6 +175,8 @@ O app pode usar gerenciamento de estado adequado ao Flutter, escolhido na implem
 
 - O app nao deve armazenar senha.
 - Token/sessao deve ficar em storage seguro quando o contrato mobile de auth for consolidado.
+- Quando a protecao local estiver ligada, a reabertura do app deve ler o token persistido sem ativa-lo, pedir biometria ou senha do aparelho e so entao instalar o Bearer token em memoria.
+- Cancelamento ou falha da autenticacao local deve manter a sessao lembrada protegida, sem chamar endpoint autenticado e sem apagar o token; o usuario pode tentar desbloquear novamente ou sair deste dispositivo.
 - Logs locais nao podem imprimir token, senha, email privado, dados sensiveis de perfil ou payloads de recuperacao.
 - Logs locais nao podem imprimir token FCM nem payload de push bruto.
 - Erros de API devem ser convertidos em mensagens de UX sem expor stack trace.
@@ -205,6 +210,7 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 - unitarios para formatacao de GTL, datas, percentuais e mapeamento de erros
 - testes de repository com clientes HTTP mockados
 - testes de repository/controller para push sem Firebase, registro com token fake/FCM e revogacao explicita
+- testes unitarios/widget para protecao biometrica local, cancelamento sem chamada autenticada e desbloqueio de sessao lembrada
 - integration tests para abrir feed, navegar ao detalhe e bloquear previsao de visitante
 - integration tests para login e previsao quando houver usuario fixture adequado
 
@@ -220,6 +226,7 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 - app mostra estado de push configurado/indisponivel sem expor token
 - app em modo QA com `GTL_PUSH_FAKE_TOKEN` registra um `PushDevice` de teste apos autenticacao, sem instalar Firebase ou expor token em UI/log
 - app Android com Firebase configurado registra token FCM apos autenticacao e abre rotas seguras por payload, sempre buscando estado real na FastAPI
+- app com protecao local ligada exige biometria ou senha do aparelho antes de restaurar uma sessao lembrada e nao apaga o token quando o usuario cancela o desbloqueio
 
 ## Impacto de mudanca
 

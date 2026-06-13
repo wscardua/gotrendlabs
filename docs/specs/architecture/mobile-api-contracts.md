@@ -190,6 +190,8 @@ Decisao v1 para a implementacao autenticada:
 - encerrar sessao por `POST /auth/logout`
 - usar a expiracao existente em `AuthResponse.session.expires_at`
 - deixar refresh token, renovacao automatica e revogacao avancada para etapa futura
+- biometria no app e apenas desbloqueio local de sessao lembrada: nao cria endpoint, nao muda OpenAPI, nao envia dado biometrico ao backend e nao substitui validacao de sessao por `GET /auth/session`
+- ao restaurar sessao protegida, o app deve ativar o Bearer token em memoria apenas apos sucesso da autenticacao local do aparelho; cancelamento deve deixar o usuario em estado `Sessao protegida`
 
 ### Favoritos e curtidas de mercado
 

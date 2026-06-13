@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-06-13 — FEAT-MOBILE-001 autenticação biométrica local
+
+- App mobile ganhou proteção local para sessões lembradas: com `Lembrar login` ligado e suporte do aparelho, a biometria vem ligada por padrão no login e a reabertura exige biometria ou senha do aparelho antes de ativar o Bearer token persistido.
+- O token salvo agora pode ser lido sem ser instalado em memória; cancelamento ou falha do desbloqueio mantém a sessão em estado `Sessão protegida`, sem chamada autenticada e sem apagar o token persistido.
+- Login sheet passou a oferecer `Proteger sessão com biometria` ligada por padrão no login e cadastro quando o aparelho suporta autenticação local; quando há sessão lembrada protegida, a tela de entrada mostra `Entrar com biometria`; Perfil ganhou o controle `Proteção local` para ativar/desativar a preferência neste dispositivo.
+- Android passou a declarar `USE_BIOMETRIC`, usar `FlutterFragmentActivity`, `minSdk >= 24` e tema AppCompat para o diálogo biométrico; iOS ganhou `NSFaceIDUsageDescription`.
+- A mudança não cria endpoint, não altera OpenAPI e não envia dados biométricos ao backend; `/auth/session` continua validando a sessão restaurada.
+- Versão mobile desta fatia definida como `1.0.4+5` para publicação Android beta após merge.
+
 ## 2026-06-12 — FEAT-NOTIFY-001 / FEAT-MOBILE-001 push FCM real Android
 
 - Admin Ops Push mobile ganhou aba `Dispositivos` para listar devices registrados, status, plataforma, versão/build, hash parcial do token e agregados de entrega, sem expor token bruto.

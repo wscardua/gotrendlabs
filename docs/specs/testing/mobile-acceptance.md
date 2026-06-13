@@ -118,6 +118,9 @@ Quando houver usuario de teste:
 15. Abrir `Sobre` e conferir versão/build, saúde da API e diagnóstico seguro sem endereço de endpoint.
 16. Fazer login com `Lembrar login` ligado e validar restauracao da sessao pelo token seguro.
 17. Fazer login com `Lembrar login` desligado e validar que o token nao fica persistido para reabertura futura.
+18. Ativar `Proteger sessao com biometria`, fechar/reabrir o app e validar que a sessao so restaura apos biometria ou senha do aparelho.
+19. Cancelar o desbloqueio local e validar que o app nao chama endpoint autenticado, nao apaga o token persistido e mostra `Sessao protegida` com acoes de desbloquear ou sair deste dispositivo.
+20. Validar que cadastro com protecao local ligada por padrao tambem salva a preferencia e que a tela de entrada mostra `Entrar com biometria` quando houver sessao lembrada protegida.
 
 ## Fluxo de previsao bloqueada
 
@@ -186,6 +189,7 @@ Deve validar:
 - badges autenticadas em resposta de lista na raiz
 - suporte/feedback
 - sugestao de mercado
+- protecao biometrica local: preferencia persistida, cancelamento sem ativar token, desbloqueio ativando token em memoria e sem armazenamento de senha
 
 ### Integration tests
 
@@ -199,6 +203,7 @@ Deve validar:
 - sem Firebase configurado, push nao registra token real
 - token fake registra dispositivo apos autenticacao
 - revoke explicito chama `DELETE /users/me/push-devices/{device_id}`
+- sessao lembrada protegida exige biometria ou senha do aparelho antes de chamar `GET /auth/session`
 
 ## QA visual
 
@@ -233,6 +238,8 @@ Antes de considerar a UI pronta:
 - confirmar que logout normal não revoga dispositivo de push
 - confirmar que revogação de dispositivo ocorre apenas por ação explícita
 - confirmar que payloads de push abrem rotas e refazem fetch na FastAPI quando FCM real estiver habilitado
+- confirmar que o login sheet mostra `Sessao protegida` com acoes claras quando o desbloqueio local for cancelado
+- confirmar que Perfil mostra `Protecao local` e explica que a proxima abertura usa biometria ou senha do aparelho
 - confirmar que ranking permite filtrar por categoria, subcategoria e evento como na web
 - confirmar que ranking identifica usuarios pelo `@handle`, nao pelo nome publico, e mostra ate 3 badges com `+N`
 - testar mercado sem comentarios

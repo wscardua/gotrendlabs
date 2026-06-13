@@ -108,8 +108,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
         ),
         actions: [
           _RoundIconButton(
-            tooltip: auth.isAuthenticated ? 'Perfil' : 'Entrar no perfil',
-            icon: auth.isAuthenticated
+            tooltip: auth.sessionLocked
+                ? 'Desbloquear sessão'
+                : auth.isAuthenticated
+                ? 'Perfil'
+                : 'Entrar no perfil',
+            icon: auth.sessionLocked
+                ? Icons.lock_outline
+                : auth.isAuthenticated
                 ? Icons.account_circle_outlined
                 : Icons.person_outline,
             onPressed: () {
