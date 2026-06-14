@@ -564,6 +564,31 @@ class CommentListResponse(BaseModel):
     comments: List[CommentResponse]
 
 
+class ViewerPositionSummary(BaseModel):
+    has_position: bool = False
+    option_id: Optional[int] = None
+    option_label: str = ""
+    active_stake_amount: int = 0
+    potential_payout_total: int = 0
+    probability_at_entry: Optional[float] = None
+    position_count: int = 0
+    reinforcement_count: int = 0
+    reinforcement_remaining: int = 0
+    reinforcement_max_count: int = 0
+    revision_count: int = 0
+    revision_remaining: int = 0
+    revision_penalty_percent: int = 0
+    revision_penalty_amount: int = 0
+    revision_new_stake_amount: int = 0
+    can_reinforce: bool = False
+    can_revise: bool = False
+    reinforcement_blocked_reason: str = ""
+    revision_blocked_reason: str = ""
+    revision_cutoff_at: Optional[str] = None
+    active_entries: List[dict] = Field(default_factory=list)
+    history: List[dict] = Field(default_factory=list)
+
+
 class MarketResponse(BaseModel):
     slug: str
     title: str
@@ -613,6 +638,7 @@ class MarketResponse(BaseModel):
     viewer_has_prediction: bool = False
     viewer_has_favorite: bool = False
     viewer_has_like: bool = False
+    viewer_position: ViewerPositionSummary = Field(default_factory=ViewerPositionSummary)
     created_at: str = ""
     sparkline_path: str = ""
     sparkline_area_path: str = ""
@@ -648,6 +674,46 @@ class PredictionPreviewResponse(BaseModel):
     stake_amount: int
     probability_exact: float
     estimated_return: int
+
+
+class PositionActionPayload(BaseModel):
+    action: str
+    option_id: int
+    stake_amount: int = Field(default=0, ge=0)
+    client_locale: str = "pt-br"
+
+
+class PositionActionPreviewResponse(BaseModel):
+    market_id: int
+    option_id: int
+    action: str
+    stake_amount: int
+    active_stake_amount: int
+    active_position_count: int = 0
+    penalty_amount: int = 0
+    revision_penalty_percent: int = 0
+    new_position_stake_amount: int
+    position_total_after: int = 0
+    probability_exact: float
+    estimated_return: int
+    reinforcement_remaining: int = 0
+    revision_remaining: int = 0
+    allowed: bool = True
+    blocked_reason: str = ""
+
+
+class PositionActionResponse(BaseModel):
+    prediction_id: int
+    market_id: int
+    option_id: int
+    action: str
+    stake_amount: int
+    penalty_amount: int = 0
+    accepted_at: str
+    wallet_balance_after: WalletResponse
+    market_probability_snapshot: List[MarketOptionResponse]
+    potential_payout: int
+    viewer_position: ViewerPositionSummary
 
 
 class CommentCreatePayload(BaseModel):

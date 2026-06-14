@@ -15,6 +15,7 @@
 - `prediction_refund`
 - `prediction_payout`
 - `prediction_loss`
+- `prediction_revision_penalty`
 - `prediction_payout_reversal`
 - `prediction_resolution_relock`
 - `manual_adjustment`
@@ -65,6 +66,8 @@
 - `prediction_payout_reversal` deve usar `direction="debit"` para estornar ganho líquido quando uma resolução for desfeita.
 - `prediction_resolution_relock` deve usar `direction="lock"` para rebloquear stake quando uma resolução for desfeita.
 - `prediction_loss` deve usar `direction="settle"` e baixar stake bloqueado sem alterar saldo disponível.
+- `prediction_revision_penalty` deve usar `direction="debit"` e registrar o custo educativo de revisão sobre o valor ativo abandonado.
+- Revisão de posição deve liberar as posições ativas antigas, debitar a penalidade quando configurada e bloquear a nova posição restante na mesma transação.
 - `reward_feedback` deve ser `credit`, usar `reference_type="feedback"` e apontar para o feedback revisado.
 - `reward_suggestion` deve ser `credit`, usar `reference_type="suggestion"` e apontar para a sugestão revisada.
 - `educational_recharge` deve ser `credit`, usar `reference_type="wallet_recharge_request"` e apontar para a solicitação aprovada.

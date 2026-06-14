@@ -45,8 +45,8 @@
 - Mercado `resolved` não pode ser editado; alterações exigem desfazer resolução antes.
 - Mercados `resolved` devem expor auditoria staff read-only via `GET /admin/markets/{slug}/resolution-audit`, sem mutação e sem recalcular regra no Django.
 - A auditoria de resolução deve retornar erro `422` para mercados que não estejam em `resolved`.
-- A auditoria deve resumir totais de participantes, vencedores, perdedores, stakes, refunds, payouts, losses e badges concedidas na resolução.
-- A lista de participantes da auditoria deve ser paginada, com default de UI em 10 itens por página, e expor escolha, stake, probabilidade de entrada, payout esperado, resultado, lançamentos de ledger e badges da resolução.
+- A auditoria deve resumir totais de participantes, vencedores, perdedores, stakes, refunds, payouts, losses e badges concedidas na resolução considerando apenas previsões `resolved`; posições `revised` permanecem no histórico de posição/sparkline e não entram na liquidação.
+- A lista de participantes da auditoria deve ser paginada, com default de UI em 10 itens por página, e expor escolha, stake, probabilidade de entrada, payout esperado, resultado, lançamentos de ledger e badges da resolução para as previsões `resolved`.
 
 ## Campos mínimos expostos
 

@@ -62,12 +62,20 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - mercado aberto não deve iniciar com opção pré-selecionada; o usuário precisa escolher explicitamente uma opção antes do envio ser válido
 - o ticket deve orientar a seleção da opção com chamada visual discreta e alinhada ao design system
 - usuário autenticado sem saldo disponível vê estado de leitura com indicação clara de saldo indisponível e CTA para wallet
+- usuário com posição ativa pode reforçar a mesma opção enquanto o mercado estiver aberto, o limite de reforços não tiver sido atingido e o Admin Ops permitir
+- usuário com posição ativa pode revisar para outra opção antes da janela limite configurada, pagando custo de revisão e preservando o histórico
 
 ## Regras de domínio
 
 - stake só pode usar saldo disponível
 - cada previsão deve ficar vinculada a mercado, opção e usuário
-- nesta etapa do MVP, cada usuário pode registrar no máximo uma previsão por mercado
+- `POST /predict` cria apenas a primeira previsão do usuário no mercado; reforços e revisões usam contratos próprios
+- cada entrada, reforço ou revisão cria uma linha auditável em `gotrendlabs_predictions`
+- posições ativas são linhas `open`; revisão marca posições anteriores como `revised` com `superseded_by`/`superseded_at`
+- mutações de previsão/posição são serializadas por usuário e mercado para evitar corrida entre primeira previsão, reforços e revisões
+- reforço deve manter a mesma opção ativa, exigir saldo disponível, respeitar `position_reinforcement_max_count` e bloquear novo stake sem penalidade
+- revisão deve trocar para opção diferente, respeitar `position_revision_max_count`, `position_revision_cutoff_hours` e `position_revision_penalty_percent`
+- revisão v1 não aceita stake extra; a nova posição usa `stake ativo - penalidade`
 - a mutação financeira deve ser refletida no ledger
 - a evolução do consenso é recalculada a partir de `gotrendlabs_predictions` ordenadas por criação, usando peso base sintético e `reputacao * stake`
 - múltipla escolha deve expor uma linha de evolução por opção

@@ -75,6 +75,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - cancelamento de mercado com previsão aberta gera refund total por `prediction_refund`
 - resolução vencedora libera stake e credita apenas o ganho líquido por `prediction_payout`
 - resolução perdedora baixa o stake bloqueado por `prediction_loss` sem devolver saldo disponível
+- revisão de posição libera stakes ativos antigos, debita `prediction_revision_penalty` quando configurado e bloqueia o stake restante da nova posição
 - desfazer resolução estorna payout líquido por `prediction_payout_reversal` e rebloqueia stake por `prediction_resolution_relock`
 
 ## Responsabilidades por camada

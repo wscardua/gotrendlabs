@@ -544,9 +544,9 @@ def _create_bot_prediction(cursor, agent, market, option, stake):
     cursor.execute(
         """
         INSERT INTO gotrendlabs_predictions
-            (user_id, market_id, market_option_id, stake_amount, probability_at_entry,
+            (user_id, market_id, market_option_id, action_type, position_sequence, stake_amount, probability_at_entry,
              weight_at_entry, potential_payout, status, won, created_at, updated_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, 'open', NULL, %s, %s)
+        VALUES (%s, %s, %s, 'initial', 1, %s, %s, %s, %s, 'open', NULL, %s, %s)
         RETURNING id
         """,
         (user_id, market["id"], option["id"], stake, probability_at_entry, weight_at_entry, potential_payout, now, now),

@@ -240,6 +240,9 @@
       {% if prediction_result %}
         <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.</div>
       {% endif %}
+      {% if position_action_result %}
+        <div class="notice green">{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.</div>
+      {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>
       {% endif %}
@@ -257,23 +260,95 @@
         </div>
         <a class="btn primary" href="{% url 'login' %}?next={{ request.path }}">Entrar para prever</a>
       {% elif existing_prediction %}
-        <div class="prediction-locked">
-          <strong>Você já registrou uma previsão neste mercado.</strong>
-          <p>Sua escolha foi <b>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</b> com {{ existing_prediction.stake_amount }} GT₵ reservadas. Consenso na entrada: {{ existing_prediction.probability_at_entry }}%.</p>
-        </div>
-        <div class="binary-ticket">
-          <div class="binary-grid option-grid">
-            {% for option in market.options %}
-              <div class="choice readonly {% if option.label == existing_prediction.option_label %}active{% endif %}">
-                <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
-                <span>{{ option.probability }}%</span>
-              </div>
-            {% endfor %}
+        <div class="position-summary-card">
+          <span>Sua posição</span>
+          <strong>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</strong>
+          <div class="position-summary-grid">
+            <div><span>Crédito reservado</span><b>{{ existing_prediction.active_stake_amount|default:existing_prediction.stake_amount }} GT₵</b></div>
+            <div><span>Entradas abertas</span><b>{{ existing_prediction.position_count|default:1 }}</b></div>
+            <div><span>Última entrada</span><b>{{ existing_prediction.probability_at_entry }}%</b></div>
           </div>
-          <div class="ticket-note">A primeira previsão fica registrada para auditoria. Para esta etapa do MVP, não é possível alterar ou enviar outra previsão no mesmo mercado.</div>
+          {% if market.viewer_position.active_entries %}
+            <details class="position-entry-details">
+              <summary>Ver entradas abertas</summary>
+              <div class="position-entry-list">
+                {% for entry in market.viewer_position.active_entries %}
+                  <div>
+                    <span>{% if entry.action_type == "initial" %}Entrada inicial{% elif entry.action_type == "reinforcement" %}Reforço{% else %}Revisão{% endif %} #{{ entry.position_sequence }}</span>
+                    <strong>{{ entry.stake_amount }} GT₵ em {% if entry.option_label == 'NAO' %}NÃO{% else %}{{ entry.option_label }}{% endif %}</strong>
+                  </div>
+                {% endfor %}
+              </div>
+            </details>
+          {% endif %}
         </div>
-        <div class="field disabled-field"><label>GT₵ reservadas</label><div class="range-row disabled-row"><input type="range" min="1" max="500" value="{{ existing_prediction.stake_amount }}" disabled><strong>{{ existing_prediction.stake_amount }} GT₵</strong></div></div>
-        <button class="btn primary" type="button" disabled>Previsão já registrada</button>
+        <div class="binary-grid option-grid position-option-grid">
+          {% for option in market.options %}
+            <div class="choice readonly {% if option.id == existing_prediction.option_id or option.label == existing_prediction.option_label %}active{% endif %}">
+              <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
+              <span>{{ option.probability }}%</span>
+            </div>
+          {% endfor %}
+        </div>
+        {% if market.viewer_position.can_reinforce or market.viewer_position.can_revise %}
+          <div class="position-action-tabs">
+            <input class="position-tab-radio" id="position-tab-reinforce" type="radio" name="position-action-tab" {% if market.viewer_position.can_reinforce %}checked{% endif %} {% if not market.viewer_position.can_reinforce %}disabled{% endif %}>
+            <input class="position-tab-radio" id="position-tab-revise" type="radio" name="position-action-tab" {% if not market.viewer_position.can_reinforce and market.viewer_position.can_revise %}checked{% endif %} {% if not market.viewer_position.can_revise %}disabled{% endif %}>
+            <div class="position-tab-labels">
+              <label for="position-tab-reinforce"><strong>Reforçar</strong><small>Mesma opção</small></label>
+              <label for="position-tab-revise"><strong>Revisar</strong><small>Outra opção</small></label>
+            </div>
+            <div class="position-action-panels">
+              {% if market.viewer_position.can_reinforce %}
+                <form class="position-action-panel reinforcement-panel" method="post" action="{% url 'position-action-confirm' market.slug %}" data-position-preview-url="{% url 'position-action-preview' market.slug %}" data-preview-target="position-reinforcement-preview">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="reinforcement">
+                  <input type="hidden" name="option_id" value="{{ existing_prediction.option_id }}">
+                  <div class="field"><label>GT₵ para reforçar</label><div class="range-row"><input name="stake_amount" data-amount="reinforcement" type="range" min="1" max="500" value="80"><strong data-amount-output="reinforcement">80 GT₵</strong></div></div>
+                  <div id="position-reinforcement-preview" class="calc compact-calc"></div>
+                  <button class="btn primary trade-action" type="submit" data-confirm="Reforçar posição" data-confirm-desc="Reserva GT₵ adicionais na mesma opção e mantém o histórico preservado.">Reforçar posição</button>
+                  <div class="ticket-note">Restam {{ market.viewer_position.reinforcement_remaining }} reforço(s) neste mercado.</div>
+                </form>
+              {% endif %}
+              {% if market.viewer_position.can_revise %}
+                <form class="position-action-panel revision-panel" method="post" action="{% url 'position-action-confirm' market.slug %}" data-position-preview-url="{% url 'position-action-preview' market.slug %}" data-preview-target="position-revision-preview">
+                  {% csrf_token %}
+                  <input type="hidden" name="action" value="revision">
+                  <input type="hidden" name="stake_amount" value="0">
+                  <div class="prediction-choice-prompt">
+                    <span>Revisão de posição</span>
+                    <strong>Revise sabendo exatamente o que será encerrado.</strong>
+                  </div>
+                  <div class="calc compact-calc position-revision-summary">
+                    <div><span>Entradas a encerrar</span><strong>{{ market.viewer_position.position_count }} em {% if market.viewer_position.option_label == 'NAO' %}NÃO{% else %}{{ market.viewer_position.option_label }}{% endif %}</strong></div>
+                    <div><span>Total ativo atual</span><strong>{{ market.viewer_position.active_stake_amount }} GT₵</strong></div>
+                    <div><span>Custo estimado</span><strong>{{ market.viewer_position.revision_penalty_amount }} GT₵ ({{ market.viewer_position.revision_penalty_percent }}%)</strong></div>
+                    <div><span>Nova posição estimada</span><strong>{{ market.viewer_position.revision_new_stake_amount }} GT₵</strong></div>
+                  </div>
+                  <div class="binary-grid option-grid">
+                    {% for option in market.options %}
+                      {% if option.id != existing_prediction.option_id %}
+                        <label class="choice" data-option-id="{{ option.id }}" data-choice="{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}">
+                          <input class="choice-radio" data-selected-option-id type="radio" name="option_id" value="{{ option.id }}" required>
+                          <span><strong>{% if option.label == 'NAO' %}NÃO{% else %}{{ option.label }}{% endif %}</strong><small>{{ option.hint }}</small></span>
+                          <span>{{ option.probability }}%</span>
+                        </label>
+                      {% endif %}
+                    {% endfor %}
+                  </div>
+                  <div id="position-revision-preview" class="calc compact-calc"></div>
+                  <button class="btn primary trade-action" type="submit" data-confirm="Revisar posição" data-confirm-desc="Você vai encerrar {{ market.viewer_position.position_count }} entrada(s) em {% if market.viewer_position.option_label == 'NAO' %}NÃO{% else %}{{ market.viewer_position.option_label }}{% endif %}, aplicar {{ market.viewer_position.revision_penalty_amount }} GT₵ de custo de revisão ({{ market.viewer_position.revision_penalty_percent }}%) e abrir uma nova posição com {{ market.viewer_position.revision_new_stake_amount }} GT₵ na opção escolhida. As entradas anteriores continuam no histórico." data-requires-choice disabled>Revisar posição</button>
+                </form>
+              {% endif %}
+            </div>
+          </div>
+        {% endif %}
+        {% if not market.viewer_position.can_reinforce and not market.viewer_position.can_revise and market.viewer_position.reinforcement_blocked_reason %}
+          <div class="notice yellow">{{ market.viewer_position.reinforcement_blocked_reason }}</div>
+        {% endif %}
+        {% if not market.viewer_position.can_revise and not market.viewer_position.can_reinforce and market.viewer_position.revision_blocked_reason %}
+          <div class="notice yellow">{{ market.viewer_position.revision_blocked_reason }}</div>
+        {% endif %}
       {% elif viewer.balance_gtl|default:0 <= 0 %}
         <div class="balance-empty-callout">
           <span>Saldo indisponível</span>

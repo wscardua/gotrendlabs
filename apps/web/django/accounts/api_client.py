@@ -208,6 +208,14 @@ def preview_prediction(slug, data):
     return _request("POST", f"/markets/{slug}/prediction-preview", data)
 
 
+def preview_position_action(token, slug, data):
+    return _request("POST", f"/markets/{slug}/position-preview", data, token=token)
+
+
+def create_position_action(token, slug, data):
+    return _request("POST", f"/markets/{slug}/position-actions", data, token=token)
+
+
 def get_market_comments(slug, token=None):
     return _request("GET", f"/markets/{slug}/comments", token=token)["comments"]
 

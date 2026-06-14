@@ -102,6 +102,81 @@
       <section class="config-section">
         <div class="config-panel-head">
           <div>
+            <span class="eyebrow">Previsões e posições</span>
+            <h2>Reforço e revisão</h2>
+            <p>Controla reforço da mesma opção e revisão auditável para outra opção antes do fechamento.</p>
+          </div>
+          <span class="config-status {% if site_config.position_reinforcement_enabled or site_config.position_revision_enabled %}is-on{% endif %}">
+            {% if site_config.position_reinforcement_enabled or site_config.position_revision_enabled %}Ativo{% else %}Inativo{% endif %}
+          </span>
+        </div>
+        <div class="config-controls">
+          <div class="config-secret-card">
+            <span>Reforço de posição</span>
+            <strong>Mesma opção, sem custo de revisão.</strong>
+            <small>Controla quantas vezes o usuário pode acrescentar GT₵ a uma posição já aberta no mesmo mercado.</small>
+          </div>
+          <div class="config-inline-options">
+            <label class="config-check-option">
+              {{ position_form.position_reinforcement_enabled }}
+              <span><strong>Permitir reforço</strong><small>Mesma opção, sem custo, enquanto o mercado estiver aberto.</small></span>
+            </label>
+          </div>
+          <div class="config-form-grid">
+            <label class="field compact-field">
+              <span>Máximo de reforços</span>
+              {{ position_form.position_reinforcement_max_count }}
+              {% if position_form.position_reinforcement_max_count.errors %}<small>{{ position_form.position_reinforcement_max_count.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Mínimo para reforço</span>
+              {{ position_form.position_reinforcement_min_gtl }}
+              {% if position_form.position_reinforcement_min_gtl.errors %}<small>{{ position_form.position_reinforcement_min_gtl.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+          <div class="config-secret-card">
+            <span>Revisão de posição</span>
+            <strong>Troca para outra opção com custo sobre o total ativo.</strong>
+            <small>Controla quando uma posição agregada pode ser encerrada e recriada em outra opção.</small>
+          </div>
+          <div class="config-inline-options">
+            <label class="config-check-option">
+              {{ position_form.position_revision_enabled }}
+              <span><strong>Permitir revisão</strong><small>Troca para outra opção com custo e limite operacional.</small></span>
+            </label>
+          </div>
+          <div class="config-form-grid">
+            <label class="field compact-field">
+              <span>Máximo de revisões</span>
+              {{ position_form.position_revision_max_count }}
+              {% if position_form.position_revision_max_count.errors %}<small>{{ position_form.position_revision_max_count.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Cutoff antes do fechamento (h)</span>
+              {{ position_form.position_revision_cutoff_hours }}
+              {% if position_form.position_revision_cutoff_hours.errors %}<small>{{ position_form.position_revision_cutoff_hours.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Custo de revisão (%)</span>
+              {{ position_form.position_revision_penalty_percent }}
+              {% if position_form.position_revision_penalty_percent.errors %}<small>{{ position_form.position_revision_penalty_percent.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field">
+              <span>Mínimo restante após revisão</span>
+              {{ position_form.position_revision_min_remaining_gtl }}
+              {% if position_form.position_revision_min_remaining_gtl.errors %}<small>{{ position_form.position_revision_min_remaining_gtl.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+          <div class="config-meta">
+            <span>Regra ativa</span>
+            <strong>Reforço permite até {{ site_config.position_reinforcement_max_count }} movimento(s) adicionais. Revisão permite trocar de opção até {{ site_config.position_revision_cutoff_hours }}h antes do fechamento, com {{ site_config.position_revision_penalty_percent }}% de custo sobre a posição ativa.</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
             <span class="eyebrow">Disponibilidade mobile</span>
             <h2>Manutenção do app</h2>
             <p>Controle independente do modo web. O shell público do app fica bloqueado para todos os usuários mobile.</p>

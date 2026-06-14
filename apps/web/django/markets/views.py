@@ -12,8 +12,10 @@ from apps.web.django.accounts.api_client import (
     clear_comment_reaction,
     create_comment,
     create_prediction,
+    create_position_action,
     favorite_market,
     preview_prediction,
+    preview_position_action,
     track_market_view,
     get_market,
     like_market,
@@ -60,20 +62,32 @@ def _datetime_label(value, timezone_name):
 def _existing_prediction(user_id, slug):
     if not user_id:
         return None
-    prediction = (
+    predictions = list(
         Prediction.objects.select_related("market_option", "market")
-        .filter(user_id=user_id, market__slug=slug)
-        .order_by("-created_at")
-        .first()
+        .filter(user_id=user_id, market__slug=slug, status="open")
+        .order_by("created_at", "id")
     )
-    if not prediction:
+    if not predictions:
+        predictions = list(
+            Prediction.objects.select_related("market_option", "market")
+            .filter(user_id=user_id, market__slug=slug, status="resolved")
+            .order_by("created_at", "id")
+        )
+    if not predictions:
         return None
+    prediction = predictions[-1]
+    active_stake = sum(item.stake_amount for item in predictions)
+    potential_payout = sum(item.potential_payout for item in predictions)
     return {
         "id": prediction.id,
+        "option_id": prediction.market_option_id,
         "option_label": prediction.market_option.label,
-        "stake_amount": prediction.stake_amount,
+        "stake_amount": active_stake,
+        "active_stake_amount": active_stake,
+        "potential_payout_total": potential_payout,
+        "position_count": len(predictions),
         "probability_at_entry": prediction.probability_at_entry,
-        "potential_payout": prediction.potential_payout,
+        "potential_payout": potential_payout,
         "status": prediction.status,
         "won": prediction.won,
         "created_at": prediction.created_at,
@@ -279,6 +293,49 @@ def prediction_preview(request, slug):
     )
 
 
+def position_action_preview(request, slug):
+    try:
+        market = get_market(slug, auth_token(request) if is_authenticated(request) else None)
+    except AuthAPIError:
+        market = local_market(slug)
+    market = _with_option_ids(slug, market)
+    action = request.POST.get("action") or "reinforcement"
+    amount = int(request.POST.get("stake_amount") or request.POST.get("amount") or 0)
+    option_id = request.POST.get("option_id") or market["options"][0]["id"]
+    selected_option = next((option for option in market["options"] if str(option.get("id")) == str(option_id)), market["options"][0])
+    preview = {}
+    preview_error = ""
+    if not is_authenticated(request):
+        preview_error = "Entre na conta para reforçar ou revisar posição."
+    else:
+        try:
+            preview = preview_position_action(
+                auth_token(request),
+                slug,
+                {
+                    "action": action,
+                    "option_id": selected_option["id"],
+                    "stake_amount": amount,
+                    "client_locale": getattr(request, "LANGUAGE_CODE", "pt-br"),
+                },
+            )
+            preview_error = preview.get("blocked_reason") or ""
+        except AuthAPIError as exc:
+            preview_error = str(exc)
+    return render(
+        request,
+        "markets/partials/position_action_preview.html",
+        {
+            "market": market,
+            "action": action,
+            "option": selected_option,
+            "amount": amount,
+            "preview": preview,
+            "preview_error": preview_error,
+        },
+    )
+
+
 @require_POST
 def confirm_prediction(request, slug):
     if not is_authenticated(request):
@@ -308,6 +365,39 @@ def confirm_prediction(request, slug):
             request,
             "markets/detail.html",
             _detail_context(request, slug, market, prediction_result=result),
+        )
+
+
+@require_POST
+def confirm_position_action(request, slug):
+    if not is_authenticated(request):
+        return redirect(login_url_with_next(request, reverse("market-detail", args=[slug])))
+
+    data = {
+        "action": request.POST.get("action"),
+        "option_id": request.POST.get("option_id"),
+        "stake_amount": request.POST.get("stake_amount") or 0,
+        "client_locale": getattr(request, "LANGUAGE_CODE", "pt-br"),
+    }
+    try:
+        result = create_position_action(auth_token(request), slug, data)
+    except AuthAPIError as exc:
+        try:
+            market = get_market(slug, auth_token(request))
+        except AuthAPIError:
+            market = local_market(slug)
+        return render(
+            request,
+            "markets/detail.html",
+            _detail_context(request, slug, market, prediction_error=str(exc)),
+            status=400 if exc.status_code != 401 else 401,
+        )
+    else:
+        market = get_market(slug, auth_token(request))
+        return render(
+            request,
+            "markets/detail.html",
+            _detail_context(request, slug, market, position_action_result=result),
         )
 
 

@@ -1,5 +1,15 @@
 # Feature Changelog
 
+## 2026-06-14 — FEAT-PRED-001 reforço e revisão de posição web-first
+
+- FastAPI ganhou contratos autenticados para prévia e criação de reforço/revisão de posição, mantendo `/predict` reservado à primeira previsão.
+- `gotrendlabs_predictions` passou a suportar múltiplas posições auditáveis por usuário/mercado, com `action_type`, sequência e supersedência para posições revisadas.
+- Revisão preserva histórico, libera posições antigas, aplica `prediction_revision_penalty` e bloqueia nova posição com o valor restante.
+- Mutações de previsão/posição passaram a usar lock transacional por usuário/mercado para impedir concorrência entre primeira previsão, reforços e revisões.
+- Auditoria de resolução considera apenas posições `resolved`; posições `revised` permanecem auditáveis no histórico/sparkline sem inflar liquidação.
+- Admin Ops Config ganhou seção `Previsões e posições` para ajustar grupos de reforço e revisão, incluindo limite máximo de reforços, limite de revisões, janela de corte, penalidade e mínimos de GT₵ sem deploy.
+- Detalhe web de mercado passou a mostrar reforço/revisão para usuários com posição ativa, incluindo resumo das entradas abertas, total afetado pela revisão e custo percentual; mobile permanece para fase posterior usando os mesmos contratos FastAPI.
+
 ## 2026-06-13 — FEAT-REP-001 badges conquistadas como propriedade histórica
 
 - Admin Ops separou exibição histórica (`is_active`) de novas concessões (`rule_active`) para badges.
