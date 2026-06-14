@@ -8,7 +8,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-PRED-001`, `FEAT-WALLET-001`, `Admin Ops`, `FastAPI public contract`, `frontend-web`
 - Objetivo: implementar reforço e revisão auditável de posições primeiro no backend/site, preservando FastAPI como autoridade e deixando mobile para fase posterior
-- Etapa atual: implementação, revisão local, docs e validações concluídas em `experiment/position-revision-web-first`; aguardando aprovação explícita do texto da PR antes de publicar no GitHub
+- Etapa atual: publicado em `main` pela PR #80, deploy de produção concluído e contrato novo validado por smoke
 - Artefatos afetados:
   - `apps/api/backend_api/`
   - `apps/web/django/markets/`
@@ -16,15 +16,16 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `apps/web/static/js/gotrendlabs.js`
   - `packages/contracts/openapi/gotrendlabs-api.json`
   - `docs/specs/`
-- Bloqueios: nenhum local; publicação/merge/deploy dependem de aprovação explícita do usuário
+- Bloqueios: nenhum; mobile permanece como fase posterior documentada em `known-gaps.md`
 - Iniciado em: 2026-06-14
 - Atualizado em: 2026-06-14
-- Retomada: após aprovação, commit/push/PR em português, merge para `main`, acompanhar `GoTrendLabs CI and Deploy` e smoke de produção
+- Retomada: acompanhar feedback de uso web e planejar a fase mobile sem mover regra de domínio para o app
 - Reversão lógica: remover endpoints `position-preview`/`position-actions`, restaurar unicidade `uniq_prediction_user_market`, remover campos de posição/config, voltar UI para estado somente leitura após primeira previsão e retirar `prediction_revision_penalty`
 - Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `git diff --check origin/main`; suíte completa `.venv/bin/python manage.py test --keepdb` com 186 testes OK; testes focados de reforço/revisão, bloqueios por cutoff/config, lock transacional de previsão inicial, auditoria de resolução com posições revisadas, Admin Ops Config e regressões de dashboard/AI/resolução/web também executados durante o ciclo de correção
 - Evidências incrementais: limite máximo de reforços, grupos de configuração por reforço/revisão e resumo de entradas abertas validados com `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_position_reinforcement_and_revision_are_auditable_wallet_mutations tests.test_web_smoke.BackendAuthAPITests.test_position_reinforcement_respects_admin_limit tests.test_web_smoke.BackendAuthAPITests.test_position_revision_respects_admin_config_and_cutoff_window tests.test_web_smoke.WebSmokeTests.test_admin_config_persists_maintenance_json_and_smtp_database_config --keepdb`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `git diff --check`
 - Evidências UX: detalhe web reorganizado para resumo compacto, entradas abertas recolhíveis e abas `Reforçar`/`Revisar`, validado com `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_market_detail_position_actions_use_compact_tabs tests.test_web_smoke.BackendAuthAPITests.test_position_reinforcement_and_revision_are_auditable_wallet_mutations tests.test_web_smoke.BackendAuthAPITests.test_position_reinforcement_respects_admin_limit --keepdb`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `git diff --check`
 - Evidências UX incrementais: confirmação de revisão passou a exibir entradas encerradas, total ativo, custo em GT₵/percentual e nova posição estimada vindos da FastAPI, validado com `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_market_detail_position_actions_use_compact_tabs tests.test_web_smoke.BackendAuthAPITests.test_position_reinforcement_and_revision_are_auditable_wallet_mutations tests.test_web_smoke.BackendAuthAPITests.test_position_reinforcement_respects_admin_limit --keepdb`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`
+- Evidências de publicação: PR #80 (`Reforço e revisão de posição web-first`) mergeada em `main` com merge commit `dc785eac6e0a7c996f0bc312d4c91f90606407fb`; GitHub Actions `GoTrendLabs CI and Deploy` run `27507258490` concluiu jobs `test` e `deploy` com sucesso; produção respondeu `https://gotrendlabs.com.br/` com HTTP 200, `https://gotrendlabs.com.br/api/health` com `status=ok`, `web_enabled=false`, `mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; `/api/markets` retornou o campo `viewer_position`; `/api/openapi.json` expôs `/markets/{slug}/position-preview` e `/markets/{slug}/position-actions`.
 
 ## WFLOW-20260613-BADGE-HISTORICAL-OWNERSHIP-001
 
