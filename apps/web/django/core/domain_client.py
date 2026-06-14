@@ -140,16 +140,19 @@ def _market_sparklines(market, options):
             points_by_option[option_id].append((Decimal(weights[option_id]) * Decimal("100") / Decimal(total)).quantize(PROBABILITY_QUANT))
 
     append_points()
-    predictions = (
-        Prediction.objects.filter(market=market, status="open")
+    events = []
+    for prediction in (
+        Prediction.objects.filter(market=market, status__in=["open", "resolved", "revised"])
         .order_by("created_at", "id")
-        .values("market_option_id", "weight_at_entry")
-    )
-    for prediction in predictions:
-        option_id = prediction["market_option_id"]
+        .values("id", "market_option_id", "weight_at_entry", "created_at", "superseded_at", "status")
+    ):
+        events.append((prediction["created_at"], 1, prediction["id"], prediction["market_option_id"], prediction["weight_at_entry"]))
+        if prediction["status"] == "revised" and prediction["superseded_at"]:
+            events.append((prediction["superseded_at"], 0, prediction["id"], prediction["market_option_id"], -prediction["weight_at_entry"]))
+    for _event_at, _order, _id, option_id, delta_weight in sorted(events):
         if option_id not in weights:
             continue
-        weights[option_id] += prediction["weight_at_entry"]
+        weights[option_id] = max(10_000, weights[option_id] + delta_weight)
         append_points()
     primary = _sparkline_paths(points_by_option[options[0]["id"]])
     series = []

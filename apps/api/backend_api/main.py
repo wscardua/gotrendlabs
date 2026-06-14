@@ -79,6 +79,9 @@ from apps.api.backend_api.schemas import (
     PredictionCreatePayload,
     PredictionCreateResponse,
     PredictionPreviewResponse,
+    PositionActionPayload,
+    PositionActionPreviewResponse,
+    PositionActionResponse,
     ProfileUpdatePayload,
     ProductFeedbackPayload,
     PushDeviceListResponse,
@@ -903,6 +906,7 @@ LEDGER_ENTRY_TYPE_LABELS = {
     "prediction_refund": "Crédito devolvido",
     "prediction_payout": "Ganho por acerto",
     "prediction_loss": "Previsão encerrada",
+    "prediction_revision_penalty": "Custo de revisão",
     "prediction_payout_reversal": "Estorno de ganho",
     "prediction_resolution_relock": "Crédito reservado novamente",
     "manual_adjustment": "Ajuste administrativo",
@@ -1314,18 +1318,22 @@ def _market_sparklines(cursor, market_id, options):
     append_points()
     cursor.execute(
         """
-        SELECT market_option_id, weight_at_entry
+        SELECT market_option_id, weight_at_entry AS delta_weight, created_at AS event_at, id, 1 AS event_order
         FROM gotrendlabs_predictions
-        WHERE market_id = %s AND status IN ('open', 'resolved')
-        ORDER BY created_at ASC, id ASC
+        WHERE market_id = %s AND status IN ('open', 'resolved', 'revised')
+        UNION ALL
+        SELECT market_option_id, -weight_at_entry AS delta_weight, superseded_at AS event_at, id, 0 AS event_order
+        FROM gotrendlabs_predictions
+        WHERE market_id = %s AND status = 'revised' AND superseded_at IS NOT NULL
+        ORDER BY event_at ASC, event_order ASC, id ASC
         """,
-        (market_id,),
+        (market_id, market_id),
     )
     for prediction in cursor.fetchall():
         option_id = prediction["market_option_id"]
         if option_id not in weights:
             continue
-        weights[option_id] += int(prediction["weight_at_entry"] or 0)
+        weights[option_id] = max(BASE_PREDICTION_WEIGHT, weights[option_id] + int(prediction["delta_weight"] or 0))
         append_points()
     primary = _sparkline_paths(points_by_option[option_ids[0]])
     series = []
@@ -1440,6 +1448,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
     viewer_has_prediction = False
     viewer_has_favorite = False
     viewer_has_like = False
+    viewer_position = {}
     if viewer_id:
         cursor.execute(
             """
@@ -1451,6 +1460,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
             (row["id"], viewer_id),
         )
         viewer_has_prediction = bool(cursor.fetchone())
+        viewer_position = _viewer_position_summary(cursor, row, viewer_id)
         cursor.execute(
             """
             SELECT 1
@@ -1521,6 +1531,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "viewer_has_prediction": viewer_has_prediction,
         "viewer_has_favorite": viewer_has_favorite,
         "viewer_has_like": viewer_has_like,
+        "viewer_position": viewer_position,
         "created_at": row["created_at"].isoformat() if "created_at" in row and row["created_at"] else "",
         "sparkline_path": sparkline["sparkline_path"],
         "sparkline_area_path": sparkline["sparkline_area_path"],
@@ -1557,11 +1568,17 @@ def get_public_stats():
                 SELECT
                     (SELECT COUNT(*) FROM gotrendlabs_markets WHERE status = 'open') AS open_markets,
                     (
-                        SELECT COUNT(*)
+                        SELECT COUNT(DISTINCT (p.user_id, p.market_id))
                         FROM gotrendlabs_predictions p
                         JOIN gotrendlabs_users u ON u.id = p.user_id
                         WHERE u.is_bot = false
                     ) AS total_predictions,
+                    (
+                        SELECT COUNT(*)
+                        FROM gotrendlabs_predictions p
+                        JOIN gotrendlabs_users u ON u.id = p.user_id
+                        WHERE u.is_bot = false
+                    ) AS total_prediction_actions,
                     (
                         SELECT COALESCE(SUM(l.amount), 0)
                         FROM gotrendlabs_wallet_ledger l
@@ -1582,6 +1599,7 @@ def get_public_stats():
     return {
         "open_markets": int(row["open_markets"] or 0),
         "total_predictions": int(row["total_predictions"] or 0),
+        "total_prediction_actions": int(row["total_prediction_actions"] or 0),
         "distributed_gtl": _format_gtl_amount(row["distributed_gtl"]),
         "moved_gtl": _format_gtl_amount(row["moved_gtl"]),
         "resolution_sla": "pendente",
@@ -1684,6 +1702,542 @@ def _prediction_preview(cursor, slug, payload):
         "stake_amount": payload.stake_amount,
         "probability_exact": float(probability_exact),
         "estimated_return": estimated_return,
+    }
+
+
+POSITION_CONFIG_DEFAULTS = {
+    "position_reinforcement_enabled": True,
+    "position_reinforcement_max_count": 3,
+    "position_revision_enabled": True,
+    "position_revision_max_count": 1,
+    "position_revision_cutoff_hours": 24,
+    "position_revision_penalty_percent": 20,
+    "position_reinforcement_min_gtl": 1,
+    "position_revision_min_remaining_gtl": 1,
+}
+
+
+def _position_mutation_lock_key(user_id, market_id):
+    digest = hashlib.blake2b(f"gotrendlabs:position:{int(user_id)}:{int(market_id)}".encode(), digest_size=8).digest()
+    key = int.from_bytes(digest, byteorder="big", signed=False)
+    if key >= 2**63:
+        key -= 2**64
+    return key
+
+
+def _lock_position_mutation(cursor, user_id, market_id):
+    cursor.execute("SELECT pg_advisory_xact_lock(%s)", (_position_mutation_lock_key(user_id, market_id),))
+
+
+def _position_config(cursor):
+    cursor.execute(
+        """
+        SELECT position_reinforcement_enabled, position_reinforcement_max_count,
+               position_revision_enabled,
+               position_revision_max_count, position_revision_cutoff_hours,
+               position_revision_penalty_percent, position_reinforcement_min_gtl,
+               position_revision_min_remaining_gtl
+        FROM gotrendlabs_site_config
+        WHERE singleton_key = 1
+        """
+    )
+    row = cursor.fetchone()
+    config = {**POSITION_CONFIG_DEFAULTS}
+    if row:
+        for key in config:
+            if row[key] is not None:
+                config[key] = row[key]
+    config["position_revision_max_count"] = int(config["position_revision_max_count"] or 0)
+    config["position_reinforcement_max_count"] = int(config["position_reinforcement_max_count"] or 0)
+    config["position_revision_cutoff_hours"] = int(config["position_revision_cutoff_hours"] or 0)
+    config["position_revision_penalty_percent"] = int(config["position_revision_penalty_percent"] or 0)
+    config["position_reinforcement_min_gtl"] = int(config["position_reinforcement_min_gtl"] or 1)
+    config["position_revision_min_remaining_gtl"] = int(config["position_revision_min_remaining_gtl"] or 1)
+    return config
+
+
+def _active_positions(cursor, user_id, market_id, *, for_update=False):
+    lock_sql = " FOR UPDATE" if for_update else ""
+    cursor.execute(
+        f"""
+        SELECT p.id, p.user_id, p.market_id, p.market_option_id, p.action_type,
+               p.position_sequence, p.stake_amount, p.probability_at_entry,
+               p.weight_at_entry, p.potential_payout, p.status, p.created_at,
+               o.label AS option_label
+        FROM gotrendlabs_predictions p
+        JOIN gotrendlabs_market_options o ON o.id = p.market_option_id
+        WHERE p.user_id = %s
+          AND p.market_id = %s
+          AND p.status = 'open'
+        ORDER BY p.created_at ASC, p.id ASC
+        {lock_sql}
+        """,
+        (user_id, market_id),
+    )
+    return cursor.fetchall()
+
+
+def _prediction_history(cursor, user_id, market_id, limit=8):
+    cursor.execute(
+        """
+        SELECT p.id, p.market_option_id, p.action_type, p.position_sequence,
+               p.stake_amount, p.status, p.created_at, p.superseded_at,
+               o.label AS option_label
+        FROM gotrendlabs_predictions p
+        JOIN gotrendlabs_market_options o ON o.id = p.market_option_id
+        WHERE p.user_id = %s AND p.market_id = %s
+        ORDER BY p.created_at DESC, p.id DESC
+        LIMIT %s
+        """,
+        (user_id, market_id, limit),
+    )
+    return [
+        {
+            "id": row["id"],
+            "option_id": row["market_option_id"],
+            "option_label": row["option_label"],
+            "action_type": row["action_type"] or "initial",
+            "position_sequence": int(row["position_sequence"] or 1),
+            "stake_amount": int(row["stake_amount"] or 0),
+            "status": row["status"],
+            "created_at": row["created_at"].isoformat() if row["created_at"] else "",
+            "superseded_at": row["superseded_at"].isoformat() if row["superseded_at"] else None,
+        }
+        for row in cursor.fetchall()
+    ]
+
+
+def _active_entries_summary(rows):
+    entries = []
+    for row in rows:
+        entries.append(
+            {
+                "id": row["id"],
+                "option_id": row["market_option_id"],
+                "option_label": row["option_label"],
+                "action_type": row["action_type"] or "initial",
+                "position_sequence": int(row["position_sequence"] or 1),
+                "stake_amount": int(row["stake_amount"] or 0),
+                "probability_at_entry": float(_decimal_probability(row["probability_at_entry"])),
+                "potential_payout": int(row["potential_payout"] or 0),
+                "created_at": row["created_at"].isoformat() if row["created_at"] else "",
+            }
+        )
+    return entries
+
+
+def _revision_count(cursor, user_id, market_id):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM gotrendlabs_predictions
+        WHERE user_id = %s AND market_id = %s AND action_type = 'revision'
+        """,
+        (user_id, market_id),
+    )
+    return int(cursor.fetchone()["total"] or 0)
+
+
+def _reinforcement_count(cursor, user_id, market_id):
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM gotrendlabs_predictions
+        WHERE user_id = %s AND market_id = %s AND action_type = 'reinforcement'
+        """,
+        (user_id, market_id),
+    )
+    return int(cursor.fetchone()["total"] or 0)
+
+
+def _next_position_sequence(cursor, user_id, market_id):
+    cursor.execute(
+        "SELECT COALESCE(MAX(position_sequence), 0) + 1 AS next_sequence FROM gotrendlabs_predictions WHERE user_id = %s AND market_id = %s",
+        (user_id, market_id),
+    )
+    return int(cursor.fetchone()["next_sequence"] or 1)
+
+
+def _revision_cutoff_at(market, config):
+    close_at = market.get("close_at") if hasattr(market, "get") else market["close_at"]
+    if not close_at:
+        return None
+    if close_at.tzinfo is None:
+        close_at = close_at.replace(tzinfo=timezone.utc)
+    return close_at - timedelta(hours=int(config["position_revision_cutoff_hours"] or 0))
+
+
+def _position_blockers(market, active_positions, config):
+    now = datetime.now(timezone.utc)
+    market_status = market.get("status") if hasattr(market, "get") else market["status"]
+    if not active_positions:
+        return "Nenhuma posição ativa neste mercado.", "Nenhuma posição ativa neste mercado."
+    reinforcement_blocked = ""
+    revision_blocked = ""
+    if market_status != "open":
+        reinforcement_blocked = "Mercado fechado para reforço."
+        revision_blocked = "Mercado fechado para revisão."
+    if not bool(config["position_reinforcement_enabled"]):
+        reinforcement_blocked = "Reforço de posição desativado no Admin Ops."
+    if not bool(config["position_revision_enabled"]):
+        revision_blocked = "Revisão de posição desativada no Admin Ops."
+    cutoff_at = _revision_cutoff_at(market, config)
+    if not revision_blocked and cutoff_at and now >= cutoff_at:
+        revision_blocked = "Janela de revisão encerrada para este mercado."
+    return reinforcement_blocked, revision_blocked
+
+
+def _viewer_position_summary(cursor, market, user_id):
+    if not user_id:
+        return {}
+    config = _position_config(cursor)
+    active = _active_positions(cursor, user_id, market["id"])
+    reinforcement_count = _reinforcement_count(cursor, user_id, market["id"])
+    reinforcement_remaining = max(0, int(config["position_reinforcement_max_count"]) - reinforcement_count)
+    revision_count = _revision_count(cursor, user_id, market["id"])
+    revision_remaining = max(0, int(config["position_revision_max_count"]) - revision_count)
+    cutoff_at = _revision_cutoff_at(market, config)
+    reinforcement_blocked, revision_blocked = _position_blockers(market, active, config)
+    if not reinforcement_blocked and reinforcement_remaining <= 0:
+        reinforcement_blocked = "Limite de reforços atingido neste mercado."
+    if not revision_blocked and revision_remaining <= 0:
+        revision_blocked = "Limite de revisões atingido neste mercado."
+    if not active:
+        return {
+            "has_position": False,
+            "reinforcement_count": reinforcement_count,
+            "reinforcement_remaining": reinforcement_remaining,
+            "reinforcement_max_count": int(config["position_reinforcement_max_count"]),
+            "revision_count": revision_count,
+            "revision_remaining": revision_remaining,
+            "revision_penalty_percent": int(config["position_revision_penalty_percent"]),
+            "revision_penalty_amount": 0,
+            "revision_new_stake_amount": 0,
+            "can_reinforce": False,
+            "can_revise": False,
+            "reinforcement_blocked_reason": reinforcement_blocked,
+            "revision_blocked_reason": revision_blocked,
+            "revision_cutoff_at": cutoff_at.isoformat() if cutoff_at else None,
+            "history": _prediction_history(cursor, user_id, market["id"]),
+        }
+    latest = active[-1]
+    active_stake = sum(int(row["stake_amount"] or 0) for row in active)
+    potential_payout = sum(int(row["potential_payout"] or 0) for row in active)
+    revision_penalty_amount = _position_penalty(active_stake, config)
+    revision_new_stake_amount = max(0, active_stake - revision_penalty_amount)
+    return {
+        "has_position": True,
+        "option_id": latest["market_option_id"],
+        "option_label": latest["option_label"],
+        "active_stake_amount": active_stake,
+        "potential_payout_total": potential_payout,
+        "probability_at_entry": float(_decimal_probability(latest["probability_at_entry"])),
+        "position_count": len(active),
+        "reinforcement_count": reinforcement_count,
+        "reinforcement_remaining": reinforcement_remaining,
+        "reinforcement_max_count": int(config["position_reinforcement_max_count"]),
+        "revision_count": revision_count,
+        "revision_remaining": revision_remaining,
+        "revision_penalty_percent": int(config["position_revision_penalty_percent"]),
+        "revision_penalty_amount": revision_penalty_amount,
+        "revision_new_stake_amount": revision_new_stake_amount,
+        "can_reinforce": not bool(reinforcement_blocked) and reinforcement_remaining > 0,
+        "can_revise": not bool(revision_blocked) and revision_remaining > 0,
+        "reinforcement_blocked_reason": reinforcement_blocked,
+        "revision_blocked_reason": revision_blocked,
+        "revision_cutoff_at": cutoff_at.isoformat() if cutoff_at else None,
+        "active_entries": _active_entries_summary(active),
+        "history": _prediction_history(cursor, user_id, market["id"]),
+    }
+
+
+def _position_penalty(active_stake, config):
+    percent = int(config["position_revision_penalty_percent"] or 0)
+    if percent <= 0:
+        return 0
+    penalty = int((Decimal(active_stake) * Decimal(percent) / Decimal("100")).to_integral_value(rounding=ROUND_HALF_UP))
+    return max(1, penalty)
+
+
+def _load_market_for_position(cursor, slug):
+    cursor.execute(
+        """
+        SELECT id, slug, status, close_at
+        FROM gotrendlabs_markets
+        WHERE slug = %s
+        """,
+        (slug,),
+    )
+    market = cursor.fetchone()
+    if not market:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+    return market
+
+
+def _load_market_option(cursor, market_id, option_id):
+    cursor.execute(
+        """
+        SELECT id, label, probability_exact, hint
+        FROM gotrendlabs_market_options
+        WHERE id = %s AND market_id = %s
+        """,
+        (option_id, market_id),
+    )
+    option = cursor.fetchone()
+    if not option:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opção inválida para este mercado.")
+    return option
+
+
+def _validate_position_action(cursor, market, option, user_id, payload, *, active_positions=None, lock_balance=False):
+    action = (payload.action or "").strip().lower()
+    if action not in {"reinforcement", "revision"}:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Ação de posição inválida.")
+    config = _position_config(cursor)
+    active = active_positions if active_positions is not None else _active_positions(cursor, user_id, market["id"])
+    if not active:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nenhuma posição ativa neste mercado.")
+    if market["status"] != "open":
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado fechado para reforço ou revisão.")
+    active_option_id = active[-1]["market_option_id"]
+    active_stake = sum(int(row["stake_amount"] or 0) for row in active)
+    reinforcement_count = _reinforcement_count(cursor, user_id, market["id"])
+    reinforcement_remaining = max(0, int(config["position_reinforcement_max_count"]) - reinforcement_count)
+    revision_count = _revision_count(cursor, user_id, market["id"])
+    revision_remaining = max(0, int(config["position_revision_max_count"]) - revision_count)
+    stake_amount = int(payload.stake_amount or 0)
+    penalty_amount = 0
+    new_stake = stake_amount
+    if action == "reinforcement":
+        if not bool(config["position_reinforcement_enabled"]):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Reforço de posição desativado no Admin Ops.")
+        if reinforcement_remaining <= 0:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Limite de reforços atingido neste mercado.")
+        if option["id"] != active_option_id:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Reforço deve manter a mesma opção da posição ativa.")
+        if stake_amount < int(config["position_reinforcement_min_gtl"]):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Valor menor que o mínimo de reforço configurado.")
+    else:
+        if not bool(config["position_revision_enabled"]):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Revisão de posição desativada no Admin Ops.")
+        if option["id"] == active_option_id:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Revisão deve trocar para uma opção diferente.")
+        cutoff_at = _revision_cutoff_at(market, config)
+        now = datetime.now(timezone.utc)
+        if cutoff_at and now >= cutoff_at:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Janela de revisão encerrada para este mercado.")
+        if revision_remaining <= 0:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Limite de revisões atingido neste mercado.")
+        penalty_amount = _position_penalty(active_stake, config)
+        new_stake = active_stake - penalty_amount
+        if new_stake < int(config["position_revision_min_remaining_gtl"]):
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Valor restante após penalidade é menor que o mínimo configurado.")
+    if lock_balance:
+        cursor.execute(
+            """
+            SELECT available_gtl
+            FROM gotrendlabs_wallet_balances
+            WHERE user_id = %s
+            FOR UPDATE
+            """,
+            (user_id,),
+        )
+        balance = cursor.fetchone()
+        if not balance:
+            _ensure_wallet_balance(cursor, user_id)
+            cursor.execute("SELECT available_gtl FROM gotrendlabs_wallet_balances WHERE user_id = %s FOR UPDATE", (user_id,))
+            balance = cursor.fetchone()
+    else:
+        _ensure_wallet_balance(cursor, user_id)
+        cursor.execute("SELECT available_gtl FROM gotrendlabs_wallet_balances WHERE user_id = %s", (user_id,))
+        balance = cursor.fetchone()
+    available_gtl = int(balance["available_gtl"] or 0) if balance else 0
+    if action == "reinforcement" and available_gtl < stake_amount:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo insuficiente para reforçar esta posição.")
+    probability_exact = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
+    estimated_return = int((Decimal(new_stake) * Decimal("100") / probability_exact).to_integral_value())
+    return {
+        "action": action,
+        "active_stake_amount": active_stake,
+        "active_position_count": len(active),
+        "stake_amount": stake_amount,
+        "penalty_amount": penalty_amount,
+        "revision_penalty_percent": int(config["position_revision_penalty_percent"]),
+        "new_position_stake_amount": new_stake,
+        "position_total_after": new_stake if action == "revision" else active_stake + stake_amount,
+        "probability_exact": probability_exact,
+        "estimated_return": estimated_return,
+        "reinforcement_remaining": max(0, reinforcement_remaining - 1) if action == "reinforcement" else reinforcement_remaining,
+        "revision_remaining": revision_remaining if action == "reinforcement" else max(0, revision_remaining - 1),
+    }
+
+
+def _insert_prediction_position(cursor, user_id, market, option, stake_amount, action_type):
+    cursor.execute("SELECT reputation_score FROM gotrendlabs_user_reputations WHERE user_id = %s", (user_id,))
+    reputation = cursor.fetchone()
+    reputation_score = int(reputation["reputation_score"] if reputation else INITIAL_REPUTATION)
+    probability_at_entry = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
+    weight_at_entry = reputation_score * int(stake_amount)
+    potential_payout = int((Decimal(stake_amount) * Decimal("100") / probability_at_entry).to_integral_value())
+    now = datetime.now(timezone.utc)
+    cursor.execute(
+        """
+        INSERT INTO gotrendlabs_predictions
+            (user_id, market_id, market_option_id, action_type, position_sequence,
+             stake_amount, probability_at_entry, weight_at_entry, potential_payout,
+             status, won, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, 'open', NULL, %s, %s)
+        RETURNING id, created_at
+        """,
+        (
+            user_id,
+            market["id"],
+            option["id"],
+            action_type,
+            _next_position_sequence(cursor, user_id, market["id"]),
+            int(stake_amount),
+            probability_at_entry,
+            weight_at_entry,
+            potential_payout,
+            now,
+            now,
+        ),
+    )
+    row = cursor.fetchone()
+    return {**dict(row), "potential_payout": potential_payout}
+
+
+def _position_action_preview(cursor, slug, payload, user_id):
+    market = _load_market_for_position(cursor, slug)
+    option = _load_market_option(cursor, market["id"], payload.option_id)
+    try:
+        preview = _validate_position_action(cursor, market, option, user_id, payload)
+        blocked_reason = ""
+        allowed = True
+    except HTTPException as exc:
+        config = _position_config(cursor)
+        active = _active_positions(cursor, user_id, market["id"])
+        active_stake = sum(int(row["stake_amount"] or 0) for row in active)
+        reinforcement_count = _reinforcement_count(cursor, user_id, market["id"])
+        probability_exact = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
+        preview = {
+            "action": (payload.action or "").strip().lower(),
+            "active_stake_amount": active_stake,
+            "active_position_count": len(active),
+            "stake_amount": int(payload.stake_amount or 0),
+            "penalty_amount": _position_penalty(active_stake, config) if active else 0,
+            "revision_penalty_percent": int(config["position_revision_penalty_percent"]),
+            "new_position_stake_amount": 0,
+            "position_total_after": active_stake,
+            "probability_exact": probability_exact,
+            "estimated_return": 0,
+            "reinforcement_remaining": max(0, int(config["position_reinforcement_max_count"]) - reinforcement_count),
+            "revision_remaining": max(0, int(config["position_revision_max_count"]) - _revision_count(cursor, user_id, market["id"])),
+        }
+        blocked_reason = str(exc.detail)
+        allowed = False
+    return {
+        "market_id": market["id"],
+        "option_id": option["id"],
+        "action": preview["action"],
+        "stake_amount": preview["stake_amount"],
+        "active_stake_amount": preview["active_stake_amount"],
+        "active_position_count": preview["active_position_count"],
+        "penalty_amount": preview["penalty_amount"],
+        "revision_penalty_percent": preview["revision_penalty_percent"],
+        "new_position_stake_amount": preview["new_position_stake_amount"],
+        "position_total_after": preview["position_total_after"],
+        "probability_exact": float(preview["probability_exact"]),
+        "estimated_return": preview["estimated_return"],
+        "reinforcement_remaining": preview["reinforcement_remaining"],
+        "revision_remaining": preview["revision_remaining"],
+        "allowed": allowed,
+        "blocked_reason": blocked_reason,
+    }
+
+
+def _apply_position_action(cursor, slug, payload, user):
+    market = _load_market_for_position(cursor, slug)
+    _lock_position_mutation(cursor, user["id"], market["id"])
+    option = _load_market_option(cursor, market["id"], payload.option_id)
+    active = _active_positions(cursor, user["id"], market["id"], for_update=True)
+    preview = _validate_position_action(cursor, market, option, user["id"], payload, active_positions=active, lock_balance=True)
+    if preview["action"] == "revision":
+        now = datetime.now(timezone.utc)
+        prediction = _insert_prediction_position(cursor, user["id"], market, option, preview["new_position_stake_amount"], "revision")
+        for row in active:
+            _record_wallet_entry(
+                cursor,
+                user["id"],
+                entry_type="prediction_refund",
+                amount=int(row["stake_amount"] or 0),
+                direction="release",
+                description=f"Stake liberado por revisão de posição: {slug}",
+                reference_type="prediction",
+                reference_id=str(row["id"]),
+            )
+        cursor.execute(
+            """
+            UPDATE gotrendlabs_predictions
+            SET status = 'revised',
+                superseded_by_id = %s,
+                superseded_at = %s,
+                updated_at = %s
+            WHERE user_id = %s
+              AND market_id = %s
+              AND status = 'open'
+              AND id <> %s
+            """,
+            (prediction["id"], now, now, user["id"], market["id"], prediction["id"]),
+        )
+        if preview["penalty_amount"]:
+            _record_wallet_entry(
+                cursor,
+                user["id"],
+                entry_type="prediction_revision_penalty",
+                amount=preview["penalty_amount"],
+                direction="debit",
+                description=f"Custo de revisão de posição: {slug}",
+                reference_type="prediction",
+                reference_id=str(prediction["id"]),
+            )
+        _record_wallet_entry(
+            cursor,
+            user["id"],
+            entry_type="prediction_stake_lock",
+            amount=preview["new_position_stake_amount"],
+            direction="lock",
+            description=f"Stake bloqueado em revisão de posição: {slug}",
+            reference_type="prediction",
+            reference_id=str(prediction["id"]),
+        )
+    else:
+        prediction = _insert_prediction_position(cursor, user["id"], market, option, preview["stake_amount"], "reinforcement")
+        _record_wallet_entry(
+            cursor,
+            user["id"],
+            entry_type="prediction_stake_lock",
+            amount=preview["stake_amount"],
+            direction="lock",
+            description=f"Stake bloqueado em reforço de posição: {slug}",
+            reference_type="prediction",
+            reference_id=str(prediction["id"]),
+        )
+    snapshot = _market_probability_snapshot(cursor, market["id"])
+    wallet_after = _wallet_summary(cursor, user["id"])
+    viewer_position = _viewer_position_summary(cursor, market, user["id"])
+    return {
+        "prediction_id": prediction["id"],
+        "market_id": market["id"],
+        "option_id": option["id"],
+        "action": preview["action"],
+        "stake_amount": preview["new_position_stake_amount"] if preview["action"] == "revision" else preview["stake_amount"],
+        "penalty_amount": preview["penalty_amount"],
+        "accepted_at": prediction["created_at"].isoformat(),
+        "wallet_balance_after": wallet_after,
+        "market_probability_snapshot": snapshot,
+        "potential_payout": prediction["potential_payout"],
+        "viewer_position": viewer_position,
     }
 
 
@@ -3695,42 +4249,23 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
             _require_email_confirmed(user)
-            cursor.execute(
-                """
-                SELECT id, slug, status
-                FROM gotrendlabs_markets
-                WHERE slug = %s
-                """,
-                (slug,),
-            )
-            market = cursor.fetchone()
-            if not market:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+            market = _load_market_for_position(cursor, slug)
             if market["status"] != "open":
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado fechado para novas previsões.")
 
-            cursor.execute(
-                """
-                SELECT id, label, probability_exact, hint
-                FROM gotrendlabs_market_options
-                WHERE id = %s AND market_id = %s
-                """,
-                (payload.option_id, market["id"]),
-            )
-            option = cursor.fetchone()
-            if not option:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Opção inválida para este mercado.")
-
+            _lock_position_mutation(cursor, user["id"], market["id"])
+            option = _load_market_option(cursor, market["id"], payload.option_id)
             cursor.execute(
                 """
                 SELECT id
                 FROM gotrendlabs_predictions
                 WHERE user_id = %s AND market_id = %s
+                FOR UPDATE
                 """,
                 (user["id"], market["id"]),
             )
             if cursor.fetchone():
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Você já registrou uma previsão neste mercado.")
+                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Use reforço ou revisão para alterar sua posição neste mercado.")
 
             cursor.execute(
                 """
@@ -3757,42 +4292,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
             if int(balance["available_gtl"] or 0) < payload.stake_amount:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo insuficiente para esta previsão.")
 
-            cursor.execute(
-                """
-                SELECT reputation_score
-                FROM gotrendlabs_user_reputations
-                WHERE user_id = %s
-                """,
-                (user["id"],),
-            )
-            reputation = cursor.fetchone()
-            reputation_score = int(reputation["reputation_score"] if reputation else INITIAL_REPUTATION)
-            probability_at_entry = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
-            weight_at_entry = reputation_score * payload.stake_amount
-            potential_payout = int((Decimal(payload.stake_amount) * Decimal("100") / probability_at_entry).to_integral_value())
-            accepted_at = datetime.now(timezone.utc)
-
-            cursor.execute(
-                """
-                INSERT INTO gotrendlabs_predictions
-                    (user_id, market_id, market_option_id, stake_amount, probability_at_entry,
-                     weight_at_entry, potential_payout, status, won, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'open', NULL, %s, %s)
-                RETURNING id, created_at
-                """,
-                (
-                    user["id"],
-                    market["id"],
-                    option["id"],
-                    payload.stake_amount,
-                    probability_at_entry,
-                    weight_at_entry,
-                    potential_payout,
-                    accepted_at,
-                    accepted_at,
-                ),
-            )
-            prediction = cursor.fetchone()
+            prediction = _insert_prediction_position(cursor, user["id"], market, option, payload.stake_amount, "initial")
             _record_wallet_entry(
                 cursor,
                 user["id"],
@@ -3823,8 +4323,26 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
                 "accepted_at": prediction["created_at"].isoformat(),
                 "wallet_balance_after": wallet_after,
                 "market_probability_snapshot": snapshot,
-                "potential_payout": potential_payout,
+                "potential_payout": prediction["potential_payout"],
             }
+
+
+@app.post("/markets/{slug}/position-preview", response_model=PositionActionPreviewResponse)
+def preview_position_action(slug: str, payload: PositionActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
+            return _position_action_preview(cursor, slug, payload, user["id"])
+
+
+@app.post("/markets/{slug}/position-actions", response_model=PositionActionResponse, status_code=status.HTTP_201_CREATED)
+def create_position_action(slug: str, payload: PositionActionPayload, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            _require_email_confirmed(user)
+            return _apply_position_action(cursor, slug, payload, user)
 
 
 @app.post("/suggestions/", response_model=QueueItemResponse, status_code=status.HTTP_201_CREATED, include_in_schema=False)
@@ -5298,6 +5816,7 @@ def admin_get_market_resolution_audit(
                        COALESCE(SUM(stake_amount), 0) AS stake_total
                 FROM gotrendlabs_predictions
                 WHERE market_id = %s
+                  AND status = 'resolved'
                 """,
                 (market["id"],),
             )
@@ -5313,6 +5832,7 @@ def admin_get_market_resolution_audit(
                  AND l.reference_id = p.id::text
                  AND l.entry_type IN ('prediction_refund', 'prediction_payout', 'prediction_loss')
                 WHERE p.market_id = %s
+                  AND p.status = 'resolved'
                 """,
                 (market["id"],),
             )
@@ -5322,12 +5842,12 @@ def admin_get_market_resolution_audit(
                 SELECT COUNT(*) AS total
                 FROM gotrendlabs_user_badge_awards a
                 WHERE a.reason_snapshot LIKE %s
-                  AND a.user_id IN (SELECT user_id FROM gotrendlabs_predictions WHERE market_id = %s)
+                  AND a.user_id IN (SELECT user_id FROM gotrendlabs_predictions WHERE market_id = %s AND status = 'resolved')
                 """,
                 (reason_pattern, market["id"]),
             )
             badge_total = cursor.fetchone()["total"]
-            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_predictions WHERE market_id = %s", (market["id"],))
+            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_predictions WHERE market_id = %s AND status = 'resolved'", (market["id"],))
             participant_total = int(cursor.fetchone()["total"] or 0)
             cursor.execute(
                 """
@@ -5351,10 +5871,11 @@ def admin_get_market_resolution_audit(
                 FROM gotrendlabs_predictions p
                 JOIN gotrendlabs_users u ON u.id = p.user_id
                 JOIN gotrendlabs_market_options o ON o.id = p.market_option_id
-                LEFT JOIN ledger_totals lt ON lt.prediction_id = p.id
-                WHERE p.market_id = %s
-                ORDER BY p.id ASC
-                LIMIT %s OFFSET %s
+	                LEFT JOIN ledger_totals lt ON lt.prediction_id = p.id
+	                WHERE p.market_id = %s
+	                  AND p.status = 'resolved'
+	                ORDER BY p.id ASC
+	                LIMIT %s OFFSET %s
                 """,
                 (market["id"], limit, offset),
             )

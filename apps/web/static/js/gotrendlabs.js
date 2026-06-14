@@ -549,9 +549,38 @@ function updatePredictionPreview() {
     .catch(() => {});
 }
 
+function updatePositionActionPreview(form) {
+  const targetId = form.dataset.previewTarget;
+  const preview = targetId ? document.getElementById(targetId) : null;
+  if (!preview) return;
+  const optionInput = $("[data-selected-option-id]:checked", form) || $("[name='option_id'][type='hidden']", form);
+  if (!optionInput?.value) return;
+  const body = new FormData(form);
+  fetch(form.dataset.positionPreviewUrl, {
+    method: "POST",
+    body,
+    credentials: "same-origin",
+    headers: {"X-Requested-With": "XMLHttpRequest"},
+  })
+    .then((response) => response.text())
+    .then((html) => {
+      preview.innerHTML = html;
+    })
+    .catch(() => {});
+}
+
 $$("[data-amount]").forEach((range) => {
   range.addEventListener("input", updatePredictionPreview);
+  range.addEventListener("input", () => {
+    const form = range.closest("[data-position-preview-url]");
+    if (form) updatePositionActionPreview(form);
+  });
   updatePredictionPreview();
+});
+
+$$("[data-position-preview-url]").forEach((form) => {
+  form.addEventListener("change", () => updatePositionActionPreview(form));
+  updatePositionActionPreview(form);
 });
 
 let pendingConfirmTrigger = null;

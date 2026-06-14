@@ -2729,6 +2729,9 @@
             "title": "Viewer Has Prediction",
             "type": "boolean"
           },
+          "viewer_position": {
+            "$ref": "#/components/schemas/ViewerPositionSummary"
+          },
           "volume_gtl": {
             "title": "Volume Gtl",
             "type": "string"
@@ -3002,6 +3005,187 @@
           "message"
         ],
         "title": "PasswordResetRequestResponse",
+        "type": "object"
+      },
+      "PositionActionPayload": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "client_locale": {
+            "default": "pt-br",
+            "title": "Client Locale",
+            "type": "string"
+          },
+          "option_id": {
+            "title": "Option Id",
+            "type": "integer"
+          },
+          "stake_amount": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Stake Amount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "action",
+          "option_id"
+        ],
+        "title": "PositionActionPayload",
+        "type": "object"
+      },
+      "PositionActionPreviewResponse": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "active_position_count": {
+            "default": 0,
+            "title": "Active Position Count",
+            "type": "integer"
+          },
+          "active_stake_amount": {
+            "title": "Active Stake Amount",
+            "type": "integer"
+          },
+          "allowed": {
+            "default": true,
+            "title": "Allowed",
+            "type": "boolean"
+          },
+          "blocked_reason": {
+            "default": "",
+            "title": "Blocked Reason",
+            "type": "string"
+          },
+          "estimated_return": {
+            "title": "Estimated Return",
+            "type": "integer"
+          },
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "new_position_stake_amount": {
+            "title": "New Position Stake Amount",
+            "type": "integer"
+          },
+          "option_id": {
+            "title": "Option Id",
+            "type": "integer"
+          },
+          "penalty_amount": {
+            "default": 0,
+            "title": "Penalty Amount",
+            "type": "integer"
+          },
+          "position_total_after": {
+            "default": 0,
+            "title": "Position Total After",
+            "type": "integer"
+          },
+          "probability_exact": {
+            "title": "Probability Exact",
+            "type": "number"
+          },
+          "reinforcement_remaining": {
+            "default": 0,
+            "title": "Reinforcement Remaining",
+            "type": "integer"
+          },
+          "revision_penalty_percent": {
+            "default": 0,
+            "title": "Revision Penalty Percent",
+            "type": "integer"
+          },
+          "revision_remaining": {
+            "default": 0,
+            "title": "Revision Remaining",
+            "type": "integer"
+          },
+          "stake_amount": {
+            "title": "Stake Amount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "market_id",
+          "option_id",
+          "action",
+          "stake_amount",
+          "active_stake_amount",
+          "new_position_stake_amount",
+          "probability_exact",
+          "estimated_return"
+        ],
+        "title": "PositionActionPreviewResponse",
+        "type": "object"
+      },
+      "PositionActionResponse": {
+        "properties": {
+          "accepted_at": {
+            "title": "Accepted At",
+            "type": "string"
+          },
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "market_probability_snapshot": {
+            "items": {
+              "$ref": "#/components/schemas/MarketOptionResponse"
+            },
+            "title": "Market Probability Snapshot",
+            "type": "array"
+          },
+          "option_id": {
+            "title": "Option Id",
+            "type": "integer"
+          },
+          "penalty_amount": {
+            "default": 0,
+            "title": "Penalty Amount",
+            "type": "integer"
+          },
+          "potential_payout": {
+            "title": "Potential Payout",
+            "type": "integer"
+          },
+          "prediction_id": {
+            "title": "Prediction Id",
+            "type": "integer"
+          },
+          "stake_amount": {
+            "title": "Stake Amount",
+            "type": "integer"
+          },
+          "viewer_position": {
+            "$ref": "#/components/schemas/ViewerPositionSummary"
+          },
+          "wallet_balance_after": {
+            "$ref": "#/components/schemas/WalletResponse"
+          }
+        },
+        "required": [
+          "prediction_id",
+          "market_id",
+          "option_id",
+          "action",
+          "stake_amount",
+          "accepted_at",
+          "wallet_balance_after",
+          "market_probability_snapshot",
+          "potential_payout",
+          "viewer_position"
+        ],
+        "title": "PositionActionResponse",
         "type": "object"
       },
       "PredictionCreatePayload": {
@@ -4548,6 +4732,146 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "ViewerPositionSummary": {
+        "properties": {
+          "active_entries": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Active Entries",
+            "type": "array"
+          },
+          "active_stake_amount": {
+            "default": 0,
+            "title": "Active Stake Amount",
+            "type": "integer"
+          },
+          "can_reinforce": {
+            "default": false,
+            "title": "Can Reinforce",
+            "type": "boolean"
+          },
+          "can_revise": {
+            "default": false,
+            "title": "Can Revise",
+            "type": "boolean"
+          },
+          "has_position": {
+            "default": false,
+            "title": "Has Position",
+            "type": "boolean"
+          },
+          "history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "option_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Option Id"
+          },
+          "option_label": {
+            "default": "",
+            "title": "Option Label",
+            "type": "string"
+          },
+          "position_count": {
+            "default": 0,
+            "title": "Position Count",
+            "type": "integer"
+          },
+          "potential_payout_total": {
+            "default": 0,
+            "title": "Potential Payout Total",
+            "type": "integer"
+          },
+          "probability_at_entry": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Probability At Entry"
+          },
+          "reinforcement_blocked_reason": {
+            "default": "",
+            "title": "Reinforcement Blocked Reason",
+            "type": "string"
+          },
+          "reinforcement_count": {
+            "default": 0,
+            "title": "Reinforcement Count",
+            "type": "integer"
+          },
+          "reinforcement_max_count": {
+            "default": 0,
+            "title": "Reinforcement Max Count",
+            "type": "integer"
+          },
+          "reinforcement_remaining": {
+            "default": 0,
+            "title": "Reinforcement Remaining",
+            "type": "integer"
+          },
+          "revision_blocked_reason": {
+            "default": "",
+            "title": "Revision Blocked Reason",
+            "type": "string"
+          },
+          "revision_count": {
+            "default": 0,
+            "title": "Revision Count",
+            "type": "integer"
+          },
+          "revision_cutoff_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Cutoff At"
+          },
+          "revision_new_stake_amount": {
+            "default": 0,
+            "title": "Revision New Stake Amount",
+            "type": "integer"
+          },
+          "revision_penalty_amount": {
+            "default": 0,
+            "title": "Revision Penalty Amount",
+            "type": "integer"
+          },
+          "revision_penalty_percent": {
+            "default": 0,
+            "title": "Revision Penalty Percent",
+            "type": "integer"
+          },
+          "revision_remaining": {
+            "default": 0,
+            "title": "Revision Remaining",
+            "type": "integer"
+          }
+        },
+        "title": "ViewerPositionSummary",
         "type": "object"
       },
       "WalletRechargeApprovalPayload": {
@@ -9425,6 +9749,124 @@
           }
         },
         "summary": "Like Market"
+      }
+    },
+    "/markets/{slug}/position-actions": {
+      "post": {
+        "operationId": "create_position_action_markets__slug__position_actions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionActionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Position Action"
+      }
+    },
+    "/markets/{slug}/position-preview": {
+      "post": {
+        "operationId": "preview_position_action_markets__slug__position_preview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PositionActionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionActionPreviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview Position Action"
       }
     },
     "/markets/{slug}/predict": {

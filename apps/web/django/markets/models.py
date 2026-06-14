@@ -163,11 +163,27 @@ class Prediction(models.Model):
         ("open", "Open"),
         ("resolved", "Resolved"),
         ("canceled", "Canceled"),
+        ("revised", "Revised"),
+    )
+    ACTION_TYPE_CHOICES = (
+        ("initial", "Initial"),
+        ("reinforcement", "Reinforcement"),
+        ("revision", "Revision"),
     )
 
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="predictions")
     market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name="predictions")
     market_option = models.ForeignKey(MarketOption, on_delete=models.PROTECT, related_name="predictions")
+    action_type = models.CharField(max_length=20, choices=ACTION_TYPE_CHOICES, default="initial")
+    position_sequence = models.PositiveIntegerField(default=1)
+    superseded_by = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="superseded_positions",
+    )
+    superseded_at = models.DateTimeField(null=True, blank=True)
     stake_amount = models.PositiveIntegerField()
     probability_at_entry = models.DecimalField(max_digits=7, decimal_places=4)
     weight_at_entry = models.PositiveBigIntegerField()
@@ -183,9 +199,8 @@ class Prediction(models.Model):
             models.Index(fields=["user", "-created_at"]),
             models.Index(fields=["market", "-created_at"]),
             models.Index(fields=["market_option"]),
-        ]
-        constraints = [
-            models.UniqueConstraint(fields=["user", "market"], name="uniq_prediction_user_market"),
+            models.Index(fields=["user", "market", "status"]),
+            models.Index(fields=["superseded_by"]),
         ]
 
 

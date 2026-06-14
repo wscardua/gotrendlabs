@@ -151,6 +151,17 @@ class EconomyConfigForm(forms.Form):
     )
 
 
+class PositionConfigForm(forms.Form):
+    position_reinforcement_enabled = forms.BooleanField(label="Permitir reforço de posição", required=False, initial=True)
+    position_reinforcement_max_count = forms.IntegerField(label="Máximo de reforços por mercado", min_value=1, max_value=20, initial=3)
+    position_revision_enabled = forms.BooleanField(label="Permitir revisão de posição", required=False, initial=True)
+    position_revision_max_count = forms.IntegerField(label="Máximo de revisões por mercado", min_value=0, max_value=20, initial=1)
+    position_revision_cutoff_hours = forms.IntegerField(label="Janela limite antes do fechamento", min_value=0, max_value=8760, initial=24)
+    position_revision_penalty_percent = forms.IntegerField(label="Penalidade por revisão (%)", min_value=0, max_value=100, initial=20)
+    position_reinforcement_min_gtl = forms.IntegerField(label="Valor mínimo para reforço", min_value=1, max_value=1000000, initial=1)
+    position_revision_min_remaining_gtl = forms.IntegerField(label="Valor mínimo restante após revisão", min_value=1, max_value=1000000, initial=1)
+
+
 class DaemonConfigForm(forms.Form):
     daemon_stale_after_minutes = forms.IntegerField(
         label="Minutos até status atrasado",

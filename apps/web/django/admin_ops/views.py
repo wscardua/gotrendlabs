@@ -96,6 +96,7 @@ from apps.web.django.admin_ops.forms import (
     MarketResolutionForm,
     MobileMaintenanceConfigForm,
     MobileAppReleaseForm,
+    PositionConfigForm,
     QueueReviewForm,
     PushTestDeliveryForm,
     PushTemplateForm,
@@ -1151,6 +1152,16 @@ def config(request):
         },
         prefix="economy",
     )
+    position_post_data = request.POST if request.method == "POST" and any(key.startswith("position-") for key in request.POST) else None
+    position_form = PositionConfigForm(
+        position_post_data,
+        initial={
+            field: getattr(site_config, field)
+            for field in PositionConfigForm.base_fields
+            if hasattr(site_config, field)
+        },
+        prefix="position",
+    )
     daemon_form = DaemonConfigForm(
         request.POST or None,
         initial={
@@ -1177,6 +1188,7 @@ def config(request):
         },
         prefix="ai",
     )
+    position_form_valid = position_post_data is None or position_form.is_valid()
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
     if request.method == "POST" and request.POST.get("action") == "resend_test":
         try:
@@ -1192,6 +1204,7 @@ def config(request):
         and mobile_maintenance_form.is_valid()
         and email_form.is_valid()
         and economy_form.is_valid()
+        and position_form_valid
         and daemon_form.is_valid()
         and retention_form.is_valid()
         and ai_form_valid
@@ -1210,6 +1223,9 @@ def config(request):
             setattr(site_config, field, value)
         site_config.wallet_recharge_min_balance_gtl = economy_form.cleaned_data["wallet_recharge_min_balance_gtl"]
         site_config.referral_bonus_gtl = economy_form.cleaned_data["referral_bonus_gtl"]
+        if position_post_data is not None:
+            for field, value in position_form.cleaned_data.items():
+                setattr(site_config, field, value)
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
@@ -1234,6 +1250,7 @@ def config(request):
             "mobile_maintenance_form": mobile_maintenance_form,
             "email_form": email_form,
             "economy_form": economy_form,
+            "position_form": position_form,
             "daemon_form": daemon_form,
             "retention_form": retention_form,
             "ai_form": ai_form,

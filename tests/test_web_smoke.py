@@ -3870,6 +3870,243 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(unauthenticated.status_code, 401)
 
+    def test_position_reinforcement_and_revision_are_auditable_wallet_mutations(self):
+        client = TestClient(app)
+        staff_register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Position Staff",
+                "email": "position-staff@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        user_register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Position User",
+                "email": "position-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(staff_register.status_code, 201)
+        self.assertEqual(user_register.status_code, 201)
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("position-staff@example.com",))
+        staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
+        headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
+        Market.objects.filter(slug="openai-gpt6-2026").update(auto_close_enabled=False)
+        sim = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
+        nao = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="NAO")
+
+        initial = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=headers,
+            json={"option_id": sim.id, "stake_amount": 100, "client_locale": "pt-br"},
+        )
+        self.assertEqual(initial.status_code, 201)
+        reinforcement = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "reinforcement", "option_id": sim.id, "stake_amount": 40, "client_locale": "pt-br"},
+        )
+        self.assertEqual(reinforcement.status_code, 201)
+        user = get_user_model().objects.get(username="@positionuser")
+        self.assertEqual(Prediction.objects.filter(user=user, market__slug="openai-gpt6-2026", status="open").count(), 2)
+        self.assertEqual(Prediction.objects.filter(user=user, action_type="reinforcement", stake_amount=40).count(), 1)
+        balance = WalletBalance.objects.get(user=user)
+        self.assertEqual(balance.available_gtl, 1860)
+        self.assertEqual(balance.locked_gtl, 140)
+
+        preview = client.post(
+            "/markets/openai-gpt6-2026/position-preview",
+            headers=headers,
+            json={"action": "revision", "option_id": nao.id, "stake_amount": 0, "client_locale": "pt-br"},
+        )
+        self.assertEqual(preview.status_code, 200)
+        self.assertTrue(preview.json()["allowed"])
+        self.assertEqual(preview.json()["active_position_count"], 2)
+        self.assertEqual(preview.json()["revision_penalty_percent"], 20)
+        self.assertEqual(preview.json()["penalty_amount"], 28)
+        self.assertEqual(preview.json()["new_position_stake_amount"], 112)
+
+        revision = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "revision", "option_id": nao.id, "stake_amount": 0, "client_locale": "pt-br"},
+        )
+        self.assertEqual(revision.status_code, 201)
+        payload = revision.json()
+        self.assertEqual(payload["action"], "revision")
+        self.assertEqual(payload["stake_amount"], 112)
+        self.assertEqual(payload["penalty_amount"], 28)
+        self.assertEqual(Prediction.objects.filter(user=user, market__slug="openai-gpt6-2026", status="revised").count(), 2)
+        self.assertEqual(Prediction.objects.filter(user=user, market__slug="openai-gpt6-2026", status="open", action_type="revision", stake_amount=112).count(), 1)
+        self.assertTrue(WalletLedgerEntry.objects.filter(user=user, entry_type="prediction_revision_penalty", direction="debit", amount=28).exists())
+        self.assertEqual(WalletLedgerEntry.objects.filter(user=user, entry_type="prediction_refund", direction="release").count(), 2)
+        balance.refresh_from_db()
+        self.assertEqual(balance.available_gtl, 1860)
+        self.assertEqual(balance.locked_gtl, 112)
+
+        blocked_second_revision = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "revision", "option_id": sim.id, "stake_amount": 0, "client_locale": "pt-br"},
+        )
+        self.assertEqual(blocked_second_revision.status_code, 422)
+
+        self.assertEqual(client.post("/admin/markets/openai-gpt6-2026/lock", headers=staff_headers, json={"note": "fechar"}).status_code, 200)
+        resolved = client.post(
+            "/admin/markets/openai-gpt6-2026/resolve",
+            headers=staff_headers,
+            json={"winning_option_id": nao.id, "source_url": "https://fonte.example/position", "note": "Resultado final."},
+        )
+        self.assertEqual(resolved.status_code, 200)
+        audit = client.get("/admin/markets/openai-gpt6-2026/resolution-audit", headers=staff_headers)
+        self.assertEqual(audit.status_code, 200)
+        audit_payload = audit.json()
+        self.assertEqual(audit_payload["summary"]["predictions_total"], 1)
+        self.assertEqual(audit_payload["summary"]["stake_total"], 112)
+        self.assertEqual(audit_payload["pagination"]["total"], 1)
+        self.assertEqual(len(audit_payload["participants"]), 1)
+        self.assertEqual(audit_payload["participants"][0]["prediction_id"], Prediction.objects.get(user=user, market__slug="openai-gpt6-2026", status="resolved").id)
+        self.assertEqual(Prediction.objects.filter(user=user, market__slug="openai-gpt6-2026", status="revised").count(), 2)
+
+    def test_initial_prediction_rechecks_existing_position_after_mutation_lock(self):
+        client = TestClient(app)
+        user_register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Race Position User",
+                "email": "race-position-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(user_register.status_code, 201)
+        headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
+        sim = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
+        injected = {"done": False}
+
+        def inject_existing_prediction(cursor, user_id, market_id):
+            if injected["done"]:
+                return
+            injected["done"] = True
+            now = timezone.now()
+            cursor.execute(
+                """
+                INSERT INTO gotrendlabs_predictions
+                    (user_id, market_id, market_option_id, action_type, position_sequence,
+                     stake_amount, probability_at_entry, weight_at_entry, potential_payout,
+                     status, won, created_at, updated_at)
+                VALUES (%s, %s, %s, 'initial', 1, 25, 50.0000, 2500, 50, 'open', NULL, %s, %s)
+                """,
+                (user_id, market_id, sim.id, now, now),
+            )
+
+        with patch("apps.api.backend_api.main._lock_position_mutation", side_effect=inject_existing_prediction):
+            response = client.post(
+                "/markets/openai-gpt6-2026/predict",
+                headers=headers,
+                json={"option_id": sim.id, "stake_amount": 30, "client_locale": "pt-br"},
+            )
+
+        self.assertEqual(response.status_code, 409)
+        self.assertIn("Use reforço ou revisão", response.json()["detail"])
+        user = get_user_model().objects.get(email="race-position-user@example.com")
+        self.assertTrue(injected["done"])
+        self.assertEqual(Prediction.objects.filter(user=user, market__slug="openai-gpt6-2026").count(), 0)
+
+    def test_position_reinforcement_respects_admin_limit(self):
+        client = TestClient(app)
+        site_config = SiteConfig.get_solo()
+        site_config.position_reinforcement_max_count = 1
+        site_config.save(update_fields=["position_reinforcement_max_count"])
+        user_register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Reinforcement Limit User",
+                "email": "reinforcement-limit-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(user_register.status_code, 201)
+        headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
+        sim = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
+
+        initial = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=headers,
+            json={"option_id": sim.id, "stake_amount": 100, "client_locale": "pt-br"},
+        )
+        self.assertEqual(initial.status_code, 201)
+        first_reinforcement = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "reinforcement", "option_id": sim.id, "stake_amount": 25, "client_locale": "pt-br"},
+        )
+        self.assertEqual(first_reinforcement.status_code, 201)
+        viewer_position = first_reinforcement.json()["viewer_position"]
+        self.assertEqual(viewer_position["reinforcement_count"], 1)
+        self.assertEqual(viewer_position["reinforcement_remaining"], 0)
+        self.assertFalse(viewer_position["can_reinforce"])
+        self.assertEqual(viewer_position["active_stake_amount"], 125)
+        self.assertEqual(viewer_position["revision_penalty_amount"], 25)
+        self.assertEqual(viewer_position["revision_new_stake_amount"], 100)
+        self.assertEqual(len(viewer_position["active_entries"]), 2)
+
+        blocked_reinforcement = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "reinforcement", "option_id": sim.id, "stake_amount": 25, "client_locale": "pt-br"},
+        )
+        self.assertEqual(blocked_reinforcement.status_code, 422)
+        self.assertIn("Limite de reforços", blocked_reinforcement.json()["detail"])
+
+    def test_position_revision_respects_admin_config_and_cutoff_window(self):
+        client = TestClient(app)
+        site_config = SiteConfig.get_solo()
+        site_config.position_revision_cutoff_hours = 24
+        site_config.save(update_fields=["position_revision_cutoff_hours"])
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        market.close_at = timezone.now() + timedelta(hours=8)
+        market.save(update_fields=["close_at"])
+        user_register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Cutoff Position User",
+                "email": "cutoff-position-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
+        sim = MarketOption.objects.get(market=market, label="SIM")
+        nao = MarketOption.objects.get(market=market, label="NAO")
+        self.assertEqual(
+            client.post(
+                "/markets/openai-gpt6-2026/predict",
+                headers=headers,
+                json={"option_id": sim.id, "stake_amount": 50, "client_locale": "pt-br"},
+            ).status_code,
+            201,
+        )
+        blocked = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "revision", "option_id": nao.id, "stake_amount": 0, "client_locale": "pt-br"},
+        )
+        self.assertEqual(blocked.status_code, 422)
+        self.assertIn("Janela de revisão encerrada", blocked.json()["detail"])
+
     def test_admin_resolve_market_applies_payout_loss_and_reputation_formula(self):
         client = TestClient(app)
         staff_register = client.post(
@@ -5851,6 +6088,7 @@ class WebSmokeTests(TransactionTestCase):
         }
         session.save()
         api_market = get_domain_client().market("openai-gpt6-2026")
+        api_market["options"] = [{key: value for key, value in option.items() if key != "id"} for option in api_market["options"]]
         self.assertNotIn("id", api_market["options"][0])
 
         with patch("apps.web.django.markets.views.get_market", return_value=api_market):
@@ -5859,6 +6097,160 @@ class WebSmokeTests(TransactionTestCase):
         option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label=api_market["options"][0]["label"])
         self.assertContains(response, f'data-option-id="{option.id}"')
         self.assertContains(response, f'data-selected-option-id type="radio" name="option_id" value="{option.id}" required')
+
+    def test_market_detail_position_actions_use_compact_tabs(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="positiontabs", email="position-tabs@example.com", password="testpass123")
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        sim = MarketOption.objects.get(market=market, label="SIM")
+        nao = MarketOption.objects.get(market=market, label="NAO")
+        Prediction.objects.create(
+            user=user,
+            market=market,
+            market_option=sim,
+            stake_amount=80,
+            probability_at_entry=Decimal("50.0000"),
+            weight_at_entry=8000,
+            potential_payout=160,
+            status="open",
+            action_type="initial",
+            position_sequence=1,
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.username,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        api_market = get_domain_client().market("openai-gpt6-2026")
+        api_market["options"] = [
+            {**option, "id": sim.id if option["label"] == "SIM" else nao.id}
+            for option in api_market["options"]
+        ]
+        api_market["viewer_has_prediction"] = True
+        api_market["viewer_position"] = {
+            "has_position": True,
+            "option_id": sim.id,
+            "option_label": "SIM",
+            "active_stake_amount": 80,
+            "potential_payout_total": 160,
+            "probability_at_entry": 50.0,
+            "position_count": 1,
+            "reinforcement_count": 0,
+            "reinforcement_remaining": 1,
+            "reinforcement_max_count": 1,
+            "revision_count": 0,
+            "revision_remaining": 1,
+            "revision_penalty_percent": 20,
+            "revision_penalty_amount": 16,
+            "revision_new_stake_amount": 64,
+            "can_reinforce": True,
+            "can_revise": True,
+            "reinforcement_blocked_reason": "",
+            "revision_blocked_reason": "",
+            "revision_cutoff_at": None,
+            "active_entries": [
+                {
+                    "id": 1,
+                    "option_id": sim.id,
+                    "option_label": "SIM",
+                    "action_type": "initial",
+                    "position_sequence": 1,
+                    "stake_amount": 80,
+                    "probability_at_entry": 50.0,
+                    "potential_payout": 160,
+                    "created_at": "2026-06-14T12:00:00+00:00",
+                }
+            ],
+            "history": [],
+        }
+
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
+            response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+
+        self.assertContains(response, "position-summary-card")
+        self.assertContains(response, "position-action-tabs")
+        self.assertContains(response, "Ver entradas abertas")
+        self.assertContains(response, "Restam 1 reforço(s) neste mercado.")
+        self.assertContains(response, "Entradas a encerrar")
+        self.assertContains(response, "Custo estimado")
+        self.assertContains(response, "16 GT₵ (20%)")
+        self.assertContains(response, "Nova posição estimada")
+        self.assertContains(response, "64 GT₵")
+        self.assertContains(response, "Você vai encerrar 1 entrada(s) em SIM, aplicar 16 GT₵ de custo de revisão (20%)")
+        self.assertNotContains(response, "A trilha original permanece auditável")
+        self.assertNotContains(response, "Esta ação substitui sua posição ativa")
+
+    def test_market_detail_hides_reinforcement_block_when_revision_is_available(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="positionlimited", email="position-limited@example.com", password="testpass123")
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        sim = MarketOption.objects.get(market=market, label="SIM")
+        nao = MarketOption.objects.get(market=market, label="NAO")
+        Prediction.objects.create(
+            user=user,
+            market=market,
+            market_option=sim,
+            stake_amount=80,
+            probability_at_entry=Decimal("50.0000"),
+            weight_at_entry=8000,
+            potential_payout=160,
+            status="open",
+            action_type="initial",
+            position_sequence=1,
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.username,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        api_market = get_domain_client().market("openai-gpt6-2026")
+        api_market["options"] = [
+            {**option, "id": sim.id if option["label"] == "SIM" else nao.id}
+            for option in api_market["options"]
+        ]
+        api_market["viewer_has_prediction"] = True
+        api_market["viewer_position"] = {
+            "has_position": True,
+            "option_id": sim.id,
+            "option_label": "SIM",
+            "active_stake_amount": 80,
+            "potential_payout_total": 160,
+            "probability_at_entry": 50.0,
+            "position_count": 1,
+            "reinforcement_count": 1,
+            "reinforcement_remaining": 0,
+            "reinforcement_max_count": 1,
+            "revision_count": 0,
+            "revision_remaining": 1,
+            "revision_penalty_percent": 20,
+            "revision_penalty_amount": 16,
+            "revision_new_stake_amount": 64,
+            "can_reinforce": False,
+            "can_revise": True,
+            "reinforcement_blocked_reason": "Limite de reforços atingido neste mercado.",
+            "revision_blocked_reason": "",
+            "revision_cutoff_at": None,
+            "active_entries": [],
+            "history": [],
+        }
+
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
+            response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+
+        self.assertContains(response, "Revisar posição")
+        self.assertNotContains(response, "Limite de reforços atingido neste mercado.")
 
     def test_resolved_market_detail_shows_resolution_time_and_personal_outcome(self):
         User = get_user_model()
@@ -6874,6 +7266,11 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Enviar teste Resend")
             self.assertContains(response, "Saldo máximo para solicitar")
             self.assertContains(response, "Bônus por indicação validada")
+            self.assertContains(response, "Reforço e revisão")
+            self.assertContains(response, "Reforço de posição")
+            self.assertContains(response, "Revisão de posição")
+            self.assertContains(response, 'name="position-position_reinforcement_max_count"')
+            self.assertContains(response, 'name="position-position_revision_penalty_percent"')
             self.assertContains(response, "Purge de logs e auditoria IA")
             self.assertContains(response, 'name="retention-system_log_retention_days"')
             self.assertContains(response, 'name="retention-ai_audit_retention_days"')
@@ -6899,6 +7296,14 @@ class WebSmokeTests(TransactionTestCase):
                     "maintenance-maintenance_message": "Voltamos logo depois da janela operacional.",
                     "economy-wallet_recharge_min_balance_gtl": "150",
                     "economy-referral_bonus_gtl": "180",
+                    "position-position_reinforcement_enabled": "on",
+                    "position-position_reinforcement_max_count": "4",
+                    "position-position_revision_enabled": "on",
+                    "position-position_revision_max_count": "2",
+                    "position-position_revision_cutoff_hours": "12",
+                    "position-position_revision_penalty_percent": "15",
+                    "position-position_reinforcement_min_gtl": "5",
+                    "position-position_revision_min_remaining_gtl": "10",
                     "daemon-daemon_stale_after_minutes": "7",
                     "daemon-daemon_missing_after_minutes": "21",
                     "retention-system_log_retention_days": "45",
@@ -6933,6 +7338,14 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.default_reply_to_email, "support@example.com")
             self.assertEqual(site_config.wallet_recharge_min_balance_gtl, 150)
             self.assertEqual(site_config.referral_bonus_gtl, 180)
+            self.assertTrue(site_config.position_reinforcement_enabled)
+            self.assertEqual(site_config.position_reinforcement_max_count, 4)
+            self.assertTrue(site_config.position_revision_enabled)
+            self.assertEqual(site_config.position_revision_max_count, 2)
+            self.assertEqual(site_config.position_revision_cutoff_hours, 12)
+            self.assertEqual(site_config.position_revision_penalty_percent, 15)
+            self.assertEqual(site_config.position_reinforcement_min_gtl, 5)
+            self.assertEqual(site_config.position_revision_min_remaining_gtl, 10)
             self.assertEqual(site_config.daemon_stale_after_minutes, 7)
             self.assertEqual(site_config.daemon_missing_after_minutes, 21)
             self.assertEqual(site_config.system_log_retention_days, 45)

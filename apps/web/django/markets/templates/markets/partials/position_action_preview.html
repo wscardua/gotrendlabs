@@ -1,0 +1,16 @@
+{% if preview_error %}
+  <div class="notice red">{{ preview_error }}</div>
+{% else %}
+  <div><span>Ação</span><strong>{% if action == "revision" %}Revisar para {{ option.label }}{% else %}Reforçar {{ option.label }}{% endif %}</strong></div>
+  {% if action == "revision" %}
+    <div><span>Entradas encerradas</span><strong>{{ preview.active_position_count }} ({{ preview.active_stake_amount }} GT₵)</strong></div>
+    <div><span>Custo de revisão</span><strong>{{ preview.penalty_amount }} GT₵ ({{ preview.revision_penalty_percent }}%)</strong></div>
+    <div><span>Nova posição estimada</span><strong>{{ preview.new_position_stake_amount }} GT₵</strong></div>
+    <div><span>Revisões restantes</span><strong>{{ preview.revision_remaining }}</strong></div>
+  {% else %}
+    <div><span>Reforço</span><strong>+{{ preview.stake_amount }} GT₵</strong></div>
+    <div><span>Novo total ativo</span><strong>{{ preview.position_total_after }} GT₵</strong></div>
+    <div><span>Reforços restantes</span><strong>{{ preview.reinforcement_remaining }}</strong></div>
+  {% endif %}
+  <div><span>Crédito possível se acertar</span><strong>{{ preview.estimated_return }} GT₵</strong></div>
+{% endif %}

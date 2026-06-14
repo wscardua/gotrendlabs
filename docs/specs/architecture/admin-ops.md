@@ -104,6 +104,8 @@
 - Aprovação de créditos aparece para Feedback e Mercado quando houver usuário cadastrado; depois de aprovada, a seção fica indisponível para alteração ou reenvio.
 - Recompensas de fila usam ledger/projeção da wallet e bloqueiam duplicidade por item.
 - Configuração geral de Admin Ops define `wallet_recharge_min_balance_gtl`, o saldo máximo para usuário solicitar recarga educativa.
+- Configuração geral de Admin Ops define a seção `Previsões e posições` com grupo de reforço (`position_reinforcement_enabled`, `position_reinforcement_max_count`, `position_reinforcement_min_gtl`) e grupo de revisão (`position_revision_enabled`, `position_revision_max_count`, `position_revision_cutoff_hours`, `position_revision_penalty_percent`, `position_revision_min_remaining_gtl`).
+- Esses parâmetros ajustam a elegibilidade de reforço/revisão sem deploy; a validação final continua na FastAPI e a UI Django apenas envia ações e renderiza bloqueios/preview.
 - Configuração geral de Admin Ops define os limites de heartbeat do daemon para status `Atrasado` e `Sem sinal`.
 - Configuração geral de Admin Ops define retenção separada para logs técnicos e auditoria IA, em dias, aplicada pelo daemon e comando de prune.
 - Solicitações de recarga educativa entram na fila operacional como `wallet_recharge`; o Admin Ops aprova definindo valor em GT₵ ou rejeita com nota, mantendo uma solicitação pendente por usuário.
