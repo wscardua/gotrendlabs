@@ -64,6 +64,11 @@ def _fixture_slug(value):
     return slug or "geral"
 
 
+def _anti_abuse_answer(challenge):
+    numbers = [int(value) for value in re.findall(r"\d+", challenge["prompt"])]
+    return str(sum(numbers[:2]))
+
+
 def _seed_test_markets():
     fixture_path = Path(settings.BASE_DIR) / "data" / "fixtures" / "domain.json"
     with fixture_path.open(encoding="utf-8") as fixture:
@@ -3683,6 +3688,83 @@ class BackendAuthAPITests(TransactionTestCase):
                 },
             )
             self.assertEqual(blocked_feedback.status_code, 422)
+
+    def test_mobile_anti_abuse_challenge_allows_register_and_guest_queue(self):
+        client = TestClient(app)
+        headers = {"X-GoTrendLabs-Client": "mobile"}
+
+        with patch("apps.api.backend_api.main.verify_recaptcha_response", side_effect=AssertionError("mobile challenge should bypass recaptcha")):
+            register_challenge = client.get("/anti-abuse/challenge", headers=headers).json()
+            registered = client.post(
+                "/auth/register",
+                headers=headers,
+                json={
+                    "display_name": "Mobile Challenge",
+                    "email": "mobile-challenge@example.com",
+                    "language": "pt-br",
+                    "password": "testpass123",
+                    "terms_accepted": True,
+                    "anti_abuse_token": register_challenge["token"],
+                    "anti_abuse_answer": _anti_abuse_answer(register_challenge),
+                },
+            )
+            self.assertEqual(registered.status_code, 201)
+
+            suggestion_challenge = client.get("/anti-abuse/challenge", headers=headers).json()
+            suggestion = client.post(
+                "/suggestions",
+                headers=headers,
+                json={
+                    "guest_name": "Visitante Mobile",
+                    "guest_email": "visitante-mobile-sugestao@example.com",
+                    "question": "A Apple lançará app IA próprio em 2026?",
+                    "category": "IA",
+                    "kind": "binary",
+                    "suggested_source": "Apple Newsroom",
+                    "rationale": "Fonte pública.",
+                    "anti_abuse_token": suggestion_challenge["token"],
+                    "anti_abuse_answer": _anti_abuse_answer(suggestion_challenge),
+                },
+            )
+            self.assertEqual(suggestion.status_code, 201)
+
+            feedback_challenge = client.get("/anti-abuse/challenge", headers=headers).json()
+            feedback = client.post(
+                "/feedback",
+                headers=headers,
+                json={
+                    "guest_name": "Visitante Mobile",
+                    "guest_email": "visitante-mobile-feedback@example.com",
+                    "feedback_type": "Ideia de melhoria",
+                    "severity": "low",
+                    "description": "Melhorar filtros.",
+                    "anti_abuse_token": feedback_challenge["token"],
+                    "anti_abuse_answer": _anti_abuse_answer(feedback_challenge),
+                },
+            )
+            self.assertEqual(feedback.status_code, 201)
+
+    def test_mobile_anti_abuse_challenge_rejects_wrong_answer(self):
+        client = TestClient(app)
+        headers = {"X-GoTrendLabs-Client": "mobile"}
+        challenge = client.get("/anti-abuse/challenge", headers=headers).json()
+
+        response = client.post(
+            "/feedback",
+            headers=headers,
+            json={
+                "guest_name": "Visitante Mobile",
+                "guest_email": "visitante-mobile-erro@example.com",
+                "feedback_type": "Ideia de melhoria",
+                "severity": "low",
+                "description": "Melhorar filtros.",
+                "anti_abuse_token": challenge["token"],
+                "anti_abuse_answer": "999",
+            },
+        )
+
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("incorreta", response.json()["detail"])
 
     def test_public_taxonomy_exposes_active_categories_and_suggestion_requires_one(self):
         blocked = MarketCategory.objects.create(name="Bloqueada", slug="bloqueada", is_blocked=True, blocked_reason="fora de uso")

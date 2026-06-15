@@ -212,6 +212,7 @@ Deve validar:
 - login -> detalhe -> preview de previsao
 - perfil -> badges/reputacao/ranking
 - menu -> suporte/feedback
+- menu -> sugerir mercado
 - perfil -> sugerir mercado
 - erro de API -> retry
 - sem Firebase configurado, push nao registra token real
@@ -232,15 +233,23 @@ Antes de considerar a UI pronta:
 - confirmar que `thumb` cadastrado aparece tambem quando houver thumbnail de mercado
 - confirmar que `thumb` cadastrado nao aparece sobreposto quando `image_url` de mercado estiver disponivel
 - confirmar que o ticket de previsao replica o preview web com `Opcao escolhida`, `Credito possivel se acertar` e `Credito reservado`, atualizando o retorno pelo backend ao mover o controle
+- confirmar que usuario com posicao ativa ve escolha atual, movimentos ativos, total ativo, credito possivel, aumentos/trocas restantes e historico resumido no detalhe mobile
+- confirmar que `Aumentar posição` e `Trocar escolha` aparecem sempre como frames fechados, inclusive quando apenas uma acao estiver disponivel, com resumo curto e contador/bloqueio no cabecalho
+- confirmar que `Aumentar posição` usa `/position-preview` e `/position-actions`, abre a mesma opcao ativa, exige preview valido e mostra novo total ativo e aumentos restantes retornados pela FastAPI
+- confirmar que `Trocar escolha` usa `/position-preview` e `/position-actions`, abre apenas opcoes diferentes da ativa, exige preview valido e mostra movimentos encerrados, custo da troca, nova posicao estimada e trocas restantes retornadas pela FastAPI
+- confirmar que bloqueios de aumento/troca por limite, cutoff, flag, saldo, sessao ou status do mercado exibem mensagens retornadas pelo backend
 - confirmar que o bottom sheet de confirmacao de previsao nao estoura em aparelho fisico, viewport compacto ou fonte ampliada
 - confirmar que a wallet mostra recarga controlada com elegibilidade, pendencia, historico e criacao via API
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
-- confirmar que o menu segue a ordem Wallet, Badges, Insights, Suporte, Política e segurança, Sobre e Sair quando autenticado
+- confirmar que o menu segue a ordem Wallet, Badges, Insights, Suporte, Sugerir mercado, Política e segurança, Sobre e Sair quando autenticado
 - confirmar que sugestao de mercado segue acessivel pelo Perfil
+- confirmar que sugestao de mercado segue acessivel pelo menu principal
+- confirmar que cadastro, feedback e sugestao de mercado como visitante exibem desafio anti-abuso dentro do app e enviam `anti_abuse_token`/`anti_abuse_answer` para a FastAPI
+- confirmar que feedback/sugestao autenticados nao exigem desafio anti-abuso
 - confirmar que politica de uso, conceitos e seguranca estao acessiveis no menu e perfil
 - confirmar que sugestao de mercado carrega categorias ativas da taxonomia
-- confirmar que feedback usa as opcoes da web sem seletor de prioridade
+- confirmar que feedback usa as opcoes da web sem seletor de prioridade, valida nome/email para visitante e mostra erro inline quando a API bloquear o envio
 - confirmar que compartilhamento aparece no hero ao lado de favoritar/curtir
 - confirmar que abrir detalhe mobile incrementa `view_count` via `POST /markets/{slug}/view`
 - confirmar que compartilhar pelo app incrementa `share_count` via `POST /markets/{slug}/share`

@@ -22,6 +22,8 @@ class AuthRepository {
     required String email,
     required String password,
     required bool termsAccepted,
+    String antiAbuseToken = '',
+    String antiAbuseAnswer = '',
   }) async {
     final json = await _api.postMap(
       '/auth/register',
@@ -32,6 +34,8 @@ class AuthRepository {
         'language': 'pt-br',
         'terms_accepted': termsAccepted,
         'recaptcha_token': '',
+        'anti_abuse_token': antiAbuseToken,
+        'anti_abuse_answer': antiAbuseAnswer,
         'referral_code': '',
       },
     );

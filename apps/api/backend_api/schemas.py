@@ -11,6 +11,8 @@ class RegisterPayload(BaseModel):
     password: str = Field(min_length=8, max_length=128)
     terms_accepted: bool = False
     recaptcha_token: str = ""
+    anti_abuse_token: str = ""
+    anti_abuse_answer: str = ""
     referral_code: str = Field(default="", max_length=32)
 
 
@@ -843,6 +845,8 @@ class MarketSuggestionPayload(BaseModel):
     suggested_source: str = Field(min_length=1, max_length=180)
     rationale: str = Field(default="", max_length=2000)
     recaptcha_token: str = ""
+    anti_abuse_token: str = ""
+    anti_abuse_answer: str = ""
 
 
 class ProductFeedbackPayload(BaseModel):
@@ -852,6 +856,14 @@ class ProductFeedbackPayload(BaseModel):
     severity: str = "medium"
     description: str = Field(min_length=1, max_length=2000)
     recaptcha_token: str = ""
+    anti_abuse_token: str = ""
+    anti_abuse_answer: str = ""
+
+
+class AntiAbuseChallengeResponse(BaseModel):
+    prompt: str
+    token: str
+    expires_at: str
 
 
 class QueueReviewPayload(BaseModel):

@@ -54,6 +54,7 @@ from apps.api.backend_api.schemas import (
     AdminMarketPayload,
     AdminMarketResolutionAuditResponse,
     AdminMarketResolvePayload,
+    AntiAbuseChallengeResponse,
     AdminEventPayload,
     AdminSubcategoryPayload,
     AdminTaxonomyResponse,
@@ -127,6 +128,7 @@ REPUTATION_K_FACTOR = Decimal("10")
 TERMS_VERSION = "2026-05-17"
 IMMEDIATE_AUTH_EMAIL_EVENTS = ("account.password_reset", "user.email_confirmation", "user.welcome")
 SOCIAL_EMAIL_PENDING_TTL_SECONDS = 15 * 60
+ANTI_ABUSE_CHALLENGE_TTL_SECONDS = 10 * 60
 BADGE_RULE_TYPES = {
     "founding_member",
     "resolved_predictions_count",
@@ -176,6 +178,114 @@ def _enforce_rate_limit(bucket, identity, *, limit, window_seconds):
 
 def _clear_rate_limits():
     _RATE_LIMIT_BUCKETS.clear()
+
+
+def _anti_abuse_secret():
+    secret = os.environ.get("GOTRENDLABS_ANTI_ABUSE_SECRET", "").strip()
+    if secret:
+        return secret
+    return os.environ.get("SECRET_KEY", "gotrendlabs-dev-secret")
+
+
+def _anti_abuse_signature(payload):
+    return hmac.new(
+        _anti_abuse_secret().encode(),
+        payload.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _anti_abuse_answer_hash(nonce, answer):
+    return hmac.new(
+        _anti_abuse_secret().encode(),
+        f"{nonce}:{answer}".encode(),
+        hashlib.sha256,
+    ).hexdigest()
+
+
+def _encode_anti_abuse_payload(payload):
+    raw = json.dumps(payload, separators=(",", ":"), sort_keys=True)
+    signed = f"{raw}.{_anti_abuse_signature(raw)}"
+    return base64.urlsafe_b64encode(signed.encode()).decode().rstrip("=")
+
+
+def _decode_anti_abuse_payload(token):
+    try:
+        padded = token + "=" * (-len(token) % 4)
+        signed = base64.urlsafe_b64decode(padded.encode()).decode()
+        raw, signature = signed.rsplit(".", 1)
+    except (binascii.Error, UnicodeDecodeError, ValueError) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Desafio anti-abuso inválido.",
+        ) from exc
+    expected = _anti_abuse_signature(raw)
+    if not hmac.compare_digest(signature, expected):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Desafio anti-abuso inválido.",
+        )
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Desafio anti-abuso inválido.",
+        ) from exc
+
+
+def _mobile_client(request):
+    return request.headers.get("X-GoTrendLabs-Client", "").strip().lower() == "mobile"
+
+
+def _create_mobile_anti_abuse_challenge():
+    first = secrets.randbelow(8) + 2
+    second = secrets.randbelow(8) + 2
+    answer = first + second
+    nonce = secrets.token_urlsafe(12)
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=ANTI_ABUSE_CHALLENGE_TTL_SECONDS)
+    payload = {
+        "answer_hash": _anti_abuse_answer_hash(nonce, answer),
+        "expires_at": int(expires_at.timestamp()),
+        "nonce": nonce,
+        "scope": "mobile-human-check",
+    }
+    return {
+        "prompt": f"Quanto é {first} + {second}?",
+        "token": _encode_anti_abuse_payload(payload),
+        "expires_at": expires_at.isoformat(),
+    }
+
+
+def _validate_mobile_anti_abuse_challenge(token, answer):
+    token = (token or "").strip()
+    answer = (answer or "").strip()
+    if not token or not answer:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Complete o desafio anti-abuso.",
+        )
+    payload = _decode_anti_abuse_payload(token)
+    if payload.get("scope") != "mobile-human-check":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Desafio anti-abuso inválido.",
+        )
+    expires_at = int(payload.get("expires_at") or 0)
+    if expires_at < int(datetime.now(timezone.utc).timestamp()):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Desafio anti-abuso expirado. Tente novamente.",
+        )
+    nonce = payload.get("nonce") or ""
+    expected_hash = payload.get("answer_hash") or ""
+    actual_hash = _anti_abuse_answer_hash(nonce, answer)
+    if not hmac.compare_digest(expected_hash, actual_hash):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Resposta do desafio anti-abuso incorreta.",
+        )
+    return True
 
 
 @lru_cache(maxsize=512)
@@ -371,6 +481,19 @@ def _ensure_recaptcha(token, request):
         verify_recaptcha_response(token, remote_ip=ip_address)
     except RecaptchaError as exc:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(exc)) from exc
+
+
+def _ensure_human_verification(payload, request):
+    recaptcha_token = (getattr(payload, "recaptcha_token", "") or "").strip()
+    if recaptcha_token:
+        _ensure_recaptcha(recaptcha_token, request)
+        return
+    anti_abuse_token = getattr(payload, "anti_abuse_token", "") or ""
+    anti_abuse_answer = getattr(payload, "anti_abuse_answer", "") or ""
+    if _mobile_client(request) and (anti_abuse_token or anti_abuse_answer):
+        _validate_mobile_anti_abuse_challenge(anti_abuse_token, anti_abuse_answer)
+        return
+    _ensure_recaptcha(recaptcha_token, request)
 
 
 def _clean_handle(handle):
@@ -3929,6 +4052,12 @@ def health():
     return payload
 
 
+@app.get("/anti-abuse/challenge", response_model=AntiAbuseChallengeResponse)
+def anti_abuse_challenge(request: Request):
+    _enforce_rate_limit("anti_abuse_challenge", _rate_limit_identity(request), limit=40, window_seconds=3600)
+    return _create_mobile_anti_abuse_challenge()
+
+
 @app.get("/")
 def root():
     return {"name": "GoTrendLabs Backend API", "status": "ok"}
@@ -4359,7 +4488,7 @@ def create_suggestion(payload: MarketSuggestionPayload, request: Request, author
             if not user and (not payload.guest_name.strip() or not payload.guest_email):
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
             if not user:
-                _ensure_recaptcha(payload.recaptcha_token, request)
+                _ensure_human_verification(payload, request)
             category_name = _suggestion_category_name(cursor, payload.category)
             now = datetime.now(timezone.utc)
             cursor.execute(
@@ -4402,7 +4531,7 @@ def create_feedback(payload: ProductFeedbackPayload, request: Request, authoriza
             if not user and (not payload.guest_name.strip() or not payload.guest_email):
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Nome e email são obrigatórios para visitantes.")
             if not user:
-                _ensure_recaptcha(payload.recaptcha_token, request)
+                _ensure_human_verification(payload, request)
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
@@ -6792,7 +6921,7 @@ def register(payload: RegisterPayload, request: Request):
     _enforce_rate_limit("register", _rate_limit_identity(request, payload.email), limit=10, window_seconds=3600)
     if not payload.terms_accepted:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="É preciso aceitar a política de uso para criar conta.")
-    _ensure_recaptcha(payload.recaptcha_token, request)
+    _ensure_human_verification(payload, request)
 
     language = payload.language if payload.language in {"pt-br", "en"} else "pt-br"
     ip_address, user_agent = _client_meta(request)

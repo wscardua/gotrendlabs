@@ -43,13 +43,14 @@ void main() {
 
     expect(find.text('Insights'), findsOneWidget);
     expect(find.text('Ranking'), findsOneWidget);
-    expect(find.text('Sugerir mercado'), findsNothing);
+    expect(find.text('Sugerir mercado'), findsOneWidget);
     expect(find.text('Suporte'), findsOneWidget);
     final menuLabels = [
       'Wallet',
       'Badges',
       'Insights',
       'Suporte',
+      'Sugerir mercado',
       'Política e segurança',
       'Sobre',
     ];

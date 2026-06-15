@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gotrendlabs_mobile/src/core/api_client.dart';
 import 'package:gotrendlabs_mobile/src/core/providers.dart';
+import 'package:gotrendlabs_mobile/src/features/anti_abuse/anti_abuse_repository.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_controller.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_models.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_repository.dart';
@@ -89,6 +90,9 @@ void main() {
             _UnauthenticatedAuthController.new,
           ),
           biometricCapabilityProvider.overrideWith((ref) async => true),
+          antiAbuseChallengeProvider.overrideWith(
+            (ref) async => _fakeChallenge,
+          ),
         ],
         child: MaterialApp(
           theme: buildGoTrendLabsTheme(),
@@ -137,6 +141,36 @@ void main() {
       find.widgetWithText(SwitchListTile, 'Proteger sessão com biometria'),
     );
     expect(biometricSwitch.value, isTrue);
+  });
+
+  testWidgets('LoginSheet shows anti abuse challenge for registration', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          biometricCapabilityProvider.overrideWith((ref) async => true),
+          antiAbuseChallengeProvider.overrideWith(
+            (ref) async => _fakeChallenge,
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: LoginSheet()),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Cadastro'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Verificação rápida'), findsOneWidget);
+    expect(find.text('Quanto é 2 + 3?'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'Resposta'), findsOneWidget);
   });
 
   testWidgets('LoginSheet shows biometric unlock for protected sessions', (
@@ -334,6 +368,8 @@ class _FakeAuthRepository extends AuthRepository {
     required String email,
     required String password,
     required bool termsAccepted,
+    String antiAbuseToken = '',
+    String antiAbuseAnswer = '',
   }) async {
     return const AuthResult(
       user: GtlUser(
@@ -403,6 +439,12 @@ class _AuthenticatedAuthController extends AuthController {
     );
   }
 }
+
+const _fakeChallenge = AntiAbuseChallenge(
+  prompt: 'Quanto é 2 + 3?',
+  token: 'challenge-token',
+  expiresAt: '2026-06-14T00:10:00Z',
+);
 
 class _LockedAuthController extends AuthController {
   @override

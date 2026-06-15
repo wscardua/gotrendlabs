@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
+import '../anti_abuse/anti_abuse_challenge_field.dart';
+import '../anti_abuse/anti_abuse_repository.dart';
 import 'auth_controller.dart';
 
 Future<void> showLoginSheet(BuildContext context) {
@@ -28,6 +30,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   final _name = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _antiAbuseAnswer = TextEditingController();
   bool _register = false;
   bool _acceptedTerms = false;
   bool _rememberLogin = true;
@@ -39,6 +42,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
     _name.dispose();
     _email.dispose();
     _password.dispose();
+    _antiAbuseAnswer.dispose();
     super.dispose();
   }
 
@@ -197,6 +201,11 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
                       'Na próxima abertura, use biometria ou senha do aparelho.',
                     ),
                   ),
+                const SizedBox(height: 12),
+                AntiAbuseChallengeField(
+                  controller: _antiAbuseAnswer,
+                  enabled: !auth.busy,
+                ),
               ] else ...[
                 const SizedBox(height: 8),
                 SwitchListTile(
@@ -264,6 +273,17 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
     }
     setState(() => _localError = null);
     if (_register) {
+      final challenge = ref
+          .read(antiAbuseChallengeProvider)
+          .maybeWhen(data: (value) => value, orElse: () => null);
+      if (challenge == null) {
+        setState(() => _localError = 'Aguarde o desafio anti-abuso carregar.');
+        return;
+      }
+      if (_antiAbuseAnswer.text.trim().isEmpty) {
+        setState(() => _localError = 'Responda ao desafio anti-abuso.');
+        return;
+      }
       await ref
           .read(authControllerProvider.notifier)
           .register(
@@ -272,6 +292,8 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
             password,
             _acceptedTerms,
             protectWithBiometrics: _protectWithBiometrics,
+            antiAbuseToken: challenge.token,
+            antiAbuseAnswer: _antiAbuseAnswer.text.trim(),
           );
       return;
     }

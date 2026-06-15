@@ -1974,6 +1974,29 @@
         "title": "AdminUserWalletAdjustmentPayload",
         "type": "object"
       },
+      "AntiAbuseChallengeResponse": {
+        "properties": {
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "token": {
+            "title": "Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "token",
+          "expires_at"
+        ],
+        "title": "AntiAbuseChallengeResponse",
+        "type": "object"
+      },
       "AuthResponse": {
         "properties": {
           "session": {
@@ -2776,6 +2799,16 @@
       },
       "MarketSuggestionPayload": {
         "properties": {
+          "anti_abuse_answer": {
+            "default": "",
+            "title": "Anti Abuse Answer",
+            "type": "string"
+          },
+          "anti_abuse_token": {
+            "default": "",
+            "title": "Anti Abuse Token",
+            "type": "string"
+          },
           "category": {
             "maxLength": 80,
             "minLength": 1,
@@ -3297,6 +3330,16 @@
       },
       "ProductFeedbackPayload": {
         "properties": {
+          "anti_abuse_answer": {
+            "default": "",
+            "title": "Anti Abuse Answer",
+            "type": "string"
+          },
+          "anti_abuse_token": {
+            "default": "",
+            "title": "Anti Abuse Token",
+            "type": "string"
+          },
           "description": {
             "maxLength": 2000,
             "minLength": 1,
@@ -4133,6 +4176,16 @@
       },
       "RegisterPayload": {
         "properties": {
+          "anti_abuse_answer": {
+            "default": "",
+            "title": "Anti Abuse Answer",
+            "type": "string"
+          },
+          "anti_abuse_token": {
+            "default": "",
+            "title": "Anti Abuse Token",
+            "type": "string"
+          },
           "display_name": {
             "maxLength": 150,
             "minLength": 1,
@@ -8533,6 +8586,24 @@
           }
         },
         "summary": "Admin Adjust User Wallet"
+      }
+    },
+    "/anti-abuse/challenge": {
+      "get": {
+        "operationId": "anti_abuse_challenge_anti_abuse_challenge_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AntiAbuseChallengeResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Anti Abuse Challenge"
       }
     },
     "/auth/account-deletion-request": {

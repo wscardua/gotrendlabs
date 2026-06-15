@@ -96,6 +96,136 @@ void main() {
 
     expect(called, isTrue);
   });
+
+  test(
+    'previewPositionAction posts to FastAPI position preview endpoint',
+    () async {
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+      dio.httpClientAdapter = _Adapter((options) {
+        expect(options.method, 'POST');
+        expect(options.path, '/markets/btc-junho/position-preview');
+        final data = Map<String, dynamic>.from(options.data as Map);
+        expect(data['action'], 'reinforcement');
+        expect(data['option_id'], 1);
+        expect(data['stake_amount'], 80);
+        return {
+          'market_id': 10,
+          'option_id': 1,
+          'action': 'reinforcement',
+          'stake_amount': 80,
+          'active_stake_amount': 120,
+          'active_position_count': 2,
+          'penalty_amount': 0,
+          'revision_penalty_percent': 10,
+          'new_position_stake_amount': 80,
+          'position_total_after': 200,
+          'probability_exact': 50.0,
+          'estimated_return': 160,
+          'reinforcement_remaining': 1,
+          'revision_remaining': 1,
+          'allowed': true,
+          'blocked_reason': '',
+        };
+      });
+      final repo = MarketsRepository(
+        ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+      );
+
+      final preview = await repo.previewPositionAction(
+        slug: 'btc-junho',
+        action: 'reinforcement',
+        optionId: 1,
+        stakeAmount: 80,
+      );
+
+      expect(preview.positionTotalAfter, 200);
+      expect(preview.allowed, isTrue);
+    },
+  );
+
+  test('previewPositionAction treats missing allowed as blocked', () async {
+    final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+    dio.httpClientAdapter = _Adapter((options) {
+      expect(options.method, 'POST');
+      expect(options.path, '/markets/btc-junho/position-preview');
+      return {
+        'market_id': 10,
+        'option_id': 1,
+        'action': 'reinforcement',
+        'stake_amount': 80,
+        'active_stake_amount': 120,
+        'active_position_count': 2,
+        'penalty_amount': 0,
+        'revision_penalty_percent': 10,
+        'new_position_stake_amount': 80,
+        'position_total_after': 200,
+        'probability_exact': 50.0,
+        'estimated_return': 160,
+        'reinforcement_remaining': 1,
+        'revision_remaining': 1,
+        'blocked_reason': '',
+      };
+    });
+    final repo = MarketsRepository(
+      ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+    );
+
+    final preview = await repo.previewPositionAction(
+      slug: 'btc-junho',
+      action: 'reinforcement',
+      optionId: 1,
+      stakeAmount: 80,
+    );
+
+    expect(preview.allowed, isFalse);
+  });
+
+  test(
+    'createPositionAction posts to FastAPI position actions endpoint',
+    () async {
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+      dio.httpClientAdapter = _Adapter((options) {
+        expect(options.method, 'POST');
+        expect(options.path, '/markets/btc-junho/position-actions');
+        final data = Map<String, dynamic>.from(options.data as Map);
+        expect(data['action'], 'revision');
+        expect(data['option_id'], 2);
+        expect(data['stake_amount'], 0);
+        return {
+          'prediction_id': 30,
+          'market_id': 10,
+          'option_id': 2,
+          'action': 'revision',
+          'stake_amount': 108,
+          'penalty_amount': 12,
+          'accepted_at': '2026-06-14T12:00:00Z',
+          'wallet_balance_after': {},
+          'market_probability_snapshot': [],
+          'potential_payout': 216,
+          'viewer_position': {
+            'has_position': true,
+            'option_id': 2,
+            'option_label': 'NÃO',
+            'active_stake_amount': 108,
+          },
+        };
+      });
+      final repo = MarketsRepository(
+        ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+      );
+
+      final result = await repo.createPositionAction(
+        slug: 'btc-junho',
+        action: 'revision',
+        optionId: 2,
+        stakeAmount: 0,
+      );
+
+      expect(result.action, 'revision');
+      expect(result.penaltyAmount, 12);
+      expect(result.viewerPosition.optionLabel, 'NÃO');
+    },
+  );
 }
 
 class _Adapter implements HttpClientAdapter {

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api_client.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
+import '../anti_abuse/anti_abuse_challenge_field.dart';
+import '../anti_abuse/anti_abuse_repository.dart';
 import '../auth/auth_controller.dart';
 import 'support_providers.dart';
 
@@ -49,14 +51,17 @@ class _FeedbackSheet extends ConsumerStatefulWidget {
 class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
   final _guestName = TextEditingController();
   final _guestEmail = TextEditingController();
+  final _antiAbuseAnswer = TextEditingController();
   final _description = TextEditingController();
   String? _feedbackType;
   bool _busy = false;
+  String? _error;
 
   @override
   void dispose() {
     _guestName.dispose();
     _guestEmail.dispose();
+    _antiAbuseAnswer.dispose();
     _description.dispose();
     super.dispose();
   }
@@ -67,6 +72,7 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
     return _ContributionScaffold(
       title: 'Suporte e feedback',
       busy: _busy,
+      error: _error,
       submitLabel: 'Enviar feedback',
       onSubmit: _send,
       children: [
@@ -80,6 +86,11 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             controller: _guestEmail,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          const SizedBox(height: 10),
+          AntiAbuseChallengeField(
+            controller: _antiAbuseAnswer,
+            enabled: !_busy,
           ),
           const SizedBox(height: 10),
         ],
@@ -105,11 +116,34 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
 
   Future<void> _send() async {
     final type = _feedbackType ?? '';
+    final auth = ref.read(authControllerProvider);
     if (_description.text.trim().isEmpty || type.isEmpty) {
-      _showMessage('Preencha tipo e descrição.');
+      setState(() => _error = 'Preencha tipo e descrição.');
       return;
     }
-    setState(() => _busy = true);
+    if (!auth.isAuthenticated && !_hasGuestIdentity()) {
+      setState(
+        () => _error = 'Informe nome e email para enviar como visitante.',
+      );
+      return;
+    }
+    final challenge = auth.isAuthenticated
+        ? null
+        : ref
+              .read(antiAbuseChallengeProvider)
+              .maybeWhen(data: (value) => value, orElse: () => null);
+    if (!auth.isAuthenticated && challenge == null) {
+      setState(() => _error = 'Aguarde o desafio anti-abuso carregar.');
+      return;
+    }
+    if (!auth.isAuthenticated && _antiAbuseAnswer.text.trim().isEmpty) {
+      setState(() => _error = 'Responda ao desafio anti-abuso.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       await ref
           .read(supportRepositoryProvider)
@@ -118,13 +152,15 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             description: _description.text.trim(),
             guestName: _guestName.text.trim(),
             guestEmail: _guestEmail.text.trim(),
+            antiAbuseToken: challenge?.token ?? '',
+            antiAbuseAnswer: _antiAbuseAnswer.text.trim(),
           );
       if (mounted) {
         Navigator.of(context).pop();
         _showMessage('Feedback enviado para revisão.');
       }
     } catch (error) {
-      _showMessage(ApiFailure.fromObject(error).message);
+      setState(() => _error = ApiFailure.fromObject(error).message);
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -140,6 +176,11 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
   }
+
+  bool _hasGuestIdentity() {
+    return _guestName.text.trim().isNotEmpty &&
+        _isValidEmail(_guestEmail.text.trim());
+  }
 }
 
 class _SuggestionSheet extends ConsumerStatefulWidget {
@@ -152,16 +193,19 @@ class _SuggestionSheet extends ConsumerStatefulWidget {
 class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
   final _guestName = TextEditingController();
   final _guestEmail = TextEditingController();
+  final _antiAbuseAnswer = TextEditingController();
   final _question = TextEditingController();
   final _source = TextEditingController();
   final _rationale = TextEditingController();
   String? _category;
   bool _busy = false;
+  String? _error;
 
   @override
   void dispose() {
     _guestName.dispose();
     _guestEmail.dispose();
+    _antiAbuseAnswer.dispose();
     _question.dispose();
     _source.dispose();
     _rationale.dispose();
@@ -175,6 +219,7 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
     return _ContributionScaffold(
       title: 'Sugerir mercado',
       busy: _busy,
+      error: _error,
       submitLabel: 'Enviar sugestão',
       onSubmit: _send,
       children: [
@@ -188,6 +233,11 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
             controller: _guestEmail,
             keyboardType: TextInputType.emailAddress,
             decoration: const InputDecoration(labelText: 'Email'),
+          ),
+          const SizedBox(height: 10),
+          AntiAbuseChallengeField(
+            controller: _antiAbuseAnswer,
+            enabled: !_busy,
           ),
           const SizedBox(height: 10),
         ],
@@ -249,13 +299,36 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
 
   Future<void> _send() async {
     final category = _category ?? '';
+    final auth = ref.read(authControllerProvider);
     if (_question.text.trim().isEmpty ||
         category.isEmpty ||
         _source.text.trim().isEmpty) {
-      _showMessage('Preencha pergunta, categoria e fonte.');
+      setState(() => _error = 'Preencha pergunta, categoria e fonte.');
       return;
     }
-    setState(() => _busy = true);
+    if (!auth.isAuthenticated && !_hasGuestIdentity()) {
+      setState(
+        () => _error = 'Informe nome e email para enviar como visitante.',
+      );
+      return;
+    }
+    final challenge = auth.isAuthenticated
+        ? null
+        : ref
+              .read(antiAbuseChallengeProvider)
+              .maybeWhen(data: (value) => value, orElse: () => null);
+    if (!auth.isAuthenticated && challenge == null) {
+      setState(() => _error = 'Aguarde o desafio anti-abuso carregar.');
+      return;
+    }
+    if (!auth.isAuthenticated && _antiAbuseAnswer.text.trim().isEmpty) {
+      setState(() => _error = 'Responda ao desafio anti-abuso.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
     try {
       await ref
           .read(supportRepositoryProvider)
@@ -267,13 +340,15 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
             rationale: _rationale.text.trim(),
             guestName: _guestName.text.trim(),
             guestEmail: _guestEmail.text.trim(),
+            antiAbuseToken: challenge?.token ?? '',
+            antiAbuseAnswer: _antiAbuseAnswer.text.trim(),
           );
       if (mounted) {
         Navigator.of(context).pop();
         _showMessage('Sugestão enviada para revisão.');
       }
     } catch (error) {
-      _showMessage(ApiFailure.fromObject(error).message);
+      setState(() => _error = ApiFailure.fromObject(error).message);
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -288,6 +363,11 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  bool _hasGuestIdentity() {
+    return _guestName.text.trim().isNotEmpty &&
+        _isValidEmail(_guestEmail.text.trim());
   }
 }
 
@@ -330,6 +410,7 @@ class _ContributionScaffold extends StatelessWidget {
     required this.busy,
     required this.submitLabel,
     required this.onSubmit,
+    this.error,
   });
 
   final String title;
@@ -337,6 +418,7 @@ class _ContributionScaffold extends StatelessWidget {
   final bool busy;
   final String submitLabel;
   final VoidCallback onSubmit;
+  final String? error;
 
   @override
   Widget build(BuildContext context) {
@@ -365,6 +447,31 @@ class _ContributionScaffold extends StatelessWidget {
               ),
               const SizedBox(height: 10),
               ...children,
+              if (error?.trim().isNotEmpty == true) ...[
+                const SizedBox(height: 12),
+                GtlSurface(
+                  color: GtlColors.surfaceInk,
+                  borderColor: GtlColors.accentRed.withValues(alpha: 0.42),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: GtlColors.accentRed,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          error!,
+                          style: Theme.of(context).textTheme.bodyMedium
+                              ?.copyWith(color: GtlColors.textPrimary),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: 14),
               FilledButton.icon(
                 onPressed: busy ? null : onSubmit,
@@ -382,4 +489,8 @@ class _ContributionScaffold extends StatelessWidget {
       ),
     );
   }
+}
+
+bool _isValidEmail(String email) {
+  return RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email);
 }

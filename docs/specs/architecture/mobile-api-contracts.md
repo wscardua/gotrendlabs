@@ -73,6 +73,32 @@ Requisitos mobile:
 - a manutencao mobile e mais restritiva que a web: nao ha excecao por papel dentro do app
 - FastAPI e a autoridade do bloqueio e pode retornar `503` com `code=mobile_maintenance` para chamadas mobile nao isentas
 
+## Anti-abuso mobile
+
+Endpoint esperado:
+
+- `GET /anti-abuse/challenge`
+
+Uso no mobile:
+
+- cadastro de visitante no app
+- envio de feedback por visitante
+- envio de sugestao de mercado por visitante
+
+Campos esperados:
+
+- `prompt`: texto do desafio simples exibido pelo app
+- `token`: token assinado pela FastAPI, com resposta esperada protegida por hash e expiracao curta
+- `expires_at`: timestamp ISO para orientar refresh visual
+
+Requisitos mobile:
+
+- app exibe o desafio dentro do fluxo, sem abrir navegador externo
+- payloads protegidos enviam `anti_abuse_token` e `anti_abuse_answer`
+- FastAPI valida assinatura, expiracao e resposta; Flutter nao calcula nem decide elegibilidade
+- reCAPTCHA v2 continua sendo o mecanismo web; o desafio mobile e usado apenas para clientes com `X-GoTrendLabs-Client: mobile`
+- usuario autenticado nao precisa de desafio para feedback/sugestao
+
 ## Contratos de leitura publica
 
 ### Feed de mercados
@@ -246,6 +272,8 @@ Endpoints esperados:
 
 - `POST /markets/{slug}/prediction-preview`
 - endpoint de criacao de previsao conforme contrato `prediction-payloads.md`
+- `POST /markets/{slug}/position-preview`
+- `POST /markets/{slug}/position-actions`
 
 Requisitos mobile:
 
@@ -254,6 +282,11 @@ Requisitos mobile:
 - criacao exige usuario autenticado, opcao explicita e stake valido
 - duplicidade de previsao, saldo insuficiente e mercado fechado devem gerar erro mapeavel
 - resposta de sucesso deve retornar saldo atualizado e snapshot de probabilidade
+- `POST /markets/{slug}/predict` e usado somente quando `viewer_position.has_position=false`; usuario com posicao ativa usa os contratos de reforco/revisao
+- reforco mobile usa `action=reinforcement`, a mesma `option_id` da posicao ativa e `stake_amount` informado pelo usuario
+- revisao mobile usa `action=revision`, uma `option_id` diferente da ativa e `stake_amount=0`, preservando custo, valor encerrado e nova posicao estimada calculados pela FastAPI
+- confirmacao de reforco/revisao exige preview valido da FastAPI com `allowed=true` e assinatura ainda coerente com acao/opcao/valor selecionados
+- bloqueios devem exibir `blocked_reason`, `reinforcement_blocked_reason` ou `revision_blocked_reason` sem traduzir para regra local
 
 ### Comentarios
 
@@ -340,6 +373,7 @@ Requisitos mobile:
 
 Endpoints esperados:
 
+- `GET /anti-abuse/challenge`
 - `POST /suggestions`
 - `POST /feedback`
 
@@ -349,7 +383,7 @@ Requisitos mobile:
 - sugestao de mercado usa categorias ativas de `GET /taxonomy`
 - feedback usa as mesmas opcoes publicas da web e envia `severity=medium` como compatibilidade de contrato
 - usuario autenticado nao informa nome/email de visitante
-- visitante identificado informa nome/email quando o backend exigir
+- visitante identificado informa nome/email e completa desafio anti-abuso mobile quando o backend exigir
 - app nao aprova sugestao, nao converte sugestao em mercado e nao calcula recompensa
 - app nao recompensa feedback; status, revisao e creditos ficam no backend/Admin Ops
 

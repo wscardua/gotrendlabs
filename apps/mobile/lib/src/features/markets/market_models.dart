@@ -102,6 +102,7 @@ class Market {
     required this.viewerHasPrediction,
     required this.viewerHasFavorite,
     required this.viewerHasLike,
+    required this.viewerPosition,
     required this.options,
     required this.comments,
     required this.sparklinePath,
@@ -138,6 +139,7 @@ class Market {
   final bool viewerHasPrediction;
   final bool viewerHasFavorite;
   final bool viewerHasLike;
+  final ViewerPositionSummary viewerPosition;
   final List<MarketOption> options;
   final List<MarketComment> comments;
   final String sparklinePath;
@@ -203,6 +205,9 @@ class Market {
       viewerHasPrediction: safeBool(json['viewer_has_prediction']),
       viewerHasFavorite: safeBool(json['viewer_has_favorite']),
       viewerHasLike: safeBool(json['viewer_has_like']),
+      viewerPosition: ViewerPositionSummary.fromJson(
+        Map<String, dynamic>.from((json['viewer_position'] as Map?) ?? {}),
+      ),
       options: ((json['options'] as List<dynamic>?) ?? <dynamic>[])
           .whereType<Map>()
           .map((item) => MarketOption.fromJson(Map<String, dynamic>.from(item)))
@@ -220,6 +225,145 @@ class Market {
               .map((item) => Map<String, dynamic>.from(item))
               .toList(),
     );
+  }
+}
+
+class ViewerPositionEntry {
+  const ViewerPositionEntry({
+    required this.id,
+    required this.optionId,
+    required this.optionLabel,
+    required this.actionType,
+    required this.positionSequence,
+    required this.stakeAmount,
+    required this.probabilityAtEntry,
+    required this.potentialPayout,
+    required this.createdAt,
+    required this.status,
+    this.supersededAt,
+  });
+
+  final int id;
+  final int optionId;
+  final String optionLabel;
+  final String actionType;
+  final int positionSequence;
+  final int stakeAmount;
+  final double probabilityAtEntry;
+  final int potentialPayout;
+  final String createdAt;
+  final String status;
+  final String? supersededAt;
+
+  factory ViewerPositionEntry.fromJson(Map<String, dynamic> json) {
+    return ViewerPositionEntry(
+      id: safeInt(json['id']),
+      optionId: safeInt(json['option_id']),
+      optionLabel: safeString(json['option_label']),
+      actionType: safeString(json['action_type'], 'initial'),
+      positionSequence: safeInt(json['position_sequence'], 1),
+      stakeAmount: safeInt(json['stake_amount']),
+      probabilityAtEntry: safeDouble(json['probability_at_entry']),
+      potentialPayout: safeInt(json['potential_payout']),
+      createdAt: safeString(json['created_at']),
+      status: safeString(json['status'], 'open'),
+      supersededAt: json['superseded_at']?.toString(),
+    );
+  }
+}
+
+class ViewerPositionSummary {
+  const ViewerPositionSummary({
+    required this.hasPosition,
+    this.optionId,
+    required this.optionLabel,
+    required this.activeStakeAmount,
+    required this.potentialPayoutTotal,
+    this.probabilityAtEntry,
+    required this.positionCount,
+    required this.reinforcementCount,
+    required this.reinforcementRemaining,
+    required this.reinforcementMaxCount,
+    required this.revisionCount,
+    required this.revisionRemaining,
+    required this.revisionPenaltyPercent,
+    required this.revisionPenaltyAmount,
+    required this.revisionNewStakeAmount,
+    required this.canReinforce,
+    required this.canRevise,
+    required this.reinforcementBlockedReason,
+    required this.revisionBlockedReason,
+    this.revisionCutoffAt,
+    required this.activeEntries,
+    required this.history,
+  });
+
+  final bool hasPosition;
+  final int? optionId;
+  final String optionLabel;
+  final int activeStakeAmount;
+  final int potentialPayoutTotal;
+  final double? probabilityAtEntry;
+  final int positionCount;
+  final int reinforcementCount;
+  final int reinforcementRemaining;
+  final int reinforcementMaxCount;
+  final int revisionCount;
+  final int revisionRemaining;
+  final int revisionPenaltyPercent;
+  final int revisionPenaltyAmount;
+  final int revisionNewStakeAmount;
+  final bool canReinforce;
+  final bool canRevise;
+  final String reinforcementBlockedReason;
+  final String revisionBlockedReason;
+  final String? revisionCutoffAt;
+  final List<ViewerPositionEntry> activeEntries;
+  final List<ViewerPositionEntry> history;
+
+  bool get hasActiveOption => optionId != null && optionId! > 0;
+
+  factory ViewerPositionSummary.fromJson(Map<String, dynamic> json) {
+    final rawOptionId = json['option_id'];
+    final parsedOptionId = rawOptionId == null ? null : safeInt(rawOptionId);
+    return ViewerPositionSummary(
+      hasPosition: safeBool(json['has_position']),
+      optionId: parsedOptionId == 0 ? null : parsedOptionId,
+      optionLabel: safeString(json['option_label']),
+      activeStakeAmount: safeInt(json['active_stake_amount']),
+      potentialPayoutTotal: safeInt(json['potential_payout_total']),
+      probabilityAtEntry: json['probability_at_entry'] == null
+          ? null
+          : safeDouble(json['probability_at_entry']),
+      positionCount: safeInt(json['position_count']),
+      reinforcementCount: safeInt(json['reinforcement_count']),
+      reinforcementRemaining: safeInt(json['reinforcement_remaining']),
+      reinforcementMaxCount: safeInt(json['reinforcement_max_count']),
+      revisionCount: safeInt(json['revision_count']),
+      revisionRemaining: safeInt(json['revision_remaining']),
+      revisionPenaltyPercent: safeInt(json['revision_penalty_percent']),
+      revisionPenaltyAmount: safeInt(json['revision_penalty_amount']),
+      revisionNewStakeAmount: safeInt(json['revision_new_stake_amount']),
+      canReinforce: safeBool(json['can_reinforce']),
+      canRevise: safeBool(json['can_revise']),
+      reinforcementBlockedReason: safeString(
+        json['reinforcement_blocked_reason'],
+      ),
+      revisionBlockedReason: safeString(json['revision_blocked_reason']),
+      revisionCutoffAt: json['revision_cutoff_at']?.toString(),
+      activeEntries: _parsePositionEntries(json['active_entries']),
+      history: _parsePositionEntries(json['history']),
+    );
+  }
+
+  static List<ViewerPositionEntry> _parsePositionEntries(Object? value) {
+    return ((value as List<dynamic>?) ?? <dynamic>[])
+        .whereType<Map>()
+        .map(
+          (item) =>
+              ViewerPositionEntry.fromJson(Map<String, dynamic>.from(item)),
+        )
+        .toList();
   }
 }
 
@@ -242,6 +386,103 @@ class PredictionPreview {
       stakeAmount: safeInt(json['stake_amount']),
       probabilityExact: safeDouble(json['probability_exact']),
       estimatedReturn: safeInt(json['estimated_return']),
+    );
+  }
+}
+
+class PositionActionPreview {
+  const PositionActionPreview({
+    required this.optionId,
+    required this.action,
+    required this.stakeAmount,
+    required this.activeStakeAmount,
+    required this.activePositionCount,
+    required this.penaltyAmount,
+    required this.revisionPenaltyPercent,
+    required this.newPositionStakeAmount,
+    required this.positionTotalAfter,
+    required this.probabilityExact,
+    required this.estimatedReturn,
+    required this.reinforcementRemaining,
+    required this.revisionRemaining,
+    required this.allowed,
+    required this.blockedReason,
+  });
+
+  final int optionId;
+  final String action;
+  final int stakeAmount;
+  final int activeStakeAmount;
+  final int activePositionCount;
+  final int penaltyAmount;
+  final int revisionPenaltyPercent;
+  final int newPositionStakeAmount;
+  final int positionTotalAfter;
+  final double probabilityExact;
+  final int estimatedReturn;
+  final int reinforcementRemaining;
+  final int revisionRemaining;
+  final bool allowed;
+  final String blockedReason;
+
+  bool matches({
+    required String action,
+    required int optionId,
+    required int stakeAmount,
+  }) {
+    return this.action == action &&
+        this.optionId == optionId &&
+        this.stakeAmount == stakeAmount;
+  }
+
+  factory PositionActionPreview.fromJson(Map<String, dynamic> json) {
+    return PositionActionPreview(
+      optionId: safeInt(json['option_id']),
+      action: safeString(json['action']),
+      stakeAmount: safeInt(json['stake_amount']),
+      activeStakeAmount: safeInt(json['active_stake_amount']),
+      activePositionCount: safeInt(json['active_position_count']),
+      penaltyAmount: safeInt(json['penalty_amount']),
+      revisionPenaltyPercent: safeInt(json['revision_penalty_percent']),
+      newPositionStakeAmount: safeInt(json['new_position_stake_amount']),
+      positionTotalAfter: safeInt(json['position_total_after']),
+      probabilityExact: safeDouble(json['probability_exact']),
+      estimatedReturn: safeInt(json['estimated_return']),
+      reinforcementRemaining: safeInt(json['reinforcement_remaining']),
+      revisionRemaining: safeInt(json['revision_remaining']),
+      allowed: safeBool(json['allowed']),
+      blockedReason: safeString(json['blocked_reason']),
+    );
+  }
+}
+
+class PositionActionResult {
+  const PositionActionResult({
+    required this.optionId,
+    required this.action,
+    required this.stakeAmount,
+    required this.penaltyAmount,
+    required this.potentialPayout,
+    required this.viewerPosition,
+  });
+
+  final int optionId;
+  final String action;
+  final int stakeAmount;
+  final int penaltyAmount;
+  final int potentialPayout;
+  final ViewerPositionSummary viewerPosition;
+
+  factory PositionActionResult.fromJson(Map<String, dynamic> json) {
+    return PositionActionResult(
+      optionId: safeInt(json['option_id']),
+      action: safeString(json['action']),
+      stakeAmount: safeInt(json['stake_amount']),
+      penaltyAmount: safeInt(json['penalty_amount']),
+      potentialPayout: safeInt(json['potential_payout']),
+      viewerPosition: ViewerPositionSummary.fromJson(
+        Map<String, dynamic>.from((json['viewer_position'] as Map?) ?? {}),
+      ),
     );
   }
 }

@@ -51,9 +51,11 @@ Specs principais:
 - design system mobile compartilhado em `lib/src/ui/`, com surfaces, headers editoriais, pills, métricas, painéis de estado, skeletons e componentes reutilizáveis
 - feed, browse, busca e detalhe de mercado via `GET /markets` e `GET /markets/{slug}`, com abertura do detalhe incrementando `view_count` pelo mesmo endpoint de tracking usado pelo web
 - auth Bearer simples via `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout`, com `Lembrar login` ligado por padrao; token persistido em secure storage quando ligado e mantido apenas em memoria quando desligado
+- cadastro mobile de visitante usa desafio anti-abuso dentro do app via `GET /anti-abuse/challenge`, enviando `anti_abuse_token` e `anti_abuse_answer` para a FastAPI; reCAPTCHA permanece restrito aos fluxos web
 - protecao local para sessao lembrada: quando `Lembrar login` esta ligado e o aparelho suporta autenticacao local, login e cadastro oferecem biometria ligada por padrao; a tela de entrada mostra `Entrar com biometria` quando ha sessao lembrada protegida; na reabertura, o app exige biometria ou senha do aparelho antes de ativar o Bearer token persistido; cancelamento deixa a sessao em estado protegido, sem chamar API autenticada nem apagar o token
 - gate de manutencao mobile via `GET /health`: falha de backend, status degradado ou `maintenance.mobile_enabled=true` mostram uma tela dark-first de manutencao; o shell mobile permanece bloqueado enquanto a janela estiver ativa
-- favoritos, curtidas, comentarios, compartilhamento, preview e criacao de previsao usando apenas FastAPI; compartilhar pelo app incrementa `share_count` antes de acionar o share nativo
+- favoritos, curtidas, comentarios, compartilhamento, preview, criacao de previsao inicial, aumento e troca de posicao usando apenas FastAPI; compartilhar pelo app incrementa `share_count` antes de acionar o share nativo
+- mesa de posicao no detalhe: quando `viewer_position.has_position=true`, o ticket mostra escolha atual, movimentos ativos, total ativo, historico resumido e dois frames de acao fechados por padrao, `Aumentar posição` na mesma opcao e `Trocar escolha` para opcao diferente, sempre exigindo preview valido de `/position-preview` antes de confirmar em `/position-actions`
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
 - `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
 - cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards
@@ -63,6 +65,7 @@ Specs principais:
 - alertas com badge de nao lidas no shell e marcacao como lido ao visualizar a tela, sem painel operacional de push
 - push mobile usa Firebase/FCM no Android quando `google-services.json` local existe, registra token somente apos autenticacao, cria o canal Android `gtl_default`, trata tap em payloads seguros (`/markets/:slug`, `/wallet`, `/badges`, `/alerts`) e continua exibindo saude/configuracao no `Sobre`
 - wallet, extrato, recarga educativa, perfil, ranking, badges, busca, confianca e alertas como leitura/acao da API
+- feedback e sugestao de mercado ficam no menu principal e no Perfil; visitante informa nome/email e responde desafio anti-abuso dentro do app, enquanto usuario autenticado envia direto para a fila FastAPI/Admin Ops
 - tela `Sobre` com versao/build, pacote/plataforma, saude da API, estado informativo de push e diagnostico seguro para suporte; a UI nao exibe enderecos de API/web, tokens, segredos nem ID interno de usuario
 - splash Android e header do shell com wordmark `GoTrendLabs` e tagline alinhada logo abaixo do nome
 - testes unitarios, widget e repository cobrindo componentes, cards, ticket, filtros pessoais, ranking, push em `Sobre`, login em memoria/secure storage e `Sobre`

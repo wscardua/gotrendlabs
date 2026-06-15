@@ -2,6 +2,51 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260614-MOBILE-ANTI-ABUSE-CONTRIBUTIONS-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`, `FEAT-AUTH-001`, `FEAT-SUGGEST-001`
+- Objetivo: manter cadastro, feedback e sugestao de mercado de visitantes dentro do app mobile com desafio anti-abuso validado pela FastAPI, corrigindo envio de feedback guest e tornando `Sugerir mercado` visivel no menu principal
+- Etapa atual: implementação backend/mobile, contratos, testes e sincronização documental concluídos em `experiment/mobile-position-revision`; aguardando aprovação explícita para commit, PR, merge, deploy ou publicação de APK
+- Artefatos afetados:
+  - `apps/api/backend_api/`
+  - `apps/mobile/`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/features/mobile-mvp.md`
+  - `docs/specs/features/mobile-ux.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum local conhecido; commit, PR, merge, deploy e publicação de APK dependem de aprovação explícita do usuário
+- Iniciado em: 2026-06-14
+- Atualizado em: 2026-06-14
+- Retomada: revisar diff final, então aguardar aprovação explícita para commit/push/PR; para QA visual física, desbloquear o Galaxy S20 e abrir o app já instalado com base local via `adb reverse`
+- Reversão lógica: remover `GET /anti-abuse/challenge`, remover campos `anti_abuse_token`/`anti_abuse_answer` dos payloads, voltar cadastro/feedback/sugestão mobile ao comportamento anterior e retirar `Sugerir mercado` do menu principal
+- Evidências de validação local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/schemas.py`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_recaptcha_blocks_register_and_guest_queue_when_required tests.test_web_smoke.BackendAuthAPITests.test_mobile_anti_abuse_challenge_allows_register_and_guest_queue tests.test_web_smoke.BackendAuthAPITests.test_mobile_anti_abuse_challenge_rejects_wrong_answer tests.test_web_smoke.BackendAuthAPITests.test_recaptcha_not_required_for_authenticated_queue_items --keepdb`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test test/anti_abuse_repository_test.dart test/support_repository_test.dart test/auth_biometric_test.dart test/shell_screen_test.dart`; `cd apps/mobile && flutter test` com 57 testes OK; `git diff --check`; `cd apps/mobile && flutter build apk --debug --dart-define=GTL_API_BASE_URL=http://127.0.0.1:8001 --dart-define=GTL_PUBLIC_WEB_BASE_URL=http://127.0.0.1:8000`; APK debug instalada no Galaxy S20 via `adb install -r`, com `adb reverse tcp:8001 tcp:8001` e `tcp:8000 tcp:8000`; QA visual física ficou pendente porque o aparelho estava no lockscreen/Bouncer, embora a Activity do app tenha ficado focada atrás do bloqueio
+
+## WFLOW-20260614-MOBILE-POSITION-REVISION-001
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`, `FEAT-PRED-001`, `FEAT-WALLET-001`
+- Objetivo: implementar no Flutter/mobile a experiência de reforço e revisão de posição já exposta pela FastAPI, preservando backend como autoridade de domínio
+- Etapa atual: implementação Flutter, testes e sincronização documental concluídos em `experiment/mobile-position-revision`; aguardando aprovação explícita para commit, PR, merge, deploy ou publicação de APK
+- Artefatos afetados:
+  - `apps/mobile/`
+  - `docs/specs/architecture/mobile-api-contracts.md`
+  - `docs/specs/features/mobile-ux.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum local; commit, PR, merge, deploy e publicação de APK dependem de aprovação explícita do usuário
+- Iniciado em: 2026-06-14
+- Atualizado em: 2026-06-15
+- Retomada: revisar diff final, então aguardar aprovação explícita para commit/push/PR; QA visual autenticado de reforço/revisão em dispositivo físico deve usar usuário com posição ativa real
+- Reversão lógica: remover parsing de `viewer_position` e métodos `position-preview`/`position-actions` no mobile, voltar `PredictionTicket` ao fluxo exclusivo de primeira previsão e restaurar docs/state para reforço/revisão mobile pendente
+- Evidências de validação local: `cd apps/mobile && flutter test test/markets_repository_test.dart`; `cd apps/mobile && flutter test test/prediction_ticket_test.dart`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test` com 55 testes OK; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py check`; `git diff --check`; `cd apps/mobile && flutter build apk --debug` gerando `build/app/outputs/flutter-apk/app-debug.apk` com aviso não bloqueante já conhecido de Kotlin Gradle Plugin transitivo em `package_info_plus`/`share_plus`
+- Evidências UX incrementais: linguagem mobile simplificada em 2026-06-15 para expor `Aumentar posição` e `Trocar escolha`, mantendo contratos `reinforcement`/`revision`; validação com `dart format lib/src/features/markets/prediction_ticket.dart test/prediction_ticket_test.dart`, `flutter test test/prediction_ticket_test.dart`, `flutter analyze`, `flutter test` com 57 testes OK e `git diff --check`
+- Evidências UX incrementais: ações de posição convertidas em frames sempre fechados em 2026-06-15, inclusive quando apenas uma ação estiver disponível, e preview de posição sem `allowed` agora bloqueia confirmação por padrão; validação com `dart format lib/src/features/markets/market_models.dart test/markets_repository_test.dart`, `flutter test test/markets_repository_test.dart test/prediction_ticket_test.dart`, `flutter analyze`, `flutter test` com 59 testes OK, `git diff --check` e APK debug instalada no Galaxy S20 apontando para `https://gotrendlabs.com.br/api` / `https://gotrendlabs.com.br`
+
 ## WFLOW-20260614-POSITION-REVISION-WEB-FIRST-001
 
 - Tipo: `new-feature`
