@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-06-15 — Publicação mobile de posição e anti-abuso
+
+- PR #82 publicou em `main` a fase mobile de reforço/revisão de posição e o desafio anti-abuso para cadastro, feedback e sugestão de visitantes.
+- GitHub Actions `GoTrendLabs CI and Deploy` run `27542726255` concluiu `test` e `deploy` com sucesso.
+- Produção respondeu `/api/health` saudável, `/api/anti-abuse/challenge` com `prompt`/`token`/`expires_at`, `/api/openapi.json` com `/anti-abuse/challenge`, `/position-preview` e `/position-actions`, e `/api/markets` com dados públicos.
+
 ## 2026-06-14 — FEAT-MOBILE-001 desafio anti-abuso e contribuição mobile
 
 - FastAPI ganhou `GET /anti-abuse/challenge`, retornando desafio simples com token assinado e expiração curta para clientes mobile.
@@ -28,7 +34,7 @@
 - Mutações de previsão/posição passaram a usar lock transacional por usuário/mercado para impedir concorrência entre primeira previsão, reforços e revisões.
 - Auditoria de resolução considera apenas posições `resolved`; posições `revised` permanecem auditáveis no histórico/sparkline sem inflar liquidação.
 - Admin Ops Config ganhou seção `Previsões e posições` para ajustar grupos de reforço e revisão, incluindo limite máximo de reforços, limite de revisões, janela de corte, penalidade e mínimos de GT₵ sem deploy.
-- Detalhe web de mercado passou a mostrar reforço/revisão para usuários com posição ativa, incluindo resumo das entradas abertas, total afetado pela revisão e custo percentual; mobile permanece para fase posterior usando os mesmos contratos FastAPI.
+- Detalhe web de mercado passou a mostrar reforço/revisão para usuários com posição ativa, incluindo resumo das entradas abertas, total afetado pela revisão e custo percentual; mobile passou a consumir os mesmos contratos FastAPI em fase publicada posteriormente pela PR #82.
 
 ## 2026-06-13 — FEAT-REP-001 badges conquistadas como propriedade histórica
 
