@@ -95,4 +95,40 @@ class MarketsRepository {
       },
     );
   }
+
+  Future<PositionActionPreview> previewPositionAction({
+    required String slug,
+    required String action,
+    required int optionId,
+    required int stakeAmount,
+  }) async {
+    final json = await _api.postMap(
+      '/markets/$slug/position-preview',
+      data: {
+        'action': action,
+        'option_id': optionId,
+        'stake_amount': stakeAmount,
+        'client_locale': 'pt-br',
+      },
+    );
+    return PositionActionPreview.fromJson(json);
+  }
+
+  Future<PositionActionResult> createPositionAction({
+    required String slug,
+    required String action,
+    required int optionId,
+    required int stakeAmount,
+  }) async {
+    final json = await _api.postMap(
+      '/markets/$slug/position-actions',
+      data: {
+        'action': action,
+        'option_id': optionId,
+        'stake_amount': stakeAmount,
+        'client_locale': 'pt-br',
+      },
+    );
+    return PositionActionResult.fromJson(json);
+  }
 }

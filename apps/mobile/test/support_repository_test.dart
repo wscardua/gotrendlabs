@@ -16,6 +16,8 @@ void main() {
       expect(body['feedback_type'], 'Bug de produto');
       expect(body['severity'], 'medium');
       expect(body['description'], 'Preciso de ajuda.');
+      expect(body['anti_abuse_token'], 'challenge-token');
+      expect(body['anti_abuse_answer'], '5');
       return {'id': 1, 'kind': 'feedback', 'status': 'pending'};
     });
     final repo = SupportRepository(
@@ -25,6 +27,8 @@ void main() {
     await repo.sendFeedback(
       feedbackType: 'Bug de produto',
       description: 'Preciso de ajuda.',
+      antiAbuseToken: 'challenge-token',
+      antiAbuseAnswer: '5',
     );
   });
 
@@ -38,6 +42,8 @@ void main() {
       expect(body['subcategory'], '');
       expect(body['kind'], 'binary');
       expect(body['suggested_source'], 'Fonte pública');
+      expect(body['anti_abuse_token'], 'challenge-token');
+      expect(body['anti_abuse_answer'], '5');
       return {'id': 2, 'kind': 'suggestion', 'status': 'pending'};
     });
     final repo = SupportRepository(
@@ -50,6 +56,8 @@ void main() {
       subcategory: '',
       suggestedSource: 'Fonte pública',
       rationale: 'Ajuda a comunidade.',
+      antiAbuseToken: 'challenge-token',
+      antiAbuseAnswer: '5',
     );
   });
 }

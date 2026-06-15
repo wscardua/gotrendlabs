@@ -140,6 +140,8 @@ class AuthController extends Notifier<AuthState> {
     String password,
     bool acceptedTerms, {
     bool protectWithBiometrics = false,
+    String antiAbuseToken = '',
+    String antiAbuseAnswer = '',
   }) async {
     await _authenticate(
       () => ref
@@ -149,6 +151,8 @@ class AuthController extends Notifier<AuthState> {
             email: email,
             password: password,
             termsAccepted: acceptedTerms,
+            antiAbuseToken: antiAbuseToken,
+            antiAbuseAnswer: antiAbuseAnswer,
           ),
       protectWithBiometrics: protectWithBiometrics,
     );

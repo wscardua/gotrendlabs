@@ -11,6 +11,8 @@ class SupportRepository {
     String severity = 'medium',
     String guestName = '',
     String guestEmail = '',
+    String antiAbuseToken = '',
+    String antiAbuseAnswer = '',
   }) async {
     await _api.postMap(
       '/feedback',
@@ -21,6 +23,8 @@ class SupportRepository {
         'severity': severity,
         'description': description,
         'recaptcha_token': '',
+        'anti_abuse_token': antiAbuseToken,
+        'anti_abuse_answer': antiAbuseAnswer,
       },
     );
   }
@@ -34,6 +38,8 @@ class SupportRepository {
     String kind = 'binary',
     String guestName = '',
     String guestEmail = '',
+    String antiAbuseToken = '',
+    String antiAbuseAnswer = '',
   }) async {
     await _api.postMap(
       '/suggestions',
@@ -47,6 +53,8 @@ class SupportRepository {
         'suggested_source': suggestedSource,
         'rationale': rationale,
         'recaptcha_token': '',
+        'anti_abuse_token': antiAbuseToken,
+        'anti_abuse_answer': antiAbuseAnswer,
       },
     );
   }

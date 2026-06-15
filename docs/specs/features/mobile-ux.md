@@ -169,7 +169,13 @@ Controle de previsao:
 - preview vindo da API
 - CTA primario de confirmar
 - confirmacao em bottom sheet com `SafeArea` e area rolavel para telas fisicas compactas/fonte ampliada
-- estados bloqueados para visitante, sem saldo, previsao existente, mercado locked/resolved/canceled
+- estados bloqueados para visitante, sem saldo, mercado locked/resolved/canceled e acoes de posicao inelegiveis
+- quando `viewer_position.has_position=false`, o ticket cria somente a primeira previsao via `/predict`
+- quando `viewer_position.has_position=true`, o ticket vira mesa de posicao: mostra escolha atual, movimentos ativos, total ativo, credito possivel, aumentos/trocas restantes e historico resumido
+- as acoes de posicao aparecem sempre como frames fechados: `Aumentar posição` e `Trocar escolha`, cada um com resumo curto, contador restante ou `Bloqueado`
+- `Aumentar posição` permanece na mesma escolha ativa quando `can_reinforce=true`, com preview de novo total ativo, aumentos restantes e credito possivel vindo da API
+- `Trocar escolha` permite apenas opcoes diferentes da ativa quando `can_revise=true`, com resumo de movimentos encerrados, custo da troca, nova posicao estimada, trocas restantes e credito possivel vindos da API
+- confirmacao de aumento/troca so aparece depois de preview valido da FastAPI; bloqueios exibem a mensagem retornada pelo backend
 
 ### ConsensusChart
 
@@ -306,6 +312,7 @@ Movimento deve ser contido:
 - skeletons leves
 - feedback visual de curtida/favorito
 - bottom sheet com entrada curta
+- desafio anti-abuso em bottom sheet deve ser direto, com refresh e erro inline, sem mandar visitante para fora do app
 - sem animacoes decorativas que atrasem decisao
 
 ## Copy e linguagem
@@ -333,6 +340,7 @@ Evitar:
 ## Criterios de aceite visual
 
 - primeira tela mostra experiencia util, nao marketing
+- contribuicoes publicas como feedback e sugestao de mercado ficam descobriveis no app e concluidas sem navegador externo
 - cards de mercado continuam legiveis com imagens claras ou escuras
 - pergunta principal nao fica encoberta por controles
 - bottom navigation nao cobre CTA critico sem alternativa

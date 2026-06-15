@@ -155,6 +155,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
               if (value == 'feedback') {
                 showFeedbackSheet(context);
               }
+              if (value == 'suggestion') {
+                showSuggestionSheet(context);
+              }
               if (value == 'trust') {
                 Navigator.of(
                   context,
@@ -199,6 +202,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                 child: ListTile(
                   leading: Icon(Icons.support_agent),
                   title: Text('Suporte'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'suggestion',
+                child: ListTile(
+                  leading: Icon(Icons.add_chart),
+                  title: Text('Sugerir mercado'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

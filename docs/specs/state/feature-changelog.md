@@ -1,5 +1,25 @@
 # Feature Changelog
 
+## 2026-06-14 — FEAT-MOBILE-001 desafio anti-abuso e contribuição mobile
+
+- FastAPI ganhou `GET /anti-abuse/challenge`, retornando desafio simples com token assinado e expiração curta para clientes mobile.
+- Payloads de cadastro, sugestão de mercado e feedback passaram a aceitar `anti_abuse_token` e `anti_abuse_answer`, mantendo reCAPTCHA v2 como mecanismo web e validando o desafio mobile apenas no backend.
+- App Flutter passou a exibir o desafio dentro do cadastro, feedback e sugestão de mercado para visitantes, sem enviar o usuário para fora do app.
+- Feedback e sugestão por visitante agora validam nome/email e mantêm erros visíveis no bottom sheet; usuários autenticados continuam enviando sem desafio.
+- `Sugerir mercado` passou a aparecer no menu principal do app, além do Perfil, usando categorias ativas de `GET /taxonomy`.
+
+## 2026-06-14 — FEAT-MOBILE-001 reforço e revisão de posição mobile
+
+- App Flutter passou a interpretar `viewer_position` de `GET /markets/{slug}` e trocar o ticket de previsão inicial por uma mesa de posição quando o usuário já possui posição ativa.
+- Mobile passou a consumir `POST /markets/{slug}/position-preview` e `POST /markets/{slug}/position-actions` para reforço/revisão, mantendo `/predict` reservado à primeira previsão.
+- Mesa de posição exibe opção ativa, entradas abertas, total ativo, crédito possível agregado, histórico resumido, reforços/revisões restantes e motivos de bloqueio retornados pela FastAPI.
+- Reforço mobile mantém a mesma opção ativa, exige preview válido e mostra novo total ativo, reforços restantes e crédito possível calculados pela API.
+- Revisão mobile permite apenas opção diferente, exige preview válido e mostra entradas encerradas, penalidade, nova posição estimada, revisões restantes e crédito possível calculados pela API.
+- UX mobile passou a apresentar reforço como `Aumentar posição` e revisão como `Trocar escolha`, reduzindo jargão sem alterar os contratos FastAPI `reinforcement`/`revision`.
+- Ações de posição no mobile passaram a aparecer como frames fechados por padrão, com resumo e contador/bloqueio no cabeçalho, abrindo somente a ação escolhida pelo usuário.
+- Prévia de reforço/revisão com campo `allowed` ausente passou a ser tratada como bloqueada pelo app, exigindo confirmação explícita da FastAPI antes de liberar ação.
+- Testes Flutter de repository e widget cobrem chamadas de posição, reforço, revisão com penalidade e bloqueios de backend.
+
 ## 2026-06-14 — FEAT-PRED-001 reforço e revisão de posição web-first
 
 - FastAPI ganhou contratos autenticados para prévia e criação de reforço/revisão de posição, mantendo `/predict` reservado à primeira previsão.

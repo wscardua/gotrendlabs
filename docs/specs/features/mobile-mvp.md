@@ -206,6 +206,7 @@ Perfil no MVP:
 - acesso a convite/indicacao quando backend habilitar
 - acesso a suporte/feedback
 - acesso a sugestao de mercado
+- desafio anti-abuso dentro do app para cadastro, feedback e sugestao de visitantes
 
 ## Regras de dominio
 
@@ -215,7 +216,7 @@ Perfil no MVP:
 - saldo e extrato usam ledger/projecao da API
 - reputacao, ranking e badges sao leitura da API
 - imagens de mercado/badges usam `image_url`/`thumb` retornados pela API, com fallback visual apenas de apresentacao
-- feedback e sugestoes sao enviados para filas do backend; revisao, recompensa e conversao em mercado ficam no backend/Admin Ops
+- feedback e sugestoes sao enviados para filas do backend; visitante informa nome/email e desafio anti-abuso mobile, enquanto revisao, recompensa e conversao em mercado ficam no backend/Admin Ops
 - visitantes podem explorar, mas mutacoes autenticadas exigem login
 
 ## Metricas de produto
