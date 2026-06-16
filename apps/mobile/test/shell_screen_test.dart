@@ -9,7 +9,7 @@ import 'package:gotrendlabs_mobile/src/features/shell/shell_screen.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
-  testWidgets('Shell puts Ranking in the bottom nav and Insights in the menu', (
+  testWidgets('Shell puts Ranking in the bottom nav and removes Insights', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -41,14 +41,13 @@ void main() {
     await tester.tap(find.byIcon(Icons.more_horiz));
     await tester.pumpAndSettle();
 
-    expect(find.text('Insights'), findsOneWidget);
+    expect(find.text('Insights'), findsNothing);
     expect(find.text('Ranking'), findsOneWidget);
     expect(find.text('Sugerir mercado'), findsOneWidget);
     expect(find.text('Suporte'), findsOneWidget);
     final menuLabels = [
       'Wallet',
       'Badges',
-      'Insights',
       'Suporte',
       'Sugerir mercado',
       'Política e segurança',
@@ -60,16 +59,6 @@ void main() {
         lessThan(tester.getTopLeft(find.text(menuLabels[index])).dy),
       );
     }
-
-    await tester.tap(find.text('Insights'));
-    await tester.pumpAndSettle();
-
-    expect(find.byTooltip('Back'), findsOneWidget);
-
-    await tester.tap(find.byTooltip('Back'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Ranking'), findsOneWidget);
   });
 }
 

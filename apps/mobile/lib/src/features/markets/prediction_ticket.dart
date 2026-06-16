@@ -95,6 +95,10 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
                 'Escolha uma opção explicitamente. O preview e a criação vêm da FastAPI.',
             icon: Icons.trending_up,
           ),
+          if (authenticated) ...[
+            const SizedBox(height: 12),
+            _WalletAvailabilityStrip(wallet: ref.watch(walletProvider)),
+          ],
           const SizedBox(height: 14),
           for (final option in market.options)
             Padding(
@@ -184,6 +188,10 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
                 'Aumente sua posição ou troque sua escolha com uma prévia segura antes de confirmar.',
             icon: Icons.swap_horiz,
           ),
+          if (authenticated) ...[
+            const SizedBox(height: 12),
+            _WalletAvailabilityStrip(wallet: ref.watch(walletProvider)),
+          ],
           const SizedBox(height: 14),
           _PositionSummaryPanel(position: position),
           if (position.activeEntries.isNotEmpty) ...[
@@ -1342,6 +1350,116 @@ class _PositionPreviewPanel extends StatelessWidget {
           ],
         ],
       ),
+    );
+  }
+}
+
+class _WalletAvailabilityStrip extends StatelessWidget {
+  const _WalletAvailabilityStrip({required this.wallet});
+
+  final AsyncValue<Map<String, dynamic>> wallet;
+
+  @override
+  Widget build(BuildContext context) {
+    return wallet.when(
+      loading: () => const _WalletAvailabilityShell(
+        available: 'Atualizando...',
+        locked: '-',
+      ),
+      error: (error, stack) => const _WalletAvailabilityShell(
+        available: 'Indisponível',
+        locked: '-',
+      ),
+      data: (data) => _WalletAvailabilityShell(
+        available: formatGtl(safeInt(data['available_gtl'])),
+        locked: formatGtl(safeInt(data['locked_gtl'])),
+      ),
+    );
+  }
+}
+
+class _WalletAvailabilityShell extends StatelessWidget {
+  const _WalletAvailabilityShell({
+    required this.available,
+    required this.locked,
+  });
+
+  final String available;
+  final String locked;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: GtlColors.surfaceInk,
+        border: Border.all(color: GtlColors.border),
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Expanded(
+              child: _WalletAvailabilityValue(
+                label: 'Disponível',
+                value: available,
+                icon: Icons.savings_outlined,
+                color: GtlColors.accentGreen,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _WalletAvailabilityValue(
+                label: 'Bloqueado',
+                value: locked,
+                icon: Icons.lock_clock,
+                color: GtlColors.accentYellow,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletAvailabilityValue extends StatelessWidget {
+  const _WalletAvailabilityValue({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: color),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: Theme.of(context).textTheme.labelSmall),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

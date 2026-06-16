@@ -4,7 +4,7 @@ titulo: "Arquitetura mobile Flutter"
 versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-08
+ultima_atualizacao: 2026-06-16
 origem:
   - docs/specs/architecture/system-overview.md
   - apps/mobile/README.md
@@ -150,6 +150,7 @@ A navegacao inicial deve combinar:
 - modal/bottom sheet para confirmacao de previsao e mensagens de erro recuperaveis
 - rotas nomeadas para permitir deep link futuro de mercado e badge
 - rotas para payload de push em `/markets/:slug`, `/wallet` e `/badges`, sempre buscando estado real na FastAPI ao abrir
+- rota `/markets/:slug?tab=community` abre o detalhe direto na aba `Comunidade`, usada por contadores de comentarios e notificacoes de comentario
 
 Abas iniciais recomendadas:
 
@@ -159,7 +160,7 @@ Abas iniciais recomendadas:
 - `Alertas`: notificacoes in-app e eventos relevantes
 - `Busca`: busca e descoberta por categoria/evento
 
-`Insights` fica no menu superior enquanto nao houver conteudo recorrente suficiente para justificar uma aba primaria.
+`Insights` nao aparece no app enquanto nao houver conteudo recorrente e contrato backend suficiente para justificar uma superficie propria.
 
 ## Estado e cache
 

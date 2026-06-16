@@ -4,7 +4,7 @@ titulo: "UX e design mobile"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-07
+ultima_atualizacao: 2026-06-16
 origem:
   - docs/specs/features/mobile-mvp.md
   - referencias_visuais_fornecidas_pelo_usuario
@@ -97,7 +97,7 @@ Tokens recomendados:
 - `accentGreen`: verde para estados positivos, online e acertos
 - `accentRed`: vermelho/coral para probabilidade baixa, erro e perda
 - `accentYellow`: amarelo para prazo, aviso e resolucao
-- `accentViolet`: uso moderado para destaque de IA/insights
+- `accentViolet`: uso moderado para destaque de IA e sinais editoriais
 
 A paleta nao deve virar monocromatica azul/roxa. Categorias devem ter acentos distintos.
 
@@ -157,6 +157,8 @@ Metricas recomendadas para o MVP:
 - `Encerra em`
 - `Status`
 
+Quando o contador de `Comentarios` aparecer em cards ou metricas do detalhe, o toque deve abrir o mercado na aba `Comunidade`.
+
 Metricas como `liquidez`, `spread`, `last trade` ou equivalentes devem ficar fora do MVP ate existir significado de dominio educativo e contrato backend.
 
 ### PredictionTicket
@@ -201,7 +203,7 @@ Comentario:
 Destinos:
 
 - Hoje
-- Insights
+- Ranking
 - Mercados
 - Alertas
 - Busca
@@ -253,8 +255,9 @@ Objetivo: confianca educativa.
 
 Deve priorizar:
 
-- saldo atual
+- saldo atual separado em `Disponível` e `Bloqueado`
 - extrato rastreavel
+- recarga educativa como acao secundaria, abaixo do resumo da carteira
 - copy clara de moeda educativa
 - ausencia de linguagem de investimento, saque ou deposito real
 

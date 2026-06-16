@@ -71,6 +71,17 @@ def _market_status_label(status_value):
     }.get(status_value, status_value)
 
 
+def _effective_market_status(market):
+    status_value = market.status
+    if status_value != "open":
+        return status_value
+    close_at = market.close_at
+    if not market.auto_close_enabled or not close_at:
+        return status_value
+    target = close_at if close_at.tzinfo else close_at.replace(tzinfo=timezone.utc)
+    return "locked" if target <= timezone.now() else status_value
+
+
 def _short_close_label(close_at):
     if not close_at:
         return ""
@@ -168,6 +179,7 @@ def _market_sparklines(market, options):
 
 
 def _local_market_response(market):
+    status_value = _effective_market_status(market)
     options = [
         {
             "id": option.id,
@@ -193,8 +205,8 @@ def _local_market_response(market):
         "event": market.event.name if market.event_id else "Geral",
         "event_notice": market.event.notice if market.event_id else "",
         "kind": market.kind,
-        "status": market.status,
-        "status_label": _market_status_label(market.status),
+        "status": status_value,
+        "status_label": _market_status_label(status_value),
         "primary_outcome": market.primary_outcome,
         "primary_probability": _display_probability(market.primary_probability_exact),
         "primary_probability_exact": float(_decimal_probability(market.primary_probability_exact)),
@@ -204,7 +216,7 @@ def _local_market_response(market):
         "participants": market.participants,
         "source": market.source,
         "closes_in": _short_close_label(market.close_at) or market.closes_in,
-        "close_label": _public_close_label(market.close_at, market.close_timezone, market.close_label, market.status),
+        "close_label": _public_close_label(market.close_at, market.close_timezone, market.close_label, status_value),
         "thumb": market.thumb,
         "thumb_color": market.thumb_color,
         "image_url": market.image_url,
@@ -265,7 +277,7 @@ def local_market(slug):
 
 
 def local_stats():
-    from django.db.models import Sum
+    from django.db.models import Q, Sum
     from apps.web.django.accounts.models import WalletLedgerEntry
     from apps.web.django.markets.models import Market, Prediction
 
@@ -279,7 +291,9 @@ def local_stats():
     )
     moved_gtl = Prediction.objects.aggregate(total=Sum("stake_amount"))["total"] or 0
     return {
-        "open_markets": Market.objects.filter(status="open").count(),
+        "open_markets": Market.objects.filter(status="open")
+        .filter(Q(auto_close_enabled=False) | Q(close_at__isnull=True) | Q(close_at__gt=timezone.now()))
+        .count(),
         "total_predictions": total_predictions,
         "distributed_gtl": _format_gtl_amount(distributed_gtl),
         "moved_gtl": _format_gtl_amount(moved_gtl),

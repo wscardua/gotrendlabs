@@ -46,38 +46,16 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       return ListView(
                         padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                         children: [
-                          GtlSurface(
-                            glowColor: GtlColors.accentCyan,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const GtlEditorialHeader(
-                                  kicker: 'Wallet',
-                                  title: 'Saldo educativo',
-                                  body:
-                                      'GT₵ não representa dinheiro real, depósito, saque ou investimento.',
-                                  icon: Icons.account_balance_wallet_outlined,
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  formatGtl(safeInt(wallet['available_gtl'])),
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.displaySmall,
-                                ),
-                                const SizedBox(height: 10),
-                                GtlMetricTile(
-                                  label: 'Crédito reservado',
-                                  value: formatGtl(
-                                    safeInt(wallet['locked_gtl']),
-                                  ),
-                                  icon: Icons.lock_clock,
-                                  color: GtlColors.accentYellow,
-                                ),
-                              ],
-                            ),
+                          _WalletBalanceHero(
+                            availableGtl: safeInt(wallet['available_gtl']),
+                            lockedGtl: safeInt(wallet['locked_gtl']),
                           ),
                           const SizedBox(height: 12),
+                          const GtlSectionTitle(
+                            title: 'Recarga educativa',
+                            subtitle: 'Solicitação controlada quando elegível',
+                          ),
+                          const SizedBox(height: 8),
                           recharge.when(
                             loading: () => const _RechargeLoadingCard(),
                             error: (error, stack) =>
@@ -162,6 +140,65 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
         setState(() => _requestingRecharge = false);
       }
     }
+  }
+}
+
+class _WalletBalanceHero extends StatelessWidget {
+  const _WalletBalanceHero({
+    required this.availableGtl,
+    required this.lockedGtl,
+  });
+
+  final int availableGtl;
+  final int lockedGtl;
+
+  @override
+  Widget build(BuildContext context) {
+    return GtlSurface(
+      glowColor: GtlColors.accentCyan,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const GtlEditorialHeader(
+            kicker: 'Wallet',
+            title: 'Sua carteira',
+            body:
+                'GT₵ não representa dinheiro real, depósito, saque ou investimento.',
+            icon: Icons.account_balance_wallet_outlined,
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: GtlMetricTile(
+                  label: 'Disponível',
+                  value: formatGtl(availableGtl),
+                  icon: Icons.savings_outlined,
+                  color: GtlColors.accentGreen,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: GtlMetricTile(
+                  label: 'Bloqueado',
+                  value: formatGtl(lockedGtl),
+                  icon: Icons.lock_clock,
+                  color: GtlColors.accentYellow,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            'O valor bloqueado representa GT₵ reservado em posições abertas.',
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(color: GtlColors.textSecondary),
+          ),
+        ],
+      ),
+    );
   }
 }
 

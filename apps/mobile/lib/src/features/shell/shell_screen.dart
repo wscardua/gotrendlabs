@@ -142,11 +142,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                   context,
                 ).push(MaterialPageRoute(builder: (_) => const WalletScreen()));
               }
-              if (value == 'insights') {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const InsightsScreen()),
-                );
-              }
               if (value == 'badges') {
                 Navigator.of(
                   context,
@@ -186,14 +181,6 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                 child: ListTile(
                   leading: Icon(Icons.workspace_premium_outlined),
                   title: Text('Badges'),
-                  contentPadding: EdgeInsets.zero,
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'insights',
-                child: ListTile(
-                  leading: Icon(Icons.insights_outlined),
-                  title: Text('Insights'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -381,56 +368,6 @@ class _RoundIconButton extends StatelessWidget {
           backgroundColor: GtlColors.surfaceElevated,
           foregroundColor: GtlColors.textPrimary,
           side: const BorderSide(color: GtlColors.border),
-        ),
-      ),
-    );
-  }
-}
-
-class InsightsScreen extends ConsumerWidget {
-  const InsightsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Insights')),
-      body: GtlScreen(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            const GtlEditorialHeader(
-              kicker: 'Leitura assistida',
-              title: 'Insights',
-              body:
-                  'Comentários de IA oficial e análises aparecem aqui quando expostos pelo backend.',
-            ),
-            const SizedBox(height: 16),
-            GtlSurface(
-              glowColor: GtlColors.accentViolet,
-              child: Row(
-                children: [
-                  const Icon(Icons.verified, color: GtlColors.accentViolet),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Fonte de verdade: FastAPI, agentes oficiais auditados e comentários com selo.',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            const GtlSurface(
-              child: GtlEditorialHeader(
-                kicker: 'MVP',
-                title: 'Sem provedor local',
-                body:
-                    'O app não chama LLM diretamente; quando houver insight, ele será servido pelo backend.',
-                icon: Icons.lock_outline,
-              ),
-            ),
-          ],
         ),
       ),
     );

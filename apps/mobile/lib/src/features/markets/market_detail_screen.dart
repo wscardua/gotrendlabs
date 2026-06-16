@@ -16,18 +16,40 @@ import 'market_models.dart';
 import 'markets_providers.dart';
 import 'prediction_ticket.dart';
 
+enum MarketDetailTab { overview, community }
+
 class MarketDetailScreen extends ConsumerStatefulWidget {
-  const MarketDetailScreen({super.key, required this.slug});
+  const MarketDetailScreen({
+    super.key,
+    required this.slug,
+    this.initialTab = MarketDetailTab.overview,
+  });
 
   final String slug;
+  final MarketDetailTab initialTab;
 
   @override
   ConsumerState<MarketDetailScreen> createState() => _MarketDetailScreenState();
 }
 
 class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
-  int _tab = 0;
+  late int _tab;
   final Set<String> _trackedViewSlugs = <String>{};
+
+  @override
+  void initState() {
+    super.initState();
+    _tab = widget.initialTab == MarketDetailTab.community ? 1 : 0;
+  }
+
+  @override
+  void didUpdateWidget(covariant MarketDetailScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.slug != oldWidget.slug ||
+        widget.initialTab != oldWidget.initialTab) {
+      _tab = widget.initialTab == MarketDetailTab.community ? 1 : 0;
+    }
+  }
 
   Future<void> _trackMarketView(String slug) async {
     try {
@@ -230,10 +252,12 @@ class _OverviewTab extends StatelessWidget {
           color: GtlColors.surfaceGlass,
           child: GtlEditorialHeader(
             kicker: market.category,
-            title: market.subcategory.isEmpty
-                ? market.event
-                : market.subcategory,
-            body: market.event,
+            title: market.title,
+            body: market.summary.isEmpty
+                ? (market.subcategory.isEmpty
+                      ? market.event
+                      : market.subcategory)
+                : market.summary,
             icon: Icons.public,
           ),
         ),

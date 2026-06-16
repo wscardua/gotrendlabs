@@ -4,7 +4,7 @@ titulo: "Detalhe do mercado"
 versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-21
+ultima_atualizacao: 2026-06-16
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -87,7 +87,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - gráficos de evolução devem preservar histórico após resolução, considerando previsões `resolved` além das `open`
 - Django usa fallback local em Postgres para IDs de opções e campos visuais quando a FastAPI está indisponível ou com payload antigo
 - ticket do detalhe renderiza card de ciclo do mercado e destaque de resultado resolvido usando apenas estado serializado pelo domínio
-- comentários reais ainda não entram nesta etapa; contrato retorna lista vazia
+- comentários reais entram no contrato público do detalhe como lista visível quando existirem, com contadores agregados no feed/detalhe
 - fixture deixou de ser fallback principal para mercados; fallback de desenvolvimento usa Postgres local
 
 ## Dados e persistência

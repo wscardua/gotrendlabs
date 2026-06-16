@@ -4,7 +4,7 @@ titulo: "Criterios de aceite mobile"
 versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-08
+ultima_atualizacao: 2026-06-16
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -239,10 +239,15 @@ Antes de considerar a UI pronta:
 - confirmar que `Trocar escolha` usa `/position-preview` e `/position-actions`, abre apenas opcoes diferentes da ativa, exige preview valido e mostra movimentos encerrados, custo da troca, nova posicao estimada e trocas restantes retornadas pela FastAPI
 - confirmar que bloqueios de aumento/troca por limite, cutoff, flag, saldo, sessao ou status do mercado exibem mensagens retornadas pelo backend
 - confirmar que o bottom sheet de confirmacao de previsao nao estoura em aparelho fisico, viewport compacto ou fonte ampliada
-- confirmar que a wallet mostra recarga controlada com elegibilidade, pendencia, historico e criacao via API
+- confirmar que o ticket de previsao mostra `Disponível` e `Bloqueado` vindos da wallet da API antes da escolha/stake
+- confirmar que contador de comentarios em cards e metricas abre `/markets/:slug?tab=community`
+- confirmar que o detalhe mostra pergunta/contexto completo fora do hero truncado
+- confirmar que mercado auto-close vencido aparece como `Fechado` no mobile e bloqueia preview/criacao/reforco/revisao pela FastAPI
+- confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`
+- confirmar que a wallet prioriza `Disponível` e `Bloqueado`, mantendo recarga controlada com elegibilidade, pendencia, historico e criacao via API como secao secundaria
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
-- confirmar que o menu segue a ordem Wallet, Badges, Insights, Suporte, Sugerir mercado, Política e segurança, Sobre e Sair quando autenticado
+- confirmar que o menu segue a ordem Wallet, Badges, Suporte, Sugerir mercado, Política e segurança, Sobre e Sair quando autenticado
 - confirmar que sugestao de mercado segue acessivel pelo Perfil
 - confirmar que sugestao de mercado segue acessivel pelo menu principal
 - confirmar que cadastro, feedback e sugestao de mercado como visitante exibem desafio anti-abuso dentro do app e enviam `anti_abuse_token`/`anti_abuse_answer` para a FastAPI

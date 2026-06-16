@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-06-16 — FEAT-MOBILE-001 ajustes de mercado, alertas e wallet
+
+- FastAPI passou a expor mercado com fechamento automático vencido como efetivamente `locked`/`Fechado` nos contratos públicos e a bloquear preview/criação/reforço/revisão nesses casos, sem exigir regra local no Flutter.
+- Mobile passou a abrir a aba `Comunidade` por `/markets/:slug?tab=community` a partir de contadores de comentários e alertas de comentário.
+- Detalhe mobile passou a exibir pergunta/contexto completo fora do hero truncado.
+- Ticket de previsão passou a mostrar `Disponível` e `Bloqueado` vindos da wallet da API.
+- Wallet mobile passou a priorizar `Disponível` e `Bloqueado`, rebaixando recarga educativa para seção secundária.
+- Tela/menu `Insights` foi removido do app enquanto não houver contrato recorrente de backend para essa superfície.
+
 ## 2026-06-16 — FEAT-OPSLOG-001 hardening de probes no Caddy
 
 - Caddy de produção passou a responder `404` diretamente para probes comuns de WordPress, PHP, `.env`, `.git` e `vendor` antes que as requests cheguem ao Django.
@@ -88,8 +97,8 @@
 - Confirmação de previsão passou a usar bottom sheet com `SafeArea` e área rolável para evitar overflow em aparelho físico, viewport compacto ou fonte ampliada.
 - Gráfico de consenso mobile passou a renderizar uma linha por opção usando `sparkline_series` da FastAPI.
 - Ranking mobile passou a identificar participantes por `@handle` e exibir badges compactas com overflow `+N`, reutilizando `badges` e `badges_total` de `/rankings`.
-- Ranking passou a ocupar a segunda aba da bottom navigation no lugar de `Insights`; `Insights` foi movido para o menu superior.
-- Menu superior passou a seguir a ordem Wallet, Badges, Insights, Suporte, Política e segurança, Sobre e Sair; sugestão de mercado continua acessível pelo Perfil.
+- Ranking passou a ocupar a segunda aba da bottom navigation no lugar de `Insights`; naquela fatia, `Insights` foi movido para o menu superior.
+- Menu superior passou a seguir a ordem Wallet, Badges, Insights, Suporte, Política e segurança, Sobre e Sair; em 2026-06-16, `Insights` foi removido novamente enquanto nao houver contrato recorrente backend.
 - Estado de push mobile saiu de `Perfil` e `Alertas` e passou para `Sobre` como item informativo de saúde/configuração do build; push real/FCM continua fora do escopo.
 - Mobile passou a incrementar `view_count` ao abrir o detalhe do mercado, alinhando a semântica do web; `share_count` permanece incrementado na ação real de compartilhamento.
 - Login mobile ganhou `Lembrar login` ligado por padrão; quando desligado, o token Bearer fica apenas em memória e não é persistido no secure storage.
@@ -159,7 +168,7 @@
 
 ## 2026-06-07 — FEAT-MOBILE-001 MVP Flutter Android
 
-- Criado projeto Flutter em `apps/mobile` para Android, com tema dark-first GoTrendLabs e bottom navigation `Hoje`, `Insights`, `Mercados`, `Alertas`, `Busca`.
+- Criado projeto Flutter em `apps/mobile` para Android, com tema dark-first GoTrendLabs e bottom navigation inicial `Hoje`, `Insights`, `Mercados`, `Alertas`, `Busca`; em 2026-06-16, `Insights` deixou de ser superficie ativa.
 - Feed, browse, busca e detalhe de mercado consomem a FastAPI local; o emulador usa `http://10.0.2.2:8001`.
 - Auth mobile v1 usa Bearer simples retornado pela FastAPI e armazenado em secure storage, sem refresh token nesta fatia.
 - Favoritos, curtidas, comentários, preview e criação de previsão chamam apenas endpoints backend; o app não calcula saldo, probabilidade, payout, reputação, badges ou resolução como fonte de verdade.

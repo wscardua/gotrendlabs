@@ -35,8 +35,12 @@ class _GoTrendLabsAppState extends ConsumerState<GoTrendLabsApp> {
           routes: [
             GoRoute(
               path: 'markets/:slug',
-              builder: (context, state) =>
-                  MarketDetailScreen(slug: state.pathParameters['slug'] ?? ''),
+              builder: (context, state) => MarketDetailScreen(
+                slug: state.pathParameters['slug'] ?? '',
+                initialTab: state.uri.queryParameters['tab'] == 'community'
+                    ? MarketDetailTab.community
+                    : MarketDetailTab.overview,
+              ),
             ),
             GoRoute(
               path: 'wallet',
@@ -104,9 +108,17 @@ String? _safePushRoute(String rawRoute) {
     return route;
   }
   if (route.startsWith('/markets/')) {
-    final slug = route.substring('/markets/'.length);
+    final uri = Uri.tryParse(route);
+    if (uri == null || uri.pathSegments.length != 2) {
+      return null;
+    }
+    final slug = uri.pathSegments[1];
     if (RegExp(r'^[a-z0-9][a-z0-9-]{0,119}$').hasMatch(slug)) {
-      return route;
+      if (uri.queryParameters.isEmpty ||
+          (uri.queryParameters.length == 1 &&
+              uri.queryParameters['tab'] == 'community')) {
+        return uri.toString();
+      }
     }
   }
   return null;

@@ -129,6 +129,12 @@ class MarketHeroCard extends StatelessWidget {
                                   '${market.humanParticipants} participantes',
                             ),
                             _HeroMeta(
+                              icon: Icons.forum_outlined,
+                              label: '${market.commentCount}',
+                              onTap: () =>
+                                  context.push(_marketCommunityPath(market)),
+                            ),
+                            _HeroMeta(
                               icon: Icons.timer_outlined,
                               label: market.timeRemainingLabel,
                             ),
@@ -266,9 +272,14 @@ class MarketCompactCard extends StatelessWidget {
                           label: market.volumeLabel,
                         ),
                         const SizedBox(width: 10),
-                        _InlineMetric(
-                          icon: Icons.forum_outlined,
-                          label: '${market.commentCount}',
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () =>
+                              context.push(_marketCommunityPath(market)),
+                          child: _InlineMetric(
+                            icon: Icons.forum_outlined,
+                            label: '${market.commentCount}',
+                          ),
                         ),
                         const SizedBox(width: 8),
                         if (showStatus)
@@ -315,32 +326,43 @@ class MarketMetricPanel extends StatelessWidget {
         market.probabilityLabel,
         Icons.stacked_line_chart,
         GtlColors.accentGreen,
+        null,
       ),
       (
         'Volume GT₵',
         market.volumeLabel,
         Icons.savings_outlined,
         GtlColors.accentBlue,
+        null,
       ),
       (
         'Participantes',
         market.humanParticipants.toString(),
         Icons.groups_2_outlined,
         GtlColors.accentCyan,
+        null,
       ),
       (
         'Comentários',
         market.commentCount.toString(),
         Icons.forum_outlined,
         GtlColors.accentViolet,
+        () => context.push(_marketCommunityPath(market)),
       ),
       (
         'Encerra em',
         market.closesIn.isEmpty ? 'fim' : market.closesIn,
         Icons.timer_outlined,
         GtlColors.accentYellow,
+        null,
       ),
-      ('Status', market.statusLabel, Icons.flag_outlined, _statusColor(market)),
+      (
+        'Status',
+        market.statusLabel,
+        Icons.flag_outlined,
+        _statusColor(market),
+        null,
+      ),
     ];
     return GtlSurface(
       color: GtlColors.surfaceGlass,
@@ -372,15 +394,26 @@ class MarketMetricPanel extends StatelessWidget {
 class _MetricFromRecord extends StatelessWidget {
   const _MetricFromRecord({required this.metric});
 
-  final (String, String, IconData, Color) metric;
+  final (String, String, IconData, Color, VoidCallback?) metric;
 
   @override
   Widget build(BuildContext context) {
-    return GtlMetricTile(
+    final tile = GtlMetricTile(
       label: metric.$1,
       value: metric.$2,
       icon: metric.$3,
       color: metric.$4,
+    );
+    if (metric.$5 == null) {
+      return tile;
+    }
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
+        onTap: metric.$5,
+        child: tile,
+      ),
     );
   }
 }
@@ -596,14 +629,15 @@ class _FallbackMarketArt extends StatelessWidget {
 }
 
 class _HeroMeta extends StatelessWidget {
-  const _HeroMeta({required this.icon, required this.label});
+  const _HeroMeta({required this.icon, required this.label, this.onTap});
 
   final IconData icon;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
+    final child = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 15, color: GtlColors.textSecondary),
@@ -617,8 +651,21 @@ class _HeroMeta extends StatelessWidget {
         ),
       ],
     );
+    if (onTap == null) {
+      return child;
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: child,
+    );
   }
 }
+
+String _marketCommunityPath(Market market) => Uri(
+  path: '/markets/${market.slug}',
+  queryParameters: {'tab': 'community'},
+).toString();
 
 class _InlineMetric extends StatelessWidget {
   const _InlineMetric({

@@ -4,7 +4,7 @@ titulo: "Contratos API para mobile"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-08
+ultima_atualizacao: 2026-06-16
 origem:
   - docs/specs/architecture/backend-api.md
   - packages/contracts/openapi/gotrendlabs-api.json
@@ -140,6 +140,8 @@ Campos minimos esperados:
 
 O app pode ordenar e filtrar visualmente os itens ja carregados, mas filtros autoritativos e recortes paginados devem vir da API quando o volume exigir.
 
+Para mercado `open` com `auto_close_enabled=true` e `close_at` vencido, a FastAPI deve expor `status=locked` e `status_label=Fechado` nos contratos publicos e bloquear preview/criacao/reforco/revisao. O mobile nao deve inferir fechamento por relogio local.
+
 ### Detalhe de mercado
 
 Endpoint esperado:
@@ -157,7 +159,7 @@ Uso no mobile:
 Campos minimos esperados:
 
 - todos os campos relevantes do feed
-- `description` ou contexto equivalente quando disponivel
+- `summary` ou contexto equivalente quando disponivel, exibido no detalhe sem truncamento como unica forma de leitura
 - `resolution_criteria`
 - `category_notice`
 - `subcategory_notice`

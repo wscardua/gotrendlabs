@@ -1392,6 +1392,28 @@ def _market_status_label(status_value):
     }.get(status_value, status_value)
 
 
+def _effective_market_status(market, *, now=None):
+    status_value = market.get("status") if hasattr(market, "get") else market["status"]
+    if status_value != "open":
+        return status_value
+    auto_close_enabled = market.get("auto_close_enabled") if hasattr(market, "get") else market["auto_close_enabled"]
+    close_at = market.get("close_at") if hasattr(market, "get") else market["close_at"]
+    if not auto_close_enabled or not close_at:
+        return status_value
+    now = now or datetime.now(timezone.utc)
+    target = close_at if close_at.tzinfo else close_at.replace(tzinfo=timezone.utc)
+    if target <= now:
+        return "locked"
+    return status_value
+
+
+def _with_effective_market_status(market):
+    effective_status = _effective_market_status(market)
+    if effective_status == (market.get("status") if hasattr(market, "get") else market["status"]):
+        return market
+    return {**dict(market), "status": effective_status, "status_label": _market_status_label(effective_status)}
+
+
 def _short_close_label(close_at):
     if not close_at:
         return ""
@@ -1544,6 +1566,7 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
 
 
 def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filter_public_image=True):
+    row = _with_effective_market_status(row)
     cursor.execute(
         """
         SELECT id, label, probability_exact, hint
@@ -1793,7 +1816,7 @@ def _market_probability_snapshot(cursor, market_id):
 def _prediction_preview(cursor, slug, payload):
     cursor.execute(
         """
-        SELECT id, status
+        SELECT id, status, close_at, auto_close_enabled
         FROM gotrendlabs_markets
         WHERE slug = %s
         """,
@@ -1802,6 +1825,7 @@ def _prediction_preview(cursor, slug, payload):
     market = cursor.fetchone()
     if not market:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
+    market = _with_effective_market_status(market)
     if market["status"] != "open":
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado fechado para novas previsões.")
 
@@ -1992,7 +2016,7 @@ def _revision_cutoff_at(market, config):
 
 def _position_blockers(market, active_positions, config):
     now = datetime.now(timezone.utc)
-    market_status = market.get("status") if hasattr(market, "get") else market["status"]
+    market_status = _effective_market_status(market, now=now)
     if not active_positions:
         return "Nenhuma posição ativa neste mercado.", "Nenhuma posição ativa neste mercado."
     reinforcement_blocked = ""
@@ -2085,7 +2109,7 @@ def _position_penalty(active_stake, config):
 def _load_market_for_position(cursor, slug):
     cursor.execute(
         """
-        SELECT id, slug, status, close_at
+        SELECT id, slug, status, close_at, auto_close_enabled
         FROM gotrendlabs_markets
         WHERE slug = %s
         """,
@@ -2094,7 +2118,7 @@ def _load_market_for_position(cursor, slug):
     market = cursor.fetchone()
     if not market:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Mercado não encontrado.")
-    return market
+    return _with_effective_market_status(market)
 
 
 def _load_market_option(cursor, market_id, option_id):
@@ -4073,8 +4097,20 @@ def list_markets(
     where = ["m.status NOT IN ('draft', 'canceled')"]
     params = []
     if status_filter:
-        where.append("lower(m.status) = lower(%s)")
-        params.append(status_filter)
+        normalized_status = status_filter.lower()
+        if normalized_status == "open":
+            where.append(
+                "(lower(m.status) = 'open' AND (m.auto_close_enabled = false OR m.close_at IS NULL OR m.close_at > %s))"
+            )
+            params.append(datetime.now(timezone.utc))
+        elif normalized_status == "locked":
+            where.append(
+                "(lower(m.status) = 'locked' OR (lower(m.status) = 'open' AND m.auto_close_enabled = true AND m.close_at <= %s))"
+            )
+            params.append(datetime.now(timezone.utc))
+        else:
+            where.append("lower(m.status) = lower(%s)")
+            params.append(status_filter)
     if category:
         where.append("(lower(c.name) = lower(%s) OR lower(c.slug) = lower(%s))")
         params.extend([category, category])
