@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
 import '../../theme.dart';
@@ -62,12 +63,21 @@ class AlertsScreen extends ConsumerWidget {
                   padding: const EdgeInsets.only(bottom: 10),
                   child: GtlSurface(
                     padding: EdgeInsets.zero,
-                    child: ListTile(
-                      leading: const Icon(Icons.bolt_outlined),
-                      title: Text(
-                        (item as Map)['title']?.toString() ?? 'Alerta',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ListTile(
+                        leading: const Icon(Icons.bolt_outlined),
+                        title: Text(
+                          (item as Map)['title']?.toString() ?? 'Alerta',
+                        ),
+                        subtitle: Text(item['body']?.toString() ?? ''),
+                        trailing: _notificationRoute(item) == null
+                            ? null
+                            : const Icon(Icons.chevron_right),
+                        onTap: _notificationRoute(item) == null
+                            ? null
+                            : () => context.push(_notificationRoute(item)!),
                       ),
-                      subtitle: Text(item['body']?.toString() ?? ''),
                     ),
                   ),
                 ),
@@ -76,4 +86,24 @@ class AlertsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+String? _notificationRoute(Map item) {
+  final eventType = item['event_type']?.toString() ?? '';
+  final marketSlug = item['market_slug']?.toString().trim() ?? '';
+  if (marketSlug.isNotEmpty) {
+    return Uri(
+      path: '/markets/$marketSlug',
+      queryParameters: eventType == 'market_comment'
+          ? {'tab': 'community'}
+          : null,
+    ).toString();
+  }
+  if (eventType == 'wallet_credit') {
+    return '/wallet';
+  }
+  if (eventType == 'badge_awarded') {
+    return '/badges';
+  }
+  return null;
 }

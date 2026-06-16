@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:gotrendlabs_mobile/src/core/api_client.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/market_cards.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/market_models.dart';
@@ -82,6 +83,64 @@ void main() {
 
     expect(find.text('3d'), findsWidgets);
     expect(find.byType(LinearProgressIndicator), findsOneWidget);
+  });
+
+  testWidgets('MarketCompactCard comment count opens community tab', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: MarketCompactCard(
+              market: _market(),
+              api: ApiClient(tokenStore: MemoryTokenStore()),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/markets/:slug',
+          builder: (context, state) => Text(
+            '${state.pathParameters['slug']} ${state.uri.queryParameters['tab']}',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+    await tester.tap(find.text('2'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('mercado-teste community'), findsOneWidget);
+  });
+
+  testWidgets('MarketMetricPanel comment tile opens community tab', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) =>
+              Scaffold(body: MarketMetricPanel(market: _market())),
+        ),
+        GoRoute(
+          path: '/markets/:slug',
+          builder: (context, state) => Text(
+            '${state.pathParameters['slug']} ${state.uri.queryParameters['tab']}',
+          ),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+
+    await tester.tap(find.text('COMENTÁRIOS'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('mercado-teste community'), findsOneWidget);
   });
 
   testWidgets('MarketCompactCard time rail changes color with urgency', (

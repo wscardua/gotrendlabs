@@ -4,7 +4,7 @@ titulo: "MVP mobile Flutter"
 versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-07
+ultima_atualizacao: 2026-06-16
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
   - docs/specs/features/market-feed.md
@@ -84,16 +84,6 @@ Primeira tela util do app. Deve mostrar:
 - mercados em destaque por popularidade/curadoria existente
 - cards grandes com imagem, categoria, pergunta, probabilidade e volume educativo
 - secoes compactas de tendencias, novos e encerrando em breve
-
-### Insights
-
-Area para conteudo interpretativo e agentes IA quando contratos existirem. No MVP pode exibir:
-
-- mercados com comentarios de IA oficial
-- explicacoes de contexto vindas do backend
-- estados vazios claros quando nao houver insight disponivel
-
-O app nao deve gerar insight local com IA nem chamar provedor LLM diretamente.
 
 ### Mercados
 
@@ -176,7 +166,7 @@ Erros esperados:
 ## Ordem sugerida de implementacao
 
 1. Criar projeto Flutter em `apps/mobile` com tema, roteamento, ambiente local e bottom navigation.
-2. Implementar shell visual dark-first com abas `Hoje`, `Ranking`, `Mercados`, `Alertas` e `Busca`, mantendo `Insights` no menu superior até existir conteúdo recorrente.
+2. Implementar shell visual dark-first com abas `Hoje`, `Ranking`, `Mercados`, `Alertas` e `Busca`, sem tela `Insights` enquanto nao houver contrato recorrente do backend.
 3. Consumir `GET /markets` e renderizar cards visuais de mercado.
 4. Implementar detalhe de mercado com hero, abas `Visao geral`/`Comunidade` e painel de metricas.
 5. Resolver estrategia de autenticacao mobile antes de login persistente.
@@ -190,7 +180,7 @@ Erros esperados:
 
 Wallet no MVP:
 
-- saldo GTL/GT₵ educativo
+- saldo GTL/GT₵ educativo com valores `Disponível` e `Bloqueado` destacados antes de recarga
 - extrato resumido
 - labels humanos de origem
 - aviso claro de que nao existe dinheiro real
@@ -214,6 +204,7 @@ Perfil no MVP:
 - stake e preview sempre validados no backend
 - probabilidade exibida usa contrato da API
 - saldo e extrato usam ledger/projecao da API
+- mercados com fechamento automatico vencido devem ser tratados pela FastAPI como efetivamente fechados nos payloads e nas mutacoes, sem regra local no app
 - reputacao, ranking e badges sao leitura da API
 - imagens de mercado/badges usam `image_url`/`thumb` retornados pela API, com fallback visual apenas de apresentacao
 - feedback e sugestoes sao enviados para filas do backend; visitante informa nome/email e desafio anti-abuso mobile, enquanto revisao, recompensa e conversao em mercado ficam no backend/Admin Ops

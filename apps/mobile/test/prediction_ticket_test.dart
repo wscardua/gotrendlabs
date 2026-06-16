@@ -46,6 +46,39 @@ void main() {
     expect(find.text('-'), findsOneWidget);
   });
 
+  testWidgets('PredictionTicket shows available and locked wallet from API', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          walletProvider.overrideWith((ref) async {
+            return {
+              'available_gtl': 1500,
+              'locked_gtl': 320,
+              'total_earned_gtl': 0,
+            };
+          }),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: SingleChildScrollView(
+              child: PredictionTicket(market: _market()),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Disponível'), findsOneWidget);
+    expect(find.text('Bloqueado'), findsOneWidget);
+    expect(find.text('1500 GT₵'), findsOneWidget);
+    expect(find.text('320 GT₵'), findsOneWidget);
+  });
+
   testWidgets('PredictionTicket refreshes possible credit from API', (
     tester,
   ) async {
@@ -226,6 +259,8 @@ void main() {
     expect(find.text('Mover sua posição para outra opção'), findsOneWidget);
     expect(find.text('GT₵ para aumentar'), findsNothing);
 
+    await tester.ensureVisible(find.text('Aumentar posição'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Aumentar posição'));
     await tester.pumpAndSettle();
     expect(find.text('GT₵ para aumentar'), findsOneWidget);
@@ -327,6 +362,7 @@ void main() {
       ProviderScope(
         overrides: [
           authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          walletProvider.overrideWith((ref) async => _wallet()),
         ],
         child: MaterialApp(
           home: Scaffold(
@@ -360,7 +396,7 @@ void main() {
       find.text('Janela de revisão encerrada para este mercado.'),
       findsOneWidget,
     );
-    expect(find.text('Bloqueado'), findsNWidgets(2));
+    expect(find.text('Bloqueado'), findsAtLeastNWidgets(2));
     expect(
       find.widgetWithText(FilledButton, 'Pré-visualizar aumento'),
       findsNothing,
@@ -374,6 +410,7 @@ void main() {
       ProviderScope(
         overrides: [
           authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          walletProvider.overrideWith((ref) async => _wallet()),
         ],
         child: MaterialApp(
           home: Scaffold(
@@ -405,6 +442,8 @@ void main() {
       findsNothing,
     );
 
+    await tester.ensureVisible(find.text('Aumentar posição'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Aumentar posição'));
     await tester.pumpAndSettle();
 
@@ -462,6 +501,8 @@ class _Adapter implements HttpClientAdapter {
   @override
   void close({bool force = false}) {}
 }
+
+Map<String, dynamic> _wallet() => {'available_gtl': 900, 'locked_gtl': 120};
 
 Market _market({Map<String, dynamic>? viewerPosition}) {
   final json = {

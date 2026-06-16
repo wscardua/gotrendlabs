@@ -46,9 +46,9 @@ from apps.api.backend_api.security import hash_token, issue_token, make_password
 from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError
 from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
-from apps.web.django.communications.push_services import create_test_push_delivery, process_due_push_deliveries
+from apps.web.django.communications.push_services import create_test_push_delivery, enqueue_push_for_notification, process_due_push_deliveries
 from apps.web.django.communications.services import DEFAULT_EMAIL_TEMPLATES, TRANSACTIONAL_FOOTER_TEMPLATE_KEY, process_due_email_deliveries, render_template
-from apps.web.django.core.domain_client import get_domain_client
+from apps.web.django.core.domain_client import get_domain_client, local_market, local_markets
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
 from apps.web.django.core.social_share import public_badge_share_token
 from apps.web.django.admin_ops.views import _safe_image_content
@@ -839,6 +839,31 @@ class BackendAuthAPITests(TransactionTestCase):
         missing = client.get("/markets/mercado-inexistente")
         self.assertEqual(missing.status_code, 404)
 
+    def test_market_api_treats_expired_auto_close_market_as_locked(self):
+        Market.objects.filter(slug="openai-gpt6-2026").update(
+            status="open",
+            status_label="Aberto",
+            auto_close_enabled=True,
+            close_at=timezone.now() - timedelta(minutes=5),
+        )
+
+        client = TestClient(app)
+        listing = client.get("/markets")
+        self.assertEqual(listing.status_code, 200)
+        market = next(item for item in listing.json()["markets"] if item["slug"] == "openai-gpt6-2026")
+        self.assertEqual(market["status"], "locked")
+        self.assertEqual(market["status_label"], "Fechado")
+
+        detail = client.get("/markets/openai-gpt6-2026")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["status"], "locked")
+        self.assertEqual(detail.json()["status_label"], "Fechado")
+
+        open_markets = client.get("/markets", params={"status": "open"})
+        self.assertNotIn("openai-gpt6-2026", [market["slug"] for market in open_markets.json()["markets"]])
+        locked_markets = client.get("/markets", params={"status": "locked"})
+        self.assertIn("openai-gpt6-2026", [market["slug"] for market in locked_markets.json()["markets"]])
+
     def test_market_listing_marks_viewer_predictions_when_authenticated(self):
         client = TestClient(app)
         register = client.post(
@@ -1186,6 +1211,31 @@ class BackendAuthAPITests(TransactionTestCase):
         delivery.refresh_from_db()
         self.assertEqual(stats["dry_run"], 1)
         self.assertEqual(delivery.status, "dry_run")
+
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        comment = MarketComment.objects.create(
+            market=market,
+            author_id=first.json()["user"]["id"],
+            body="Comentário com push.",
+        )
+        comment_notification = UserNotification.objects.create(
+            recipient_id=first.json()["user"]["id"],
+            market=market,
+            comment=comment,
+            event_type="market_comment",
+            source_key=f"push-comment:{comment.id}",
+            title="Novo comentário",
+            body="Alguém comentou no mercado.",
+        )
+        with override_settings(GOTRENDLABS_PUSH_ENABLED=True, GOTRENDLABS_PUSH_PROVIDER="none", GOTRENDLABS_PUSH_DRY_RUN=True):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    queued = enqueue_push_for_notification(cursor, comment_notification.id)
+        self.assertEqual(queued["queued"], 1)
+        comment_delivery = PushDelivery.objects.get(event_type="market_comment", notification_id=comment_notification.id)
+        self.assertEqual(comment_delivery.payload["route"], "/markets/openai-gpt6-2026?tab=community")
+        self.assertEqual(comment_delivery.payload["market_slug"], "openai-gpt6-2026")
+        self.assertEqual(comment_delivery.payload["comment_id"], str(comment.id))
 
     def test_push_preferences_block_outbox_and_provider_invalidates_bad_tokens(self):
         client = TestClient(app)
@@ -3951,6 +4001,76 @@ class BackendAuthAPITests(TransactionTestCase):
             json={"option_id": insufficient_option.id, "stake_amount": 10, "client_locale": "pt-br"},
         )
         self.assertEqual(unauthenticated.status_code, 401)
+
+    def test_expired_auto_close_market_blocks_prediction_and_position_actions(self):
+        client = TestClient(app)
+        user_register = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Expired Auto Close User",
+                "email": "expired-auto-close-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(user_register.status_code, 201)
+        headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
+        sim = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
+
+        prediction = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=headers,
+            json={"option_id": sim.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(prediction.status_code, 201)
+
+        Market.objects.filter(slug="openai-gpt6-2026").update(
+            status="open",
+            status_label="Aberto",
+            auto_close_enabled=True,
+            close_at=timezone.now() - timedelta(minutes=5),
+        )
+
+        new_user = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Expired Auto Close New User",
+                "email": "expired-auto-close-new-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(new_user.status_code, 201)
+        new_headers = {"Authorization": f"Bearer {new_user.json()['session']['token']}"}
+        preview = client.post(
+            "/markets/openai-gpt6-2026/prediction-preview",
+            json={"option_id": sim.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(preview.status_code, 422)
+        blocked_prediction = client.post(
+            "/markets/openai-gpt6-2026/predict",
+            headers=new_headers,
+            json={"option_id": sim.id, "stake_amount": 80, "client_locale": "pt-br"},
+        )
+        self.assertEqual(blocked_prediction.status_code, 422)
+
+        position_preview = client.post(
+            "/markets/openai-gpt6-2026/position-preview",
+            headers=headers,
+            json={"action": "reinforcement", "option_id": sim.id, "stake_amount": 40, "client_locale": "pt-br"},
+        )
+        self.assertEqual(position_preview.status_code, 200)
+        self.assertFalse(position_preview.json()["allowed"])
+        self.assertIn("Mercado fechado", position_preview.json()["blocked_reason"])
+
+        position_action = client.post(
+            "/markets/openai-gpt6-2026/position-actions",
+            headers=headers,
+            json={"action": "reinforcement", "option_id": sim.id, "stake_amount": 40, "client_locale": "pt-br"},
+        )
+        self.assertEqual(position_action.status_code, 422)
 
     def test_position_reinforcement_and_revision_are_auditable_wallet_mutations(self):
         client = TestClient(app)
@@ -10485,6 +10605,30 @@ class WebSmokeTests(TransactionTestCase):
         with patch("apps.web.django.core.views.get_markets", side_effect=AuthAPIError("api off")):
             response = self.client.get(reverse("home"))
             self.assertContains(response, "OpenAI anuncia GPT-6")
+
+    def test_site_local_fallback_treats_expired_auto_close_market_as_locked(self):
+        Market.objects.filter(slug="openai-gpt6-2026").update(
+            status="open",
+            status_label="Aberto",
+            auto_close_enabled=True,
+            close_at=timezone.now() - timedelta(minutes=5),
+        )
+
+        local_listing_market = next(market for market in local_markets() if market["slug"] == "openai-gpt6-2026")
+        self.assertEqual(local_listing_market["status"], "locked")
+        self.assertEqual(local_market("openai-gpt6-2026")["status"], "locked")
+
+        with patch("apps.web.django.core.views.get_markets", side_effect=AuthAPIError("api off")):
+            response = self.client.get(reverse("home"))
+        self.assertContains(response, 'data-market-slug="openai-gpt6-2026"')
+        self.assertContains(response, 'data-market-status="locked"')
+        self.assertContains(response, "Em apuração")
+
+        with patch("apps.web.django.markets.views.get_market", side_effect=AuthAPIError("api off")):
+            response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+        self.assertContains(response, "Mercado fechado")
+        self.assertContains(response, "Em apuração")
+        self.assertNotContains(response, "Registrar previsão")
 
     def test_register_login_and_logout_flow(self):
         auth_response = {

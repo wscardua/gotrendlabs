@@ -298,6 +298,8 @@ def _notification_context(row):
     route = "/"
     if market_slug:
         route = f"/markets/{market_slug}"
+        if row["event_type"] == "market_comment":
+            route = f"{route}?tab=community"
     elif row["event_type"] == "wallet_credit":
         route = "/wallet"
     elif row["event_type"] == "badge_awarded":
