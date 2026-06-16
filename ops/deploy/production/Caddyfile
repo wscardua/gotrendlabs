@@ -8,22 +8,7 @@
 	encode gzip
 
 	@blocked_probe {
-		path /wp-*
-		path /wp/*
-		path /wordpress/*
-		path /wp-login.php
-		path /xmlrpc.php
-		path /.env*
-		path /*/.env*
-		path /.git/*
-		path /*/.git/*
-		path /vendor/*
-		path /*/vendor/*
-		path /phpinfo*
-		path /*phpinfo*
-		path /*.php*
-		path /server-status*
-		path /server-info*
+		path_regexp blocked_probe ^/(wp[-/]|wordpress/|wp-login\.php$|xmlrpc\.php$|(.*/)?\.env($|[./_~:-])|(.*/)?\.git/|(.*/)?vendor/|(.*/)?phpinfo($|[./_:-])|.*\.php($|/)|server-status($|[./_:-])|server-info($|[./_:-])).*
 	}
 
 	handle @blocked_probe {
