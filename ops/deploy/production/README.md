@@ -198,11 +198,13 @@ Ao ativar FCM real no futuro, atualize `/opt/gotrendlabs/.env.prod`, recrie `dja
 O Caddy publica a FastAPI sob o mesmo dominio oficial:
 
 - `https://gotrendlabs.com.br/api/*` roteia para `fastapi:8001` usando `handle_path`, removendo o prefixo `/api`.
+- Probes comuns contra WordPress, PHP, `.env`, `.git` e `vendor` sao respondidos com `404` diretamente no Caddy antes de chegar ao Django. A regra nao bloqueia `/admin/*` genericamente; apenas padroes suspeitos como `/admin/.env` e `/admin/phpinfo.php` entram no bloqueio.
 - Smokes esperados apos deploy: `/api/health`, `/api/markets`, login/auth e endpoints mobile existentes.
 - Quando o `Caddyfile` mudar, recrie ou recarregue o servico `proxy` e confirme que o container em execucao contem o bloco novo. O arquivo no disco pode estar atualizado enquanto o Caddy ainda roda com configuracao antiga:
 
 ```bash
 docker compose -f ops/deploy/production/docker-compose.yml up -d --force-recreate --no-deps proxy
+docker compose -f ops/deploy/production/docker-compose.yml exec -T proxy caddy validate --config /etc/caddy/Caddyfile
 docker compose -f ops/deploy/production/docker-compose.yml exec -T proxy sh -c 'grep -n "handle_path /api" -A2 /etc/caddy/Caddyfile'
 ```
 

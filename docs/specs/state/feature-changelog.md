@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-06-16 — FEAT-OPSLOG-001 hardening de probes no Caddy
+
+- Caddy de produção passou a responder `404` diretamente para probes comuns de WordPress, PHP, `.env`, `.git` e `vendor` antes que as requests cheguem ao Django.
+- O bloqueio preserva `/admin/*` como rota real, cobrindo apenas padrões suspeitos como `/admin/.env` e `/admin/phpinfo.php`.
+- A mudança reduz ruído em `gotrendlabs_system_logs` sem alterar Django, FastAPI, banco, Cloudflare ou contratos públicos.
+
 ## 2026-06-15 — Publicação mobile de posição e anti-abuso
 
 - PR #82 publicou em `main` a fase mobile de reforço/revisão de posição e o desafio anti-abuso para cadastro, feedback e sugestão de visitantes.
