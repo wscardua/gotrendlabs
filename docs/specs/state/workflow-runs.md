@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260616-MOBILE-MARKET-WALLET-UX-FIXES-001
 
 - Tipo: `change-feature`
-- Status: `em_publicacao`
+- Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`, `FEAT-PRED-001`, `FEAT-WALLET-001`, `FEAT-NOTIFY-001`, `FastAPI public contract`, `frontend-web`
 - Objetivo: corrigir UX mobile de mercado, comentários, alertas e wallet, remover `Insights` enquanto não houver contrato recorrente e alinhar mercados `open` com `auto_close_enabled=true` e `close_at` vencido como efetivamente `locked`.
-- Etapa atual: implementação e validação local concluídas; aguardando aprovação do texto da PR antes de publicar, mergear em `main` e acompanhar `GoTrendLabs CI and Deploy`.
+- Etapa atual: publicado em `main` pela PR #87, deploy de produção concluído e smokes públicos confirmaram API/site saudáveis e Royal Ascot 2026 como `locked`/`Fechado` no contrato público.
 - Artefatos afetados:
   - `apps/api/backend_api/main.py`
   - `apps/web/django/core/domain_client.py`
@@ -24,12 +24,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/testing/mobile-acceptance.md`
   - `docs/specs/state/feature-changelog.md`
   - `docs/specs/state/implementation-status.md`
-- Bloqueios: aguardando aprovação do usuário para criar/submeter a PR; publicação de nova APK beta fica fora desta entrega.
+- Bloqueios: nenhum conhecido; publicação de nova APK beta fica fora desta entrega.
 - Iniciado em: 2026-06-16
 - Atualizado em: 2026-06-16
-- Retomada: após aprovação, criar PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e validar produção em `/api/health`, `/api/markets`, `/api/markets/{slug}` para mercado auto-close vencido quando houver fixture/registro aplicável, homepage e contrato de push/alerta sem expor dados sensíveis.
+- Encerrado em: 2026-06-16
+- Retomada: acompanhar feedback mobile de mercado, comunidade, alertas e wallet; se a próxima publicação Android exigir essas telas no canal beta, gerar nova APK em follow-up próprio.
 - Reversão lógica: remover overlay de status efetivo em FastAPI/fallback web, restaurar `Insights` no shell mobile, voltar wallet/ticket/alertas/cards ao comportamento anterior e retirar as notas documentais desta fatia.
 - Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_market_api_seed_filters_and_detail_contract --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_market_api_treats_expired_auto_close_market_as_locked tests.test_web_smoke.BackendAuthAPITests.test_expired_auto_close_market_blocks_prediction_and_position_actions --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_main_pages_render --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_market_pages_consume_api_and_fallback_to_fixture tests.test_web_smoke.WebSmokeTests.test_market_and_result_share_pages_expose_social_cards tests.test_web_smoke.WebSmokeTests.test_home_stays_market_focused_for_guest_and_user tests.test_web_smoke.WebSmokeTests.test_home_stats_show_real_total_predictions tests.test_web_smoke.WebSmokeTests.test_site_local_fallback_treats_expired_auto_close_market_as_locked --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_push_outbox_uses_user_notification_policy_and_safe_payload --keepdb`; `.venv/bin/python -m py_compile apps/web/django/communications/push_services.py tests/test_web_smoke.py`; `cd apps/mobile && flutter pub get`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test`; `cd apps/mobile && flutter test test/alerts_screen_test.dart test/market_detail_screen_test.dart`; `git diff --check`.
+- Evidências de publicação: PR #87 (`Ajusta UX mobile de mercados, alertas e wallet`) mergeada em `main` por squash commit `9f724c989b7d054356fed83130415b14b518dd08`; GitHub Actions `GoTrendLabs CI and Deploy` run `27654353053` concluiu jobs `test` e `deploy` com sucesso; produção respondeu `https://gotrendlabs.com.br/api/health` com `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; homepage retornou `HTTP/2 200`; `/api/markets` retornou 19 mercados; `/api/markets/rei-rainha-royal-ascot-2026` retornou `status=locked`, `status_label=Fechado`, `auto_close_enabled=true`, `close_at=2026-06-16T15:55:00+00:00` e `comment_count=6`; o mesmo slug ficou ausente de `/api/markets?status=open` e presente em `/api/markets?status=locked`; a página web `/markets/rei-rainha-royal-ascot-2026/` retornou `HTTP 200`, exibiu `Mercado fechado` e manteve o trilho de ciclo sem reabrir o ticket.
 
 ## WFLOW-20260616-CADDY-PROBE-BLOCK-001
 
