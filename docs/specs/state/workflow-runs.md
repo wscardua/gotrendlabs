@@ -2,6 +2,24 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260616-CADDY-PROBE-BLOCK-001
+
+- Tipo: `new-feature`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-OPSLOG-001`, infra de produção
+- Objetivo: bloquear no Caddy probes comuns de WordPress, PHP, `.env`, `.git` e `vendor` antes que cheguem ao Django, reduzindo ruído em `gotrendlabs_system_logs`
+- Etapa atual: implementação local em `feature/caddy-probe-block`
+- Artefatos afetados:
+  - `ops/deploy/production/Caddyfile`
+  - `ops/deploy/production/README.md`
+  - `docs/specs/state/feature-changelog.md`
+- Bloqueios: nenhum conhecido; deploy exige merge em `main` e recriação/reload do serviço `proxy`
+- Iniciado em: 2026-06-16
+- Atualizado em: 2026-06-16
+- Retomada: validar sintaxe do Compose/Caddy, abrir PR, executar deploy e confirmar por smoke que probes retornam `404` sem aparecer como requests Django
+- Reversão lógica: remover o matcher `@blocked_probe` e o `handle` correspondente do `Caddyfile`, mantendo as notas documentais como histórico ou revertendo-as em PR separado
+- Evidências de validação local: `docker run --rm -v "$PWD/ops/deploy/production/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy validate --config /etc/caddy/Caddyfile` com `Valid configuration`; `docker run --rm -v "$PWD/ops/deploy/production/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy adapt --config /etc/caddy/Caddyfile --pretty` confirmou `@blocked_probe` antes dos handlers de `/static`, `/media`, `/api` e do proxy Django; `git diff --check`; `docker compose -f ops/deploy/production/docker-compose.yml config` ficou bloqueado localmente pela ausência intencional de `.env.prod`
+
 ## WFLOW-20260614-MOBILE-ANTI-ABUSE-CONTRIBUTIONS-001
 
 - Tipo: `change-feature`

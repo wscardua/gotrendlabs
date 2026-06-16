@@ -7,6 +7,29 @@
 (gotrendlabs_reverse_proxy) {
 	encode gzip
 
+	@blocked_probe {
+		path /wp-*
+		path /wp/*
+		path /wordpress/*
+		path /wp-login.php
+		path /xmlrpc.php
+		path /.env*
+		path /*/.env*
+		path /.git/*
+		path /*/.git/*
+		path /vendor/*
+		path /*/vendor/*
+		path /phpinfo*
+		path /*phpinfo*
+		path /*.php*
+		path /server-status*
+		path /server-info*
+	}
+
+	handle @blocked_probe {
+		respond 404
+	}
+
 	handle_path /static/* {
 		header {
 			X-Content-Type-Options nosniff
