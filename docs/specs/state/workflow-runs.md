@@ -5,20 +5,22 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260616-CADDY-PROBE-BLOCK-001
 
 - Tipo: `new-feature`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-OPSLOG-001`, infra de produção
 - Objetivo: bloquear no Caddy probes comuns de WordPress, PHP, `.env`, `.git` e `vendor` antes que cheguem ao Django, reduzindo ruído em `gotrendlabs_system_logs`
-- Etapa atual: publicado em `main` pela PR #84; follow-up local em `feature/caddy-probe-block-regexp` corrige cobertura de probes `.php` em subcaminhos como `/admin/phpinfo.php`
+- Etapa atual: publicado em `main` pelas PRs #84 e #85, deploy de produção concluído, proxy recriado e probes validados sem persistência em logs Django
 - Artefatos afetados:
   - `ops/deploy/production/Caddyfile`
   - `ops/deploy/production/README.md`
   - `docs/specs/state/feature-changelog.md`
-- Bloqueios: nenhum conhecido; deploy exige merge em `main` e recriação/reload do serviço `proxy`
+- Bloqueios: nenhum
 - Iniciado em: 2026-06-16
 - Atualizado em: 2026-06-16
-- Retomada: publicar follow-up do matcher regex, executar deploy e confirmar por smoke que probes retornam `404` sem aparecer como requests Django
+- Encerrado em: 2026-06-16
+- Retomada: acompanhar logs técnicos; se surgirem novos padrões de probe recorrentes, adicioná-los ao matcher Caddy em novo follow-up pequeno
 - Reversão lógica: remover o matcher `@blocked_probe` e o `handle` correspondente do `Caddyfile`, mantendo as notas documentais como histórico ou revertendo-as em PR separado
 - Evidências de validação local: `docker run --rm -v "$PWD/ops/deploy/production/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy validate --config /etc/caddy/Caddyfile` com `Valid configuration`; `docker run --rm -v "$PWD/ops/deploy/production/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2 caddy adapt --config /etc/caddy/Caddyfile --pretty` confirmou `@blocked_probe` antes dos handlers de `/static`, `/media`, `/api` e do proxy Django; após smoke da PR #84 mostrar `/admin/phpinfo.php` ainda chegando ao Django, o matcher foi convertido para `path_regexp` e revalidado com `caddy validate`/`caddy adapt`; `git diff --check`; `docker compose -f ops/deploy/production/docker-compose.yml config` ficou bloqueado localmente pela ausência intencional de `.env.prod`
+- Evidências de publicação: PR #84 mergeada em `main` com merge commit `71dbb9f567b671cbebe74aaf3c06b9e357a4a271` e GitHub Actions `GoTrendLabs CI and Deploy` run `27651554576` com jobs `test` e `deploy` em sucesso; PR #85 mergeada em `main` com merge commit `499782e8e6376078d571efec55cacf29b33a5afa` e run `27652030681` com jobs `test` e `deploy` em sucesso; proxy de produção recriado por SSM e validado com `caddy validate` mostrando `path_regexp blocked_probe`; smokes públicos confirmaram `404` direto do Caddy para `/admin/phpinfo.php?codex=final-regexp` e `/admin/.env?codex=final-regexp`, `200` saudável para `/api/health` e home; consulta read-only em `gotrendlabs_system_logs` nos 15 minutos finais retornou `probe_log_count=0`, `recent_error_count=0` e `recent_5xx_count=0`
 
 ## WFLOW-20260614-MOBILE-ANTI-ABUSE-CONTRIBUTIONS-001
 
