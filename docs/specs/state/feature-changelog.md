@@ -7,6 +7,7 @@
 - O ciclo do agente `analyst` passou a contar comentários visíveis de autores `is_bot=true` antes de chamar a LLM; mercados no limite configurado são pulados e auditados com `market_ai_comment_limit`.
 - A auditoria `market_ai_comment_limit` passou a ser agregada quando todos os candidatos avaliados foram bloqueados pelo limite, evitando inflar o painel por mercado a cada ciclo do daemon.
 - Cooldown, limites por dia/ciclo e tentativas LLM seguem como proteções adicionais; comentários ocultos/moderados não contam para o limite total por mercado.
+- Em produção, duplicados históricos visíveis de IA foram tratados operacionalmente ocultando os comentários extras e preservando o comentário IA visível mais antigo por mercado.
 
 ## 2026-06-16 — FEAT-MOBILE-001 ajustes de mercado, alertas e wallet
 
