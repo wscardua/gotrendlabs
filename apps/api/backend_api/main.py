@@ -755,7 +755,7 @@ def _badge_rows(cursor, user_id=None, include_inactive=False):
     return [_badge_response(row) for row in cursor.fetchall()]
 
 
-def _admin_badge_response(row):
+def _admin_badge_response(row, requirements=None):
     return {
         "code": row["code"],
         "name": row["name"],
@@ -771,10 +771,40 @@ def _admin_badge_response(row):
         "subcategory": row["subcategory"] or "",
         "event": row["event"] or "",
         "rule_active": bool(row["rule_active"]),
+        "requirements": requirements or [],
         "awards_count": int(row["awards_count"] or 0),
         "created_at": row["created_at"].isoformat(),
         "updated_at": row["updated_at"].isoformat(),
     }
+
+
+def _admin_badge_requirements_by_rule_ids(cursor, rule_ids):
+    if not rule_ids:
+        return {}
+    placeholders = ", ".join(["%s"] * len(rule_ids))
+    cursor.execute(
+        f"""
+        SELECT id, badge_rule_id, metric_type, threshold_value, category, subcategory, event, is_active
+        FROM gotrendlabs_badge_rule_requirements
+        WHERE badge_rule_id IN ({placeholders})
+        ORDER BY badge_rule_id ASC, id ASC
+        """,
+        rule_ids,
+    )
+    requirements = {rule_id: [] for rule_id in rule_ids}
+    for row in cursor.fetchall():
+        requirements.setdefault(row["badge_rule_id"], []).append(
+            {
+                "id": row["id"],
+                "metric_type": row["metric_type"],
+                "threshold_value": float(row["threshold_value"] or 0),
+                "category": row["category"] or "",
+                "subcategory": row["subcategory"] or "",
+                "event": row["event"] or "",
+                "is_active": bool(row["is_active"]),
+            }
+        )
+    return requirements
 
 
 def _admin_badge_rows(cursor, where_sql="", params=None):
@@ -782,7 +812,7 @@ def _admin_badge_rows(cursor, where_sql="", params=None):
         f"""
         SELECT b.code, b.name, b.description, b.rule_description, b.badge_type, b.image_url, b.image_dark_url,
                b.is_active, b.created_at, b.updated_at,
-               r.rule_type, r.threshold_value, r.category, r.subcategory, r.event, r.is_active AS rule_active,
+               r.id AS rule_id, r.rule_type, r.threshold_value, r.category, r.subcategory, r.event, r.is_active AS rule_active,
                COUNT(a.id) AS awards_count
         FROM gotrendlabs_badge_definitions b
         JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
@@ -793,7 +823,9 @@ def _admin_badge_rows(cursor, where_sql="", params=None):
         """,
         params or [],
     )
-    return [_admin_badge_response(row) for row in cursor.fetchall()]
+    rows = cursor.fetchall()
+    requirements = _admin_badge_requirements_by_rule_ids(cursor, [row["rule_id"] for row in rows])
+    return [_admin_badge_response(row, requirements.get(row["rule_id"], [])) for row in rows]
 
 
 def _validate_badge_payload(payload):
@@ -801,13 +833,13 @@ def _validate_badge_payload(payload):
     rule_type = payload.rule_type
     if rule_type not in BADGE_RULE_TYPES:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de regra de badge inválido.")
+    for requirement in payload.requirements:
+        if requirement.metric_type not in BADGE_RULE_TYPES:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Tipo de requisito de badge inválido.")
     return badge_type, rule_type
 
 
-def _validate_badge_taxonomy(cursor, payload):
-    category = payload.category.strip()
-    subcategory = payload.subcategory.strip()
-    event = payload.event.strip()
+def _validate_badge_scope(cursor, category, subcategory, event):
     if event and not subcategory:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Escolha uma subcategoria antes do evento da badge.")
     if subcategory and not category:
@@ -848,6 +880,40 @@ def _validate_badge_taxonomy(cursor, payload):
     )
     if not cursor.fetchone():
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Evento de badge não pertence à subcategoria.")
+
+
+def _validate_badge_taxonomy(cursor, payload):
+    _validate_badge_scope(cursor, payload.category.strip(), payload.subcategory.strip(), payload.event.strip())
+    for requirement in payload.requirements:
+        _validate_badge_scope(
+            cursor,
+            requirement.category.strip(),
+            requirement.subcategory.strip(),
+            requirement.event.strip(),
+        )
+
+
+def _replace_badge_requirements(cursor, badge_rule_id, requirements, now):
+    cursor.execute("DELETE FROM gotrendlabs_badge_rule_requirements WHERE badge_rule_id = %s", (badge_rule_id,))
+    for requirement in requirements:
+        cursor.execute(
+            """
+            INSERT INTO gotrendlabs_badge_rule_requirements
+                (badge_rule_id, metric_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (
+                badge_rule_id,
+                requirement.metric_type,
+                _decimal_probability(requirement.threshold_value),
+                requirement.category.strip(),
+                requirement.subcategory.strip(),
+                requirement.event.strip(),
+                requirement.is_active,
+                now,
+                now,
+            ),
+        )
 
 
 def _ledger_wallet_totals(cursor, user_id):
@@ -6535,6 +6601,7 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
                 INSERT INTO gotrendlabs_badge_rules
                     (badge_id, rule_type, threshold_value, category, subcategory, event, is_active, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
                 """,
                 (
                     badge_id,
@@ -6548,6 +6615,8 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
                     now,
                 ),
             )
+            badge_rule_id = cursor.fetchone()["id"]
+            _replace_badge_requirements(cursor, badge_rule_id, payload.requirements, now)
             _record_admin_event(cursor, staff["id"], "badge.create", "badge", code, payload.rule_description)
             return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
 
@@ -6561,7 +6630,7 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
             _validate_badge_taxonomy(cursor, payload)
             cursor.execute(
                 """
-                SELECT b.id, r.is_active AS rule_active
+                SELECT b.id, r.id AS rule_id, r.is_active AS rule_active
                 FROM gotrendlabs_badge_definitions b
                 JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
                 WHERE b.code = %s
@@ -6620,6 +6689,8 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
                     badge["id"],
                 ),
             )
+            if "requirements" in payload.model_fields_set:
+                _replace_badge_requirements(cursor, badge["rule_id"], payload.requirements, now)
             _record_admin_event(cursor, staff["id"], "badge.update", "badge", code, payload.rule_description)
             return _admin_badge_rows(cursor, "WHERE b.code = %s", [code])[0]
 

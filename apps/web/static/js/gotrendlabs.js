@@ -839,6 +839,78 @@ function updateBadgePreview(form) {
   }
 }
 
+function syncBadgeRequirementTaxonomy(row) {
+  const category = $('[data-requirement-category-select]', row)?.value || "";
+  const subcategorySelect = $('[data-requirement-subcategory-select]', row);
+  const eventSelect = $('[data-requirement-event-select]', row);
+  if (subcategorySelect) {
+    $$("option", subcategorySelect).forEach((option) => {
+      const optionCategory = option.dataset.category || "";
+      option.hidden = Boolean(option.value && category && optionCategory !== category);
+      if (option.hidden && option.selected) subcategorySelect.value = "";
+    });
+  }
+  const subcategory = subcategorySelect?.value || "";
+  if (eventSelect) {
+    $$("option", eventSelect).forEach((option) => {
+      const optionCategory = option.dataset.category || "";
+      const optionSubcategory = option.dataset.subcategory || "";
+      option.hidden = Boolean(
+        option.value &&
+          ((category && optionCategory !== category) || (subcategory && optionSubcategory !== subcategory))
+      );
+      if (option.hidden && option.selected) eventSelect.value = "";
+    });
+  }
+}
+
+function reindexBadgeRequirements(form) {
+  const rows = $$("[data-badge-requirement-row]", form);
+  rows.forEach((row, index) => {
+    $$("[name]", row).forEach((field) => {
+      field.name = field.name.replace(/requirements_\d+_/, `requirements_${index}_`);
+    });
+    syncBadgeRequirementTaxonomy(row);
+  });
+  const count = $("[data-badge-requirement-count]", form);
+  if (count) count.value = rows.length;
+}
+
+function badgeRequirementRow(form, index) {
+  const metricOptions = $('[name="rule_type"]', form)?.innerHTML || "";
+  const categoryOptions = $('[data-category-select]', form)?.innerHTML || "";
+  const subcategoryOptions = $('[data-subcategory-select]', form)?.innerHTML || "";
+  const eventOptions = $('[data-event-select]', form)?.innerHTML || "";
+  const row = document.createElement("div");
+  row.className = "dynamic-option";
+  row.dataset.badgeRequirementRow = "1";
+  row.innerHTML = `
+    <div class="field">
+      <label>Métrica</label>
+      <select name="requirements_${index}_metric_type"><option value="">Escolha uma métrica</option>${metricOptions}</select>
+    </div>
+    <div class="field">
+      <label>Valor mínimo/posição</label>
+      <input type="number" step="0.0001" min="0" name="requirements_${index}_threshold_value" value="1">
+    </div>
+    <div class="field">
+      <label>Categoria</label>
+      <select name="requirements_${index}_category" data-requirement-category-select>${categoryOptions}</select>
+    </div>
+    <div class="field">
+      <label>Subcategoria</label>
+      <select name="requirements_${index}_subcategory" data-requirement-subcategory-select>${subcategoryOptions}</select>
+    </div>
+    <div class="field">
+      <label>Evento</label>
+      <select name="requirements_${index}_event" data-requirement-event-select>${eventOptions}</select>
+    </div>
+    <label class="toggle-row"><input type="checkbox" name="requirements_${index}_is_active" checked> <span>Ativo</span></label>
+    <button class="btn small ghost" type="button" data-remove-badge-requirement>Remover</button>
+  `;
+  return row;
+}
+
 function updateAutoCloseHelp(form) {
   const autoClose = $('[name="auto_close_enabled"]', form);
   const help = $("[data-auto-close-help]", form);
@@ -985,8 +1057,27 @@ $$("[data-badge-form]").forEach((form) => {
         reader.readAsDataURL(file);
       }
     }
+    if (event.target.matches("[data-requirement-category-select], [data-requirement-subcategory-select]")) {
+      syncBadgeRequirementTaxonomy(event.target.closest("[data-badge-requirement-row]"));
+    }
     updateBadgePreview(form);
   });
+  form.addEventListener("click", (event) => {
+    if (event.target.matches("[data-add-badge-requirement]")) {
+      const list = $("[data-badge-requirement-list]", form);
+      const index = $$("[data-badge-requirement-row]", form).length;
+      if (list) {
+        list.appendChild(badgeRequirementRow(form, index));
+        reindexBadgeRequirements(form);
+      }
+    }
+    if (event.target.matches("[data-remove-badge-requirement]")) {
+      event.target.closest("[data-badge-requirement-row]")?.remove();
+      reindexBadgeRequirements(form);
+    }
+  });
+  $$("[data-badge-requirement-row]", form).forEach(syncBadgeRequirementTaxonomy);
+  reindexBadgeRequirements(form);
   updateBadgePreview(form);
 });
 

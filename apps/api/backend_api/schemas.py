@@ -403,6 +403,15 @@ class BadgeListResponse(BaseModel):
     badges: List[BadgeResponse]
 
 
+class AdminBadgeRequirementPayload(BaseModel):
+    metric_type: str
+    threshold_value: float = Field(default=1, ge=0)
+    category: str = Field(default="", max_length=80)
+    subcategory: str = Field(default="", max_length=80)
+    event: str = Field(default="", max_length=80)
+    is_active: bool = True
+
+
 class AdminBadgePayload(BaseModel):
     code: Optional[str] = Field(default=None, max_length=80)
     name: str = Field(min_length=1, max_length=120)
@@ -418,6 +427,11 @@ class AdminBadgePayload(BaseModel):
     category: str = Field(default="", max_length=80)
     subcategory: str = Field(default="", max_length=80)
     event: str = Field(default="", max_length=80)
+    requirements: List[AdminBadgeRequirementPayload] = Field(default_factory=list)
+
+
+class AdminBadgeRequirementResponse(AdminBadgeRequirementPayload):
+    id: int
 
 
 class AdminBadgeResponse(BaseModel):
@@ -435,6 +449,7 @@ class AdminBadgeResponse(BaseModel):
     subcategory: str
     event: str
     rule_active: bool
+    requirements: List[AdminBadgeRequirementResponse] = Field(default_factory=list)
     awards_count: int = 0
     created_at: str
     updated_at: str

@@ -520,6 +520,13 @@
             "title": "Name",
             "type": "string"
           },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/AdminBadgeRequirementPayload"
+            },
+            "title": "Requirements",
+            "type": "array"
+          },
           "rule_active": {
             "anyOf": [
               {
@@ -560,6 +567,95 @@
           "rule_type"
         ],
         "title": "AdminBadgePayload",
+        "type": "object"
+      },
+      "AdminBadgeRequirementPayload": {
+        "properties": {
+          "category": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Category",
+            "type": "string"
+          },
+          "event": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Event",
+            "type": "string"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "metric_type": {
+            "title": "Metric Type",
+            "type": "string"
+          },
+          "subcategory": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Subcategory",
+            "type": "string"
+          },
+          "threshold_value": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Threshold Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "metric_type"
+        ],
+        "title": "AdminBadgeRequirementPayload",
+        "type": "object"
+      },
+      "AdminBadgeRequirementResponse": {
+        "properties": {
+          "category": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Category",
+            "type": "string"
+          },
+          "event": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Event",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "default": true,
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "metric_type": {
+            "title": "Metric Type",
+            "type": "string"
+          },
+          "subcategory": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Subcategory",
+            "type": "string"
+          },
+          "threshold_value": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Threshold Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "metric_type",
+          "id"
+        ],
+        "title": "AdminBadgeRequirementResponse",
         "type": "object"
       },
       "AdminBadgeResponse": {
@@ -608,6 +704,13 @@
           "name": {
             "title": "Name",
             "type": "string"
+          },
+          "requirements": {
+            "items": {
+              "$ref": "#/components/schemas/AdminBadgeRequirementResponse"
+            },
+            "title": "Requirements",
+            "type": "array"
           },
           "rule_active": {
             "title": "Rule Active",

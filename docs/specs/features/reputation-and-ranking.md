@@ -96,6 +96,8 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 - endpoints e ações administrativas devem disparar eventos de domínio para a engine, como `user_registered`, `comment_created`, `suggestion_approved`, `suggestion_rewarded`, `feedback_rewarded` e `market_resolved`
 - resolução de mercado deve avaliar badges dos participantes após persistir resultado, reputação, sequência e ranking derivado
 - regras MVP suportadas: `founding_member`, `resolved_predictions_count`, `correct_predictions_count`, `streak_count`, `ranking_position`, `comments_count`, `approved_suggestions_count` e `rewarded_feedback_count`
+- regras de badge podem ter requisitos adicionais configuráveis usando os mesmos tipos de métrica controlados pelo backend; a concessão exige regra principal verdadeira e todos os requisitos ativos verdadeiros
+- a badge `Top 10` deve permanecer configurada como `ranking_position <= 10` com requisito adicional `resolved_predictions_count >= 3`, evitando concessão automática para usuários sem histórico em bases pequenas
 - regras que aceitam recorte temático devem escolher categoria/subcategoria/evento a partir da taxonomia dinâmica cadastrada no Admin Ops, não por texto livre
 - os avisos opcionais de categoria/subcategoria/evento são apenas conteúdo contextual de mercado e não participam das regras de concessão de badge
 - `resolved_predictions_count`, `correct_predictions_count` e `comments_count` podem ser aplicadas a todas as categorias, a uma categoria específica, a uma subcategoria da categoria escolhida ou a um evento da subcategoria

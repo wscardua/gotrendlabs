@@ -643,6 +643,7 @@ class AdminBadgeForm(forms.Form):
     def __init__(self, *args, taxonomy=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.taxonomy = taxonomy or {"categories": []}
+        self.badge_rule_choices = BADGE_RULE_CHOICES
         category_choices = [("", "Todas as categorias")]
         subcategory_choices = [("", "Todas as subcategorias")]
         event_choices = [("", "Todos os eventos")]
@@ -662,33 +663,92 @@ class AdminBadgeForm(forms.Form):
         self.fields["category"] = forms.ChoiceField(label="Categoria", choices=category_choices, required=False)
         self.fields["subcategory"] = forms.ChoiceField(label="Subcategoria", choices=subcategory_choices, required=False)
         self.fields["event"] = forms.ChoiceField(label="Evento", choices=event_choices, required=False)
+        self.requirement_rows = self._requirement_rows()
+
+    def _requirement_rows(self):
+        if not self.is_bound:
+            return list(self.initial.get("requirements") or [])
+        try:
+            requirement_count = int(self.data.get("requirements_count") or 0)
+        except (TypeError, ValueError):
+            requirement_count = 0
+        rows = []
+        for index in range(requirement_count):
+            row = {
+                "metric_type": (self.data.get(f"requirements_{index}_metric_type") or "").strip(),
+                "threshold_value": (self.data.get(f"requirements_{index}_threshold_value") or "").strip(),
+                "category": (self.data.get(f"requirements_{index}_category") or "").strip(),
+                "subcategory": (self.data.get(f"requirements_{index}_subcategory") or "").strip(),
+                "event": (self.data.get(f"requirements_{index}_event") or "").strip(),
+                "is_active": self.data.get(f"requirements_{index}_is_active") == "on",
+            }
+            if any(row[field] for field in ("metric_type", "threshold_value", "category", "subcategory", "event")):
+                rows.append(row)
+        return rows
+
+    def _validate_taxonomy_scope(self, category_name, subcategory_name, event_name, *, label):
+        categories = self.taxonomy.get("categories", [])
+        if event_name and not subcategory_name:
+            self.add_error(None, f"{label}: escolha uma subcategoria antes do evento.")
+            return
+        if subcategory_name and not category_name:
+            self.add_error(None, f"{label}: escolha uma categoria antes da subcategoria.")
+            return
+        if not category_name:
+            return
+        category = next((item for item in categories if item.get("name") == category_name), None)
+        if not category:
+            self.add_error(None, f"{label}: escolha uma categoria cadastrada.")
+            return
+        if not subcategory_name:
+            return
+        subcategory = next((item for item in category.get("subcategories", []) if item.get("name") == subcategory_name), None)
+        if not subcategory:
+            self.add_error(None, f"{label}: escolha uma subcategoria da categoria selecionada.")
+            return
+        if event_name:
+            event = next((item for item in subcategory.get("events", []) if item.get("name") == event_name), None)
+            if not event:
+                self.add_error(None, f"{label}: escolha um evento da subcategoria selecionada.")
 
     def clean(self):
         cleaned_data = super().clean()
         category_name = cleaned_data.get("category")
         subcategory_name = cleaned_data.get("subcategory")
         event_name = cleaned_data.get("event")
-        categories = self.taxonomy.get("categories", [])
-        if event_name and not subcategory_name:
-            self.add_error("event", "Escolha uma subcategoria antes do evento.")
-            return cleaned_data
-        if not subcategory_name:
-            return cleaned_data
-        if not category_name:
-            self.add_error("subcategory", "Escolha uma categoria antes da subcategoria.")
-            return cleaned_data
-        category = next((item for item in categories if item.get("name") == category_name), None)
-        if not category:
-            self.add_error("category", "Escolha uma categoria cadastrada.")
-            return cleaned_data
-        subcategory = next((item for item in category.get("subcategories", []) if item.get("name") == subcategory_name), None)
-        if not subcategory:
-            self.add_error("subcategory", "Escolha uma subcategoria da categoria selecionada.")
-            return cleaned_data
-        if event_name:
-            event = next((item for item in subcategory.get("events", []) if item.get("name") == event_name), None)
-            if not event:
-                self.add_error("event", "Escolha um evento da subcategoria selecionada.")
+        self._validate_taxonomy_scope(category_name, subcategory_name, event_name, label="Regra principal")
+        requirements = []
+        valid_metrics = {choice[0] for choice in BADGE_RULE_CHOICES}
+        for index, row in enumerate(self.requirement_rows, start=1):
+            metric_type = row.get("metric_type", "")
+            if metric_type not in valid_metrics:
+                self.add_error(None, f"Requisito {index}: escolha uma métrica válida.")
+                continue
+            try:
+                threshold_value = Decimal(str(row.get("threshold_value") or "0"))
+            except Exception:
+                self.add_error(None, f"Requisito {index}: informe um valor válido.")
+                continue
+            if threshold_value < 0:
+                self.add_error(None, f"Requisito {index}: informe um valor igual ou maior que zero.")
+                continue
+            self._validate_taxonomy_scope(
+                row.get("category", ""),
+                row.get("subcategory", ""),
+                row.get("event", ""),
+                label=f"Requisito {index}",
+            )
+            requirements.append(
+                {
+                    "metric_type": metric_type,
+                    "threshold_value": float(threshold_value),
+                    "category": row.get("category", ""),
+                    "subcategory": row.get("subcategory", ""),
+                    "event": row.get("event", ""),
+                    "is_active": row.get("is_active", False),
+                }
+            )
+        cleaned_data["requirements"] = requirements
         return cleaned_data
 
     def to_payload(self):
@@ -707,6 +767,7 @@ class AdminBadgeForm(forms.Form):
             "category": self.cleaned_data.get("category") or "",
             "subcategory": self.cleaned_data.get("subcategory") or "",
             "event": self.cleaned_data.get("event") or "",
+            "requirements": self.cleaned_data.get("requirements") or [],
         }
 
 
