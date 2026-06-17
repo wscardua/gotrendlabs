@@ -5,6 +5,7 @@
 - FastAPI passou a expor mercado com fechamento automático vencido como efetivamente `locked`/`Fechado` nos contratos públicos e a bloquear preview/criação/reforço/revisão nesses casos, sem exigir regra local no Flutter.
 - Mobile passou a abrir a aba `Comunidade` por `/markets/:slug?tab=community` a partir de contadores de comentários e alertas de comentário.
 - Mobile passou a invalidar e reconsultar mercados, detalhe, wallet, ledger, recargas e alertas em eventos de consulta reais: entrada em telas críticas, retorno do background, troca para abas dependentes de mercados e pull-to-refresh.
+- APK Android beta `1.0.6 (7)` publicada em produção no canal direto, com `/app/android/latest.json` apontando para o arquivo ativo e SHA-256 `ce4ea6e23305474b2ec1e5d73708b680ec12a9c4018bd845d77c076e369c2288`.
 - Detalhe mobile passou a exibir pergunta/contexto completo fora do hero truncado.
 - Ticket de previsão passou a mostrar `Disponível` e `Bloqueado` vindos da wallet da API.
 - Wallet mobile passou a priorizar `Disponível` e `Bloqueado`, rebaixando recarga educativa para seção secundária.
