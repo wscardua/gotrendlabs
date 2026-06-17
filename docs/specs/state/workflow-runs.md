@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260617-BADGE-RULE-REQUIREMENTS-001
 
 - Tipo: `change-feature`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-REP-001`
 - Objetivo: evoluir badges administráveis para requisitos adicionais configuráveis, sem lógica específica por nome/código de badge, garantindo que `Top 10` dependa de posição global 10 ou melhor e ao menos 3 previsões resolvidas.
-- Etapa atual: implementado localmente; aguardando publicação por PR e validação do workflow `GoTrendLabs CI and Deploy`.
+- Etapa atual: concluído; PR #96 mergeada em `main`, deploy de produção concluído pelo workflow `GoTrendLabs CI and Deploy` run `27725980398`, e concessão indevida `top_ten` removida operacionalmente de `@karlascardua`.
 - Artefatos afetados:
   - `apps/api/backend_api/badge_engine.py`
   - `apps/api/backend_api/main.py`
@@ -24,9 +24,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-17
 - Atualizado em: 2026-06-17
-- Encerrado em:
+- Encerrado em: 2026-06-17
 - Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test --keepdb tests.test_web_smoke`; `git diff --check`.
-- Evidências de publicação: pendente.
+- Evidências de publicação: PR #96 (`Adiciona requisitos configuráveis para badges`) mergeada com squash `92f98025`; workflow `GoTrendLabs CI and Deploy` run `27725980398` concluiu `test` em 4m25s e `deploy` em 50s.
+- Evidências de produção: `/api/health` respondeu `status=ok`, `checks.api=ok` e `checks.database=ok`; `/api/badges` exibiu a descrição nova da `Top 10`; `/badges/` respondeu HTTP 200; SSM read-only `23fae723-f778-4793-b5c9-d971ad6bc2e9` confirmou uma conquista `top_ten` indevida para `@karlascardua`/`karla.flor@ne.com`; SSM corretivo `d3d615ba-cbff-4eec-9362-ffd314ca340a` removeu 1 `UserBadgeAward` `top_ten`, removeu notificações `badge_awarded:top_ten`, deixou `remaining_top_ten=0` e preservou `remaining_badges=['founding_member']`.
 - Reversão lógica: remover `BadgeRuleRequirement`, retirar `requirements` do contrato administrativo de badges, voltar a `BadgeAwardEngine` a avaliar apenas a regra principal e restaurar a descrição/configuração anterior da `Top 10`.
 
 ## WFLOW-20260617-AI-COMMENT-MARKET-LIMIT-001
