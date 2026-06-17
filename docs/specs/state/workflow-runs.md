@@ -2,6 +2,28 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260617-AI-COMMENT-MARKET-LIMIT-001
+
+- Tipo: `change-feature`
+- Status: `validado_localmente`
+- Feature alvo: `FEAT-AIAGENT-001`
+- Objetivo: tornar administrável o limite total de comentários IA oficiais visíveis por mercado, adicionar override opcional por agente `analyst`, manter `ai_commenting_enabled` como kill switch e preservar cooldown/limites por dia/ciclo como proteções adicionais.
+- Etapa atual: implementação local concluída na branch `feature/admin-ai-comment-market-limit`; aguardando revisão/publicação.
+- Artefatos afetados:
+  - `apps/api/backend_api/agent_services.py`
+  - `apps/api/backend_api/main.py`
+  - `apps/api/backend_api/schemas.py`
+  - `apps/web/django/agents/`
+  - `apps/web/django/admin_ops/`
+  - `docs/specs/features/official-ai-agents.md`
+  - `docs/specs/state/`
+  - `tests/test_web_smoke.py`
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-17
+- Atualizado em: 2026-06-17
+- Evidências de validação local: `.venv/bin/python manage.py check` sem issues; `.venv/bin/python manage.py makemigrations --check --dry-run` sem mudanças pendentes; recorte focado de 8 testes IA/Admin Ops OK; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 198 testes OK; `git diff --check` limpo; migration `agents.0005_aiagent_max_comments_per_market_override` aplicada no banco local.
+- Reversão lógica: remover os campos `ai_max_comments_per_market` e `max_comments_per_market_override` e suas migrations, retirar o bloqueio `market_ai_comment_limit` da seleção de candidatos do agente `analyst` e restaurar a documentação para limites baseados apenas em cooldown/dia/ciclo.
+
 ## WFLOW-20260616-MOBILE-RANKING-LIVE-REFRESH-001
 
 - Tipo: `change-feature`

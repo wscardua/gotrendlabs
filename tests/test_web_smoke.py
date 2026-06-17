@@ -1962,8 +1962,8 @@ class BackendAuthAPITests(TransactionTestCase):
                             email_enabled, email_provider, smtp_host, smtp_port, smtp_username, smtp_use_tls, smtp_use_ssl, smtp_timeout_seconds,
                             default_from_email, default_reply_to_email,
                             ai_agents_enabled, ai_commenting_enabled, ai_predictions_enabled, ai_llm_provider, ai_llm_base_url,
-                            ai_model, ai_high_reasoning_model, ai_market_cooldown_hours, ai_max_comments_per_market_per_day,
-                            ai_max_comments_per_cycle, ai_max_comment_attempts_per_cycle, ai_comment_candidate_limit,
+                            ai_model, ai_high_reasoning_model, ai_market_cooldown_hours, ai_max_comments_per_market,
+                            ai_max_comments_per_market_per_day, ai_max_comments_per_cycle, ai_max_comment_attempts_per_cycle, ai_comment_candidate_limit,
                             ai_max_comments_per_day, ai_comment_max_chars, ai_min_humans_for_prediction,
                             ai_max_stake_gtl, ai_max_predictions_per_cycle, ai_max_predictions_per_day, ai_skip_if_human_comments_recent,
                             ai_recent_human_comment_window_hours, ai_openai_timeout_seconds, ai_openai_max_retries, ai_pause_reason,
@@ -1972,7 +1972,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     VALUES (
                         1, 100, 200, 5, 15, 90, 90, true, 'smtp', 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
-                        1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
+                        1, 1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
                     )
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
@@ -2456,6 +2456,214 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(llm.call_count, 1)
         self.assertEqual(summary["comments_created"], 1)
         self.assertTrue(MarketComment.objects.filter(market=eligible, author=bot).exists())
+
+    def test_ai_comment_market_total_limit_skips_old_visible_bot_comment_and_falls_back(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 1
+        site_config.ai_market_cooldown_hours = 24
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.ai_comment_candidate_limit = 200
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_market_limit", email="gotrendlabs-ai-market-limit@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Market Limit")
+        AiAgent.objects.create(name="GoTrendLabs AI Market Limit", agent_type="analyst", user=bot, is_active=True)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        first = Market.objects.get(slug="openai-gpt6-2026")
+        second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
+        first.view_count = 1000
+        second.view_count = 900
+        first.save(update_fields=["view_count"])
+        second.save(update_fields=["view_count"])
+        old_comment = MarketComment.objects.create(market=first, author=bot, body="Comentario IA antigo.")
+        MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertEqual(MarketComment.objects.filter(market=first, author=bot, status="visible").count(), 1)
+        self.assertTrue(MarketComment.objects.filter(market=second, author=bot, status="visible").exists())
+        self.assertFalse(AiAgentAction.objects.filter(status="skipped", reason="market_ai_comment_limit").exists())
+
+    def test_ai_comment_market_total_limit_audits_once_when_all_candidates_blocked(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 1
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.ai_comment_candidate_limit = 200
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_market_limit_all", email="gotrendlabs-ai-market-limit-all@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Market Limit All")
+        AiAgent.objects.create(name="GoTrendLabs AI Market Limit All", agent_type="analyst", user=bot, is_active=True)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        blocked_markets = list(Market.objects.filter(status="open").order_by("id")[:10])
+        for market in blocked_markets:
+            comment = MarketComment.objects.create(market=market, author=bot, body="Comentario IA antigo.")
+            MarketComment.objects.filter(id=comment.id).update(created_at=timezone.now() - timedelta(days=3))
+        site_config.ai_comment_candidate_limit = len(blocked_markets)
+        site_config.save(update_fields=["ai_comment_candidate_limit"])
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 0)
+        self.assertEqual(summary["comments_created"], 0)
+        actions = AiAgentAction.objects.filter(action_type="comment", status="skipped", reason="market_ai_comment_limit")
+        self.assertEqual(actions.count(), 1)
+        self.assertEqual(actions.first().payload_summary["blocked_markets"], len(blocked_markets))
+
+    def test_ai_comment_market_total_limit_does_not_mask_mixed_local_skips(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 2
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.ai_comment_candidate_limit = 2
+        site_config.ai_market_cooldown_hours = 24
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_market_limit_mixed", email="gotrendlabs-ai-market-limit-mixed@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Market Limit Mixed")
+        AiAgent.objects.create(name="GoTrendLabs AI Market Limit Mixed", agent_type="analyst", user=bot, is_active=True)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        first = Market.objects.get(slug="openai-gpt6-2026")
+        second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
+        first.view_count = 1000
+        second.view_count = 900
+        first.save(update_fields=["view_count"])
+        second.save(update_fields=["view_count"])
+        first_old_comment = MarketComment.objects.create(market=first, author=bot, body="Comentario IA antigo.")
+        first_second_old_comment = MarketComment.objects.create(market=first, author=bot, body="Outro comentario IA antigo.")
+        MarketComment.objects.filter(id__in=[first_old_comment.id, first_second_old_comment.id]).update(created_at=timezone.now() - timedelta(days=3))
+        MarketComment.objects.create(market=second, author=bot, body="Comentario IA recente.")
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 0)
+        self.assertEqual(summary["comments_created"], 0)
+        self.assertFalse(AiAgentAction.objects.filter(action_type="comment", status="skipped", reason="market_ai_comment_limit").exists())
+        action = AiAgentAction.objects.get(action_type="comment", status="skipped", reason="no_eligible_market")
+        self.assertEqual(action.payload_summary["skip_summary"]["market_ai_comment_limit"], 1)
+        self.assertEqual(action.payload_summary["skip_summary"]["market_cooldown"], 1)
+
+    def test_ai_comment_market_total_limit_allows_second_comment_when_configured(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 2
+        site_config.ai_market_cooldown_hours = 24
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_second_comment", email="gotrendlabs-ai-second-comment@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Second")
+        AiAgent.objects.create(name="GoTrendLabs AI Second", agent_type="analyst", user=bot, is_active=True)
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        old_comment = MarketComment.objects.create(market=market, author=bot, body="Comentario IA antigo.")
+        MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertEqual(MarketComment.objects.filter(market=market, author=bot, status="visible").count(), 2)
+
+    def test_ai_comment_agent_market_override_can_allow_second_comment(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 1
+        site_config.ai_market_cooldown_hours = 24
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_override_allow", email="gotrendlabs-ai-override-allow@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Override Allow")
+        AiAgent.objects.create(name="GoTrendLabs AI Override Allow", agent_type="analyst", user=bot, is_active=True, max_comments_per_market_override=2)
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        old_comment = MarketComment.objects.create(market=market, author=bot, body="Comentario IA antigo.")
+        MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertEqual(MarketComment.objects.filter(market=market, author=bot, status="visible").count(), 2)
+
+    def test_ai_comment_agent_market_override_can_be_stricter_than_global(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 2
+        site_config.ai_market_cooldown_hours = 24
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.ai_comment_candidate_limit = 200
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_override_strict", email="gotrendlabs-ai-override-strict@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Override Strict")
+        AiAgent.objects.create(name="GoTrendLabs AI Override Strict", agent_type="analyst", user=bot, is_active=True, max_comments_per_market_override=1)
+        Market.objects.filter(status="open").update(is_featured=False, view_count=0)
+        first = Market.objects.get(slug="openai-gpt6-2026")
+        second = Market.objects.exclude(id=first.id).filter(status="open").order_by("id").first()
+        first.view_count = 1000
+        second.view_count = 900
+        first.save(update_fields=["view_count"])
+        second.save(update_fields=["view_count"])
+        old_comment = MarketComment.objects.create(market=first, author=bot, body="Comentario IA antigo.")
+        MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertEqual(MarketComment.objects.filter(market=first, author=bot, status="visible").count(), 1)
+        self.assertTrue(MarketComment.objects.filter(market=second, author=bot, status="visible").exists())
+
+    def test_ai_comment_market_total_limit_ignores_hidden_bot_comments(self):
+        self._reset_ai_agent_state()
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = True
+        site_config.ai_predictions_enabled = False
+        site_config.ai_max_comments_per_market = 1
+        site_config.ai_max_comments_per_cycle = 1
+        site_config.ai_max_comment_attempts_per_cycle = 3
+        site_config.save()
+        User = get_user_model()
+        bot = User.objects.create_user(username="@gotrendlabs_ai_hidden_comment", email="gotrendlabs-ai-hidden-comment@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Hidden")
+        AiAgent.objects.create(name="GoTrendLabs AI Hidden", agent_type="analyst", user=bot, is_active=True)
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        MarketComment.objects.create(market=market, author=bot, body="Comentario IA oculto.", status="hidden")
+
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+            summary = self._run_ai_cycle_for_test()
+
+        self.assertEqual(llm.call_count, 1)
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertEqual(MarketComment.objects.filter(market=market, author=bot, status="visible").count(), 1)
 
     def test_agent_llm_allows_bedrock_openai_compatible_provider(self):
         class FakeResponse:
@@ -5638,6 +5846,7 @@ class BackendAuthAPITests(TransactionTestCase):
                         ai_model,
                         ai_high_reasoning_model,
                         ai_market_cooldown_hours,
+                        ai_max_comments_per_market,
                         ai_max_comments_per_market_per_day,
                         ai_max_comments_per_cycle,
                         ai_max_comment_attempts_per_cycle,
@@ -5658,7 +5867,7 @@ class BackendAuthAPITests(TransactionTestCase):
                     VALUES (
                         1, 10000, 200, 5, 15, 90, 90, false, 'smtp', '', 587, '', true, false, 10, '', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
-                        1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
+                        1, 1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
                     )
                     ON CONFLICT (singleton_key)
                     DO UPDATE SET
@@ -7860,6 +8069,7 @@ class WebSmokeTests(TransactionTestCase):
                     "ai-ai_model": "gpt-5.4-mini",
                     "ai-ai_high_reasoning_model": "gpt-5.5",
                     "ai-ai_market_cooldown_hours": "12",
+                    "ai-ai_max_comments_per_market": "2",
                     "ai-ai_max_comments_per_market_per_day": "1",
                     "ai-ai_max_comments_per_cycle": "2",
                     "ai-ai_max_comment_attempts_per_cycle": "4",
@@ -7886,6 +8096,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(site_config.ai_model, "gpt-5.4-mini")
             self.assertEqual(site_config.ai_high_reasoning_model, "gpt-5.5")
             self.assertEqual(site_config.ai_market_cooldown_hours, 12)
+            self.assertEqual(site_config.ai_max_comments_per_market, 2)
             self.assertEqual(site_config.ai_max_comments_per_cycle, 2)
             self.assertEqual(site_config.ai_max_comment_attempts_per_cycle, 4)
             self.assertEqual(site_config.ai_comment_candidate_limit, 250)
@@ -8027,6 +8238,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Experimental, sem ciclo ativo")
             self.assertContains(response, "Prévia operacional")
             self.assertContains(response, "Parâmetros globais atuais")
+            self.assertContains(response, "Comentários IA/mercado do agente")
             self.assertContains(response, "sem rotina backend ativa")
             self.assertContains(response, "Não usado por Analyst")
             self.assertContains(response, "Não usado por Liquidity")
@@ -8045,6 +8257,7 @@ class WebSmokeTests(TransactionTestCase):
                     "personality_prompt": "Comente de forma equilibrada.",
                     "comment_style": "direto",
                     "max_comments_per_day": "",
+                    "max_comments_per_market_override": "2",
                     "max_predictions_per_day": "",
                     "max_stake_gtl": "",
                     "cooldown_hours": "",
@@ -8054,6 +8267,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 302)
             create_mock.assert_called_once()
             self.assertEqual(create_mock.call_args.args[1]["user_id"], 91)
+            self.assertEqual(create_mock.call_args.args[1]["max_comments_per_market_override"], 2)
             self.assertIsNone(create_mock.call_args.args[1]["max_predictions_per_day"])
             self.assertIsNone(create_mock.call_args.args[1]["max_stake_gtl"])
             self.assertIsNone(create_mock.call_args.args[1]["min_humans_for_prediction"])
@@ -8069,6 +8283,7 @@ class WebSmokeTests(TransactionTestCase):
                     "personality_prompt": "Este texto deve ser limpo para liquidity.",
                     "comment_style": "este estilo deve ser limpo",
                     "max_comments_per_day": "7",
+                    "max_comments_per_market_override": "4",
                     "max_predictions_per_day": "3",
                     "max_stake_gtl": "25",
                     "cooldown_hours": "12",
@@ -8080,6 +8295,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(payload["personality_prompt"], "")
             self.assertEqual(payload["comment_style"], "")
             self.assertIsNone(payload["max_comments_per_day"])
+            self.assertIsNone(payload["max_comments_per_market_override"])
             self.assertIsNone(payload["cooldown_hours"])
             self.assertEqual(payload["max_predictions_per_day"], 3)
             self.assertEqual(payload["max_stake_gtl"], 25)
