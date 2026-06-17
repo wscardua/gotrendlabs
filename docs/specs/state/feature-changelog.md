@@ -6,8 +6,7 @@
 - Mobile passou a abrir a aba `Comunidade` por `/markets/:slug?tab=community` a partir de contadores de comentários e alertas de comentário.
 - Mobile passou a invalidar e reconsultar mercados, detalhe, wallet, ledger, recargas e alertas em eventos de consulta reais: entrada em telas críticas, retorno do background, troca para abas dependentes de mercados e pull-to-refresh.
 - Ranking mobile passou a invalidar e reconsultar `GET /rankings` ao abrir a tela ativa, voltar do background, tocar na aba, trocar filtros e usar pull-to-refresh, evitando consulta antecipada/duplicada enquanto a tela está apenas montada fora da aba ativa.
-- Versão mobile desta fatia definida como `1.0.7+8` para publicação Android beta no canal direto após merge.
-- APK Android beta `1.0.6 (7)` publicada em produção no canal direto, com `/app/android/latest.json` apontando para o arquivo ativo e SHA-256 `ce4ea6e23305474b2ec1e5d73708b680ec12a9c4018bd845d77c076e369c2288`.
+- APK Android beta `1.0.7 (8)` publicada em produção no canal direto, com `/app/android/latest.json` apontando para o arquivo ativo e SHA-256 `54822fc7aa84ebad2e923c0af75076ba43f7d73433c918f1a365bcd2d4ffe5ae`.
 - Detalhe mobile passou a exibir pergunta/contexto completo fora do hero truncado.
 - Ticket de previsão passou a mostrar `Disponível` e `Bloqueado` vindos da wallet da API.
 - Wallet mobile passou a priorizar `Disponível` e `Bloqueado`, rebaixando recarga educativa para seção secundária.

@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260616-MOBILE-RANKING-LIVE-REFRESH-001
 
 - Tipo: `change-feature`
-- Status: `validado_localmente`
+- Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`, `FEAT-REP-001`
 - Objetivo: incluir Ranking no contrato mobile de refresh em tempo de consulta, reconsultando `GET /rankings` ao abrir a tela ativa, voltar do background, tocar na aba, trocar filtros e usar pull-to-refresh, sem polling continuo, sem regra local de reputacao e sem consulta antecipada/duplicada quando a tela esta apenas montada fora da aba ativa.
-- Etapa atual: validado localmente na branch `feature/mobile-ranking-live-refresh`; aguardando aprovacao do texto da PR para publicar, mergear, acompanhar deploy e publicar APK Android beta `1.0.7 (8)` no canal direto.
+- Etapa atual: concluido; PR #91 mergeada em `main`, deploy de producao concluido e APK Android beta `1.0.7 (8)` publicada no canal direto do site.
 - Artefatos afetados:
   - `apps/mobile/lib/src/features/live_refresh.dart`
   - `apps/mobile/lib/src/features/ranking/`
@@ -20,9 +20,9 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-16
 - Atualizado em: 2026-06-16
-- Retomada: validar `flutter analyze`, `flutter test`, `git diff --check` e reinstalar APK debug com API de producao no Galaxy S20 para QA fisico.
+- Retomada: acompanhar feedback de Ranking no Android beta `1.0.7 (8)`; se a proxima fatia mobile exigir nova publicacao, incrementar `version` em `apps/mobile/pubspec.yaml`, gerar APK release assinada com bases de producao e publicar pelo canal direto.
 - Evidências de validação local: `cd apps/mobile && flutter test test/ranking_screen_test.dart test/shell_screen_test.dart` com 8 testes OK; `cd apps/mobile && flutter analyze` sem issues; `cd apps/mobile && flutter test` com 78 testes OK; `git diff --check` limpo.
-- Publicacao planejada: apos merge em `main` e deploy verde, gerar APK release assinado com `GTL_API_BASE_URL=https://gotrendlabs.com.br/api` e `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br`, publicar `1.0.7 (8)` via Admin Ops/canal direto e validar `/app/android/latest.json` e download publico.
+- Evidências de publicação: PR #91 (`Atualiza Ranking mobile com dados quentes`) mergeada em `main` por squash commit `585733fa69bdccdd4b6d8a90280c9afbcc25e3b2`; GitHub Actions `GoTrendLabs CI and Deploy` run `27658699222` concluiu jobs `test` e `deploy` com sucesso; producao respondeu `https://gotrendlabs.com.br/api/health` com `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; homepage retornou `HTTP/2 200`; APK release `1.0.7 (8)` gerada com `GTL_API_BASE_URL=https://gotrendlabs.com.br/api` e `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br`, SHA-256 `54822fc7aa84ebad2e923c0af75076ba43f7d73433c918f1a365bcd2d4ffe5ae` e tamanho `57636557` bytes; APK publicada em producao via SSM `1d347ac1-7a64-496f-b6d4-578926566bc3` com limpeza temporaria posterior via SSM `5c26639f-2a22-4352-a855-56ffd44135e8`; bucket S3 temporario de transporte foi removido; `https://gotrendlabs.com.br/app/android/latest.json` retornou `version_name=1.0.7`, `version_code=8`, `file_size=57636557` e o mesmo SHA-256; download publico da APK retornou `HTTP/2 200`, `content-type: application/vnd.android.package-archive`, `content-length=57636557` e hash recalculado identico.
 - Reversao lógica: remover invalidacao/refresh de ranking do helper central, shell e `RankingScreen`, mantendo `GET /rankings` e filtros existentes inalterados.
 
 ## WFLOW-20260616-MOBILE-LIVE-REFRESH-001
