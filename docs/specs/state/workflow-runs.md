@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260616-MOBILE-LIVE-REFRESH-001
 
 - Tipo: `change-feature`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`, `FEAT-WALLET-001`, `FEAT-NOTIFY-001`
 - Objetivo: corrigir refresh em tempo de consulta no app mobile para que mercados/status, detalhe, wallet, ledger, recargas e alertas sejam reconsultados ao abrir telas criticas, voltar do background, trocar para abas dependentes de mercado e usar pull-to-refresh, sem mudar contratos backend.
-- Etapa atual: implementação e validação local concluídas; aguardando PR, merge, deploy e publicação do APK Android beta `1.0.6 (7)` em produção.
+- Etapa atual: concluído; PR #89 mergeada em `main`, deploy de produção concluído e APK Android beta `1.0.6 (7)` publicado no canal direto do site.
 - Artefatos afetados:
   - `apps/mobile/lib/src/features/live_refresh.dart`
   - `apps/mobile/lib/src/features/shell/`
@@ -21,12 +21,14 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/testing/mobile-acceptance.md`
   - `docs/specs/state/feature-changelog.md`
   - `docs/specs/state/implementation-status.md`
-- Bloqueios: nenhum conhecido; PR e publicação de APK dependem de aprovação explícita do usuário para submissão.
+- Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-16
 - Atualizado em: 2026-06-16
-- Retomada: abrir PR após aprovação do texto, acompanhar GitHub Actions, publicar APK release assinado `1.0.6 (7)` via canal Android direto e validar `/app/android/latest.json`/download público.
+- Encerrado em: 2026-06-16
+- Retomada: acompanhar feedback físico do app Android publicado; se o usuário ainda perceber dados desatualizados, validar evento específico contra logs/API de produção antes de adicionar polling contínuo.
 - Reversão lógica: remover invalidações/refetches centralizados do Flutter, voltar `RefreshIndicator` aos callbacks anteriores e manter a versão Android ativa anterior `1.0.5 (6)` no Admin Ops.
 - Evidências de validação local: `cd apps/mobile && flutter test test/markets_screen_test.dart`; `cd apps/mobile && flutter pub get`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test`; `git diff --check`; `cd apps/mobile && flutter build apk --release --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` gerou APK assinado `1.0.6 (7)` com SHA-256 `ce4ea6e23305474b2ec1e5d73708b680ec12a9c4018bd845d77c076e369c2288` e tamanho `57636557` bytes; APK debug com API de produção instalado no Galaxy S20 `192.168.18.148:43831`, sem `adb reverse`, com `GTL_API_BASE_URL=https://gotrendlabs.com.br/api`, Activity `br.com.gotrendlabs.gotrendlabs_mobile/.MainActivity` focada e SHA-256 `48011f20ada65846c0f823d784d11449057ffe116bb61c6029ddcf51f520f756`.
+- Evidências de publicação: PR #89 (`Corrige refresh vivo no mobile`) mergeada em `main` por squash commit `db0f9757fbc75df172563af0e03e7561cd1154a8`; GitHub Actions `GoTrendLabs CI and Deploy` run `27656995985` concluiu jobs `test` e `deploy` com sucesso; produção respondeu `https://gotrendlabs.com.br/api/health` com `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; homepage retornou `HTTP/2 200`; APK release `1.0.6 (7)` publicada em produção via SSM `096bb6c7-e31f-4101-81b0-30d01c370fc9`, com limpeza temporária posterior via SSM `b48ae9f8-9234-4f13-94c6-4ec996d19d96`; bucket S3 temporário de transporte foi removido; `https://gotrendlabs.com.br/app/android/latest.json` retornou `version_name=1.0.6`, `version_code=7`, `file_size=57636557` e SHA-256 `ce4ea6e23305474b2ec1e5d73708b680ec12a9c4018bd845d77c076e369c2288`; download público da APK retornou `HTTP/2 200`, `content-type: application/vnd.android.package-archive`, `content-length=57636557` e hash recalculado idêntico.
 
 ## WFLOW-20260616-MOBILE-MARKET-WALLET-UX-FIXES-001
 
