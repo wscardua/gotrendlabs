@@ -9,6 +9,7 @@ import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
+import '../live_refresh.dart';
 import 'market_models.dart';
 import 'markets_providers.dart';
 
@@ -740,7 +741,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
   void _invalidateMarketState() {
     ref.invalidate(marketsProvider);
     ref.invalidate(marketDetailProvider(widget.market.slug));
-    ref.invalidate(walletProvider);
+    invalidateWalletData(ref);
   }
 
   void _setFailure(Object error, {required bool busy, bool? previewBusy}) {

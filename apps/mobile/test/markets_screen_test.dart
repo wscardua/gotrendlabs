@@ -100,6 +100,133 @@ void main() {
     expect(find.text('Mercado com posição ativa'), findsOneWidget);
     expect(find.text('Mercado geral'), findsNothing);
   });
+
+  testWidgets('TodayScreen pull refresh waits for fresh market data', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketsProvider.overrideWith((ref) async {
+            calls += 1;
+            return [
+              _market(
+                slug: 'mercado-$calls',
+                title: calls == 1
+                    ? 'Mercado antes do refresh'
+                    : 'Mercado depois do refresh',
+              ),
+            ];
+          }),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: TodayScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+    expect(find.text('Mercado antes do refresh'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView).last, const Offset(0, 360));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(find.text('Mercado depois do refresh'), findsOneWidget);
+    expect(find.text('Mercado antes do refresh'), findsNothing);
+  });
+
+  testWidgets('TodayScreen empty state can be pulled to refresh', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketsProvider.overrideWith((ref) async {
+            calls += 1;
+            if (calls == 1) {
+              return <Market>[];
+            }
+            return [
+              _market(
+                slug: 'mercado-atualizado',
+                title: 'Mercado apareceu depois do refresh',
+              ),
+            ];
+          }),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: TodayScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+    expect(
+      find.text('Nenhum mercado aberto disponível agora.'),
+      findsOneWidget,
+    );
+
+    await tester.drag(find.byType(ListView).last, const Offset(0, 360));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(find.text('Mercado apareceu depois do refresh'), findsOneWidget);
+  });
+
+  testWidgets('MarketsScreen empty filter state can be pulled to refresh', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          marketsProvider.overrideWith((ref) async {
+            calls += 1;
+            if (calls == 1) {
+              return <Market>[];
+            }
+            return [
+              _market(
+                slug: 'mercado-atualizado',
+                title: 'Mercado atualizado no browse',
+              ),
+            ];
+          }),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: MarketsScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+    expect(find.text('Nenhum mercado neste recorte.'), findsOneWidget);
+
+    await tester.drag(find.byType(ListView).last, const Offset(0, 360));
+    await tester.pump();
+    await tester.pumpAndSettle();
+
+    expect(calls, 2);
+    expect(find.text('Mercado atualizado no browse'), findsOneWidget);
+  });
 }
 
 class _UnauthenticatedAuthController extends AuthController {

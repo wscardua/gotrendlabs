@@ -2,6 +2,32 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260616-MOBILE-LIVE-REFRESH-001
+
+- Tipo: `change-feature`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-MOBILE-001`, `FEAT-WALLET-001`, `FEAT-NOTIFY-001`
+- Objetivo: corrigir refresh em tempo de consulta no app mobile para que mercados/status, detalhe, wallet, ledger, recargas e alertas sejam reconsultados ao abrir telas criticas, voltar do background, trocar para abas dependentes de mercado e usar pull-to-refresh, sem mudar contratos backend.
+- Etapa atual: implementação e validação local concluídas; aguardando PR, merge, deploy e publicação do APK Android beta `1.0.6 (7)` em produção.
+- Artefatos afetados:
+  - `apps/mobile/lib/src/features/live_refresh.dart`
+  - `apps/mobile/lib/src/features/shell/`
+  - `apps/mobile/lib/src/features/markets/`
+  - `apps/mobile/lib/src/features/wallet/`
+  - `apps/mobile/test/`
+  - `apps/mobile/pubspec.yaml`
+  - `apps/mobile/README.md`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+- Bloqueios: nenhum conhecido; PR e publicação de APK dependem de aprovação explícita do usuário para submissão.
+- Iniciado em: 2026-06-16
+- Atualizado em: 2026-06-16
+- Retomada: abrir PR após aprovação do texto, acompanhar GitHub Actions, publicar APK release assinado `1.0.6 (7)` via canal Android direto e validar `/app/android/latest.json`/download público.
+- Reversão lógica: remover invalidações/refetches centralizados do Flutter, voltar `RefreshIndicator` aos callbacks anteriores e manter a versão Android ativa anterior `1.0.5 (6)` no Admin Ops.
+- Evidências de validação local: `cd apps/mobile && flutter test test/markets_screen_test.dart`; `cd apps/mobile && flutter pub get`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test`; `git diff --check`; `cd apps/mobile && flutter build apk --release --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` gerou APK assinado `1.0.6 (7)` com SHA-256 `ce4ea6e23305474b2ec1e5d73708b680ec12a9c4018bd845d77c076e369c2288` e tamanho `57636557` bytes; APK debug com API de produção instalado no Galaxy S20 `192.168.18.148:43831`, sem `adb reverse`, com `GTL_API_BASE_URL=https://gotrendlabs.com.br/api`, Activity `br.com.gotrendlabs.gotrendlabs_mobile/.MainActivity` focada e SHA-256 `48011f20ada65846c0f823d784d11449057ffe116bb61c6029ddcf51f520f756`.
+
 ## WFLOW-20260616-MOBILE-MARKET-WALLET-UX-FIXES-001
 
 - Tipo: `change-feature`
