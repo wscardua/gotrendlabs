@@ -2,6 +2,33 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260617-BADGE-RULE-REQUIREMENTS-001
+
+- Tipo: `change-feature`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-REP-001`
+- Objetivo: evoluir badges administráveis para requisitos adicionais configuráveis, sem lógica específica por nome/código de badge, garantindo que `Top 10` dependa de posição global 10 ou melhor e ao menos 3 previsões resolvidas.
+- Etapa atual: implementado localmente; aguardando publicação por PR e validação do workflow `GoTrendLabs CI and Deploy`.
+- Artefatos afetados:
+  - `apps/api/backend_api/badge_engine.py`
+  - `apps/api/backend_api/main.py`
+  - `apps/api/backend_api/schemas.py`
+  - `apps/web/django/accounts/models.py`
+  - `apps/web/django/accounts/migrations/0020_badge_rule_requirements.py`
+  - `apps/web/django/admin_ops/`
+  - `apps/web/static/js/gotrendlabs.js`
+  - `docs/specs/contracts/reputation-ranking.md`
+  - `docs/specs/features/reputation-and-ranking.md`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `tests/test_web_smoke.py`
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-17
+- Atualizado em: 2026-06-17
+- Encerrado em:
+- Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test --keepdb tests.test_web_smoke`; `git diff --check`.
+- Evidências de publicação: pendente.
+- Reversão lógica: remover `BadgeRuleRequirement`, retirar `requirements` do contrato administrativo de badges, voltar a `BadgeAwardEngine` a avaliar apenas a regra principal e restaurar a descrição/configuração anterior da `Top 10`.
+
 ## WFLOW-20260617-AI-COMMENT-MARKET-LIMIT-001
 
 - Tipo: `change-feature`

@@ -320,6 +320,25 @@ class BadgeRule(models.Model):
         ]
 
 
+class BadgeRuleRequirement(models.Model):
+    badge_rule = models.ForeignKey(BadgeRule, on_delete=models.CASCADE, related_name="requirements")
+    metric_type = models.CharField(max_length=64, choices=BadgeRule.RULE_TYPE_CHOICES)
+    threshold_value = models.DecimalField(max_digits=12, decimal_places=4, default=1)
+    category = models.CharField(max_length=80, blank=True)
+    subcategory = models.CharField(max_length=80, blank=True)
+    event = models.CharField(max_length=80, blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gotrendlabs_badge_rule_requirements"
+        indexes = [
+            models.Index(fields=["badge_rule", "is_active"], name="gtl_req_rule_active_idx"),
+            models.Index(fields=["metric_type", "is_active"], name="gtl_req_metric_active_idx"),
+        ]
+
+
 class UserBadgeAward(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="badge_awards")
     badge = models.ForeignKey(BadgeDefinition, on_delete=models.CASCADE, related_name="awards")

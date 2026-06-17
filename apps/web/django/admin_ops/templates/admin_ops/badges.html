@@ -34,7 +34,10 @@
           <td>{% if badge.is_active %}<span class="tag safe">Visível</span>{% else %}<span class="tag">Oculta</span>{% endif %}</td>
           <td>{% if badge.rule_active %}<span class="tag safe">Ativa</span>{% else %}<span class="tag warn">Pausada</span>{% endif %}</td>
           <td>{{ badge.badge_type }}</td>
-          <td>{{ badge.rule_type }} · {{ badge.threshold_value }}</td>
+          <td>
+            {{ badge.rule_type }} · {{ badge.threshold_value }}
+            {% if badge.requirements %}<br><span class="muted">+ {{ badge.requirements|length }} requisito{{ badge.requirements|length|pluralize }}</span>{% endif %}
+          </td>
           <td>{% if badge.category %}{{ badge.category }}{% else %}Todas{% endif %} / {% if badge.subcategory %}{{ badge.subcategory }}{% else %}Todas{% endif %} / {% if badge.event %}{{ badge.event }}{% else %}Todos{% endif %}</td>
           <td>{{ badge.awards_count }}</td>
           <td><a class="btn small" href="{% url 'admin-ops-badge-edit' badge.code %}">Editar</a></td>

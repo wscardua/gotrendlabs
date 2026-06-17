@@ -26,7 +26,7 @@ from fastapi.testclient import TestClient
 from unittest.mock import patch
 
 from apps.web.django.accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
-from apps.web.django.accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, ExternalIdentity, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
+from apps.web.django.accounts.models import AuthEvent, AuthSession, BadgeDefinition, BadgeRule, BadgeRuleRequirement, ExternalIdentity, PasswordResetToken, ReferralCode, ReferralReward, UserBadgeAward, UserReputation, WalletBalance, WalletLedgerEntry, WalletRechargeRequest
 from apps.web.django.accounts.session import TOKEN_KEY, USER_KEY
 from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 from apps.api.backend_api.db import get_connection
@@ -126,13 +126,17 @@ def _seed_test_markets():
 
 def _seed_test_badges():
     badge_seed = importlib.import_module("apps.web.django.accounts.migrations.0009_badgedefinition_userbadgeaward_badgerule_and_more")
+    top_ten_requirement = importlib.import_module("apps.web.django.accounts.migrations.0020_badge_rule_requirements")
     for item in badge_seed.DEFAULT_BADGES:
+        rule_description = item["rule_description"]
+        if item["code"] == "top_ten":
+            rule_description = top_ten_requirement.TOP_TEN_RULE_DESCRIPTION
         badge, _ = BadgeDefinition.objects.update_or_create(
             code=item["code"],
             defaults={
                 "name": item["name"],
                 "description": item["description"],
-                "rule_description": item["rule_description"],
+                "rule_description": rule_description,
                 "badge_type": item["badge_type"],
                 "is_active": True,
             },
@@ -146,6 +150,18 @@ def _seed_test_badges():
                 "subcategory": "",
                 "is_active": True,
             },
+        )
+        if item["code"] == "top_ten":
+            BadgeRuleRequirement.objects.update_or_create(
+                badge_rule=badge.rule,
+                metric_type="resolved_predictions_count",
+                defaults={
+                    "threshold_value": 3,
+                    "category": "",
+                    "subcategory": "",
+                    "event": "",
+                    "is_active": True,
+                },
             )
 
 
@@ -3423,11 +3439,20 @@ class BackendAuthAPITests(TransactionTestCase):
                 "is_active": True,
                 "rule_type": "comments_count",
                 "threshold_value": 1,
+                "requirements": [
+                    {
+                        "metric_type": "resolved_predictions_count",
+                        "threshold_value": 3,
+                        "is_active": True,
+                    }
+                ],
             },
         )
         self.assertEqual(created.status_code, 201)
         self.assertEqual(created.json()["code"], "one-comment")
         self.assertEqual(created.json()["image_dark_url"], "/media/badge_images/comment-dark.png")
+        self.assertEqual(created.json()["requirements"][0]["metric_type"], "resolved_predictions_count")
+        self.assertEqual(created.json()["requirements"][0]["threshold_value"], 3.0)
 
         updated = client.patch(
             "/admin/badges/one-comment",
@@ -3446,6 +3471,7 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(updated.status_code, 200)
         self.assertEqual(updated.json()["name"], "Comentador")
+        self.assertEqual(updated.json()["requirements"][0]["metric_type"], "resolved_predictions_count")
 
         deactivated = client.post("/admin/badges/one-comment/deactivate", headers=staff_headers, json={"note": "pausar"})
         self.assertEqual(deactivated.status_code, 200)
@@ -3491,6 +3517,7 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(legacy_update_without_rule_state.status_code, 200)
         self.assertFalse(legacy_update_without_rule_state.json()["rule_active"])
+        self.assertEqual(legacy_update_without_rule_state.json()["requirements"][0]["threshold_value"], 3.0)
 
         explicit_reactivation = client.patch(
             "/admin/badges/one-comment",
@@ -3506,10 +3533,12 @@ class BackendAuthAPITests(TransactionTestCase):
                 "rule_active": True,
                 "rule_type": "comments_count",
                 "threshold_value": 1,
+                "requirements": [],
             },
         )
         self.assertEqual(explicit_reactivation.status_code, 200)
         self.assertTrue(explicit_reactivation.json()["rule_active"])
+        self.assertEqual(explicit_reactivation.json()["requirements"], [])
 
     def test_badge_awards_are_idempotent_for_automatic_rules(self):
         client = TestClient(app)
@@ -3633,6 +3662,60 @@ class BackendAuthAPITests(TransactionTestCase):
                     """
                 )
                 self.assertEqual(cursor.fetchone()["total"], 0)
+
+    def test_badge_rule_requirements_gate_ranking_badges(self):
+        User = get_user_model()
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = market.options.first()
+
+        def create_ranked_user(email, *, score=500, resolved_count=0):
+            user = User.objects.create(
+                username=email,
+                email=email,
+                first_name=email.split("@", 1)[0],
+                password=make_password("testpass123"),
+                is_active=True,
+                account_status="active",
+                email_confirmed_at=timezone.now(),
+            )
+            UserReputation.objects.create(user=user, reputation_score=score)
+            for _ in range(resolved_count):
+                Prediction.objects.create(
+                    user=user,
+                    market=market,
+                    market_option=option,
+                    stake_amount=10,
+                    probability_at_entry=50,
+                    weight_at_entry=1000,
+                    potential_payout=20,
+                    status="resolved",
+                    won=True,
+                )
+            return user
+
+        no_resolutions = create_ranked_user("badge-top-zero@example.com", resolved_count=0)
+        two_resolutions = create_ranked_user("badge-top-two@example.com", resolved_count=2)
+        three_resolutions = create_ranked_user("badge-top-three@example.com", resolved_count=3)
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                for user in (no_resolutions, two_resolutions, three_resolutions):
+                    BadgeAwardEngine.reconcile_user(cursor, user.id, ensure_user_core=_ensure_user_core)
+
+        for index in range(10):
+            create_ranked_user(f"badge-top-blocker-{index}@example.com", score=900, resolved_count=3)
+        outside_top_ten = create_ranked_user("badge-top-outside@example.com", score=100, resolved_count=3)
+
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                BadgeAwardEngine.reconcile_user(cursor, outside_top_ten.id, ensure_user_core=_ensure_user_core)
+
+        awarded_top_ten = set(
+            UserBadgeAward.objects.filter(badge__code="top_ten").values_list("user__email", flat=True)
+        )
+        self.assertNotIn("badge-top-zero@example.com", awarded_top_ten)
+        self.assertNotIn("badge-top-two@example.com", awarded_top_ten)
+        self.assertIn("badge-top-three@example.com", awarded_top_ten)
+        self.assertNotIn("badge-top-outside@example.com", awarded_top_ten)
 
     def test_rankings_filter_category_subcategory_recalculates_theme(self):
         client = TestClient(app)
@@ -9613,6 +9696,17 @@ class WebSmokeTests(TransactionTestCase):
             "event": "",
             "rule_active": True,
             "awards_count": 3,
+            "requirements": [
+                {
+                    "id": 7,
+                    "metric_type": "resolved_predictions_count",
+                    "threshold_value": 3,
+                    "category": "",
+                    "subcategory": "",
+                    "event": "",
+                    "is_active": True,
+                }
+            ],
         }
         payload = {
             "action": "save",
@@ -9629,6 +9723,13 @@ class WebSmokeTests(TransactionTestCase):
             "category": "",
             "subcategory": "",
             "event": "",
+            "requirements_count": "1",
+            "requirements_0_metric_type": "resolved_predictions_count",
+            "requirements_0_threshold_value": "3",
+            "requirements_0_category": "",
+            "requirements_0_subcategory": "",
+            "requirements_0_event": "",
+            "requirements_0_is_active": "on",
         }
 
         with (
@@ -9645,6 +9746,8 @@ class WebSmokeTests(TransactionTestCase):
         sent_payload = update_badge.call_args.args[2]
         self.assertTrue(sent_payload["is_active"])
         self.assertFalse(sent_payload["rule_active"])
+        self.assertEqual(sent_payload["requirements"][0]["metric_type"], "resolved_predictions_count")
+        self.assertEqual(sent_payload["requirements"][0]["threshold_value"], 3.0)
 
     def test_admin_list_pages_use_load_more_blocks_of_ten(self):
         session = self.client.session

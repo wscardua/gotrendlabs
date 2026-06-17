@@ -2034,6 +2034,7 @@ def _badge_initial(badge):
         "category": badge.get("category", ""),
         "subcategory": badge.get("subcategory", ""),
         "event": badge.get("event", ""),
+        "requirements": badge.get("requirements", []),
     }
 
 
@@ -2085,7 +2086,7 @@ def badge_form(request, mode="new", code=None):
                 post_data["image_dark_url"] = BADGE_STORAGE.url(saved_name)
         except ValueError as exc:
             upload_error = str(exc)
-    initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True, "rule_active": True}
+    initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True, "rule_active": True, "requirements": []}
     form = AdminBadgeForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
     if upload_error:
         form.add_error(None, upload_error)

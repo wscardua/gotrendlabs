@@ -98,7 +98,7 @@ class BadgeAwardEngine:
         awarded = []
         for rule in rules:
             value = cls._metric_value(cursor, user_id, rule)
-            if cls._rule_is_met(value, rule):
+            if cls._rule_is_met(value, rule) and cls._requirements_are_met(cursor, user_id, rule["id"]):
                 created = cls._award_by_code(
                     cursor,
                     user_id,
@@ -119,7 +119,7 @@ class BadgeAwardEngine:
             params.extend(sorted(rule_types))
         cursor.execute(
             f"""
-            SELECT b.id, b.code, b.name, r.rule_type, r.threshold_value, r.category, r.subcategory, r.event
+            SELECT r.id, b.id AS badge_id, b.code, b.name, r.rule_type, r.threshold_value, r.category, r.subcategory, r.event
             FROM gotrendlabs_badge_definitions b
             JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
             WHERE b.is_active = true
@@ -130,6 +130,28 @@ class BadgeAwardEngine:
             params,
         )
         return cursor.fetchall()
+
+    @classmethod
+    def _active_requirements(cls, cursor, badge_rule_id):
+        cursor.execute(
+            """
+            SELECT metric_type, threshold_value, category, subcategory, event
+            FROM gotrendlabs_badge_rule_requirements
+            WHERE badge_rule_id = %s
+              AND is_active = true
+            ORDER BY id ASC
+            """,
+            (badge_rule_id,),
+        )
+        return cursor.fetchall()
+
+    @classmethod
+    def _requirements_are_met(cls, cursor, user_id, badge_rule_id):
+        for requirement in cls._active_requirements(cursor, badge_rule_id):
+            value = cls._metric_value(cursor, user_id, requirement)
+            if not cls._rule_is_met(value, requirement):
+                return False
+        return True
 
     @classmethod
     def _award_by_code(cls, cursor, user_id, code, reason_snapshot=""):
@@ -231,7 +253,7 @@ class BadgeAwardEngine:
 
     @classmethod
     def _metric_value(cls, cursor, user_id, rule):
-        rule_type = rule["rule_type"]
+        rule_type = rule.get("rule_type") or rule.get("metric_type")
         if rule_type == "founding_member":
             cursor.execute("SELECT date_joined FROM gotrendlabs_users WHERE id = %s", (user_id,))
             return 1 if cursor.fetchone() else 0
@@ -317,6 +339,7 @@ class BadgeAwardEngine:
     @classmethod
     def _rule_is_met(cls, value, rule):
         threshold = Decimal(str(rule["threshold_value"] or 0))
-        if rule["rule_type"] == "ranking_position":
+        rule_type = rule.get("rule_type") or rule.get("metric_type")
+        if rule_type == "ranking_position":
             return value > 0 and Decimal(value) <= threshold
         return Decimal(value) >= threshold

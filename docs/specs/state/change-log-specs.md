@@ -2,6 +2,9 @@
 
 ## 2026-06-17
 
+- registrada evolução de `FEAT-REP-001` para requisitos adicionais configuráveis em regras de badge, persistidos em `BadgeRuleRequirement` e avaliados com lógica AND pela `BadgeAwardEngine`.
+- atualizado contrato administrativo de badges para incluir `requirements`, mantendo contratos públicos/mobile sem expor a estrutura interna de requisitos.
+- registrada configuração da badge `Top 10` como `ranking_position <= 10` com requisito adicional `resolved_predictions_count >= 3`.
 - registrada evolução de `FEAT-AIAGENT-001` para limite administrável de comentários IA visíveis por mercado em `gotrendlabs_site_config.ai_max_comments_per_market`, com default `1`.
 - registrado que o daemon pula mercados que já atingiram esse limite e audita o motivo `market_ai_comment_limit`; comentários ocultos/moderados não contam para o total visível.
 - registrado override opcional por agente em `gotrendlabs_ai_agents.max_comments_per_market_override`; quando preenchido, o limite é contado sobre comentários visíveis do próprio bot do agente, e a auditoria de limite é agregada quando todos os candidatos avaliados são bloqueados.

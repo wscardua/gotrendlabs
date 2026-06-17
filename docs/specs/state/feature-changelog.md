@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-17 — FEAT-REP-001 requisitos configuráveis de badges
+
+- Badges administráveis passaram a aceitar requisitos adicionais configuráveis por regra, avaliados pela `BadgeAwardEngine` com lógica AND depois da regra principal.
+- Requisitos adicionais reutilizam os mesmos tipos de métrica controlados pelo backend, com recorte opcional por categoria/subcategoria/evento e flag `is_active` para não bloquear concessões quando desativados.
+- Admin Ops passou a listar, criar, editar e remover requisitos adicionais no formulário de badges, mantendo `Conceder para novas conquistas` como controle da regra principal.
+- A badge `Top 10` permanece configurada por `ranking_position <= 10`, mas ganhou requisito adicional `resolved_predictions_count >= 3` e descrição pública alinhada.
+- Contratos públicos/mobile de badges não expõem a estrutura de requisitos; a mudança afeta a concessão autoritativa no backend e o contrato administrativo de badges.
+
 ## 2026-06-17 — FEAT-AIAGENT-001 limite administrável de comentários IA
 
 - Admin Ops Config ganhou `Comentários IA por mercado`, persistido em `gotrendlabs_site_config.ai_max_comments_per_market`, com default `1`.

@@ -105,6 +105,18 @@ Conquistas de usuário são persistidas em `gotrendlabs_user_badge_awards`. A ex
 
 `BadgeDefinition.is_active` controla se a badge e suas conquistas históricas podem aparecer publicamente. `BadgeRule.is_active` controla apenas se novas conquistas ainda podem ser concedidas pela engine.
 
+`BadgeRuleRequirement`:
+
+- `badge_rule`
+- `metric_type`
+- `threshold_value`
+- `category`
+- `subcategory`
+- `event`
+- `is_active`
+
+Requisitos adicionais refinam a elegibilidade da regra principal e são combinados com lógica AND. A engine só concede a badge quando a regra principal passa e todos os requisitos ativos vinculados à regra também passam. Requisitos inativos permanecem configurados, mas não bloqueiam novas conquistas.
+
 `category`, `subcategory` e `event` devem usar valores da taxonomia dinâmica exposta em `GET /admin/taxonomy` quando preenchidos pelo Admin Ops. Subcategoria só é válida junto de sua categoria; evento só é válido junto da subcategoria da mesma categoria. Os `notice` de categoria/subcategoria/evento são metadados de apresentação do mercado e não alteram elegibilidade de badges.
 
 `UserBadgeAward`:
