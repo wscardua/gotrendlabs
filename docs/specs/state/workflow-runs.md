@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260617-AI-COMMENT-MARKET-LIMIT-001
 
 - Tipo: `change-feature`
-- Status: `validado_localmente`
+- Status: `concluido`
 - Feature alvo: `FEAT-AIAGENT-001`
 - Objetivo: tornar administrável o limite total de comentários IA oficiais visíveis por mercado, adicionar override opcional por agente `analyst`, manter `ai_commenting_enabled` como kill switch e preservar cooldown/limites por dia/ciclo como proteções adicionais.
-- Etapa atual: implementação local concluída na branch `feature/admin-ai-comment-market-limit`; aguardando revisão/publicação.
+- Etapa atual: concluído; PR #93 mergeada em `main`, hotfix OpenAPI #94 mergeado, deploy de produção concluído pelo workflow `GoTrendLabs CI and Deploy` run `27690438066`, e duplicados históricos de comentários IA visíveis ocultados operacionalmente em produção.
 - Artefatos afetados:
   - `apps/api/backend_api/agent_services.py`
   - `apps/api/backend_api/main.py`
@@ -21,7 +21,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-17
 - Atualizado em: 2026-06-17
+- Encerrado em: 2026-06-17
 - Evidências de validação local: `.venv/bin/python manage.py check` sem issues; `.venv/bin/python manage.py makemigrations --check --dry-run` sem mudanças pendentes; recorte focado de 8 testes IA/Admin Ops OK; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 198 testes OK; `git diff --check` limpo; migration `agents.0005_aiagent_max_comments_per_market_override` aplicada no banco local.
+- Evidências de publicação: PR #93 (`Controla comentários IA por mercado no Admin Ops`) mergeada com squash `e309c6b`; PR #94 (`Atualiza snapshot OpenAPI dos agentes IA`) mergeada com squash `41e7925`; workflow `GoTrendLabs CI and Deploy` run `27690438066` concluiu `test` em 4m14s e `deploy` em 49s, com deploy SSM `9e71e997-865c-4597-b927-6282466bc928`; produção respondeu `GET /api/health` com `status=ok`.
+- Evidências de produção: consulta read-only SSM `e60dff52-0fa8-4711-9b4a-87460dead67f` encontrou 10 mercados com duplicados visíveis de IA e 22 comentários extras; limpeza SSM `8825bf8e-6a6a-4782-8fe8-986212cc4159` ocultou os 22 extras preservando o comentário IA visível mais antigo por mercado; verificação SSM `69d5f9b6-a430-4aca-afc9-eea633c7f3e8` confirmou `duplicate_markets=0`, `extra_visible_comments=0`, `ai_max_comments_per_market=1`, `ai_commenting_enabled=true` e `GoTrendLabs AI Analyst` sem override.
 - Reversão lógica: remover os campos `ai_max_comments_per_market` e `max_comments_per_market_override` e suas migrations, retirar o bloqueio `market_ai_comment_limit` da seleção de candidatos do agente `analyst` e restaurar a documentação para limites baseados apenas em cooldown/dia/ciclo.
 
 ## WFLOW-20260616-MOBILE-RANKING-LIVE-REFRESH-001
