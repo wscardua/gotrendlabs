@@ -5,20 +5,20 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260617-BADGE-REQUIREMENT-GRANTS-HOTFIX-001
 
 - Tipo: `change-feature`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-REP-001`, `Admin Ops`
 - Objetivo: corrigir permissão runtime da FastAPI na tabela `gotrendlabs_badge_rule_requirements`, após o detalhe administrativo de usuário retornar erro interno ao avaliar badges durante `_ensure_user_core`.
-- Etapa atual: produção restaurada com grant operacional; hotfix versionado em migration complementar aguardando publicação por PR e deploy.
+- Etapa atual: concluído; produção restaurada com grant operacional, hotfix versionado pela PR #98 e deploy concluído pelo workflow `GoTrendLabs CI and Deploy` run `27727206127`.
 - Artefatos afetados:
   - `apps/web/django/accounts/migrations/0021_grant_badge_requirement_runtime_permissions.py`
   - `docs/specs/state/workflow-runs.md`
 - Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-17
 - Atualizado em: 2026-06-17
-- Encerrado em:
+- Encerrado em: 2026-06-17
 - Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python manage.py test --keepdb tests.test_web_smoke.BackendAuthAPITests.test_admin_user_management_contracts_audit_wallet_and_sessions`; `git diff --check`.
 - Evidências de produção: logs FastAPI mostraram `psycopg.errors.InsufficientPrivilege: permission denied for table gotrendlabs_badge_rule_requirements` em `GET /admin/users/8`; SSM `5a6428bd-9e81-4048-b1ba-967977c416e1` aplicou `GRANT` para `gotrendlabs_fastapi`; SSM `01f749c3-e603-4089-a3c8-4a41ab4950cd` confirmou `_admin_user_detail(8)` retornando `@karlascardua` com badges `['founding_member']`.
-- Evidências de publicação: pendente.
+- Evidências de publicação: PR #98 (`Corrige permissão runtime dos requisitos de badges`) mergeada com squash `8b9b11b`; workflow `GoTrendLabs CI and Deploy` run `27727206127` concluiu `test` em 4m16s e `deploy` em 54s; `/api/health` respondeu `status=ok`, `checks.api=ok` e `checks.database=ok`; SSM final `a6523ed0-e953-4257-8959-52a4b9998338` confirmou `_admin_user_detail(8)` retornando `@karlascardua` com badges `['founding_member']`.
 - Reversão lógica: remover a migration complementar apenas se a estratégia de roles runtime for substituída por privilégios padrão gerenciados no provisionamento do banco.
 
 ## WFLOW-20260617-BADGE-RULE-REQUIREMENTS-001
