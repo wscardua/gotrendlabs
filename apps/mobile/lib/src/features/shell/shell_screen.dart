@@ -11,6 +11,7 @@ import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
 import '../info/about_screen.dart';
 import '../info/trust_screen.dart';
+import '../live_refresh.dart';
 import '../markets/markets_screen.dart';
 import '../profile/badges_screen.dart';
 import '../profile/profile_screen.dart';
@@ -57,7 +58,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      _refreshNotifications();
+      _refreshLiveData();
     }
   }
 
@@ -234,6 +235,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
         selectedIndex: _index,
         onDestinationSelected: (value) {
           setState(() => _index = value);
+          if (value == 0 || value == 2 || value == 4) {
+            invalidateMarketData(ref);
+          }
           if (value == 3) {
             _markNotificationsRead();
           }
@@ -275,6 +279,16 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     } else {
       ref.invalidate(notificationsProvider);
     }
+  }
+
+  void _refreshLiveData() {
+    invalidateMarketData(ref);
+    final auth = ref.read(authControllerProvider);
+    if (!auth.isAuthenticated) {
+      return;
+    }
+    invalidateWalletData(ref);
+    _refreshNotifications();
   }
 
   void _openMarketDesk(MarketDeskFilter filter) {

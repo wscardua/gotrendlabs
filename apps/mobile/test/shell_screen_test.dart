@@ -60,12 +60,103 @@ void main() {
       );
     }
   });
+
+  testWidgets('Shell refreshes live market and wallet data on app resume', (
+    tester,
+  ) async {
+    var marketCalls = 0;
+    var notificationCalls = 0;
+    var ledgerCalls = 0;
+    var walletCalls = 0;
+    var rechargeCalls = 0;
+    final container = ProviderContainer(
+      overrides: [
+        authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+        marketsProvider.overrideWith((ref) async {
+          marketCalls += 1;
+          return [_market()];
+        }),
+        notificationsProvider.overrideWith((ref) async {
+          notificationCalls += 1;
+          return <dynamic>[];
+        }),
+        ledgerProvider.overrideWith((ref) async {
+          ledgerCalls += 1;
+          return {'wallet': <String, dynamic>{}, 'entries': <dynamic>[]};
+        }),
+        walletProvider.overrideWith((ref) async {
+          walletCalls += 1;
+          return <String, dynamic>{};
+        }),
+        walletRechargeRequestsProvider.overrideWith((ref) async {
+          rechargeCalls += 1;
+          return <String, dynamic>{'requests': <dynamic>[]};
+        }),
+        rankingPayloadProvider.overrideWith((ref, filters) async {
+          return {
+            'rows': <Map<String, dynamic>>[],
+            'categories': <Map<String, dynamic>>[],
+          };
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(ledgerProvider.future);
+    await container.read(walletProvider.future);
+    await container.read(walletRechargeRequestsProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const ShellScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(marketCalls, 1);
+    expect(notificationCalls, 1);
+    expect(ledgerCalls, 1);
+    expect(walletCalls, 1);
+    expect(rechargeCalls, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pumpAndSettle();
+    await container.read(ledgerProvider.future);
+    await container.read(walletProvider.future);
+    await container.read(walletRechargeRequestsProvider.future);
+
+    expect(marketCalls, 2);
+    expect(notificationCalls, 2);
+    expect(ledgerCalls, 2);
+    expect(walletCalls, 2);
+    expect(rechargeCalls, 2);
+  });
 }
 
 class _UnauthenticatedAuthController extends AuthController {
   @override
   AuthState build() {
     return const AuthState();
+  }
+}
+
+class _AuthenticatedAuthController extends AuthController {
+  @override
+  AuthState build() {
+    return const AuthState(
+      user: GtlUser(
+        id: 1,
+        handle: 'tester',
+        email: 'tester@example.com',
+        displayName: 'Tester',
+        emailConfirmed: true,
+        isStaff: false,
+      ),
+    );
   }
 }
 

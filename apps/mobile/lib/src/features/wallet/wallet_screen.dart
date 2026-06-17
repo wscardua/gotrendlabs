@@ -8,6 +8,7 @@ import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
+import '../live_refresh.dart';
 
 class WalletScreen extends ConsumerStatefulWidget {
   const WalletScreen({super.key});
@@ -18,6 +19,16 @@ class WalletScreen extends ConsumerStatefulWidget {
 
 class _WalletScreenState extends ConsumerState<WalletScreen> {
   bool _requestingRecharge = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        invalidateWalletData(ref);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,69 +54,74 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       final recharge = ref.watch(
                         walletRechargeRequestsProvider,
                       );
-                      return ListView(
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                        children: [
-                          _WalletBalanceHero(
-                            availableGtl: safeInt(wallet['available_gtl']),
-                            lockedGtl: safeInt(wallet['locked_gtl']),
-                          ),
-                          const SizedBox(height: 12),
-                          const GtlSectionTitle(
-                            title: 'Recarga educativa',
-                            subtitle: 'Solicitação controlada quando elegível',
-                          ),
-                          const SizedBox(height: 8),
-                          recharge.when(
-                            loading: () => const _RechargeLoadingCard(),
-                            error: (error, stack) =>
-                                _RechargeErrorCard(message: error.toString()),
-                            data: (data) => _RechargeCard(
-                              data: data,
-                              requesting: _requestingRecharge,
-                              onRequest: _requestRecharge,
+                      return RefreshIndicator(
+                        onRefresh: () => refreshWalletData(ref),
+                        child: ListView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                          children: [
+                            _WalletBalanceHero(
+                              availableGtl: safeInt(wallet['available_gtl']),
+                              lockedGtl: safeInt(wallet['locked_gtl']),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          const GtlSectionTitle(
-                            title: 'Extrato',
-                            subtitle:
-                                'Movimentos recentes conciliados pela API',
-                          ),
-                          const SizedBox(height: 8),
-                          if (entries.isEmpty)
-                            const GtlSurface(
-                              child: GtlEditorialHeader(
-                                kicker: 'Histórico',
-                                title: 'Sem lançamentos recentes',
-                                body:
-                                    'Quando houver reservas, resultados ou recargas, eles aparecem aqui.',
-                                icon: Icons.receipt_long,
+                            const SizedBox(height: 12),
+                            const GtlSectionTitle(
+                              title: 'Recarga educativa',
+                              subtitle:
+                                  'Solicitação controlada quando elegível',
+                            ),
+                            const SizedBox(height: 8),
+                            recharge.when(
+                              loading: () => const _RechargeLoadingCard(),
+                              error: (error, stack) =>
+                                  _RechargeErrorCard(message: error.toString()),
+                              data: (data) => _RechargeCard(
+                                data: data,
+                                requesting: _requestingRecharge,
+                                onRequest: _requestRecharge,
                               ),
-                            )
-                          else
-                            for (final entry in entries.take(20))
-                              Padding(
-                                padding: const EdgeInsets.only(bottom: 10),
-                                child: GtlSurface(
-                                  padding: EdgeInsets.zero,
-                                  child: ListTile(
-                                    title: Text(
-                                      (entry as Map)['entry_type_label']
-                                              ?.toString() ??
-                                          entry['entry_type']?.toString() ??
-                                          'Movimento',
-                                    ),
-                                    subtitle: Text(
-                                      entry['description']?.toString() ?? '',
-                                    ),
-                                    trailing: Text(
-                                      formatGtl(safeInt(entry['amount'])),
+                            ),
+                            const SizedBox(height: 12),
+                            const GtlSectionTitle(
+                              title: 'Extrato',
+                              subtitle:
+                                  'Movimentos recentes conciliados pela API',
+                            ),
+                            const SizedBox(height: 8),
+                            if (entries.isEmpty)
+                              const GtlSurface(
+                                child: GtlEditorialHeader(
+                                  kicker: 'Histórico',
+                                  title: 'Sem lançamentos recentes',
+                                  body:
+                                      'Quando houver reservas, resultados ou recargas, eles aparecem aqui.',
+                                  icon: Icons.receipt_long,
+                                ),
+                              )
+                            else
+                              for (final entry in entries.take(20))
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: 10),
+                                  child: GtlSurface(
+                                    padding: EdgeInsets.zero,
+                                    child: ListTile(
+                                      title: Text(
+                                        (entry as Map)['entry_type_label']
+                                                ?.toString() ??
+                                            entry['entry_type']?.toString() ??
+                                            'Movimento',
+                                      ),
+                                      subtitle: Text(
+                                        entry['description']?.toString() ?? '',
+                                      ),
+                                      trailing: Text(
+                                        formatGtl(safeInt(entry['amount'])),
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   ),

@@ -11,6 +11,7 @@ import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
+import '../live_refresh.dart';
 import 'market_cards.dart';
 import 'market_models.dart';
 import 'markets_providers.dart';
@@ -40,6 +41,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
   void initState() {
     super.initState();
     _tab = widget.initialTab == MarketDetailTab.community ? 1 : 0;
+    _refreshAfterFrame(widget.slug);
   }
 
   @override
@@ -49,6 +51,17 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
         widget.initialTab != oldWidget.initialTab) {
       _tab = widget.initialTab == MarketDetailTab.community ? 1 : 0;
     }
+    if (widget.slug != oldWidget.slug) {
+      _refreshAfterFrame(widget.slug);
+    }
+  }
+
+  void _refreshAfterFrame(String slug) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        invalidateMarketData(ref, slug: slug);
+      }
+    });
   }
 
   Future<void> _trackMarketView(String slug) async {

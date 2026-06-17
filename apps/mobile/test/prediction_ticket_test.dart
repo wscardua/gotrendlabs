@@ -133,6 +133,91 @@ void main() {
     expect(find.text('${stakes.last * 2} GT₵'), findsOneWidget);
   });
 
+  testWidgets('PredictionTicket invalidates wallet surfaces after prediction', (
+    tester,
+  ) async {
+    final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+    dio.httpClientAdapter = _Adapter((options) {
+      expect(options.method, 'POST');
+      if (options.path == '/markets/mercado-aberto/prediction-preview') {
+        final data = Map<String, dynamic>.from(options.data as Map);
+        return {
+          'market_id': 10,
+          'option_id': data['option_id'],
+          'stake_amount': data['stake_amount'],
+          'probability_exact': 50.0,
+          'estimated_return': 160,
+        };
+      }
+      expect(options.path, '/markets/mercado-aberto/predict');
+      return {'ok': true};
+    });
+    var walletCalls = 0;
+    var ledgerCalls = 0;
+    var rechargeCalls = 0;
+    final container = ProviderContainer(
+      overrides: [
+        authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+        apiClientProvider.overrideWithValue(
+          ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+        ),
+        walletProvider.overrideWith((ref) async {
+          walletCalls += 1;
+          return _wallet();
+        }),
+        ledgerProvider.overrideWith((ref) async {
+          ledgerCalls += 1;
+          return {'wallet': _wallet(), 'entries': <dynamic>[]};
+        }),
+        walletRechargeRequestsProvider.overrideWith((ref) async {
+          rechargeCalls += 1;
+          return {'requests': <dynamic>[]};
+        }),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(walletProvider.future);
+    await container.read(ledgerProvider.future);
+    await container.read(walletRechargeRequestsProvider.future);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp(
+          home: Scaffold(
+            body: ListView(children: [PredictionTicket(market: _market())]),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(walletCalls, 1);
+    expect(ledgerCalls, 1);
+    expect(rechargeCalls, 1);
+
+    await tester.tap(find.byType(ChoiceChip).first);
+    await tester.pump(const Duration(milliseconds: 350));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Pré-visualizar e confirmar'));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.widgetWithText(FilledButton, 'Pré-visualizar e confirmar'),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(FilledButton, 'Confirmar').last);
+    await tester.pumpAndSettle();
+
+    await container.read(ledgerProvider.future);
+    await container.read(walletRechargeRequestsProvider.future);
+
+    expect(walletCalls, greaterThanOrEqualTo(2));
+    expect(ledgerCalls, 2);
+    expect(rechargeCalls, 2);
+    expect(find.text('Previsão registrada pela API.'), findsOneWidget);
+  });
+
   testWidgets('Prediction confirmation sheet fits compact physical screens', (
     tester,
   ) async {

@@ -60,6 +60,42 @@ void main() {
     expect(find.text(_longTitle), findsWidgets);
     expect(find.text(_longSummary), findsWidgets);
   });
+
+  testWidgets('MarketDetailScreen refetches cached detail when opened', (
+    tester,
+  ) async {
+    var detailCalls = 0;
+    final container = ProviderContainer(
+      overrides: [
+        authControllerProvider.overrideWith(_UnauthenticatedAuthController.new),
+        marketDetailProvider.overrideWith((ref, slug) async {
+          detailCalls += 1;
+          return _market(
+            status: detailCalls == 1 ? 'open' : 'locked',
+            statusLabel: detailCalls == 1 ? 'Aberto' : 'Fechado',
+          );
+        }),
+        marketsRepositoryProvider.overrideWithValue(_NoopMarketsRepository()),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(marketDetailProvider('mercado-longo').future);
+    expect(detailCalls, 1);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(
+          home: MarketDetailScreen(slug: 'mercado-longo'),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(detailCalls, 2);
+    expect(find.text('Fechado'), findsWidgets);
+  });
 }
 
 class _UnauthenticatedAuthController extends AuthController {
@@ -81,7 +117,7 @@ const _longTitle =
 const _longSummary =
     'Resumo completo do mercado com contexto suficiente para o usuário entender a condição antes de escolher uma opção.';
 
-Market _market() {
+Market _market({String status = 'open', String statusLabel = 'Aberto'}) {
   return Market.fromJson({
     'slug': 'mercado-longo',
     'title': _longTitle,
@@ -89,8 +125,8 @@ Market _market() {
     'subcategory': 'Apps',
     'event': 'Geral',
     'kind': 'binary',
-    'status': 'open',
-    'status_label': 'Aberto',
+    'status': status,
+    'status_label': statusLabel,
     'primary_outcome': 'SIM',
     'primary_probability': 64,
     'primary_probability_exact': 64.0,

@@ -5,6 +5,7 @@ import '../../core/providers.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
+import '../live_refresh.dart';
 import 'market_cards.dart';
 import 'market_models.dart';
 import 'markets_providers.dart';
@@ -28,15 +29,19 @@ class TodayScreen extends ConsumerWidget {
       data: (items) {
         final openMarkets = _successfulOpenMarkets(items);
         if (openMarkets.isEmpty) {
-          return const _EmptyState(
-            message: 'Nenhum mercado aberto disponível agora.',
+          return GtlScreen(
+            child: _RefreshableEmptyState(
+              message: 'Nenhum mercado aberto disponível agora.',
+              onRefresh: () => refreshMarkets(ref),
+            ),
           );
         }
         final featured = openMarkets.take(3).toList();
         return GtlScreen(
           child: RefreshIndicator(
-            onRefresh: () async => ref.invalidate(marketsProvider),
+            onRefresh: () => refreshMarkets(ref),
             child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
               children: [
                 GtlEditorialHeader(
@@ -233,15 +238,17 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
               ),
               Expanded(
                 child: filtered.isEmpty
-                    ? _EmptyState(
+                    ? _RefreshableEmptyState(
                         message: _emptyMessage(
                           _deskFilter,
                           auth.isAuthenticated,
                         ),
+                        onRefresh: () => refreshMarkets(ref),
                       )
                     : RefreshIndicator(
-                        onRefresh: () async => ref.invalidate(marketsProvider),
+                        onRefresh: () => refreshMarkets(ref),
                         child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
                           itemCount: filtered.length,
                           itemBuilder: (context, index) {
@@ -516,6 +523,40 @@ class _EmptyState extends StatelessWidget {
     body: message,
     color: GtlColors.accentYellow,
   );
+}
+
+class _RefreshableEmptyState extends StatelessWidget {
+  const _RefreshableEmptyState({
+    required this.message,
+    required this.onRefresh,
+  });
+
+  final String message;
+  final RefreshCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final minHeight = constraints.hasBoundedHeight
+              ? (constraints.maxHeight - 48).clamp(240.0, double.infinity)
+              : 360.0;
+          return ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
+            children: [
+              ConstrainedBox(
+                constraints: BoxConstraints(minHeight: minHeight),
+                child: Center(child: _EmptyState(message: message)),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
 }
 
 class _ErrorState extends StatelessWidget {
