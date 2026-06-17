@@ -198,6 +198,19 @@
             ],
             "title": "Max Comments Per Day"
           },
+          "max_comments_per_market_override": {
+            "anyOf": [
+              {
+                "maximum": 10.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Comments Per Market Override"
+          },
           "max_predictions_per_day": {
             "anyOf": [
               {
@@ -331,6 +344,17 @@
               }
             ],
             "title": "Max Comments Per Day"
+          },
+          "max_comments_per_market_override": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Comments Per Market Override"
           },
           "max_predictions_per_day": {
             "anyOf": [
