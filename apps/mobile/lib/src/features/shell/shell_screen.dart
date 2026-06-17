@@ -72,7 +72,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
     );
     final pages = [
       TodayScreen(onOpenDesk: _openMarketDesk),
-      const RankingScreen(),
+      RankingScreen(isActive: _index == 1),
       MarketsScreen(initialDeskFilter: _marketDeskFilter),
       const AlertsScreen(),
       const SearchScreen(),
@@ -235,6 +235,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
         selectedIndex: _index,
         onDestinationSelected: (value) {
           setState(() => _index = value);
+          if (value == 1) {
+            invalidateRankingData(ref);
+          }
           if (value == 0 || value == 2 || value == 4) {
             invalidateMarketData(ref);
           }
@@ -283,6 +286,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
 
   void _refreshLiveData() {
     invalidateMarketData(ref);
+    invalidateRankingData(ref);
     final auth = ref.read(authControllerProvider);
     if (!auth.isAuthenticated) {
       return;

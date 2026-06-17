@@ -2,6 +2,29 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260616-MOBILE-RANKING-LIVE-REFRESH-001
+
+- Tipo: `change-feature`
+- Status: `validado_localmente`
+- Feature alvo: `FEAT-MOBILE-001`, `FEAT-REP-001`
+- Objetivo: incluir Ranking no contrato mobile de refresh em tempo de consulta, reconsultando `GET /rankings` ao abrir a tela ativa, voltar do background, tocar na aba, trocar filtros e usar pull-to-refresh, sem polling continuo, sem regra local de reputacao e sem consulta antecipada/duplicada quando a tela esta apenas montada fora da aba ativa.
+- Etapa atual: validado localmente na branch `feature/mobile-ranking-live-refresh`; aguardando aprovacao do texto da PR para publicar, mergear, acompanhar deploy e publicar APK Android beta `1.0.7 (8)` no canal direto.
+- Artefatos afetados:
+  - `apps/mobile/lib/src/features/live_refresh.dart`
+  - `apps/mobile/lib/src/features/ranking/`
+  - `apps/mobile/lib/src/features/shell/`
+  - `apps/mobile/test/`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/`
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-16
+- Atualizado em: 2026-06-16
+- Retomada: validar `flutter analyze`, `flutter test`, `git diff --check` e reinstalar APK debug com API de producao no Galaxy S20 para QA fisico.
+- Evidências de validação local: `cd apps/mobile && flutter test test/ranking_screen_test.dart test/shell_screen_test.dart` com 8 testes OK; `cd apps/mobile && flutter analyze` sem issues; `cd apps/mobile && flutter test` com 78 testes OK; `git diff --check` limpo.
+- Publicacao planejada: apos merge em `main` e deploy verde, gerar APK release assinado com `GTL_API_BASE_URL=https://gotrendlabs.com.br/api` e `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br`, publicar `1.0.7 (8)` via Admin Ops/canal direto e validar `/app/android/latest.json` e download publico.
+- Reversao lógica: remover invalidacao/refresh de ranking do helper central, shell e `RankingScreen`, mantendo `GET /rankings` e filtros existentes inalterados.
+
 ## WFLOW-20260616-MOBILE-LIVE-REFRESH-001
 
 - Tipo: `change-feature`
