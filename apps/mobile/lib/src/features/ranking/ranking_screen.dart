@@ -6,11 +6,14 @@ import '../../core/providers.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
+import '../live_refresh.dart';
 import '../markets/markets_providers.dart';
 import '../profile/badges_screen.dart';
 
 class RankingScreen extends ConsumerStatefulWidget {
-  const RankingScreen({super.key});
+  const RankingScreen({super.key, this.isActive = true});
+
+  final bool isActive;
 
   @override
   ConsumerState<RankingScreen> createState() => _RankingScreenState();
@@ -20,14 +23,42 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
   String _category = '';
   String _subcategory = '';
   String _event = '';
+  bool _refreshedForActiveMount = false;
+
+  RankingFilters get _filters => RankingFilters(
+    category: _category,
+    subcategory: _subcategory,
+    event: _event,
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (widget.isActive && !_refreshedForActiveMount) {
+      _refreshedForActiveMount = true;
+      invalidateRankingData(ref, filters: _filters);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant RankingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.isActive) {
+      _refreshedForActiveMount = false;
+      return;
+    }
+    if (!oldWidget.isActive) {
+      _refreshedForActiveMount = true;
+      invalidateRankingData(ref, filters: _filters);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final filters = RankingFilters(
-      category: _category,
-      subcategory: _subcategory,
-      event: _event,
-    );
+    if (!widget.isActive) {
+      return const SizedBox.shrink();
+    }
+    final filters = _filters;
     final ranking = ref.watch(rankingPayloadProvider(filters));
     final api = ref.watch(apiClientProvider);
     return Scaffold(
@@ -44,62 +75,96 @@ class _RankingScreenState extends ConsumerState<RankingScreen> {
           data: (payload) {
             final rows = _listOfMaps(payload['rows']);
             final categories = _listOfMaps(payload['categories']);
-            return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-              children: [
-                const GtlEditorialHeader(
-                  kicker: 'Reputação pública',
-                  title: 'Ranking',
-                  body: 'Quem se destaca nas previsões resolvidas?',
-                  icon: Icons.leaderboard_outlined,
-                ),
-                const SizedBox(height: 12),
-                _RankingFiltersCard(
-                  categories: categories,
-                  category: _category,
-                  subcategory: _subcategory,
-                  event: _event,
-                  onCategory: (value) => setState(() {
-                    _category = value;
-                    _subcategory = '';
-                    _event = '';
-                  }),
-                  onSubcategory: (value) => setState(() {
-                    _subcategory = value;
-                    _event = '';
-                  }),
-                  onEvent: (value) => setState(() => _event = value),
-                  onClear: () => setState(() {
-                    _category = '';
-                    _subcategory = '';
-                    _event = '';
-                  }),
-                ),
-                const SizedBox(height: 12),
-                if (rows.isEmpty)
-                  const GtlSurface(
-                    child: GtlEditorialHeader(
-                      kicker: 'Recorte vazio',
-                      title: 'Sem previsões resolvidas',
-                      body:
-                          'Ainda não há previsões resolvidas para este recorte.',
-                      icon: Icons.hourglass_empty,
-                    ),
-                  )
-                else
-                  for (final row in rows) _RankingRowCard(row: row, api: api),
-                const SizedBox(height: 12),
-                const GtlSurface(
-                  child: Text(
-                    'O ranking considera previsões já resolvidas. Acertos em perguntas difíceis e previsões antecipadas pesam mais.',
+            return RefreshIndicator(
+              onRefresh: () => refreshRankingData(ref, filters),
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                children: [
+                  const GtlEditorialHeader(
+                    kicker: 'Reputação pública',
+                    title: 'Ranking',
+                    body: 'Quem se destaca nas previsões resolvidas?',
+                    icon: Icons.leaderboard_outlined,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 12),
+                  _RankingFiltersCard(
+                    categories: categories,
+                    category: _category,
+                    subcategory: _subcategory,
+                    event: _event,
+                    onCategory: _selectCategory,
+                    onSubcategory: _selectSubcategory,
+                    onEvent: _selectEvent,
+                    onClear: _clearFilters,
+                  ),
+                  const SizedBox(height: 12),
+                  if (rows.isEmpty)
+                    const GtlSurface(
+                      child: GtlEditorialHeader(
+                        kicker: 'Recorte vazio',
+                        title: 'Sem previsões resolvidas',
+                        body:
+                            'Ainda não há previsões resolvidas para este recorte.',
+                        icon: Icons.hourglass_empty,
+                      ),
+                    )
+                  else
+                    for (final row in rows) _RankingRowCard(row: row, api: api),
+                  const SizedBox(height: 12),
+                  const GtlSurface(
+                    child: Text(
+                      'O ranking considera previsões já resolvidas. Acertos em perguntas difíceis e previsões antecipadas pesam mais.',
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         ),
       ),
     );
+  }
+
+  void _selectCategory(String value) {
+    invalidateRankingData(ref, filters: RankingFilters(category: value));
+    setState(() {
+      _category = value;
+      _subcategory = '';
+      _event = '';
+    });
+  }
+
+  void _selectSubcategory(String value) {
+    invalidateRankingData(
+      ref,
+      filters: RankingFilters(category: _category, subcategory: value),
+    );
+    setState(() {
+      _subcategory = value;
+      _event = '';
+    });
+  }
+
+  void _selectEvent(String value) {
+    invalidateRankingData(
+      ref,
+      filters: RankingFilters(
+        category: _category,
+        subcategory: _subcategory,
+        event: value,
+      ),
+    );
+    setState(() => _event = value);
+  }
+
+  void _clearFilters() {
+    invalidateRankingData(ref, filters: const RankingFilters());
+    setState(() {
+      _category = '';
+      _subcategory = '';
+      _event = '';
+    });
   }
 }
 

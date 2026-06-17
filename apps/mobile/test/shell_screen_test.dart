@@ -65,6 +65,7 @@ void main() {
     tester,
   ) async {
     var marketCalls = 0;
+    var rankingCalls = 0;
     var notificationCalls = 0;
     var ledgerCalls = 0;
     var walletCalls = 0;
@@ -93,6 +94,7 @@ void main() {
           return <String, dynamic>{'requests': <dynamic>[]};
         }),
         rankingPayloadProvider.overrideWith((ref, filters) async {
+          rankingCalls += 1;
           return {
             'rows': <Map<String, dynamic>>[],
             'categories': <Map<String, dynamic>>[],
@@ -122,6 +124,12 @@ void main() {
     expect(ledgerCalls, 1);
     expect(walletCalls, 1);
     expect(rechargeCalls, 1);
+    expect(rankingCalls, 0);
+
+    await tester.tap(find.text('Ranking').last);
+    await tester.pumpAndSettle();
+    final rankingCallsAfterOpen = rankingCalls;
+    expect(rankingCallsAfterOpen, 1);
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
@@ -134,6 +142,43 @@ void main() {
     expect(ledgerCalls, 2);
     expect(walletCalls, 2);
     expect(rechargeCalls, 2);
+    expect(rankingCalls, greaterThan(rankingCallsAfterOpen));
+  });
+
+  testWidgets('Shell refreshes ranking when Ranking tab is selected', (
+    tester,
+  ) async {
+    var rankingCalls = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketsProvider.overrideWith((ref) async => [_market()]),
+          rankingPayloadProvider.overrideWith((ref, filters) async {
+            rankingCalls += 1;
+            return {
+              'rows': <Map<String, dynamic>>[],
+              'categories': <Map<String, dynamic>>[],
+            };
+          }),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const ShellScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final rankingCallsAfterOpen = rankingCalls;
+    expect(rankingCallsAfterOpen, 0);
+
+    await tester.tap(find.text('Ranking').last);
+    await tester.pumpAndSettle();
+
+    expect(rankingCalls, 1);
   });
 }
 

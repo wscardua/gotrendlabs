@@ -245,7 +245,7 @@ Antes de considerar a UI pronta:
 - confirmar que mercado auto-close vencido aparece como `Fechado` no mobile e bloqueia preview/criacao/reforco/revisao pela FastAPI
 - confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`
 - confirmar que a wallet prioriza `Disponível` e `Bloqueado`, mantendo recarga controlada com elegibilidade, pendencia, historico e criacao via API como secao secundaria
-- confirmar que Hoje/Mercados/Busca, detalhe de mercado, Wallet e Alertas reconsultam a FastAPI ao entrar, voltar do background ou usar pull-to-refresh, sem exigir encerrar e abrir o app para atualizar status ou saldo
+- confirmar que Hoje/Mercados/Busca, detalhe de mercado, Ranking, Wallet e Alertas reconsultam a FastAPI ao entrar, voltar do background ou usar pull-to-refresh, sem exigir encerrar e abrir o app para atualizar status, ranking ou saldo
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
 - confirmar que o menu segue a ordem Wallet, Badges, Suporte, Sugerir mercado, Política e segurança, Sobre e Sair quando autenticado

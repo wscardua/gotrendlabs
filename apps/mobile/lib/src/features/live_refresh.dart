@@ -20,8 +20,18 @@ void invalidateNotifications(WidgetRef ref) {
   ref.invalidate(notificationsProvider);
 }
 
+void invalidateRankingData(WidgetRef ref, {RankingFilters? filters}) {
+  if (filters == null) {
+    ref.invalidate(rankingPayloadProvider);
+  } else {
+    ref.invalidate(rankingPayloadProvider(filters));
+  }
+  ref.invalidate(rankingProvider);
+}
+
 void invalidateLiveData(WidgetRef ref, {String? marketSlug}) {
   invalidateMarketData(ref, slug: marketSlug);
+  invalidateRankingData(ref);
   if (ref.read(authControllerProvider).isAuthenticated) {
     invalidateWalletData(ref);
     invalidateNotifications(ref);
@@ -51,6 +61,11 @@ Future<void> refreshWalletData(WidgetRef ref) async {
     _ignoreRefreshError(ref.read(ledgerProvider.future)),
     _ignoreRefreshError(ref.read(walletRechargeRequestsProvider.future)),
   ]);
+}
+
+Future<void> refreshRankingData(WidgetRef ref, RankingFilters filters) async {
+  invalidateRankingData(ref, filters: filters);
+  await _ignoreRefreshError(ref.read(rankingPayloadProvider(filters).future));
 }
 
 Future<void> _ignoreRefreshError(Future<Object?> future) async {

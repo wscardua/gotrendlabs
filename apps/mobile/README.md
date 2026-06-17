@@ -109,7 +109,7 @@ flutter build apk --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao desta fatia: `1.0.6+7`.
+Versao desta fatia: `1.0.7+8`.
 
 O build release falha quando `android/key.properties` nao existe. Use `flutter build apk --debug` para validacao local sem assinatura release.
 

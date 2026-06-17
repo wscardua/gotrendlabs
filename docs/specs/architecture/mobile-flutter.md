@@ -171,7 +171,7 @@ O app pode usar gerenciamento de estado adequado ao Flutter, escolhido na implem
 - estados explicitos de `loading`, `refreshing`, `empty`, `error`, `unauthenticated` e `stale`
 - cache leve apenas para melhorar leitura e retomar tela
 - invalidacao de cache apos mutacoes autenticadas
-- dados vivos de mercado, detalhe, wallet e alertas devem ser reconsultados ao entrar em telas criticas, voltar do background, trocar para abas que dependem de mercado e usar pull-to-refresh; o app nao deve exigir encerramento/reabertura para refletir status ou saldo vindos da FastAPI
+- dados vivos de mercado, detalhe, ranking, wallet e alertas devem ser reconsultados ao entrar em telas criticas, voltar do background, trocar para abas que dependem desses dados e usar pull-to-refresh; o app nao deve exigir encerramento/reabertura para refletir status, ranking ou saldo vindos da FastAPI, nem fazer consulta antecipada de ranking apenas porque a tela esta pre-montada fora da aba ativa
 
 ## Seguranca
 
