@@ -50,6 +50,7 @@ def _site_config(cursor):
         "ai_model": "gpt-5.4-mini",
         "ai_high_reasoning_model": "gpt-5.5",
         "ai_market_cooldown_hours": 24,
+        "ai_max_comments_per_market": 1,
         "ai_max_comments_per_market_per_day": 1,
         "ai_max_comments_per_cycle": 1,
         "ai_max_comment_attempts_per_cycle": 3,
@@ -283,8 +284,47 @@ def _recent_ai_comment_exists(cursor, market_id, now, cooldown_hours):
     return bool(cursor.fetchone())
 
 
-def _candidate_comment_markets(cursor, config, now, cooldown_hours=None):
+def _visible_ai_comment_count(cursor, market_id, author_id=None):
+    if author_id:
+        cursor.execute(
+            """
+            SELECT COUNT(*) AS total
+            FROM gotrendlabs_market_comments mc
+            JOIN gotrendlabs_users u ON u.id = mc.author_id
+            WHERE mc.market_id = %s
+              AND mc.author_id = %s
+              AND mc.status = 'visible'
+              AND u.is_bot = true
+            """,
+            (market_id, author_id),
+        )
+        return int(cursor.fetchone()["total"] or 0)
+    cursor.execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM gotrendlabs_market_comments mc
+        JOIN gotrendlabs_users u ON u.id = mc.author_id
+        WHERE mc.market_id = %s
+          AND mc.status = 'visible'
+          AND u.is_bot = true
+        """,
+        (market_id,),
+    )
+    return int(cursor.fetchone()["total"] or 0)
+
+
+def _comment_market_limit(agent, config):
+    override = agent.get("max_comments_per_market_override") if agent else None
+    if override is not None:
+        return max(1, int(override)), "agent_override", agent.get("user_id")
+    return max(1, int(config.get("ai_max_comments_per_market") or 1)), "global_config", None
+
+
+def _candidate_comment_markets(cursor, config, now, agent=None):
+    agent = agent or {}
     candidate_limit = max(1, int(config.get("ai_comment_candidate_limit") or 200))
+    max_market_comments, limit_source, limit_author_id = _comment_market_limit(agent, config)
+    cooldown_hours = agent.get("cooldown_hours")
     cursor.execute(
         """
         SELECT m.id, m.slug, m.title, m.summary, m.kind, m.resolution_criteria, m.source,
@@ -301,16 +341,45 @@ def _candidate_comment_markets(cursor, config, now, cooldown_hours=None):
         (candidate_limit,),
     )
     candidates = []
+    skip_summary = {
+        "total": 0,
+        "market_ai_comment_limit": 0,
+        "market_daily_comment_limit": 0,
+        "market_cooldown": 0,
+        "recent_human_comment": 0,
+        "limit_sample": [],
+    }
     for market in cursor.fetchall():
         market_id = market["id"]
+        visible_ai_comments = _visible_ai_comment_count(cursor, market_id, author_id=limit_author_id)
+        if visible_ai_comments >= max_market_comments:
+            skip_summary["total"] += 1
+            skip_summary["market_ai_comment_limit"] += 1
+            skip_summary["limit_sample"].append(
+                {
+                    "market_id": market_id,
+                    "market_slug": market["slug"],
+                    "visible_ai_comments": visible_ai_comments,
+                    "limit": max_market_comments,
+                    "limit_source": limit_source,
+                }
+            )
+            continue
         if _comment_daily_count(cursor, market_id=market_id, now=now) >= int(config.get("ai_max_comments_per_market_per_day") or 1):
+            skip_summary["total"] += 1
+            skip_summary["market_daily_comment_limit"] += 1
             continue
         if _recent_ai_comment_exists(cursor, market_id, now, cooldown_hours or config.get("ai_market_cooldown_hours") or 24):
+            skip_summary["total"] += 1
+            skip_summary["market_cooldown"] += 1
             continue
         if _recent_human_comment_exists(cursor, market_id, config, now):
+            skip_summary["total"] += 1
+            skip_summary["recent_human_comment"] += 1
             continue
         candidates.append(dict(market))
-    return candidates
+    skip_summary["limit_sample"] = skip_summary["limit_sample"][:10]
+    return candidates, skip_summary
 
 
 def _recent_comments(cursor, market_id):
@@ -396,9 +465,29 @@ def _run_comment_cycle(cursor, config, summary, now):
             _record_action(cursor, agent_id=agent["id"], action_type="comment", status="skipped", reason="agent_daily_comment_limit")
             summary["skipped"] += 1
             continue
-        markets = _candidate_comment_markets(cursor, config, now, agent.get("cooldown_hours"))
+        markets, skip_summary = _candidate_comment_markets(cursor, config, now, agent=agent)
         if not markets:
-            _record_action(cursor, agent_id=agent["id"], action_type="comment", status="skipped", reason="no_eligible_market")
+            if skip_summary["total"] > 0 and skip_summary["market_ai_comment_limit"] == skip_summary["total"]:
+                _record_action(
+                    cursor,
+                    agent_id=agent["id"],
+                    action_type="comment",
+                    status="skipped",
+                    reason="market_ai_comment_limit",
+                    payload={
+                        "blocked_markets": skip_summary["market_ai_comment_limit"],
+                        "sample": skip_summary["limit_sample"],
+                    },
+                )
+            else:
+                _record_action(
+                    cursor,
+                    agent_id=agent["id"],
+                    action_type="comment",
+                    status="skipped",
+                    reason="no_eligible_market",
+                    payload={"skip_summary": skip_summary},
+                )
             summary["skipped"] += 1
             continue
         attempts = 0
@@ -731,6 +820,7 @@ def ai_health_summary(cursor, *, now=None):
             "ai_llm_provider": provider,
             "ai_llm_base_url": config.get("ai_llm_base_url") or "https://api.openai.com/v1",
             "ai_model": config.get("ai_model") or "gpt-5.4-mini",
+            "ai_max_comments_per_market": int(config.get("ai_max_comments_per_market") or 1),
             "ai_max_comments_per_cycle": int(config.get("ai_max_comments_per_cycle") or 1),
             "ai_max_comment_attempts_per_cycle": int(config.get("ai_max_comment_attempts_per_cycle") or 3),
             "ai_comment_candidate_limit": int(config.get("ai_comment_candidate_limit") or 200),

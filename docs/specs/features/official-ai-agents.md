@@ -1,10 +1,10 @@
 ---
 id: FEAT-AIAGENT-001
 titulo: "Agentes IA oficiais"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-06
+ultima_atualizacao: 2026-06-17
 origem:
   - solicitação de produto para comentários IA oficiais e liquidez bot controlada
 contratos_afetados:
@@ -37,6 +37,8 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 
 - Todo agente oficial usa usuário real `is_bot=true`.
 - Comentários IA exibem selo `IA oficial`, podem ocorrer com 0 humanos e não alteram probabilidade, ranking, reputação, wallet ou badges.
+- O total de comentários IA visíveis por mercado é controlado em Admin Ops por `ai_max_comments_per_market`, com default `1`; comentários ocultos/moderados não contam para esse limite.
+- Agentes `analyst` podem ter override opcional `max_comments_per_market_override`; quando preenchido, o limite por mercado é contado para comentários visíveis do próprio usuário bot do agente, e quando vazio herda o limite global.
 - Previsão bot só ocorre com `ai_agents_enabled=true`, `ai_predictions_enabled=true`, mercado `open`, saldo disponível e `human_participants >= ai_min_humans_for_prediction`.
 - Mercado com 0 humanos nunca recebe previsão bot; se chegar ao fechamento sem humanos, o daemon cancela e aplica refund de previsões abertas.
 - Participantes públicos e `volume_gtl` legado representam apenas humanos; contratos também expõem métricas separadas de bot e total.
@@ -56,9 +58,11 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 
 ## Persistência
 
-- `gotrendlabs_ai_agents`: configuração operacional por agente, persona editável e vínculo com usuário bot.
+- `gotrendlabs_ai_agents`: configuração operacional por agente, persona editável, override opcional de comentários por mercado e vínculo com usuário bot.
 - `gotrendlabs_ai_agent_actions`: auditoria de comentários, previsões, skips, falhas e ciclos, com payload resumido e hash/versão do template.
 - `gotrendlabs_site_config`: flags, provider/base URL/modelos, limites, cooldowns, timeout/retries e pausa global.
+- `ai_max_comments_per_market` define o total global de comentários IA oficiais visíveis permitidos por mercado durante sua vida.
+- `gotrendlabs_ai_agents.max_comments_per_market_override` permite configurar limite específico do agente `analyst` por mercado, sem alterar o contrato público nem o app mobile.
 - `ai_comment_candidate_limit` define quantos mercados abertos são avaliados localmente por ciclo de comentário antes de chamar a LLM.
 - `ai_max_comment_attempts_per_cycle` define quantos mercados elegíveis podem consumir chamada LLM por ciclo, separado do limite de comentários publicados.
 - O segredo do provedor LLM permanece exclusivamente em ambiente (`OPENAI_API_KEY` para OpenAI ou `AWS_BEARER_TOKEN_BEDROCK` para Bedrock).
@@ -79,6 +83,7 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 - O daemon chama o ciclo IA sem bloquear fechamento de mercado e prune de logs.
 - Falhas LLM/provedor configurado geram auditoria/log e não derrubam o daemon.
 - Admin Ops gerencia agentes, configs, auditoria e saúde técnica.
+- Quando um mercado já atingiu o limite configurado de comentários IA visíveis, o daemon pula o mercado antes de chamar a LLM; se todos os candidatos avaliados forem barrados por esse limite, registra uma auditoria agregada com motivo `market_ai_comment_limit`.
 - Auditoria administrativa lista ações em blocos de 10, permite filtrar por motivo e mantém detalhe operacional com tipo, status e motivo explicados em linguagem operacional, preservando códigos técnicos, payload resumido, hash/versão de prompt, mercado, comentário ou previsão relacionada.
 - A auditoria IA é limpa pelo daemon junto com logs técnicos, usando `created_at` e o prazo configurado atual, inclusive para registros antigos.
 - Formulários administrativos de agentes devem explicar os tipos operacionais, limitar seleção de usuário a contas bot oficiais e orientar campos relevantes conforme o tipo selecionado.
@@ -86,6 +91,8 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 ## Testes esperados
 
 - Flags desligadas impedem ações.
+- Limite administrável por mercado impede novo comentário IA visível quando atingido e permite novo comentário quando configurado acima da contagem atual.
+- Override por agente herda o global quando vazio, permite limite maior para o próprio agente quando preenchido e também pode ser mais restritivo que o global.
 - Falha LLM não quebra daemon.
 - Browse e detalhe de auditoria IA explicam tipo, status e motivo sem exigir interpretação dos códigos brutos.
 - Comentário IA mostra selo e não altera participantes.

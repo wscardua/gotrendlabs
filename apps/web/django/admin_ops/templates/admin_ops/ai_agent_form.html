@@ -100,7 +100,7 @@
         <div>
           <span class="eyebrow">Limites opcionais</span>
           <h2>Overrides por agente</h2>
-          <p>Deixe em branco para usar os limites globais definidos em Config. Valores preenchidos estreitam a operação deste agente.</p>
+          <p>Deixe em branco para usar os limites globais definidos em Config. Valores preenchidos substituem o limite global deste agente.</p>
         </div>
         <div class="agent-form-grid">
           <label class="field" data-agent-field="comment">
@@ -109,6 +109,13 @@
             <small>Teto diário específico para comentários deste agente.</small>
             <small class="agent-field-status" data-agent-field-status></small>
             {% if form.max_comments_per_day.errors %}<small class="field-error">{{ form.max_comments_per_day.errors|join:", " }}</small>{% endif %}
+          </label>
+          <label class="field" data-agent-field="comment">
+            <span>{{ form.max_comments_per_market_override.label }}</span>
+            {{ form.max_comments_per_market_override }}
+            <small>Deixe vazio para herdar o limite global por mercado.</small>
+            <small class="agent-field-status" data-agent-field-status></small>
+            {% if form.max_comments_per_market_override.errors %}<small class="field-error">{{ form.max_comments_per_market_override.errors|join:", " }}</small>{% endif %}
           </label>
           <label class="field" data-agent-field="prediction">
             <span>{{ form.max_predictions_per_day.label }}</span>
@@ -153,6 +160,7 @@
         data-commenting-enabled="{{ site_config.ai_commenting_enabled|yesno:'true,false' }}"
         data-predictions-enabled="{{ site_config.ai_predictions_enabled|yesno:'true,false' }}"
         data-global-comments-day="{{ site_config.ai_max_comments_per_day }}"
+        data-global-comments-market="{{ site_config.ai_max_comments_per_market }}"
         data-global-predictions-day="{{ site_config.ai_max_predictions_per_day }}"
         data-global-stake="{{ site_config.ai_max_stake_gtl }}"
         data-global-cooldown="{{ site_config.ai_market_cooldown_hours }}"
@@ -230,6 +238,7 @@
       comments: preview.dataset.commentingEnabled,
       predictions: preview.dataset.predictionsEnabled,
       commentsDay: numberOr(preview.dataset.globalCommentsDay, 20),
+      commentsMarket: numberOr(preview.dataset.globalCommentsMarket, 1),
       predictionsDay: numberOr(preview.dataset.globalPredictionsDay, 10),
       stake: numberOr(preview.dataset.globalStake, 25),
       cooldown: numberOr(preview.dataset.globalCooldown, 24),
@@ -241,6 +250,7 @@
       const active = checked("is_active");
       const botUser = selectedText("user_id") || "Selecione um usuário oficial.";
       const commentsDay = numberOr(fieldValue("max_comments_per_day"), globals.commentsDay);
+      const commentsMarket = numberOr(fieldValue("max_comments_per_market_override"), globals.commentsMarket);
       const predictionsDay = numberOr(fieldValue("max_predictions_per_day"), globals.predictionsDay);
       const cooldown = numberOr(fieldValue("cooldown_hours"), globals.cooldown);
       const minHumans = numberOr(fieldValue("min_humans_for_prediction"), globals.minHumans);
@@ -270,9 +280,9 @@
       setText("agent-preview-summary", typeSummary);
       setText("agent-preview-state", blockers.length ? `Bloqueado agora: ${blockers.join(", ")}.` : "Elegível quando o daemon encontrar mercado compatível.");
       setText("agent-preview-user", botUser);
-      setText("agent-preview-comments", type === "liquidity" ? "Este tipo não cria comentários; use Analyst para análises públicas." : `Até ${commentsDay} comentário(s)/dia para este agente, com cooldown efetivo de ${cooldown}h por mercado.`);
+      setText("agent-preview-comments", type === "liquidity" ? "Este tipo não cria comentários; use Analyst para análises públicas." : `Até ${commentsDay} comentário(s)/dia para este agente, ${commentsMarket} comentário(s) IA por mercado e cooldown efetivo de ${cooldown}h.`);
       setText("agent-preview-predictions", type === "liquidity" ? `Até ${predictionsDay} previsão(ões)/dia, stake efetivo máximo de ${stake} GT₵ e mínimo de ${minHumans} humano(s).` : "Este tipo não cria previsão bot nesta entrega.");
-      setText("agent-preview-globals", `Agentes ${enabledLabel(globals.agents)}, comentários ${enabledLabel(globals.comments)}, previsões bot ${enabledLabel(globals.predictions)}. Globais: ${globals.commentsDay} comentários/dia, ${globals.predictionsDay} previsões/dia, stake ${globals.stake} GT₵, ${globals.minHumans} humano(s).`);
+      setText("agent-preview-globals", `Agentes ${enabledLabel(globals.agents)}, comentários ${enabledLabel(globals.comments)}, previsões bot ${enabledLabel(globals.predictions)}. Globais: ${globals.commentsDay} comentários/dia, ${globals.commentsMarket} comentário(s) IA/mercado, ${globals.predictionsDay} previsões/dia, stake ${globals.stake} GT₵, ${globals.minHumans} humano(s).`);
     };
 
     const updateFieldAvailability = () => {

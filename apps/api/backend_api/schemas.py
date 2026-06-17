@@ -323,6 +323,7 @@ class AdminAiAgentPayload(BaseModel):
     personality_prompt: str = Field(default="", max_length=5000)
     comment_style: str = Field(default="", max_length=120)
     max_comments_per_day: Optional[int] = Field(default=None, ge=0, le=10000)
+    max_comments_per_market_override: Optional[int] = Field(default=None, ge=1, le=10)
     max_predictions_per_day: Optional[int] = Field(default=None, ge=0, le=10000)
     max_stake_gtl: Optional[int] = Field(default=None, ge=0, le=1000000)
     cooldown_hours: Optional[int] = Field(default=None, ge=0, le=10000)
@@ -341,6 +342,7 @@ class AdminAiAgentResponse(BaseModel):
     personality_prompt: str = ""
     comment_style: str = ""
     max_comments_per_day: Optional[int] = None
+    max_comments_per_market_override: Optional[int] = None
     max_predictions_per_day: Optional[int] = None
     max_stake_gtl: Optional[int] = None
     cooldown_hours: Optional[int] = None

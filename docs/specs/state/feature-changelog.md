@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-17 — FEAT-AIAGENT-001 limite administrável de comentários IA
+
+- Admin Ops Config ganhou `Comentários IA por mercado`, persistido em `gotrendlabs_site_config.ai_max_comments_per_market`, com default `1`.
+- Admin Ops de agentes ganhou override opcional `Comentários IA/mercado do agente`, persistido em `gotrendlabs_ai_agents.max_comments_per_market_override`, para o `analyst` herdar o global quando vazio ou usar limite próprio entre `1..10`.
+- O ciclo do agente `analyst` passou a contar comentários visíveis de autores `is_bot=true` antes de chamar a LLM; mercados no limite configurado são pulados e auditados com `market_ai_comment_limit`.
+- A auditoria `market_ai_comment_limit` passou a ser agregada quando todos os candidatos avaliados foram bloqueados pelo limite, evitando inflar o painel por mercado a cada ciclo do daemon.
+- Cooldown, limites por dia/ciclo e tentativas LLM seguem como proteções adicionais; comentários ocultos/moderados não contam para o limite total por mercado.
+
 ## 2026-06-16 — FEAT-MOBILE-001 ajustes de mercado, alertas e wallet
 
 - FastAPI passou a expor mercado com fechamento automático vencido como efetivamente `locked`/`Fechado` nos contratos públicos e a bloquear preview/criação/reforço/revisão nesses casos, sem exigir regra local no Flutter.

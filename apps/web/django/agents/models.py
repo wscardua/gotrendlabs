@@ -16,6 +16,7 @@ class AiAgent(models.Model):
     personality_prompt = models.TextField(blank=True)
     comment_style = models.CharField(max_length=120, blank=True)
     max_comments_per_day = models.PositiveIntegerField(null=True, blank=True)
+    max_comments_per_market_override = models.PositiveIntegerField(null=True, blank=True)
     max_predictions_per_day = models.PositiveIntegerField(null=True, blank=True)
     max_stake_gtl = models.PositiveIntegerField(null=True, blank=True)
     cooldown_hours = models.PositiveIntegerField(null=True, blank=True)

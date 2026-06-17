@@ -5023,6 +5023,7 @@ def _admin_ai_agent_response(cursor, row, now=None):
         "personality_prompt": row["personality_prompt"] or "",
         "comment_style": row["comment_style"] or "",
         "max_comments_per_day": row["max_comments_per_day"],
+        "max_comments_per_market_override": row["max_comments_per_market_override"],
         "max_predictions_per_day": row["max_predictions_per_day"],
         "max_stake_gtl": row["max_stake_gtl"],
         "cooldown_hours": row["cooldown_hours"],
@@ -5084,9 +5085,9 @@ def admin_create_ai_agent(payload: AdminAiAgentPayload, authorization: str = Hea
                 """
                 INSERT INTO gotrendlabs_ai_agents
                     (name, agent_type, user_id, is_active, personality_prompt, comment_style,
-                     max_comments_per_day, max_predictions_per_day, max_stake_gtl, cooldown_hours,
+                     max_comments_per_day, max_comments_per_market_override, max_predictions_per_day, max_stake_gtl, cooldown_hours,
                      min_humans_for_prediction, last_error, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '', %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, '', %s, %s)
                 RETURNING id
                 """,
                 (
@@ -5097,6 +5098,7 @@ def admin_create_ai_agent(payload: AdminAiAgentPayload, authorization: str = Hea
                     payload.personality_prompt.strip(),
                     payload.comment_style.strip(),
                     payload.max_comments_per_day,
+                    payload.max_comments_per_market_override,
                     payload.max_predictions_per_day,
                     payload.max_stake_gtl,
                     payload.cooldown_hours,
@@ -5156,6 +5158,7 @@ def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authoriza
                     personality_prompt = %s,
                     comment_style = %s,
                     max_comments_per_day = %s,
+                    max_comments_per_market_override = %s,
                     max_predictions_per_day = %s,
                     max_stake_gtl = %s,
                     cooldown_hours = %s,
@@ -5172,6 +5175,7 @@ def admin_update_ai_agent(agent_id: int, payload: AdminAiAgentPayload, authoriza
                     payload.personality_prompt.strip(),
                     payload.comment_style.strip(),
                     payload.max_comments_per_day,
+                    payload.max_comments_per_market_override,
                     payload.max_predictions_per_day,
                     payload.max_stake_gtl,
                     payload.cooldown_hours,

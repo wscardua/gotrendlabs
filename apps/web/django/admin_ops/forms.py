@@ -209,6 +209,7 @@ class AiConfigForm(forms.Form):
     ai_model = forms.CharField(label="Modelo comentário", max_length=120, initial="gpt-5.4-mini")
     ai_high_reasoning_model = forms.CharField(label="Modelo alto raciocínio", max_length=120, initial="gpt-5.5")
     ai_market_cooldown_hours = forms.IntegerField(label="Cooldown por mercado (h)", min_value=1, max_value=720, initial=24)
+    ai_max_comments_per_market = forms.IntegerField(label="Comentários IA por mercado", min_value=1, max_value=10, initial=1)
     ai_max_comments_per_market_per_day = forms.IntegerField(label="Comentários por mercado/dia", min_value=1, max_value=10, initial=1)
     ai_max_comments_per_cycle = forms.IntegerField(label="Comentários por ciclo", min_value=0, max_value=100, initial=1)
     ai_max_comment_attempts_per_cycle = forms.IntegerField(label="Tentativas LLM por ciclo", min_value=1, max_value=100, initial=3)
@@ -260,6 +261,7 @@ class AiAgentForm(forms.Form):
     personality_prompt = forms.CharField(label="Persona editável", required=False, widget=forms.Textarea(attrs={"rows": 5}), max_length=5000)
     comment_style = forms.CharField(label="Estilo de comentário", required=False, max_length=120)
     max_comments_per_day = forms.IntegerField(label="Comentários/dia do agente", required=False, min_value=0, max_value=10000)
+    max_comments_per_market_override = forms.IntegerField(label="Comentários IA/mercado do agente", required=False, min_value=1, max_value=10)
     max_predictions_per_day = forms.IntegerField(label="Previsões/dia do agente", required=False, min_value=0, max_value=10000)
     max_stake_gtl = forms.IntegerField(label="Stake máximo do agente", required=False, min_value=0, max_value=1000000)
     cooldown_hours = forms.IntegerField(label="Cooldown do agente (h)", required=False, min_value=0, max_value=10000)
@@ -293,11 +295,13 @@ class AiAgentForm(forms.Form):
             cleaned_data["personality_prompt"] = ""
             cleaned_data["comment_style"] = ""
             cleaned_data["max_comments_per_day"] = None
+            cleaned_data["max_comments_per_market_override"] = None
             cleaned_data["cooldown_hours"] = None
         elif agent_type == "contrarian":
             cleaned_data["personality_prompt"] = ""
             cleaned_data["comment_style"] = ""
             cleaned_data["max_comments_per_day"] = None
+            cleaned_data["max_comments_per_market_override"] = None
             cleaned_data["max_predictions_per_day"] = None
             cleaned_data["max_stake_gtl"] = None
             cleaned_data["cooldown_hours"] = None
