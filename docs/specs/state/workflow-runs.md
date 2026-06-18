@@ -8,7 +8,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`
 - Objetivo: melhorar a digitação de data de nascimento no perfil mobile e corrigir os contadores/recorte da mesa autenticada para considerar somente posições ativas.
-- Etapa atual: concluído localmente; branch `fix/mobile-birth-date-autoslash` contém a correção de data e a correção de `Sua mesa`, com PR/publicação pendentes neste fechamento.
+- Etapa atual: concluído; PR #104 mergeada em `main`, deploy de produção concluído pelo workflow `GoTrendLabs CI and Deploy` run `27792783182` e smokes públicos validados.
 - Artefatos afetados:
   - `apps/mobile/lib/src/features/profile/profile_screen.dart`
   - `apps/mobile/lib/src/features/markets/market_models.dart`
@@ -23,9 +23,11 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-06-18
 - Atualizado em: 2026-06-18
 - Encerrado em: 2026-06-18
-- Retomada: criar PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e validar se o canal APK público deve ser atualizado em follow-up; APK debug já foi instalado no Galaxy S20 para QA físico.
+- Retomada: se a operação decidir disponibilizar a correção para todos os usuários do canal direto Android, gerar nova APK release assinada em follow-up próprio; este fechamento atualizou `main`/produção backend-site e manteve o APK público em `1.0.7 (8)`, enquanto o APK debug com a feature foi instalado no Galaxy S20 para QA físico.
 - Reversão lógica: remover o formatter local de data, voltar o campo a aceitar apenas a digitação anterior e restaurar `Sua mesa`/`Posições` para o comportamento anterior baseado em `viewer_has_prediction`.
 - Evidências de validação local: `cd apps/mobile && flutter test test/push_placement_test.dart`; `cd apps/mobile && flutter test test/markets_screen_test.dart`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test`; `git diff --check`; APK debug instalado no Galaxy S20 `SM G980F` apontando para `https://gotrendlabs.com.br/api`, versão `1.0.7 (8)`.
+- Evidências de publicação: PR #104 (`Ajusta data do perfil e mesa mobile`) mergeada por squash `266a663`; workflow `GoTrendLabs CI and Deploy` run `27792783182` concluiu `test` em 4m20s e `deploy` em 50s.
+- Evidências de produção: `/api/health` respondeu `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; homepage retornou `HTTP 200`; `/api/openapi.json` retornou `HTTP 200`; `/app/android/latest.json` permaneceu em `version_name=1.0.7`, `version_code=8` e SHA-256 `54822fc7aa84ebad2e923c0af75076ba43f7d73433c918f1a365bcd2d4ffe5ae`, confirmando que o canal APK público não foi alterado por esta publicação.
 
 ## WFLOW-20260618-MOBILE-PROFILE-CONTRIBUTION-WALLET-001
 
