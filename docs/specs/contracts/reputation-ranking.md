@@ -52,6 +52,45 @@ Campos mínimos de cada item em `badges`:
 - `badge_type`
 - `awarded_at`
 
+## Endpoint autenticado de desempenho
+
+`GET /users/me/performance`
+
+Exige sessão válida e retorna um agregado de leitura para o app mobile mostrar evolução preditiva sem calcular regra crítica localmente.
+
+Resposta mínima:
+
+- `scorecard`: mesmo núcleo de reputação de `GET /users/me`, com `reputation_score`, `ranking_position`, `resolved_predictions_count`, `accuracy_indicator`, `streak`, `strong_category` e `last_updated_at`.
+- `history`: últimas previsões resolvidas do usuário, ordenadas pela resolução mais recente.
+- `progression`: badges conquistadas e últimas conquistas persistidas.
+- `generated_at`: timestamp de geração do agregado.
+
+Campos mínimos de cada item em `history`:
+
+- `prediction_id`
+- `market_slug`
+- `market_title`
+- `option_label`
+- `winning_option_label`
+- `won`
+- `result_label`
+- `stake_amount`
+- `probability_at_entry`
+- `reputation_delta`
+- `gtc_result`
+- `educational_result_label`
+- `resolved_at`
+- `resolved_at_label`
+- `resolution_note`
+
+Regras do endpoint:
+
+- `reputation_delta` usa a fórmula MVP da reputação no backend.
+- `gtc_result` vem do ledger associado à previsão resolvida, somando resultado educativo líquido disponível no contrato.
+- `result_label` deve usar copy de produto, hoje `Acertou` ou `Não acertou`, sem termos técnicos ou ambíguos como `Resultado diferente`.
+- `progression.next_milestones` fica vazio enquanto não houver progresso confiável exposto pelo backend.
+- O cliente mobile deve reconsultar esse endpoint ao abrir a tela, voltar do background e usar pull-to-refresh.
+
 ## Regras
 
 - A fórmula MVP usa `K=10`, `delta_R = K * (1 - p)` para acertos e `delta_R = -K * p` para erros.

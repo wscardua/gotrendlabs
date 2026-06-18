@@ -4878,6 +4878,33 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(len(audit_payload["participants"]), 1)
         self.assertIn("prediction_refund", audit_payload["participants"][0]["ledger"])
 
+        winner_performance = client.get("/users/me/performance", headers=winner_headers)
+        self.assertEqual(winner_performance.status_code, 200)
+        winner_performance_payload = winner_performance.json()
+        self.assertEqual(winner_performance_payload["scorecard"]["reputation_score"], 100 + winner_delta)
+        self.assertEqual(winner_performance_payload["scorecard"]["resolved_predictions_count"], 1)
+        self.assertEqual(winner_performance_payload["history"][0]["prediction_id"], winner_prediction.id)
+        self.assertEqual(winner_performance_payload["history"][0]["market_slug"], "resolucao-mvp-teste")
+        self.assertEqual(winner_performance_payload["history"][0]["option_label"], "SIM")
+        self.assertEqual(winner_performance_payload["history"][0]["winning_option_label"], "SIM")
+        self.assertEqual(winner_performance_payload["history"][0]["result_label"], "Acertou")
+        self.assertEqual(winner_performance_payload["history"][0]["reputation_delta"], winner_delta)
+        self.assertEqual(winner_performance_payload["history"][0]["gtc_result"], winner_prediction.potential_payout - 100)
+        self.assertEqual(winner_performance_payload["history"][0]["educational_result_label"], f"+{winner_prediction.potential_payout - 100} GT₵")
+        self.assertEqual(winner_performance_payload["history"][0]["resolved_at_label"], "18/05/2026 20:03 America/Sao_Paulo")
+        self.assertGreaterEqual(winner_performance_payload["progression"]["earned_badges_count"], 2)
+        self.assertIn("first_resolution", [badge["code"] for badge in winner_performance_payload["progression"]["latest_awards"]])
+        self.assertEqual(winner_performance_payload["progression"]["next_milestones"], [])
+
+        loser_performance = client.get("/users/me/performance", headers=loser_headers)
+        self.assertEqual(loser_performance.status_code, 200)
+        loser_history = loser_performance.json()["history"][0]
+        self.assertEqual(loser_history["prediction_id"], loser_prediction.id)
+        self.assertEqual(loser_history["result_label"], "Não acertou")
+        self.assertEqual(loser_history["reputation_delta"], loser_delta)
+        self.assertEqual(loser_history["gtc_result"], -100)
+        self.assertEqual(loser_history["educational_result_label"], "-100 GT₵")
+
         duplicate = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
             headers=staff_headers,

@@ -48,6 +48,7 @@ void main() {
     final menuLabels = [
       'Wallet',
       'Badges',
+      'Desempenho',
       'Suporte',
       'Sugerir mercado',
       'Política e segurança',

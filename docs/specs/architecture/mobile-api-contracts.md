@@ -334,12 +334,16 @@ Endpoints esperados:
 - `GET /rankings`
 - `GET /badges`
 - `GET /users/me/badges`
+- `GET /users/me/performance`
 - compartilhamento de badge conquistada quando disponivel
 
 Requisitos mobile:
 
 - staff, superuser e bots nao aparecem no ranking publico
 - app nao calcula elegibilidade de badge
+- tela `Desempenho` consome o agregado autenticado da FastAPI para placar, ultimas resolucoes, impacto reputacional, resultado GT₵ educativo e ultimas conquistas
+- `GET /users/me/performance` deve ser reconsultado ao abrir a tela, voltar do background, usar pull-to-refresh e apos mutacoes de previsao/posicao que possam afetar desempenho
+- proximos marcos so podem aparecer quando o payload trouxer progresso confiavel; o app nao deriva progresso de regras de badge localmente
 - imagens de badge em `/media/...` sao resolvidas contra o web/public base, nao contra a FastAPI
 - compartilhamento nao altera reputacao, wallet ou ranking
 

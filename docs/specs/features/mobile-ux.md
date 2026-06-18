@@ -277,8 +277,23 @@ Deve priorizar:
 - badges
 - posicao real quando existir
 - historico resumido
+- acesso a `Desempenho` pelo perfil/menu, sem nova aba principal, mostrando evolucao preditiva com placar, historico de resolucoes e progressao
 - ranking publico identificado pelo `@handle`, com badges compactas e overflow `+N` vindos de `GET /rankings`
 - sem controles operacionais de push; o estado de push mobile aparece em `Sobre` como item informativo de saude/configuracao do build
+
+### Desempenho
+
+Objetivo: responder "como minha capacidade preditiva esta evoluindo?" sem linguagem financeira.
+
+Deve priorizar:
+
+- placar compacto com reputacao, posicao, previsoes resolvidas, precisao, sequencia e categoria forte
+- historico das ultimas resolucoes do usuario com impacto em reputacao e resultado GT₵ educativo quando o backend expuser
+- progressao por badges conquistadas e ultimas conquistas
+- proximos marcos somente quando a FastAPI expuser progresso confiavel
+- dados quentes ao abrir a tela, voltar do background e usar pull-to-refresh
+- estado visitante com CTA de login
+- UI final nao deve mencionar `FastAPI`, `backend`, ROI, lucro, perda, saque, deposito ou aposta; labels de resolucao usam copy simples como `Acertou` e `Não acertou`
 
 ### Alertas
 

@@ -165,6 +165,9 @@ Deve validar:
 - extrato mostra labels humanos
 - app nao usa linguagem de dinheiro real
 - reputacao/ranking/badges sao exibidos como leitura da API
+- tela `Desempenho` autenticada exibe placar, ultimas resolucoes e progressao vindos de `GET /users/me/performance`
+- visitante na tela `Desempenho` ve CTA de login
+- tela `Desempenho` reconsulta a FastAPI ao abrir, voltar do background e usar pull-to-refresh, sem exigir logout/login ou reiniciar o app
 - app nao calcula elegibilidade de badge
 
 ## Testes automatizados minimos
@@ -187,6 +190,7 @@ Deve validar:
 - `AboutScreen`
 - `PredictionTicket`
 - `RankingScreen` exibindo `@handle`, badges e overflow `+N`
+- `PerformanceScreen` exibindo placar, historico, progressao, estados vazio/erro/visitante e refresh por pull-to-refresh
 - estado informativo de push em `Sobre`, ausente em Perfil e Alertas
 - `CommentItem`
 - estados `loading`, `empty`, `error` e `unauthenticated`
@@ -211,6 +215,7 @@ Deve validar:
 - visitante tenta prever -> login CTA
 - login -> detalhe -> preview de previsao
 - perfil -> badges/reputacao/ranking
+- perfil/menu -> desempenho
 - menu -> suporte/feedback
 - menu -> sugerir mercado
 - perfil -> sugerir mercado
@@ -246,7 +251,7 @@ Antes de considerar a UI pronta:
 - confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`
 - confirmar que a wallet prioriza `Disponível` e `Bloqueado`, mantendo recarga controlada com elegibilidade, pendencia, historico e criacao via API como secao secundaria
 - confirmar que a recarga controlada nao exibe `Fila Admin Ops` nem os quadros internos `Solicitação`, `Revisão` e `Crédito`
-- confirmar que Hoje/Mercados/Busca, detalhe de mercado, Ranking, Wallet e Alertas reconsultam a FastAPI ao entrar, voltar do background ou usar pull-to-refresh, sem exigir encerrar e abrir o app para atualizar status, ranking ou saldo
+- confirmar que Hoje/Mercados/Busca, detalhe de mercado, Ranking, Wallet, Desempenho e Alertas reconsultam a FastAPI ao entrar, voltar do background ou usar pull-to-refresh, sem exigir encerrar e abrir o app para atualizar status, ranking, desempenho ou saldo
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, email, data de nascimento, bio, reputacao, badges conquistadas, catalogo de badges e convite
 - confirmar que edicao de data de nascimento aceita digitacao so com numeros, aplica barras automaticas em `DD/MM/AAAA`, mantém calendario e envia o formato normalizado para a FastAPI

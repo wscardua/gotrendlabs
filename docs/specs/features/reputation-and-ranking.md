@@ -29,6 +29,7 @@ Exibir desempenho acumulado do usuário e ranking social de forma compreensível
 - score de reputação
 - posição no ranking
 - histórico resumido de desempenho
+- contrato autenticado de desempenho para mobile com placar, historico auditavel de resolucoes e progressao
 - ranking global por reputação persistida
 - ranking por categoria/subcategoria/evento recalculado a partir de previsões resolvidas
 - filtros públicos de categoria/subcategoria/evento
@@ -53,6 +54,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 
 - ranking reflete previsões resolvidas
 - perfil e tela de ranking usam o mesmo contrato base
+- tela mobile `Desempenho` usa `GET /users/me/performance` para exibir dados quentes de evolucao preditiva sem calcular delta, GT₵, ranking ou badges no app
 - visitantes podem consultar ranking, mas "Seu recorte" deve convidar login sem exibir posição fictícia
 - usuários autenticados veem seu recorte somente quando houver dados reais no ranking filtrado/global exibido
 - administradores, superusuários, bots e dados internos/dev não aparecem no ranking público

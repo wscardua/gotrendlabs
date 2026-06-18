@@ -55,6 +55,7 @@ O APK deve ser gerenciado no Admin Ops, armazenado em `MEDIA_ROOT/app_releases/a
 - leitura e criacao de comentarios
 - wallet resumida e extrato
 - perfil autenticado
+- tela autenticada `Desempenho`, acessivel pelo menu/perfil, com placar, historico de resolucoes e progressao vindos de contrato FastAPI agregado
 - ranking e badges em leitura
 - suporte/feedback via fila FastAPI existente
 - sugestao de mercados via fila FastAPI existente
@@ -191,7 +192,7 @@ Perfil no MVP:
 - reputacao
 - badges conquistadas
 - catalogo de badges com imagens e estado de conquista
-- estatisticas resumidas quando contrato existir
+- estatisticas/desempenho por `GET /users/me/performance`, incluindo reputacao atual, posicao, previsoes resolvidas, precisao, sequencia, categoria forte, historico auditavel de resolucoes e ultimas conquistas
 - acesso a configuracoes basicas
 - acesso a convite/indicacao quando backend habilitar
 - acesso a suporte/feedback
@@ -206,6 +207,7 @@ Perfil no MVP:
 - saldo e extrato usam ledger/projecao da API
 - mercados com fechamento automatico vencido devem ser tratados pela FastAPI como efetivamente fechados nos payloads e nas mutacoes, sem regra local no app
 - reputacao, ranking e badges sao leitura da API
+- desempenho do usuario logado usa contrato agregado da FastAPI; o app nao calcula impacto reputacional, resultado GT₵, ranking, badges ou proximos marcos localmente
 - imagens de mercado/badges usam `image_url`/`thumb` retornados pela API, com fallback visual apenas de apresentacao
 - feedback e sugestoes sao enviados para filas do backend; visitante informa nome/email e desafio anti-abuso mobile, enquanto revisao, recompensa e conversao em mercado ficam no backend/Admin Ops
 - visitantes podem explorar, mas mutacoes autenticadas exigem login

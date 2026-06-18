@@ -2,6 +2,30 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260618-MOBILE-PERFORMANCE-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`, `FEAT-REP-001`
+- Objetivo: criar a tela mobile autenticada `Desempenho` com placar, historico auditavel de resolucoes e progressao, usando contrato agregado da FastAPI e dados quentes.
+- Etapa atual: implementacao local concluida em branch `feature/mobile-user-performance`, com `origin/main` atualizado antes da branch.
+- Artefatos afetados:
+  - `apps/api/backend_api/main.py`
+  - `apps/api/backend_api/schemas.py`
+  - `apps/mobile/lib/src/features/performance/`
+  - `apps/mobile/lib/src/features/live_refresh.dart`
+  - `apps/mobile/lib/src/features/shell/shell_screen.dart`
+  - `apps/mobile/lib/src/features/profile/profile_screen.dart`
+  - `tests/test_web_smoke.py`
+  - `apps/mobile/test/`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `docs/specs/`
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-18
+- Atualizado em: 2026-06-18
+- Reversao logica: remover `GET /users/me/performance`, retirar a tela `Desempenho` do app/menu/perfil/live refresh e voltar a usar apenas Perfil/Ranking/Badges como superficies de reputacao.
+- Evidencias de validacao local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/schemas.py`; `.venv/bin/python manage.py check`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_admin_resolve_market_applies_payout_loss_and_reputation_formula --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 201 testes OK; `cd apps/mobile && flutter test test/performance_screen_test.dart test/shell_screen_test.dart test/push_placement_test.dart`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test` com 87 testes OK; apos ajuste final de copy, `.venv/bin/python -m py_compile apps/api/backend_api/main.py`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_admin_resolve_market_applies_payout_loss_and_reputation_formula --keepdb`; `cd apps/mobile && flutter test test/performance_screen_test.dart`; `cd apps/mobile && flutter analyze`; `git diff --check`; APK debug instalado no Galaxy S20 `SM G980F` com API/web locais via `adb reverse` para `127.0.0.1:8001` e `127.0.0.1:8000`.
+
 ## WFLOW-20260618-MOBILE-PROFILE-DATE-DESK-001
 
 - Tipo: `change-feature`
