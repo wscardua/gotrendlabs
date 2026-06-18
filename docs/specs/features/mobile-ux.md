@@ -222,6 +222,7 @@ Deve priorizar:
 - chips de categoria
 - secoes horizontais de tendencias com mercados abertos ordenados por engajamento visual
 - resumo educativo de produto quando util
+- `Sua mesa` para usuarios autenticados deve contar posicoes ativas por `viewer_position.has_position`, nao participacao historica por `viewer_has_prediction`; o atalho de mercados abertos usa apenas posicoes ativas em mercados `open`
 
 Nao deve abrir com hero marketing.
 
@@ -235,6 +236,7 @@ Deve priorizar:
 - cards escaneaveis
 - ordenacao clara
 - estados de lista vazia
+- recorte `Posições` baseado em `viewer_position.has_position=true`, sem incluir mercados onde o usuario apenas participou historicamente
 
 ### Detalhe
 
@@ -270,7 +272,7 @@ Deve priorizar:
 
 - handle
 - dados privados conferiveis pelo usuario autenticado: email, data de nascimento e bio
-- edicao privada desses dados em bottom sheet, com data digitavel em `DD/MM/AAAA` ou selecionavel por calendario
+- edicao privada desses dados em bottom sheet, com data de nascimento digitavel so com numeros e barras automaticas em `DD/MM/AAAA`, ou selecionavel por calendario
 - reputacao
 - badges
 - posicao real quando existir

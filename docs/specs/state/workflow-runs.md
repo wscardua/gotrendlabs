@@ -2,6 +2,31 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260618-MOBILE-PROFILE-DATE-DESK-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: melhorar a digitação de data de nascimento no perfil mobile e corrigir os contadores/recorte da mesa autenticada para considerar somente posições ativas.
+- Etapa atual: concluído localmente; branch `fix/mobile-birth-date-autoslash` contém a correção de data e a correção de `Sua mesa`, com PR/publicação pendentes neste fechamento.
+- Artefatos afetados:
+  - `apps/mobile/lib/src/features/profile/profile_screen.dart`
+  - `apps/mobile/lib/src/features/markets/market_models.dart`
+  - `apps/mobile/lib/src/features/markets/markets_screen.dart`
+  - `apps/mobile/test/push_placement_test.dart`
+  - `apps/mobile/test/markets_screen_test.dart`
+  - `docs/specs/features/mobile-ux.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-18
+- Atualizado em: 2026-06-18
+- Encerrado em: 2026-06-18
+- Retomada: criar PR em português, mergear em `main`, acompanhar `GoTrendLabs CI and Deploy` e validar se o canal APK público deve ser atualizado em follow-up; APK debug já foi instalado no Galaxy S20 para QA físico.
+- Reversão lógica: remover o formatter local de data, voltar o campo a aceitar apenas a digitação anterior e restaurar `Sua mesa`/`Posições` para o comportamento anterior baseado em `viewer_has_prediction`.
+- Evidências de validação local: `cd apps/mobile && flutter test test/push_placement_test.dart`; `cd apps/mobile && flutter test test/markets_screen_test.dart`; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test`; `git diff --check`; APK debug instalado no Galaxy S20 `SM G980F` apontando para `https://gotrendlabs.com.br/api`, versão `1.0.7 (8)`.
+
 ## WFLOW-20260618-MOBILE-PROFILE-CONTRIBUTION-WALLET-001
 
 - Tipo: `change-feature`

@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-06-18 — FEAT-MOBILE-001 ajustes de perfil e mesa autenticada
+
+- Campo mobile `Data de nascimento` no perfil passou a aceitar digitacao apenas de numeros com barras automaticas em `DD/MM/AAAA`, preservando envio `YYYY-MM-DD` para a FastAPI.
+- Recorte `Posições` em `Mercados` passou a usar `viewer_position.has_position` como fonte de verdade de posicao ativa, sem listar mercados onde o usuario tem apenas participacao historica.
+- Atalho `Sua mesa` em `Hoje` passou a contar posicoes ativas por `viewer_position.has_position` e substituiu o contador ambiguo `Encerram` por `Abertas`, restrito a posicoes ativas em mercados abertos.
+- Testes Flutter cobrem o formatter de data, payload normalizado de perfil e a regressao de mesa em que `viewer_has_prediction=true` sem posicao ativa nao deve entrar em `Posições`.
+
 ## 2026-06-18 — FEAT-MOBILE-001 limpeza de perfil, contribuição e wallet
 
 - Perfil mobile autenticado passou a exibir email, data de nascimento e bio em uma seção privada, com edição em bottom sheet e data em formato `DD/MM/AAAA`.

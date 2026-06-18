@@ -148,7 +148,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
           final deskOk = switch (_deskFilter) {
             MarketDeskFilter.all => true,
             MarketDeskFilter.favorites => market.viewerHasFavorite,
-            MarketDeskFilter.positions => market.viewerHasPrediction,
+            MarketDeskFilter.positions => market.viewerHasActivePosition,
           };
           final categoryOk = _category.isEmpty || market.category == _category;
           final statusOk = _status.isEmpty || market.status == _status;
@@ -335,18 +335,13 @@ class _DeskSnapshot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final positions = markets
-        .where((market) => market.viewerHasPrediction)
+        .where((market) => market.viewerHasActivePosition)
         .length;
     final favorites = markets
         .where((market) => market.viewerHasFavorite)
         .length;
-    final closingSoon = markets
-        .where(
-          (market) =>
-              market.viewerHasPrediction &&
-              market.isOpen &&
-              market.closesIn.trim().isNotEmpty,
-        )
+    final openPositions = markets
+        .where((market) => market.viewerHasActivePosition && market.isOpen)
         .length;
     if (positions == 0 && favorites == 0) {
       return const SizedBox.shrink();
@@ -366,6 +361,7 @@ class _DeskSnapshot extends StatelessWidget {
             children: [
               Expanded(
                 child: _DeskActionTile(
+                  key: const ValueKey('desk-tile-positions'),
                   label: 'Posições',
                   value: positions.toString(),
                   icon: Icons.stacked_line_chart,
@@ -378,6 +374,7 @@ class _DeskSnapshot extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _DeskActionTile(
+                  key: const ValueKey('desk-tile-favorites'),
                   label: 'Favoritos',
                   value: favorites.toString(),
                   icon: Icons.bookmark_border,
@@ -390,11 +387,12 @@ class _DeskSnapshot extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: _DeskActionTile(
-                  label: 'Encerram',
-                  value: closingSoon.toString(),
-                  icon: Icons.timer_outlined,
+                  key: const ValueKey('desk-tile-open-positions'),
+                  label: 'Abertas',
+                  value: openPositions.toString(),
+                  icon: Icons.lock_open_outlined,
                   color: GtlColors.accentBlue,
-                  onTap: positions == 0
+                  onTap: openPositions == 0
                       ? null
                       : () => onOpenDesk?.call(MarketDeskFilter.positions),
                 ),
@@ -409,6 +407,7 @@ class _DeskSnapshot extends StatelessWidget {
 
 class _DeskActionTile extends StatelessWidget {
   const _DeskActionTile({
+    super.key,
     required this.label,
     required this.value,
     required this.icon,
