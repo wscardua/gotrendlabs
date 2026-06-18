@@ -81,14 +81,16 @@ void main() {
       find.widgetWithText(TextField, 'Data de nascimento'),
     );
     expect(birthDateField.controller?.text, '18/06/1990');
+    expect(birthDateField.keyboardType, TextInputType.number);
     await tester.enterText(
       find.widgetWithText(TextField, 'Email'),
       'novo@example.com',
     );
     await tester.enterText(
       find.widgetWithText(TextField, 'Data de nascimento'),
-      '01/02/1991',
+      '01021991',
     );
+    expect(find.text('01/02/1991'), findsOneWidget);
     await tester.enterText(
       find.widgetWithText(TextField, 'Bio'),
       'Bio atualizada',

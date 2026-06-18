@@ -270,7 +270,7 @@ Deve priorizar:
 
 - handle
 - dados privados conferiveis pelo usuario autenticado: email, data de nascimento e bio
-- edicao privada desses dados em bottom sheet, com data digitavel em `DD/MM/AAAA` ou selecionavel por calendario
+- edicao privada desses dados em bottom sheet, com data de nascimento digitavel so com numeros e barras automaticas em `DD/MM/AAAA`, ou selecionavel por calendario
 - reputacao
 - badges
 - posicao real quando existir

@@ -509,16 +509,13 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
               TextField(
                 controller: _birthDate,
                 enabled: !_busy && emailConfirmed,
-                keyboardType: TextInputType.datetime,
+                keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
-                inputFormatters: [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9/\-]')),
-                  LengthLimitingTextInputFormatter(10),
-                ],
+                inputFormatters: const [_BirthDateInputFormatter()],
                 decoration: InputDecoration(
                   labelText: 'Data de nascimento',
                   hintText: 'DD/MM/AAAA',
-                  helperText: 'Digite com barras ou use o calendário.',
+                  helperText: 'Digite só números ou use o calendário.',
                   suffixIcon: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -736,6 +733,31 @@ String _toIsoDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
   return '${date.year}-$month-$day';
+}
+
+class _BirthDateInputFormatter extends TextInputFormatter {
+  const _BirthDateInputFormatter();
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limited = digits.length > 8 ? digits.substring(0, 8) : digits;
+    final buffer = StringBuffer();
+    for (var index = 0; index < limited.length; index += 1) {
+      if (index == 2 || index == 4) {
+        buffer.write('/');
+      }
+      buffer.write(limited[index]);
+    }
+    final formatted = buffer.toString();
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
 }
 
 class _ReputationPanel extends StatelessWidget {

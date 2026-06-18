@@ -249,7 +249,7 @@ Antes de considerar a UI pronta:
 - confirmar que Hoje/Mercados/Busca, detalhe de mercado, Ranking, Wallet e Alertas reconsultam a FastAPI ao entrar, voltar do background ou usar pull-to-refresh, sem exigir encerrar e abrir o app para atualizar status, ranking ou saldo
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
 - confirmar que perfil mostra dados de perfil, email, data de nascimento, bio, reputacao, badges conquistadas, catalogo de badges e convite
-- confirmar que edicao de data de nascimento aceita digitacao com barras em `DD/MM/AAAA` e calendario, enviando o formato normalizado para a FastAPI
+- confirmar que edicao de data de nascimento aceita digitacao so com numeros, aplica barras automaticas em `DD/MM/AAAA`, mantém calendario e envia o formato normalizado para a FastAPI
 - confirmar que usuario sem email confirmado pode corrigir somente o email e recebe nova confirmacao, sem liberar bio/data antes da confirmacao
 - confirmar que o menu segue a ordem Wallet, Badges, Suporte, Sugerir mercado, Política e segurança, Sobre e Sair quando autenticado
 - confirmar que sugestao de mercado segue acessivel pelo Perfil
