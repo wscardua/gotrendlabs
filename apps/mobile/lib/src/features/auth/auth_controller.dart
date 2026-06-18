@@ -246,6 +246,16 @@ class AuthController extends Notifier<AuthState> {
     state = state.copyWith(busy: false);
   }
 
+  void syncProfileUser(Map<String, dynamic> profile) {
+    final user = profile['user'];
+    if (user is! Map) {
+      return;
+    }
+    state = state.copyWith(
+      user: GtlUser.fromJson(Map<String, dynamic>.from(user)),
+    );
+  }
+
   Future<void> _authenticate(
     Future<AuthResult> Function() call, {
     bool rememberSession = true,

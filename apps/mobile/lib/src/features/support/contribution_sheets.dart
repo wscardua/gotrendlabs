@@ -88,11 +88,6 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
             decoration: const InputDecoration(labelText: 'Email'),
           ),
           const SizedBox(height: 10),
-          AntiAbuseChallengeField(
-            controller: _antiAbuseAnswer,
-            enabled: !_busy,
-          ),
-          const SizedBox(height: 10),
         ],
         DropdownButtonFormField<String>(
           initialValue: _feedbackType,
@@ -110,6 +105,13 @@ class _FeedbackSheetState extends ConsumerState<_FeedbackSheet> {
           maxLines: 6,
           decoration: const InputDecoration(labelText: 'Descrição'),
         ),
+        if (!auth.isAuthenticated) ...[
+          const SizedBox(height: 10),
+          AntiAbuseChallengeField(
+            controller: _antiAbuseAnswer,
+            enabled: !_busy,
+          ),
+        ],
       ],
     );
   }
@@ -235,11 +237,6 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
             decoration: const InputDecoration(labelText: 'Email'),
           ),
           const SizedBox(height: 10),
-          AntiAbuseChallengeField(
-            controller: _antiAbuseAnswer,
-            enabled: !_busy,
-          ),
-          const SizedBox(height: 10),
         ],
         TextField(
           controller: _question,
@@ -293,6 +290,13 @@ class _SuggestionSheetState extends ConsumerState<_SuggestionSheet> {
           maxLines: 5,
           decoration: const InputDecoration(labelText: 'Contexto'),
         ),
+        if (!auth.isAuthenticated) ...[
+          const SizedBox(height: 10),
+          AntiAbuseChallengeField(
+            controller: _antiAbuseAnswer,
+            enabled: !_busy,
+          ),
+        ],
       ],
     );
   }
@@ -438,7 +442,7 @@ class _ContributionScaffold extends StatelessWidget {
               GtlEditorialHeader(
                 kicker: 'Contribuição',
                 title: title,
-                body: 'Envie para a fila FastAPI/Admin Ops, sem lógica local.',
+                body: 'Envie sua contribuição para análise da equipe.',
                 trailing: IconButton(
                   onPressed: () => Navigator.of(context).pop(),
                   icon: const Icon(Icons.close),

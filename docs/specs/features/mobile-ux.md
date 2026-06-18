@@ -258,6 +258,7 @@ Deve priorizar:
 - saldo atual separado em `Disponível` e `Bloqueado`
 - extrato rastreavel
 - recarga educativa como acao secundaria, abaixo do resumo da carteira
+- recarga controlada sem expor jargao operacional como `Fila Admin Ops` nem passos internos em cards
 - copy clara de moeda educativa
 - ausencia de linguagem de investimento, saque ou deposito real
 
@@ -268,6 +269,8 @@ Objetivo: reputacao publica.
 Deve priorizar:
 
 - handle
+- dados privados conferiveis pelo usuario autenticado: email, data de nascimento e bio
+- edicao privada desses dados em bottom sheet, com data digitavel em `DD/MM/AAAA` ou selecionavel por calendario
 - reputacao
 - badges
 - posicao real quando existir
@@ -344,6 +347,7 @@ Evitar:
 
 - primeira tela mostra experiencia util, nao marketing
 - contribuicoes publicas como feedback e sugestao de mercado ficam descobriveis no app e concluidas sem navegador externo
+- desafio anti-abuso de visitante em feedback deve aparecer depois de `Descricao`; em sugestao de mercado, depois de `Contexto`
 - cards de mercado continuam legiveis com imagens claras ou escuras
 - pergunta principal nao fica encoberta por controles
 - bottom navigation nao cobre CTA critico sem alternativa

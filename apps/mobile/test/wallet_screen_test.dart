@@ -49,6 +49,10 @@ void main() {
       expect(find.text('BLOQUEADO'), findsOneWidget);
       expect(find.text('1700 GT₵'), findsWidgets);
       expect(find.text('300 GT₵'), findsOneWidget);
+      expect(find.text('Fila Admin Ops'), findsNothing);
+      expect(find.text('Solicitação'), findsNothing);
+      expect(find.text('Revisão'), findsNothing);
+      expect(find.text('Crédito'), findsNothing);
       expect(
         tester.getTopLeft(find.text('Sua carteira')).dy,
         lessThan(tester.getTopLeft(find.text('Recarga educativa')).dy),
