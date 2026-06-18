@@ -68,6 +68,12 @@ void main() {
                 slug: 'posicao',
                 title: 'Mercado com posição ativa',
                 prediction: true,
+                activePosition: true,
+              ),
+              _market(
+                slug: 'historico',
+                title: 'Mercado com participação histórica',
+                prediction: true,
               ),
               _market(slug: 'geral', title: 'Mercado geral'),
             ];
@@ -84,13 +90,14 @@ void main() {
 
     expect(find.text('Mercado salvo pelo usuário'), findsOneWidget);
     expect(find.text('Mercado com posição ativa'), findsOneWidget);
-    expect(find.text('Mercado geral'), findsOneWidget);
+    expect(find.text('Mercado com participação histórica'), findsOneWidget);
 
     await tester.tap(find.text('Favoritos'));
     await tester.pumpAndSettle();
 
     expect(find.text('Mercado salvo pelo usuário'), findsOneWidget);
     expect(find.text('Mercado com posição ativa'), findsNothing);
+    expect(find.text('Mercado com participação histórica'), findsNothing);
     expect(find.text('Mercado geral'), findsNothing);
 
     await tester.tap(find.text('Posições'));
@@ -98,7 +105,71 @@ void main() {
 
     expect(find.text('Mercado salvo pelo usuário'), findsNothing);
     expect(find.text('Mercado com posição ativa'), findsOneWidget);
+    expect(find.text('Mercado com participação histórica'), findsNothing);
     expect(find.text('Mercado geral'), findsNothing);
+  });
+
+  testWidgets('TodayScreen desk counts active positions, not history', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          marketsProvider.overrideWith((ref) async {
+            return [
+              _market(
+                slug: 'ativa',
+                title: 'Mercado aberto com posição ativa',
+                prediction: true,
+                activePosition: true,
+              ),
+              _market(
+                slug: 'historica',
+                title: 'Mercado aberto só com histórico',
+                prediction: true,
+              ),
+              _market(
+                slug: 'favorito',
+                title: 'Mercado favorito',
+                favorite: true,
+              ),
+            ];
+          }),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: TodayScreen()),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sua mesa'), findsOneWidget);
+    expect(find.text('Encerram'), findsNothing);
+    expect(find.text('Abertas'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('desk-tile-positions')),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('desk-tile-open-positions')),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const ValueKey('desk-tile-favorites')),
+        matching: find.text('1'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('TodayScreen pull refresh waits for fresh market data', (
@@ -261,6 +332,7 @@ Market _market({
   int volume = 120,
   bool favorite = false,
   bool prediction = false,
+  bool activePosition = false,
 }) {
   return Market.fromJson({
     'slug': slug,
@@ -289,6 +361,28 @@ Market _market({
     'resolution_criteria': 'Critério',
     'viewer_has_favorite': favorite,
     'viewer_has_prediction': prediction,
+    'viewer_position': {
+      'has_position': activePosition,
+      'option_id': activePosition ? 1 : null,
+      'option_label': activePosition ? 'SIM' : '',
+      'active_stake_amount': activePosition ? 100 : 0,
+      'potential_payout_total': activePosition ? 150 : 0,
+      'position_count': activePosition ? 1 : 0,
+      'reinforcement_count': 0,
+      'reinforcement_remaining': activePosition ? 2 : 0,
+      'reinforcement_max_count': 2,
+      'revision_count': 0,
+      'revision_remaining': activePosition ? 1 : 0,
+      'revision_penalty_percent': 15,
+      'revision_penalty_amount': 0,
+      'revision_new_stake_amount': 0,
+      'can_reinforce': activePosition,
+      'can_revise': activePosition,
+      'reinforcement_blocked_reason': '',
+      'revision_blocked_reason': '',
+      'active_entries': [],
+      'history': [],
+    },
     'options': [],
   });
 }

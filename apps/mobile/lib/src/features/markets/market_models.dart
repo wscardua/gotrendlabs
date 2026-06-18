@@ -148,6 +148,7 @@ class Market {
   bool get isOpen => status == 'open';
   bool get isResolved => status == 'resolved';
   bool get isLocked => status == 'locked';
+  bool get viewerHasActivePosition => viewerPosition.hasPosition;
   String get probabilityLabel => formatProbability(primaryProbability);
   String get volumeLabel => formatGtl(humanVolumeGtl);
   String get timeRemainingLabel {

@@ -116,8 +116,8 @@ Quando houver usuario de teste:
 10. Confirmar previsao.
 11. Ver saldo/estado atualizado pela resposta da API.
 12. Ver o mercado favoritado no recorte `Favoritos`.
-13. Ver o mercado com previsão no recorte `Posições`.
-14. Ver atalhos de `Sua mesa` na tela `Hoje` quando houver favoritos ou posições.
+13. Ver o mercado com posição ativa no recorte `Posições`, sem incluir participação histórica encerrada ou zerada.
+14. Ver atalhos de `Sua mesa` na tela `Hoje` quando houver favoritos ou posições ativas, com contador `Abertas` apenas para posições ativas em mercados abertos.
 15. Abrir `Sobre` e conferir versão/build, saúde da API e diagnóstico seguro sem endereço de endpoint.
 16. Fazer login com `Lembrar login` ligado e validar restauracao da sessao pelo token seguro.
 17. Fazer login com `Lembrar login` desligado e validar que o token nao fica persistido para reabertura futura.
@@ -281,7 +281,8 @@ Antes de considerar a UI pronta:
 - testar tema dark como padrao
 - confirmar que tema, app shell, cards, detalhe, ticket, wallet, ranking, alertas, busca, perfil, badges e bottom sheets usam o mesmo design system dark-first/editorial, sem cards genéricos ou estados soltos
 - confirmar que `Mercados` permite alternar `Todos`, `Favoritos` e `Posições`, com estados vazios claros quando não houver itens
-- confirmar que `Hoje` exibe `Sua mesa` para usuário autenticado com favoritos/posições e abre `Mercados` no recorte escolhido
+- confirmar que `Hoje` exibe `Sua mesa` para usuário autenticado com favoritos/posições ativas e abre `Mercados` no recorte escolhido
+- confirmar que `Sua mesa` e o recorte `Posições` usam `viewer_position.has_position`, sem contar mercados onde o usuário tem apenas participação histórica
 - confirmar que `Hoje` nao exibe mercados fechados em destaque/tendencias e prioriza mercados abertos com mais engajamento
 - confirmar que cards exibem prazo restante compacto sem aumentar a altura atual e que a barra muda de cor conforme o fechamento se aproxima
 - confirmar que tocar no hero de imagem dentro do detalhe nao empilha a mesma tela novamente
