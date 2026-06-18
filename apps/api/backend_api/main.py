@@ -7511,7 +7511,10 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
     with get_connection() as connection:
         with connection.cursor() as cursor:
             user = _current_user(cursor, authorization)
-            _require_email_confirmed(user)
+            email_change_requested = payload.email is not None and payload.email.lower() != user["email"].lower()
+            profile_fields_requested = bool(payload.model_fields_set - {"email"})
+            if profile_fields_requested or not email_change_requested:
+                _require_email_confirmed(user)
             updates = []
             values = []
             if payload.display_name is not None:

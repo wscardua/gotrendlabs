@@ -252,8 +252,6 @@ class _RechargeCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Fila Admin Ops'),
-                    SizedBox(height: 4),
                     Text(
                       'Recarga controlada',
                       style: TextStyle(
@@ -279,14 +277,6 @@ class _RechargeCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text(
             'Crédito educativo sob revisão administrativa, disponível quando seu crédito livre estiver em até ${formatGtl(minBalance)}.',
-          ),
-          const SizedBox(height: 12),
-          const Row(
-            children: [
-              _RechargeStep(number: '1', label: 'Solicitação'),
-              _RechargeStep(number: '2', label: 'Revisão'),
-              _RechargeStep(number: '3', label: 'Crédito'),
-            ],
           ),
           const SizedBox(height: 12),
           if (pending != null) ...[
@@ -355,36 +345,6 @@ class _RechargeCard extends StatelessWidget {
       }
     }
     return null;
-  }
-}
-
-class _RechargeStep extends StatelessWidget {
-  const _RechargeStep({required this.number, required this.label});
-
-  final String number;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          border: Border.all(color: GtlColors.border),
-          borderRadius: BorderRadius.circular(GtlRadii.medium),
-          color: GtlColors.surfaceInk,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
-          child: Column(
-            children: [
-              Text(number, style: const TextStyle(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 4),
-              FittedBox(child: Text(label)),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
 

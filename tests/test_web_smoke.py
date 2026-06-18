@@ -3178,6 +3178,42 @@ class BackendAuthAPITests(TransactionTestCase):
         )
         self.assertEqual(allowed.status_code, 201, allowed.json())
 
+    def test_unconfirmed_user_can_update_email_and_get_new_confirmation(self):
+        site_config = SiteConfig.get_solo()
+        site_config.email_enabled = True
+        site_config.save()
+        client = TestClient(app)
+        response = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Correct Email User",
+                "email": "wrong-email-user@example.com",
+                "language": "pt-br",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        user_id = response.json()["user"]["id"]
+        headers = {"Authorization": f"Bearer {response.json()['session']['token']}"}
+
+        blocked_profile = client.patch("/users/me", headers=headers, json={"bio": "Ainda pendente"})
+        self.assertEqual(blocked_profile.status_code, 403)
+        self.assertEqual(blocked_profile.json()["detail"], "Confirme seu email para liberar esta ação.")
+
+        updated = client.patch("/users/me", headers=headers, json={"email": "correct-email-user@example.com"})
+        self.assertEqual(updated.status_code, 200, updated.json())
+        self.assertEqual(updated.json()["user"]["email"], "correct-email-user@example.com")
+        self.assertFalse(updated.json()["user"]["email_confirmed"])
+        self.assertTrue(
+            EmailDelivery.objects.filter(
+                recipient_user_id=user_id,
+                recipient_email="correct-email-user@example.com",
+                template_key="user.email_confirmation",
+            ).exists()
+        )
+        self.assertEqual(EmailConfirmationToken.objects.filter(user_id=user_id, used_at__isnull=True).count(), 1)
+
     def test_register_sends_welcome_and_confirmation_immediately_when_email_enabled(self):
         site_config = SiteConfig.get_solo()
         site_config.email_enabled = True

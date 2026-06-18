@@ -72,6 +72,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - cadastro com email ativo em produção cria conta em login limitado, envia boas-vindas e, quando necessário, envia link de confirmação
 - usuário com email não confirmado pode entrar, mas ações sensíveis ficam bloqueadas até confirmar o endereço
 - alteração de email no perfil invalida a confirmação anterior e dispara novo link de confirmação quando email estiver ativo
+- usuário com email ainda não confirmado pode corrigir apenas o email no perfil para receber novo link de confirmação; demais campos privados continuam bloqueados até a confirmação
 - login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`) e iniciam OAuth real via Django, mantendo a FastAPI como fonte de verdade do vínculo e da sessão
 - clique em login social registra aceite da política de uso vigente; email verificado pelo provedor nasce confirmado, email não verificado nasce em login limitado e recebe link de confirmação; quando uma identidade social nova não retorna email, a FastAPI emite token pendente assinado/expirável e a web solicita email antes de criar a conta limitada
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
@@ -169,6 +170,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo de cadastro com código de indicação válido, inválido e bônus desativado
 - fluxo de edição de perfil na própria página autenticada
 - regressão para `/profile/` renderizar dados reais de `gotrendlabs_user_profiles`, incluindo `display_name`, `bio`, `birth_date` e `sex`
+- regressão para usuário em login limitado corrigir email e receber nova confirmação sem liberar edição de bio/data antes da confirmação
 - fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público
 - fluxo de exclusão lógica
 - fluxo staff de listagem/detalhe administrativo de usuário

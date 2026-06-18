@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-18 — FEAT-MOBILE-001 limpeza de perfil, contribuição e wallet
+
+- Perfil mobile autenticado passou a exibir email, data de nascimento e bio em uma seção privada, com edição em bottom sheet e data em formato `DD/MM/AAAA`.
+- Usuário em login limitado pode corrigir somente o email pelo app e receber nova confirmação; data de nascimento e bio continuam bloqueadas até a confirmação do endereço.
+- Feedback e sugestão de mercado no app movem o desafio anti-abuso para depois de `Descrição`/`Contexto`, mantendo token e resposta assinados pela FastAPI.
+- Bottom sheets de contribuição deixam de expor termos técnicos como `FastAPI/Admin Ops` para usuários finais.
+- Wallet mobile remove a etiqueta `Fila Admin Ops` e os quadros explicativos `Solicitação`, `Revisão` e `Crédito` da recarga controlada, preservando elegibilidade, pendência, histórico e criação via API.
+
 ## 2026-06-18 — FEAT-MARKET-001 probabilidade derivada das opções
 
 - `gotrendlabs_markets` deixou de persistir `primary_probability_exact` e `secondary_probability_exact`; a fonte única de consenso passa a ser `gotrendlabs_market_options.probability_exact`.

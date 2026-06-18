@@ -245,13 +245,17 @@ Antes de considerar a UI pronta:
 - confirmar que mercado auto-close vencido aparece como `Fechado` no mobile e bloqueia preview/criacao/reforco/revisao pela FastAPI
 - confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`
 - confirmar que a wallet prioriza `Disponível` e `Bloqueado`, mantendo recarga controlada com elegibilidade, pendencia, historico e criacao via API como secao secundaria
+- confirmar que a recarga controlada nao exibe `Fila Admin Ops` nem os quadros internos `Solicitação`, `Revisão` e `Crédito`
 - confirmar que Hoje/Mercados/Busca, detalhe de mercado, Ranking, Wallet e Alertas reconsultam a FastAPI ao entrar, voltar do background ou usar pull-to-refresh, sem exigir encerrar e abrir o app para atualizar status, ranking ou saldo
 - confirmar que o acesso a perfil usa icone neutro, sem parecer acao de sair
-- confirmar que perfil mostra dados de perfil, reputacao, badges conquistadas, catalogo de badges e convite
+- confirmar que perfil mostra dados de perfil, email, data de nascimento, bio, reputacao, badges conquistadas, catalogo de badges e convite
+- confirmar que edicao de data de nascimento aceita digitacao com barras em `DD/MM/AAAA` e calendario, enviando o formato normalizado para a FastAPI
+- confirmar que usuario sem email confirmado pode corrigir somente o email e recebe nova confirmacao, sem liberar bio/data antes da confirmacao
 - confirmar que o menu segue a ordem Wallet, Badges, Suporte, Sugerir mercado, Política e segurança, Sobre e Sair quando autenticado
 - confirmar que sugestao de mercado segue acessivel pelo Perfil
 - confirmar que sugestao de mercado segue acessivel pelo menu principal
 - confirmar que cadastro, feedback e sugestao de mercado como visitante exibem desafio anti-abuso dentro do app e enviam `anti_abuse_token`/`anti_abuse_answer` para a FastAPI
+- confirmar que o desafio anti-abuso de feedback visitante aparece depois de `Descrição` e o de sugestao visitante aparece depois de `Contexto`
 - confirmar que feedback/sugestao autenticados nao exigem desafio anti-abuso
 - confirmar que politica de uso, conceitos e seguranca estao acessiveis no menu e perfil
 - confirmar que sugestao de mercado carrega categorias ativas da taxonomia

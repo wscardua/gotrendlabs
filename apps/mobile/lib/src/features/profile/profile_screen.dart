@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/environment.dart';
 import '../../core/formatters.dart';
+import '../../core/providers.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
@@ -15,6 +17,31 @@ import 'badges_screen.dart';
 import '../ranking/ranking_screen.dart';
 import '../support/contribution_sheets.dart';
 import '../wallet/wallet_screen.dart';
+
+final profileRepositoryProvider = Provider<ProfileRepository>(
+  (ref) => ProfileRepository(ref.watch(apiClientProvider)),
+);
+
+class ProfileRepository {
+  const ProfileRepository(this._api);
+
+  final ApiClient _api;
+
+  Future<Map<String, dynamic>> updatePrivateProfile({
+    required String email,
+    required String birthDate,
+    required String bio,
+  }) {
+    return _api.patchMap(
+      '/users/me',
+      data: {'email': email, 'birth_date': birthDate, 'bio': bio},
+    );
+  }
+
+  Future<Map<String, dynamic>> updateEmail({required String email}) {
+    return _api.patchMap('/users/me', data: {'email': email});
+  }
+}
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -52,6 +79,15 @@ class ProfileScreen extends ConsumerWidget {
                             user: user,
                             profile: profile,
                             emailConfirmed: auth.user?.emailConfirmed == true,
+                          ),
+                          const SizedBox(height: 12),
+                          _PrivateProfilePanel(
+                            user: user,
+                            profile: profile,
+                            onEdit: () => showProfileEditSheet(
+                              context,
+                              initialProfile: profile,
+                            ),
                           ),
                           const SizedBox(height: 12),
                           const _BiometricSettingsPanel(),
@@ -154,6 +190,21 @@ class ProfileScreen extends ConsumerWidget {
   }
 }
 
+Future<void> showProfileEditSheet(
+  BuildContext context, {
+  required Map<String, dynamic> initialProfile,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: GtlColors.surfaceElevated,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(GtlRadii.large)),
+    ),
+    builder: (_) => _ProfileEditSheet(initialProfile: initialProfile),
+  );
+}
+
 class _BiometricSettingsPanel extends ConsumerWidget {
   const _BiometricSettingsPanel();
 
@@ -224,7 +275,6 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final displayName = user['display_name']?.toString() ?? 'Usuário';
     final handle = _handleLabel(user['handle']?.toString() ?? '');
-    final bio = profile['bio']?.toString() ?? '';
     final category = profile['strong_category']?.toString() ?? '';
     return GtlSurface(
       glowColor: GtlColors.accentBlue,
@@ -262,10 +312,350 @@ class _ProfileHeader extends StatelessWidget {
             const SizedBox(height: 12),
             _Pill(label: category, icon: Icons.category_outlined),
           ],
-          if (bio.isNotEmpty) ...[const SizedBox(height: 12), Text(bio)],
         ],
       ),
     );
+  }
+}
+
+class _PrivateProfilePanel extends StatelessWidget {
+  const _PrivateProfilePanel({
+    required this.user,
+    required this.profile,
+    required this.onEdit,
+  });
+
+  final Map<String, dynamic> user;
+  final Map<String, dynamic> profile;
+  final VoidCallback onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final email = user['email']?.toString() ?? '';
+    final birthDate = profile['birth_date']?.toString() ?? '';
+    final bio = profile['bio']?.toString() ?? '';
+
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          GtlSectionTitle(
+            title: 'Dados pessoais',
+            subtitle: 'Informações privadas para conferência e edição',
+            trailing: TextButton.icon(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text('Editar'),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _PrivateDataRow(
+            icon: Icons.alternate_email,
+            label: 'Email',
+            value: email.isEmpty ? 'Não informado' : email,
+          ),
+          const SizedBox(height: 10),
+          _PrivateDataRow(
+            icon: Icons.cake_outlined,
+            label: 'Nascimento',
+            value: _formatBirthDate(birthDate),
+          ),
+          const SizedBox(height: 10),
+          _PrivateDataRow(
+            icon: Icons.notes_outlined,
+            label: 'Bio',
+            value: bio.trim().isEmpty ? 'Ainda sem bio' : bio.trim(),
+            maxLines: 4,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrivateDataRow extends StatelessWidget {
+  const _PrivateDataRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.maxLines = 2,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+  final int maxLines;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: GtlColors.surfaceInk,
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
+        border: Border.all(color: GtlColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: GtlColors.accentCyan),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label.toUpperCase(),
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    maxLines: maxLines,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: GtlColors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileEditSheet extends ConsumerStatefulWidget {
+  const _ProfileEditSheet({required this.initialProfile});
+
+  final Map<String, dynamic> initialProfile;
+
+  @override
+  ConsumerState<_ProfileEditSheet> createState() => _ProfileEditSheetState();
+}
+
+class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
+  late final TextEditingController _email;
+  late final TextEditingController _birthDate;
+  late final TextEditingController _bio;
+  bool _busy = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = Map<String, dynamic>.from(
+      (widget.initialProfile['user'] as Map?) ?? const {},
+    );
+    _email = TextEditingController(text: user['email']?.toString() ?? '');
+    _birthDate = TextEditingController(
+      text: _editableBirthDate(widget.initialProfile['birth_date']),
+    );
+    _bio = TextEditingController(
+      text: widget.initialProfile['bio']?.toString() ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _birthDate.dispose();
+    _bio.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final emailConfirmed =
+        ref.watch(authControllerProvider).user?.emailConfirmed == true;
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 16,
+          right: 16,
+          top: 16,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + 16,
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              GtlEditorialHeader(
+                kicker: 'Perfil privado',
+                title: 'Editar dados',
+                body: emailConfirmed
+                    ? 'Atualize seus dados pessoais. Alterar email exige nova confirmação.'
+                    : 'Corrija seu email para receber o link de confirmação.',
+                icon: Icons.manage_accounts_outlined,
+                trailing: IconButton(
+                  onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _email,
+                enabled: !_busy,
+                keyboardType: TextInputType.emailAddress,
+                textInputAction: TextInputAction.next,
+                decoration: const InputDecoration(labelText: 'Email'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _birthDate,
+                enabled: !_busy && emailConfirmed,
+                keyboardType: TextInputType.datetime,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9/\-]')),
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                decoration: InputDecoration(
+                  labelText: 'Data de nascimento',
+                  hintText: 'DD/MM/AAAA',
+                  helperText: 'Digite com barras ou use o calendário.',
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_birthDate.text.isNotEmpty)
+                        IconButton(
+                          tooltip: 'Limpar data',
+                          onPressed: _busy || !emailConfirmed
+                              ? null
+                              : () => setState(() => _birthDate.clear()),
+                          icon: const Icon(Icons.close),
+                        ),
+                      IconButton(
+                        tooltip: 'Escolher data',
+                        onPressed: _busy || !emailConfirmed
+                            ? null
+                            : _pickBirthDate,
+                        icon: const Icon(Icons.calendar_month_outlined),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: _bio,
+                enabled: !_busy && emailConfirmed,
+                minLines: 4,
+                maxLines: 6,
+                maxLength: 1000,
+                decoration: const InputDecoration(labelText: 'Bio'),
+              ),
+              if (!emailConfirmed) ...[
+                const SizedBox(height: 10),
+                const Text(
+                  'Depois de confirmar o email, você poderá alterar nascimento e bio.',
+                ),
+              ],
+              if (_error?.trim().isNotEmpty == true) ...[
+                const SizedBox(height: 10),
+                GtlSurface(
+                  color: GtlColors.surfaceInk,
+                  borderColor: GtlColors.accentRed.withValues(alpha: 0.42),
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: GtlColors.accentRed,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(child: Text(_error!)),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 14),
+              FilledButton.icon(
+                onPressed: _busy ? null : _save,
+                icon: _busy
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.check),
+                label: const Text('Salvar dados'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickBirthDate() async {
+    final initial = _parseBirthDateInput(_birthDate.text) ?? DateTime(1995);
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (selected == null) {
+      return;
+    }
+    setState(() => _birthDate.text = _toDisplayDate(selected));
+  }
+
+  Future<void> _save() async {
+    final email = _email.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      setState(() => _error = 'Informe um email válido.');
+      return;
+    }
+    final emailConfirmed =
+        ref.read(authControllerProvider).user?.emailConfirmed == true;
+    final birthDate = _normalizeBirthDateInput(_birthDate.text);
+    if (emailConfirmed &&
+        _birthDate.text.trim().isNotEmpty &&
+        birthDate == null) {
+      setState(() => _error = 'Use uma data válida no formato DD/MM/AAAA.');
+      return;
+    }
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final repository = ref.read(profileRepositoryProvider);
+      final updated = emailConfirmed
+          ? await repository.updatePrivateProfile(
+              email: email,
+              birthDate: birthDate ?? '',
+              bio: _bio.text.trim(),
+            )
+          : await repository.updateEmail(email: email);
+      ref.read(authControllerProvider.notifier).syncProfileUser(updated);
+      ref.invalidate(profileProvider);
+      if (mounted) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              emailConfirmed
+                  ? 'Dados do perfil atualizados.'
+                  : 'Enviamos a confirmação para o email informado.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      setState(() => _error = ApiFailure.fromObject(error).message);
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
   }
 }
 
@@ -275,6 +665,77 @@ String _handleLabel(String value) {
     return '';
   }
   return handle.startsWith('@') ? handle : '@$handle';
+}
+
+String _editableBirthDate(Object? value) {
+  final date = _parseIsoDate(value?.toString() ?? '');
+  return date == null ? '' : _toDisplayDate(date);
+}
+
+String _formatBirthDate(String value) {
+  final date = _parseIsoDate(value);
+  if (date == null) {
+    return 'Não informada';
+  }
+  final day = date.day.toString().padLeft(2, '0');
+  final month = date.month.toString().padLeft(2, '0');
+  return '$day/$month/${date.year}';
+}
+
+DateTime? _parseBirthDateInput(String value) {
+  final normalized = value.trim();
+  if (normalized.isEmpty) {
+    return null;
+  }
+  final displayMatch = RegExp(
+    r'^(\d{1,2})/(\d{1,2})/(\d{4})$',
+  ).firstMatch(normalized);
+  if (displayMatch != null) {
+    final day = int.tryParse(displayMatch.group(1)!);
+    final month = int.tryParse(displayMatch.group(2)!);
+    final year = int.tryParse(displayMatch.group(3)!);
+    if (day == null || month == null || year == null) {
+      return null;
+    }
+    final date = DateTime(year, month, day);
+    if (date.year != year || date.month != month || date.day != day) {
+      return null;
+    }
+    return date;
+  }
+  return _parseIsoDate(normalized);
+}
+
+String? _normalizeBirthDateInput(String value) {
+  final normalized = value.trim();
+  if (normalized.isEmpty) {
+    return '';
+  }
+  final date = _parseBirthDateInput(normalized);
+  if (date == null) {
+    return null;
+  }
+  return _toIsoDate(date);
+}
+
+DateTime? _parseIsoDate(String value) {
+  final normalized = value.trim();
+  if (normalized.isEmpty) {
+    return null;
+  }
+  return DateTime.tryParse(normalized);
+}
+
+String _toDisplayDate(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '$day/$month/${date.year}';
+}
+
+String _toIsoDate(DateTime date) {
+  final month = date.month.toString().padLeft(2, '0');
+  final day = date.day.toString().padLeft(2, '0');
+  return '${date.year}-$month-$day';
 }
 
 class _ReputationPanel extends StatelessWidget {
