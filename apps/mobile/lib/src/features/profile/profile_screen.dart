@@ -13,6 +13,7 @@ import '../auth/auth_controller.dart';
 import '../auth/login_sheet.dart';
 import '../info/about_screen.dart';
 import '../info/trust_screen.dart';
+import '../performance/performance_screen.dart';
 import 'badges_screen.dart';
 import '../ranking/ranking_screen.dart';
 import '../support/contribution_sheets.dart';
@@ -93,6 +94,16 @@ class ProfileScreen extends ConsumerWidget {
                           const _BiometricSettingsPanel(),
                           const SizedBox(height: 12),
                           _ReputationPanel(reputation: reputation),
+                          const SizedBox(height: 12),
+                          FilledButton.icon(
+                            onPressed: () => Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const PerformanceScreen(),
+                              ),
+                            ),
+                            icon: const Icon(Icons.query_stats),
+                            label: const Text('Ver desempenho'),
+                          ),
                           const SizedBox(height: 12),
                           ref
                               .watch(badgesProvider)

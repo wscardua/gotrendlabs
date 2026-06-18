@@ -13,6 +13,7 @@ import '../info/about_screen.dart';
 import '../info/trust_screen.dart';
 import '../live_refresh.dart';
 import '../markets/markets_screen.dart';
+import '../performance/performance_screen.dart';
 import '../profile/badges_screen.dart';
 import '../profile/profile_screen.dart';
 import '../ranking/ranking_screen.dart';
@@ -148,6 +149,11 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                   context,
                 ).push(MaterialPageRoute(builder: (_) => const BadgesScreen()));
               }
+              if (value == 'performance') {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PerformanceScreen()),
+                );
+              }
               if (value == 'feedback') {
                 showFeedbackSheet(context);
               }
@@ -182,6 +188,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
                 child: ListTile(
                   leading: Icon(Icons.workspace_premium_outlined),
                   title: Text('Badges'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'performance',
+                child: ListTile(
+                  leading: Icon(Icons.query_stats),
+                  title: Text('Desempenho'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),

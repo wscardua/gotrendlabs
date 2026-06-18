@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-06-18 — FEAT-MOBILE-001 desempenho autenticado
+
+- FastAPI ganhou `GET /users/me/performance`, contrato autenticado agregado para placar, historico de resolucoes e progressao do usuario logado.
+- O app mobile ganhou tela `Desempenho`, acessivel pelo menu e pelo Perfil, sem virar nova aba da bottom navigation.
+- A tela usa linguagem de evolucao preditiva, reputacao, resolucao auditavel e GT₵ educativo, sem calcular reputacao, resultado, ranking ou badges no Flutter.
+- Copy final da tela remove termos tecnicos para usuario final e usa labels simples de resolucao, como `Acertou` e `Não acertou`.
+- Desempenho passou a reconsultar a FastAPI ao abrir a tela, voltar do background, usar pull-to-refresh e apos confirmacoes de previsao/posicao.
+
 ## 2026-06-18 — FEAT-MOBILE-001 ajustes de perfil e mesa autenticada
 
 - Campo mobile `Data de nascimento` no perfil passou a aceitar digitacao apenas de numeros com barras automaticas em `DD/MM/AAAA`, preservando envio `YYYY-MM-DD` para a FastAPI.

@@ -50,7 +50,7 @@ Specs principais:
 - shell dark-first editorial com bottom navigation: `Hoje`, `Ranking`, `Mercados`, `Alertas`, `Busca`, sem tela `Insights` enquanto nao houver contrato recorrente do backend
 - design system mobile compartilhado em `lib/src/ui/`, com surfaces, headers editoriais, pills, métricas, painéis de estado, skeletons e componentes reutilizáveis
 - feed, browse, busca e detalhe de mercado via `GET /markets` e `GET /markets/{slug}`, com abertura do detalhe incrementando `view_count` pelo mesmo endpoint de tracking usado pelo web
-- dados vivos de mercado, detalhe, wallet, ledger, recargas e alertas sao reconsultados ao abrir telas criticas, voltar do background, trocar para abas dependentes de mercado e usar pull-to-refresh, sem exigir reiniciar o app
+- dados vivos de mercado, detalhe, desempenho, wallet, ledger, recargas e alertas sao reconsultados ao abrir telas criticas, voltar do background, trocar para abas dependentes de mercado e usar pull-to-refresh, sem exigir reiniciar o app
 - auth Bearer simples via `/auth/login`, `/auth/register`, `/auth/session` e `/auth/logout`, com `Lembrar login` ligado por padrao; token persistido em secure storage quando ligado e mantido apenas em memoria quando desligado
 - cadastro mobile de visitante usa desafio anti-abuso dentro do app via `GET /anti-abuse/challenge`, enviando `anti_abuse_token` e `anti_abuse_answer` para a FastAPI; reCAPTCHA permanece restrito aos fluxos web
 - protecao local para sessao lembrada: quando `Lembrar login` esta ligado e o aparelho suporta autenticacao local, login e cadastro oferecem biometria ligada por padrao; a tela de entrada mostra `Entrar com biometria` quando ha sessao lembrada protegida; na reabertura, o app exige biometria ou senha do aparelho antes de ativar o Bearer token persistido; cancelamento deixa a sessao em estado protegido, sem chamar API autenticada nem apagar o token
@@ -63,6 +63,7 @@ Specs principais:
 - detalhe de mercado com hero visual nao navegavel, evitando empilhar a mesma rota ao tocar na imagem
 - grafico de consenso multi-serie, usando uma linha por opcao a partir de `sparkline_series`
 - ranking mobile identificado por `@handle`, com badges compactas e overflow `+N` vindos de `/rankings`
+- tela `Desempenho` autenticada, acessivel pelo menu e pelo Perfil, consumindo `GET /users/me/performance` para placar, historico de resolucoes, impacto em reputacao, resultado GT₵ educativo e ultimas conquistas sem regra critica local
 - alertas com badge de nao lidas no shell e marcacao como lido ao visualizar a tela, sem painel operacional de push
 - push mobile usa Firebase/FCM no Android quando `google-services.json` local existe, registra token somente apos autenticacao, cria o canal Android `gtl_default`, trata tap em payloads seguros (`/markets/:slug`, `/wallet`, `/badges`, `/alerts`) e continua exibindo saude/configuracao no `Sobre`
 - wallet, extrato, recarga educativa, perfil, ranking, badges, busca, confianca e alertas como leitura/acao da API

@@ -105,6 +105,7 @@ from apps.api.backend_api.schemas import (
     SuggestionRewardPayload,
     SystemLogListResponse,
     SystemLogResponse,
+    UserPerformanceResponse,
     UserProfileResponse,
     WalletRechargeApprovalPayload,
     WalletRechargeRejectPayload,
@@ -1374,6 +1375,108 @@ def _profile_response(cursor, user):
             "strong_category": profile["reputation_category"] or "",
             "last_updated_at": profile["last_updated_at"].isoformat() if profile["last_updated_at"] else profile["profile_updated_at"].isoformat(),
         },
+    }
+
+
+def _reputation_delta(probability_at_entry, won):
+    probability = max(Decimal("0"), min(Decimal("1"), _decimal_probability(probability_at_entry) / Decimal("100")))
+    delta = REPUTATION_K_FACTOR * (Decimal("1") - probability) if won else -(REPUTATION_K_FACTOR * probability)
+    return int(delta.to_integral_value(rounding=ROUND_HALF_UP))
+
+
+def _performance_history_rows(cursor, user_id, limit=10):
+    cursor.execute(
+        """
+        WITH ledger_totals AS (
+            SELECT reference_id::bigint AS prediction_id,
+                   COALESCE(SUM(CASE WHEN entry_type = 'prediction_refund' THEN amount ELSE 0 END), 0) AS prediction_refund,
+                   COALESCE(SUM(CASE WHEN entry_type = 'prediction_payout' THEN amount ELSE 0 END), 0) AS prediction_payout,
+                   COALESCE(SUM(CASE WHEN entry_type = 'prediction_loss' THEN amount ELSE 0 END), 0) AS prediction_loss
+            FROM gotrendlabs_wallet_ledger
+            WHERE user_id = %s
+              AND reference_type = 'prediction'
+              AND reference_id ~ '^[0-9]+$'
+              AND entry_type IN ('prediction_refund', 'prediction_payout', 'prediction_loss')
+            GROUP BY reference_id::bigint
+        )
+        SELECT p.id AS prediction_id, p.stake_amount, p.probability_at_entry, p.won,
+               m.slug AS market_slug, m.title AS market_title, m.resolved_at,
+               m.resolution_timezone, m.close_timezone, m.resolution_note,
+               chosen.label AS option_label,
+               winning.label AS winning_option_label,
+               COALESCE(lt.prediction_refund, 0) AS prediction_refund,
+               COALESCE(lt.prediction_payout, 0) AS prediction_payout,
+               COALESCE(lt.prediction_loss, 0) AS prediction_loss
+        FROM gotrendlabs_predictions p
+        JOIN gotrendlabs_markets m ON m.id = p.market_id
+        JOIN gotrendlabs_market_options chosen ON chosen.id = p.market_option_id
+        LEFT JOIN gotrendlabs_market_options winning ON winning.id = m.winning_option_id
+        LEFT JOIN ledger_totals lt ON lt.prediction_id = p.id
+        WHERE p.user_id = %s
+          AND p.status = 'resolved'
+          AND p.won IS NOT NULL
+        ORDER BY COALESCE(m.resolved_at, p.updated_at) DESC, p.id DESC
+        LIMIT %s
+        """,
+        (user_id, user_id, limit),
+    )
+    history = []
+    for row in cursor.fetchall():
+        gtc_result = int(row["prediction_payout"] or 0) - int(row["prediction_loss"] or 0)
+        result_label = "Acertou" if row["won"] else "Não acertou"
+        if gtc_result > 0:
+            educational_result_label = f"+{gtc_result} GT₵"
+        elif gtc_result < 0:
+            educational_result_label = f"{gtc_result} GT₵"
+        else:
+            educational_result_label = "0 GT₵"
+        resolved_at = row["resolved_at"]
+        timezone_name = _resolution_timezone(row)
+        history.append(
+            {
+                "prediction_id": row["prediction_id"],
+                "market_slug": row["market_slug"],
+                "market_title": row["market_title"],
+                "option_label": row["option_label"],
+                "winning_option_label": row["winning_option_label"] or "",
+                "won": bool(row["won"]),
+                "result_label": result_label,
+                "stake_amount": int(row["stake_amount"] or 0),
+                "probability_at_entry": float(_decimal_probability(row["probability_at_entry"])),
+                "reputation_delta": _reputation_delta(row["probability_at_entry"], row["won"]),
+                "gtc_result": gtc_result,
+                "educational_result_label": educational_result_label,
+                "resolved_at": resolved_at.isoformat() if resolved_at else None,
+                "resolved_at_label": _datetime_label(resolved_at, timezone_name) if resolved_at else "",
+                "resolution_note": row["resolution_note"] or "",
+            }
+        )
+    return history
+
+
+def _performance_response(cursor, user):
+    profile = _profile_response(cursor, user)
+    BadgeAwardEngine.reconcile_user(cursor, user["id"], ensure_user_core=_ensure_user_core)
+    badges = _badge_rows(cursor, user_id=user["id"])
+    earned_badges = [
+        badge for badge in badges
+        if badge["status"] == "earned" or bool(badge.get("earned_at"))
+    ]
+    latest_awards = sorted(
+        earned_badges,
+        key=lambda badge: badge.get("earned_at") or "",
+        reverse=True,
+    )[:5]
+    return {
+        "scorecard": profile["reputation"],
+        "history": _performance_history_rows(cursor, user["id"]),
+        "progression": {
+            "earned_badges_count": len(earned_badges),
+            "badges": earned_badges,
+            "latest_awards": latest_awards,
+            "next_milestones": [],
+        },
+        "generated_at": datetime.now(timezone.utc).isoformat(),
     }
 
 
@@ -7732,6 +7835,14 @@ def get_my_badges(authorization: str = Header(default="")):
             user = _current_user(cursor, authorization)
             BadgeAwardEngine.reconcile_user(cursor, user["id"], ensure_user_core=_ensure_user_core)
             return _badge_rows(cursor, user_id=user["id"])
+
+
+@app.get("/users/me/performance", response_model=UserPerformanceResponse)
+def get_my_performance(authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            return _performance_response(cursor, user)
 
 
 @app.get("/users/me/activity")

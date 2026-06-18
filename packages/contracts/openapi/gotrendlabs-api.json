@@ -4723,6 +4723,162 @@
         "title": "SystemLogResponse",
         "type": "object"
       },
+      "UserPerformanceHistoryItemResponse": {
+        "properties": {
+          "educational_result_label": {
+            "title": "Educational Result Label",
+            "type": "string"
+          },
+          "gtc_result": {
+            "title": "Gtc Result",
+            "type": "integer"
+          },
+          "market_slug": {
+            "title": "Market Slug",
+            "type": "string"
+          },
+          "market_title": {
+            "title": "Market Title",
+            "type": "string"
+          },
+          "option_label": {
+            "title": "Option Label",
+            "type": "string"
+          },
+          "prediction_id": {
+            "title": "Prediction Id",
+            "type": "integer"
+          },
+          "probability_at_entry": {
+            "title": "Probability At Entry",
+            "type": "number"
+          },
+          "reputation_delta": {
+            "title": "Reputation Delta",
+            "type": "integer"
+          },
+          "resolution_note": {
+            "default": "",
+            "title": "Resolution Note",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "resolved_at_label": {
+            "default": "",
+            "title": "Resolved At Label",
+            "type": "string"
+          },
+          "result_label": {
+            "title": "Result Label",
+            "type": "string"
+          },
+          "stake_amount": {
+            "title": "Stake Amount",
+            "type": "integer"
+          },
+          "winning_option_label": {
+            "default": "",
+            "title": "Winning Option Label",
+            "type": "string"
+          },
+          "won": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Won"
+          }
+        },
+        "required": [
+          "prediction_id",
+          "market_slug",
+          "market_title",
+          "option_label",
+          "result_label",
+          "stake_amount",
+          "probability_at_entry",
+          "reputation_delta",
+          "gtc_result",
+          "educational_result_label"
+        ],
+        "title": "UserPerformanceHistoryItemResponse",
+        "type": "object"
+      },
+      "UserPerformanceProgressionResponse": {
+        "properties": {
+          "badges": {
+            "items": {
+              "$ref": "#/components/schemas/BadgeResponse"
+            },
+            "title": "Badges",
+            "type": "array"
+          },
+          "earned_badges_count": {
+            "default": 0,
+            "title": "Earned Badges Count",
+            "type": "integer"
+          },
+          "latest_awards": {
+            "items": {
+              "$ref": "#/components/schemas/BadgeResponse"
+            },
+            "title": "Latest Awards",
+            "type": "array"
+          },
+          "next_milestones": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Next Milestones",
+            "type": "array"
+          }
+        },
+        "title": "UserPerformanceProgressionResponse",
+        "type": "object"
+      },
+      "UserPerformanceResponse": {
+        "properties": {
+          "generated_at": {
+            "title": "Generated At",
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/UserPerformanceHistoryItemResponse"
+            },
+            "title": "History",
+            "type": "array"
+          },
+          "progression": {
+            "$ref": "#/components/schemas/UserPerformanceProgressionResponse"
+          },
+          "scorecard": {
+            "$ref": "#/components/schemas/ReputationResponse"
+          }
+        },
+        "required": [
+          "scorecard",
+          "progression",
+          "generated_at"
+        ],
+        "title": "UserPerformanceResponse",
+        "type": "object"
+      },
       "UserProfileResponse": {
         "properties": {
           "bio": {
@@ -10685,6 +10841,46 @@
           }
         },
         "summary": "Mark My Notifications Read"
+      }
+    },
+    "/users/me/performance": {
+      "get": {
+        "operationId": "get_my_performance_users_me_performance_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPerformanceResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get My Performance"
       }
     },
     "/users/me/push-devices": {

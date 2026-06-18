@@ -403,6 +403,38 @@ class BadgeListResponse(BaseModel):
     badges: List[BadgeResponse]
 
 
+class UserPerformanceHistoryItemResponse(BaseModel):
+    prediction_id: int
+    market_slug: str
+    market_title: str
+    option_label: str
+    winning_option_label: str = ""
+    won: Optional[bool] = None
+    result_label: str
+    stake_amount: int
+    probability_at_entry: float
+    reputation_delta: int
+    gtc_result: int
+    educational_result_label: str
+    resolved_at: Optional[str] = None
+    resolved_at_label: str = ""
+    resolution_note: str = ""
+
+
+class UserPerformanceProgressionResponse(BaseModel):
+    earned_badges_count: int = 0
+    badges: List[BadgeResponse] = Field(default_factory=list)
+    latest_awards: List[BadgeResponse] = Field(default_factory=list)
+    next_milestones: List[dict] = Field(default_factory=list)
+
+
+class UserPerformanceResponse(BaseModel):
+    scorecard: ReputationResponse
+    history: List[UserPerformanceHistoryItemResponse] = Field(default_factory=list)
+    progression: UserPerformanceProgressionResponse
+    generated_at: str
+
+
 class AdminBadgeRequirementPayload(BaseModel):
     metric_type: str
     threshold_value: float = Field(default=1, ge=0)

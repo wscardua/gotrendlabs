@@ -742,6 +742,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
     ref.invalidate(marketsProvider);
     ref.invalidate(marketDetailProvider(widget.market.slug));
     invalidateWalletData(ref);
+    invalidatePerformanceData(ref);
   }
 
   void _setFailure(Object error, {required bool busy, bool? previewBusy}) {

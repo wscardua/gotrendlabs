@@ -29,6 +29,8 @@ void main() {
     expect(find.text('Push mobile'), findsNothing);
     expect(find.text('Push preparado'), findsNothing);
     expect(find.text('Atualizar push'), findsNothing);
+    await tester.scrollUntilVisible(find.text('Ver desempenho'), 320);
+    expect(find.text('Ver desempenho'), findsOneWidget);
   });
 
   testWidgets('Profile shows and edits private user data', (tester) async {

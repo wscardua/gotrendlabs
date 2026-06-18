@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth/auth_controller.dart';
 import 'markets/markets_providers.dart';
+import 'performance/performance_providers.dart';
 
 void invalidateMarketData(WidgetRef ref, {String? slug}) {
   ref.invalidate(marketsProvider);
@@ -29,11 +30,16 @@ void invalidateRankingData(WidgetRef ref, {RankingFilters? filters}) {
   ref.invalidate(rankingProvider);
 }
 
+void invalidatePerformanceData(WidgetRef ref) {
+  ref.invalidate(performanceProvider);
+}
+
 void invalidateLiveData(WidgetRef ref, {String? marketSlug}) {
   invalidateMarketData(ref, slug: marketSlug);
   invalidateRankingData(ref);
   if (ref.read(authControllerProvider).isAuthenticated) {
     invalidateWalletData(ref);
+    invalidatePerformanceData(ref);
     invalidateNotifications(ref);
   }
 }
@@ -66,6 +72,14 @@ Future<void> refreshWalletData(WidgetRef ref) async {
 Future<void> refreshRankingData(WidgetRef ref, RankingFilters filters) async {
   invalidateRankingData(ref, filters: filters);
   await _ignoreRefreshError(ref.read(rankingPayloadProvider(filters).future));
+}
+
+Future<void> refreshPerformanceData(WidgetRef ref) async {
+  if (!ref.read(authControllerProvider).isAuthenticated) {
+    return;
+  }
+  invalidatePerformanceData(ref);
+  await _ignoreRefreshError(ref.read(performanceProvider.future));
 }
 
 Future<void> _ignoreRefreshError(Future<Object?> future) async {
