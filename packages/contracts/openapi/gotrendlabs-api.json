@@ -1249,13 +1249,6 @@
             "title": "Primary Outcome",
             "type": "string"
           },
-          "primary_probability_exact": {
-            "default": 0,
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Primary Probability Exact",
-            "type": "number"
-          },
           "resolution_criteria": {
             "default": "",
             "title": "Resolution Criteria",
@@ -1270,13 +1263,6 @@
             "default": "",
             "title": "Resolution Type",
             "type": "string"
-          },
-          "secondary_probability_exact": {
-            "default": 0,
-            "maximum": 100.0,
-            "minimum": 0.0,
-            "title": "Secondary Probability Exact",
-            "type": "number"
           },
           "slug": {
             "anyOf": [

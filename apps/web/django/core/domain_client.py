@@ -20,6 +20,13 @@ def _display_probability(value):
     return int(_decimal_probability(value).to_integral_value(rounding=ROUND_DOWN))
 
 
+def _rank_market_options_by_probability(options):
+    return sorted(
+        enumerate(options),
+        key=lambda item: (-_decimal_probability(item[1]["probability_exact"]), item[0], item[1]["id"]),
+    )
+
+
 class FixtureDomainClient:
     """Read-only client that mimics the future backend-api contract shape."""
 
@@ -195,6 +202,14 @@ def _local_market_response(market):
         {**option, "sparkline_path": next((item["path"] for item in sparkline["series"] if item["id"] == option["id"]), "")}
         for option in options
     ]
+    ranked_options = [item[1] for item in _rank_market_options_by_probability(options)]
+    primary_option = ranked_options[0] if ranked_options else None
+    if status_value == "resolved":
+        primary_option = next((option for option in options if option["label"] == market.primary_outcome), primary_option)
+    secondary_option = next((option for option in ranked_options if primary_option and option["id"] != primary_option["id"]), None)
+    primary_probability_exact = _decimal_probability(primary_option["probability_exact"]) if primary_option else Decimal("0")
+    secondary_probability_exact = _decimal_probability(secondary_option["probability_exact"]) if secondary_option else Decimal("0")
+    primary_outcome = primary_option["label"] if primary_option else market.primary_outcome
     return {
         "slug": market.slug,
         "title": market.title,
@@ -207,11 +222,11 @@ def _local_market_response(market):
         "kind": market.kind,
         "status": status_value,
         "status_label": _market_status_label(status_value),
-        "primary_outcome": market.primary_outcome,
-        "primary_probability": _display_probability(market.primary_probability_exact),
-        "primary_probability_exact": float(_decimal_probability(market.primary_probability_exact)),
-        "secondary_probability": _display_probability(market.secondary_probability_exact),
-        "secondary_probability_exact": float(_decimal_probability(market.secondary_probability_exact)),
+        "primary_outcome": primary_outcome,
+        "primary_probability": _display_probability(primary_probability_exact),
+        "primary_probability_exact": float(primary_probability_exact),
+        "secondary_probability": _display_probability(secondary_probability_exact),
+        "secondary_probability_exact": float(secondary_probability_exact),
         "volume_gtl": _currency_label(market.volume_gtl),
         "participants": market.participants,
         "source": market.source,

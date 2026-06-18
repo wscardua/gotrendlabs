@@ -35,7 +35,7 @@ Exibir mercados relevantes com filtros e informações suficientes para descober
 - curtida autenticada de mercado limitada a uma por usuário
 - ordenações rápidas no feed web por tendência, abertura, fechamento, volume, curtidas, novidade e recorte de resolvidos
 - carregamento incremental client-side dos cards renderizados em blocos de 18 itens
-- destaque de probabilidade agregada
+- destaque de probabilidade derivada das opções
 - mini gráfico de evolução do consenso por opção
 - contador compacto de curtidas no card do mercado
 - contador compacto de comentários visíveis no card do mercado
@@ -65,7 +65,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - visitante vê o contador de curtidas no mesmo slot visual, mas ao tentar curtir recebe aviso de que a ação exige login
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
 - mini gráficos devem continuar refletindo histórico após resolução; previsões `resolved` permanecem na série visual e previsões `canceled` ficam fora
-- labels mostram percentuais inteiros, enquanto barras e mini gráficos usam `probability_exact`
+- labels de consenso usam a opção líder por `probability_exact`, enquanto barras, opções e mini gráficos usam `options[].probability_exact`
 - botão `Em alta` ordena por mercados mais visualizados, com mercado mais recente como desempate
 - botões `Novos`, `Abertos`, `Em apuração`, `Mais volume` e `Mais curtidas` reordenam ou filtram a lista no frontend sem recarregar a página
 - botão `Abertos` mostra apenas cards com `status=open`, usando os cards já renderizados e sem recarregar a página
@@ -87,7 +87,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 ## Regras de domínio
 
 - o feed deve refletir estados vindos do domínio
-- probabilidades exibidas são informativas, não editáveis pela UI
+- probabilidades exibidas são informativas, derivadas das opções e não editáveis pela UI
 - mercados `canceled` não aparecem no feed público padrão
 - mercados `draft` e `canceled` não entram no card principal; mercados `resolved` podem entrar se liderarem por `view_count`, com CTA de visualização
 - mercados cancelados não podem permanecer marcados como destaque editorial
@@ -145,7 +145,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - categoria com estado de bloqueio lógico
 - subcategoria com estado de bloqueio lógico
 - categoria/subcategoria/evento com estado de bloqueio lógico e aviso opcional de até 500 caracteres; evento é vinculado à subcategoria e obrigatório para mercados novos no Admin Ops/API
-- snapshot resumido de probabilidade
+- percentuais públicos derivados das opções
 - `is_featured` no mercado para curadoria editorial do feed
 - `gotrendlabs_market_favorites` guarda favoritos pessoais com unicidade por usuário e mercado
 - `gotrendlabs_market_likes` guarda curtidas reais do mercado com unicidade por usuário e mercado

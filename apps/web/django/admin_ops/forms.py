@@ -475,7 +475,6 @@ class AdminMarketForm(forms.Form):
     def to_payload(self):
         options = self.calculated_option_rows()
         primary = options[0] if options else {"label": "", "probability": 0}
-        secondary = options[1] if len(options) > 1 else {"probability": 0}
         return {
             "title": self.cleaned_data["title"],
             "slug": self.cleaned_data.get("slug") or None,
@@ -486,8 +485,6 @@ class AdminMarketForm(forms.Form):
             "event": self.cleaned_data["event"],
             "status_label": self.initial.get("status_label") or "Rascunho",
             "primary_outcome": self.initial.get("primary_outcome") or primary["label"],
-            "primary_probability_exact": self.initial.get("primary_probability_exact", primary.get("probability_exact", primary["probability"])),
-            "secondary_probability_exact": self.initial.get("secondary_probability_exact", secondary.get("probability_exact", secondary["probability"])),
             "volume_gtl": self.initial.get("volume_gtl") or "0 GT₵",
             "participants": self.initial.get("participants") or "0 usuários",
             "source": self.cleaned_data.get("source") or "",

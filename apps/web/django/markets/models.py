@@ -73,8 +73,6 @@ class Market(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, db_index=True)
     status_label = models.CharField(max_length=80)
     primary_outcome = models.CharField(max_length=80)
-    primary_probability_exact = models.DecimalField(max_digits=7, decimal_places=4, default=0)
-    secondary_probability_exact = models.DecimalField(max_digits=7, decimal_places=4, default=0)
     volume_gtl = models.CharField(max_length=80, blank=True)
     participants = models.CharField(max_length=80, blank=True)
     source = models.CharField(max_length=180, blank=True)

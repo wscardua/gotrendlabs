@@ -200,22 +200,16 @@ def _recalculate_market_probabilities(cursor, market_id):
     total_weight = sum(int(row["total_weight"] or 0) for row in rows)
     if not rows or total_weight <= 0:
         return
-    probabilities = []
     for row in rows:
         probability = (Decimal(int(row["total_weight"] or 0)) * Decimal("100") / Decimal(total_weight)).quantize(PROBABILITY_QUANT)
-        probabilities.append((row["id"], probability))
         cursor.execute("UPDATE gotrendlabs_market_options SET probability_exact = %s, updated_at = %s WHERE id = %s", (probability, datetime.now(timezone.utc), row["id"]))
-    primary = probabilities[0][1]
-    secondary = probabilities[1][1] if len(probabilities) > 1 else Decimal("0.0000")
     cursor.execute(
         """
         UPDATE gotrendlabs_markets
-        SET primary_probability_exact = %s,
-            secondary_probability_exact = %s,
-            updated_at = %s
+        SET updated_at = %s
         WHERE id = %s
         """,
-        (primary, secondary, datetime.now(timezone.utc), market_id),
+        (datetime.now(timezone.utc), market_id),
     )
 
 

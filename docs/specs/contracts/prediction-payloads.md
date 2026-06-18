@@ -110,6 +110,8 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - `resolved_at`
 - `resolved_at_label`
 - `resolution_timezone`
+
+`primary_probability*` e `secondary_probability*` são atalhos de leitura derivados das opções ranqueadas por `probability_exact` no backend; a persistência autoritativa fica em `options[].probability_exact`.
 - `winning_option_id`
 - `resolution_note`
 - `viewer_has_prediction`

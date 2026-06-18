@@ -787,8 +787,6 @@ def _market_initial(market):
         "kind": market.get("kind", "binary"),
         "status_label": market.get("status_label", ""),
         "primary_outcome": market.get("primary_outcome", ""),
-        "primary_probability_exact": market.get("primary_probability_exact", 0),
-        "secondary_probability_exact": market.get("secondary_probability_exact", 0),
         "volume_gtl": market.get("volume_gtl", ""),
         "participants": market.get("participants", ""),
         "category": market.get("category", ""),

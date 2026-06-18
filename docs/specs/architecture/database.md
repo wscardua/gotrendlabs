@@ -17,7 +17,7 @@
 - `gotrendlabs_market_categories.notice`, `gotrendlabs_market_subcategories.notice` e `gotrendlabs_market_events.notice` guardam avisos opcionais, vazios por padrão, para exibição contextual no detalhe/ticket de mercados sensíveis vinculados.
 - `gotrendlabs_markets.event_id` referencia `gotrendlabs_market_events`; mercados migrados sem evento explícito devem apontar para o evento ativo `Geral` da subcategoria.
 - Mercados existentes devem manter vínculo com taxonomia bloqueada para preservar histórico e auditoria.
-- Probabilidades de mercado/opção devem preservar precisão decimal (`*_probability_exact`/`probability_exact`); inteiros de exibição são derivados na serialização/UI, não persistidos.
+- Probabilidades de opção devem preservar precisão decimal em `gotrendlabs_market_options.probability_exact`; percentuais de mercado (`primary_probability*`/`secondary_probability*`) são derivados das opções ranqueadas por probabilidade na serialização e não são persistidos em `gotrendlabs_markets`.
 - Métricas operacionais simples de popularidade de mercado ficam denormalizadas em `gotrendlabs_markets.view_count` e `gotrendlabs_markets.share_count` para leitura rápida no Admin Ops; nesta etapa cada evento incrementa o contador sem deduplicação.
 - Comentários de mercado são preservados em `gotrendlabs_market_comments` com status `visible`/`hidden`, nota de moderação, moderador e timestamps.
 - Reações de comentário ficam em `gotrendlabs_comment_reactions`, com uma reação ativa por usuário/comentário e valores `like` ou `dislike`.

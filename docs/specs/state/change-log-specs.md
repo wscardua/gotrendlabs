@@ -2,6 +2,7 @@
 
 ## 2026-06-17
 
+- registrado que `primary_probability*` e `secondary_probability*` em `MarketResponse` são atalhos de leitura derivados da opção líder por `gotrendlabs_market_options.probability_exact`, sem snapshot duplicado em `gotrendlabs_markets`.
 - registrada evolução de `FEAT-REP-001` para requisitos adicionais configuráveis em regras de badge, persistidos em `BadgeRuleRequirement` e avaliados com lógica AND pela `BadgeAwardEngine`.
 - atualizado contrato administrativo de badges para incluir `requirements`, mantendo contratos públicos/mobile sem expor a estrutura interna de requisitos.
 - registrada configuração da badge `Top 10` como `ranking_position <= 10` com requisito adicional `resolved_predictions_count >= 3`.
