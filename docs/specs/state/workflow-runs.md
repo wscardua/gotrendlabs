@@ -8,7 +8,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Status: `em_andamento`
 - Feature alvo: `FEAT-MOBILE-001`, `FEAT-AUTH-001`, `FEAT-WALLET-001`, `FEAT-SUGGEST-001`
 - Objetivo: limpar UX mobile de contribuição/wallet, expor dados privados de perfil para conferência/edição, permitir correção de email em login limitado e preservar FastAPI como autoridade de domínio.
-- Etapa atual: implementação e validação local concluídas; aguardando autorização para abrir PR em português e seguir com merge/deploy padrão.
+- Etapa atual: PR #102 aberta; aguardando merge para `main`, deploy pelo GitHub Actions e smokes de produção.
 - Artefatos afetados:
   - `apps/api/backend_api/main.py`
   - `apps/mobile/lib/src/features/auth/auth_controller.dart`
@@ -21,10 +21,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/features/mobile-ux.md`
   - `docs/specs/testing/mobile-acceptance.md`
   - `docs/specs/state/`
-- Bloqueios: PR ainda não submetida por solicitação explícita de aprovação prévia.
+- Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-18
 - Atualizado em: 2026-06-18
-- Retomada: após autorização, criar PR da branch `feat/mobile-contribution-wallet-cleanup` para `main`, acompanhar `GoTrendLabs CI and Deploy`, validar produção e atualizar esta entrada com PR/run/smokes finais.
+- Retomada: acompanhar a PR #102, mergear em `main`, observar `GoTrendLabs CI and Deploy`, validar produção e atualizar esta entrada com run/smokes finais se houver novo ajuste documental.
 - Reversão lógica: restaurar a posição anterior do desafio anti-abuso nas folhas mobile, remover o painel privado/edit sheet do perfil mobile, voltar `/users/me` a exigir email confirmado para qualquer patch e recolocar a copy/quadros técnicos da recarga apenas se a operação decidir expô-los novamente.
 - Evidências de validação local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/schemas.py`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py test tests.test_web_smoke.BackendAuthAPITests.test_email_confirmation_outbox_blocks_sensitive_actions_until_confirmed tests.test_web_smoke.BackendAuthAPITests.test_unconfirmed_user_can_update_email_and_get_new_confirmation tests.test_web_smoke.BackendAuthAPITests.test_register_requires_terms_profile_update_and_logical_deletion --keepdb`; `cd apps/mobile && flutter test test/push_placement_test.dart`; `cd apps/mobile && flutter test`; `cd apps/mobile && flutter analyze`; `git diff --check`; APK debug instalado no Galaxy S20 `SM G980F` apontando para `https://gotrendlabs.com.br/api`.
 
