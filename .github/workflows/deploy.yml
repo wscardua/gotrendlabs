@@ -11,7 +11,68 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.detect.outputs.docs_only }}
+      diff_range: ${{ steps.detect.outputs.diff_range }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Detect docs-only changes
+        id: detect
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+        run: |
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "Manual workflow dispatch detected; treating this run as production-relevant."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            echo "diff_range=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+            DIFF_RANGE="${CURRENT_SHA}^..${CURRENT_SHA}"
+          else
+            DIFF_RANGE="${BEFORE_SHA}..${CURRENT_SHA}"
+          fi
+
+          echo "diff_range=$DIFF_RANGE" >> "$GITHUB_OUTPUT"
+          git diff --name-only "$DIFF_RANGE" > changed-files.txt
+
+          if [[ ! -s changed-files.txt ]]; then
+            echo "No changed files detected; preserving production-relevant workflow behavior."
+            echo "docs_only=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Changed files:"
+          cat changed-files.txt
+
+          DOCS_ONLY=true
+          while IFS= read -r path; do
+            if [[ "$path" == docs/* ]]; then
+              continue
+            fi
+
+            if [[ "$path" != */* && "$path" == *.md ]]; then
+              continue
+            fi
+
+            DOCS_ONLY=false
+            break
+          done < changed-files.txt
+
+          echo "docs_only=$DOCS_ONLY" >> "$GITHUB_OUTPUT"
+
   test:
+    needs: detect-changes
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -31,21 +92,35 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Validate docs-only diff
+        if: needs.detect-changes.outputs.docs_only == 'true'
+        env:
+          DIFF_RANGE: ${{ needs.detect-changes.outputs.diff_range }}
+        run: |
+          echo "Docs-only change detected; skipping full test suite."
+          git diff --check "$DIFF_RANGE"
 
       - name: Set up Python
+        if: needs.detect-changes.outputs.docs_only != 'true'
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Install dependencies
+        if: needs.detect-changes.outputs.docs_only != 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Validate OpenAPI contract snapshot
+        if: needs.detect-changes.outputs.docs_only != 'true'
         run: python packages/contracts/export_openapi.py --check
 
       - name: Run test suite
+        if: needs.detect-changes.outputs.docs_only != 'true'
         env:
           POSTGRES_DB: gotrendlabs
           POSTGRES_USER: gotrendlabs
@@ -55,8 +130,13 @@ jobs:
         run: python manage.py test
 
   deploy:
-    needs: test
-    if: github.ref == 'refs/heads/main' && vars.ENABLE_PROD_DEPLOY == '1'
+    needs:
+      - detect-changes
+      - test
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      vars.ENABLE_PROD_DEPLOY == '1' &&
+      needs.detect-changes.outputs.docs_only != 'true'
     runs-on: ubuntu-latest
     permissions:
       id-token: write
