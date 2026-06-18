@@ -16,6 +16,14 @@ Use este arquivo como checklist rápido antes de encerrar processos.
 - ADR foi criado quando fronteira, contrato estável ou regra estrutural mudou
 - pendências foram registradas em `known-gaps.md` ou no workflow
 
+## Publicação e deploy
+
+- mudanças docs-only continuam usando branch, PR e merge em `main`, mas devem rodar apenas validação leve no `GoTrendLabs CI and Deploy` e não devem acionar deploy PRD
+- docs-only é restrito a `docs/**` e arquivos Markdown na raiz, como `README.md` e `notes.md`
+- mudanças em `.github/**`, `ops/**`, `apps/**`, `packages/**`, migrations, fixtures, contratos, configs, exemplos de env e workflows nunca contam como docs-only, mesmo quando forem texto
+- mudanças produtivas seguem CI completo, deploy PRD quando `ENABLE_PROD_DEPLOY=1` e smoke pós-merge
+- `workflow_dispatch` permanece caminho manual produtivo e não é bloqueado pela detecção docs-only
+
 ## Nova feature
 
 - frontmatter completo
