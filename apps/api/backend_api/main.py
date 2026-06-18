@@ -433,6 +433,13 @@ def _display_probability(value):
     return int(_decimal_probability(value).to_integral_value(rounding=ROUND_DOWN))
 
 
+def _rank_market_options_by_probability(options):
+    return sorted(
+        enumerate(options),
+        key=lambda item: (-_decimal_probability(item[1]["probability_exact"]), item[0], item[1]["id"]),
+    )
+
+
 def _even_probability_exact(total):
     if total <= 0:
         return Decimal("0.0000")
@@ -1422,7 +1429,7 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
     cursor.execute(
         f"""
         SELECT m.id, m.slug, m.title, m.summary, m.kind, m.status, m.status_label,
-               m.primary_outcome, m.primary_probability_exact, m.secondary_probability_exact,
+               m.primary_outcome,
                m.volume_gtl, m.participants, m.source, m.closes_in, m.close_label,
                m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
@@ -1657,6 +1664,14 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         {**option, "sparkline_path": next((item["path"] for item in sparkline["series"] if item["id"] == option["id"]), "")}
         for option in options
     ]
+    ranked_options = [item[1] for item in _rank_market_options_by_probability(options)]
+    primary_option = ranked_options[0] if ranked_options else None
+    if row["status"] == "resolved":
+        primary_option = next((option for option in options if option["label"] == row["primary_outcome"]), primary_option)
+    secondary_option = next((option for option in ranked_options if primary_option and option["id"] != primary_option["id"]), None)
+    primary_probability_exact = _decimal_probability(primary_option["probability_exact"]) if primary_option else Decimal("0")
+    secondary_probability_exact = _decimal_probability(secondary_option["probability_exact"]) if secondary_option else Decimal("0")
+    primary_outcome = primary_option["label"] if primary_option else row["primary_outcome"]
     viewer_has_prediction = False
     viewer_has_favorite = False
     viewer_has_like = False
@@ -1706,11 +1721,11 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "kind": row["kind"],
         "status": row["status"],
         "status_label": _market_status_label(row["status"]),
-        "primary_outcome": row["primary_outcome"],
-        "primary_probability": _display_probability(row["primary_probability_exact"]),
-        "primary_probability_exact": float(_decimal_probability(row["primary_probability_exact"])),
-        "secondary_probability": _display_probability(row["secondary_probability_exact"]),
-        "secondary_probability_exact": float(_decimal_probability(row["secondary_probability_exact"])),
+        "primary_outcome": primary_outcome,
+        "primary_probability": _display_probability(primary_probability_exact),
+        "primary_probability_exact": float(primary_probability_exact),
+        "secondary_probability": _display_probability(secondary_probability_exact),
+        "secondary_probability_exact": float(secondary_probability_exact),
         "volume_gtl": _currency_label(public_metrics["volume_gtl"]),
         "participants": public_metrics["participants"],
         "human_participants": public_metrics["human_participants"],
@@ -1854,22 +1869,16 @@ def _market_probability_snapshot(cursor, market_id):
         probability = _display_probability(probability_exact)
         snapshot.append({"id": row["id"], "label": row["label"], "probability": probability, "probability_exact": float(probability_exact), "hint": row["hint"]})
 
-    primary_probability_exact = _decimal_probability(snapshot[0]["probability_exact"]) if snapshot else Decimal("0")
-    secondary_probability_exact = _decimal_probability(snapshot[1]["probability_exact"]) if len(snapshot) > 1 else Decimal("0")
     public_metrics = market_public_metrics(cursor, market_id)
     cursor.execute(
         """
         UPDATE gotrendlabs_markets
-        SET primary_probability_exact = %s,
-            secondary_probability_exact = %s,
-            volume_gtl = %s,
+        SET volume_gtl = %s,
             participants = %s,
             updated_at = %s
         WHERE id = %s
         """,
         (
-            primary_probability_exact,
-            secondary_probability_exact,
             public_metrics["volume_gtl"],
             public_metrics["participants"],
             datetime.now(timezone.utc),
@@ -5806,19 +5815,17 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             _validate_admin_market_payload(payload)
             _ensure_featured_allowed("draft", payload.is_featured)
             primary = payload.primary_outcome or (options[0]["label"] if options else "")
-            primary_probability_exact = _decimal_probability(payload.primary_probability_exact or (options[0]["probability_exact"] if options else 0))
-            secondary_probability_exact = _decimal_probability(payload.secondary_probability_exact or (options[1]["probability_exact"] if len(options) > 1 else 0))
             _sync_featured_market(cursor, None, payload.is_featured)
             cursor.execute(
                 """
                 INSERT INTO gotrendlabs_markets
                     (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
-                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_gtl, participants,
+                     primary_outcome, volume_gtl, participants,
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                         0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
                 RETURNING id
                 """,
@@ -5832,8 +5839,6 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
                     payload.kind,
                     payload.status_label or "Rascunho",
                     primary,
-                    primary_probability_exact,
-                    secondary_probability_exact,
                     payload.volume_gtl,
                     payload.participants,
                     payload.source.strip(),
@@ -5897,8 +5902,6 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
             if preserve_operational_fields:
                 status_label = row["status_label"]
                 primary = row["primary_outcome"]
-                primary_probability_exact = _decimal_probability(row["primary_probability_exact"])
-                secondary_probability_exact = _decimal_probability(row["secondary_probability_exact"])
                 volume_gtl = row["volume_gtl"]
                 participants = row["participants"]
                 resolution_type = row["resolution_type"] or ""
@@ -5906,8 +5909,6 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
             else:
                 status_label = payload.status_label or row["status_label"]
                 primary = payload.primary_outcome or (options[0]["label"] if options else "")
-                primary_probability_exact = _decimal_probability(payload.primary_probability_exact or (options[0]["probability_exact"] if options else 0))
-                secondary_probability_exact = _decimal_probability(payload.secondary_probability_exact or (options[1]["probability_exact"] if len(options) > 1 else 0))
                 volume_gtl = payload.volume_gtl
                 participants = payload.participants
                 resolution_type = payload.resolution_type
@@ -5925,8 +5926,6 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                     kind = %s,
                     status_label = %s,
                     primary_outcome = %s,
-                    primary_probability_exact = %s,
-                    secondary_probability_exact = %s,
                     volume_gtl = %s,
                     participants = %s,
                     source = %s,
@@ -5957,8 +5956,6 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                     payload.kind,
                     status_label,
                     primary,
-                    primary_probability_exact,
-                    secondary_probability_exact,
                     volume_gtl,
                     participants,
                     payload.source.strip(),
@@ -6349,18 +6346,16 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                 )
             )
             primary = options[0]["label"] if options else ""
-            primary_probability_exact = _decimal_probability(options[0]["probability_exact"] if options else 0)
-            secondary_probability_exact = _decimal_probability(options[1]["probability_exact"] if len(options) > 1 else 0)
             cursor.execute(
                 """
                 INSERT INTO gotrendlabs_markets
                     (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
-                     primary_outcome, primary_probability_exact, secondary_probability_exact, volume_gtl, participants,
+                     primary_outcome, volume_gtl, participants,
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
                      view_count, share_count, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, %s, %s, '0 GT₵', '0 usuários',
+                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, '0 GT₵', '0 usuários',
                         %s, %s, '', '', '#d8ece2', '', 'A definir pela curadoria antes da publicação.',
                         %s, 'America/Sao_Paulo', true, false, '', '', '', %s, %s, %s,
                         0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
@@ -6375,8 +6370,6 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                     suggestion["rationale"] or "Sugestão enviada por usuário para curadoria editorial.",
                     suggestion["kind"],
                     primary,
-                    primary_probability_exact,
-                    secondary_probability_exact,
                     suggestion["suggested_source"],
                     _short_close_label(close_at),
                     close_at,

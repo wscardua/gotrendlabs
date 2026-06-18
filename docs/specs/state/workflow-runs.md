@@ -2,6 +2,33 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260618-MARKET-PROBABILITY-SOURCE-001
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-MARKET-001`, `FastAPI public contract`, `Admin Ops`
+- Objetivo: remover as colunas duplicadas `primary_probability_exact` e `secondary_probability_exact` de `gotrendlabs_markets`, mantendo `gotrendlabs_market_options.probability_exact` como fonte unica de probabilidade e derivando os atalhos publicos de mercado das opcoes.
+- Etapa atual: concluido localmente; aguardando publicacao por PR e aplicacao da migration no ambiente alvo.
+- Artefatos afetados:
+  - `apps/web/django/markets/models.py`
+  - `apps/web/django/markets/migrations/0026_remove_market_primary_probability_exact_and_more.py`
+  - `apps/api/backend_api/main.py`
+  - `apps/api/backend_api/agent_services.py`
+  - `apps/api/backend_api/schemas.py`
+  - `apps/web/django/core/domain_client.py`
+  - `apps/web/django/admin_ops/`
+  - `ops/scripts/`
+  - `data/fixtures/domain.json`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/`
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-18
+- Atualizado em: 2026-06-18
+- Encerrado em: 2026-06-18
+- Evidencias de validacao local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/agent_services.py apps/api/backend_api/schemas.py apps/web/django/core/domain_client.py apps/web/django/admin_ops/forms.py apps/web/django/admin_ops/views.py`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python manage.py migrate`; introspeccao local confirmou ausencia de `primary_probability_exact` e `secondary_probability_exact` em `gotrendlabs_markets`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 200 testes OK; `GET /markets` local retornou atalhos publicos de consenso derivados da opcao lider por `options[].probability_exact`; `git diff --check`.
+- Reversao logica: recriar as colunas removidas apenas se um cache materializado de consenso voltar a ser necessario, garantindo entao rotina atomica de sincronizacao com `gotrendlabs_market_options.probability_exact`.
+
 ## WFLOW-20260617-BADGE-REQUIREMENT-GRANTS-HOTFIX-001
 
 - Tipo: `change-feature`

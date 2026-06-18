@@ -315,8 +315,6 @@ def import_editorial(data, admin):
                 "status": item["status"],
                 "status_label": item.get("status_label", item["status"]),
                 "primary_outcome": item.get("primary_outcome", ""),
-                "primary_probability_exact": decimal_value(item.get("primary_probability_exact", 0)),
-                "secondary_probability_exact": decimal_value(item.get("secondary_probability_exact", 0)),
                 "volume_gtl": item.get("volume_gtl", ""),
                 "participants": item.get("participants", ""),
                 "source": item.get("source", ""),

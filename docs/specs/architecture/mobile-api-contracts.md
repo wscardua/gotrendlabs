@@ -130,6 +130,8 @@ Campos minimos esperados:
 - `human_volume_gtl`
 - `participants`
 - `market_like_count`
+
+`primary_probability*` é compatibilidade de leitura derivada da opção líder em `options[].probability_exact`; o app não deve calcular nem corrigir consenso localmente.
 - `comment_count`
 - `viewer_has_prediction`
 - `viewer_has_favorite`

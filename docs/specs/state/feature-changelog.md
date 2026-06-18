@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-06-18 — FEAT-MARKET-001 probabilidade derivada das opções
+
+- `gotrendlabs_markets` deixou de persistir `primary_probability_exact` e `secondary_probability_exact`; a fonte única de consenso passa a ser `gotrendlabs_market_options.probability_exact`.
+- `MarketResponse` preserva `primary_probability*` e `secondary_probability*` como campos derivados para compatibilidade com web/mobile; em múltipla escolha, o atalho público usa a opção líder por `probability_exact`, sem alterar a ordem editorial de `options[]`.
+- Admin Ops, bootstrap e seeds deixam de enviar/gravar probabilidade agregada separada, evitando cards com percentual diferente do ticket de previsão.
+
 ## 2026-06-17 — FEAT-REP-001 requisitos configuráveis de badges
 
 - Badges administráveis passaram a aceitar requisitos adicionais configuráveis por regra, avaliados pela `BadgeAwardEngine` com lógica AND depois da regra principal.

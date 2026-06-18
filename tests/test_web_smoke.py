@@ -95,8 +95,6 @@ def _seed_test_markets():
                 "status": payload["status"],
                 "status_label": payload.get("status_label", payload["status"]),
                 "primary_outcome": payload.get("primary_outcome", ""),
-                "primary_probability_exact": payload.get("primary_probability_exact", payload.get("primary_probability", 0)),
-                "secondary_probability_exact": payload.get("secondary_probability_exact", payload.get("secondary_probability", 0)),
                 "volume_gtl": payload.get("volume_gtl", ""),
                 "participants": payload.get("participants", ""),
                 "source": payload.get("source", ""),
@@ -854,6 +852,72 @@ class BackendAuthAPITests(TransactionTestCase):
 
         missing = client.get("/markets/mercado-inexistente")
         self.assertEqual(missing.status_code, 404)
+
+    def test_market_api_and_local_fallback_rank_public_leader_by_probability(self):
+        client = TestClient(app)
+        category = MarketCategory.objects.get(name="IA")
+        subcategory = MarketSubcategory.objects.get(category=category, name="Modelos")
+        event = MarketEvent.objects.get(subcategory=subcategory, name="Geral")
+        netflix_market, _ = Market.objects.update_or_create(
+            slug="netflix-serie-top1-global-julho-2026",
+            defaults={
+                "category": category,
+                "subcategory": subcategory,
+                "event": event,
+                "title": "Qual série estará em #1 no Top 10 Global da Netflix?",
+                "summary": "Valida líder público por probabilidade",
+                "kind": "multiple",
+                "status": "open",
+                "status_label": "Aberto",
+                "primary_outcome": "Avatar: The Last Airbender",
+            },
+        )
+        netflix_market.options.all().delete()
+        MarketOption.objects.create(market=netflix_market, label="Avatar: The Last Airbender", probability_exact=Decimal("20.1939"), display_order=1)
+        MarketOption.objects.create(market=netflix_market, label="Wednesday", probability_exact=Decimal("16.1551"), display_order=2)
+        MarketOption.objects.create(market=netflix_market, label="One Piece", probability_exact=Decimal("47.4960"), display_order=3)
+        MarketOption.objects.create(market=netflix_market, label="Outra", probability_exact=Decimal("16.1551"), display_order=4)
+
+        listing = client.get("/markets")
+        self.assertEqual(listing.status_code, 200)
+        listing_market = next(market for market in listing.json()["markets"] if market["slug"] == "netflix-serie-top1-global-julho-2026")
+        self.assertEqual([option["label"] for option in listing_market["options"][:3]], ["Avatar: The Last Airbender", "Wednesday", "One Piece"])
+        self.assertEqual(listing_market["primary_outcome"], "One Piece")
+        self.assertEqual(Decimal(str(listing_market["primary_probability_exact"])), Decimal("47.4960"))
+        self.assertEqual(Decimal(str(listing_market["secondary_probability_exact"])), Decimal("20.1939"))
+
+        detail = client.get("/markets/netflix-serie-top1-global-julho-2026")
+        self.assertEqual(detail.status_code, 200)
+        self.assertEqual(detail.json()["primary_outcome"], "One Piece")
+        self.assertEqual(Decimal(str(detail.json()["primary_probability_exact"])), Decimal("47.4960"))
+        self.assertEqual(Decimal(str(detail.json()["secondary_probability_exact"])), Decimal("20.1939"))
+
+        local_payload = local_market("netflix-serie-top1-global-julho-2026")
+        self.assertEqual(local_payload["primary_outcome"], "One Piece")
+        self.assertEqual(Decimal(str(local_payload["primary_probability_exact"])), Decimal("47.4960"))
+        self.assertEqual(Decimal(str(local_payload["secondary_probability_exact"])), Decimal("20.1939"))
+
+        tie_market = Market.objects.create(
+            category=category,
+            subcategory=subcategory,
+            event=event,
+            slug="empate-multipla-escolha",
+            title="Empate de múltipla escolha",
+            summary="Valida desempate por ordem editorial",
+            kind="multiple",
+            status="open",
+            status_label="Aberto",
+            primary_outcome="Verde",
+        )
+        MarketOption.objects.create(market=tie_market, label="Azul", probability_exact=Decimal("33.3333"), display_order=1)
+        MarketOption.objects.create(market=tie_market, label="Verde", probability_exact=Decimal("33.3333"), display_order=2)
+        MarketOption.objects.create(market=tie_market, label="Cinza", probability_exact=Decimal("33.3333"), display_order=3)
+
+        tie_detail = client.get("/markets/empate-multipla-escolha")
+        self.assertEqual(tie_detail.status_code, 200)
+        self.assertEqual(tie_detail.json()["primary_outcome"], "Azul")
+        self.assertEqual(tie_detail.json()["secondary_probability_exact"], 33.3333)
+        self.assertEqual(local_market("empate-multipla-escolha")["primary_outcome"], "Azul")
 
     def test_market_api_treats_expired_auto_close_market_as_locked(self):
         Market.objects.filter(slug="openai-gpt6-2026").update(
@@ -2124,14 +2188,13 @@ class BackendAuthAPITests(TransactionTestCase):
                     cursor.execute(
                         """
                         INSERT INTO gotrendlabs_markets
-                            (slug, title, summary, kind, status, status_label, primary_outcome, primary_probability_exact,
-                             secondary_probability_exact, volume_gtl, participants, source, closes_in, close_label, thumb,
+                            (slug, title, summary, kind, status, status_label, primary_outcome, volume_gtl, participants, source, closes_in, close_label, thumb,
                              thumb_color, image_url, resolution_criteria, resolution_type, close_at, close_timezone,
                              auto_close_enabled, resolved_at, resolution_timezone, canceled_at, winning_option_id,
                              resolution_note, admin_notes, category_id, subcategory_id, created_by_id, updated_by_id,
                              display_order, view_count, share_count, is_featured, created_at, updated_at)
                         VALUES
-                            (%s, %s, 'Resumo daemon', 'binary', %s, %s, '', 0, 0, '', '', 'Fonte',
+                            (%s, %s, 'Resumo daemon', 'binary', %s, %s, '', '', '', 'Fonte',
                              '', '', '', '#136f4a', '', 'Critério', '', %s, 'America/Sao_Paulo',
                              %s, NULL, '', NULL, NULL, '', '', %s, %s, %s, %s, 0, 0, 0, false, %s, %s)
                         """,
@@ -5234,8 +5297,6 @@ class BackendAuthAPITests(TransactionTestCase):
             "auto_close_enabled": False,
             "status_label": "Rascunho",
             "primary_outcome": "SIM",
-            "primary_probability_exact": 0,
-            "secondary_probability_exact": 0,
             "volume_gtl": "0 GT₵",
             "participants": "0 usuários",
             "resolution_type": "",
@@ -5275,8 +5336,6 @@ class BackendAuthAPITests(TransactionTestCase):
             "title": "Mercado preserva dados internos? Pós-resolução",
             "status_label": "Rascunho",
             "primary_outcome": "NAO",
-            "primary_probability_exact": 0,
-            "secondary_probability_exact": 0,
             "volume_gtl": "0 GT₵",
             "participants": "0 usuários",
             "resolution_type": "",
@@ -8660,8 +8719,6 @@ class WebSmokeTests(TransactionTestCase):
             "status": market.status,
             "status_label": market.status_label,
             "primary_outcome": market.primary_outcome,
-            "primary_probability_exact": float(market.primary_probability_exact),
-            "secondary_probability_exact": float(market.secondary_probability_exact),
             "volume_gtl": market.volume_gtl,
             "participants": market.participants,
             "category": market.category.name,
@@ -9653,8 +9710,8 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(sent_payload["status_label"], "Aberto")
             self.assertEqual(sent_payload["volume_gtl"], "910 GT₵")
             self.assertEqual(sent_payload["participants"], "10 participantes")
-            self.assertEqual(sent_payload["primary_probability_exact"], 72.0721)
-            self.assertEqual(sent_payload["secondary_probability_exact"], 27.9279)
+            self.assertNotIn("primary_probability_exact", sent_payload)
+            self.assertNotIn("secondary_probability_exact", sent_payload)
             self.assertEqual(sent_payload["resolution_note"], "Nota interna preservada")
             self.assertEqual(sent_payload["options"][0]["probability_exact"], 72.0721)
 

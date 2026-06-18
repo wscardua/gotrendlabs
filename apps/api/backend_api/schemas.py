@@ -761,8 +761,6 @@ class AdminMarketPayload(BaseModel):
     event: str = Field(default="Geral", max_length=80)
     status_label: str = ""
     primary_outcome: str = ""
-    primary_probability_exact: float = Field(default=0, ge=0, le=100)
-    secondary_probability_exact: float = Field(default=0, ge=0, le=100)
     volume_gtl: str = ""
     participants: str = ""
     source: str = ""

@@ -216,8 +216,6 @@ def export_markets(media_files, market_slugs):
                         "status",
                         "status_label",
                         "primary_outcome",
-                        "primary_probability_exact",
-                        "secondary_probability_exact",
                         "volume_gtl",
                         "participants",
                         "source",
