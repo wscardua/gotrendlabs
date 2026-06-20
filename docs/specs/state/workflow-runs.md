@@ -2,6 +2,38 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260618-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-001
+
+- Tipo: `release-prep`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: preparar o primeiro Android App Bundle assinado para Google Play Closed testing, com versao `1.0.8+9`, release name e release notes `pt-BR` prontos para Play Console.
+- Etapa atual: AAB assinado `1.0.8+9` gerado localmente e pronto para upload manual no track Closed testing do Play Console.
+- Artefatos afetados:
+  - `apps/mobile/pubspec.yaml`
+  - `apps/mobile/README.md`
+  - `docs/specs/testing/mobile-acceptance.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+  - `ops/deploy/production/README.md`
+- Release name Play Console: `1.0.8+9 - Closed testing Android`.
+- Release notes Play Console:
+
+```text
+<pt-BR>
+Primeira versão de teste fechado do app GoTrendLabs no Google Play. Inclui feed e detalhe de mercados, previsões com GT₵ educativo, carteira, ranking, alertas, perfil, suporte, proteção local da sessão, manutenção mobile e push Android via FCM quando autorizado.
+</pt-BR>
+```
+
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-18
+- Atualizado em: 2026-06-20
+- Encerrado em: 2026-06-20
+- Retomada: subir `apps/mobile/build/app/outputs/bundle/release/app-release.aab` no track Closed testing do Play Console; o canal direto do site permanece com o APK ativo `1.0.7 (8)` ate uma publicacao propria.
+- Reversao logica: voltar `apps/mobile/pubspec.yaml` para `1.0.7+8` e remover a documentacao de Google Play Closed testing se a operacao adiar o canal Play.
+- Evidencias de validacao local: `cd apps/mobile && flutter pub get`; `cd apps/mobile && flutter analyze` sem issues; `cd apps/mobile && flutter test` com 87 testes OK; `cd apps/mobile && flutter build appbundle --release --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` gerou o bundle release; `jarsigner -verify -verbose -certs build/app/outputs/bundle/release/app-release.aab` retornou `jar verified` com certificado upload self-signed `CN=GoTrendLabs, OU=Mobile, O=GoTrendLabs, L=Sao Paulo, ST=SP, C=BR`; `git diff --check` sem problemas; `.venv/bin/python manage.py check` sem issues.
+- Evidencias do AAB: `apps/mobile/build/app/outputs/bundle/release/app-release.aab`; tamanho `57316771` bytes; SHA-256 `8871e060f9e49833ab459e42e00f98b6ffd832a73720fa6103c4c8ed6a436bf2`.
+
 ## WFLOW-20260618-MOBILE-PERFORMANCE-001
 
 - Tipo: `change-feature`

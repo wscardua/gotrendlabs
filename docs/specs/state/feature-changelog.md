@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-06-18 — FEAT-MOBILE-001 preparação Google Play Closed testing
+
+- Versão mobile avançada para `1.0.8+9` para o primeiro AAB de Google Play Closed testing, preservando o APK público direto `1.0.7 (8)` até uma publicação própria desse canal.
+- Documentado o build `flutter build appbundle --release` com bases de produção, signing local e artefato esperado `build/app/outputs/bundle/release/app-release.aab`.
+- Release name definido como `1.0.8+9 - Closed testing Android` e release notes `pt-BR` prontas para Play Console.
+- Critérios de aceite mobile passaram a cobrir AAB de Closed testing, hash/tamanho registrados e separação entre canal Google Play e canal APK direto.
+
 ## 2026-06-18 — FEAT-MOBILE-001 desempenho autenticado
 
 - FastAPI ganhou `GET /users/me/performance`, contrato autenticado agregado para placar, historico de resolucoes e progressao do usuario logado.
