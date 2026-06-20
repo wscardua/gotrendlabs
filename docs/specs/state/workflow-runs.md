@@ -2,6 +2,36 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260620-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-002
+
+- Tipo: `release-prep`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: preparar nova rodada de Android App Bundle assinado para Google Play Closed testing, com versao `1.0.10+11`, release name e release notes `pt-BR` prontos para Play Console, sem alterar comportamento funcional do app.
+- Etapa atual: `versionCode 10` foi recusado pelo Play Console por já ter sido usado; AAB assinado `1.0.10+11` gerado localmente e pronto para upload manual no track Closed testing do Play Console.
+- Artefatos afetados:
+  - `apps/mobile/pubspec.yaml`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/workflow-runs.md`
+- Release name Play Console: `1.0.10+11 - Closed testing Android`.
+- Release notes Play Console:
+
+```text
+<pt-BR>
+Nova versão para teste fechado do GoTrendLabs no Android, mantendo o app conectado à produção e preservando o canal beta direto do site. Esta rodada atualiza o bundle da Google Play para validação interna, sem alterar as regras de negócio nem o canal APK público atual.
+</pt-BR>
+```
+
+- Bloqueios: nenhum conhecido.
+- Iniciado em: 2026-06-20
+- Atualizado em: 2026-06-20
+- Encerrado em: 2026-06-20
+- Retomada: subir `apps/mobile/build/app/outputs/bundle/release/app-release.aab` no track Closed testing do Play Console; o canal direto do site permanece com o APK ativo `1.0.7 (8)` ate uma publicacao propria.
+- Reversao logica: voltar `apps/mobile/pubspec.yaml` para `1.0.8+9` e remover esta documentacao da segunda rodada de Google Play Closed testing se a operacao adiar o novo bundle.
+- Evidencias de validacao local: `cd apps/mobile && flutter pub get`; `cd apps/mobile && flutter analyze` sem issues; `cd apps/mobile && flutter test` com 94 testes OK; `cd apps/mobile && flutter build appbundle --release --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br` gerou o bundle release; `jarsigner -verify -verbose -certs build/app/outputs/bundle/release/app-release.aab` retornou `jar verified` com certificado upload self-signed `CN=GoTrendLabs, OU=Mobile, O=GoTrendLabs, L=Sao Paulo, ST=SP, C=BR`.
+- Evidencias do AAB: `apps/mobile/build/app/outputs/bundle/release/app-release.aab`; tamanho `57383320` bytes; SHA-256 `6592ccd9e65d323127bbbf2050866f58f050d85bbe9303280182237570e0d476`.
+
 ## WFLOW-20260620-MOBILE-COMPATIBILITY-POLICY-001
 
 - Tipo: `change-feature`
@@ -20,7 +50,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 - Iniciado em: 2026-06-20
 - Atualizado em: 2026-06-20
 - Encerrado em: 2026-06-20.
-- Retomada: para forçar atualização em produção, primeiro publicar/ativar uma release Android compatível em `MobileAppRelease` com `version_code` igual ou maior que o build mínimo desejado; depois ajustar `min_supported_android_build` no Admin Ops. Para updates opcionais, usar `recommended_android_build`. Em 2026-06-20, o canal direto do site permaneceu em `1.0.7 (8)` enquanto o Closed testing Google Play estava preparado como `1.0.8+9`; por isso a política de produção ficou com mínimo `0` e nenhum bloqueio obrigatório foi ativado.
+- Retomada: para forçar atualização em produção, primeiro publicar/ativar uma release Android compatível em `MobileAppRelease` com `version_code` igual ou maior que o build mínimo desejado; depois ajustar `min_supported_android_build` no Admin Ops. Para updates opcionais, usar `recommended_android_build`. Em 2026-06-20, o canal direto do site permaneceu em `1.0.7 (8)` enquanto o Closed testing Google Play já tinha AABs preparados como `1.0.8+9` e `1.0.10+11`; por isso a política de produção ficou com mínimo `0` e nenhum bloqueio obrigatório foi ativado.
 - Reversão lógica: zerar `min_supported_android_build`/`recommended_android_build`, ocultar a seção de compatibilidade no Admin Ops, remover o middleware `426`, manter `GET /health` compatível ou restaurar o snapshot OpenAPI anterior conforme necessidade.
 - Evidências de validação local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/schemas.py apps/web/django/admin_ops/models.py apps/web/django/admin_ops/forms.py apps/web/django/admin_ops/views.py`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_admin_config_mobile_compatibility_requires_superuser_and_audits_change tests.test_web_smoke.WebSmokeTests.test_admin_config_rejects_mobile_compatibility_above_active_release --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 207 testes OK; após revisão final, `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_admin_config_rejects_mobile_compatibility_above_active_release --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb`; `cd apps/mobile && flutter test test/api_client_test.dart test/maintenance_gate_test.dart test/market_detail_screen_test.dart`; `cd apps/mobile && flutter analyze`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `git diff --check` sem problemas.
 - Evidências de publicação: PR #109 (`Adiciona política de compatibilidade mobile por build`) mergeada em `main` por squash commit `6982a764a2f17a4670acad91f5306e514e82feb6`; GitHub Actions `GoTrendLabs CI and Deploy` run `27882938261` concluiu `detect-changes`, `test` e `deploy` com sucesso.
