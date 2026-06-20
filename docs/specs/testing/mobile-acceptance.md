@@ -4,7 +4,7 @@ titulo: "Criterios de aceite mobile"
 versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-16
+ultima_atualizacao: 2026-06-20
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -65,8 +65,13 @@ Deve passar:
 - app nao trava quando a API local esta indisponivel
 - app exibe erro recuperavel quando `http://10.0.2.2:8001` nao responde
 - app consulta `GET /health` ao abrir e mostra tela de manutencao quando a API falha, fica degradada ou retorna `maintenance.mobile_enabled=true`
+- app envia headers de cliente, versão e build em todas as chamadas: `X-GoTrendLabs-Client`, `X-GoTrendLabs-App-Version` e `X-GoTrendLabs-App-Build`
+- app mostra tela obrigatória de atualização quando `GET /health` retorna `mobile.update_required=true`, exibindo mensagem da API, versão/build instalada, versão/build disponível quando houver, botão de atualização por `download_url` e `Tentar novamente`
+- app promove qualquer resposta `426 code=app_update_required` recebida pelo `ApiClient` para a tela obrigatória de atualização, independentemente da superfície que disparou a chamada
+- app não bloqueia o shell quando `mobile.update_available=true` e `mobile.update_required=false`
 - tela de manutencao mobile segue o design dark-first, tem mensagem operacional e `Tentar novamente`, sem entrada operacional visivel
 - em manutencao mobile, usuarios publicos, staff e superusers permanecem bloqueados no shell mobile
+- chamadas mobile não isentas com build abaixo do mínimo recebem `426 code=app_update_required`, enquanto `GET /health` continua acessível para orientar o gate
 - APK beta de producao usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`; FCM depende de `google-services.json` local no build e backend com provider `fcm`
 - AAB de Google Play Closed testing usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`, versionCode maior que o ultimo build publicado e signing release local sem commitar artefatos
 

@@ -28,6 +28,10 @@ Implementar o app Flutter com escopo conservador, aderente às specs e validado 
 - No emulador, usar API local `http://10.0.2.2:8001`.
 - Sem opção pré-selecionada no ticket de previsão.
 - UI deve seguir design dark-first e componentes de `mobile-ux.md`.
+- `ApiClient` deve enviar `X-GoTrendLabs-Client`, `X-GoTrendLabs-App-Version` e `X-GoTrendLabs-App-Build` em todas as chamadas usando `package_info_plus`.
+- O gate inicial deve tratar `maintenance.mobile_enabled`, health degradado e `mobile.update_required` como estados separados; `mobile.update_available` sem obrigatoriedade não bloqueia o shell.
+- `426 code=app_update_required` deve ser tratado no cliente HTTP comum e promovido para estado global de atualização obrigatória; não limite esse tratamento a uma tela ou provider específico.
+- Flutter não decide compatibilidade por `versionName`; apenas exibe a política retornada pela FastAPI e usa `download_url` quando atualização obrigatória for sinalizada.
 - Preferir implementação incremental: app shell, tema, navegação, feed mock/API, detalhe, auth, previsão.
 - Não commitar segredos nem tokens.
 

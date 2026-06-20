@@ -2438,6 +2438,111 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "HealthMaintenanceResponse": {
+        "properties": {
+          "mobile_enabled": {
+            "default": false,
+            "title": "Mobile Enabled",
+            "type": "boolean"
+          },
+          "mobile_message": {
+            "default": "",
+            "title": "Mobile Message",
+            "type": "string"
+          },
+          "web_enabled": {
+            "default": false,
+            "title": "Web Enabled",
+            "type": "boolean"
+          }
+        },
+        "title": "HealthMaintenanceResponse",
+        "type": "object"
+      },
+      "HealthMobileResponse": {
+        "properties": {
+          "current_app_build": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current App Build"
+          },
+          "current_app_version": {
+            "default": "",
+            "title": "Current App Version",
+            "type": "string"
+          },
+          "download_url": {
+            "default": "",
+            "title": "Download Url",
+            "type": "string"
+          },
+          "latest_android_build": {
+            "default": 0,
+            "title": "Latest Android Build",
+            "type": "integer"
+          },
+          "latest_android_version": {
+            "default": "",
+            "title": "Latest Android Version",
+            "type": "string"
+          },
+          "min_supported_android_build": {
+            "default": 0,
+            "title": "Min Supported Android Build",
+            "type": "integer"
+          },
+          "update_available": {
+            "default": false,
+            "title": "Update Available",
+            "type": "boolean"
+          },
+          "update_required": {
+            "default": false,
+            "title": "Update Required",
+            "type": "boolean"
+          },
+          "update_required_message": {
+            "default": "Atualize o app para continuar usando o GoTrendLabs.",
+            "title": "Update Required Message",
+            "type": "string"
+          }
+        },
+        "title": "HealthMobileResponse",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "checks": {
+            "additionalProperties": true,
+            "title": "Checks",
+            "type": "object"
+          },
+          "maintenance": {
+            "$ref": "#/components/schemas/HealthMaintenanceResponse"
+          },
+          "mobile": {
+            "$ref": "#/components/schemas/HealthMobileResponse"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "maintenance",
+          "checks",
+          "mobile"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
       "LedgerEntryResponse": {
         "properties": {
           "amount": {
@@ -9647,7 +9752,9 @@
           "200": {
             "content": {
               "application/json": {
-                "schema": {}
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
               }
             },
             "description": "Successful Response"

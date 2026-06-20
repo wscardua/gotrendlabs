@@ -54,10 +54,18 @@
     </div>
 
     {% if messages %}
-      {% for message in messages %}<div class="notice green">{{ message }}</div>{% endfor %}
+      {% for message in messages %}
+        <div class="notice {% if 'error' in message.tags %}red{% else %}green{% endif %}">{{ message }}</div>
+      {% endfor %}
     {% endif %}
     {% if maintenance_form.non_field_errors %}<div class="notice red">{{ maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if mobile_maintenance_form.non_field_errors %}<div class="notice red">{{ mobile_maintenance_form.non_field_errors|join:", " }}</div>{% endif %}
+    {% if mobile_compatibility_form.errors %}
+      <div class="notice red">
+        Compatibilidade mobile não foi salva. Revise a seção <a href="#mobile-compatibility-section">Compatibilidade mobile</a>; o build mínimo e recomendado não podem passar do versionCode da release Android ativa{% if active_android_release %}: {{ active_android_release.version_name }} ({{ active_android_release.version_code }}){% endif %}.
+      </div>
+    {% endif %}
+    {% if mobile_compatibility_form.non_field_errors %}<div class="notice red">{{ mobile_compatibility_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if email_form.non_field_errors %}<div class="notice red">{{ email_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if economy_form.non_field_errors %}<div class="notice red">{{ economy_form.non_field_errors|join:", " }}</div>{% endif %}
     {% if daemon_form.non_field_errors %}<div class="notice red">{{ daemon_form.non_field_errors|join:", " }}</div>{% endif %}
@@ -174,7 +182,7 @@
         </div>
       </section>
 
-      <section class="config-section">
+      <section id="mobile-compatibility-section" class="config-section{% if mobile_compatibility_form.errors %} config-section-error{% endif %}">
         <div class="config-panel-head">
           <div>
             <span class="eyebrow">Disponibilidade mobile</span>
@@ -203,6 +211,65 @@
             <strong>{{ platform_config.mobile_updated_at|default:"Ainda não registrada" }}</strong>
             <span>Operador</span>
             <strong>{{ platform_config.mobile_updated_by|default:"-" }}</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div>
+            <span class="eyebrow">Compatibilidade mobile</span>
+            <h2>Atualização obrigatória</h2>
+            <p>Controle por versionCode Android. Aumentar o build mínimo pode bloquear usuários com apps antigos instalados.</p>
+          </div>
+          <span class="config-status {% if site_config.min_supported_android_build %}is-on{% endif %}">
+            Min {{ site_config.min_supported_android_build }} / Rec {{ site_config.recommended_android_build }}
+          </span>
+        </div>
+        <div class="config-controls">
+          {% if mobile_compatibility_form.errors %}
+            <div class="notice red section-error-notice">
+              Nada foi gravado nesta seção. Ajuste os campos destacados antes de salvar novamente.
+            </div>
+          {% endif %}
+          <div class="config-secret-card">
+            <span>Release Android ativa</span>
+            <strong>
+              {% if active_android_release %}
+                {{ active_android_release.version_name }} ({{ active_android_release.version_code }})
+              {% else %}
+                Nenhuma release ativa
+              {% endif %}
+            </strong>
+            <small>O build mínimo e recomendado não podem passar do versionCode da release Android ativa.</small>
+          </div>
+          <div class="config-secret-card">
+            <span>Atenção operacional</span>
+            <strong>Use bloqueio obrigatório somente quando o build antigo estiver incompatível ou inseguro.</strong>
+            <small>Campos novos opcionais, mudanças backend-only e mudanças web/admin-only não exigem aumento do build mínimo.</small>
+          </div>
+          <div class="config-form-grid">
+            <label class="field compact-field{% if mobile_compatibility_form.min_supported_android_build.errors %} field-has-error{% endif %}">
+              <span>Build mínimo Android</span>
+              {{ mobile_compatibility_form.min_supported_android_build }}
+              {% if mobile_compatibility_form.min_supported_android_build.errors %}<small class="field-error">{{ mobile_compatibility_form.min_supported_android_build.errors|join:", " }}</small>{% endif %}
+            </label>
+            <label class="field compact-field{% if mobile_compatibility_form.recommended_android_build.errors %} field-has-error{% endif %}">
+              <span>Build recomendado Android</span>
+              {{ mobile_compatibility_form.recommended_android_build }}
+              {% if mobile_compatibility_form.recommended_android_build.errors %}<small class="field-error">{{ mobile_compatibility_form.recommended_android_build.errors|join:", " }}</small>{% endif %}
+            </label>
+          </div>
+          <label class="field full{% if mobile_compatibility_form.mobile_update_required_message.errors %} field-has-error{% endif %}">
+            <span>Mensagem obrigatória</span>
+            {{ mobile_compatibility_form.mobile_update_required_message }}
+            {% if mobile_compatibility_form.mobile_update_required_message.errors %}<small class="field-error">{{ mobile_compatibility_form.mobile_update_required_message.errors|join:", " }}</small>{% endif %}
+          </label>
+          <div class="config-meta">
+            <span>Autoridade</span>
+            <strong>versionCode/build number define compatibilidade; versionName é informativo.</strong>
+            <span>Permissão</span>
+            <strong>Alterações exigem superuser.</strong>
           </div>
         </div>
       </section>

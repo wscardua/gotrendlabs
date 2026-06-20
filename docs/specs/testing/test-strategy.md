@@ -9,6 +9,7 @@ Garantir que cada feature tenha critérios de aceite verificáveis e cobertura s
 - Testes acompanham contratos e comportamento, não apenas telas.
 - Mudanças de spec devem atualizar os testes esperados.
 - Features críticas precisam de testes em múltiplos níveis.
+- Compatibilidade mobile deve ser testada por build/versionCode: `/health` sem headers, `/health` com build compatível, `/health` com build antigo, middleware `426` em endpoint não isento, cliente web sem bloqueio, gate Flutter para update obrigatório/opcional e promoção global de `426 code=app_update_required` pelo `ApiClient`.
 
 ## Níveis mínimos
 

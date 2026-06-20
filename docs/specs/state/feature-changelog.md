@@ -1,5 +1,15 @@
 # Feature Changelog
 
+## 2026-06-20 — FEAT-MOBILE-001 compatibilidade mobile por build
+
+- FastAPI passou a enriquecer `GET /health` com bloco `mobile`, incluindo build/versão instalados por headers, release Android ativa, build mínimo/recomendado, flags de atualização e URL de download.
+- Clientes mobile passam a enviar `X-GoTrendLabs-App-Version` e `X-GoTrendLabs-App-Build` em todas as chamadas, mantendo `versionCode`/build number como autoridade de compatibilidade.
+- Middleware FastAPI bloqueia clientes mobile abaixo de `min_supported_android_build` com `426 code=app_update_required`, preservando `/health` isento e mantendo manutenção mobile como `503 code=mobile_maintenance`.
+- Migration de compatibilidade concede leitura runtime para a FastAPI em `gotrendlabs_site_config` e `gotrendlabs_mobile_app_releases`, evitando falha aberta quando a política buscar a release Android ativa em produção.
+- Admin Ops Config ganhou seção `Compatibilidade mobile` com build mínimo, build recomendado e mensagem obrigatória, validação contra a release Android ativa, alteração restrita a superuser e auditoria `mobile.compatibility_update`.
+- Flutter ampliou o gate inicial para mostrar tela obrigatória de atualização quando `mobile.update_required=true` e o `ApiClient` promove qualquer `426 code=app_update_required` para o estado global de atualização obrigatória; update opcional não bloqueia o shell.
+- O projeto continua com API atual única, sem `/api/v1` ou `/api/v2`; campos novos opcionais e mudanças backend/web/admin-only não forçam atualização mobile.
+
 ## 2026-06-18 — FEAT-MOBILE-001 preparação Google Play Closed testing
 
 - Versão mobile avançada para `1.0.8+9` para o primeiro AAB de Google Play Closed testing, preservando o APK público direto `1.0.7 (8)` até uma publicação própria desse canal.

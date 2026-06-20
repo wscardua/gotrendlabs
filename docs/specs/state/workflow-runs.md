@@ -2,6 +2,28 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260620-MOBILE-COMPATIBILITY-POLICY-001
+
+- Tipo: `change-feature`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-MOBILE-001`, `backend-api`, `Admin Ops`
+- Objetivo: implementar política de compatibilidade mobile controlada pela API atual, sem versionamento de rotas, usando Android build/versionCode como autoridade.
+- Etapa atual: implementação local validada em `feature/mobile-api-compatibility-policy`; aguardando PR, merge em `main`, deploy pelo GitHub Actions e smoke de produção.
+- Artefatos afetados:
+  - `apps/api/backend_api/`
+  - `apps/web/django/admin_ops/`
+  - `apps/mobile/`
+  - `packages/contracts/openapi/gotrendlabs-api.json`
+  - `docs/specs/`
+  - `tools/skills/gotrendlabs/`
+- Bloqueios: publicação pendente de autorização para criar PR.
+- Iniciado em: 2026-06-20
+- Atualizado em: 2026-06-20
+- Encerrado em: pendente de publicação e validação de produção.
+- Retomada: criar PR para `main` com a descrição aprovada; após merge, acompanhar `GoTrendLabs CI and Deploy`, verificar `/api/health` com bloco `mobile`, validar `426 code=app_update_required` em endpoint não isento para build antigo e atualizar este workflow com evidências de produção. Se uma mudança futura quebrar ou tornar inseguro um build instalado, ajustar `min_supported_android_build` no Admin Ops após publicar uma release Android ativa compatível; para updates opcionais, usar `recommended_android_build`.
+- Reversão lógica: zerar `min_supported_android_build`/`recommended_android_build`, ocultar a seção de compatibilidade no Admin Ops, remover o middleware `426`, manter `GET /health` compatível ou restaurar o snapshot OpenAPI anterior conforme necessidade.
+- Evidências de validação local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/schemas.py apps/web/django/admin_ops/models.py apps/web/django/admin_ops/forms.py apps/web/django/admin_ops/views.py`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_admin_config_mobile_compatibility_requires_superuser_and_audits_change tests.test_web_smoke.WebSmokeTests.test_admin_config_rejects_mobile_compatibility_above_active_release --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 207 testes OK; após revisão final, `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_admin_config_rejects_mobile_compatibility_above_active_release --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb`; `cd apps/mobile && flutter test test/api_client_test.dart test/maintenance_gate_test.dart test/market_detail_screen_test.dart`; `cd apps/mobile && flutter analyze`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `git diff --check` sem problemas.
+
 ## WFLOW-20260618-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-001
 
 - Tipo: `release-prep`

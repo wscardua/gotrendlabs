@@ -2,7 +2,7 @@ from decimal import Decimal, ROUND_DOWN
 
 from django import forms
 
-from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
+from apps.web.django.admin_ops.models import MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT, MobileAppRelease, SiteConfig
 
 
 PROBABILITY_QUANT = Decimal("0.0001")
@@ -38,6 +38,65 @@ class MobileMaintenanceConfigForm(forms.Form):
         if self.cleaned_data.get("mobile_maintenance_enabled") and not message:
             raise forms.ValidationError("Informe a mensagem exibida no app mobile.")
         return message
+
+
+class MobileCompatibilityConfigForm(forms.Form):
+    min_supported_android_build = forms.IntegerField(
+        label="Build mínimo Android",
+        min_value=0,
+        max_value=1000000,
+        initial=0,
+        help_text="Builds abaixo deste versionCode recebem atualização obrigatória.",
+    )
+    recommended_android_build = forms.IntegerField(
+        label="Build recomendado Android",
+        min_value=0,
+        max_value=1000000,
+        initial=0,
+        help_text="Builds abaixo deste versionCode veem atualização disponível, sem bloqueio.",
+    )
+    mobile_update_required_message = forms.CharField(
+        label="Mensagem de atualização obrigatória",
+        max_length=240,
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 3}),
+    )
+
+    def __init__(self, *args, active_release=None, require_superuser=False, changed_by_non_superuser=False, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.active_release = active_release
+        self.require_superuser = require_superuser
+        self.changed_by_non_superuser = changed_by_non_superuser
+
+    def clean_mobile_update_required_message(self):
+        message = (self.cleaned_data.get("mobile_update_required_message") or "").strip()
+        return message or MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT
+
+    def clean(self):
+        cleaned_data = super().clean()
+        min_build = cleaned_data.get("min_supported_android_build") or 0
+        recommended_build = cleaned_data.get("recommended_android_build") or 0
+        active_code = self.active_release.version_code if self.active_release else None
+        if self.changed_by_non_superuser:
+            raise forms.ValidationError("Apenas superusuários podem alterar a compatibilidade mobile.")
+        if (min_build > 0 or recommended_build > 0) and active_code is None:
+            raise forms.ValidationError("Publique uma release Android ativa antes de exigir ou recomendar builds.")
+        if active_code is not None:
+            if min_build > active_code:
+                release_label = f"{self.active_release.version_name} ({active_code})"
+                self.add_error(
+                    "min_supported_android_build",
+                    f"O build mínimo Android ({min_build}) não pode ser maior que a release Android ativa {release_label}. Cadastre uma release ativa com versionCode {min_build} ou maior antes de salvar esta política.",
+                )
+            if recommended_build > active_code:
+                release_label = f"{self.active_release.version_name} ({active_code})"
+                self.add_error(
+                    "recommended_android_build",
+                    f"O build recomendado Android ({recommended_build}) não pode ser maior que a release Android ativa {release_label}. Cadastre uma release ativa com versionCode {recommended_build} ou maior antes de salvar esta política.",
+                )
+        if min_build and recommended_build and recommended_build < min_build:
+            self.add_error("recommended_android_build", "O build recomendado deve ser maior ou igual ao build mínimo.")
+        return cleaned_data
 
 
 class SiteEmailConfigForm(forms.Form):

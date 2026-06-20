@@ -4,7 +4,7 @@ titulo: "Arquitetura mobile Flutter"
 versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-16
+ultima_atualizacao: 2026-06-20
 origem:
   - docs/specs/architecture/system-overview.md
   - apps/mobile/README.md
@@ -112,9 +112,13 @@ Regras:
 - A configuracao local de assinatura fica em `apps/mobile/android/key.properties`, ignorado pelo Git.
 - O exemplo versionado fica em `apps/mobile/android/key.properties.example`.
 - Keystore, senhas e APKs gerados nunca devem ser versionados.
+- O app envia `X-GoTrendLabs-Client: mobile`, `X-GoTrendLabs-App-Version` e `X-GoTrendLabs-App-Build` em todas as chamadas; os dois ultimos vêm de `package_info_plus`.
+- Android `versionCode`/build number e a autoridade de compatibilidade. `versionName` pode mudar para valores como `2.0.0`, mas o build continua monotônico e nunca reinicia.
+- O gate inicial usa `GET /health`: manutenção/degradação mostra tela de manutenção, `mobile.update_required=true` mostra tela obrigatória de atualização e `mobile.update_available=true` sem obrigatoriedade não bloqueia o shell.
+- O `ApiClient` trata `426 code=app_update_required` como estado global de atualização obrigatória para qualquer chamada Dio; a tela bloqueante não depende de lógica específica de mercados, wallet, perfil ou ranking.
 - O APK beta de producao usa `GTL_API_BASE_URL=https://gotrendlabs.com.br/api` e `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br`.
 - Push FCM real no APK depende de `google-services.json` local no build Android e backend com `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON`.
-- `/app/android/latest.json` permanece como metadado publico para uso futuro pelo app.
+- `/app/android/latest.json` permanece como metadado publico para o site; o app usa o bloco `mobile` do `GET /health` como fonte autoritativa de atualização.
 - Publicacao na Google Play continua fora do escopo desta fase.
 
 Comando padrao:

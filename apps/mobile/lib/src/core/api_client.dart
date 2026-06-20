@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'environment.dart';
 
@@ -43,11 +44,18 @@ class MemoryTokenStore implements TokenStore {
   }
 }
 
+typedef PackageInfoLoader = Future<PackageInfo> Function();
+typedef AppUpdateRequiredHandler = void Function(Map<String, dynamic> payload);
+
 class ApiClient {
   ApiClient({
     Dio? dio,
     TokenStore? tokenStore,
     String baseUrl = AppEnvironment.apiBaseUrl,
+    PackageInfoLoader? packageInfoLoader,
+    this.onAppUpdateRequired,
+    String? appVersion,
+    String? appBuild,
   }) : _dio =
            dio ??
            Dio(
@@ -62,17 +70,35 @@ class ApiClient {
              ),
            ),
        _tokenStore = tokenStore ?? SecureTokenStore(),
-       _baseUrl = baseUrl {
+       _baseUrl = baseUrl,
+       _packageInfoLoader = packageInfoLoader ?? PackageInfo.fromPlatform {
+    _appVersion = appVersion;
+    _appBuild = appBuild;
     _dio.interceptors.add(
       InterceptorsWrapper(
-        onRequest: (options, handler) {
+        onRequest: (options, handler) async {
           options.headers.putIfAbsent('Accept', () => 'application/json');
           options.headers.putIfAbsent('X-GoTrendLabs-Client', () => 'mobile');
+          final appHeaders = await _appHeaders();
+          options.headers.putIfAbsent(
+            'X-GoTrendLabs-App-Version',
+            () => appHeaders.version,
+          );
+          options.headers.putIfAbsent(
+            'X-GoTrendLabs-App-Build',
+            () => appHeaders.build,
+          );
           final token = _token;
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
           }
           handler.next(options);
+        },
+        onError: (error, handler) {
+          if (error.response?.statusCode == 426) {
+            onAppUpdateRequired?.call(_asMap(error.response?.data));
+          }
+          handler.next(error);
         },
       ),
     );
@@ -81,6 +107,10 @@ class ApiClient {
   final Dio _dio;
   final TokenStore _tokenStore;
   final String _baseUrl;
+  final PackageInfoLoader _packageInfoLoader;
+  final AppUpdateRequiredHandler? onAppUpdateRequired;
+  String? _appVersion;
+  String? _appBuild;
   String? _token;
 
   Future<void> restoreToken() async {
@@ -105,6 +135,31 @@ class ApiClient {
   Future<void> clearToken() async {
     _token = null;
     await _tokenStore.clearToken();
+  }
+
+  Future<_AppHeaders> _appHeaders() async {
+    final version = (_appVersion ?? '').trim();
+    final build = (_appBuild ?? '').trim();
+    if (version.isNotEmpty && build.isNotEmpty) {
+      return _AppHeaders(version: version, build: build);
+    }
+    try {
+      final info = await _packageInfoLoader();
+      final loadedVersion = info.version.trim();
+      final loadedBuild = info.buildNumber.trim();
+      if (loadedVersion.isNotEmpty) {
+        _appVersion = loadedVersion;
+      }
+      if (loadedBuild.isNotEmpty) {
+        _appBuild = loadedBuild;
+      }
+    } catch (_) {
+      return const _AppHeaders(version: '0.0.0', build: '0');
+    }
+    return _AppHeaders(
+      version: (_appVersion ?? '').isEmpty ? '0.0.0' : _appVersion!,
+      build: (_appBuild ?? '').isEmpty ? '0' : _appBuild!,
+    );
   }
 
   String resolveUrl(String path) {
@@ -171,6 +226,13 @@ class ApiClient {
   }
 }
 
+class _AppHeaders {
+  const _AppHeaders({required this.version, required this.build});
+
+  final String version;
+  final String build;
+}
+
 class ApiFailure implements Exception {
   ApiFailure(this.category, this.message);
 
@@ -197,6 +259,12 @@ class ApiFailure implements Exception {
       }
       if (statusCode == 403) {
         return ApiFailure('forbidden', detail ?? 'Ação não permitida.');
+      }
+      if (statusCode == 426) {
+        return ApiFailure(
+          'app_update_required',
+          detail ?? 'Atualize o app para continuar usando o GoTrendLabs.',
+        );
       }
       if (statusCode == 409 || statusCode == 422) {
         final lower = (detail ?? '').toLowerCase();

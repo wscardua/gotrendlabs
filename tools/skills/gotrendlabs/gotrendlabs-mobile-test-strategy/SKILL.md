@@ -25,6 +25,7 @@ Garantir que o MVP Android seja verificável por testes automatizados, smoke tes
 - Testes protegem contratos e comportamento, não só aparência.
 - Fluxos críticos: feed -> detalhe, visitante bloqueado, login, preview, previsão, erro de API e wallet.
 - Widget tests devem cobrir estados `loading`, `empty`, `error`, `unauthenticated` e bloqueado.
+- Testes de compatibilidade mobile devem cobrir headers do `ApiClient`, `/health` com e sem headers, build antigo em `/health`, `426 code=app_update_required` em endpoint não isento, promoção global desse 426 pelo cliente HTTP, manutenção `503` separada e gate Flutter para update obrigatório/opcional.
 - QA visual deve testar texto longo, imagem ausente, mercado resolvido, fonte ampliada e tema dark.
 - Xcode/CocoaPods não bloqueia Android MVP.
 

@@ -24,6 +24,10 @@ Garantir que o app mobile consuma a FastAPI corretamente, com contratos estávei
 
 - Mobile consome FastAPI JSON; não consome templates Django.
 - Reutilize endpoints existentes antes de propor novos.
+- Não criar `/api/v1` ou `/api/v2` para compatibilidade mobile sem decisão explícita; a fase atual usa API única e política por build.
+- Compatibilidade obrigatória mobile é por `X-GoTrendLabs-App-Build`/Android `versionCode`; `X-GoTrendLabs-App-Version`/`versionName` é informativo.
+- `GET /health` deve permanecer isento de bloqueio e expor o bloco `mobile`; endpoints não isentos podem retornar `426 code=app_update_required`.
+- Manutenção mobile (`503 code=mobile_maintenance`) e atualização obrigatória (`426 code=app_update_required`) são estados distintos.
 - Preview de previsão, stake, saldo, reputação, ranking, badges e resolução vêm do backend.
 - Erros devem mapear para UX: `unauthenticated`, `forbidden`, `validation`, `domain_state`, `insufficient_balance`, `network`, `server`.
 - Atualização otimista no app é permitida só como estado visual reversível.
