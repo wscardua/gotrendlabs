@@ -8,6 +8,9 @@ from django.db.models import Q
 from django.utils import timezone
 
 
+MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT = "Atualize o app para continuar usando o GoTrendLabs."
+
+
 def _release_slug(value):
     return re.sub(r"[^a-zA-Z0-9._-]+", "-", str(value or "").strip()).strip("-") or "release"
 
@@ -42,6 +45,9 @@ class SiteConfig(models.Model):
     daemon_missing_after_minutes = models.PositiveIntegerField(default=21)
     system_log_retention_days = models.PositiveIntegerField(default=90)
     ai_audit_retention_days = models.PositiveIntegerField(default=90)
+    min_supported_android_build = models.PositiveIntegerField(default=0)
+    recommended_android_build = models.PositiveIntegerField(default=0)
+    mobile_update_required_message = models.CharField(max_length=240, default=MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT)
     ai_agents_enabled = models.BooleanField(default=False)
     ai_commenting_enabled = models.BooleanField(default=False)
     ai_predictions_enabled = models.BooleanField(default=False)

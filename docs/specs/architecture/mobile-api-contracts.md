@@ -4,7 +4,7 @@ titulo: "Contratos API para mobile"
 versao: 0.1
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-16
+ultima_atualizacao: 2026-06-20
 origem:
   - docs/specs/architecture/backend-api.md
   - packages/contracts/openapi/gotrendlabs-api.json
@@ -63,15 +63,32 @@ Campos esperados sem quebrar compatibilidade:
 - `maintenance.mobile_message`
 - `checks.api`
 - `checks.database`
+- `mobile.current_app_version`
+- `mobile.current_app_build`
+- `mobile.min_supported_android_build`
+- `mobile.latest_android_build`
+- `mobile.latest_android_version`
+- `mobile.update_required`
+- `mobile.update_available`
+- `mobile.download_url`
+- `mobile.update_required_message`
 
 Requisitos mobile:
 
 - toda chamada do app envia `X-GoTrendLabs-Client: mobile`
+- toda chamada do app envia `X-GoTrendLabs-App-Version` e `X-GoTrendLabs-App-Build` lidos do `PackageInfo`
+- `X-GoTrendLabs-App-Build`/Android `versionCode` e a autoridade de compatibilidade; `versionName` e informativo para humanos e nunca reinicia a contagem de build
 - quando `maintenance.mobile_enabled=true`, o app mostra tela de manutencao antes do shell publico
+- quando `mobile.update_required=true`, o app mostra tela obrigatoria de atualizacao com mensagem, versao/build instalada, versao/build disponivel quando houver, `download_url` e retry
+- qualquer resposta `426 code=app_update_required` recebida pelo `ApiClient` deve acionar o estado global de atualizacao obrigatoria, independentemente da tela ou endpoint que originou a chamada
+- quando `mobile.update_available=true` e `mobile.update_required=false`, o app nao bloqueia o usuario nesta etapa
 - falha de rede, timeout ou status degradado tambem mostram a tela de manutencao
 - durante manutencao mobile, o shell mobile permanece bloqueado para todos os usuarios do app
 - a manutencao mobile e mais restritiva que a web: nao ha excecao por papel dentro do app
 - FastAPI e a autoridade do bloqueio e pode retornar `503` com `code=mobile_maintenance` para chamadas mobile nao isentas
+- FastAPI pode retornar `426` com `code=app_update_required`, `detail` e `mobile` quando o build mobile instalado esta abaixo de `min_supported_android_build`; `GET /health` permanece isento para permitir o gate inicial
+- Campos opcionais novos na API, mudanças backend-only ou web/admin-only e mudanças compatíveis com mobile nao devem elevar `min_supported_android_build`
+- Nao ha multiplos contratos simultaneos nesta fase; site/Admin Ops consomem sempre a API atual
 
 ## Anti-abuso mobile
 

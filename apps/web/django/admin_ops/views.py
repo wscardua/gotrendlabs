@@ -94,6 +94,7 @@ from apps.web.django.admin_ops.forms import (
     FeedbackRewardForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
+    MobileCompatibilityConfigForm,
     MobileMaintenanceConfigForm,
     MobileAppReleaseForm,
     PositionConfigForm,
@@ -116,6 +117,7 @@ from apps.web.django.communications.push_services import (
     push_runtime_config,
 )
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
+from apps.web.django.markets.models import AdminEvent
 from PIL import Image, UnidentifiedImageError
 
 
@@ -974,6 +976,25 @@ def _admin_model_user(request):
     return get_user_model().objects.filter(id=user_id).first()
 
 
+def _admin_session_is_superuser(request):
+    user = request.session.get(USER_KEY) or {}
+    model_user = _admin_model_user(request)
+    if model_user is not None:
+        user["is_staff"] = bool(model_user.is_staff)
+        user["is_superuser"] = bool(model_user.is_superuser)
+        request.session[USER_KEY] = user
+        return bool(model_user.is_superuser)
+    return bool(user.get("is_superuser"))
+
+
+def _mobile_compatibility_values(config):
+    return {
+        "min_supported_android_build": config.min_supported_android_build,
+        "recommended_android_build": config.recommended_android_build,
+        "mobile_update_required_message": config.mobile_update_required_message,
+    }
+
+
 def _audit_pagination(audit_data):
     pagination = audit_data.get("pagination", {})
     limit = int(pagination.get("limit") or 10)
@@ -1109,6 +1130,7 @@ def dashboard(request):
 def config(request):
     platform_config = load_platform_config()
     site_config = SiteConfig.get_solo()
+    active_android_release = MobileAppRelease.active_android()
     llm_provider = (site_config.ai_llm_provider or "openai").strip().lower()
     llm_secret_name = "AWS_BEARER_TOKEN_BEDROCK" if llm_provider == "bedrock" else "OPENAI_API_KEY"
     maintenance_form = MaintenanceConfigForm(
@@ -1126,6 +1148,31 @@ def config(request):
             "mobile_maintenance_message": platform_config.get("mobile_maintenance_message", ""),
         },
         prefix="mobile_maintenance",
+    )
+    mobile_compatibility_initial = _mobile_compatibility_values(site_config)
+    mobile_compatibility_post_data = request.POST if request.method == "POST" and any(key.startswith("mobile_compatibility-") for key in request.POST) else None
+    mobile_compatibility_changed = False
+    if mobile_compatibility_post_data is not None:
+        posted_message = (request.POST.get("mobile_compatibility-mobile_update_required_message") or "").strip() or mobile_compatibility_initial["mobile_update_required_message"]
+        try:
+            posted_min_build = int(request.POST.get("mobile_compatibility-min_supported_android_build") or 0)
+        except ValueError:
+            posted_min_build = None
+        try:
+            posted_recommended_build = int(request.POST.get("mobile_compatibility-recommended_android_build") or 0)
+        except ValueError:
+            posted_recommended_build = None
+        mobile_compatibility_changed = (
+            posted_min_build != mobile_compatibility_initial["min_supported_android_build"]
+            or posted_recommended_build != mobile_compatibility_initial["recommended_android_build"]
+            or posted_message != mobile_compatibility_initial["mobile_update_required_message"]
+        )
+    mobile_compatibility_form = MobileCompatibilityConfigForm(
+        mobile_compatibility_post_data,
+        initial=mobile_compatibility_initial,
+        prefix="mobile_compatibility",
+        active_release=active_android_release,
+        changed_by_non_superuser=mobile_compatibility_changed and not _admin_session_is_superuser(request),
     )
     email_form = SiteEmailConfigForm(
         request.POST or None,
@@ -1188,6 +1235,7 @@ def config(request):
         prefix="ai",
     )
     position_form_valid = position_post_data is None or position_form.is_valid()
+    mobile_compatibility_form_valid = mobile_compatibility_post_data is None or mobile_compatibility_form.is_valid()
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
     if request.method == "POST" and request.POST.get("action") == "resend_test":
         try:
@@ -1204,10 +1252,12 @@ def config(request):
         and email_form.is_valid()
         and economy_form.is_valid()
         and position_form_valid
+        and mobile_compatibility_form_valid
         and daemon_form.is_valid()
         and retention_form.is_valid()
         and ai_form_valid
     ):
+        previous_mobile_compatibility = _mobile_compatibility_values(site_config)
         save_platform_config(
             {
                 "maintenance_enabled": maintenance_form.cleaned_data["maintenance_enabled"],
@@ -1225,6 +1275,9 @@ def config(request):
         if position_post_data is not None:
             for field, value in position_form.cleaned_data.items():
                 setattr(site_config, field, value)
+        if mobile_compatibility_post_data is not None:
+            for field, value in mobile_compatibility_form.cleaned_data.items():
+                setattr(site_config, field, value)
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
@@ -1234,8 +1287,25 @@ def config(request):
                 setattr(site_config, field, value)
         site_config.updated_by = _admin_model_user(request)
         site_config.save()
+        current_mobile_compatibility = _mobile_compatibility_values(site_config)
+        if previous_mobile_compatibility != current_mobile_compatibility:
+            AdminEvent.objects.create(
+                actor=_admin_model_user(request),
+                action="mobile.compatibility_update",
+                entity_type="site_config",
+                entity_identifier="mobile_compatibility",
+                note=(
+                    f"min={current_mobile_compatibility['min_supported_android_build']}; "
+                    f"recommended={current_mobile_compatibility['recommended_android_build']}"
+                ),
+            )
         messages.success(request, "Configurações atualizadas.")
         return redirect("admin-ops-config")
+    if request.method == "POST" and mobile_compatibility_post_data is not None and not mobile_compatibility_form_valid:
+        messages.error(
+            request,
+            "Compatibilidade mobile não foi salva. Nenhuma alteração dessa seção foi persistida; corrija os campos destacados e salve novamente.",
+        )
     smtp_secret_configured = bool(settings.GOTRENDLABS_SMTP_PASSWORD or settings.GOTRENDLABS_SMTP_API_KEY)
     resend_secret_configured = bool(getattr(settings, "GOTRENDLABS_RESEND_API_KEY", ""))
     email_secret_configured = resend_secret_configured if site_config.email_provider == SiteConfig.EMAIL_PROVIDER_RESEND else smtp_secret_configured
@@ -1247,6 +1317,7 @@ def config(request):
         {
             "maintenance_form": maintenance_form,
             "mobile_maintenance_form": mobile_maintenance_form,
+            "mobile_compatibility_form": mobile_compatibility_form,
             "email_form": email_form,
             "economy_form": economy_form,
             "position_form": position_form,
@@ -1255,6 +1326,7 @@ def config(request):
             "ai_form": ai_form,
             "platform_config": platform_config,
             "site_config": site_config,
+            "active_android_release": active_android_release,
             "smtp_secret_configured": smtp_secret_configured,
             "resend_secret_configured": resend_secret_configured,
             "email_secret_configured": email_secret_configured,

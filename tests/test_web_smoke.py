@@ -407,6 +407,130 @@ class MobileMaintenanceGateTests(TransactionTestCase):
         self.assertEqual(response.json()["checks"]["database"], "ok")
         self.assertTrue(response.json()["maintenance"]["mobile_enabled"])
         self.assertEqual(response.json()["maintenance"]["mobile_message"], "App em manutenção.")
+        self.assertFalse(response.json()["mobile"]["update_required"])
+        self.assertFalse(response.json()["mobile"]["update_available"])
+        self.assertIsNone(response.json()["mobile"]["current_app_build"])
+
+    def test_health_reports_mobile_compatibility_for_current_build(self):
+        release = MobileAppRelease.objects.create(
+            platform="android",
+            version_name="1.0.8",
+            version_code=9,
+            apk=SimpleUploadedFile("app-release.apk", b"apk", content_type="application/vnd.android.package-archive"),
+            is_active=True,
+        )
+        site_config = SiteConfig.get_solo()
+        site_config.min_supported_android_build = 8
+        site_config.recommended_android_build = 9
+        site_config.save()
+
+        response = self.client_api.get(
+            "/health",
+            headers={
+                "X-GoTrendLabs-Client": "mobile",
+                "X-GoTrendLabs-App-Version": "1.0.8",
+                "X-GoTrendLabs-App-Build": "9",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mobile = response.json()["mobile"]
+        self.assertEqual(mobile["current_app_version"], "1.0.8")
+        self.assertEqual(mobile["current_app_build"], 9)
+        self.assertEqual(mobile["min_supported_android_build"], 8)
+        self.assertEqual(mobile["latest_android_build"], 9)
+        self.assertEqual(mobile["latest_android_version"], "1.0.8")
+        self.assertIn(release.apk.name, mobile["download_url"])
+        self.assertFalse(mobile["update_required"])
+        self.assertFalse(mobile["update_available"])
+
+    def test_health_remains_accessible_for_old_mobile_build_and_marks_required_update(self):
+        MobileAppRelease.objects.create(
+            platform="android",
+            version_name="1.0.8",
+            version_code=9,
+            apk=SimpleUploadedFile("app-release.apk", b"apk", content_type="application/vnd.android.package-archive"),
+            is_active=True,
+        )
+        site_config = SiteConfig.get_solo()
+        site_config.min_supported_android_build = 9
+        site_config.mobile_update_required_message = "Atualize para continuar."
+        site_config.save()
+
+        response = self.client_api.get(
+            "/health",
+            headers={
+                "X-GoTrendLabs-Client": "mobile",
+                "X-GoTrendLabs-App-Version": "1.0.7",
+                "X-GoTrendLabs-App-Build": "8",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        mobile = response.json()["mobile"]
+        self.assertTrue(mobile["update_required"])
+        self.assertEqual(mobile["update_required_message"], "Atualize para continuar.")
+        self.assertEqual(mobile["current_app_build"], 8)
+
+    def test_mobile_compatibility_blocks_non_exempt_old_build_without_blocking_web(self):
+        MobileAppRelease.objects.create(
+            platform="android",
+            version_name="1.0.8",
+            version_code=9,
+            apk=SimpleUploadedFile("app-release.apk", b"apk", content_type="application/vnd.android.package-archive"),
+            is_active=True,
+        )
+        site_config = SiteConfig.get_solo()
+        site_config.min_supported_android_build = 9
+        site_config.mobile_update_required_message = "Atualize o app para continuar usando o GoTrendLabs."
+        site_config.save()
+
+        blocked = self.client_api.get(
+            "/markets",
+            headers={
+                "X-GoTrendLabs-Client": "mobile",
+                "X-GoTrendLabs-App-Version": "1.0.7",
+                "X-GoTrendLabs-App-Build": "8",
+            },
+        )
+        web_response = self.client_api.get("/markets")
+
+        self.assertEqual(blocked.status_code, 426)
+        self.assertEqual(blocked.json()["code"], "app_update_required")
+        self.assertTrue(blocked.json()["mobile"]["update_required"])
+        self.assertEqual(web_response.status_code, 200)
+
+    def test_mobile_maintenance_takes_precedence_over_compatibility_block(self):
+        MobileAppRelease.objects.create(
+            platform="android",
+            version_name="1.0.8",
+            version_code=9,
+            apk=SimpleUploadedFile("app-release.apk", b"apk", content_type="application/vnd.android.package-archive"),
+            is_active=True,
+        )
+        site_config = SiteConfig.get_solo()
+        site_config.min_supported_android_build = 9
+        site_config.save()
+        self._runtime_path().write_text(
+            json.dumps(
+                {
+                    "mobile_maintenance_enabled": True,
+                    "mobile_maintenance_message": "App em manutenção.",
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        response = self.client_api.get(
+            "/markets",
+            headers={
+                "X-GoTrendLabs-Client": "mobile",
+                "X-GoTrendLabs-App-Build": "8",
+            },
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["code"], "mobile_maintenance")
 
     def test_health_reports_degraded_when_database_check_fails(self):
         with patch("apps.api.backend_api.main.get_connection", side_effect=Exception("database unavailable")):
@@ -2047,12 +2171,14 @@ class BackendAuthAPITests(TransactionTestCase):
                             ai_max_comments_per_day, ai_comment_max_chars, ai_min_humans_for_prediction,
                             ai_max_stake_gtl, ai_max_predictions_per_cycle, ai_max_predictions_per_day, ai_skip_if_human_comments_recent,
                             ai_recent_human_comment_window_hours, ai_openai_timeout_seconds, ai_openai_max_retries, ai_pause_reason,
+                            min_supported_android_build, recommended_android_build, mobile_update_required_message,
                             updated_by_id, updated_at
                         )
                     VALUES (
                         1, 100, 200, 5, 15, 90, 90, true, 'smtp', 'smtp.example.com', 587, 'mailer', true, false, 10, 'noreply@example.com', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
-                        1, 1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', %s, %s
+                        1, 1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', 0, 0,
+                        'Atualize o app para continuar usando o GoTrendLabs.', %s, %s
                     )
                     ON CONFLICT (singleton_key) DO UPDATE SET
                         email_enabled = EXCLUDED.email_enabled,
@@ -6067,12 +6193,16 @@ class BackendAuthAPITests(TransactionTestCase):
                         ai_openai_timeout_seconds,
                         ai_openai_max_retries,
                         ai_pause_reason,
+                        min_supported_android_build,
+                        recommended_android_build,
+                        mobile_update_required_message,
                         updated_at
                     )
                     VALUES (
                         1, 10000, 200, 5, 15, 90, 90, false, 'smtp', '', 587, '', true, false, 10, '', '',
                         false, false, false, 'openai', 'https://api.openai.com/v1', 'gpt-5.4-mini', 'gpt-5.5', 24, 1,
-                        1, 1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', NOW()
+                        1, 1, 3, 200, 20, 700, 1, 25, 1, 10, true, 6, 20, 1, '', 0, 0,
+                        'Atualize o app para continuar usando o GoTrendLabs.', NOW()
                     )
                     ON CONFLICT (singleton_key)
                     DO UPDATE SET
@@ -7730,6 +7860,152 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(payload["file_size"], len(apk_bytes))
             self.assertEqual(payload["release_notes"], "Primeira versão beta pública.")
             self.assertIn(release.apk.url, payload["download_url"])
+
+    def test_admin_config_mobile_compatibility_requires_superuser_and_audits_change(self):
+        staff = get_user_model().objects.create_user(
+            username="@compatstaff",
+            email="compat-staff@example.com",
+            password="testpass123",
+            first_name="Compat Staff",
+            is_staff=True,
+        )
+        superuser = get_user_model().objects.create_user(
+            username="@compatsuper",
+            email="compat-super@example.com",
+            password="testpass123",
+            first_name="Compat Super",
+            is_staff=True,
+            is_superuser=True,
+        )
+        MobileAppRelease.objects.create(
+            version_name="1.0.8",
+            version_code=9,
+            apk=SimpleUploadedFile("app-release.apk", b"apk", content_type="application/vnd.android.package-archive"),
+            is_active=True,
+        )
+        payload = {
+            "maintenance-maintenance_message": "",
+            "mobile_maintenance-mobile_maintenance_message": "",
+            "mobile_compatibility-min_supported_android_build": "8",
+            "mobile_compatibility-recommended_android_build": "9",
+            "mobile_compatibility-mobile_update_required_message": "",
+            "economy-wallet_recharge_min_balance_gtl": "100",
+            "economy-referral_bonus_gtl": "200",
+            "daemon-daemon_stale_after_minutes": "7",
+            "daemon-daemon_missing_after_minutes": "21",
+            "retention-system_log_retention_days": "90",
+            "retention-ai_audit_retention_days": "90",
+            "email-email_provider": "smtp",
+            "email-smtp_port": "587",
+            "email-smtp_timeout_seconds": "10",
+        }
+
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": staff.id,
+            "handle": staff.username,
+            "email": staff.email,
+            "display_name": staff.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+            "is_superuser": False,
+        }
+        session.save()
+        response = self.client.post(reverse("admin-ops-config"), payload)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Apenas superusuários podem alterar a compatibilidade mobile.")
+        site_config = SiteConfig.get_solo()
+        self.assertEqual(site_config.min_supported_android_build, 0)
+        self.assertFalse(AdminEvent.objects.filter(action="mobile.compatibility_update").exists())
+
+        session = self.client.session
+        session[TOKEN_KEY] = "super-token"
+        session[USER_KEY] = {
+            "id": superuser.id,
+            "handle": superuser.username,
+            "email": superuser.email,
+            "display_name": superuser.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+            "is_superuser": False,
+        }
+        session.save()
+        response = self.client.post(reverse("admin-ops-config"), payload)
+        self.assertEqual(response.status_code, 302)
+        site_config.refresh_from_db()
+        self.assertEqual(site_config.min_supported_android_build, 8)
+        self.assertEqual(site_config.recommended_android_build, 9)
+        self.assertEqual(site_config.mobile_update_required_message, "Atualize o app para continuar usando o GoTrendLabs.")
+        self.assertTrue(AdminEvent.objects.filter(action="mobile.compatibility_update", entity_identifier="mobile_compatibility").exists())
+
+    def test_admin_config_rejects_mobile_compatibility_above_active_release(self):
+        superuser = get_user_model().objects.create_user(
+            username="@compatroot",
+            email="compat-root@example.com",
+            password="testpass123",
+            first_name="Compat Root",
+            is_staff=True,
+            is_superuser=True,
+        )
+        MobileAppRelease.objects.create(
+            version_name="1.0.8",
+            version_code=9,
+            apk=SimpleUploadedFile("app-release.apk", b"apk", content_type="application/vnd.android.package-archive"),
+            is_active=True,
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "super-token"
+        session[USER_KEY] = {
+            "id": superuser.id,
+            "handle": superuser.username,
+            "email": superuser.email,
+            "display_name": superuser.first_name,
+            "preferred_language": "pt-br",
+            "is_staff": True,
+            "is_superuser": True,
+        }
+        session.save()
+
+        response = self.client.post(
+            reverse("admin-ops-config"),
+            {
+                "maintenance-maintenance_message": "",
+                "mobile_maintenance-mobile_maintenance_message": "",
+                "mobile_compatibility-min_supported_android_build": "10",
+                "mobile_compatibility-recommended_android_build": "10",
+                "mobile_compatibility-mobile_update_required_message": "Atualize.",
+                "economy-wallet_recharge_min_balance_gtl": "100",
+                "economy-referral_bonus_gtl": "200",
+                "daemon-daemon_stale_after_minutes": "7",
+                "daemon-daemon_missing_after_minutes": "21",
+                "retention-system_log_retention_days": "90",
+                "retention-ai_audit_retention_days": "90",
+                "email-email_provider": "smtp",
+                "email-smtp_port": "587",
+                "email-smtp_timeout_seconds": "10",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Compatibilidade mobile não foi salva.")
+        self.assertContains(response, 'href="#mobile-compatibility-section"')
+        self.assertContains(response, 'id="mobile-compatibility-section"')
+        self.assertContains(response, "config-section-error")
+        self.assertContains(response, "field-has-error")
+        self.assertContains(response, "Nada foi gravado nesta seção.")
+        self.assertContains(response, "O build mínimo Android (10) não pode ser maior que a release Android ativa 1.0.8 (9).")
+        self.assertContains(response, "O build recomendado Android (10) não pode ser maior que a release Android ativa 1.0.8 (9).")
+        html = response.content.decode()
+        self.assertRegex(
+            html,
+            r'id="mobile-compatibility-section" class="config-section config-section-error"[\s\S]*?<span class="eyebrow">Compatibilidade mobile</span>',
+        )
+        self.assertNotRegex(
+            html,
+            r'id="mobile-compatibility-section"[\s\S]*?<span class="eyebrow">Disponibilidade</span>',
+        )
+        self.assertEqual(SiteConfig.get_solo().min_supported_android_build, 0)
 
     def test_mobile_release_admin_upload_calculates_metadata_and_keeps_one_active_release(self):
         staff = get_user_model().objects.create_user(

@@ -33,6 +33,7 @@ Governar processos de mudança de ponta a ponta, mantendo memória operacional e
 
 - Não deixe mudança multi-documento sem workflow run.
 - Não apague histórico para reverter; use reversão lógica.
+- Mudanças mobile que alterem health, headers, OpenAPI, Admin Ops ou skills devem atualizar specs de arquitetura/teste, changelog, integration map, implementation status, known gaps e `workflow-runs.md`.
 - Toda retomada precisa apontar a próxima ação objetiva.
 - Toda conclusão precisa passar por `docs/specs/state/workflow-checklists.md`.
 - Se uma etapa ficar pendente, registrar bloqueio em vez de fingir conclusão.

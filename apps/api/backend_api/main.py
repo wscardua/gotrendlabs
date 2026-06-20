@@ -68,6 +68,7 @@ from apps.api.backend_api.schemas import (
     EmailConfirmationConfirmPayload,
     EmailConfirmationResponse,
     LedgerResponse,
+    HealthResponse,
     LoginPayload,
     MarketListResponse,
     MarketResponse,
@@ -146,6 +147,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
 
 _RATE_LIMIT_BUCKETS = {}
+MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT = "Atualize o app para continuar usando o GoTrendLabs."
 
 
 def _rate_limits_enabled():
@@ -339,8 +341,122 @@ def _is_mobile_client(request: Request):
     return request.headers.get("x-gotrendlabs-client", "").strip().lower() == "mobile"
 
 
+def _mobile_app_build(request: Request):
+    value = request.headers.get("x-gotrendlabs-app-build", "")
+    try:
+        return max(int(str(value).strip()), 0)
+    except (TypeError, ValueError):
+        return 0
+
+
+def _mobile_app_version(request: Request):
+    return request.headers.get("x-gotrendlabs-app-version", "").strip()[:40]
+
+
 def _mobile_maintenance_exempt(path):
     return path in {"/health", "/auth/login", "/auth/session", "/auth/logout"} or path.startswith("/auth/social/")
+
+
+def _mobile_compatibility_exempt(path):
+    return path == "/health"
+
+
+def _mobile_release_download_url(apk_path):
+    apk_path = str(apk_path or "").strip()
+    if not apk_path:
+        return ""
+    return public_url(f"media/{apk_path}")
+
+
+def _mobile_compatibility_policy(*, log_errors=True):
+    policy = {
+        "min_supported_android_build": 0,
+        "recommended_android_build": 0,
+        "mobile_update_required_message": MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT,
+        "latest_android_build": 0,
+        "latest_android_version": "",
+        "download_url": "",
+    }
+    try:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    SELECT min_supported_android_build, recommended_android_build, mobile_update_required_message
+                    FROM gotrendlabs_site_config
+                    WHERE singleton_key = 1
+                    LIMIT 1
+                    """
+                )
+                config = cursor.fetchone()
+                if config:
+                    policy["min_supported_android_build"] = int(config["min_supported_android_build"] or 0)
+                    policy["recommended_android_build"] = int(config["recommended_android_build"] or 0)
+                    policy["mobile_update_required_message"] = str(
+                        config["mobile_update_required_message"] or MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT
+                    )
+                cursor.execute(
+                    """
+                    SELECT version_name, version_code, apk
+                    FROM gotrendlabs_mobile_app_releases
+                    WHERE platform = 'android' AND is_active = true
+                    ORDER BY published_at DESC NULLS LAST, id DESC
+                    LIMIT 1
+                    """
+                )
+                release = cursor.fetchone()
+                if release:
+                    policy["latest_android_build"] = int(release["version_code"] or 0)
+                    policy["latest_android_version"] = str(release["version_name"] or "")
+                    policy["download_url"] = _mobile_release_download_url(release["apk"])
+    except Exception:
+        if log_errors:
+            logger.exception("Mobile compatibility policy lookup failed.")
+    return policy
+
+
+def _mobile_compatibility_payload(request: Request, *, log_errors=True):
+    policy = _mobile_compatibility_policy(log_errors=log_errors)
+    is_mobile = _is_mobile_client(request)
+    current_build = _mobile_app_build(request) if is_mobile else None
+    current_version = _mobile_app_version(request) if is_mobile else ""
+    required_build = policy["min_supported_android_build"]
+    recommended_build = max(policy["recommended_android_build"], required_build)
+    update_required = bool(is_mobile and required_build > 0 and (current_build or 0) < required_build)
+    update_available = bool(
+        is_mobile
+        and not update_required
+        and recommended_build > 0
+        and (current_build or 0) < recommended_build
+    )
+    return {
+        "current_app_version": current_version,
+        "current_app_build": current_build,
+        "min_supported_android_build": required_build,
+        "latest_android_build": policy["latest_android_build"],
+        "latest_android_version": policy["latest_android_version"],
+        "update_required": update_required,
+        "update_available": update_available,
+        "download_url": policy["download_url"],
+        "update_required_message": policy["mobile_update_required_message"],
+    }
+
+
+@app.middleware("http")
+async def mobile_compatibility_middleware(request: Request, call_next):
+    path = request.url.path
+    if _is_mobile_client(request) and not _mobile_compatibility_exempt(path) and not _mobile_maintenance_mode()["enabled"]:
+        mobile = _mobile_compatibility_payload(request)
+        if mobile["update_required"]:
+            return JSONResponse(
+                status_code=status.HTTP_426_UPGRADE_REQUIRED,
+                content={
+                    "detail": mobile["update_required_message"],
+                    "code": "app_update_required",
+                    "mobile": mobile,
+                },
+            )
+    return await call_next(request)
 
 
 @app.middleware("http")
@@ -4225,8 +4341,8 @@ def _bearer_token(authorization):
     return authorization.split(" ", 1)[1].strip()
 
 
-@app.get("/health")
-def health():
+@app.get("/health", response_model=HealthResponse)
+def health(request: Request):
     maintenance = _mobile_maintenance_mode()
     checks = {"api": "ok", "database": "ok"}
     response_status = status.HTTP_200_OK
@@ -4248,6 +4364,7 @@ def health():
             "mobile_message": maintenance["message"],
         },
         "checks": checks,
+        "mobile": _mobile_compatibility_payload(request, log_errors=response_status == status.HTTP_200_OK),
     }
     if response_status != status.HTTP_200_OK:
         return JSONResponse(status_code=response_status, content=payload)

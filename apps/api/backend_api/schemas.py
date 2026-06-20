@@ -73,6 +73,31 @@ class PasswordResetConfirmResponse(BaseModel):
     message: str
 
 
+class HealthMaintenanceResponse(BaseModel):
+    web_enabled: bool = False
+    mobile_enabled: bool = False
+    mobile_message: str = ""
+
+
+class HealthMobileResponse(BaseModel):
+    current_app_version: str = ""
+    current_app_build: Optional[int] = None
+    min_supported_android_build: int = 0
+    latest_android_build: int = 0
+    latest_android_version: str = ""
+    update_required: bool = False
+    update_available: bool = False
+    download_url: str = ""
+    update_required_message: str = "Atualize o app para continuar usando o GoTrendLabs."
+
+
+class HealthResponse(BaseModel):
+    status: str
+    maintenance: HealthMaintenanceResponse
+    checks: dict
+    mobile: HealthMobileResponse
+
+
 class UserResponse(BaseModel):
     id: int
     handle: str
