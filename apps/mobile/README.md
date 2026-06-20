@@ -128,15 +128,15 @@ flutter build appbundle --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao alvo do AAB: `1.0.8+9`.
+Versao alvo atual do AAB: `1.0.10+11`.
 
-Release name no Play Console: `1.0.8+9 - Closed testing Android`.
+Release name no Play Console: `1.0.10+11 - Closed testing Android`.
 
 Release notes em `pt-BR`:
 
 ```text
 <pt-BR>
-Primeira versão de teste fechado do app GoTrendLabs no Google Play. Inclui feed e detalhe de mercados, previsões com GT₵ educativo, carteira, ranking, alertas, perfil, suporte, proteção local da sessão, manutenção mobile e push Android via FCM quando autorizado.
+Nova versão para teste fechado do GoTrendLabs no Android, mantendo o app conectado à produção e preservando o canal beta direto do site. Esta rodada atualiza o bundle da Google Play para validação interna, sem alterar as regras de negócio nem o canal APK público atual.
 </pt-BR>
 ```
 

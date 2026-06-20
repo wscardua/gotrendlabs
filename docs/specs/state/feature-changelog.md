@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-06-20 — FEAT-MOBILE-001 novo AAB Google Play Closed testing
+
+- Versão mobile avançada para `1.0.10+11` para nova rodada de Google Play Closed testing, sem mudança funcional e preservando o APK público direto `1.0.7 (8)`; `versionCode 10` foi descartado porque o Play Console informou que já tinha sido usado.
+- AAB assinado gerado com bases de produção, SHA-256 `6592ccd9e65d323127bbbf2050866f58f050d85bbe9303280182237570e0d476` e tamanho `57383320` bytes.
+- Release name definido como `1.0.10+11 - Closed testing Android` e release notes `pt-BR` prontas para Play Console.
+
 ## 2026-06-20 — FEAT-MOBILE-001 compatibilidade mobile por build
 
 - FastAPI passou a enriquecer `GET /health` com bloco `mobile`, incluindo build/versão instalados por headers, release Android ativa, build mínimo/recomendado, flags de atualização e URL de download.
