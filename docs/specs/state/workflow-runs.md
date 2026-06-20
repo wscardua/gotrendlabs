@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260620-MOBILE-COMPATIBILITY-POLICY-001
 
 - Tipo: `change-feature`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-MOBILE-001`, `backend-api`, `Admin Ops`
 - Objetivo: implementar política de compatibilidade mobile controlada pela API atual, sem versionamento de rotas, usando Android build/versionCode como autoridade.
-- Etapa atual: implementação local validada em `feature/mobile-api-compatibility-policy`; aguardando PR, merge em `main`, deploy pelo GitHub Actions e smoke de produção.
+- Etapa atual: PR #109 publicada e mergeada em `main`; deploy de produção concluído pelo GitHub Actions e smoke público validado.
 - Artefatos afetados:
   - `apps/api/backend_api/`
   - `apps/web/django/admin_ops/`
@@ -16,13 +16,15 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `packages/contracts/openapi/gotrendlabs-api.json`
   - `docs/specs/`
   - `tools/skills/gotrendlabs/`
-- Bloqueios: publicação pendente de autorização para criar PR.
+- Bloqueios: nenhum conhecido.
 - Iniciado em: 2026-06-20
 - Atualizado em: 2026-06-20
-- Encerrado em: pendente de publicação e validação de produção.
-- Retomada: criar PR para `main` com a descrição aprovada; após merge, acompanhar `GoTrendLabs CI and Deploy`, verificar `/api/health` com bloco `mobile`, validar `426 code=app_update_required` em endpoint não isento para build antigo e atualizar este workflow com evidências de produção. Se uma mudança futura quebrar ou tornar inseguro um build instalado, ajustar `min_supported_android_build` no Admin Ops após publicar uma release Android ativa compatível; para updates opcionais, usar `recommended_android_build`.
+- Encerrado em: 2026-06-20.
+- Retomada: para forçar atualização em produção, primeiro publicar/ativar uma release Android compatível em `MobileAppRelease` com `version_code` igual ou maior que o build mínimo desejado; depois ajustar `min_supported_android_build` no Admin Ops. Para updates opcionais, usar `recommended_android_build`. Em 2026-06-20, o canal direto do site permaneceu em `1.0.7 (8)` enquanto o Closed testing Google Play estava preparado como `1.0.8+9`; por isso a política de produção ficou com mínimo `0` e nenhum bloqueio obrigatório foi ativado.
 - Reversão lógica: zerar `min_supported_android_build`/`recommended_android_build`, ocultar a seção de compatibilidade no Admin Ops, remover o middleware `426`, manter `GET /health` compatível ou restaurar o snapshot OpenAPI anterior conforme necessidade.
 - Evidências de validação local: `.venv/bin/python -m py_compile apps/api/backend_api/main.py apps/api/backend_api/schemas.py apps/web/django/admin_ops/models.py apps/web/django/admin_ops/forms.py apps/web/django/admin_ops/views.py`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python manage.py check`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_admin_config_mobile_compatibility_requires_superuser_and_audits_change tests.test_web_smoke.WebSmokeTests.test_admin_config_rejects_mobile_compatibility_above_active_release --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke --keepdb` com 207 testes OK; após revisão final, `.venv/bin/python manage.py test tests.test_web_smoke.WebSmokeTests.test_admin_config_rejects_mobile_compatibility_above_active_release --keepdb`; `.venv/bin/python manage.py test tests.test_web_smoke.MobileMaintenanceGateTests --keepdb`; `cd apps/mobile && flutter test test/api_client_test.dart test/maintenance_gate_test.dart test/market_detail_screen_test.dart`; `cd apps/mobile && flutter analyze`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `git diff --check` sem problemas.
+- Evidências de publicação: PR #109 (`Adiciona política de compatibilidade mobile por build`) mergeada em `main` por squash commit `6982a764a2f17a4670acad91f5306e514e82feb6`; GitHub Actions `GoTrendLabs CI and Deploy` run `27882938261` concluiu `detect-changes`, `test` e `deploy` com sucesso.
+- Evidências de produção: `https://gotrendlabs.com.br/api/health` respondeu `HTTP 200`, `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok`, `checks.database=ok` e bloco `mobile` com `min_supported_android_build=0`, `latest_android_build=8`, `latest_android_version=1.0.7`, `update_required=false`, `update_available=false` e mensagem padrão segura; a mesma rota com headers `X-GoTrendLabs-Client: mobile`, `X-GoTrendLabs-App-Version: 1.0.8`, `X-GoTrendLabs-App-Build: 9` retornou `current_app_build=9` sem bloqueio; `/api/health` com build `8` continuou acessível; `/api/markets` com build `8` retornou `HTTP 200` porque o mínimo produtivo segue `0`; `/app/android/latest.json` confirmou a release direta ativa `1.0.7 (8)` com SHA-256 `54822fc7aa84ebad2e923c0af75076ba43f7d73433c918f1a365bcd2d4ffe5ae`.
 
 ## WFLOW-20260618-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-001
 
