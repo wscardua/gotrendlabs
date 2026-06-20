@@ -68,6 +68,7 @@ Deve passar:
 - tela de manutencao mobile segue o design dark-first, tem mensagem operacional e `Tentar novamente`, sem entrada operacional visivel
 - em manutencao mobile, usuarios publicos, staff e superusers permanecem bloqueados no shell mobile
 - APK beta de producao usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`; FCM depende de `google-services.json` local no build e backend com provider `fcm`
+- AAB de Google Play Closed testing usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`, versionCode maior que o ultimo build publicado e signing release local sem commitar artefatos
 
 ## Validacao de distribuicao beta
 
@@ -83,6 +84,7 @@ Deve passar:
 - publicar uma release Android ativa desativa a anterior
 - Caddy roteia `/api/*` para `fastapi:8001` removendo o prefixo `/api`
 - smoke em producao confirma `/api/health`, rodape/login/cadastro/compartilhamento com link direto, download HTTPS do APK e checksum do arquivo baixado
+- Google Play Closed testing possui AAB assinado, SHA-256/tamanho registrados em `workflow-runs.md`, release name definido e release notes `pt-BR` dentro do limite do Play Console
 
 ## Smoke test manual
 

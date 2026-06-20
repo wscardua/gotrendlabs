@@ -217,6 +217,33 @@ O beta Android fora da Google Play e distribuido por Django/Admin Ops:
 
 Os arquivos ficam no volume de media em `MEDIA_ROOT/app_releases/android/` e sao servidos por `/media/app_releases/android/...`. Apenas uma release Android ativa deve existir por vez. Google Play e atualizacao automatica dentro do app continuam fora desta etapa.
 
+## Google Play closed testing
+
+O canal Google Play Closed testing usa Android App Bundle assinado localmente e e independente do APK beta direto publicado pelo Admin Ops. Preparar um AAB para Play Console nao altera `/app/android/latest.json` nem substitui o APK ativo do site.
+
+Build padrao do AAB:
+
+```bash
+cd apps/mobile
+flutter build appbundle --release \
+  --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
+```
+
+Para a primeira release de teste fechado, use:
+
+- Versao: `1.0.8+9`
+- Release name: `1.0.8+9 - Closed testing Android`
+- Release notes:
+
+```text
+<pt-BR>
+Primeira versão de teste fechado do app GoTrendLabs no Google Play. Inclui feed e detalhe de mercados, previsões com GT₵ educativo, carteira, ranking, alertas, perfil, suporte, proteção local da sessão, manutenção mobile e push Android via FCM quando autorizado.
+</pt-BR>
+```
+
+O AAB, APKs, keystores, `apps/mobile/android/key.properties` e `apps/mobile/android/app/google-services.json` nao devem ser commitados. Registre SHA-256 e tamanho do AAB no workflow de release antes do upload manual no Play Console.
+
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.

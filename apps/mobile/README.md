@@ -110,10 +110,36 @@ flutter build apk --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao desta fatia: `1.0.7+8`.
+Versao ativa no canal direto do site: `1.0.7+8`.
 
 O build release falha quando `android/key.properties` nao existe. Use `flutter build apk --debug` para validacao local sem assinatura release.
 
 Depois do build, suba o APK pelo Admin Ops em `/admin-ops/mobile-releases/`; o servidor calcula SHA-256 e tamanho, guarda em `MEDIA_ROOT/app_releases/android/` e publica apenas uma release Android ativa por vez. O link publico aponta direto para o arquivo ativo quando existir release. Entrega FCM real depende tambem do backend em producao com `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON` configurado fora do Git/Admin Ops.
+
+## Google Play closed testing
+
+O primeiro pacote para Google Play Closed testing usa Android App Bundle assinado localmente, sem passar pelo upload de APK do Admin Ops e sem alterar o APK ativo no canal direto do site.
+
+Build padrao do AAB para Play Console:
+
+```bash
+flutter build appbundle --release \
+  --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
+```
+
+Versao alvo do AAB: `1.0.8+9`.
+
+Release name no Play Console: `1.0.8+9 - Closed testing Android`.
+
+Release notes em `pt-BR`:
+
+```text
+<pt-BR>
+Primeira versão de teste fechado do app GoTrendLabs no Google Play. Inclui feed e detalhe de mercados, previsões com GT₵ educativo, carteira, ranking, alertas, perfil, suporte, proteção local da sessão, manutenção mobile e push Android via FCM quando autorizado.
+</pt-BR>
+```
+
+O AAB esperado fica em `build/app/outputs/bundle/release/app-release.aab`. O arquivo `.aab`, APKs, keystores, `android/key.properties` e `google-services.json` permanecem fora do Git.
 
 Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.
