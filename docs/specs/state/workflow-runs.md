@@ -5,10 +5,10 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260829-MARKET-CARD-LAYOUT-001
 
 - Tipo: `change-feature`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-MARKET-001`
 - Objetivo: compactar os cards web do feed, removendo metadados secundários e reposicionando as tags de classificação para aproveitar o espaço abaixo da miniatura, sem alterar domínio, contratos ou app mobile.
-- Etapa atual: implementação, specs, memória e teste de regressão atualizados; aguardando aprovação do usuário para publicar a PR em português, mesclar em `main` e acompanhar a automação de produção.
+- Etapa atual: implementado, publicado na PR #112, mesclado em `main` e implantado em produção com smoke externo aprovado.
 - Artefatos afetados:
   - `apps/web/templates/components/market_card.html`
   - `apps/web/static/css/gotrendlabs.css`
@@ -21,10 +21,11 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/state/workflow-runs.md`
 - Impacto arquitetural: somente apresentação Django; FastAPI, OpenAPI, banco e Flutter permanecem inalterados.
 - Testes esperados: renderização do card preserva tags e prazo relativo, omite metadados secundários e `Crédito distribuído` em cards resolvidos, exibe `Consenso final` como contexto do gráfico/opções e mantém título/CTAs/favoritos/curtidas/comentários funcionais.
-- Bloqueios: aprovação pendente para criar PR/merge remoto.
+- Bloqueios: nenhum.
 - Iniciado em: 2026-08-29
 - Atualizado em: 2026-08-29
-- Retomada: após aprovação, criar PR, aguardar CI, mesclar em `main`, acompanhar deploy quando acionado e registrar evidências finais nesta execução.
+- Evidências finais: PR #112 mesclada por squash no commit `458b127`; workflow `GoTrendLabs CI and Deploy` #33257650695 aprovado (detecção, suíte completa e deploy); `https://gotrendlabs.com.br/` e `/api/health` responderam HTTP 200, com API e banco `ok`. O HTML público apresentou `Consenso final` e as novas faixas de tags, sem os metadados removidos.
+- Retomada: encerrado; para reversão, aplicar a reversão lógica abaixo em uma nova mudança.
 - Reversão lógica: restaurar os quatro metadados no componente do card e reverter a regra visual da faixa de tags, sem migração, mudança de contrato ou efeito no mobile.
 
 ## WFLOW-20260620-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-002
