@@ -2,6 +2,31 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260829-MARKET-CARD-LAYOUT-001
+
+- Tipo: `change-feature`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-MARKET-001`
+- Objetivo: compactar os cards web do feed, removendo metadados secundários e reposicionando as tags de classificação para aproveitar o espaço abaixo da miniatura, sem alterar domínio, contratos ou app mobile.
+- Etapa atual: implementação, specs, memória e teste de regressão atualizados; aguardando aprovação do usuário para publicar a PR em português, mesclar em `main` e acompanhar a automação de produção.
+- Artefatos afetados:
+  - `apps/web/templates/components/market_card.html`
+  - `apps/web/static/css/gotrendlabs.css`
+  - `tests/test_web_smoke.py`
+  - `docs/specs/architecture/frontend-web.md`
+  - `docs/specs/features/market-feed.md`
+  - `docs/specs/state/implementation-status.md`
+  - `docs/specs/state/feature-changelog.md`
+  - `docs/specs/state/change-log-specs.md`
+  - `docs/specs/state/workflow-runs.md`
+- Impacto arquitetural: somente apresentação Django; FastAPI, OpenAPI, banco e Flutter permanecem inalterados.
+- Testes esperados: renderização do card preserva tags e prazo relativo, omite metadados secundários e `Crédito distribuído` em cards resolvidos, exibe `Consenso final` como contexto do gráfico/opções e mantém título/CTAs/favoritos/curtidas/comentários funcionais.
+- Bloqueios: aprovação pendente para criar PR/merge remoto.
+- Iniciado em: 2026-08-29
+- Atualizado em: 2026-08-29
+- Retomada: após aprovação, criar PR, aguardar CI, mesclar em `main`, acompanhar deploy quando acionado e registrar evidências finais nesta execução.
+- Reversão lógica: restaurar os quatro metadados no componente do card e reverter a regra visual da faixa de tags, sem migração, mudança de contrato ou efeito no mobile.
+
 ## WFLOW-20260620-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-002
 
 - Tipo: `release-prep`

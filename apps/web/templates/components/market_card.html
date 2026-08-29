@@ -23,24 +23,24 @@
       <span class="thumb-fallback">{{ market.thumb|default:"GT" }}</span>
     {% endif %}
   </div>
-  <div>
+  <div class="market-card-summary">
     <div class="market-title">
       <h3><a class="market-title-link" href="{% url 'market-detail' market.slug %}">{{ market.title }}</a></h3>
+    </div>
+  </div>
+  <div class="market-side">
+    <div class="market-card-tags" aria-label="Classificação do mercado">
       <span class="tag hot">{{ market.category }}</span>
       <span class="tag">{{ market.subcategory }}</span>
       <span class="tag">{{ market.event }}</span>
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span>
     </div>
-    <div class="mini-stats">
-      <span>{{ market.volume_gtl }} reservados</span>
-      <span>{{ market.participants }}</span>
-      {% if market.close_label and market.close_label != market.status_label %}<span>{{ market.close_label }}</span>{% endif %}
-      <span>Fonte: {{ market.source }}</span>
-    </div>
-  </div>
-  <div class="market-side">
-    <div class="prob-row">
-      <strong>{% if market.status == "resolved" %}Crédito distribuído{% else %}{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %} {{ market.primary_probability }}%{% endif %}</strong>
+    <div class="prob-row {% if market.status == 'resolved' %}resolved{% endif %}">
+      {% if market.status == "resolved" %}
+        <span class="market-final-consensus">Consenso final</span>
+      {% else %}
+        <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %} {{ market.primary_probability }}%</strong>
+      {% endif %}
       <span class="deadline-rail" data-deadline-rail aria-label="Tempo restante: {{ market.closes_in }}">
         <span class="deadline-rail-copy"><span>Prazo</span><strong>{{ market.closes_in }}</strong></span>
         <span class="deadline-rail-track" aria-hidden="true"><span class="deadline-rail-fill"></span></span>

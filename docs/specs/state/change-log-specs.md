@@ -1,5 +1,10 @@
 # Change Log de Specs
 
+## 2026-08-29
+
+- atualizada a especificação de `FEAT-MARKET-001` e a arquitetura web para definir cards compactos: classificação e prazo relativo permanecem no feed, enquanto volume reservado, participantes, `close_label` e fonte ficam fora dessa superfície.
+- atualizado o estado de implementação e a regressão esperada, incluindo o rótulo visual `Consenso final` em cards resolvidos, sem mudança de contratos FastAPI/OpenAPI ou impacto no app mobile.
+
 ## 2026-06-17
 
 - registrado que `primary_probability*` e `secondary_probability*` em `MarketResponse` são atalhos de leitura derivados da opção líder por `gotrendlabs_market_options.probability_exact`, sem snapshot duplicado em `gotrendlabs_markets`.

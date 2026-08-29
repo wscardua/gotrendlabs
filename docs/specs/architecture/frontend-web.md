@@ -76,7 +76,7 @@
 - Cards sociais usam URL pública configurável para que crawlers de redes consigam ler `og:image`; em host local a UI deve indicar que o preview externo não é rastreável.
 - Compartilhamento de badge conquistada pode gerar URL pública com token opaco de conquista, sem expor id, email ou handle no query string.
 - Cards de mercado com `image_url` devem tratar a imagem como thumbnail visual pura do evento, sem título, texto, categoria ou marca embutidos. A UI já renderiza título, tags, evento e fonte em HTML; a thumbnail deve apenas reforçar visualmente o tema do mercado e encaixar em corte quadrado com `object-fit: cover`.
-- Cards de mercado devem exibir fechamento em formato legível localizado, evitando ISO cru em labels como `Fecha em 2026-06-11T15:55:00 BRT`.
+- Cards de mercado devem comunicar o prazo restante por `closes_in` e indicador visual de prazo; não exibem `close_label` nem data/hora absoluta de fechamento. A data completa localizada permanece disponível no detalhe e nas superfícies operacionais que a exigem.
 - Cards de mercado sem imagem devem exibir fallback visual legível com iniciais derivadas de categoria/subcategoria/evento/título no feed e nas imagens sociais.
 - A distribuicao Android deve aparecer como CTA discreto no rodape, nas telas de acesso e nas paginas de compartilhamento, apontando direto para o APK ativo quando houver release publicada e mostrando "Android em breve" sem link quebrado quando nao houver release ativa.
 - O iOS pode aparecer ao lado do Android apenas como estado "em breve", sem link, rota publica ou artefato baixavel nesta etapa.
