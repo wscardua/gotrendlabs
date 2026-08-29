@@ -36,7 +36,9 @@
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span>
     </div>
     <div class="prob-row {% if market.status == 'resolved' %}resolved{% endif %}">
-      {% if market.status != "resolved" %}
+      {% if market.status == "resolved" %}
+        <span class="market-final-consensus">Consenso final</span>
+      {% else %}
         <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %} {{ market.primary_probability }}%</strong>
       {% endif %}
       <span class="deadline-rail" data-deadline-rail aria-label="Tempo restante: {{ market.closes_in }}">

@@ -7178,6 +7178,8 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, 'class="mini-stats"')
         self.assertNotContains(response, "Crédito distribuído")
         self.assertContains(response, 'class="prob-row resolved"')
+        self.assertContains(response, 'class="market-final-consensus"')
+        self.assertContains(response, "Consenso final")
         self.assertContains(response, "data-deadline-rail")
 
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):

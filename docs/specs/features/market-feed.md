@@ -62,7 +62,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - cards exibem curtidas reais do mercado como sinal social discreto
 - cards exibem comentários visíveis como sinal social discreto para visitantes e usuários autenticados
 - cards mantêm categoria, subcategoria, evento, status e prazo relativo, mas omitem volume reservado, participantes, `close_label` e fonte para reduzir densidade visual; esses dados continuam disponíveis no detalhe/contratos aplicáveis
-- cards resolvidos não exibem a mensagem redundante `Crédito distribuído`; o status e prazo relativo permanecem como leitura compacta
+- cards resolvidos não exibem a mensagem redundante `Crédito distribuído`; exibem o rótulo discreto `Consenso final` ao lado do prazo relativo para contextualizar o gráfico e as opções, sem apresentar resultado vencedor no card
 - usuário autenticado pode curtir/descurtir cada mercado uma única vez; a ação atualiza o contador sem recarregar a página
 - visitante vê o contador de curtidas no mesmo slot visual, mas ao tentar curtir recebe aviso de que a ação exige login
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
@@ -203,6 +203,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - fluxo de navegação feed -> detalhe
 - regressão para cards com payload antigo sem sparkline
 - regressão para o card omitir metadados secundários (volume reservado, participantes, `close_label` e fonte), preservando tags e prazo relativo
+- regressão para cards resolvidos exibirem `Consenso final` sem `Crédito distribuído`, preservando o prazo relativo
 - regressão para notices vazios não renderizarem alerta e notices preenchidos de categoria/subcategoria/evento renderizarem apenas no detalhe/ticket, não nos cards da home/feed
 
 ## Critérios de aceite

@@ -3,7 +3,7 @@
 ## 2026-08-29
 
 - atualizada a especificação de `FEAT-MARKET-001` e a arquitetura web para definir cards compactos: classificação e prazo relativo permanecem no feed, enquanto volume reservado, participantes, `close_label` e fonte ficam fora dessa superfície.
-- atualizado o estado de implementação e a regressão esperada, sem mudança de contratos FastAPI/OpenAPI ou impacto no app mobile.
+- atualizado o estado de implementação e a regressão esperada, incluindo o rótulo visual `Consenso final` em cards resolvidos, sem mudança de contratos FastAPI/OpenAPI ou impacto no app mobile.
 
 ## 2026-06-17
 
