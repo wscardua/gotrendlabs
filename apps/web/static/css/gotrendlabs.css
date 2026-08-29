@@ -1394,6 +1394,14 @@ h3 {
   overflow-wrap: anywhere;
 }
 
+.prob-row.resolved {
+  grid-template-columns: 1fr;
+}
+
+.prob-row.resolved .deadline-rail {
+  justify-self: end;
+}
+
 .sparkline-card-wrap {
   min-width: 0;
   overflow: hidden;

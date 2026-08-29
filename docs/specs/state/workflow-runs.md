@@ -20,7 +20,7 @@ Use este arquivo como memória operacional de processos em andamento, concluído
   - `docs/specs/state/change-log-specs.md`
   - `docs/specs/state/workflow-runs.md`
 - Impacto arquitetural: somente apresentação Django; FastAPI, OpenAPI, banco e Flutter permanecem inalterados.
-- Testes esperados: renderização do card preserva tags e prazo relativo, omite metadados secundários e mantém título/CTAs/favoritos/curtidas/comentários funcionais.
+- Testes esperados: renderização do card preserva tags e prazo relativo, omite metadados secundários e `Crédito distribuído` em cards resolvidos e mantém título/CTAs/favoritos/curtidas/comentários funcionais.
 - Bloqueios: aprovação pendente para criar PR/merge remoto.
 - Iniciado em: 2026-08-29
 - Atualizado em: 2026-08-29

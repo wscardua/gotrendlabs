@@ -7160,6 +7160,9 @@ class WebSmokeTests(TransactionTestCase):
     def test_market_card_omits_secondary_metadata(self):
         market = {
             **get_domain_client().market("openai-gpt6-2026"),
+            "status": "resolved",
+            "status_label": "Resolvido",
+            "primary_outcome": "SIM",
             "close_at": "2026-06-11T18:55:00+00:00",
             "close_timezone": "America/Sao_Paulo",
             "close_label": "Fecha em 2026-06-11T15:55:00 BRT",
@@ -7173,6 +7176,9 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, market["source"])
         self.assertContains(response, 'class="market-card-tags"')
         self.assertNotContains(response, 'class="mini-stats"')
+        self.assertNotContains(response, "Crédito distribuído")
+        self.assertContains(response, 'class="prob-row resolved"')
+        self.assertContains(response, "data-deadline-rail")
 
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
         market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}
