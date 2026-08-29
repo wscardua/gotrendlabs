@@ -61,6 +61,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - títulos dos cards de mercado também navegam para o detalhe, reduzindo atrito além do CTA principal
 - cards exibem curtidas reais do mercado como sinal social discreto
 - cards exibem comentários visíveis como sinal social discreto para visitantes e usuários autenticados
+- cards mantêm categoria, subcategoria, evento, status e prazo relativo, mas omitem volume reservado, participantes, `close_label` e fonte para reduzir densidade visual; esses dados continuam disponíveis no detalhe/contratos aplicáveis
 - usuário autenticado pode curtir/descurtir cada mercado uma única vez; a ação atualiza o contador sem recarregar a página
 - visitante vê o contador de curtidas no mesmo slot visual, mas ao tentar curtir recebe aviso de que a ação exige login
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
@@ -117,6 +118,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `MarketResponse` expõe `comment_count` com a contagem de comentários `visible` para leitura pública nos cards
 - `MarketResponse` público só deve expor `image_url` local (`/media/...`) quando o arquivo existir no armazenamento de mídia do ambiente; contratos administrativos preservam a URL cadastrada para curadoria.
 - Cards da home/feed devem comunicar prazo restante por texto (`closes_in`) e por indicador visual derivado de `created_at`/`close_at`, sem reutilizar probabilidade como progresso de tempo.
+- Tags de categoria/subcategoria/evento/status ocupam a faixa de largura total abaixo do cabeçalho de título/miniatura, aproveitando o espaço visual do card sem alterar os campos recebidos do domínio.
 - O indicador de prazo deve hidratar estados visuais `open`, `soon`, `urgent` e `closed`, atualizar periodicamente enquanto a página estiver aberta e manter texto legível para não depender só de cor.
 - `MarketResponse` expõe `view_count` e `share_count` como métricas de popularidade usadas no Admin Ops e na seleção pública de destaques/onboarding
 - `GET /admin/markets` aceita ordenação operacional por `order=views_desc` e `order=shares_desc` para apoiar curadoria por popularidade
@@ -199,6 +201,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - criação/edição administrativa de mercado deve rejeitar taxonomia bloqueada
 - fluxo de navegação feed -> detalhe
 - regressão para cards com payload antigo sem sparkline
+- regressão para o card omitir metadados secundários (volume reservado, participantes, `close_label` e fonte), preservando tags e prazo relativo
 - regressão para notices vazios não renderizarem alerta e notices preenchidos de categoria/subcategoria/evento renderizarem apenas no detalhe/ticket, não nos cards da home/feed
 
 ## Critérios de aceite
@@ -212,7 +215,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - usuário autenticado consegue favoritar mercados e alternar para o recorte `Favoritos` sem recarregar
 - usuário autenticado consegue curtir/descurtir cada mercado uma vez, sem recarregar
 - usuário carrega mais mercados em blocos de 18 cards sem recarregar
-- cards exibem informações mínimas coerentes
+- cards exibem informações mínimas coerentes, com tags e prazo relativo sem os metadados secundários removidos
 - título e CTA principal levam ao detalhe do mercado
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
 - destaque principal exibe até dois mercados publicados não cancelados mais visualizados, excluindo `draft` e `canceled`, incluindo resolvidos quando liderarem por popularidade

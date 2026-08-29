@@ -7157,7 +7157,7 @@ class WebSmokeTests(TransactionTestCase):
         expected = f'<h3><a class="market-title-link" href="{reverse("market-detail", args=[market["slug"]])}">{market["title"]}</a></h3>'
         self.assertContains(response, expected, html=True)
 
-    def test_market_card_formats_iso_close_label(self):
+    def test_market_card_omits_secondary_metadata(self):
         market = {
             **get_domain_client().market("openai-gpt6-2026"),
             "close_at": "2026-06-11T18:55:00+00:00",
@@ -7167,8 +7167,12 @@ class WebSmokeTests(TransactionTestCase):
         with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
-        self.assertContains(response, "Fecha em 11/06/2026 15:55 BRT")
+        self.assertNotContains(response, "Fecha em 11/06/2026 15:55 BRT")
         self.assertNotContains(response, "2026-06-11T15:55:00")
+        self.assertNotContains(response, f'{market["volume_gtl"]} reservados')
+        self.assertNotContains(response, market["source"])
+        self.assertContains(response, 'class="market-card-tags"')
+        self.assertNotContains(response, 'class="mini-stats"')
 
     def test_home_prediction_filter_is_only_rendered_for_authenticated_users(self):
         market = {**get_domain_client().market("openai-gpt6-2026"), "viewer_has_prediction": True, "viewer_has_favorite": True, "viewer_has_like": True}

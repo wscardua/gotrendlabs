@@ -1107,7 +1107,7 @@ h3 {
   grid-template-columns: 62px minmax(0, 1fr);
   gap: 12px;
   align-items: start;
-  min-height: 255px;
+  min-height: 238px;
   grid-template-rows: auto 1fr;
   overflow: hidden;
 }
@@ -1152,7 +1152,7 @@ h3 {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 7px;
+  margin: 0;
 }
 
 .market-title h3 {
@@ -1175,7 +1175,7 @@ h3 {
 }
 
 .tags,
-.mini-stats {
+.market-card-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 7px;
@@ -1208,17 +1208,6 @@ h3 {
 .tag.warn {
   color: #7a5300;
   background: #fff0c2;
-}
-
-.mini-stats {
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.mini-stats span {
-  min-width: 0;
-  overflow-wrap: anywhere;
 }
 
 .like-chip {

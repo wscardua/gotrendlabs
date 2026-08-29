@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-08-29 — FEAT-MARKET-001 compactação dos cards do feed web
+
+- Cards do feed/home mantêm a classificação por categoria, subcategoria, evento e status em uma faixa própria abaixo do cabeçalho de título/miniatura, aproveitando a largura disponível do card.
+- A leitura compacta remove volume reservado, participantes, `close_label` e fonte do card; o prazo relativo `closes_in`, o indicador visual, consenso, opções, CTAs e ações sociais permanecem.
+- Não houve alteração em FastAPI, OpenAPI, persistência ou app mobile; a mudança é somente de apresentação web e é coberta por regressão de renderização.
+
 ## 2026-06-20 — FEAT-MOBILE-001 novo AAB Google Play Closed testing
 
 - Versão mobile avançada para `1.0.10+11` para nova rodada de Google Play Closed testing, sem mudança funcional e preservando o APK público direto `1.0.7 (8)`; `versionCode 10` foi descartado porque o Play Console informou que já tinha sido usado.
