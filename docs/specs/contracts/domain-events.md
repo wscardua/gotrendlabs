@@ -14,6 +14,8 @@ Definir eventos produzidos pelo domínio e consumidos por subsistemas como comun
 - `market.resolved`
 - `market.canceled`
 - `market.resolution_undone`
+- `market.sealed`
+- `market.corrected`
 - `feedback.submitted`
 - `suggestion.submitted`
 - `wallet.credited`
@@ -30,6 +32,8 @@ Definir eventos produzidos pelo domínio e consumidos por subsistemas como comun
 - `market.cancel`
 - `market.cancel_reconcile`
 - `market.resolution_undo`
+- `market.seal_failed`
+- `market.correct`
 
 Esses eventos são registrados em `gotrendlabs_admin_events` nas primeiras fatias de comentários e resolução. Eles preservam operador, entidade, justificativa e momento, mas ainda não representam emissão assíncrona no envelope de eventos de domínio.
 

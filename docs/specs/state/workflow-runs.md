@@ -2,6 +2,24 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260905-MARKET-INTEGRITY-001
+
+- Tipo: `new-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: implementar ledger criptografico interno assinado cobrindo publicacao, previsoes, resolucao, selagem, verificacao, Admin Ops, web, mobile, comunicacoes e paginas institucionais.
+- Etapa atual: implementação local concluída e validada; aguardando rollout controlado com IAM/KMS, secrets e migrations de produção.
+- Artefatos afetados: `docs/specs/`, `apps/api/backend_api/`, `apps/web/django/`, `apps/web/templates/`, `apps/web/static/`, `apps/mobile/`, `packages/contracts/openapi/`, `requirements.txt`, migrations e testes.
+- Decisoes: assinatura sincrona/atomica; KMS Ed25519 em producao; chave efemera apenas em desenvolvimento/testes; HMAC-SHA-256 para pseudonimo; Merkle deterministica; ledger global sob lock; legado sem assinatura retroativa.
+- Bloqueios: configuracao IAM/KMS e segredo de commitment sao requisitos de deploy, nao bloqueiam implementacao/testes locais.
+- Iniciado em: 2026-09-05
+- Atualizado em: 2026-09-05
+- Encerrado em: 2026-09-05
+- Retomada: executar o runbook `docs/specs/operations/market-integrity-deploy.md` em staging, provisionar a chave KMS Ed25519 e validar o smoke concorrente antes de produção. Mercados legados permanecem `legacy_unregistered` e não devem ser apresentados como prova original.
+- Reversao logica: desabilitar novas mutacoes dependentes do signer, preservar integralmente provas ja emitidas e manter mercados `resolved` para retry; nunca apagar o ledger.
+- Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test` com 217 testes; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test` com 95 testes; teste dedicado cobre dois workers concorrentes, idempotência, falha/retry de assinatura, prova Merkle, verificação pública e trigger append-only.
+- Limitações conhecidas: integração real com AWS KMS, políticas IAM e alarmes CloudWatch exigem validação de staging; não há ancoragem Polygon; mercados legados não recebem assinatura retroativa; o pacote público v1 é JSON servido pela API, sem formato ZIP independente.
+
 ## WFLOW-20260829-MARKET-CARD-LAYOUT-001
 
 - Tipo: `change-feature`

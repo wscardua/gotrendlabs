@@ -37,6 +37,7 @@ Enviar comunicações transacionais e de engajamento compatíveis com o idioma e
 - email de recuperação de senha com link expirável
 - aviso de mercado fechado
 - aviso de mercado resolvido
+- aviso de historico selado e verificavel
 - aviso de crédito concedido
 - comunicações de feedback/sugestão quando definido
 - outbox `EmailDelivery` com idempotência, retries e trilha de falha/envio

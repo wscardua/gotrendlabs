@@ -7,6 +7,7 @@
 - `open`: recebendo previsões
 - `locked`: fechado para novas previsões e aguardando resolução
 - `resolved`: resultado definido e efeitos aplicados
+- `sealed`: historico final criptograficamente selado e verificavel
 - `canceled`: encerrado sem resultado válido
 
 ## Regras
@@ -41,7 +42,10 @@
 - `canceled` devolve 100% dos stakes bloqueados por previsões abertas, marca previsões como `canceled` e não altera reputação.
 - O fluxo normal de cancelamento deve validar que nenhuma previsão `open` permaneceu no mercado antes de concluir a transição para `canceled`.
 - Estados históricos inconsistentes, como mercado `canceled` com previsões ainda `open`, devem ser corrigidos por reconciliação operacional idempotente, com refund ausente em `prediction_refund` e evento administrativo `market.cancel_reconcile`.
-- `resolved -> locked` é uma operação administrativa excepcional para desfazer resolução; deve estornar payout líquido, rebloquear stakes, reabrir previsões internas como pendentes de resultado e recalcular reputação.
+- `resolved` define `seal_due_at = resolved_at + market_seal_window_hours`.
+- `resolved -> locked` é permitido somente antes de `seal_due_at`; exige motivo, estorna os efeitos atuais, reabre previsoes internas e limpa o prazo.
+- `resolved -> sealed` e executado pelo daemon quando o prazo vence e exige Seal assinado e Merkle root validados na mesma transacao.
+- `sealed` e terminal; correcoes posteriores sao novos eventos append-only.
 - Mercado `resolved` não pode ser editado; alterações exigem desfazer resolução antes.
 - Mercados `resolved` devem expor auditoria staff read-only via `GET /admin/markets/{slug}/resolution-audit`, sem mutação e sem recalcular regra no Django.
 - A auditoria de resolução deve retornar erro `422` para mercados que não estejam em `resolved`.
@@ -55,6 +59,11 @@
 - `resolution_type`
 - `close_at`
 - `resolved_at`
+- `published_at`
+- `seal_due_at`
+- `sealed_at`
+- `integrity_version`
+- `integrity`
 - `resolution_timezone`
 - `winning_option_id`
 - `resolution_note`

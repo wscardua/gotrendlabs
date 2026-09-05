@@ -135,3 +135,5 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 ## Impacto de mudança
 
 Mudanças neste contrato impactam previsão, comentários e compartilhamento.
+
+O detalhe apresenta definicao registrada, prazo de selagem e historico `sealed` conforme o resumo de integridade da API, com acao `Verificar integridade`.

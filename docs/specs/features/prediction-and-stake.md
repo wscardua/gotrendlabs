@@ -132,3 +132,5 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 ## Impacto de mudança
 
 Mudanças nesta feature impactam wallet, probabilidades, comunicações e, em certos casos, reputação futura.
+
+Cada previsao inicial, reforco ou revisao cria comprovante criptografico assinado na mesma transacao. Falha da assinatura aborta a acao; o payload publico nunca contem PII.

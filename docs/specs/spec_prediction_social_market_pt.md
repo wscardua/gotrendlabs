@@ -21,7 +21,7 @@ O produto é uma aplicação web social onde usuários fazem previsões sobre ev
 
 O MVP existe para validar se pessoas voltam com frequência para prever, acompanhar resultados e comparar desempenho com outros usuários.
 
-O MVP não deve ser percebido como casa de apostas, cassino ou plataforma financeira. Nesta fase não haverá dinheiro real, blockchain, wallet on-chain nem negociação financeira entre usuários.
+O MVP não deve ser percebido como casa de apostas, cassino ou plataforma financeira. Nesta fase não haverá dinheiro real, blockchain pública, wallet on-chain nem negociação financeira entre usuários. O Ledger Criptográfico de Integridade é interno e assinado, não descentralizado, conforme `features/market-integrity-ledger.md`.
 
 ---
 

@@ -134,6 +134,7 @@ Card de lista/grid:
 - volume, comentarios e prazo compacto; o prazo deve aparecer como barra curta de regressao/urgencia no canto inferior direito, ao lado do contador de comentarios, mudando de cor conforme o tempo restante diminui
 - status fechado/resolvido visivel nos recortes que permitem estes estados
 - estado de favorito/curtida quando autenticado
+- selo neutro de escudo/check para `Definicao registrada` e, quando `sealed`, `Historico finalizado e verificavel`, com semantics acessivel e sem estetica cripto
 
 ### MarketMetricPanel
 

@@ -63,6 +63,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - cards exibem comentários visíveis como sinal social discreto para visitantes e usuários autenticados
 - cards mantêm categoria, subcategoria, evento, status e prazo relativo, mas omitem volume reservado, participantes, `close_label` e fonte para reduzir densidade visual; esses dados continuam disponíveis no detalhe/contratos aplicáveis
 - cards resolvidos não exibem a mensagem redundante `Crédito distribuído`; exibem o rótulo discreto `Consenso final` ao lado do prazo relativo para contextualizar o gráfico e as opções, sem apresentar resultado vencedor no card
+- cards publicados com prova exibem `Definicao registrada`; cards `sealed` exibem `Historico finalizado e verificavel`; `resolved` ainda nao selado exibe `Resultado em finalizacao`
 - usuário autenticado pode curtir/descurtir cada mercado uma única vez; a ação atualiza o contador sem recarregar a página
 - visitante vê o contador de curtidas no mesmo slot visual, mas ao tentar curtir recebe aviso de que a ação exige login
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência

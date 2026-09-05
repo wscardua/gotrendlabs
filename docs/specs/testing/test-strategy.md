@@ -31,3 +31,4 @@ Garantir que cada feature tenha critérios de aceite verificáveis e cobertura s
 - Revisões amplas de testes devem abrir workflow `test-review-cycle`.
 - Uma feature não deve ser marcada como `validada` sem evidência de teste ou pendência documentada.
 - `gotrendlabs-test-strategy` define o que deve ser testado; `gotrendlabs-test-engineer` transforma isso em testes executáveis e evidência.
+- Integridade exige testes de adulteracao, assinatura, cadeia, Merkle, concorrencia, atomicidade KMS, ausencia de PII e contratos/UI web e mobile.

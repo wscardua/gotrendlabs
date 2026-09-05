@@ -21,6 +21,7 @@
 - Fechamento automático deve cancelar mercados sem participantes humanos, liberando previsões abertas existentes, inclusive stakes bot criados por falha/configuração.
 - O daemon drena a outbox de `communications_emaildelivery`, aplicando provider configurado, retries e resumo de enviados/falhos/suprimidos no heartbeat operacional.
 - O daemon drena a outbox de `communications_pushdelivery`, aplicando provider `none`/dry-run, retries, invalidação automática de tokens rejeitados e resumo de enviados/dry-run/falhos/suprimidos no heartbeat operacional.
+- O daemon sela mercados `resolved` vencidos com `FOR UPDATE SKIP LOCKED`; valida Merkle e assinatura antes do commit e mantem `resolved` em qualquer falha.
 
 ## Dependências
 

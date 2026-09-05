@@ -1,5 +1,12 @@
 # Change Log de Specs
 
+## 2026-09-05
+
+- criada `FEAT-INTEGRITY-001` e o contrato `integrity-ledger.md` para canonicalização, assinaturas, Merkle, visibilidade e migração de legado;
+- ciclo de mercado, previsões, eventos, notificações, backend, banco, daemon, web, mobile e testes foram atualizados para `sealed` e provas verificáveis;
+- aprovadas ADR-0004, ADR-0005 e ADR-0006 para ledger interno, AWS KMS Ed25519 e correções append-only;
+- comunicação institucional passou a distinguir claramente ledger interno de blockchain pública/descentralizada.
+
 ## 2026-08-29
 
 - atualizada a especificação de `FEAT-MARKET-001` e a arquitetura web para definir cards compactos: classificação e prazo relativo permanecem no feed, enquanto volume reservado, participantes, `close_label` e fonte ficam fora dessa superfície.

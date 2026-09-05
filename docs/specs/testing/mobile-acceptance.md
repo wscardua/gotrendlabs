@@ -289,6 +289,7 @@ Antes de considerar a UI pronta:
 - confirmar que ranking identifica usuarios pelo `@handle`, nao pelo nome publico, e mostra ate 3 badges com `+N`
 - testar mercado sem comentarios
 - testar mercado resolvido
+- testar mercado `resolved` aguardando selagem e mercado `sealed`, incluindo selo nos cards, tela de verificacao, recibo proprio, loading, erro e retry
 - testar erro de rede
 - testar tema dark como padrao
 - confirmar que tema, app shell, cards, detalhe, ticket, wallet, ranking, alertas, busca, perfil, badges e bottom sheets usam o mesmo design system dark-first/editorial, sem cards genéricos ou estados soltos

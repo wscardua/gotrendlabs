@@ -56,6 +56,7 @@
 - `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY` mantém o segredo de envio fora do banco.
 - `GOTRENDLABS_RESEND_API_KEY` mantém a API key Resend fora do banco/Admin Ops/Git.
 - `GOTRENDLABS_PUSH_ENABLED=0`, `GOTRENDLABS_PUSH_PROVIDER=none` e `GOTRENDLABS_PUSH_DRY_RUN=1` são os defaults seguros de push.
+- `market.sealed` gera comunicacao idempotente para participantes humanos, sem hashes extensos ou dados sensiveis.
 - Envio FCM real exige `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON` com o service account JSON cru ou base64 fora do banco/Git/Admin Ops.
 - O daemon envia FCM via Firebase Admin SDK, grava `provider_message_id` em sucesso, agenda retry em falha transitória e invalida o `PushDevice` quando o provedor rejeita o token.
 - O daemon faz claim de `PushDelivery` em transação curta, libera locks antes da chamada externa ao FCM e recupera entregas presas em `sending` há mais de 15 minutos.

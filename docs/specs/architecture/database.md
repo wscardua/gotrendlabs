@@ -3,12 +3,14 @@
 ## Responsabilidades
 
 - Persistir usuários, perfis, mercados, opções, previsões, ledger da wallet, comentários, notificações in-app, sugestões, decisões de moderação e histórico operacional.
+- Persistir definicoes assinadas, compromissos de previsao, folhas/provas Merkle, Seals e eventos globais do ledger de integridade.
 - Garantir integridade relacional e rastreabilidade temporal.
 - Suportar consultas transacionais e relatórios administrativos.
 
 ## Diretrizes
 
 - Modelos críticos devem preservar histórico quando o produto exigir auditabilidade.
+- Tabelas de integridade sao append-only, protegidas contra UPDATE/DELETE, sem cascades destrutivos e fora de purge/retenção comum.
 - Wallet deve usar razão de transações (`ledger`) em vez de depender apenas de saldo derivado.
 - Resolução de mercado deve registrar origem, operador, evidência, data efetiva e timezone usado para apresentação/auditoria.
 - Sempre que possível, usar identificadores estáveis independentes de textos traduzidos.

@@ -22,6 +22,13 @@ aprovacao: pendente
 
 # Contratos API para mobile
 
+## Integridade verificável
+
+- `MarketResponse` inclui `published_at`, `seal_due_at`, `sealed_at` e `integrity` com status/protocolo/disponibilidade.
+- O app consome `GET /markets/{slug}/integrity`, `/integrity/verify`, `/predictions/{id}/receipt` e `/merkle-proof`; não assina nem trata cálculo local como autoridade.
+- Campos novos são aditivos. Clientes anteriores devem continuar funcionando e exibir o estado pelo label recebido; releases com enum fechado precisam incluir `sealed` antes do rollout.
+- Comprovantes autenticados pertencem somente ao usuário da previsão. Provas públicas não carregam PII ou identificador interno bruto de usuário.
+
 ## Objetivo
 
 Definir o conjunto inicial de contratos FastAPI que o app Flutter deve consumir no MVP, evitando acoplamento com templates Django e evitando endpoints novos sem necessidade comprovada.

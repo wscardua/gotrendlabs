@@ -131,6 +131,7 @@ Deve mostrar:
 - grafico de consenso baseado em `sparkline_series`
 - ticket de previsao para mercado aberto
 - resultado oficial para mercado resolvido
+- selo de definicao registrada, estado de resultado em finalizacao e verificacao do historico `sealed`
 
 ### Comunidade
 

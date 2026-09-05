@@ -135,3 +135,7 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 ## Impacto de mudança
 
 Alta sensibilidade; mudanças afetam contratos centrais e múltiplas features dependentes.
+
+## Finalizacao criptografica
+
+Resolucao inicia janela configuravel de 12 horas. Durante a janela, desfazer exige motivo e limpa o prazo. Vencido o prazo, o daemon cria Seal/Merkle e muda para `sealed`; falha de assinatura preserva `resolved`. Depois de selado nao ha desfazer/cancelar, apenas correcao append-only.

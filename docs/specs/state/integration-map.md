@@ -14,6 +14,7 @@
 - `FEAT-I18N-001` é transversal às demais features
 - `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
 - `FEAT-MOBILE-001` depende de `FEAT-AUTH-001`, `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-PRED-001`, `FEAT-WALLET-001`, `FEAT-COMMENT-001`, `FEAT-REP-001` e contratos FastAPI/OpenAPI para operar como cliente mobile sem regra crítica local
+- `FEAT-INTEGRITY-001` depende de `FEAT-MARKET-001/002`, `FEAT-PRED-001`, `FEAT-RES-001`, PostgreSQL, daemon, comunicações e AWS KMS; web/mobile dependem somente de seus contratos FastAPI/OpenAPI.
 
 ## Contratos com maior reutilização
 
@@ -23,8 +24,12 @@
 - `reputation-ranking.md`
 - `i18n-content.md`
 - `domain-events.md`
+- `integrity-ledger.md`
 
 ## Integrações já materializadas
+
+- `FEAT-INTEGRITY-001` integra publicação e previsão atomicamente ao signer, encadeia eventos globais sob advisory lock, sela mercados vencidos no daemon e distribui `market_sealed` por in-app/push/email idempotentes.
+- Django Admin Ops configura a janela de 1 a 168 horas e apresenta filas/métricas; cards e detalhe web, Flutter e páginas de confiança consomem status/provas sem assinar ou recalcular autoridade no cliente.
 
 - `FEAT-COMMENT-001` usa `FEAT-AUTH-001` para autor/reação autenticada e staff em moderação.
 - `FEAT-COMMENT-001` usa `FEAT-MARKET-002` para vínculo com mercado e exposição em `MarketResponse.comments`.

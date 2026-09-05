@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-09-05 — FEAT-INTEGRITY-001 Ledger Criptográfico de Integridade
+
+- Publicação passa a registrar definição canônica assinada; previsão inicial, reforço e revisão geram comprovantes pseudonimizados na mesma transação.
+- Ciclo de mercado ganhou `seal_due_at` e estado terminal `sealed`, com reversão auditável antes do prazo e selagem idempotente pelo daemon usando Merkle Tree.
+- Ledger global encadeado e assinado ganhou proteção append-only no PostgreSQL; correções pós-selagem são novos eventos e nunca reescrevem a prova anterior.
+- FastAPI/OpenAPI expõem resumo, verificação, chave pública, pacote e comprovante individual; Django e Flutter apenas consomem e apresentam esses contratos.
+- Cards web/mobile distinguem “Definição registrada” de “Histórico verificável”; páginas institucionais explicam limites sem alegar blockchain pública, descentralização ou imutabilidade absoluta.
+- Produção exige AWS KMS Ed25519 e segredo de pseudonimização; signer efêmero permanece restrito a desenvolvimento/testes.
+
 ## 2026-08-29 — FEAT-MARKET-001 compactação dos cards do feed web
 
 - Cards do feed/home mantêm a classificação por categoria, subcategoria, evento e status em uma faixa própria abaixo do cabeçalho de título/miniatura, aproveitando a largura disponível do card.
