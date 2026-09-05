@@ -15,6 +15,7 @@ import unicodedata
 from urllib.parse import quote, urlparse
 
 from django.conf import settings
+from django.db import connection
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.contrib.staticfiles import finders
@@ -23,6 +24,7 @@ from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from fastapi.testclient import TestClient
+from psycopg.rows import dict_row
 from unittest.mock import patch
 
 from apps.web.django.accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
@@ -42,6 +44,7 @@ from apps.api.backend_api.main import app
 from apps.api.backend_api.main import _ensure_user_core
 from apps.api.backend_api.main import _record_wallet_entry
 from apps.api.backend_api.main import _clear_rate_limits
+from apps.api.backend_api.integrity_service import PROTOCOL_VERSION, register_market_definition
 from apps.api.backend_api.security import hash_token, issue_token, make_password
 from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError
@@ -120,6 +123,14 @@ def _seed_test_markets():
                     "display_order": option_index,
                 },
             )
+        if market.status == "open":
+            published_at = timezone.now()
+            Market.objects.filter(pk=market.pk).update(
+                published_at=published_at,
+                integrity_version=PROTOCOL_VERSION,
+            )
+            with connection.connection.cursor(row_factory=dict_row) as cursor:
+                register_market_definition(cursor, market.id, occurred_at=published_at)
 
 
 def _seed_test_badges():
@@ -4141,7 +4152,7 @@ class BackendAuthAPITests(TransactionTestCase):
         token = response.json()["session"]["token"]
         headers = {"Authorization": f"Bearer {token}"}
         user = get_user_model().objects.get(username="@policycase")
-        self.assertEqual(user.terms_version, "2026-05-17")
+        self.assertEqual(user.terms_version, "2026-09-05")
         self.assertIsNotNone(user.terms_accepted_at)
 
         updated = client.patch(
@@ -5037,6 +5048,7 @@ class BackendAuthAPITests(TransactionTestCase):
             json={"winning_option_id": winning_option.id, "source_url": "https://fonte.example/resolucao", "note": "Duplicada."},
         )
         self.assertEqual(duplicate.status_code, 422)
+        Market.objects.filter(slug="resolucao-mvp-teste").update(seal_due_at=timezone.now() + timedelta(hours=1))
         cancel_resolved = client.post("/admin/markets/resolucao-mvp-teste/cancel", headers=staff_headers, json={"note": "cancelar resolução e aplicar refund"})
         self.assertEqual(cancel_resolved.status_code, 200)
         self.assertEqual(cancel_resolved.json()["status"], "locked")
@@ -5466,7 +5478,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
-                "auto_close_enabled": True,
+                "auto_close_enabled": False,
             },
         )
         self.assertEqual(created.status_code, 201)
@@ -5496,8 +5508,8 @@ class BackendAuthAPITests(TransactionTestCase):
             ],
         }
         edited = client.patch("/admin/markets/preserva-dados-internos", headers=staff_headers, json=dangerous_payload)
-        self.assertEqual(edited.status_code, 200)
-        edited_payload = edited.json()
+        self.assertEqual(edited.status_code, 422)
+        edited_payload = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
         self.assertFalse(edited_payload["auto_close_enabled"])
         self.assertEqual(edited_payload["status_label"], before["status_label"])
         self.assertEqual(edited_payload["volume_gtl"], before["volume_gtl"])
@@ -5889,7 +5901,7 @@ class BackendAuthAPITests(TransactionTestCase):
         make_featured = client.patch(
             "/admin/markets/energia-solar-maioria-2030",
             headers=headers,
-            json={**valid_market.json(), "is_featured": True},
+            json={**valid_market.json(), "is_featured": True, "auto_close_enabled": False},
         )
         self.assertEqual(make_featured.status_code, 200)
         self.assertTrue(make_featured.json()["is_featured"])
@@ -5956,8 +5968,9 @@ class BackendAuthAPITests(TransactionTestCase):
             headers=headers,
             json=edited_market_payload,
         )
-        self.assertEqual(edit_after_prediction.status_code, 200)
-        self.assertEqual(edit_after_prediction.json()["title"], "Energia solar será maioria em 2030? Revisado")
+        self.assertEqual(edit_after_prediction.status_code, 422)
+        edit_after_prediction = client.get("/admin/markets/energia-solar-maioria-2030", headers=headers)
+        self.assertEqual(edit_after_prediction.json()["title"], valid_market.json()["title"])
         self.assertFalse(edit_after_prediction.json()["auto_close_enabled"])
         self.assertEqual(edit_after_prediction.json()["status_label"], "Aberto")
         self.assertEqual(edit_after_prediction.json()["volume_gtl"], "20 GT₵")
@@ -6785,7 +6798,7 @@ class WebSmokeTests(TransactionTestCase):
 
         with patch("apps.web.django.markets.views.create_prediction", return_value=result), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
-            self.assertContains(response, "Previsão registrada")
+            self.assertContains(response, "Sua previsão foi registrada")
 
         with patch("apps.web.django.markets.views.create_prediction", side_effect=AuthAPIError("Você já registrou uma previsão neste mercado.", 409)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
