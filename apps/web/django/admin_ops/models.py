@@ -45,6 +45,7 @@ class SiteConfig(models.Model):
     daemon_missing_after_minutes = models.PositiveIntegerField(default=21)
     system_log_retention_days = models.PositiveIntegerField(default=90)
     ai_audit_retention_days = models.PositiveIntegerField(default=90)
+    market_seal_window_hours = models.PositiveIntegerField(default=12)
     min_supported_android_build = models.PositiveIntegerField(default=0)
     recommended_android_build = models.PositiveIntegerField(default=0)
     mobile_update_required_message = models.CharField(max_length=240, default=MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT)

@@ -665,6 +665,14 @@ class ViewerPositionSummary(BaseModel):
     history: List[dict] = Field(default_factory=list)
 
 
+class MarketIntegritySummary(BaseModel):
+    status: str = "not_published"
+    protocol_version: str = ""
+    definition_registered: bool = False
+    verification_available: bool = False
+    key_fingerprint: str = ""
+
+
 class MarketResponse(BaseModel):
     slug: str
     title: str
@@ -702,6 +710,9 @@ class MarketResponse(BaseModel):
     auto_close_enabled: bool = True
     is_featured: bool = False
     resolved_at: Optional[str] = None
+    published_at: Optional[str] = None
+    seal_due_at: Optional[str] = None
+    sealed_at: Optional[str] = None
     resolved_at_label: str = ""
     resolution_timezone: str = ""
     winning_option_id: Optional[int] = None
@@ -721,6 +732,39 @@ class MarketResponse(BaseModel):
     sparkline_series: List[dict] = Field(default_factory=list)
     options: List[MarketOptionResponse]
     comments: List[CommentResponse] = Field(default_factory=list)
+    integrity: MarketIntegritySummary = Field(default_factory=MarketIntegritySummary)
+
+
+class IntegrityPublicKeyResponse(BaseModel):
+    protocol_version: str
+    algorithm: str
+    key_id: str
+    fingerprint: str
+    public_key_pem: str
+
+
+class MarketIntegrityResponse(BaseModel):
+    market_slug: str
+    status: str
+    protocol_version: str = ""
+    definition: Optional[dict] = None
+    seal: Optional[dict] = None
+    ledger_events: List[dict] = Field(default_factory=list)
+
+
+class MarketIntegrityVerificationResponse(BaseModel):
+    valid: bool
+    definition_valid: Optional[bool] = None
+    seal_valid: Optional[bool] = None
+    merkle_root_valid: Optional[bool] = None
+    ledger_chain_valid: bool = False
+    errors: List[str] = Field(default_factory=list)
+
+
+class PredictionIntegrityReceiptResponse(BaseModel):
+    prediction_id: int
+    receipt: dict
+    merkle_proof: Optional[dict] = None
 
 
 class MarketListResponse(BaseModel):
@@ -742,6 +786,7 @@ class PredictionCreateResponse(BaseModel):
     wallet_balance_after: WalletResponse
     market_probability_snapshot: List[MarketOptionResponse]
     potential_payout: int
+    integrity_receipt: Optional[dict] = None
 
 
 class PredictionPreviewResponse(BaseModel):
@@ -790,6 +835,7 @@ class PositionActionResponse(BaseModel):
     market_probability_snapshot: List[MarketOptionResponse]
     potential_payout: int
     viewer_position: ViewerPositionSummary
+    integrity_receipt: Optional[dict] = None
 
 
 class CommentCreatePayload(BaseModel):
@@ -839,6 +885,11 @@ class AdminMarketPayload(BaseModel):
 
 class AdminMarketActionPayload(BaseModel):
     note: str = ""
+
+
+class AdminMarketIntegrityCorrectionPayload(BaseModel):
+    reason: str = Field(min_length=1, max_length=2000)
+    correction: dict
 
 
 class AdminMarketResolvePayload(BaseModel):

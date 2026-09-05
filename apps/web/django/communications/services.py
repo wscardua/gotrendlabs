@@ -206,6 +206,29 @@ DEFAULT_EMAIL_TEMPLATES = {
             ),
         },
     },
+    "market.sealed": {
+        "pt-br": {
+            "subject": "Histórico finalizado: {{ market_title }}",
+            "body_text": (
+                "Olá {{ display_name }},\n\n"
+                "Histórico finalizado e verificável: o registro deste mercado está disponível para conferência.\n\n"
+                "{{ market_url }}\n\n"
+                "A verificação confirma a consistência criptográfica do registro e não substitui o critério público de resolução."
+            ),
+            "body_html": (
+                "<div style=\"font-family:Arial,sans-serif;line-height:1.55;color:#1f2b2b;max-width:620px;margin:0 auto;padding:24px;\">"
+                "<h1 style=\"font-size:24px;color:#101413;\">Histórico finalizado e verificável</h1>"
+                "<p>O registro do mercado <strong>{{ market_title }}</strong> está disponível para conferência.</p>"
+                "<p style=\"margin:24px 0;\"><a href=\"{{ market_url }}\" style=\"display:inline-block;background:#101413;color:#fff;text-decoration:none;border-radius:999px;padding:12px 18px;font-weight:700;\">Verificar integridade</a></p>"
+                "<p style=\"color:#5f6b6b;font-size:14px;\">A verificação confirma a consistência criptográfica do registro e não substitui o critério público de resolução.</p>"
+                "</div>"
+            ),
+        },
+        "en": {
+            "subject": "Finalized history: {{ market_title }}",
+            "body_text": "The finalized, verifiable market record is available at {{ market_url }}.",
+        },
+    },
     "wallet.credited": {
         "pt-br": {
             "subject": "Você recebeu {{ amount }} GT₵",

@@ -60,6 +60,7 @@ class Market(models.Model):
         ("open", "Open"),
         ("locked", "Locked"),
         ("resolved", "Resolved"),
+        ("sealed", "Sealed"),
         ("canceled", "Canceled"),
     )
 
@@ -90,6 +91,10 @@ class Market(models.Model):
     view_count = models.PositiveIntegerField(default=0)
     share_count = models.PositiveIntegerField(default=0)
     resolved_at = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
+    seal_due_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    sealed_at = models.DateTimeField(null=True, blank=True)
+    integrity_version = models.CharField(max_length=40, blank=True, default="")
     resolution_timezone = models.CharField(max_length=64, blank=True, default="")
     canceled_at = models.DateTimeField(null=True, blank=True)
     winning_option = models.ForeignKey(
@@ -200,6 +205,103 @@ class Prediction(models.Model):
             models.Index(fields=["user", "market", "status"]),
             models.Index(fields=["superseded_by"]),
         ]
+
+
+class MarketIntegrityDefinition(models.Model):
+    market = models.OneToOneField(Market, on_delete=models.PROTECT, related_name="integrity_definition")
+    definition_version = models.PositiveIntegerField(default=1)
+    protocol_version = models.CharField(max_length=40)
+    canonical_payload = models.BinaryField()
+    payload_json = models.JSONField(default=dict)
+    payload_hash = models.CharField(max_length=64, unique=True)
+    signature = models.BinaryField()
+    algorithm = models.CharField(max_length=40)
+    key_id = models.CharField(max_length=255)
+    key_fingerprint = models.CharField(max_length=64)
+    signed_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "market_integrity_definitions"
+
+
+class PredictionCommitment(models.Model):
+    prediction = models.OneToOneField(Prediction, on_delete=models.PROTECT, related_name="integrity_commitment")
+    market = models.ForeignKey(Market, on_delete=models.PROTECT, related_name="prediction_commitments")
+    definition = models.ForeignKey(MarketIntegrityDefinition, on_delete=models.PROTECT, related_name="prediction_commitments")
+    previous_commitment = models.ForeignKey("self", on_delete=models.PROTECT, null=True, blank=True, related_name="next_commitments")
+    protocol_version = models.CharField(max_length=40)
+    canonical_payload = models.BinaryField()
+    payload_json = models.JSONField(default=dict)
+    commitment_hash = models.CharField(max_length=64, unique=True)
+    signature = models.BinaryField()
+    algorithm = models.CharField(max_length=40)
+    key_id = models.CharField(max_length=255)
+    key_fingerprint = models.CharField(max_length=64)
+    signed_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "prediction_commitments"
+        indexes = [models.Index(fields=["market", "prediction"], name="gtl_commit_market_pred_idx")]
+
+
+class MarketSeal(models.Model):
+    market = models.OneToOneField(Market, on_delete=models.PROTECT, related_name="integrity_seal")
+    definition = models.ForeignKey(MarketIntegrityDefinition, on_delete=models.PROTECT, related_name="seals")
+    protocol_version = models.CharField(max_length=40)
+    predictions_root = models.CharField(max_length=64)
+    result_hash = models.CharField(max_length=64)
+    previous_event_hash = models.CharField(max_length=64, blank=True)
+    canonical_payload = models.BinaryField()
+    payload_json = models.JSONField(default=dict)
+    seal_hash = models.CharField(max_length=64, unique=True)
+    signature = models.BinaryField()
+    algorithm = models.CharField(max_length=40)
+    key_id = models.CharField(max_length=255)
+    key_fingerprint = models.CharField(max_length=64)
+    sealed_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "market_seals"
+
+
+class MarketMerkleLeaf(models.Model):
+    market = models.ForeignKey(Market, on_delete=models.PROTECT, related_name="merkle_leaves")
+    seal = models.ForeignKey(MarketSeal, on_delete=models.PROTECT, related_name="leaves")
+    commitment = models.OneToOneField(PredictionCommitment, on_delete=models.PROTECT, related_name="merkle_leaf")
+    leaf_index = models.PositiveIntegerField()
+    leaf_hash = models.CharField(max_length=64)
+    proof = models.JSONField(default=list)
+
+    class Meta:
+        db_table = "market_merkle_leaves"
+        constraints = [models.UniqueConstraint(fields=["market", "leaf_index"], name="uniq_market_merkle_leaf_index")]
+
+
+class IntegrityLedgerEvent(models.Model):
+    sequence = models.PositiveBigIntegerField(unique=True)
+    protocol_version = models.CharField(max_length=40)
+    event_type = models.CharField(max_length=60, db_index=True)
+    entity_type = models.CharField(max_length=40)
+    entity_identifier = models.CharField(max_length=160)
+    market = models.ForeignKey(Market, on_delete=models.PROTECT, null=True, blank=True, related_name="integrity_events")
+    payload_reference = models.CharField(max_length=200)
+    payload_hash = models.CharField(max_length=64)
+    canonical_payload = models.BinaryField()
+    payload_json = models.JSONField(default=dict)
+    previous_event_hash = models.CharField(max_length=64, blank=True)
+    event_hash = models.CharField(max_length=64, unique=True)
+    signature = models.BinaryField()
+    algorithm = models.CharField(max_length=40)
+    key_id = models.CharField(max_length=255)
+    key_fingerprint = models.CharField(max_length=64)
+    correlation_id = models.UUIDField(null=True, blank=True)
+    causation_id = models.UUIDField(null=True, blank=True)
+    occurred_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "integrity_ledger_events"
+        ordering = ["sequence"]
 
 
 class MarketFavorite(models.Model):

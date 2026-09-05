@@ -29,6 +29,21 @@ from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.daemon_services import daemon_dashboard_status
 from apps.api.backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, enqueue_welcome_email, issue_email_confirmation, public_url
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
+from apps.api.backend_api.integrity_service import (
+    IntegritySigningError,
+    PROTOCOL_VERSION,
+    append_ledger_event,
+    build_merkle,
+    canonical_json,
+    commit_prediction,
+    encode_signature,
+    get_signer,
+    public_key_payload,
+    public_key_der_for,
+    sha256_hex,
+    verify_merkle_proof,
+    verify_signed_hash,
+)
 from apps.api.backend_api.schemas import (
     AdminCategoryPayload,
     AdminBadgeListResponse,
@@ -52,6 +67,7 @@ from apps.api.backend_api.schemas import (
     AdminMarketListResponse,
     AdminMarketParticipantListResponse,
     AdminMarketPayload,
+    AdminMarketIntegrityCorrectionPayload,
     AdminMarketResolutionAuditResponse,
     AdminMarketResolvePayload,
     AntiAbuseChallengeResponse,
@@ -71,6 +87,8 @@ from apps.api.backend_api.schemas import (
     HealthResponse,
     LoginPayload,
     MarketListResponse,
+    MarketIntegrityResponse,
+    MarketIntegrityVerificationResponse,
     MarketResponse,
     MarketSuggestionPayload,
     NotificationListResponse,
@@ -80,7 +98,9 @@ from apps.api.backend_api.schemas import (
     PasswordResetRequestResponse,
     PredictionCreatePayload,
     PredictionCreateResponse,
+    PredictionIntegrityReceiptResponse,
     PredictionPreviewResponse,
+    IntegrityPublicKeyResponse,
     PositionActionPayload,
     PositionActionPreviewResponse,
     PositionActionResponse,
@@ -127,7 +147,7 @@ INITIAL_REPUTATION = 100
 BASE_PREDICTION_WEIGHT = 10_000
 PROBABILITY_QUANT = Decimal("0.0001")
 REPUTATION_K_FACTOR = Decimal("10")
-TERMS_VERSION = "2026-05-17"
+TERMS_VERSION = "2026-09-05"
 IMMEDIATE_AUTH_EMAIL_EVENTS = ("account.password_reset", "user.email_confirmation", "user.welcome")
 SOCIAL_EMAIL_PENDING_TTL_SECONDS = 15 * 60
 ANTI_ABUSE_CHALLENGE_TTL_SECONDS = 10 * 60
@@ -145,6 +165,12 @@ BADGE_TYPES = {"global", "category", "performance", "engagement"}
 logger = logging.getLogger(__name__)
 
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
+
+
+@app.exception_handler(IntegritySigningError)
+async def integrity_signing_error_handler(_request: Request, exc: IntegritySigningError):
+    logger.error("integrity.signing_failed", extra={"error_type": exc.__class__.__name__})
+    return JSONResponse(status_code=503, content={"detail": "O registro de integridade está temporariamente indisponível; nenhuma alteração foi confirmada.", "code": "integrity_signing_unavailable"})
 
 _RATE_LIMIT_BUCKETS = {}
 MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT = "Atualize o app para continuar usando o GoTrendLabs."
@@ -1653,6 +1679,7 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
                m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
+               m.published_at, m.seal_due_at, m.sealed_at, m.integrity_version,
                COALESCE(COUNT(DISTINCT ml.id), 0) AS market_like_count,
                COALESCE(COUNT(DISTINCT visible_comments.id), 0) AS comment_count,
                c.name AS category, c.notice AS category_notice,
@@ -1680,6 +1707,7 @@ def _market_status_label(status_value):
         "open": "Aberto",
         "locked": "Fechado",
         "resolved": "Resolvido",
+        "sealed": "Selado",
         "canceled": "Cancelado",
     }.get(status_value, status_value)
 
@@ -1928,6 +1956,30 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         )
         viewer_has_like = bool(cursor.fetchone())
     public_metrics = market_public_metrics(cursor, row["id"])
+    cursor.execute("""SELECT d.protocol_version,d.key_fingerprint,s.id seal_id
+                      FROM market_integrity_definitions d LEFT JOIN market_seals s ON s.market_id=d.market_id
+                      WHERE d.market_id=%s""", (row["id"],))
+    integrity_row = cursor.fetchone()
+    cursor.execute(
+        """SELECT 1 FROM gotrendlabs_admin_events
+           WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s
+             AND created_at >= COALESCE(%s, created_at)
+           LIMIT 1""",
+        (row["slug"], row.get("resolved_at") if hasattr(row, "get") else None),
+    )
+    has_integrity_failure = bool(cursor.fetchone())
+    if row["status"] in {"draft", "scheduled"}:
+        integrity_status = "not_published"
+    elif not integrity_row:
+        integrity_status = "legacy_unregistered"
+    elif row["status"] == "sealed" and integrity_row["seal_id"]:
+        integrity_status = "sealed"
+    elif row["status"] == "sealed" or has_integrity_failure:
+        integrity_status = "verification_failed"
+    elif row["status"] == "resolved":
+        integrity_status = "resolved_pending_seal"
+    else:
+        integrity_status = "registered"
     return {
         "slug": row["slug"],
         "title": row["title"],
@@ -1965,6 +2017,9 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "auto_close_enabled": row["auto_close_enabled"],
         "is_featured": bool(row["is_featured"]) if "is_featured" in row else False,
         "resolved_at": row["resolved_at"].isoformat() if "resolved_at" in row and row["resolved_at"] else None,
+        "published_at": row["published_at"].isoformat() if "published_at" in row and row["published_at"] else None,
+        "seal_due_at": row["seal_due_at"].isoformat() if "seal_due_at" in row and row["seal_due_at"] else None,
+        "sealed_at": row["sealed_at"].isoformat() if "sealed_at" in row and row["sealed_at"] else None,
         "resolved_at_label": _datetime_label(row["resolved_at"], _resolution_timezone(row)) if "resolved_at" in row and row["resolved_at"] else "",
         "resolution_timezone": _resolution_timezone(row),
         "winning_option_id": row["winning_option_id"] if "winning_option_id" in row else None,
@@ -1984,6 +2039,13 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "sparkline_series": sparkline["series"],
         "options": options,
         "comments": _market_comments(cursor, row["id"], viewer_id=viewer_id) if include_comments else [],
+        "integrity": {
+            "status": integrity_status,
+            "protocol_version": integrity_row["protocol_version"] if integrity_row else "",
+            "definition_registered": bool(integrity_row),
+            "verification_available": bool(integrity_row),
+            "key_fingerprint": integrity_row["key_fingerprint"] if integrity_row else "",
+        },
     }
 
 
@@ -2548,6 +2610,21 @@ def _insert_prediction_position(cursor, user_id, market, option, stake_amount, a
     return {**dict(row), "potential_payout": potential_payout}
 
 
+def _integrity_receipt_response(commitment):
+    if not commitment:
+        return None
+    return {
+        "commitment_id": commitment["id"],
+        "commitment_hash": commitment["commitment_hash"],
+        "signature": encode_signature(commitment["signature"]),
+        "algorithm": commitment["algorithm"],
+        "key_id": commitment["key_id"],
+        "key_fingerprint": commitment["key_fingerprint"],
+        "protocol_version": commitment["protocol_version"],
+        "signed_at": commitment["signed_at"].isoformat(),
+    }
+
+
 def _position_action_preview(cursor, slug, payload, user_id):
     market = _load_market_for_position(cursor, slug)
     option = _load_market_option(cursor, market["id"], payload.option_id)
@@ -2664,6 +2741,7 @@ def _apply_position_action(cursor, slug, payload, user):
             reference_type="prediction",
             reference_id=str(prediction["id"]),
         )
+    commitment = commit_prediction(cursor, prediction_id=prediction["id"], user_id=user["id"], occurred_at=prediction["created_at"])
     snapshot = _market_probability_snapshot(cursor, market["id"])
     wallet_after = _wallet_summary(cursor, user["id"])
     viewer_position = _viewer_position_summary(cursor, market, user["id"])
@@ -2679,6 +2757,7 @@ def _apply_position_action(cursor, slug, payload, user):
         "market_probability_snapshot": snapshot,
         "potential_payout": prediction["potential_payout"],
         "viewer_position": viewer_position,
+        "integrity_receipt": _integrity_receipt_response(commitment),
     }
 
 
@@ -4432,6 +4511,127 @@ def get_market(slug: str, authorization: str = Header(default="")):
             return _market_response(cursor, rows[0], viewer_id=viewer["id"] if viewer else None)
 
 
+def _json_object(value):
+    return json.loads(value) if isinstance(value, str) else (value or {})
+
+
+def _signed_record(record, hash_field):
+    if not record:
+        return None
+    return {"payload": _json_object(record["payload_json"]), "hash": record[hash_field], "signature": encode_signature(record["signature"]), "algorithm": record["algorithm"], "key_id": record["key_id"], "key_fingerprint": record["key_fingerprint"], "protocol_version": record["protocol_version"]}
+
+
+def _market_integrity_contract(cursor, slug):
+    cursor.execute("SELECT id,slug,status,resolved_at FROM gotrendlabs_markets WHERE slug=%s AND status <> 'draft'", (slug,))
+    market = cursor.fetchone()
+    if not market:
+        raise HTTPException(status_code=404, detail="Mercado não encontrado.")
+    cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market["id"],))
+    definition = cursor.fetchone()
+    cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
+    seal = cursor.fetchone()
+    cursor.execute("SELECT sequence,event_type,payload_reference,payload_hash,previous_event_hash,event_hash,key_id,key_fingerprint,occurred_at FROM integrity_ledger_events WHERE market_id=%s ORDER BY sequence", (market["id"],))
+    events = [{**dict(row), "occurred_at": row["occurred_at"].isoformat()} for row in cursor.fetchall()]
+    cursor.execute("SELECT 1 FROM gotrendlabs_admin_events WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s AND created_at >= COALESCE(%s, created_at) LIMIT 1", (slug, market["resolved_at"]))
+    failed = bool(cursor.fetchone())
+    integrity_status = "not_published" if market["status"] in {"draft", "scheduled"} else "legacy_unregistered" if not definition else "sealed" if seal and market["status"] == "sealed" else "verification_failed" if market["status"] == "sealed" or (failed and market["status"] == "resolved") else "resolved_pending_seal" if market["status"] == "resolved" else "registered"
+    return {"market_slug": slug, "status": integrity_status, "protocol_version": definition["protocol_version"] if definition else "", "definition": _signed_record(definition, "payload_hash"), "seal": _signed_record(seal, "seal_hash"), "ledger_events": events}
+
+
+@app.get("/integrity/public-key", response_model=IntegrityPublicKeyResponse)
+def integrity_public_key(request: Request, key_id: Optional[str] = None):
+    _enforce_rate_limit("integrity_public_key", _rate_limit_identity(request), limit=120, window_seconds=60)
+    if key_id:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """SELECT 1 FROM market_integrity_definitions WHERE key_id=%s
+                       UNION SELECT 1 FROM prediction_commitments WHERE key_id=%s
+                       UNION SELECT 1 FROM market_seals WHERE key_id=%s
+                       UNION SELECT 1 FROM integrity_ledger_events WHERE key_id=%s LIMIT 1""",
+                    (key_id, key_id, key_id, key_id),
+                )
+                if not cursor.fetchone():
+                    raise HTTPException(status_code=404, detail="Chave de integridade não encontrada.")
+    return public_key_payload(key_id)
+
+
+@app.get("/markets/{slug}/integrity", response_model=MarketIntegrityResponse)
+def get_market_integrity(slug: str, request: Request):
+    _enforce_rate_limit("market_integrity", _rate_limit_identity(request), limit=120, window_seconds=60)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            return _market_integrity_contract(cursor, slug)
+
+
+@app.get("/markets/{slug}/integrity/package", response_model=MarketIntegrityResponse)
+def download_market_integrity_package(slug: str, request: Request):
+    return get_market_integrity(slug, request)
+
+
+@app.get("/markets/{slug}/integrity/verify", response_model=MarketIntegrityVerificationResponse)
+def verify_market_integrity(slug: str, request: Request):
+    _enforce_rate_limit("market_integrity_verify", _rate_limit_identity(request), limit=60, window_seconds=60)
+    errors = []
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id,status FROM gotrendlabs_markets WHERE slug=%s", (slug,))
+            market = cursor.fetchone()
+            if not market:
+                raise HTTPException(status_code=404, detail="Mercado não encontrado.")
+            cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market["id"],))
+            definition = cursor.fetchone()
+            definition_valid = None
+            if definition:
+                definition_valid = hmac.compare_digest(sha256_hex(bytes(definition["canonical_payload"])), definition["payload_hash"]) and verify_signed_hash(definition["payload_hash"], bytes(definition["signature"]), public_key_der_for(definition["key_id"]))
+                if not definition_valid: errors.append("definition_invalid")
+            cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
+            seal = cursor.fetchone()
+            seal_valid = merkle_valid = None
+            if seal:
+                seal_valid = hmac.compare_digest(sha256_hex(bytes(seal["canonical_payload"])), seal["seal_hash"]) and verify_signed_hash(seal["seal_hash"], bytes(seal["signature"]), public_key_der_for(seal["key_id"]))
+                cursor.execute("SELECT leaf_hash,proof FROM market_merkle_leaves WHERE seal_id=%s ORDER BY leaf_index", (seal["id"],))
+                leaves = cursor.fetchall()
+                calculated_root, _ = build_merkle([row["leaf_hash"] for row in leaves])
+                merkle_valid = hmac.compare_digest(calculated_root, seal["predictions_root"]) and all(verify_merkle_proof(row["leaf_hash"], _json_object(row["proof"]), seal["predictions_root"]) for row in leaves)
+                if not seal_valid: errors.append("seal_invalid")
+                if not merkle_valid: errors.append("merkle_invalid")
+            cursor.execute("SELECT * FROM integrity_ledger_events ORDER BY sequence")
+            previous_hash, ledger_valid = "", True
+            for event in cursor.fetchall():
+                expected_hash = sha256_hex(bytes(event["canonical_payload"]))
+                valid_event = hmac.compare_digest(event["previous_event_hash"], previous_hash) and hmac.compare_digest(event["event_hash"], expected_hash) and verify_signed_hash(event["event_hash"], bytes(event["signature"]), public_key_der_for(event["key_id"]))
+                ledger_valid = ledger_valid and valid_event
+                previous_hash = event["event_hash"]
+            if not ledger_valid: errors.append("ledger_chain_invalid")
+            valid = bool(definition_valid) and ledger_valid and (market["status"] != "sealed" or bool(seal_valid and merkle_valid))
+            return {"valid": valid, "definition_valid": definition_valid, "seal_valid": seal_valid, "merkle_root_valid": merkle_valid, "ledger_chain_valid": ledger_valid, "errors": errors}
+
+
+@app.get("/markets/{slug}/predictions/{prediction_id}/receipt", response_model=PredictionIntegrityReceiptResponse)
+def get_prediction_integrity_receipt(slug: str, prediction_id: int, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _current_user(cursor, authorization)
+            cursor.execute("""SELECT pc.*,p.user_id,ml.leaf_hash,ml.proof,s.predictions_root FROM prediction_commitments pc
+                JOIN gotrendlabs_predictions p ON p.id=pc.prediction_id JOIN gotrendlabs_markets m ON m.id=p.market_id
+                LEFT JOIN market_merkle_leaves ml ON ml.commitment_id=pc.id LEFT JOIN market_seals s ON s.id=ml.seal_id
+                WHERE p.id=%s AND m.slug=%s""", (prediction_id, slug))
+            row = cursor.fetchone()
+            if not row: raise HTTPException(status_code=404, detail="Comprovante não encontrado.")
+            if row["user_id"] != user["id"]: raise HTTPException(status_code=403, detail="Comprovante pertence a outro usuário.")
+            merkle = {"leaf_hash": row["leaf_hash"], "proof": _json_object(row["proof"]), "predictions_root": row["predictions_root"]} if row["leaf_hash"] else None
+            return {"prediction_id": prediction_id, "receipt": _signed_record(row, "commitment_hash"), "merkle_proof": merkle}
+
+
+@app.get("/markets/{slug}/predictions/{prediction_id}/merkle-proof", response_model=PredictionIntegrityReceiptResponse)
+def get_prediction_merkle_proof(slug: str, prediction_id: int, authorization: str = Header(default="")):
+    result = get_prediction_integrity_receipt(slug, prediction_id, authorization)
+    if not result["merkle_proof"]:
+        raise HTTPException(status_code=409, detail="A prova Merkle estará disponível após a finalização do histórico.")
+    return result
+
+
 def _public_market_row_or_404(cursor, slug):
     rows = _market_rows(cursor, "WHERE m.slug = %s AND m.status NOT IN ('draft', 'canceled')", [slug])
     if not rows:
@@ -4763,6 +4963,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
                 reference_type="prediction",
                 reference_id=str(prediction["id"]),
             )
+            commitment = commit_prediction(cursor, prediction_id=prediction["id"], user_id=user["id"], occurred_at=prediction["created_at"])
             _notify_market_participants(
                 cursor,
                 actor=user,
@@ -4784,6 +4985,7 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
                 "wallet_balance_after": wallet_after,
                 "market_probability_snapshot": snapshot,
                 "potential_payout": prediction["potential_payout"],
+                "integrity_receipt": _integrity_receipt_response(commitment),
             }
 
 
@@ -5067,6 +5269,18 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
             market_totals = cursor.fetchone()
             cursor.execute(
                 """
+                SELECT
+                    (SELECT COUNT(*) FROM gotrendlabs_markets WHERE status = 'resolved') AS awaiting_seal,
+                    (SELECT COUNT(*) FROM gotrendlabs_markets WHERE status = 'resolved' AND seal_due_at <= %s + interval '1 hour') AS near_due,
+                    (SELECT COUNT(*) FROM gotrendlabs_markets WHERE status = 'sealed') AS sealed,
+                    (SELECT COUNT(*) FROM gotrendlabs_markets WHERE status = 'resolved' AND seal_due_at <= %s) AS overdue,
+                    (SELECT COUNT(*) FROM gotrendlabs_admin_events WHERE action = 'integrity.seal_failed' AND created_at >= %s) AS failures_7d
+                """,
+                (now, now, since),
+            )
+            integrity_counts = cursor.fetchone()
+            cursor.execute(
+                """
                 SELECT m.slug, m.title, m.status, m.status_label, c.name AS category,
                        s.name AS subcategory, ev.name AS event, m.view_count, m.share_count
                 FROM gotrendlabs_markets m
@@ -5235,6 +5449,11 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "closing_24h": int(market_totals["closing_24h"] or 0),
                     "total_views": int(market_totals["total_views"] or 0),
                     "total_shares": int(market_totals["total_shares"] or 0),
+                    "awaiting_seal": int(integrity_counts["awaiting_seal"] or 0),
+                    "near_seal_due": int(integrity_counts["near_due"] or 0),
+                    "sealed": int(integrity_counts["sealed"] or 0),
+                    "seal_overdue": int(integrity_counts["overdue"] or 0),
+                    "seal_failures_7d": int(integrity_counts["failures_7d"] or 0),
                 },
                 "queues": {
                     "suggestions_pending": suggestion_counts.get("pending", 0),
@@ -6044,9 +6263,9 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
-                     view_count, share_count, display_order, created_at, updated_at)
+                     view_count, share_count, integrity_version, display_order, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
+                        0, 0, '', (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
                 RETURNING id
                 """,
                 (
@@ -6102,8 +6321,30 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
             row = _admin_market_by_slug(cursor, slug)
-            if row["status"] == "resolved":
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar.")
+            if row["status"] in {"resolved", "sealed"}:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercados resolvidos ou selados não podem ser alterados.")
+            cursor.execute("SELECT 1 FROM market_integrity_definitions WHERE market_id = %s", (row["id"],))
+            has_registered_definition = bool(cursor.fetchone())
+            if has_registered_definition:
+                protected_current = {
+                    "slug": row["slug"], "title": row["title"], "summary": row["summary"] or "", "kind": row["kind"],
+                    "category": row["category"], "subcategory": row["subcategory"], "event": row["event"] or "Geral",
+                    "source": row["source"] or "", "resolution_criteria": row["resolution_criteria"] or "",
+                    "close_at": row["close_at"], "close_timezone": row["close_timezone"] or "UTC",
+                    "auto_close_enabled": bool(row["auto_close_enabled"]),
+                }
+                protected_requested = {
+                    "slug": _slug_seed(payload.slug or slug), "title": payload.title.strip(), "summary": payload.summary.strip(), "kind": payload.kind,
+                    "category": payload.category.strip(), "subcategory": payload.subcategory.strip(), "event": payload.event.strip() or "Geral",
+                    "source": payload.source.strip(), "resolution_criteria": payload.resolution_criteria.strip(),
+                    "close_at": payload.close_at, "close_timezone": payload.close_timezone or "UTC",
+                    "auto_close_enabled": bool(payload.auto_close_enabled),
+                }
+                cursor.execute("SELECT label,hint FROM gotrendlabs_market_options WHERE market_id=%s ORDER BY display_order,id", (row["id"],))
+                existing_options = [{"label": option["label"], "hint": option["hint"] or ""} for option in cursor.fetchall()]
+                requested_options = [{"label": option.label.strip(), "hint": option.hint.strip()} for option in payload.options]
+                if protected_current != protected_requested or existing_options != requested_options:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="A definição registrada não pode ser alterada após a publicação.")
             category = _upsert_category(cursor, payload.category)
             subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
             event = _upsert_event(cursor, subcategory["id"], payload.event)
@@ -6220,6 +6461,40 @@ def admin_cancel_market(slug: str, payload: AdminMarketActionPayload, authorizat
             row = _admin_market_by_slug(cursor, slug)
             _market_lifecycle_engine(cursor, staff["id"]).cancel_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
+
+
+@app.post("/admin/markets/{slug}/integrity/corrections")
+def admin_create_integrity_correction(
+    slug: str,
+    payload: AdminMarketIntegrityCorrectionPayload,
+    authorization: str = Header(default=""),
+):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_by_slug(cursor, slug)
+            if row["status"] != "sealed":
+                raise HTTPException(status_code=422, detail="Correções append-only são exclusivas de mercados selados.")
+            cursor.execute("SELECT event_hash FROM integrity_ledger_events WHERE market_id=%s ORDER BY sequence DESC LIMIT 1", (row["id"],))
+            previous = cursor.fetchone()
+            correction = {
+                "corrects_event_hash": previous["event_hash"] if previous else "",
+                "correction": payload.correction,
+                "reason": payload.reason.strip(),
+            }
+            correction_hash = sha256_hex(canonical_json(correction))
+            event = append_ledger_event(
+                cursor,
+                event_type="market_corrected",
+                entity_type="market",
+                entity_identifier=slug,
+                market_id=row["id"],
+                payload_reference=f"market:{slug}:correction:{correction_hash}",
+                payload_hash=correction_hash,
+                payload_snapshot=correction,
+            )
+            _record_admin_event(cursor, staff["id"], "market.integrity_correction", "market", slug, payload.reason.strip())
+            return {"sequence": event["sequence"], "event_hash": event["event_hash"], "corrects_event_hash": correction["corrects_event_hash"]}
 
 
 @app.post("/admin/markets/{slug}/resolve", response_model=MarketResponse)

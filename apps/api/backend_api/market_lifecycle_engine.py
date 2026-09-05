@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -7,6 +7,7 @@ from fastapi import HTTPException, status
 
 from apps.api.backend_api.badge_engine import BadgeAwardEngine
 from apps.api.backend_api.email_outbox import enqueue_user_email, public_url
+from apps.api.backend_api.integrity_service import PROTOCOL_VERSION, append_ledger_event, canonical_json, register_market_definition, sha256_hex
 
 
 INITIAL_REPUTATION = 100
@@ -41,21 +42,30 @@ class MarketLifecycleEngine:
                 detail="Apenas rascunhos ou mercados agendados podem ser publicados.",
             )
         self.validate_publishable(self.cursor, row["id"])
+        now = datetime.now(timezone.utc)
+        definition = register_market_definition(self.cursor, row["id"], occurred_at=now)
         self.cursor.execute(
             """
             UPDATE gotrendlabs_markets
-            SET status = 'open', status_label = 'Aberto', updated_by_id = %s, updated_at = %s
+            SET status = 'open', status_label = 'Aberto', published_at = %s,
+                integrity_version = %s, updated_by_id = %s, updated_at = %s
             WHERE id = %s
             """,
-            (self.staff_id, datetime.now(timezone.utc), row["id"]),
+            (now, PROTOCOL_VERSION, self.staff_id, now, row["id"]),
         )
         self.record_admin_event(self.cursor, self.staff_id, "market.publish", "market", slug, note)
 
     def cancel_market(self, row, slug, note=""):
+        if row["status"] == "sealed":
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado selado não pode ser cancelado ou reaberto.")
         if row["status"] == "canceled":
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercado já cancelado.")
         now = datetime.now(timezone.utc)
         if row["status"] == "resolved":
+            if not note.strip():
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Informe o motivo auditável para desfazer a resolução.")
+            if row.get("seal_due_at") and now >= row["seal_due_at"]:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="A janela para desfazer a resolução terminou; aguarde a selagem ou registre correção append-only.")
             self._undo_resolved_market_predictions(row["id"], slug, now)
             self.cursor.execute(
                 """
@@ -64,6 +74,7 @@ class MarketLifecycleEngine:
                     status_label = 'Fechado',
                     winning_option_id = NULL,
                     resolved_at = NULL,
+                    seal_due_at = NULL,
                     resolution_timezone = '',
                     resolution_type = '',
                     resolution_note = '',
@@ -75,6 +86,7 @@ class MarketLifecycleEngine:
                 (note, self.staff_id, now, row["id"]),
             )
             self.record_admin_event(self.cursor, self.staff_id, "market.resolution_undo", "market", slug, note)
+            self._integrity_event("market_resolution_undone", row, f"market:{slug}:resolution_undo", {"note": note, "occurred_at": now}, now)
             return
 
         self._refund_market_predictions(row["id"], slug, now)
@@ -94,6 +106,7 @@ class MarketLifecycleEngine:
             (now, note, self.staff_id, now, row["id"]),
         )
         self.record_admin_event(self.cursor, self.staff_id, "market.cancel", "market", slug, note)
+        self._integrity_event("market_canceled", row, f"market:{slug}:canceled", {"note": note, "occurred_at": now}, now)
 
     def resolve_market(self, row, slug, payload):
         if row["status"] != "locked":
@@ -137,6 +150,10 @@ class MarketLifecycleEngine:
         resolution_note = note
         if evidence:
             resolution_note = f"{note}\nFonte: {evidence}".strip()
+        self.cursor.execute("SELECT market_seal_window_hours FROM gotrendlabs_site_config WHERE singleton_key=1")
+        config = self.cursor.fetchone()
+        seal_window_hours = max(1, min(int(config["market_seal_window_hours"] or 12) if config else 12, 168))
+        seal_due_at = resolved_at + timedelta(hours=seal_window_hours)
         self.cursor.execute(
             """
             UPDATE gotrendlabs_markets
@@ -145,6 +162,7 @@ class MarketLifecycleEngine:
                 primary_outcome = %s,
                 resolution_type = 'manual',
                 resolved_at = %s,
+                seal_due_at = %s,
                 resolution_timezone = %s,
                 winning_option_id = %s,
                 resolution_note = %s,
@@ -152,7 +170,7 @@ class MarketLifecycleEngine:
                 updated_at = %s
             WHERE id = %s
             """,
-            (winning_option["label"], resolved_at, resolution_timezone, winning_option["id"], resolution_note, self.staff_id, now, row["id"]),
+            (winning_option["label"], resolved_at, seal_due_at, resolution_timezone, winning_option["id"], resolution_note, self.staff_id, now, row["id"]),
         )
         self._resolve_market_predictions(row["id"], winning_option["id"], slug, now)
         self._notify_market_participants(
@@ -169,6 +187,7 @@ class MarketLifecycleEngine:
             actor_id=self.staff_id,
         )
         self.record_admin_event(self.cursor, self.staff_id, "market.resolve", "market", slug, resolution_note)
+        self._integrity_event("market_resolved", row, f"market:{slug}:resolution", {"winning_option_id": winning_option["id"], "resolved_at": resolved_at, "seal_due_at": seal_due_at, "resolution_note": resolution_note}, now)
 
     def lock_market(self, row, slug, note=""):
         if row["auto_close_enabled"]:
@@ -203,6 +222,7 @@ class MarketLifecycleEngine:
             actor_id=self.staff_id,
         )
         self.record_admin_event(self.cursor, self.staff_id, "market.lock", "market", slug, note)
+        self._integrity_event("market_locked", row, f"market:{slug}:locked", {"note": note, "occurred_at": now}, now)
 
     def lock_market_automatically(self, row, slug, note="", now=None):
         if not row["auto_close_enabled"]:
@@ -236,6 +256,22 @@ class MarketLifecycleEngine:
             body=f"O mercado {self._market_title(row['id'], slug)} foi fechado para novas previsões.",
         )
         self.record_admin_event(self.cursor, None, "market.lock", "market", slug, note)
+        self._integrity_event("market_locked", row, f"market:{slug}:locked", {"note": note, "occurred_at": now}, now)
+
+    def _integrity_event(self, event_type, row, reference, payload, occurred_at):
+        self.cursor.execute("SELECT 1 FROM market_integrity_definitions WHERE market_id=%s", (row["id"],))
+        if not self.cursor.fetchone():
+            return
+        append_ledger_event(
+            self.cursor,
+            event_type=event_type,
+            entity_type="market",
+            entity_identifier=row["slug"],
+            market_id=row["id"],
+            payload_reference=reference,
+            payload_hash=sha256_hex(canonical_json(payload)),
+            occurred_at=occurred_at,
+        )
 
     def reconcile_canceled_market_refunds(self, market_id, slug, now):
         return self._refund_market_predictions(market_id, slug, now)

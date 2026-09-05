@@ -4,6 +4,7 @@ from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.agent_services import run_ai_agent_cycle
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
+from apps.api.backend_api.integrity_service import seal_market
 from apps.web.django.system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
 
 
@@ -112,6 +113,35 @@ def close_due_auto_markets(now=None):
     return locked
 
 
+def seal_due_markets(now=None):
+    now = now or datetime.now(timezone.utc)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM gotrendlabs_markets WHERE status='resolved' AND seal_due_at IS NOT NULL AND seal_due_at<=%s ORDER BY seal_due_at,id", (now,))
+            candidate_ids = [row["id"] for row in cursor.fetchall()]
+    sealed, failed = [], []
+    for market_id in candidate_ids:
+        market_slug = str(market_id)
+        try:
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT * FROM gotrendlabs_markets WHERE id=%s AND status='resolved' FOR UPDATE SKIP LOCKED", (market_id,))
+                    market = cursor.fetchone()
+                    if not market:
+                        continue
+                    market_slug = market["slug"]
+                    _seal, created = seal_market(cursor, market, sealed_at=now)
+                    if created:
+                        sealed.append({"id": market["id"], "slug": market["slug"], "sealed_at": now.isoformat()})
+        except Exception as exc:
+            failed.append({"id": market_id, "error_type": exc.__class__.__name__})
+            log_daemon_event("daemon.market_seal_failed", "Selagem de mercado falhou; mercado permaneceu resolvido.", level="ERROR", context={"market_id": market_id, "error_type": exc.__class__.__name__})
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    record_admin_event(cursor, None, "integrity.seal_failed", "market", market_slug, f"Falha segura de selagem: {exc.__class__.__name__}")
+    return {"sealed": sealed, "failed": failed}
+
+
 def prune_expired_system_logs(now=None):
     now = now or datetime.now(timezone.utc)
     with get_connection() as connection:
@@ -199,6 +229,7 @@ def run_daemon_cycle(now=None):
     }
     try:
         locked_markets = close_due_auto_markets(now=now)
+        seal_summary = seal_due_markets(now=now)
         pruned_details = prune_expired_operational_records(now=now)
         pruned_logs = pruned_details["total"]
         from apps.web.django.communications.push_services import process_due_push_deliveries
@@ -244,6 +275,7 @@ def run_daemon_cycle(now=None):
             "ai": ai_summary,
             "email": email_summary,
             "push": push_summary,
+            "integrity_seals": seal_summary,
         },
     )
     if locked_markets:
@@ -264,6 +296,7 @@ def run_daemon_cycle(now=None):
         "ai": ai_summary,
         "email": email_summary,
         "push": push_summary,
+        "integrity_seals": seal_summary,
     }
 
 
