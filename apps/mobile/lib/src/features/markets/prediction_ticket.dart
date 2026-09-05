@@ -432,7 +432,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
     }
     setState(() => _busy = true);
     try {
-      await ref
+      final result = await ref
           .read(marketsRepositoryProvider)
           .createPrediction(
             slug: widget.market.slug,
@@ -442,8 +442,10 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
       _invalidateMarketState();
       setState(() => _busy = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Previsão registrada pela API.')),
+        _showReceiptConfirmation(
+          safeString(
+            ((result['integrity_receipt'] as Map?) ?? {})['commitment_hash'],
+          ),
         );
       }
     } catch (error) {
@@ -486,7 +488,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
     }
     setState(() => _busy = true);
     try {
-      await ref
+      final result = await ref
           .read(marketsRepositoryProvider)
           .createPositionAction(
             slug: widget.market.slug,
@@ -497,19 +499,46 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
       _invalidateMarketState();
       setState(() => _busy = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _positionAction == _revisionAction
-                  ? 'Escolha trocada.'
-                  : 'Posição aumentada.',
-            ),
-          ),
-        );
+        _showReceiptConfirmation(result.commitmentHash);
       }
     } catch (error) {
       _setFailure(error, busy: false);
     }
+  }
+
+  Future<void> _showReceiptConfirmation(String commitmentHash) async {
+    if (!mounted) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const GtlSectionTitle(
+                title: 'Sua previsão foi registrada',
+                subtitle: 'Comprovante de integridade',
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'A ação e o comprovante foram gravados juntos pela API.',
+              ),
+              if (commitmentHash.isNotEmpty) ...[
+                const SizedBox(height: 10),
+                SelectableText(commitmentHash),
+              ],
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Concluir'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<bool?> _showConfirmationSheet({

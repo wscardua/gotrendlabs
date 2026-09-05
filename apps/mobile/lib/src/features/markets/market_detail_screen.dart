@@ -251,13 +251,13 @@ class _MarketActionButtons extends ConsumerWidget {
   }
 }
 
-class _OverviewTab extends StatelessWidget {
+class _OverviewTab extends ConsumerWidget {
   const _OverviewTab({required this.market});
 
   final Market market;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -279,6 +279,35 @@ class _OverviewTab extends StatelessWidget {
         const SizedBox(height: 12),
         MarketSparklineCard(market: market),
         const SizedBox(height: 12),
+        if (market.integrity.definitionRegistered) ...[
+          GtlSurface(
+            color: GtlColors.surfaceGlass,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GtlSectionTitle(
+                  title: market.integrity.isSealed
+                      ? 'Histórico finalizado e verificável'
+                      : market.integrity.isPendingSeal
+                      ? 'Resultado em processo de finalização'
+                      : 'Definição registrada',
+                  subtitle:
+                      market.integrity.isPendingSeal &&
+                          market.sealDueAt.isNotEmpty
+                      ? 'Previsão de finalização: ${market.sealDueAt}'
+                      : 'Registro de Integridade Verificável',
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () => _showIntegritySheet(context, ref, market),
+                  icon: const Icon(Icons.verified_user_outlined),
+                  label: const Text('Verificar integridade'),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+        ],
         PredictionTicket(market: market),
         const SizedBox(height: 12),
         GtlSurface(
@@ -295,7 +324,7 @@ class _OverviewTab extends StatelessWidget {
                     ? 'Critério não informado.'
                     : market.resolutionCriteria,
               ),
-              if (market.isResolved) ...[
+              if (market.isResolved || market.isSealed) ...[
                 const SizedBox(height: 14),
                 const GtlSectionTitle(title: 'Resultado oficial'),
                 const SizedBox(height: 8),
@@ -311,6 +340,120 @@ class _OverviewTab extends StatelessWidget {
       ],
     );
   }
+
+  Future<void> _showIntegritySheet(
+    BuildContext context,
+    WidgetRef ref,
+    Market market,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => _IntegritySheet(
+        market: market,
+        load: () async {
+          final repository = ref.read(marketsRepositoryProvider);
+          return (
+            proof: await repository.integrity(market.slug),
+            verification: await repository.verifyIntegrity(market.slug),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _IntegritySheet extends StatelessWidget {
+  const _IntegritySheet({required this.market, required this.load});
+
+  final Market market;
+  final Future<
+    ({Map<String, dynamic> proof, Map<String, dynamic> verification})
+  >
+  Function()
+  load;
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: FutureBuilder(
+          future: load(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const SizedBox(
+                height: 260,
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError || !snapshot.hasData) {
+              return GtlStatePanel(
+                icon: Icons.cloud_off,
+                title: 'Verificação indisponível',
+                body: 'Não foi possível conferir agora. Tente novamente.',
+                color: GtlColors.accentYellow,
+              );
+            }
+            final value = snapshot.data!;
+            final verification = value.verification;
+            Widget check(String label, String key, {bool pending = false}) =>
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(
+                    pending
+                        ? Icons.schedule
+                        : verification[key] == true
+                        ? Icons.check_circle_outline
+                        : Icons.error_outline,
+                  ),
+                  title: Text(label),
+                );
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const GtlSectionTitle(
+                    title: 'Verificar integridade',
+                    subtitle: 'Registro de Integridade Verificável',
+                  ),
+                  const SizedBox(height: 12),
+                  check('Definição original confirmada', 'definition_valid'),
+                  check(
+                    'Seal final válido',
+                    'seal_valid',
+                    pending: !market.integrity.isSealed,
+                  ),
+                  check(
+                    'Histórico de previsões preservado',
+                    'merkle_root_valid',
+                    pending: !market.integrity.isSealed,
+                  ),
+                  check('Cadeia do ledger válida', 'ledger_chain_valid'),
+                  const SizedBox(height: 8),
+                  Text('Protocolo: ${market.integrity.protocolVersion}'),
+                  Text('Chave: ${_shortHash(market.integrity.keyFingerprint)}'),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'A conferência demonstra consistência criptográfica e não substitui o critério público de resolução.',
+                  ),
+                  const SizedBox(height: 18),
+                  FilledButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Fechar'),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _shortHash(String value) => value.length <= 18
+      ? value
+      : '${value.substring(0, 10)}…${value.substring(value.length - 6)}';
 }
 
 class _CommunityTab extends ConsumerStatefulWidget {

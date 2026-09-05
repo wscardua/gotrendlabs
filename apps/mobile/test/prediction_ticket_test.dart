@@ -215,7 +215,8 @@ void main() {
     expect(walletCalls, greaterThanOrEqualTo(2));
     expect(ledgerCalls, 2);
     expect(rechargeCalls, 2);
-    expect(find.text('Previsão registrada pela API.'), findsOneWidget);
+    expect(find.text('Sua previsão foi registrada'), findsOneWidget);
+    expect(find.text('Comprovante de integridade'), findsOneWidget);
   });
 
   testWidgets('Prediction confirmation sheet fits compact physical screens', (
@@ -367,7 +368,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(paths, contains('/markets/mercado-aberto/position-actions'));
-    expect(find.text('Posição aumentada.'), findsOneWidget);
+    expect(find.text('Sua previsão foi registrada'), findsOneWidget);
+    expect(
+      find.text('A ação e o comprovante foram gravados juntos pela API.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Position desk previews revision with backend penalty', (

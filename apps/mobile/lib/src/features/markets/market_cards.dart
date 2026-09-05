@@ -98,6 +98,19 @@ class MarketHeroCard extends StatelessWidget {
                           color: _statusColor(market),
                           filled: true,
                         ),
+                      if (market.integrity.definitionRegistered)
+                        GtlPill(
+                          label: market.integrity.isSealed
+                              ? 'Histórico verificável'
+                              : 'Definição registrada',
+                          icon: market.integrity.isSealed
+                              ? Icons.verified_outlined
+                              : Icons.shield_outlined,
+                          color: market.integrity.isSealed
+                              ? GtlColors.accentCyan
+                              : GtlColors.accentGreen,
+                          filled: true,
+                        ),
                       ..._viewerPills(market),
                     ],
                   ),
@@ -262,6 +275,33 @@ class MarketCompactCard extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 6,
                         children: _viewerPills(market, dense: true),
+                      ),
+                    ],
+                    if (market.integrity.definitionRegistered) ...[
+                      const SizedBox(height: 7),
+                      Row(
+                        children: [
+                          Icon(
+                            market.integrity.isSealed
+                                ? Icons.verified_outlined
+                                : Icons.shield_outlined,
+                            size: 15,
+                            color: market.integrity.isSealed
+                                ? GtlColors.accentCyan
+                                : GtlColors.accentGreen,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              market.integrity.isSealed
+                                  ? 'Histórico verificável'
+                                  : 'Definição registrada',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.labelSmall,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     const SizedBox(height: 10),
@@ -799,6 +839,9 @@ Color _statusColor(Market market) {
   }
   if (market.isResolved) {
     return GtlColors.accentViolet;
+  }
+  if (market.isSealed) {
+    return GtlColors.accentCyan;
   }
   if (market.isLocked) {
     return GtlColors.accentYellow;

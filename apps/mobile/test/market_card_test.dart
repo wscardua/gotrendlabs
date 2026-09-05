@@ -66,6 +66,32 @@ void main() {
     expect(find.text('Favorito'), findsOneWidget);
   });
 
+  testWidgets(
+    'market cards distinguish registered definition from sealed history',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                MarketHeroCard(
+                  market: _market(integrityStatus: 'registered'),
+                  api: ApiClient(tokenStore: MemoryTokenStore()),
+                ),
+                MarketCompactCard(
+                  market: _market(integrityStatus: 'sealed'),
+                  api: ApiClient(tokenStore: MemoryTokenStore()),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Definição registrada'), findsOneWidget);
+      expect(find.text('Histórico verificável'), findsOneWidget);
+    },
+  );
+
   testWidgets('MarketCompactCard shows compact time remaining', (tester) async {
     final market = _market();
 
@@ -244,6 +270,7 @@ Market _market({
   String statusLabel = 'Aberto',
   String closesIn = '3d',
   String closeLabel = 'Fecha em 3 dias',
+  String integrityStatus = '',
 }) {
   return Market.fromJson({
     'slug': 'mercado-teste',
@@ -272,6 +299,14 @@ Market _market({
     'resolution_criteria': 'Critério',
     'viewer_has_favorite': favorite,
     'viewer_has_prediction': prediction,
+    if (integrityStatus.isNotEmpty)
+      'integrity': {
+        'status': integrityStatus,
+        'protocol_version': 'gtl-integrity/v1',
+        'definition_registered': true,
+        'verification_available': true,
+        'key_fingerprint': 'abc123',
+      },
     'options': [
       {'id': 1, 'label': 'SIM', 'probability': 64, 'probability_exact': 64.0},
       {'id': 2, 'label': 'NÃO', 'probability': 36, 'probability_exact': 36.0},

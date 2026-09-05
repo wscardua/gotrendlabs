@@ -24,6 +24,21 @@ class MarketsRepository {
     return Market.fromJson(await _api.getMap('/markets/$slug'));
   }
 
+  Future<Map<String, dynamic>> integrity(String slug) {
+    return _api.getMap('/markets/$slug/integrity');
+  }
+
+  Future<Map<String, dynamic>> verifyIntegrity(String slug) {
+    return _api.getMap('/markets/$slug/integrity/verify');
+  }
+
+  Future<Map<String, dynamic>> predictionReceipt(
+    String slug,
+    int predictionId,
+  ) {
+    return _api.getMap('/markets/$slug/predictions/$predictionId/receipt');
+  }
+
   Future<void> trackView(String slug) async {
     await _api.postMap('/markets/$slug/view');
   }
@@ -81,12 +96,12 @@ class MarketsRepository {
     return PredictionPreview.fromJson(json);
   }
 
-  Future<void> createPrediction({
+  Future<Map<String, dynamic>> createPrediction({
     required String slug,
     required int optionId,
     required int stakeAmount,
   }) async {
-    await _api.postMap(
+    return _api.postMap(
       '/markets/$slug/predict',
       data: {
         'option_id': optionId,
