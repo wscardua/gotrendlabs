@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}GoTrendLabs | Comprovante da previsão{% endblock %}
+{% block content %}
+<main class="shell page-content integrity-page">
+  <section class="hero-card integrity-hero">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Comprovante individual</span></div>
+    <h1>Sua previsão foi registrada</h1>
+    <p class="lead">Este comprovante pertence à sua conta e não publica dados pessoais.</p>
+  </section>
+  {% if receipt_error %}<section class="notice risk">{{ receipt_error }}</section>{% else %}
+  <section class="panel integrity-technical">
+    <dl>
+      <dt>Previsão</dt><dd>#{{ prediction_id }}</dd>
+      <dt>Protocolo</dt><dd>{{ receipt.receipt.protocol_version }}</dd>
+      <dt>Hash</dt><dd><code>{{ receipt.receipt.hash }}</code></dd>
+      <dt>Chave</dt><dd><code>{{ receipt.receipt.key_fingerprint }}</code></dd>
+      <dt>Assinatura</dt><dd><code>{{ receipt.receipt.signature|truncatechars:48 }}</code></dd>
+      <dt>Prova no histórico final</dt><dd>{% if receipt.merkle_proof %}Disponível e vinculada ao Seal{% else %}Disponível após a finalização do histórico{% endif %}</dd>
+    </dl>
+    <a class="btn ghost" href="{% url 'market-integrity' slug %}">Ver integridade do mercado</a>
+  </section>{% endif %}
+</main>
+{% endblock %}

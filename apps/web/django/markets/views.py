@@ -18,6 +18,9 @@ from apps.web.django.accounts.api_client import (
     preview_position_action,
     track_market_view,
     get_market,
+    get_market_integrity,
+    get_prediction_integrity_receipt,
+    verify_market_integrity,
     like_market,
     react_to_comment,
     unfavorite_market,
@@ -260,6 +263,36 @@ def detail(request, slug):
     response = render(request, "markets/detail.html", _detail_context(request, slug, market))
     _track_market_view(slug)
     return response
+
+
+def integrity(request, slug):
+    try:
+        market = get_market(slug, auth_token(request) if is_authenticated(request) else None)
+        proof = get_market_integrity(slug)
+        verification = verify_market_integrity(slug)
+        error = ""
+    except AuthAPIError as exc:
+        market = local_market(slug)
+        proof = {}
+        verification = {}
+        error = str(exc)
+    return render(
+        request,
+        "markets/integrity.html",
+        {"market": market, "proof": proof, "verification": verification, "integrity_error": error},
+    )
+
+
+def prediction_receipt(request, slug, prediction_id):
+    if not is_authenticated(request):
+        return redirect(login_url_with_next(request, request.path))
+    try:
+        receipt = get_prediction_integrity_receipt(auth_token(request), slug, prediction_id)
+        error = ""
+    except AuthAPIError as exc:
+        receipt = {}
+        error = str(exc)
+    return render(request, "markets/prediction_receipt.html", {"slug": slug, "prediction_id": prediction_id, "receipt": receipt, "receipt_error": error})
 
 
 def prediction_preview(request, slug):

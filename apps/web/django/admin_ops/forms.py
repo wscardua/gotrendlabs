@@ -244,6 +244,13 @@ class DaemonConfigForm(forms.Form):
         return cleaned_data
 
 
+class IntegrityConfigForm(forms.Form):
+    market_seal_window_hours = forms.IntegerField(
+        label="Janela para finalizar o histórico (horas)", min_value=1, max_value=168, initial=12,
+        help_text="Nova resolução recebe uma janela completa antes da selagem criptográfica.",
+    )
+
+
 class RetentionConfigForm(forms.Form):
     system_log_retention_days = forms.IntegerField(
         label="Retenção de logs técnicos",

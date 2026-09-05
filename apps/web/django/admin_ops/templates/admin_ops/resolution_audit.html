@@ -2,6 +2,18 @@
 {% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
+  {% if integrity %}
+  <section class="panel">
+    <div class="section-head"><div><span class="eyebrow">Integridade</span><h2>Ledger criptográfico assinado</h2></div><a class="btn small ghost" href="{% url 'market-integrity' market.slug %}">Verificação pública</a></div>
+    <div class="admin-grid">
+      <div class="metric"><strong>{{ integrity.status }}</strong><span>status</span></div>
+      <div class="metric"><strong>{{ integrity.protocol_version|default:"legado" }}</strong><span>protocolo</span></div>
+      <div class="metric"><strong>{{ integrity.definition.hash|default:"-"|truncatechars:18 }}</strong><span>definição</span></div>
+      <div class="metric"><strong>{{ integrity.seal.hash|default:"-"|truncatechars:18 }}</strong><span>Seal</span></div>
+    </div>
+    <table class="table"><tr><th>Seq.</th><th>Evento</th><th>Payload</th><th>Elo anterior</th><th>Chave</th><th>Quando</th></tr>{% for event in integrity.ledger_events %}<tr><td>{{ event.sequence }}</td><td>{{ event.event_type }}</td><td><code>{{ event.payload_hash|truncatechars:18 }}</code></td><td><code>{{ event.previous_event_hash|default:"início"|truncatechars:18 }}</code></td><td><code>{{ event.key_fingerprint|truncatechars:18 }}</code></td><td>{{ event.occurred_at }}</td></tr>{% empty %}<tr><td colspan="6">Sem eventos de integridade.</td></tr>{% endfor %}</table>
+  </section>
+  {% endif %}
   <section class="panel resolution-audit">
     <div class="section-head">
       <div>

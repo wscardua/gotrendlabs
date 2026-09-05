@@ -50,6 +50,7 @@ from apps.web.django.accounts.api_client import (
     admin_get_users,
     admin_request_user_password_reset,
     get_backend_health,
+    get_market_integrity,
     admin_lock_market,
     admin_moderate_comment,
     admin_publish_market,
@@ -92,6 +93,7 @@ from apps.web.django.admin_ops.forms import (
     EconomyConfigForm,
     EmailTemplateForm,
     FeedbackRewardForm,
+    IntegrityConfigForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
     MobileCompatibilityConfigForm,
@@ -1216,6 +1218,12 @@ def config(request):
         },
         prefix="daemon",
     )
+    integrity_post_data = request.POST if request.method == "POST" and any(key.startswith("integrity-") for key in request.POST) else None
+    integrity_form = IntegrityConfigForm(
+        integrity_post_data,
+        initial={"market_seal_window_hours": site_config.market_seal_window_hours},
+        prefix="integrity",
+    )
     retention_form = RetentionConfigForm(
         request.POST or None,
         initial={
@@ -1237,6 +1245,7 @@ def config(request):
     position_form_valid = position_post_data is None or position_form.is_valid()
     mobile_compatibility_form_valid = mobile_compatibility_post_data is None or mobile_compatibility_form.is_valid()
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
+    integrity_form_valid = integrity_post_data is None or integrity_form.is_valid()
     if request.method == "POST" and request.POST.get("action") == "resend_test":
         try:
             call_command("send_resend_test_email")
@@ -1254,6 +1263,7 @@ def config(request):
         and position_form_valid
         and mobile_compatibility_form_valid
         and daemon_form.is_valid()
+        and integrity_form_valid
         and retention_form.is_valid()
         and ai_form_valid
     ):
@@ -1278,15 +1288,20 @@ def config(request):
         if mobile_compatibility_post_data is not None:
             for field, value in mobile_compatibility_form.cleaned_data.items():
                 setattr(site_config, field, value)
+        previous_seal_window = site_config.market_seal_window_hours
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
         site_config.ai_audit_retention_days = retention_form.cleaned_data["ai_audit_retention_days"]
+        if integrity_post_data is not None:
+            site_config.market_seal_window_hours = integrity_form.cleaned_data["market_seal_window_hours"]
         if ai_post_data is not None:
             for field, value in ai_form.cleaned_data.items():
                 setattr(site_config, field, value)
         site_config.updated_by = _admin_model_user(request)
         site_config.save()
+        if previous_seal_window != site_config.market_seal_window_hours:
+            AdminEvent.objects.create(actor=_admin_model_user(request), action="integrity.seal_window_update", entity_type="site_config", entity_identifier="market_seal_window_hours", note=f"{previous_seal_window}h -> {site_config.market_seal_window_hours}h")
         current_mobile_compatibility = _mobile_compatibility_values(site_config)
         if previous_mobile_compatibility != current_mobile_compatibility:
             AdminEvent.objects.create(
@@ -1322,6 +1337,7 @@ def config(request):
             "economy_form": economy_form,
             "position_form": position_form,
             "daemon_form": daemon_form,
+            "integrity_form": integrity_form,
             "retention_form": retention_form,
             "ai_form": ai_form,
             "platform_config": platform_config,
@@ -2247,9 +2263,10 @@ def resolution(request):
     try:
         locked_data = admin_get_markets(token, status="locked", order=active_order)
         resolved_data = admin_get_markets(token, status="resolved", order=active_order)
+        sealed_data = admin_get_markets(token, status="sealed", order=active_order)
         market_data = {
-            "markets": [*locked_data.get("markets", []), *resolved_data.get("markets", [])],
-            "counts": {**locked_data.get("counts", {}), **resolved_data.get("counts", {})},
+            "markets": [*locked_data.get("markets", []), *resolved_data.get("markets", []), *sealed_data.get("markets", [])],
+            "counts": {**locked_data.get("counts", {}), **resolved_data.get("counts", {}), **sealed_data.get("counts", {})},
         }
     except AuthAPIError as exc:
         market_data = {"markets": [], "counts": {}}
@@ -2511,13 +2528,13 @@ def market_form(request, mode="new", slug=None):
     form = AdminMarketForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
     if upload_error:
         form.add_error(None, upload_error)
-    is_readonly = bool(market and market.get("status") == "resolved")
+    is_readonly = bool(market and market.get("status") in {"resolved", "sealed"})
     if is_readonly:
         for field in form.fields.values():
             field.disabled = True
     if request.method == "POST" and request.POST.get("action") != "lock" and not upload_error and form.is_valid():
         if is_readonly:
-            error = "Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar."
+            error = "Mercados resolvidos ou selados não podem ser alterados."
             return render(
                 request,
                 "admin_ops/market_form.html",
@@ -2615,11 +2632,16 @@ def resolution_action(request, action, slug=None):
             limit = 10
             offset = 0
         audit_data = None
+        integrity_data = None
         if not error:
             try:
                 audit_data = _audit_pagination(admin_get_market_resolution_audit(token, market["slug"], limit=limit, offset=offset))
             except AuthAPIError as exc:
                 error = str(exc)
+            try:
+                integrity_data = get_market_integrity(market["slug"])
+            except AuthAPIError as exc:
+                error = error or str(exc)
         return render(
             request,
             "admin_ops/resolution_audit.html",
@@ -2629,6 +2651,7 @@ def resolution_action(request, action, slug=None):
                 "slug": slug,
                 "market": _market_resolution_meta(market),
                 "audit": audit_data,
+                "integrity": integrity_data,
                 "admin_error": error,
             },
         )
@@ -2653,7 +2676,10 @@ def resolution_action(request, action, slug=None):
             error = "Informe resultado e evidência da resolução."
     elif action == "cancel-refund" and market:
         if request.method == "POST":
-            note = request.POST.get("note") or "Resolução cancelada pelo Admin Ops com refund operacional."
+            note = (request.POST.get("note") or "").strip()
+            if not note:
+                error = "A justificativa é obrigatória para desfazer uma resolução."
+                return render(request, "admin_ops/resolution_action.html", {"title": titles[action], "action": action, "slug": slug, "market": market, "form": form, "admin_error": error})
             try:
                 canceled = admin_cancel_market(token, market["slug"], note)
                 messages.success(request, f"Resolução desfeita: {canceled['title']}")

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}GoTrendLabs | Integridade de {{ market.title }}{% endblock %}
+{% block content %}
+<main class="shell page-content integrity-page">
+  <section class="hero-card integrity-hero">
+    <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Registro de Integridade Verificável</span></div>
+    <h1>Verificar integridade</h1>
+    <p class="lead">{{ market.title }}</p>
+    <p>Esta conferência confirma a consistência criptográfica dos registros. Ela não substitui o critério público usado para resolver o mercado.</p>
+  </section>
+  {% if integrity_error %}
+    <section class="notice risk" role="alert">Não foi possível verificar agora: {{ integrity_error }}</section>
+  {% else %}
+    <section class="panel integrity-checks" aria-label="Resultado da verificação">
+      <div><span aria-hidden="true">{% if verification.definition_valid %}✓{% else %}!{% endif %}</span><strong>Definição original</strong><small>{% if verification.definition_valid %}confirmada{% else %}não confirmada{% endif %}</small></div>
+      <div><span aria-hidden="true">{% if verification.seal_valid %}✓{% else %}·{% endif %}</span><strong>Seal final</strong><small>{% if proof.status == 'sealed' %}{% if verification.seal_valid %}válido{% else %}falhou{% endif %}{% else %}aguardando finalização{% endif %}</small></div>
+      <div><span aria-hidden="true">{% if verification.merkle_root_valid %}✓{% else %}·{% endif %}</span><strong>Histórico de previsões</strong><small>{% if proof.status == 'sealed' %}{{ verification.merkle_root_valid|yesno:"preservado,falhou" }}{% else %}aguardando finalização{% endif %}</small></div>
+      <div><span aria-hidden="true">{% if verification.ledger_chain_valid %}✓{% else %}!{% endif %}</span><strong>Cadeia do ledger</strong><small>{{ verification.ledger_chain_valid|yesno:"válida,falhou" }}</small></div>
+    </section>
+    <section class="panel integrity-technical">
+      <div class="section-kicker"><span class="eyebrow">Como funciona tecnicamente</span></div>
+      <h2>Detalhes da prova</h2>
+      <dl>
+        <dt>Protocolo</dt><dd>{{ proof.protocol_version|default:"não disponível" }}</dd>
+        <dt>Hash da definição</dt><dd><code>{{ proof.definition.hash|default:"não disponível"|truncatechars:22 }}</code></dd>
+        <dt>Chave</dt><dd><code>{{ proof.definition.key_fingerprint|default:"não disponível"|truncatechars:22 }}</code></dd>
+        {% if proof.seal %}<dt>Hash do Seal</dt><dd><code>{{ proof.seal.hash|truncatechars:22 }}</code></dd>{% endif %}
+      </dl>
+      <a class="btn ghost" href="{{ request.path|slice:':-1' }}/package">Baixar pacote de verificação</a>
+    </section>
+    <section class="notice">O GoTrendLabs utiliza um ledger criptográfico interno para rastreabilidade e detecção de alterações. Isso não equivale a uma blockchain pública ou descentralizada.</section>
+  {% endif %}
+</main>
+{% endblock %}

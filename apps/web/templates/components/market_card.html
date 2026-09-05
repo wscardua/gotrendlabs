@@ -30,13 +30,18 @@
   </div>
   <div class="market-side">
     <div class="market-card-tags" aria-label="Classificação do mercado">
+      {% if market.integrity.definition_registered %}
+        <a class="integrity-badge {% if market.integrity.status == 'sealed' %}is-sealed{% endif %}" href="{% url 'market-integrity' market.slug %}" aria-label="{% if market.integrity.status == 'sealed' %}Histórico finalizado e verificável{% else %}Definição registrada{% endif %}" title="Registro de Integridade Verificável">
+          <span aria-hidden="true">✓</span>{% if market.integrity.status == "sealed" %}Histórico verificável{% else %}Definição registrada{% endif %}
+        </a>
+      {% endif %}
       <span class="tag hot">{{ market.category }}</span>
       <span class="tag">{{ market.subcategory }}</span>
       <span class="tag">{{ market.event }}</span>
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span>
     </div>
-    <div class="prob-row {% if market.status == 'resolved' %}resolved{% endif %}">
-      {% if market.status == "resolved" %}
+    <div class="prob-row {% if market.status == 'resolved' or market.status == 'sealed' %}resolved{% endif %}">
+      {% if market.status == "resolved" or market.status == "sealed" %}
         <span class="market-final-consensus">Consenso final</span>
       {% else %}
         <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %} {{ market.primary_probability }}%</strong>
@@ -66,8 +71,8 @@
       {% endfor %}
     </div>
     <div class="market-foot">
-      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% elif market.status == "locked" %}Em apuração{% else %}Prever{% endif %}</a>
-      <a class="btn small ghost share-card-button" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}" aria-label="Compartilhar mercado" title="Compartilhar mercado"><span class="share-label">Compartilhar</span><span class="share-symbol" aria-hidden="true">↗</span></a>
+      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "sealed" %}Ver histórico{% elif market.status == "resolved" %}Ver resolução{% elif market.status == "locked" %}Em apuração{% else %}Prever{% endif %}</a>
+      <a class="btn small ghost share-card-button" href="{% if market.status == 'resolved' or market.status == 'sealed' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}" aria-label="Compartilhar mercado" title="Compartilhar mercado"><span class="share-label">Compartilhar</span><span class="share-symbol" aria-hidden="true">↗</span></a>
       <div class="market-card-actions">
         <a class="market-comment-count" href="{% url 'market-detail' market.slug %}#comments" aria-label="{% if market.comment_count == 1 %}1 comentário{% else %}{{ market.comment_count|default:0 }} comentários{% endif %}" title="Ver comentários">
           <span aria-hidden="true">💬</span>

@@ -1,6 +1,14 @@
 {% extends "base.html" %}
 {% block title %}GoTrendLabs | {{ market.title }}{% endblock %}
 {% block content %}
+{% if market.integrity.definition_registered %}
+<aside class="shell integrity-strip {% if market.integrity.status == 'sealed' %}is-sealed{% endif %}">
+  <span aria-hidden="true">✓</span>
+  <strong>{% if market.integrity.status == "sealed" %}Histórico finalizado e verificável{% elif market.integrity.status == "resolved_pending_seal" %}Resultado em processo de finalização{% else %}Definição registrada{% endif %}</strong>
+  {% if market.seal_due_at and market.integrity.status == "resolved_pending_seal" %}<small>Previsão de finalização: {{ market.seal_due_at }}</small>{% endif %}
+  <a href="{% url 'market-integrity' market.slug %}">Verificar integridade</a>
+</aside>
+{% endif %}
 <main class="shell layout-detail">
   <section class="panel detail-hero">
     <div class="detail-market-actions">
@@ -86,8 +94,8 @@
       <div class="metric"><strong>{{ market.closes_in }}</strong><span>até fechar previsões</span></div>
     </div>
     <section class="panel" style="margin-top:16px">
-      <h3>{% if market.status == "resolved" %}Resultado oficial{% elif market.status == "canceled" %}Mercado cancelado{% else %}Critério de resolução{% endif %}</h3>
-      {% if market.status == "resolved" %}
+      <h3>{% if market.status == "resolved" or market.status == "sealed" %}Resultado oficial{% elif market.status == "canceled" %}Mercado cancelado{% else %}Critério de resolução{% endif %}</h3>
+      {% if market.status == "resolved" or market.status == "sealed" %}
         <p>Resultado final: <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>.</p>
         {% if market.resolution_note %}<p>{{ market.resolution_note|linebreaksbr }}</p>{% endif %}
         <div class="tags"><span class="tag">Resolvido em: {{ market.resolved_at_label|default:"data registrada" }}</span><span class="tag">Timezone: {{ market.resolution_timezone|default:"UTC" }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
@@ -189,26 +197,30 @@
         <span>1</span>
         <strong>Criação</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'open' or market.status == 'scheduled' %}active{% elif market.status == 'locked' or market.status == 'resolved' or market.status == 'canceled' %}done{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'open' or market.status == 'scheduled' %}active{% elif market.status == 'locked' or market.status == 'resolved' or market.status == 'sealed' or market.status == 'canceled' %}done{% endif %}">
         <span>2</span>
         <strong>Aberto</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'locked' %}active{% elif market.status == 'resolved' or market.status == 'canceled' %}done{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'locked' %}active{% elif market.status == 'resolved' or market.status == 'sealed' or market.status == 'canceled' %}done{% endif %}">
         <span>3</span>
         <strong>Fechamento</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'resolved' %}done{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'resolved' or market.status == 'sealed' %}done{% endif %}">
         <span>4</span>
         <strong>Resolução</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'resolved' %}active{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'resolved' %}active{% elif market.status == 'sealed' %}done{% endif %}">
         <span>5</span>
         <strong>Distribuição</strong>
       </div>
+      <div class="lifecycle-step {% if market.status == 'sealed' %}active{% endif %}">
+        <span>6</span>
+        <strong>Verificação</strong>
+      </div>
     </div>
     {% if market.status != "open" %}
-      <h2 class="market-state-title">{% if market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
-      {% if market.status == "resolved" %}
+      <h2 class="market-state-title">{% if market.status == "sealed" %}Histórico finalizado{% elif market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
+      {% if market.status == "resolved" or market.status == "sealed" %}
         <div class="result-highlight">
           <span>Resultado oficial</span>
           <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>
@@ -234,14 +246,14 @@
       {% else %}
         <p>Este mercado não aceita novas previsões neste momento.</p>
       {% endif %}
-      {% if market.status == "resolved" %}<a class="btn primary" href="{% url 'share-result' market.slug %}">Compartilhar resultado</a>{% endif %}
+      {% if market.status == "resolved" or market.status == "sealed" %}<a class="btn primary" href="{% url 'share-result' market.slug %}">Compartilhar resultado</a>{% endif %}
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
       {% if prediction_result %}
-        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.</div>
+        <div class="notice green">Sua previsão foi registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.{% if prediction_result.prediction_id %} <a href="{% url 'prediction-integrity-receipt' market.slug prediction_result.prediction_id %}">Abrir comprovante</a>{% endif %}</div>
       {% endif %}
       {% if position_action_result %}
-        <div class="notice green">{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.</div>
+        <div class="notice green">{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.{% if position_action_result.prediction_id %} <a href="{% url 'prediction-integrity-receipt' market.slug position_action_result.prediction_id %}">Abrir comprovante</a>{% endif %}</div>
       {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>

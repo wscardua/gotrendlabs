@@ -39,6 +39,10 @@
           <strong>{{ site_config.daemon_stale_after_minutes }}/{{ site_config.daemon_missing_after_minutes }} min</strong>
         </div>
         <div>
+          <span>Integridade</span>
+          <strong>Selagem em {{ site_config.market_seal_window_hours }}h</strong>
+        </div>
+        <div>
           <span>Retenção</span>
           <strong>Logs {{ site_config.system_log_retention_days }}d / IA {{ site_config.ai_audit_retention_days }}d</strong>
         </div>
@@ -74,6 +78,17 @@
 
     <form class="admin-config-surface" method="post">
       {% csrf_token %}
+      <section class="config-section">
+        <div class="config-panel-head">
+          <div><span class="eyebrow">Registro de Integridade Verificável</span><h2>Janela de finalização</h2><p>Tempo para revisão operacional após o resultado, antes de o histórico ser selado pelo daemon.</p></div>
+          <span class="config-status is-on">{{ site_config.market_seal_window_hours }}h</span>
+        </div>
+        <div class="config-controls">
+          <label class="field compact-field"><span>Horas até a selagem</span>{{ integrity_form.market_seal_window_hours }}{% if integrity_form.market_seal_window_hours.errors %}<small>{{ integrity_form.market_seal_window_hours.errors|join:", " }}</small>{% endif %}</label>
+          <div class="config-secret-card"><span>Garantia operacional</span><strong>Após a selagem não há desfazer ou cancelar.</strong><small>Correções posteriores criam novos eventos e preservam a rastreabilidade.</small></div>
+        </div>
+      </section>
+
       <section class="config-section">
         <div class="config-panel-head">
           <div>

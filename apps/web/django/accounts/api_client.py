@@ -176,6 +176,18 @@ def get_market(slug, token=None):
     return _normalize_market_payload(_request("GET", f"/markets/{slug}", token=token))
 
 
+def get_market_integrity(slug):
+    return _request("GET", f"/markets/{slug}/integrity")
+
+
+def verify_market_integrity(slug):
+    return _request("GET", f"/markets/{slug}/integrity/verify")
+
+
+def get_prediction_integrity_receipt(token, slug, prediction_id):
+    return _request("GET", f"/markets/{slug}/predictions/{prediction_id}/receipt", token=token)
+
+
 def track_market_view(slug):
     return _request("POST", f"/markets/{slug}/view")
 

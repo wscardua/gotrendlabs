@@ -6,7 +6,7 @@
     <div class="section-head">
       <div>
         <h1 class="large-title">Mercados aguardando decisão</h1>
-        <p class="muted">Revise mercados fechados, publique decisões e desfaça resoluções quando houver necessidade operacional.</p>
+        <p class="muted">Revise mercados fechados, publique decisões e desfaça resoluções quando houver necessidade operacional. Acompanhe também a janela de selagem e consulte históricos finalizados.</p>
       </div>
     </div>
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
@@ -36,8 +36,12 @@
             {% if market.status == "locked" %}
               <a class="btn small primary" href="{% url 'admin-ops-resolution-market-action' market.slug 'resolve' %}">Resolver</a>
             {% elif market.status == "resolved" %}
+              {% if market.seal_due_at %}<small>Selagem prevista: {{ market.seal_due_at }}</small><br>{% endif %}
               <a class="btn small ghost" href="{% url 'admin-ops-resolution-market-action' market.slug 'audit' %}">Auditoria</a>
               <a class="btn small danger" href="{% url 'admin-ops-resolution-market-action' market.slug 'cancel-refund' %}">Desfazer resolução</a>
+            {% elif market.status == "sealed" %}
+              <a class="btn small ghost" href="{% url 'admin-ops-resolution-market-action' market.slug 'audit' %}">Auditoria</a>
+              <a class="btn small" href="{% url 'market-integrity' market.slug %}">Verificar</a>
             {% endif %}
             <a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Revisar</a>
             </div>
