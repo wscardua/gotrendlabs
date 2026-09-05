@@ -2,6 +2,8 @@
 
 ## 2026-09-05 — FEAT-INTEGRITY-001 Ledger Criptográfico de Integridade
 
+- A sinalização web foi refinada para preservar a thumbnail e usar um selo iconizado sobreposto no canto superior direito, disponível também no detalhe do mercado.
+- A verificação web passou a abrir em modal compartilhado, responsivo e acessível, com conteúdo leigo antes dos detalhes técnicos e rota completa mantida como fallback.
 - Publicação passa a registrar definição canônica assinada; previsão inicial, reforço e revisão geram comprovantes pseudonimizados na mesma transação.
 - Ciclo de mercado ganhou `seal_due_at` e estado terminal `sealed`, com reversão auditável antes do prazo e selagem idempotente pelo daemon usando Merkle Tree.
 - Ledger global encadeado e assinado ganhou proteção append-only no PostgreSQL; correções pós-selagem são novos eventos e nunca reescrevem a prova anterior.

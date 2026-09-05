@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260905-MARKET-INTEGRITY-UX-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: refinar a sinalizacao de integridade nos cards e no detalhe web, preservar thumbnails e apresentar a verificacao em modal acessivel com linguagem para publico leigo.
+- Etapa atual: implementacao concluida e validada localmente em desktop e viewport mobile.
+- Artefatos afetados: `docs/specs/`, templates Django, CSS/JavaScript web e testes de regressao.
+- Impacto arquitetural: apenas apresentacao Django; FastAPI, OpenAPI, persistencia, daemon e Flutter permanecem inalterados.
+- Reversao logica: restaurar os links de pagina inteira e o badge textual anterior, sem alterar provas ou dados de integridade.
+- Iniciado em: 2026-09-05
+- Atualizado em: 2026-09-05
+- Encerrado em: 2026-09-05
+- Evidencias: `manage.py check`; quatro testes focados de selo/modal/fallback/download; `manage.py test tests.test_web_smoke --keepdb` com 211 testes; `node --check`; download JSON via rota Django com HTTP 200; QA visual no feed, detalhe e modal em desktop/mobile, sem overflow horizontal ou erros no console.
+
 ## WFLOW-20260905-MARKET-INTEGRITY-001
 
 - Tipo: `new-feature` + `implementation-cycle`

@@ -41,6 +41,65 @@ $$("[data-context-back]").forEach((link) => {
   }
 });
 
+const integrityDialog = $("[data-integrity-dialog]");
+const integrityDialogBody = $("[data-integrity-dialog-body]", integrityDialog || document);
+const integrityDialogCache = new Map();
+let integrityDialogTrigger = null;
+
+function integrityLoadingMarkup() {
+  return '<div class="integrity-dialog-loading" role="status"><span aria-hidden="true"></span><strong>Conferindo os registros</strong><small>Isso deve levar apenas um instante.</small></div>';
+}
+
+async function openIntegrityDialog(link) {
+  if (!integrityDialog?.showModal || !integrityDialogBody) return;
+  integrityDialogTrigger = link;
+  const sourceUrl = new URL(link.href, window.location.href);
+  const cacheKey = sourceUrl.pathname;
+  sourceUrl.searchParams.set("modal", "1");
+  integrityDialogBody.innerHTML = integrityLoadingMarkup();
+  integrityDialog.setAttribute("aria-busy", "true");
+  integrityDialog.showModal();
+
+  try {
+    let markup = integrityDialogCache.get(cacheKey);
+    if (!markup) {
+      const response = await fetch(sourceUrl, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "same-origin",
+      });
+      if (!response.ok) throw new Error("verification_unavailable");
+      markup = await response.text();
+      integrityDialogCache.set(cacheKey, markup);
+    }
+    integrityDialogBody.innerHTML = markup;
+    integrityDialogBody.scrollTop = 0;
+  } catch (_error) {
+    integrityDialogBody.innerHTML = '<div class="integrity-dialog-load-error" role="alert"><span aria-hidden="true">!</span><strong>Não foi possível abrir a verificação</strong><p>Confira sua conexão e tente novamente.</p></div>';
+  } finally {
+    integrityDialog.removeAttribute("aria-busy");
+  }
+}
+
+document.addEventListener("click", (event) => {
+  const link = event.target.closest("[data-integrity-modal-link]");
+  if (!link || !integrityDialog?.showModal) return;
+  event.preventDefault();
+  openIntegrityDialog(link);
+});
+
+$("[data-integrity-dialog-close]", integrityDialog || document)?.addEventListener("click", () => {
+  integrityDialog?.close();
+});
+
+integrityDialog?.addEventListener("click", (event) => {
+  if (event.target === integrityDialog) integrityDialog.close();
+});
+
+integrityDialog?.addEventListener("close", () => {
+  integrityDialogTrigger?.focus();
+  integrityDialogTrigger = null;
+});
+
 $$("[data-menu-chip]").forEach((chip) => {
   const button = $("[data-menu-button]", chip);
   if (!button) return;

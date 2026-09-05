@@ -1,0 +1,89 @@
+<article class="integrity-report" data-integrity-report>
+  {% if integrity_error %}
+    <header class="integrity-report-intro has-error">
+      <span class="integrity-report-mark" aria-hidden="true">!</span>
+      <div>
+        <span class="eyebrow">Verificação indisponível</span>
+        <h2 id="integrity-dialog-title">Não foi possível conferir agora</h2>
+        <p>{{ integrity_error }}</p>
+      </div>
+    </header>
+    <div class="integrity-report-callout" role="alert">
+      <strong>O registro não foi marcado como inválido.</strong>
+      <p>A conferência está temporariamente indisponível. Feche esta janela e tente novamente em alguns instantes.</p>
+    </div>
+  {% else %}
+    <header class="integrity-report-intro{% if proof.status == 'sealed' %} is-sealed{% endif %}">
+      <span class="integrity-report-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path><path d="m8.4 12 2.2 2.3 5-5.2"></path></svg>
+      </span>
+      <div>
+        <span class="eyebrow">Registro de Integridade Verificável</span>
+        <h2 id="integrity-dialog-title">
+          {% if proof.status == "sealed" %}Histórico finalizado e conferido
+          {% elif proof.status == "resolved_pending_seal" %}Resultado registrado, finalização pendente
+          {% else %}Definição publicada e conferida{% endif %}
+        </h2>
+        <p>{{ market.title }}</p>
+      </div>
+    </header>
+
+    <div class="integrity-explainer">
+      {% if proof.status == "sealed" %}
+        <p>Esta conferência comparou os registros atuais com as provas criadas durante a vida do mercado. A definição, o resultado e o histórico final continuam consistentes.</p>
+      {% elif proof.status == "resolved_pending_seal" %}
+        <p>A definição e os eventos registrados até agora foram conferidos. O resultado já foi publicado, mas o histórico ainda está dentro do prazo operacional antes da finalização.</p>
+      {% else %}
+        <p>A pergunta, as opções, o prazo e o critério de resolução foram registrados quando o mercado abriu. Uma alteração silenciosa nesses dados faria esta conferência falhar.</p>
+      {% endif %}
+    </div>
+
+    <section class="integrity-check-list" aria-label="O que foi conferido">
+      <div class="integrity-check-item is-valid">
+        <span class="integrity-check-icon" aria-hidden="true">✓</span>
+        <div><strong>Definição original</strong><p>Pergunta, opções, prazo e regra de resolução correspondem ao registro feito na publicação.</p></div>
+        <small>{% if verification.definition_valid %}Confirmada{% else %}Falhou{% endif %}</small>
+      </div>
+      <div class="integrity-check-item{% if proof.status == 'sealed' and verification.merkle_root_valid %} is-valid{% else %} is-waiting{% endif %}">
+        <span class="integrity-check-icon" aria-hidden="true">{% if proof.status == "sealed" %}✓{% else %}2{% endif %}</span>
+        <div><strong>Comprovantes das previsões</strong><p>{% if proof.status == "sealed" %}Os comprovantes foram reunidos sem revelar quem participou e o conjunto final foi conferido.{% else %}Cada ação recebe seu próprio comprovante. O conjunto completo será conferido na finalização.{% endif %}</p></div>
+        <small>{% if proof.status == "sealed" %}{% if verification.merkle_root_valid %}Preservados{% else %}Falhou{% endif %}{% else %}Em andamento{% endif %}</small>
+      </div>
+      <div class="integrity-check-item{% if proof.status == 'sealed' and verification.seal_valid %} is-valid{% else %} is-waiting{% endif %}">
+        <span class="integrity-check-icon" aria-hidden="true">{% if proof.status == "sealed" %}✓{% else %}3{% endif %}</span>
+        <div><strong>Resultado e histórico final</strong><p>{% if proof.status == "sealed" %}O resultado foi ligado à definição original e ao histórico de previsões em um registro final assinado.{% elif proof.status == "resolved_pending_seal" %}O resultado está publicado. A finalização acontece depois da janela operacional{% if market.seal_due_at %}, com previsão para {{ market.seal_due_at }}{% endif %}.{% else %}Esta etapa será conferida depois que o mercado fechar e o resultado for publicado.{% endif %}</p></div>
+        <small>{% if proof.status == "sealed" %}{% if verification.seal_valid %}Finalizados{% else %}Falhou{% endif %}{% else %}Aguardando{% endif %}</small>
+      </div>
+      <div class="integrity-check-item{% if verification.ledger_chain_valid %} is-valid{% endif %}">
+        <span class="integrity-check-icon" aria-hidden="true">{% if verification.ledger_chain_valid %}✓{% else %}!{% endif %}</span>
+        <div><strong>Sequência dos registros</strong><p>Os eventos estão ligados em ordem. Remover, trocar ou alterar um registro anterior quebraria essa sequência.</p></div>
+        <small>{% if verification.ledger_chain_valid %}Consistente{% else %}Falhou{% endif %}</small>
+      </div>
+    </section>
+
+    <div class="integrity-report-note">
+      <strong>O que esta verificação significa?</strong>
+      <p>Ela demonstra que os registros conferidos permanecem consistentes com as assinaturas do GoTrendLabs. Não decide se o resultado factual está correto e não substitui o critério público de resolução.</p>
+    </div>
+
+    <details class="integrity-technical-disclosure">
+      <summary><span>Como funciona tecnicamente</span><small>Hashes, chave e protocolo</small></summary>
+      <div class="integrity-technical-body">
+        <p>Os dados relevantes são organizados sempre da mesma forma, resumidos por SHA-256 e assinados. A chave privada usada para assinar não fica no banco nem é entregue aos usuários.</p>
+        <dl>
+          <dt>Protocolo</dt><dd><code>{{ proof.protocol_version|default:"não disponível" }}</code></dd>
+          <dt>Hash da definição</dt><dd><code title="{{ proof.definition.hash }}">{{ proof.definition.hash|default:"não disponível"|truncatechars:30 }}</code></dd>
+          <dt>Identificação da chave</dt><dd><code title="{{ proof.definition.key_fingerprint }}">{{ proof.definition.key_fingerprint|default:"não disponível"|truncatechars:30 }}</code></dd>
+          <dt>Eventos conferidos</dt><dd>{{ proof.ledger_events|length }}</dd>
+          {% if proof.seal %}<dt>Hash da finalização</dt><dd><code title="{{ proof.seal.hash }}">{{ proof.seal.hash|truncatechars:30 }}</code></dd>{% endif %}
+        </dl>
+        <a class="btn small ghost" href="{% url 'market-integrity-package' market.slug %}">Baixar pacote de verificação</a>
+      </div>
+    </details>
+
+    <footer class="integrity-report-footer">
+      <span>Ledger criptográfico interno assinado</span>
+      <p>Não é uma blockchain pública ou descentralizada e não representa promessa de imutabilidade absoluta.</p>
+    </footer>
+  {% endif %}
+</article>

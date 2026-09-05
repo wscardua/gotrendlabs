@@ -19,6 +19,7 @@ from apps.web.django.accounts.api_client import (
     track_market_view,
     get_market,
     get_market_integrity,
+    get_market_integrity_package,
     get_prediction_integrity_receipt,
     verify_market_integrity,
     like_market,
@@ -276,11 +277,18 @@ def integrity(request, slug):
         proof = {}
         verification = {}
         error = str(exc)
-    return render(
-        request,
-        "markets/integrity.html",
-        {"market": market, "proof": proof, "verification": verification, "integrity_error": error},
-    )
+    template_name = "markets/_integrity_content.html" if request.GET.get("modal") == "1" else "markets/integrity.html"
+    return render(request, template_name, {"market": market, "proof": proof, "verification": verification, "integrity_error": error})
+
+
+def integrity_package(request, slug):
+    try:
+        package = get_market_integrity_package(slug)
+    except AuthAPIError as exc:
+        return JsonResponse({"error": str(exc)}, status=exc.status_code or 502)
+    response = JsonResponse(package, json_dumps_params={"ensure_ascii": False, "indent": 2})
+    response["Content-Disposition"] = f'attachment; filename="{slug}-integrity-proof.json"'
+    return response
 
 
 def prediction_receipt(request, slug, prediction_id):

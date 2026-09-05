@@ -85,5 +85,6 @@
 - Usuários autenticados veem sino de notificações com contador de não lidas, dropdown das últimas notificações e ação para marcar todas como lidas; visitantes podem ver affordance desabilitada, sem navegação para login.
 - Itens do dropdown devem navegar para o contexto persistido: `badge_awarded` para `/badges/`, `wallet_credit` para `/wallet/`, eventos de mercado para o detalhe do mercado e notificações com comentário para `#comments`.
 - Cards da home/feed e o detalhe do mercado devem exibir contador público de comentários com base em `comment_count`, sem inferir contagem no template.
-- Cards exibem `Definicao registrada` quando a API confirma a prova e `Historico finalizado e verificavel` quando `status=sealed`; a UI nao infere validade pelo status isolado.
+- Cards preservam a thumbnail e exibem um selo iconizado sobreposto em seu canto superior direito quando a API confirma a prova; o nome acessivel distingue `Definicao registrada` de `Historico finalizado e verificavel`, e a UI nao infere validade pelo status isolado.
+- O selo de integridade abre uma verificacao publica em modal compartilhado nos cards e no detalhe do mercado, consumindo a rota Django que consulta a FastAPI. A rota completa permanece como fallback sem JavaScript; explicacoes leigas precedem detalhes tecnicos progressivos.
 - Mercado `resolved` mostra `Resultado em finalizacao` e `seal_due_at` como previsao operacional da proxima passagem do daemon.

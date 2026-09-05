@@ -32,6 +32,7 @@ urlpatterns = [
     path("share/result/<slug:slug>/", core_views.share_result, name="share-result"),
     path("markets/<slug:slug>/", market_views.detail, name="market-detail"),
     path("markets/<slug:slug>/integrity/", market_views.integrity, name="market-integrity"),
+    path("markets/<slug:slug>/integrity/package", market_views.integrity_package, name="market-integrity-package"),
     path("markets/<slug:slug>/predictions/<int:prediction_id>/receipt/", market_views.prediction_receipt, name="prediction-integrity-receipt"),
     path("markets/<slug:slug>/predict/", market_views.prediction_preview, name="prediction-preview"),
     path("markets/<slug:slug>/predict/confirm/", market_views.confirm_prediction, name="prediction-confirm"),

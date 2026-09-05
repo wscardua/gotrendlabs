@@ -22,6 +22,9 @@
     {% else %}
       <span class="thumb-fallback">{{ market.thumb|default:"GT" }}</span>
     {% endif %}
+    {% if market.integrity.definition_registered %}
+      {% include "components/integrity_seal.html" with market=market %}
+    {% endif %}
   </div>
   <div class="market-card-summary">
     <div class="market-title">
@@ -30,11 +33,6 @@
   </div>
   <div class="market-side">
     <div class="market-card-tags" aria-label="Classificação do mercado">
-      {% if market.integrity.definition_registered %}
-        <a class="integrity-badge {% if market.integrity.status == 'sealed' %}is-sealed{% endif %}" href="{% url 'market-integrity' market.slug %}" aria-label="{% if market.integrity.status == 'sealed' %}Histórico finalizado e verificável{% else %}Definição registrada{% endif %}" title="Registro de Integridade Verificável">
-          <span aria-hidden="true">✓</span>{% if market.integrity.status == "sealed" %}Histórico verificável{% else %}Definição registrada{% endif %}
-        </a>
-      {% endif %}
       <span class="tag hot">{{ market.category }}</span>
       <span class="tag">{{ market.subcategory }}</span>
       <span class="tag">{{ market.event }}</span>

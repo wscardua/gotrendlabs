@@ -7162,6 +7162,68 @@ class WebSmokeTests(TransactionTestCase):
             html=True,
         )
 
+    def test_market_card_overlays_integrity_seal_without_replacing_thumbnail(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        market["image_url"] = "/media/market_thumbnails/test-thumb.jpg"
+        market["integrity"] = {"definition_registered": True, "status": "sealed"}
+
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, 'src="/media/market_thumbnails/test-thumb.jpg"')
+        self.assertContains(response, 'class="market-integrity-seal is-sealed"')
+        self.assertContains(response, "Histórico finalizado e verificável. Abrir verificação de integridade")
+        self.assertContains(response, "data-integrity-modal-link")
+        self.assertNotContains(response, 'class="integrity-badge')
+
+    def test_market_detail_reuses_integrity_seal_and_modal_action(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        market["integrity"] = {"definition_registered": True, "status": "registered"}
+
+        with patch("apps.web.django.markets.views.get_market", return_value=market):
+            response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+        self.assertContains(response, 'class="market-integrity-seal"')
+        self.assertContains(response, 'class="detail-integrity-action"')
+        self.assertContains(response, "Definição registrada")
+        self.assertContains(response, "Abrir verificação de integridade")
+        self.assertGreaterEqual(response.content.decode().count("data-integrity-modal-link"), 2)
+
+    def test_integrity_modal_fragment_explains_verification_in_plain_language(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        proof = {
+            "status": "sealed",
+            "protocol_version": "gtl-integrity/v1",
+            "definition": {"hash": "a" * 64, "key_fingerprint": "b" * 64},
+            "seal": {"hash": "c" * 64},
+            "ledger_events": [{"event_type": "market_published"}, {"event_type": "market_sealed"}],
+        }
+        verification = {"definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
+
+        with (
+            patch("apps.web.django.markets.views.get_market", return_value=market),
+            patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
+            patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
+        ):
+            response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Histórico finalizado e conferido")
+        self.assertContains(response, "Remover, trocar ou alterar um registro anterior")
+        self.assertContains(response, "não substitui o critério público de resolução")
+        self.assertContains(response, "Como funciona tecnicamente")
+        self.assertNotContains(response, "<!doctype html>")
+
+    def test_integrity_package_is_downloaded_through_django_proxy(self):
+        package = {"market_slug": "openai-gpt6-2026", "protocol_version": "gtl-integrity/v1"}
+        with patch("apps.web.django.markets.views.get_market_integrity_package", return_value=package):
+            response = self.client.get(reverse("market-integrity-package", args=["openai-gpt6-2026"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), package)
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn("openai-gpt6-2026-integrity-proof.json", response["Content-Disposition"])
+
     def test_market_card_title_links_to_market_detail(self):
         market = get_domain_client().market("openai-gpt6-2026")
         with patch("apps.web.django.core.views.get_markets", return_value=[market]):
