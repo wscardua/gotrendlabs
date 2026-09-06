@@ -6794,11 +6794,22 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
         api_market = get_domain_client().market("openai-gpt6-2026")
         api_market["options"] = [{**option, "id": index} for index, option in enumerate(api_market["options"], start=1)]
-        result = {"stake_amount": 80, "potential_payout": 160}
+        result = {
+            "prediction_id": 321,
+            "stake_amount": 80,
+            "potential_payout": 160,
+            "integrity_receipt": {
+                "signature": "signed-receipt-value",
+                "key_fingerprint": "fingerprint-value",
+            },
+        }
 
         with patch("apps.web.django.markets.views.create_prediction", return_value=result), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
             self.assertContains(response, "Sua previsão foi registrada")
+            self.assertContains(response, "Comprovante assinado")
+            self.assertContains(response, "A assinatura criptográfica confirma a origem deste registro")
+            self.assertContains(response, "Ver assinatura")
 
         with patch("apps.web.django.markets.views.create_prediction", side_effect=AuthAPIError("Você já registrou uma previsão neste mercado.", 409)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
@@ -6933,6 +6944,9 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         self.assertContains(response, "position-summary-card")
+        self.assertContains(response, "Comprovante assinado")
+        self.assertContains(response, "Ver assinatura da última entrada")
+        self.assertContains(response, reverse("prediction-integrity-receipt", args=["openai-gpt6-2026", Prediction.objects.get(user=user, market=market).id]))
         self.assertContains(response, "position-action-tabs")
         self.assertContains(response, "Ver entradas abertas")
         self.assertContains(response, "Restam 1 reforço(s) neste mercado.")
@@ -7216,8 +7230,9 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Revela remoções ou trocas na ordem dos registros")
         self.assertContains(response, "Como este mercado foi protegido")
         self.assertContains(response, "Proteção contra manipulações")
-        self.assertContains(response, "A proteção torna a manipulação detectável")
-        self.assertContains(response, "O que esta verificação não faz")
+        self.assertContains(response, "tentativas de manipulação se tornam detectáveis")
+        self.assertNotContains(response, "mas não impede fisicamente toda tentativa")
+        self.assertNotContains(response, "O que esta verificação não faz")
         self.assertContains(response, "Ver detalhes técnicos")
         self.assertContains(response, "Um hash funciona como uma impressão digital do registro")
         self.assertNotContains(response, "Seal final")
@@ -7252,8 +7267,22 @@ class WebSmokeTests(TransactionTestCase):
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, headline)
             self.assertContains(response, detail)
-            self.assertContains(response, "O que esta verificação não faz")
+            self.assertNotContains(response, "O que esta verificação não faz")
             self.assertNotContains(response, "Proteção ativa")
+
+    def test_sealed_market_card_keeps_resolution_call_to_action(self):
+        market = {
+            **get_domain_client().market("openai-gpt6-2026"),
+            "status": "sealed",
+            "status_label": "Finalizado",
+            "integrity": {"definition_registered": True, "status": "sealed"},
+        }
+
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, "Ver resolução")
+        self.assertNotContains(response, "Ver histórico")
 
     def test_integrity_modal_distinguishes_active_retry_and_canceled_states(self):
         base_market = get_domain_client().market("openai-gpt6-2026")

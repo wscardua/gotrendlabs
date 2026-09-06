@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 confirmação de assinatura e copy compacta
+
+- O modal de verificação remove a ressalva destacada e mantém o foco em como hash, assinatura e histórico conectado detectam alterações.
+- Alertas da cadeia global que não invalidam as provas específicas do mercado ficam no contrato e na auditoria operacional, sem parecer falha do mercado nas experiências públicas web/mobile.
+- Cards resolvidos e selados voltam a usar o CTA familiar `Ver resolução`.
+- A confirmação de previsão, reforço ou revisão passa a informar que o comprovante foi assinado e oferece acesso ao recibo individual emitido pela FastAPI.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 semântica e verificação reforçadas
 
 - Estados visuais agora distinguem registro em curso, prazo/retry operacional, etapa não aplicável e diferença criptográfica, com cores coerentes em web, Admin Ops e mobile.

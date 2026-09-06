@@ -24,7 +24,7 @@ O registro append-only `integrity_signing_keys` preserva somente a chave publica
 - `GET /markets/{slug}/predictions/{prediction_id}/merkle-proof`
 - `GET /integrity/public-key`
 
-`GET /markets/{slug}/integrity/verify` retorna, alem dos campos v1 existentes, `definition_matches_current`, `result_matches_current`, `prediction_commitments_valid` e `market_events_valid`. Os campos sao booleanos quando aplicaveis e `null` quando a etapa ainda nao existe. `valid` resume as provas do mercado; `ledger_chain_valid` informa separadamente a cadeia global para que falha historica externa ao mercado nao seja atribuida silenciosamente a ele. Indisponibilidade de transporte/KMS e retry de selagem permanecem estados operacionais separados.
+`GET /markets/{slug}/integrity/verify` retorna, alem dos campos v1 existentes, `definition_matches_current`, `result_matches_current`, `prediction_commitments_valid` e `market_events_valid`. Os campos sao booleanos quando aplicaveis e `null` quando a etapa ainda nao existe. `valid` resume as provas do mercado; `ledger_chain_valid` informa separadamente a cadeia global para que falha historica externa ao mercado nao seja atribuida silenciosamente a ele. `errors` contem somente inconsistencias que invalidam a prova especifica do mercado; observacoes globais que nao mudam `valid` ficam em `warnings`. Indisponibilidade de transporte/KMS e retry de selagem permanecem estados operacionais separados.
 
 Recibos de previsao exigem que o usuario autenticado seja dono da previsao. A prova publica nunca lista previsoes ou identificadores de usuarios.
 

@@ -526,19 +526,9 @@ class _IntegritySheet extends StatelessWidget {
                         ? GtlColors.accentYellow
                         : GtlColors.muted,
                   ),
-                  if (verification['valid'] == true &&
-                      verification['ledger_chain_valid'] == false)
-                    const Text(
-                      'Este mercado foi conferido, mas a cadeia global contém uma chave histórica indisponível e precisa de revisão operacional.',
-                      style: TextStyle(color: GtlColors.accentYellow),
-                    ),
                   const SizedBox(height: 8),
                   Text('Protocolo: ${market.integrity.protocolVersion}'),
                   Text('Chave: ${_shortHash(market.integrity.keyFingerprint)}'),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'A conferência demonstra consistência criptográfica e não substitui o critério público de resolução.',
-                  ),
                   const SizedBox(height: 18),
                   FilledButton(
                     onPressed: () => Navigator.pop(context),

@@ -255,6 +255,7 @@ Antes de considerar a UI pronta:
 - confirmar que contador de comentarios em cards e metricas abre `/markets/:slug?tab=community`
 - confirmar que o detalhe mostra pergunta/contexto completo fora do hero truncado
 - confirmar que mercado auto-close vencido aparece como `Fechado` no mobile e bloqueia preview/criacao/reforco/revisao pela FastAPI
+- confirmar que a verificacao de integridade mobile nao apresenta alerta global como falha do mercado quando `valid=true`, mantendo vermelho reservado a diferenca criptografica da prova especifica
 - confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`
 - confirmar que a wallet prioriza `Disponível` e `Bloqueado`, mantendo recarga controlada com elegibilidade, pendencia, historico e criacao via API como secao secundaria
 - confirmar que a recarga controlada nao exibe `Fila Admin Ops` nem os quadros internos `Solicitação`, `Revisão` e `Crédito`

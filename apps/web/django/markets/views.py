@@ -290,9 +290,6 @@ def integrity(request, slug):
         {
             "integrity_verification_available": verification_available,
             "integrity_has_difference": verification_available and verification.get("valid") is False,
-            "global_ledger_warning": verification_available
-            and verification.get("valid") is True
-            and verification.get("ledger_chain_valid") is False,
             "definition_confirmed": verification.get("definition_valid") is True
             and verification.get("definition_matches_current", True) is True,
             "predictions_confirmed": proof_status == "sealed"

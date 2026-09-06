@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MARKET-INTEGRITY-UX-006
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: reduzir ressalvas que assustam no modal, restaurar o CTA `Ver resolução`, evidenciar o comprovante assinado apos a previsao e disponibilizar demos locais validas do caminho feliz.
+- Etapa atual: copy, CTA, comprovante persistente/imediato, contrato de erros/avisos, paridade mobile e dados locais validados.
+- Artefatos afetados: feature de integridade, templates/CSS Django, testes web, changelogs, estado operacional e dados locais de demonstracao.
+- Impacto arquitetural: apresentacao Django consumindo o recibo autoritativo ja retornado pela FastAPI; sem mudanca de contrato ou persistencia produtiva.
+- Reversao logica: restaurar copy/CTA anteriores e remover apenas os novos mercados locais de demonstracao se explicitamente desejado; nenhuma prova existente sera reescrita.
+- Demos locais: `demo-integridade-valida-definicao`, `demo-integridade-valida-resultado` e `demo-integridade-valida-finalizado`; todas retornam `valid=true`, `errors=[]` e verificacoes especificas aplicaveis aprovadas.
+- Evidencias: 214 testes de `tests.test_web_smoke`; 15 testes focados de ledger/web; 96 testes Flutter; `flutter analyze`; `manage.py check`; `makemigrations --check --dry-run`; OpenAPI export/check; `git diff --check`; QA visual no modal registrado e selado e no CTA do card.
+- Encerrado em: 2026-09-06
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-MARKET-INTEGRITY-SEMANTICS-005
 
 - Tipo: `change-feature` + `implementation-cycle`

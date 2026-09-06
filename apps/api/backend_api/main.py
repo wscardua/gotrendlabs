@@ -4588,6 +4588,7 @@ def download_market_integrity_package(slug: str, request: Request):
 def verify_market_integrity(slug: str, request: Request):
     _enforce_rate_limit("market_integrity_verify", _rate_limit_identity(request), limit=60, window_seconds=60)
     errors = []
+    warnings = []
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM gotrendlabs_markets WHERE slug=%s", (slug,))
@@ -4693,7 +4694,7 @@ def verify_market_integrity(slug: str, request: Request):
                 if event["market_id"] == market["id"]:
                     market_events_valid = market_events_valid and valid_event
                 previous_hash = event["event_hash"]
-            if not ledger_valid: errors.append("ledger_chain_invalid")
+            if not ledger_valid: warnings.append("ledger_chain_invalid")
             if not market_events_valid: errors.append("market_events_invalid")
             valid = (
                 bool(definition_valid and definition_matches_current)
@@ -4715,6 +4716,7 @@ def verify_market_integrity(slug: str, request: Request):
                 "market_events_valid": market_events_valid,
                 "ledger_chain_valid": ledger_valid,
                 "errors": errors,
+                "warnings": warnings,
             }
 
 

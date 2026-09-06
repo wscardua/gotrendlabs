@@ -2,6 +2,7 @@
 
 ## 2026-09-06
 
+- refinada a experiencia web de `FEAT-INTEGRITY-001`: o modal compacto deixa de destacar uma secao negativa de limitacoes ou alertas globais que nao invalidam o mercado, o CTA de mercados finalizados volta a `Ver resolução` e a confirmacao de previsao explicita o comprovante assinado emitido pela FastAPI;
 - refinada `FEAT-INTEGRITY-001` para separar retry operacional (`seal_retry_pending`) de diferenca criptografica (`verification_failed`) e representar cancelamento preservado sem etapas eternamente pendentes;
 - a verificacao passa a comparar definicao e resultado operacionais com os snapshots assinados e a validar os compromissos incluidos no Merkle;
 - web e mobile passam a usar verde somente para verificacao aprovada, azul para processo ativo, amarelo para prazo/retry, cinza para nao aplicavel/legado e vermelho para inconsistencia comprovada.

@@ -1,0 +1,14 @@
+{% if receipt_result.prediction_id and receipt_result.integrity_receipt.signature %}
+  <div class="prediction-integrity-confirmation">
+    <span class="prediction-integrity-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path><path d="m8.4 12 2.2 2.3 5-5.2"></path></svg>
+    </span>
+    <span class="prediction-integrity-copy">
+      <strong>Comprovante assinado</strong>
+      <small>A assinatura criptográfica confirma a origem deste registro e permite detectar alterações.</small>
+    </span>
+    <a href="{% url 'prediction-integrity-receipt' market.slug receipt_result.prediction_id %}">Ver assinatura</a>
+  </div>
+{% elif receipt_result.prediction_id %}
+  <a href="{% url 'prediction-integrity-receipt' market.slug receipt_result.prediction_id %}">Abrir comprovante</a>
+{% endif %}

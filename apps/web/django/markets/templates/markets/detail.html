@@ -245,10 +245,16 @@
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
       {% if prediction_result %}
-        <div class="notice green">Sua previsão foi registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.{% if prediction_result.prediction_id %} <a href="{% url 'prediction-integrity-receipt' market.slug prediction_result.prediction_id %}">Abrir comprovante</a>{% endif %}</div>
+        <div class="notice green prediction-success-notice">
+          <p>Sua previsão foi registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.</p>
+          {% include "markets/partials/prediction_integrity_confirmation.html" with receipt_result=prediction_result %}
+        </div>
       {% endif %}
       {% if position_action_result %}
-        <div class="notice green">{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.{% if position_action_result.prediction_id %} <a href="{% url 'prediction-integrity-receipt' market.slug position_action_result.prediction_id %}">Abrir comprovante</a>{% endif %}</div>
+        <div class="notice green prediction-success-notice">
+          <p>{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.</p>
+          {% include "markets/partials/prediction_integrity_confirmation.html" with receipt_result=position_action_result %}
+        </div>
       {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>
@@ -288,6 +294,10 @@
               </div>
             </details>
           {% endif %}
+          <a class="position-integrity-link" href="{% url 'prediction-integrity-receipt' market.slug existing_prediction.id %}">
+            <span aria-hidden="true">✓</span>
+            <span><strong>Comprovante assinado</strong><small>Ver assinatura da última entrada</small></span>
+          </a>
         </div>
         <div class="binary-grid option-grid position-option-grid">
           {% for option in market.options %}

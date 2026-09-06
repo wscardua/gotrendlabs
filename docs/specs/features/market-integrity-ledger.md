@@ -1,7 +1,7 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.5
+versao: 0.6
 status_spec: draft
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-06
@@ -106,7 +106,7 @@ Estados publicos de integridade: `not_published`, `legacy_unregistered`, `regist
 
 A verificacao publica nao valida apenas os bytes armazenados contra si mesmos. Ela tambem reconstrói a definicao atual do mercado e o resultado operacional atual para compara-los aos snapshots assinados. Em mercado selado, valida ainda cada compromisso assinado incluido nas folhas, a raiz/provas Merkle, o Seal e a cadeia global. Campos nao aplicaveis sao `null`, nunca tratados como falha.
 
-O resultado `valid` resume as provas relacionadas ao mercado e `ledger_chain_valid` reporta separadamente a cadeia global. Uma falha global deve ser exibida como alerta operacional proprio, sem atribuir adulteracao a todos os mercados que continuam com suas provas especificas validas.
+O resultado `valid` resume as provas relacionadas ao mercado e `ledger_chain_valid` reporta separadamente a cadeia global. `errors` inclui apenas inconsistencias que tornam `valid=false`; observacoes globais independentes usam `warnings`. Uma falha global externa ao mercado deve permanecer disponivel no contrato e na auditoria operacional, sem ser apresentada como falha daquele mercado no modal publico quando suas provas especificas continuam validas.
 
 ## Experiencia web e mobile
 
@@ -119,9 +119,11 @@ O selo nao substitui imagem, fallback ou icone editorial do mercado. Seu nome ac
 
 No web, o selo abre a verificacao em modal tanto no card quanto no detalhe do mercado, com a rota publica completa preservada como fallback sem JavaScript. O modal prioriza explicacoes para publico leigo, responde o que foi protegido e o que cada verificacao significa, e deixa hashes, chave, protocolo e pacote em uma secao tecnica progressiva. `resolved` mostra `Resultado em finalizacao` e horario estimado de selagem. A estetica permanece editorial, sem logos cripto, trading ou apostas.
 
-A primeira leitura da verificacao deve responder, nesta ordem: para que a pagina serve; se alguma alteracao indevida foi detectada; quais etapas da vida do mercado ja foram protegidas; o que aconteceria se um registro fosse alterado; e quais sao os limites da prova. Termos como hash, assinatura, chave e protocolo ficam recolhidos em detalhes tecnicos e recebem explicacao por analogia antes de serem exibidos.
+A primeira leitura da verificacao deve responder, nesta ordem: para que a pagina serve; se alguma alteracao indevida foi detectada; quais etapas da vida do mercado ja foram protegidas; e o que aconteceria se um registro fosse alterado. Limites e ressalvas nao formam uma secao destacada no modal compacto; a transparencia institucional e tecnica permanece no rodape, nas paginas publicas e nos detalhes progressivos. Termos como hash, assinatura, chave e protocolo ficam recolhidos em detalhes tecnicos e recebem explicacao por analogia antes de serem exibidos.
 
-Sem alongar a pagina, o bloco introdutorio deve resumir o metodo em tres sinais: impressao digital por hash para detectar mudanca de conteudo, assinatura criptografica para confirmar origem com chave privada protegida e encadeamento para evidenciar alteracao ou remocao na sequencia. A linguagem promete deteccao de manipulacao, nao impedimento absoluto. No detalhe do mercado, o escudo sobre a thumbnail e o unico acionador de verificacao; nao deve haver botao textual redundante abaixo do titulo.
+Sem alongar a pagina, o bloco introdutorio deve resumir o metodo em tres sinais: impressao digital por hash para detectar mudanca de conteudo, assinatura criptografica para confirmar origem com chave privada protegida e encadeamento para evidenciar alteracao ou remocao na sequencia. No detalhe do mercado, o escudo sobre a thumbnail e o unico acionador de verificacao; nao deve haver botao textual redundante abaixo do titulo.
+
+Depois de previsao inicial, reforco ou revisao, o detalhe do mercado confirma de forma compacta que foi emitido um comprovante assinado, explica que ele permite conferir a origem e detectar alteracoes e oferece acesso ao recibo individual. A interface usa os dados de `integrity_receipt` retornados pela FastAPI e nao simula assinatura no Django.
 
 A linguagem visual segue esta semantica: verde somente para verificacao executada e aprovada; azul para processo ativo; amarelo para prazo ou retry operacional; cinza para aguardando, nao aplicavel ou ausencia historica; vermelho somente para diferenca criptografica detectada. Em `open`, previsoes aparecem como comprovantes sendo registrados, nao como etapa concluida. Em `locked`, aparecem como registros encerrados. Em `resolved`, resultado registrado e finalizacao pendente ficam distintos. Em `canceled`, resultado e finalizacao sao `Nao se aplica`.
 

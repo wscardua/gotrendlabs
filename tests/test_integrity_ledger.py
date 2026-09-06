@@ -203,6 +203,8 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertTrue(verification.json()["definition_matches_current"])
         self.assertTrue(verification.json()["result_matches_current"])
         self.assertTrue(verification.json()["prediction_commitments_valid"])
+        self.assertEqual(verification.json()["errors"], [])
+        self.assertEqual(verification.json()["warnings"], [])
 
         original_title = market.title
         Market.objects.filter(pk=market.pk).update(title="Título adulterado fora do domínio")

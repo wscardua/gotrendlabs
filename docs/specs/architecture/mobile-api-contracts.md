@@ -28,6 +28,7 @@ aprovacao: pendente
 - O app consome `GET /markets/{slug}/integrity`, `/integrity/verify`, `/predictions/{id}/receipt` e `/merkle-proof`; não assina nem trata cálculo local como autoridade.
 - O app reconhece `seal_retry_pending` como pendencia operacional, `canceled_preserved` como registros preservados sem Seal aplicavel e `verification_failed` exclusivamente como inconsistencia criptografica. Campos nullable da verificacao nao podem ser renderizados como falha.
 - `/integrity/verify` inclui `definition_matches_current`, `result_matches_current` e `prediction_commitments_valid`; o estado verde final exige todas as verificacoes aplicaveis.
+- `errors` representa apenas inconsistencias da prova do mercado; `warnings` e `ledger_chain_valid` preservam observacoes operacionais globais sem fazer o app rotular como adulterado um mercado com `valid=true`.
 - Campos novos são aditivos. Clientes anteriores devem continuar funcionando e exibir o estado pelo label recebido; releases com enum fechado precisam incluir `sealed` antes do rollout.
 - Comprovantes autenticados pertencem somente ao usuário da previsão. Provas públicas não carregam PII ou identificador interno bruto de usuário.
 

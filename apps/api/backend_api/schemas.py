@@ -763,6 +763,7 @@ class MarketIntegrityVerificationResponse(BaseModel):
     market_events_valid: bool = False
     ledger_chain_valid: bool = False
     errors: List[str] = Field(default_factory=list)
+    warnings: List[str] = Field(default_factory=list)
 
 
 class PredictionIntegrityReceiptResponse(BaseModel):
