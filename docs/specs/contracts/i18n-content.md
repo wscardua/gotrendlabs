@@ -16,6 +16,7 @@
 - A moeda educativa é exibida em textos de produto como `GT₵`; nomes técnicos, campos e sufixos internos permanecem como `_gtl`.
 - Estados técnicos podem ter rótulos públicos diferentes: `locked` deve aparecer para usuários finais como `Em apuração`, preservando `locked`/`Fechado` apenas em contexto técnico, histórico ou operacional.
 - Integridade usa `Definicao registrada` e `Resultado em finalizacao`; cards e comunicacoes existentes podem usar `Historico finalizado e verificavel`, enquanto o detalhe `sealed` prioriza `Mercado concluido` e o complemento `Concluido e verificavel`. Nao usa descentralizacao, imutabilidade absoluta ou blockchain publica como promessa.
+- No detalhe publico, o ciclo usa `Mercado agendado`, `Mercado em apuracao`, `Resultado publicado`, `Mercado concluido` e `Mercado cancelado`. `Fecha em` fica restrito a mercado `open`; estados posteriores informam encerramento das previsoes e a etapa atual sem jargao operacional.
 
 ## Campos de conteúdo com potencial multilíngue
 

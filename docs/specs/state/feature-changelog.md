@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 copy coerente do ciclo web
+
+- O detalhe web passa a identificar o bloco como `Ciclo do mercado` e usa mensagens próprias para agendamento, apuração, resultado publicado, conclusão e cancelamento.
+- Rótulos e métricas deixam de mostrar `Fecha em` ou contagem regressiva depois que as previsões foram encerradas.
+- A finalização pendente diferencia prazo normal, retry operacional e mercado legado; a etapa final selada aparece concluída.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 conclusão clara no detalhe web
 
 - O detalhe de mercado selado passa a comunicar primeiro `Mercado concluído`, deixando explícito que o ciclo de previsões, apuração e resultado terminou.

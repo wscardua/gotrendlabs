@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MARKET-DETAIL-LIFECYCLE-COPY-015
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MARKET-001`
+- Objetivo: alinhar títulos, descrições, rótulos e métricas do detalhe web ao estado real do ciclo do mercado.
+- Etapa atual: títulos, descrições, linha do tempo, rótulos, métricas, specs, regressões e QA visual concluídos.
+- Artefatos afetados: detalhe Django, contexto de apresentação, specs web/i18n, testes, changelog e estado operacional.
+- Impacto arquitetural: nenhum; a UI continua representando estados e timestamps fornecidos pela FastAPI.
+- Reversão lógica: restaurar a copy e condicionais anteriores sem alterar mercados, previsões ou provas criptográficas.
+- Evidências: 5 testes focados e 219 testes de `tests.test_web_smoke` aprovados; `manage.py check`; QA visual de `locked`, `resolved` e `sealed`; desktop sem sobreposição e viewport móvel sem overflow; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-WEB-COMPLETION-COPY-014
 
 - Tipo: `change-feature` + `implementation-cycle`

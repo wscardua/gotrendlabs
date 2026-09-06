@@ -6437,7 +6437,7 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertNotContains(response, subcategory_notice)
                     self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
-                    self.assertContains(response, "Sua previsão")
+                    self.assertContains(response, "Ciclo do mercado")
                     self.assertContains(response, "detail-title-block")
                     self.assertContains(response, "detail-title-row")
                     self.assertContains(response, "detail-market-thumb")
@@ -7230,6 +7230,7 @@ class WebSmokeTests(TransactionTestCase):
         market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
         market["status"] = "sealed"
         market["status_label"] = "Selado"
+        market["close_label"] = "Fecha em uma data antiga"
         market["integrity"] = {"definition_registered": True, "status": "sealed"}
 
         with patch("apps.web.django.markets.views.get_market", return_value=market):
@@ -7239,8 +7240,87 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "O resultado já foi publicado e o registro de integridade deste mercado foi finalizado.")
         self.assertContains(response, "A definição, as previsões e o resultado podem ser conferidos.")
         self.assertContains(response, "Concluído e verificável")
+        self.assertContains(response, "Ciclo do mercado")
+        self.assertContains(response, "Encerrado")
+        self.assertNotContains(response, "Fecha em uma data antiga")
+        self.assertNotContains(response, "até fechar previsões")
+        self.assertNotContains(response, "Resultado publicado para consulta.")
         self.assertNotContains(response, '<h2 class="market-state-title">Histórico finalizado</h2>')
+        self.assertRegex(
+            response.content.decode(),
+            r'<div class="lifecycle-step done">\s*<span>6</span>\s*<strong>Concluído</strong>',
+        )
         self.assertEqual(response.content.decode().count("data-integrity-modal-link"), 1)
+
+    def test_market_detail_uses_clear_copy_for_each_non_open_lifecycle_state(self):
+        base_market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        cases = (
+            (
+                "scheduled",
+                {"definition_registered": False, "status": "not_published"},
+                "Mercado agendado",
+                "As previsões ainda não começaram. A abertura ocorrerá conforme a programação do mercado.",
+                "Agendado",
+            ),
+            (
+                "locked",
+                {"definition_registered": True, "status": "registered"},
+                "Mercado em apuração",
+                "As previsões foram encerradas. Agora aguardamos a publicação do resultado.",
+                "Em apuração",
+            ),
+            (
+                "resolved",
+                {"definition_registered": True, "status": "resolved_pending_seal"},
+                "Resultado publicado",
+                "A finalização do registro de integridade está prevista para",
+                "Finalização",
+            ),
+            (
+                "canceled",
+                {"definition_registered": True, "status": "canceled_preserved"},
+                "Mercado cancelado",
+                "Este mercado foi encerrado sem resultado. As GT₵ reservadas foram devolvidas integralmente.",
+                "Cancelado",
+            ),
+        )
+
+        for status, integrity, title, summary, lifecycle_label in cases:
+            with self.subTest(status=status):
+                market = {
+                    **base_market,
+                    "status": status,
+                    "status_label": status.title(),
+                    "close_label": "Fecha em uma data antiga",
+                    "seal_due_at": "2026-10-01T21:00:00+00:00" if status == "resolved" else None,
+                    "integrity": integrity,
+                }
+                with patch("apps.web.django.markets.views.get_market", return_value=market):
+                    response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+                self.assertContains(response, title)
+                self.assertContains(response, summary)
+                self.assertContains(response, lifecycle_label)
+                self.assertContains(response, "Ciclo do mercado")
+                self.assertNotContains(response, "Fecha em uma data antiga")
+                self.assertNotContains(response, "até fechar previsões")
+                self.assertNotContains(response, "Resultado publicado para consulta.")
+
+    def test_resolved_legacy_market_does_not_promise_retroactive_integrity(self):
+        market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        market.update(
+            status="resolved",
+            status_label="Resolvido",
+            integrity={"definition_registered": False, "status": "legacy_unregistered"},
+        )
+
+        with patch("apps.web.django.markets.views.get_market", return_value=market):
+            response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+        self.assertContains(response, "Resultado publicado")
+        self.assertContains(response, "não recebe comprovação retroativa")
+        self.assertContains(response, "Sem registro")
+        self.assertNotContains(response, "finalização do registro de integridade está prevista")
 
     def test_integrity_modal_fragment_explains_verification_in_plain_language(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -11721,7 +11801,8 @@ class WebSmokeTests(TransactionTestCase):
 
         with patch("apps.web.django.markets.views.get_market", side_effect=AuthAPIError("api off")):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
-        self.assertContains(response, "Mercado fechado")
+        self.assertContains(response, "Mercado em apuração")
+        self.assertContains(response, "As previsões foram encerradas. Agora aguardamos a publicação do resultado.")
         self.assertContains(response, "Em apuração")
         self.assertNotContains(response, "Registrar previsão")
 

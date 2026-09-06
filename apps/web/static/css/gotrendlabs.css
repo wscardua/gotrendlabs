@@ -1676,7 +1676,7 @@ h3 {
 }
 
 .detail-title-block .page-kicker-row {
-  padding-right: 0;
+  padding-right: 180px;
 }
 
 .detail-title-row {
@@ -10564,6 +10564,10 @@ body[data-theme="dark"] .footer {
   }
 
   .detail-title-block {
+    padding-right: 0;
+  }
+
+  .detail-title-block .page-kicker-row {
     padding-right: 0;
   }
 

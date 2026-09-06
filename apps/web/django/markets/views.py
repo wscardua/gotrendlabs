@@ -207,6 +207,7 @@ def _detail_context(request, slug, market, **extra):
         "event_notice": market.get("event_notice") or "",
         "resolution_timezone": resolution_timezone,
         "resolved_at_label": market.get("resolved_at_label") or _datetime_label(market.get("resolved_at"), resolution_timezone),
+        "seal_due_at_label": _datetime_label(market.get("seal_due_at"), resolution_timezone),
     }
     user = auth_user(request) or {}
     if is_authenticated(request) and not market.get("viewer_has_favorite") and user.get("id"):
