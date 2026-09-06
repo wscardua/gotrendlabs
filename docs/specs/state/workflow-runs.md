@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-WEB-COMPLETION-COPY-014
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: deixar claro no detalhe web selado que o mercado foi concluído, mantendo a integridade verificável como informação complementar.
+- Etapa atual: copy, hierarquia, espaçamento, specs, regressão web e QA visual concluídos.
+- Artefatos afetados: detalhe Django, specs web/i18n, teste de renderização, changelog e estado operacional.
+- Impacto arquitetural: nenhum; somente copy e hierarquia de apresentação sobre o estado `sealed` já retornado pela FastAPI.
+- Reversão lógica: restaurar os textos anteriores no template e nas specs, sem alterar contratos, mercado ou provas criptográficas.
+- Evidências: 3 testes focados de detalhe/card aprovados; `manage.py check`; QA visual no mercado local selado; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-MOBILE-HIERARCHY-013
 
 - Tipo: `change-feature` + `implementation-cycle`

@@ -214,12 +214,15 @@
       </div>
     </div>
     {% if market.status != "open" %}
-      <h2 class="market-state-title">{% if market.status == "sealed" %}Histórico finalizado{% elif market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
+      <h2 class="market-state-title">{% if market.status == "sealed" %}Mercado concluído{% elif market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
+      {% if market.status == "sealed" %}
+        <p class="muted market-state-summary">O resultado já foi publicado e o registro de integridade deste mercado foi finalizado. A definição, as previsões e o resultado podem ser conferidos.</p>
+      {% endif %}
       {% if market.status == "resolved" or market.status == "sealed" %}
         <div class="result-highlight">
           <span>Resultado oficial</span>
           <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>
-          <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span><span>{{ market.status_label }}</span></div>
+          <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span><span>{% if market.status == "sealed" %}Concluído e verificável{% else %}{{ market.status_label }}{% endif %}</span></div>
           {% if existing_prediction and existing_prediction.status == "resolved" %}
             {% if existing_prediction.won %}
               <div class="prediction-result-note success">

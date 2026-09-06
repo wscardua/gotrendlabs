@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 conclusão clara no detalhe web
+
+- O detalhe de mercado selado passa a comunicar primeiro `Mercado concluído`, deixando explícito que o ciclo de previsões, apuração e resultado terminou.
+- A integridade aparece como complemento `Concluído e verificável`, com explicação curta sobre resultado publicado e registro finalizado; o escudo permanece como único acesso à verificação.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 hierarquia da integridade no detalhe mobile
 
 - A secao mobile passa a se chamar `Integridade do mercado`; no estado registrado, informa que a definicao publicada foi registrada e pode ser conferida.

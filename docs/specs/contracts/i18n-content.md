@@ -15,7 +15,7 @@
 - A marca pública atual da plataforma é `GoTrendLabs`; nomes técnicos e históricos não precisam ser renomeados quando forem identificadores, caminhos, tabelas, comandos ou registros legados.
 - A moeda educativa é exibida em textos de produto como `GT₵`; nomes técnicos, campos e sufixos internos permanecem como `_gtl`.
 - Estados técnicos podem ter rótulos públicos diferentes: `locked` deve aparecer para usuários finais como `Em apuração`, preservando `locked`/`Fechado` apenas em contexto técnico, histórico ou operacional.
-- Integridade usa `Definicao registrada`, `Resultado em finalizacao` e `Historico finalizado e verificavel`; nao usa descentralizacao, imutabilidade absoluta ou blockchain publica como promessa.
+- Integridade usa `Definicao registrada` e `Resultado em finalizacao`; cards e comunicacoes existentes podem usar `Historico finalizado e verificavel`, enquanto o detalhe `sealed` prioriza `Mercado concluido` e o complemento `Concluido e verificavel`. Nao usa descentralizacao, imutabilidade absoluta ou blockchain publica como promessa.
 
 ## Campos de conteúdo com potencial multilíngue
 

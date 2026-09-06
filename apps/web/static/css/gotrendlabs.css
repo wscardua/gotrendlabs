@@ -2783,7 +2783,12 @@ input[type="range"] {
 }
 
 .trade-box .market-state-title {
-  margin-top: 12px;
+  margin: 12px 0 6px;
+}
+
+.trade-box .market-state-summary {
+  margin: 0 0 12px;
+  line-height: 1.5;
 }
 
 .result-highlight {

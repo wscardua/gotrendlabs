@@ -7226,6 +7226,22 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, 'class="detail-integrity-action"')
         self.assertEqual(response.content.decode().count("data-integrity-modal-link"), 1)
 
+    def test_sealed_market_detail_prioritizes_completion_and_explains_integrity(self):
+        market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        market["status"] = "sealed"
+        market["status_label"] = "Selado"
+        market["integrity"] = {"definition_registered": True, "status": "sealed"}
+
+        with patch("apps.web.django.markets.views.get_market", return_value=market):
+            response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+        self.assertContains(response, "Mercado concluído")
+        self.assertContains(response, "O resultado já foi publicado e o registro de integridade deste mercado foi finalizado.")
+        self.assertContains(response, "A definição, as previsões e o resultado podem ser conferidos.")
+        self.assertContains(response, "Concluído e verificável")
+        self.assertNotContains(response, '<h2 class="market-state-title">Histórico finalizado</h2>')
+        self.assertEqual(response.content.decode().count("data-integrity-modal-link"), 1)
+
     def test_integrity_modal_fragment_explains_verification_in_plain_language(self):
         market = get_domain_client().market("openai-gpt6-2026")
         proof = {
