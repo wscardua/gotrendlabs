@@ -62,13 +62,6 @@
         </div>
         <h1 class="large-title">{{ market.title }}</h1>
       </div>
-      {% if market.integrity.definition_registered %}
-        <a class="detail-integrity-action" href="{% url 'market-integrity' market.slug %}" data-integrity-modal-link>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path><path d="m8.4 12 2.2 2.3 5-5.2"></path></svg>
-          <span><strong>{% if market.integrity.status == "sealed" %}Histórico finalizado e verificável{% elif market.integrity.status == "resolved_pending_seal" %}Resultado em processo de finalização{% else %}Definição registrada{% endif %}</strong><small>{% if market.integrity.status == "resolved_pending_seal" and market.seal_due_at %}Finalização prevista: {{ market.seal_due_at }}{% else %}Abrir verificação de integridade{% endif %}</small></span>
-          <span aria-hidden="true">›</span>
-        </a>
-      {% endif %}
     </div>
     <p class="lead">{{ market.summary }}</p>
     <div class="chart-box">

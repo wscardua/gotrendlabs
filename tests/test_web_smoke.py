@@ -7176,7 +7176,7 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "data-integrity-modal-link")
         self.assertNotContains(response, 'class="integrity-badge')
 
-    def test_market_detail_reuses_integrity_seal_and_modal_action(self):
+    def test_market_detail_uses_only_thumbnail_integrity_seal_as_modal_action(self):
         market = get_domain_client().market("openai-gpt6-2026")
         market["integrity"] = {"definition_registered": True, "status": "registered"}
 
@@ -7184,10 +7184,10 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(reverse("market-detail", args=[market["slug"]]))
 
         self.assertContains(response, 'class="market-integrity-seal"')
-        self.assertContains(response, 'class="detail-integrity-action"')
         self.assertContains(response, "Definição registrada")
         self.assertContains(response, "Abrir verificação de integridade")
-        self.assertGreaterEqual(response.content.decode().count("data-integrity-modal-link"), 2)
+        self.assertNotContains(response, 'class="detail-integrity-action"')
+        self.assertEqual(response.content.decode().count("data-integrity-modal-link"), 1)
 
     def test_integrity_modal_fragment_explains_verification_in_plain_language(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -7210,10 +7210,13 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Nenhuma alteração indevida foi detectada")
         self.assertContains(response, "Para que serve esta página?")
-        self.assertContains(response, "o histórico que você vê hoje continua igual")
+        self.assertContains(response, "Métodos de proteção criptográfica")
+        self.assertContains(response, "Impressão digital que muda se o conteúdo mudar")
+        self.assertContains(response, "Confirma a origem sem expor a chave privada protegida")
+        self.assertContains(response, "Revela remoções ou trocas na ordem dos registros")
         self.assertContains(response, "Como este mercado foi protegido")
-        self.assertContains(response, "E se alguém alterar alguma informação?")
-        self.assertContains(response, "Isso permite detectar alterações silenciosas no histórico")
+        self.assertContains(response, "Proteção contra manipulações")
+        self.assertContains(response, "A proteção torna a manipulação detectável")
         self.assertContains(response, "O que esta verificação não faz")
         self.assertContains(response, "Ver detalhes técnicos")
         self.assertContains(response, "Um hash funciona como uma impressão digital do registro")

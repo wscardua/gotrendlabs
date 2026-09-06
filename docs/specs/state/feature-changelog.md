@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 método criptográfico compacto
+
+- A primeira leitura passou a resumir hash, assinatura criptográfica e encadeamento sem expandir a página com nova seção longa.
+- A comunicação diferencia detecção de manipulação de impedimento absoluto e informa que a chave privada permanece protegida.
+- O botão textual redundante foi removido do detalhe; o escudo sobre a thumbnail permanece como acionador acessível da verificação.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 clareza da verificação pública
 
 - O modal de integridade passou a responder primeiro se alguma alteração indevida foi detectada e para que a conferência existe.

@@ -10791,22 +10791,6 @@ body[data-theme="dark"] .system-log-code {
   height: 31px;
 }
 
-.detail-integrity-action {
-  width: min(100%, 460px);
-  margin-top: 13px;
-  padding: 10px 12px;
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) auto;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid rgba(19, 111, 74, 0.2);
-  border-radius: 14px;
-  background: rgba(223, 246, 223, 0.55);
-  color: #263031;
-  text-decoration: none;
-  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
-}
-
 .layout-detail > * {
   min-width: 0;
   box-sizing: border-box;
@@ -10815,49 +10799,6 @@ body[data-theme="dark"] .system-log-code {
 .layout-detail > .panel,
 .layout-detail > .side-stack {
   width: 100%;
-}
-
-.detail-integrity-action:hover,
-.detail-integrity-action:focus-visible {
-  border-color: rgba(19, 111, 74, 0.38);
-  background: rgba(223, 246, 223, 0.82);
-  transform: translateY(-1px);
-}
-
-.detail-integrity-action:focus-visible {
-  outline: 3px solid rgba(45, 94, 136, 0.28);
-  outline-offset: 2px;
-}
-
-.detail-integrity-action svg {
-  width: 27px;
-  height: 27px;
-  fill: none;
-  stroke: #136f4a;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  stroke-width: 1.7;
-}
-
-.detail-integrity-action strong,
-.detail-integrity-action small {
-  display: block;
-}
-
-.detail-integrity-action strong {
-  font-size: 13px;
-}
-
-.detail-integrity-action small {
-  margin-top: 3px;
-  color: #667071;
-  font-size: 11px;
-}
-
-.detail-integrity-action > span:last-child {
-  color: #136f4a;
-  font-size: 24px;
-  line-height: 1;
 }
 
 .integrity-dialog {
@@ -11114,6 +11055,43 @@ body[data-theme="dark"] .system-log-code {
   color: #596163;
   font-size: 13px;
   line-height: 1.52;
+}
+
+.integrity-methods {
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid #ded7c8;
+  border-radius: 12px;
+  background: #ded7c8;
+  list-style: none;
+}
+
+.integrity-methods li {
+  min-width: 0;
+  padding: 9px 10px;
+  background: #fffdf7;
+}
+
+.integrity-methods strong,
+.integrity-methods span {
+  display: block;
+}
+
+.integrity-methods strong {
+  color: #173c2a;
+  font-size: 11px;
+  line-height: 1.25;
+}
+
+.integrity-methods span {
+  margin-top: 3px;
+  color: #667071;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .integrity-timeline {
@@ -11500,13 +11478,6 @@ body[data-theme="dark"] .market-integrity-seal.is-pending {
   color: #f5d98d;
 }
 
-body[data-theme="dark"] .detail-integrity-action {
-  border-color: rgba(117, 205, 148, 0.24);
-  background: rgba(99, 169, 123, 0.1);
-  color: #e4ece7;
-}
-
-body[data-theme="dark"] .detail-integrity-action small,
 body[data-theme="dark"] .integrity-report-intro p,
 body[data-theme="dark"] .integrity-check-item p,
 body[data-theme="dark"] .integrity-purpose p,
@@ -11520,10 +11491,6 @@ body[data-theme="dark"] .integrity-technical-body > p,
 body[data-theme="dark"] .integrity-technical-body dt,
 body[data-theme="dark"] .integrity-report-footer p {
   color: #a6b1ab;
-}
-
-body[data-theme="dark"] .detail-integrity-action svg {
-  stroke: #8bd0a4;
 }
 
 body[data-theme="dark"] .integrity-dialog,
@@ -11552,6 +11519,7 @@ body[data-theme="dark"] .integrity-report-intro.is-sealed {
 
 body[data-theme="dark"] .integrity-report-intro h2,
 body[data-theme="dark"] .integrity-check-item strong,
+body[data-theme="dark"] .integrity-methods strong,
 body[data-theme="dark"] .integrity-purpose h3,
 body[data-theme="dark"] .integrity-section-heading h3,
 body[data-theme="dark"] .integrity-timeline-item strong,
@@ -11587,6 +11555,19 @@ body[data-theme="dark"] .integrity-section-number {
   border-color: rgba(117, 205, 148, 0.2);
   background: #21372b;
   color: #a7e4b4;
+}
+
+body[data-theme="dark"] .integrity-methods {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body[data-theme="dark"] .integrity-methods li {
+  background: #1b2421;
+}
+
+body[data-theme="dark"] .integrity-methods span {
+  color: #a6b1ab;
 }
 
 body[data-theme="dark"] .integrity-timeline-list::before {
@@ -11653,6 +11634,21 @@ body[data-theme="dark"] .integrity-change-icon {
   .integrity-timeline {
     padding-left: 18px;
     padding-right: 18px;
+  }
+
+  .integrity-methods {
+    grid-template-columns: 1fr;
+  }
+
+  .integrity-methods li {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 8px;
+    align-items: start;
+  }
+
+  .integrity-methods span {
+    margin-top: 0;
   }
 
   .integrity-change-explainer,

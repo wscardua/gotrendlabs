@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MARKET-INTEGRITY-COPY-004
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: explicar de forma compacta hash, assinatura, encadeamento e deteccao de manipulacao, removendo o botao redundante do detalhe do mercado.
+- Etapa atual: concluido; metodo criptografico compacto e acionador unico no escudo validados em desktop e mobile em 2026-09-06.
+- Artefatos afetados: spec de integridade, arquitetura web, partial de verificacao, detalhe do mercado, CSS e testes de renderizacao.
+- Impacto arquitetural: apenas apresentacao Django; contratos, regras de verificacao e persistencia nao mudam.
+- Evidencias: `manage.py check`, 3 testes focados, suite `tests.test_web_smoke` com 212 testes e inspecao visual em desktop e 390 px, todos aprovados; console sem erros.
+- Encerrado em: 2026-09-06
+- Reversao logica: restaurar a copy anterior e o acionador textual do detalhe sem alterar provas ou dados.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-MARKET-INTEGRITY-COPY-003
 
 - Tipo: `change-feature`
