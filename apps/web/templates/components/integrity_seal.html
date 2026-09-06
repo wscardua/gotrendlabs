@@ -1,18 +1,18 @@
 <a
-  class="market-integrity-seal{% if market.integrity.status == 'sealed' %} is-sealed{% elif market.integrity.status == 'resolved_pending_seal' %} is-pending{% endif %}"
+  class="market-integrity-seal{% if market.integrity.status == 'sealed' %} is-sealed{% elif market.integrity.status == 'resolved_pending_seal' or market.integrity.status == 'seal_retry_pending' %} is-pending{% elif market.integrity.status == 'verification_failed' %} is-failed{% elif market.integrity.status == 'canceled_preserved' %} is-neutral{% endif %}"
   href="{% url 'market-integrity' market.slug %}"
   data-integrity-modal-link
-  aria-label="{% if market.integrity.status == 'sealed' %}Histórico finalizado e verificável. Abrir verificação de integridade{% elif market.integrity.status == 'resolved_pending_seal' %}Resultado em processo de finalização. Abrir registro de integridade{% else %}Definição registrada. Abrir verificação de integridade{% endif %}"
+  aria-label="{% if market.integrity.status == 'sealed' %}Histórico finalizado e verificável. Abrir verificação de integridade{% elif market.integrity.status == 'resolved_pending_seal' %}Resultado aguardando finalização. Abrir registro de integridade{% elif market.integrity.status == 'seal_retry_pending' %}Finalização aguardando nova tentativa. Abrir registro de integridade{% elif market.integrity.status == 'verification_failed' %}Diferença de integridade detectada. Abrir verificação{% elif market.integrity.status == 'canceled_preserved' %}Mercado cancelado com registros preservados. Abrir registro de integridade{% else %}Definição registrada. Abrir verificação de integridade{% endif %}"
 >
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
     <path class="integrity-seal-shield" d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path>
-    {% if market.integrity.status == "resolved_pending_seal" %}
+    {% if market.integrity.status == "resolved_pending_seal" or market.integrity.status == "seal_retry_pending" %}
       <path class="integrity-seal-mark" d="M12 7.3v4.9l3 1.8M12 6.1a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"></path>
     {% else %}
       <path class="integrity-seal-mark" d="m8.4 12 2.2 2.3 5-5.2"></path>
     {% endif %}
   </svg>
   <span class="integrity-seal-label" role="tooltip">
-    {% if market.integrity.status == "sealed" %}Histórico verificável{% elif market.integrity.status == "resolved_pending_seal" %}Em finalização{% else %}Definição registrada{% endif %}
+    {% if market.integrity.status == "sealed" %}Histórico verificável{% elif market.integrity.status == "resolved_pending_seal" %}Finalização prevista{% elif market.integrity.status == "seal_retry_pending" %}Nova tentativa pendente{% elif market.integrity.status == "verification_failed" %}Diferença detectada{% elif market.integrity.status == "canceled_preserved" %}Registros preservados{% else %}Definição registrada{% endif %}
   </span>
 </a>

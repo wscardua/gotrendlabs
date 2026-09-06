@@ -1,7 +1,7 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-06
@@ -47,6 +47,7 @@ O mecanismo oferece rastreabilidade e deteccao criptografica de adulteracao. Nao
 - entrada assinada: bytes ASCII do hash SHA-256 hexadecimal, enviados como `RAW`
 - toda prova preserva payload canonico exato, hash, assinatura, algoritmo, `key_id`, fingerprint SHA-256 da chave publica e timestamp
 - `key_id` historico permanece no registro para suportar rotacao
+- chaves publicas historicas ficam em `integrity_signing_keys`, com protecao append-only; isso permite verificacao apos rotacao/reinicio sem persistir ou exportar material privado
 
 ## Estados e transicoes
 
@@ -97,7 +98,15 @@ O Seal referencia definicao, versao, raiz, resultado/evidencia/timestamps, merca
 - admin: estado operacional, falhas/tentativas e auditoria completa
 - clientes nao assinam nem decidem validade
 
-Estados publicos de integridade: `not_published`, `legacy_unregistered`, `registered`, `resolved_pending_seal`, `sealed`, `verification_failed`.
+Estados publicos de integridade: `not_published`, `legacy_unregistered`, `registered`, `resolved_pending_seal`, `seal_retry_pending`, `canceled_preserved`, `sealed`, `verification_failed`.
+
+- `seal_retry_pending` significa falha operacional de assinatura/persistencia com nova tentativa segura pendente; nao indica adulteracao.
+- `canceled_preserved` significa que o mercado foi cancelado e os registros de integridade ja emitidos foram preservados; resultado e Seal sao etapas nao aplicaveis.
+- `verification_failed` fica reservado a inconsistencia criptografica comprovada ou ausencia de prova obrigatoria em mercado marcado como `sealed`.
+
+A verificacao publica nao valida apenas os bytes armazenados contra si mesmos. Ela tambem reconstrói a definicao atual do mercado e o resultado operacional atual para compara-los aos snapshots assinados. Em mercado selado, valida ainda cada compromisso assinado incluido nas folhas, a raiz/provas Merkle, o Seal e a cadeia global. Campos nao aplicaveis sao `null`, nunca tratados como falha.
+
+O resultado `valid` resume as provas relacionadas ao mercado e `ledger_chain_valid` reporta separadamente a cadeia global. Uma falha global deve ser exibida como alerta operacional proprio, sem atribuir adulteracao a todos os mercados que continuam com suas provas especificas validas.
 
 ## Experiencia web e mobile
 
@@ -113,6 +122,8 @@ No web, o selo abre a verificacao em modal tanto no card quanto no detalhe do me
 A primeira leitura da verificacao deve responder, nesta ordem: para que a pagina serve; se alguma alteracao indevida foi detectada; quais etapas da vida do mercado ja foram protegidas; o que aconteceria se um registro fosse alterado; e quais sao os limites da prova. Termos como hash, assinatura, chave e protocolo ficam recolhidos em detalhes tecnicos e recebem explicacao por analogia antes de serem exibidos.
 
 Sem alongar a pagina, o bloco introdutorio deve resumir o metodo em tres sinais: impressao digital por hash para detectar mudanca de conteudo, assinatura criptografica para confirmar origem com chave privada protegida e encadeamento para evidenciar alteracao ou remocao na sequencia. A linguagem promete deteccao de manipulacao, nao impedimento absoluto. No detalhe do mercado, o escudo sobre a thumbnail e o unico acionador de verificacao; nao deve haver botao textual redundante abaixo do titulo.
+
+A linguagem visual segue esta semantica: verde somente para verificacao executada e aprovada; azul para processo ativo; amarelo para prazo ou retry operacional; cinza para aguardando, nao aplicavel ou ausencia historica; vermelho somente para diferenca criptografica detectada. Em `open`, previsoes aparecem como comprovantes sendo registrados, nao como etapa concluida. Em `locked`, aparecem como registros encerrados. Em `resolved`, resultado registrado e finalizacao pendente ficam distintos. Em `canceled`, resultado e finalizacao sao `Nao se aplica`.
 
 ## Configuracao e operacao
 

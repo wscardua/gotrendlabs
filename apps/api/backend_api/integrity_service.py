@@ -61,7 +61,7 @@ class Signature:
 class _EphemeralSigner:
     def __init__(self):
         self._private_key = Ed25519PrivateKey.generate()
-        self.key_id = "local-ephemeral-ed25519"
+        self.key_id = f"local-ephemeral-ed25519:{sha256_hex(self.public_key())[:16]}"
 
     def sign(self, digest_hex: str) -> Signature:
         public_der = self.public_key()
@@ -136,6 +136,21 @@ def sign_payload(payload: dict) -> tuple[bytes, str, Signature]:
     return canonical, digest, get_signer().sign(digest)
 
 
+def remember_public_key(cursor, signed: Signature, *, created_at: datetime | None = None):
+    created_at = created_at or datetime.now(timezone.utc)
+    cursor.execute(
+        """INSERT INTO integrity_signing_keys
+           (key_id,algorithm,key_fingerprint,public_key_der,created_at)
+           VALUES (%s,%s,%s,%s,%s)
+           ON CONFLICT (key_id) DO NOTHING""",
+        (signed.key_id, signed.algorithm, signed.key_fingerprint, signed.public_key_der, created_at),
+    )
+    cursor.execute("SELECT key_fingerprint FROM integrity_signing_keys WHERE key_id=%s", (signed.key_id,))
+    existing = cursor.fetchone()
+    if not existing or not hmac.compare_digest(existing["key_fingerprint"], signed.key_fingerprint):
+        raise IntegritySigningError("O identificador da chave nao corresponde a chave publica registrada.")
+
+
 def verify_signed_hash(digest_hex: str, signature: bytes, public_key_der: bytes) -> bool:
     try:
         key = serialization.load_der_public_key(public_key_der)
@@ -180,6 +195,7 @@ def append_ledger_event(cursor, *, event_type: str, entity_type: str, entity_ide
         "sequence": sequence,
     }
     canonical, event_hash, signed = sign_payload(event_payload)
+    remember_public_key(cursor, signed, created_at=occurred_at)
     cursor.execute(
         """INSERT INTO integrity_ledger_events
         (sequence,protocol_version,event_type,entity_type,entity_identifier,market_id,payload_reference,payload_hash,canonical_payload,payload_json,previous_event_hash,event_hash,signature,algorithm,key_id,key_fingerprint,correlation_id,causation_id,occurred_at,created_at)
@@ -189,30 +205,46 @@ def append_ledger_event(cursor, *, event_type: str, entity_type: str, entity_ide
     return cursor.fetchone()
 
 
+def market_definition_payload(cursor, market_id: int, *, published_at: datetime, definition_version: int = 1):
+    cursor.execute("""SELECT m.*, c.name category_name, sc.name subcategory_name, ev.name event_name
+                    FROM gotrendlabs_markets m JOIN gotrendlabs_market_categories c ON c.id=m.category_id
+                    JOIN gotrendlabs_market_subcategories sc ON sc.id=m.subcategory_id
+                    LEFT JOIN gotrendlabs_market_events ev ON ev.id=m.event_id WHERE m.id=%s""", (market_id,))
+    market = cursor.fetchone()
+    if not market:
+        raise IntegritySigningError("Mercado inexistente para definicao de integridade.")
+    cursor.execute("SELECT id,label,hint,display_order FROM gotrendlabs_market_options WHERE market_id=%s ORDER BY display_order,id", (market_id,))
+    options = cursor.fetchall()
+    return {
+        "auto_close_enabled": bool(market["auto_close_enabled"]), "category": market["category_name"],
+        "close_at": market["close_at"], "close_timezone": market["close_timezone"] or "UTC",
+        "definition_version": definition_version, "event": market["event_name"] or "", "kind": market["kind"],
+        "market_id": market_id, "market_slug": market["slug"],
+        "options": [{"id": row["id"], "label": row["label"], "hint": row["hint"] or "", "order": row["display_order"]} for row in options],
+        "protocol_version": PROTOCOL_VERSION, "published_at": published_at,
+        "resolution_criteria": market["resolution_criteria"] or "", "resolution_source": market["source"] or "",
+        "subcategory": market["subcategory_name"], "summary": market["summary"] or "", "title": market["title"],
+    }
+
+
+def market_result_payload(market: dict):
+    return {
+        "evidence": market["resolution_note"] or "", "resolved_at": market["resolved_at"],
+        "resolution_timezone": market["resolution_timezone"] or "UTC", "winning_option_id": market["winning_option_id"],
+    }
+
+
 def register_market_definition(cursor, market_id: int, *, occurred_at: datetime | None = None):
     occurred_at = occurred_at or datetime.now(timezone.utc)
     cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market_id,))
     existing = cursor.fetchone()
     if existing:
         return existing
-    cursor.execute("""SELECT m.*, c.name category_name, sc.name subcategory_name, ev.name event_name
-                    FROM gotrendlabs_markets m JOIN gotrendlabs_market_categories c ON c.id=m.category_id
-                    JOIN gotrendlabs_market_subcategories sc ON sc.id=m.subcategory_id
-                    LEFT JOIN gotrendlabs_market_events ev ON ev.id=m.event_id WHERE m.id=%s FOR UPDATE OF m""", (market_id,))
+    cursor.execute("SELECT id,slug FROM gotrendlabs_markets WHERE id=%s FOR UPDATE", (market_id,))
     market = cursor.fetchone()
-    cursor.execute("SELECT id,label,hint,display_order FROM gotrendlabs_market_options WHERE market_id=%s ORDER BY display_order,id", (market_id,))
-    options = cursor.fetchall()
-    payload = {
-        "auto_close_enabled": bool(market["auto_close_enabled"]), "category": market["category_name"],
-        "close_at": market["close_at"], "close_timezone": market["close_timezone"] or "UTC",
-        "definition_version": 1, "event": market["event_name"] or "", "kind": market["kind"],
-        "market_id": market_id, "market_slug": market["slug"],
-        "options": [{"id": row["id"], "label": row["label"], "hint": row["hint"] or "", "order": row["display_order"]} for row in options],
-        "protocol_version": PROTOCOL_VERSION, "published_at": occurred_at,
-        "resolution_criteria": market["resolution_criteria"] or "", "resolution_source": market["source"] or "",
-        "subcategory": market["subcategory_name"], "summary": market["summary"] or "", "title": market["title"],
-    }
+    payload = market_definition_payload(cursor, market_id, published_at=occurred_at)
     canonical, digest, signed = sign_payload(payload)
+    remember_public_key(cursor, signed, created_at=occurred_at)
     cursor.execute("""INSERT INTO market_integrity_definitions
         (market_id,definition_version,protocol_version,canonical_payload,payload_json,payload_hash,signature,algorithm,key_id,key_fingerprint,signed_at)
         VALUES (%s,1,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s) RETURNING *""",
@@ -247,6 +279,7 @@ def commit_prediction(cursor, *, prediction_id: int, user_id: int, occurred_at: 
         "user_commitment": _user_commitment(user_id),
     }
     canonical,digest,signed=sign_payload(payload)
+    remember_public_key(cursor, signed, created_at=occurred_at)
     cursor.execute("""INSERT INTO prediction_commitments
         (prediction_id,market_id,definition_id,previous_commitment_id,protocol_version,canonical_payload,payload_json,commitment_hash,signature,algorithm,key_id,key_fingerprint,signed_at)
         VALUES (%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s) RETURNING *""",
@@ -305,10 +338,7 @@ def seal_market(cursor, market: dict, *, sealed_at: datetime | None = None):
     check_root, _ = build_merkle(commitment_hashes)
     if not hmac.compare_digest(predictions_root, check_root):
         raise IntegritySigningError("A raiz Merkle nao passou pela validacao independente.")
-    result_payload = {
-        "evidence": market["resolution_note"] or "", "resolved_at": market["resolved_at"],
-        "resolution_timezone": market["resolution_timezone"] or "UTC", "winning_option_id": market["winning_option_id"],
-    }
+    result_payload = market_result_payload(market)
     result_hash = sha256_hex(canonical_json(result_payload))
     cursor.execute("SELECT event_hash FROM integrity_ledger_events ORDER BY sequence DESC LIMIT 1")
     previous = cursor.fetchone()
@@ -320,6 +350,7 @@ def seal_market(cursor, market: dict, *, sealed_at: datetime | None = None):
         "result": result_payload, "result_hash": result_hash, "sealed_at": sealed_at,
     }
     canonical,digest,signed=sign_payload(payload)
+    remember_public_key(cursor, signed, created_at=sealed_at)
     cursor.execute("""INSERT INTO market_seals
         (market_id,definition_id,protocol_version,predictions_root,result_hash,previous_event_hash,canonical_payload,payload_json,seal_hash,signature,algorithm,key_id,key_fingerprint,sealed_at)
         VALUES (%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s) RETURNING *""",
@@ -354,10 +385,10 @@ def _notify_sealed(cursor, market, sealed_at):
         enqueue_user_email(cursor,event_type="market.sealed",user_id=recipient_id,template_key="market.sealed",context={"market_title":market["title"],"market_url":public_url(f"/markets/{market['slug']}/")},idempotency_key=f"market.sealed:{recipient_id}:{market['id']}")
 
 
-def public_key_payload(key_id: str | None = None):
+def public_key_payload(key_id: str | None = None, *, cursor=None):
     signer = get_signer()
     resolved_key_id = key_id or signer.key_id
-    public_der = public_key_der_for(resolved_key_id)
+    public_der = public_key_der_for(resolved_key_id, cursor=cursor)
     pem = serialization.load_der_public_key(public_der).public_bytes(
         serialization.Encoding.PEM,
         serialization.PublicFormat.SubjectPublicKeyInfo,
@@ -371,10 +402,17 @@ def public_key_payload(key_id: str | None = None):
     }
 
 
-def public_key_der_for(key_id: str) -> bytes:
+def public_key_der_for(key_id: str, *, cursor=None) -> bytes:
+    if cursor is not None:
+        cursor.execute("SELECT public_key_der FROM integrity_signing_keys WHERE key_id=%s", (key_id,))
+        registered = cursor.fetchone()
+        if registered:
+            return bytes(registered["public_key_der"])
     signer = get_signer()
-    if getattr(signer, "key_id", "") == key_id or key_id == "local-ephemeral-ed25519":
+    if getattr(signer, "key_id", "") == key_id:
         return signer.public_key()
+    if key_id.startswith("local-ephemeral-ed25519"):
+        return b""
     return _KMSSigner(key_id)._public_key()
 
 

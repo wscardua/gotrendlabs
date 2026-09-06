@@ -224,6 +224,17 @@ class MarketIntegrityDefinition(models.Model):
         db_table = "market_integrity_definitions"
 
 
+class IntegritySigningKey(models.Model):
+    key_id = models.CharField(max_length=255, primary_key=True)
+    algorithm = models.CharField(max_length=40)
+    key_fingerprint = models.CharField(max_length=64, unique=True)
+    public_key_der = models.BinaryField()
+    created_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "integrity_signing_keys"
+
+
 class PredictionCommitment(models.Model):
     prediction = models.OneToOneField(Prediction, on_delete=models.PROTECT, related_name="integrity_commitment")
     market = models.ForeignKey(Market, on_delete=models.PROTECT, related_name="prediction_commitments")

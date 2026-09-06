@@ -284,6 +284,26 @@ def integrity(request, slug):
         "seal_due_at_label": _datetime_label(market.get("seal_due_at"), timezone_name),
         "sealed_at_label": _datetime_label(market.get("sealed_at"), timezone_name),
     }
+    proof_status = proof.get("status", "")
+    verification_available = proof.get("definition") is not None
+    labels.update(
+        {
+            "integrity_verification_available": verification_available,
+            "integrity_has_difference": verification_available and verification.get("valid") is False,
+            "global_ledger_warning": verification_available
+            and verification.get("valid") is True
+            and verification.get("ledger_chain_valid") is False,
+            "definition_confirmed": verification.get("definition_valid") is True
+            and verification.get("definition_matches_current", True) is True,
+            "predictions_confirmed": proof_status == "sealed"
+            and verification.get("prediction_commitments_valid") is True
+            and verification.get("merkle_root_valid") is True,
+            "result_confirmed": proof_status == "sealed"
+            and verification.get("result_matches_current") is True
+            and verification.get("seal_valid") is True,
+            "final_history_confirmed": proof_status == "sealed" and verification.get("valid") is True,
+        }
+    )
     template_name = "markets/_integrity_content.html" if request.GET.get("modal") == "1" else "markets/integrity.html"
     return render(request, template_name, {"market": market, "proof": proof, "verification": verification, "integrity_error": error, **labels})
 

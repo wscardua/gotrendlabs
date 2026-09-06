@@ -6,7 +6,7 @@
   <section class="panel">
     <div class="section-head"><div><span class="eyebrow">Integridade</span><h2>Ledger criptográfico assinado</h2></div><a class="btn small ghost" href="{% url 'market-integrity' market.slug %}">Verificação pública</a></div>
     <div class="admin-grid">
-      <div class="metric"><strong>{{ integrity.status }}</strong><span>status</span></div>
+      <div class="metric"><strong>{% if integrity.status == "sealed" %}Finalizado e verificável{% elif integrity.status == "resolved_pending_seal" %}Finalização prevista{% elif integrity.status == "seal_retry_pending" %}Nova tentativa pendente{% elif integrity.status == "verification_failed" %}Diferença detectada{% elif integrity.status == "canceled_preserved" %}Cancelado; registros preservados{% elif integrity.status == "legacy_unregistered" %}Sem prova histórica{% elif integrity.status == "registered" %}Definição registrada{% else %}Ainda não publicado{% endif %}</strong><span>status</span></div>
       <div class="metric"><strong>{{ integrity.protocol_version|default:"legado" }}</strong><span>protocolo</span></div>
       <div class="metric"><strong>{{ integrity.definition.hash|default:"-"|truncatechars:18 }}</strong><span>definição</span></div>
       <div class="metric"><strong>{{ integrity.seal.hash|default:"-"|truncatechars:18 }}</strong><span>Seal</span></div>

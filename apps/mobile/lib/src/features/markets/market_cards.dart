@@ -102,12 +102,28 @@ class MarketHeroCard extends StatelessWidget {
                         GtlPill(
                           label: market.integrity.isSealed
                               ? 'Histórico verificável'
+                              : market.integrity.isSealRetryPending
+                              ? 'Nova tentativa pendente'
+                              : market.integrity.isVerificationFailed
+                              ? 'Diferença detectada'
+                              : market.integrity.isCanceledPreserved
+                              ? 'Registros preservados'
                               : 'Definição registrada',
                           icon: market.integrity.isSealed
                               ? Icons.verified_outlined
+                              : market.integrity.isSealRetryPending
+                              ? Icons.sync_problem_outlined
+                              : market.integrity.isVerificationFailed
+                              ? Icons.error_outline
                               : Icons.shield_outlined,
                           color: market.integrity.isSealed
                               ? GtlColors.accentCyan
+                              : market.integrity.isSealRetryPending
+                              ? GtlColors.accentYellow
+                              : market.integrity.isVerificationFailed
+                              ? GtlColors.accentRed
+                              : market.integrity.isCanceledPreserved
+                              ? GtlColors.muted
                               : GtlColors.accentGreen,
                           filled: true,
                         ),
@@ -284,10 +300,20 @@ class MarketCompactCard extends StatelessWidget {
                           Icon(
                             market.integrity.isSealed
                                 ? Icons.verified_outlined
+                                : market.integrity.isSealRetryPending
+                                ? Icons.sync_problem_outlined
+                                : market.integrity.isVerificationFailed
+                                ? Icons.error_outline
                                 : Icons.shield_outlined,
                             size: 15,
                             color: market.integrity.isSealed
                                 ? GtlColors.accentCyan
+                                : market.integrity.isSealRetryPending
+                                ? GtlColors.accentYellow
+                                : market.integrity.isVerificationFailed
+                                ? GtlColors.accentRed
+                                : market.integrity.isCanceledPreserved
+                                ? GtlColors.muted
                                 : GtlColors.accentGreen,
                           ),
                           const SizedBox(width: 5),
@@ -295,6 +321,12 @@ class MarketCompactCard extends StatelessWidget {
                             child: Text(
                               market.integrity.isSealed
                                   ? 'Histórico verificável'
+                                  : market.integrity.isSealRetryPending
+                                  ? 'Nova tentativa pendente'
+                                  : market.integrity.isVerificationFailed
+                                  ? 'Diferença detectada'
+                                  : market.integrity.isCanceledPreserved
+                                  ? 'Registros preservados'
                                   : 'Definição registrada',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,

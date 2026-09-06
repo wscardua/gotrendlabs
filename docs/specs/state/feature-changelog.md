@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 semântica e verificação reforçadas
+
+- Estados visuais agora distinguem registro em curso, prazo/retry operacional, etapa não aplicável e diferença criptográfica, com cores coerentes em web, Admin Ops e mobile.
+- A verificação compara definição e resultado atuais aos snapshots assinados e valida compromissos, folhas/provas Merkle, Seal, eventos do mercado e cadeia global.
+- Chaves públicas históricas passam a ser preservadas em registro append-only, mantendo a verificação após rotação ou reinício local sem armazenar chave privada.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 método criptográfico compacto
 
 - A primeira leitura passou a resumir hash, assinatura criptográfica e encadeamento sem expandir a página com nova seção longa.

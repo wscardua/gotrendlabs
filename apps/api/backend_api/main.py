@@ -38,6 +38,8 @@ from apps.api.backend_api.integrity_service import (
     commit_prediction,
     encode_signature,
     get_signer,
+    market_definition_payload,
+    market_result_payload,
     public_key_payload,
     public_key_der_for,
     sha256_hex,
@@ -1974,10 +1976,14 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         integrity_status = "legacy_unregistered"
     elif row["status"] == "sealed" and integrity_row["seal_id"]:
         integrity_status = "sealed"
-    elif row["status"] == "sealed" or has_integrity_failure:
+    elif row["status"] == "sealed":
         integrity_status = "verification_failed"
+    elif row["status"] == "resolved" and has_integrity_failure:
+        integrity_status = "seal_retry_pending"
     elif row["status"] == "resolved":
         integrity_status = "resolved_pending_seal"
+    elif row["status"] == "canceled":
+        integrity_status = "canceled_preserved"
     else:
         integrity_status = "registered"
     return {
@@ -4534,16 +4540,25 @@ def _market_integrity_contract(cursor, slug):
     events = [{**dict(row), "occurred_at": row["occurred_at"].isoformat()} for row in cursor.fetchall()]
     cursor.execute("SELECT 1 FROM gotrendlabs_admin_events WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s AND created_at >= COALESCE(%s, created_at) LIMIT 1", (slug, market["resolved_at"]))
     failed = bool(cursor.fetchone())
-    integrity_status = "not_published" if market["status"] in {"draft", "scheduled"} else "legacy_unregistered" if not definition else "sealed" if seal and market["status"] == "sealed" else "verification_failed" if market["status"] == "sealed" or (failed and market["status"] == "resolved") else "resolved_pending_seal" if market["status"] == "resolved" else "registered"
+    integrity_status = (
+        "not_published" if market["status"] in {"draft", "scheduled"}
+        else "legacy_unregistered" if not definition
+        else "sealed" if seal and market["status"] == "sealed"
+        else "verification_failed" if market["status"] == "sealed"
+        else "seal_retry_pending" if failed and market["status"] == "resolved"
+        else "resolved_pending_seal" if market["status"] == "resolved"
+        else "canceled_preserved" if market["status"] == "canceled"
+        else "registered"
+    )
     return {"market_slug": slug, "status": integrity_status, "protocol_version": definition["protocol_version"] if definition else "", "definition": _signed_record(definition, "payload_hash"), "seal": _signed_record(seal, "seal_hash"), "ledger_events": events}
 
 
 @app.get("/integrity/public-key", response_model=IntegrityPublicKeyResponse)
 def integrity_public_key(request: Request, key_id: Optional[str] = None):
     _enforce_rate_limit("integrity_public_key", _rate_limit_identity(request), limit=120, window_seconds=60)
-    if key_id:
-        with get_connection() as connection:
-            with connection.cursor() as cursor:
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            if key_id:
                 cursor.execute(
                     """SELECT 1 FROM market_integrity_definitions WHERE key_id=%s
                        UNION SELECT 1 FROM prediction_commitments WHERE key_id=%s
@@ -4553,7 +4568,7 @@ def integrity_public_key(request: Request, key_id: Optional[str] = None):
                 )
                 if not cursor.fetchone():
                     raise HTTPException(status_code=404, detail="Chave de integridade não encontrada.")
-    return public_key_payload(key_id)
+            return public_key_payload(key_id, cursor=cursor)
 
 
 @app.get("/markets/{slug}/integrity", response_model=MarketIntegrityResponse)
@@ -4575,37 +4590,132 @@ def verify_market_integrity(slug: str, request: Request):
     errors = []
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            cursor.execute("SELECT id,status FROM gotrendlabs_markets WHERE slug=%s", (slug,))
+            cursor.execute("SELECT * FROM gotrendlabs_markets WHERE slug=%s", (slug,))
             market = cursor.fetchone()
             if not market:
                 raise HTTPException(status_code=404, detail="Mercado não encontrado.")
             cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market["id"],))
             definition = cursor.fetchone()
-            definition_valid = None
+            definition_valid = definition_matches_current = None
             if definition:
-                definition_valid = hmac.compare_digest(sha256_hex(bytes(definition["canonical_payload"])), definition["payload_hash"]) and verify_signed_hash(definition["payload_hash"], bytes(definition["signature"]), public_key_der_for(definition["key_id"]))
+                definition_valid = (
+                    hmac.compare_digest(sha256_hex(bytes(definition["canonical_payload"])), definition["payload_hash"])
+                    and hmac.compare_digest(sha256_hex(canonical_json(_json_object(definition["payload_json"]))), definition["payload_hash"])
+                    and verify_signed_hash(definition["payload_hash"], bytes(definition["signature"]), public_key_der_for(definition["key_id"], cursor=cursor))
+                )
+                current_definition = market_definition_payload(
+                    cursor,
+                    market["id"],
+                    published_at=market["published_at"],
+                    definition_version=definition["definition_version"],
+                )
+                definition_matches_current = hmac.compare_digest(
+                    sha256_hex(canonical_json(current_definition)), definition["payload_hash"]
+                )
                 if not definition_valid: errors.append("definition_invalid")
+                if not definition_matches_current: errors.append("definition_changed")
             cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
             seal = cursor.fetchone()
-            seal_valid = merkle_valid = None
+            seal_valid = merkle_valid = result_matches_current = prediction_commitments_valid = None
             if seal:
-                seal_valid = hmac.compare_digest(sha256_hex(bytes(seal["canonical_payload"])), seal["seal_hash"]) and verify_signed_hash(seal["seal_hash"], bytes(seal["signature"]), public_key_der_for(seal["key_id"]))
-                cursor.execute("SELECT leaf_hash,proof FROM market_merkle_leaves WHERE seal_id=%s ORDER BY leaf_index", (seal["id"],))
+                seal_payload = _json_object(seal["payload_json"])
+                signed_result = seal_payload.get("result") or {}
+                signed_result_hash = sha256_hex(canonical_json(signed_result))
+                seal_valid = (
+                    hmac.compare_digest(sha256_hex(bytes(seal["canonical_payload"])), seal["seal_hash"])
+                    and hmac.compare_digest(sha256_hex(canonical_json(seal_payload)), seal["seal_hash"])
+                    and verify_signed_hash(seal["seal_hash"], bytes(seal["signature"]), public_key_der_for(seal["key_id"], cursor=cursor))
+                    and hmac.compare_digest(seal_payload.get("result_hash", ""), seal["result_hash"])
+                    and hmac.compare_digest(signed_result_hash, seal["result_hash"])
+                    and hmac.compare_digest(seal_payload.get("predictions_root", ""), seal["predictions_root"])
+                    and bool(definition)
+                    and hmac.compare_digest(seal_payload.get("definition_hash", ""), definition["payload_hash"])
+                )
+                current_result_hash = sha256_hex(canonical_json(market_result_payload(market)))
+                result_matches_current = hmac.compare_digest(current_result_hash, seal["result_hash"])
+                cursor.execute("""SELECT ml.commitment_id,ml.leaf_hash,ml.proof,pc.canonical_payload,
+                                  pc.payload_json,pc.commitment_hash,pc.signature,pc.key_id
+                                  FROM market_merkle_leaves ml
+                                  LEFT JOIN prediction_commitments pc ON pc.id=ml.commitment_id
+                                  WHERE ml.seal_id=%s ORDER BY ml.leaf_index""", (seal["id"],))
                 leaves = cursor.fetchall()
+                cursor.execute("SELECT count(*) count FROM prediction_commitments WHERE market_id=%s", (market["id"],))
+                commitment_count = cursor.fetchone()["count"]
+                prediction_commitments_valid = len(leaves) == commitment_count and all(
+                    row["canonical_payload"] is not None
+                    and hmac.compare_digest(sha256_hex(bytes(row["canonical_payload"])), row["commitment_hash"])
+                    and hmac.compare_digest(sha256_hex(canonical_json(_json_object(row["payload_json"]))), row["commitment_hash"])
+                    and hmac.compare_digest(row["leaf_hash"], row["commitment_hash"])
+                    and verify_signed_hash(row["commitment_hash"], bytes(row["signature"]), public_key_der_for(row["key_id"], cursor=cursor))
+                    for row in leaves
+                )
                 calculated_root, _ = build_merkle([row["leaf_hash"] for row in leaves])
                 merkle_valid = hmac.compare_digest(calculated_root, seal["predictions_root"]) and all(verify_merkle_proof(row["leaf_hash"], _json_object(row["proof"]), seal["predictions_root"]) for row in leaves)
                 if not seal_valid: errors.append("seal_invalid")
+                if not result_matches_current: errors.append("result_changed")
+                if not prediction_commitments_valid: errors.append("prediction_commitment_invalid")
                 if not merkle_valid: errors.append("merkle_invalid")
+            elif market["status"] == "resolved":
+                cursor.execute(
+                    """SELECT payload_hash FROM integrity_ledger_events
+                       WHERE market_id=%s AND event_type='market_resolved'
+                       ORDER BY sequence DESC LIMIT 1""",
+                    (market["id"],),
+                )
+                resolution_event = cursor.fetchone()
+                current_resolution = {
+                    "winning_option_id": market["winning_option_id"],
+                    "resolved_at": market["resolved_at"],
+                    "seal_due_at": market["seal_due_at"],
+                    "resolution_note": market["resolution_note"] or "",
+                }
+                result_matches_current = bool(resolution_event) and hmac.compare_digest(
+                    sha256_hex(canonical_json(current_resolution)), resolution_event["payload_hash"]
+                )
+                if not result_matches_current: errors.append("result_changed")
             cursor.execute("SELECT * FROM integrity_ledger_events ORDER BY sequence")
-            previous_hash, ledger_valid = "", True
+            previous_hash, ledger_valid, market_events_valid = "", True, True
             for event in cursor.fetchall():
                 expected_hash = sha256_hex(bytes(event["canonical_payload"]))
-                valid_event = hmac.compare_digest(event["previous_event_hash"], previous_hash) and hmac.compare_digest(event["event_hash"], expected_hash) and verify_signed_hash(event["event_hash"], bytes(event["signature"]), public_key_der_for(event["key_id"]))
+                event_payload = _json_object(event["payload_json"])
+                valid_event = (
+                    hmac.compare_digest(event["previous_event_hash"], previous_hash)
+                    and hmac.compare_digest(event["event_hash"], expected_hash)
+                    and hmac.compare_digest(sha256_hex(canonical_json(event_payload)), event["event_hash"])
+                    and event_payload.get("sequence") == event["sequence"]
+                    and event_payload.get("event_type") == event["event_type"]
+                    and event_payload.get("payload_hash") == event["payload_hash"]
+                    and event_payload.get("payload_reference") == event["payload_reference"]
+                    and event_payload.get("previous_event_hash") == event["previous_event_hash"]
+                    and verify_signed_hash(event["event_hash"], bytes(event["signature"]), public_key_der_for(event["key_id"], cursor=cursor))
+                )
                 ledger_valid = ledger_valid and valid_event
+                if event["market_id"] == market["id"]:
+                    market_events_valid = market_events_valid and valid_event
                 previous_hash = event["event_hash"]
             if not ledger_valid: errors.append("ledger_chain_invalid")
-            valid = bool(definition_valid) and ledger_valid and (market["status"] != "sealed" or bool(seal_valid and merkle_valid))
-            return {"valid": valid, "definition_valid": definition_valid, "seal_valid": seal_valid, "merkle_root_valid": merkle_valid, "ledger_chain_valid": ledger_valid, "errors": errors}
+            if not market_events_valid: errors.append("market_events_invalid")
+            valid = (
+                bool(definition_valid and definition_matches_current)
+                and market_events_valid
+                and (market["status"] != "resolved" or bool(result_matches_current))
+                and (
+                    market["status"] != "sealed"
+                    or bool(seal_valid and result_matches_current and prediction_commitments_valid and merkle_valid)
+                )
+            )
+            return {
+                "valid": valid,
+                "definition_valid": definition_valid,
+                "definition_matches_current": definition_matches_current,
+                "seal_valid": seal_valid,
+                "result_matches_current": result_matches_current,
+                "prediction_commitments_valid": prediction_commitments_valid,
+                "merkle_root_valid": merkle_valid,
+                "market_events_valid": market_events_valid,
+                "ledger_chain_valid": ledger_valid,
+                "errors": errors,
+            }
 
 
 @app.get("/markets/{slug}/predictions/{prediction_id}/receipt", response_model=PredictionIntegrityReceiptResponse)

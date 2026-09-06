@@ -755,8 +755,12 @@ class MarketIntegrityResponse(BaseModel):
 class MarketIntegrityVerificationResponse(BaseModel):
     valid: bool
     definition_valid: Optional[bool] = None
+    definition_matches_current: Optional[bool] = None
     seal_valid: Optional[bool] = None
+    result_matches_current: Optional[bool] = None
+    prediction_commitments_valid: Optional[bool] = None
     merkle_root_valid: Optional[bool] = None
+    market_events_valid: bool = False
     ledger_chain_valid: bool = False
     errors: List[str] = Field(default_factory=list)
 

@@ -1,5 +1,11 @@
 # Change Log de Specs
 
+## 2026-09-06
+
+- refinada `FEAT-INTEGRITY-001` para separar retry operacional (`seal_retry_pending`) de diferenca criptografica (`verification_failed`) e representar cancelamento preservado sem etapas eternamente pendentes;
+- a verificacao passa a comparar definicao e resultado operacionais com os snapshots assinados e a validar os compromissos incluidos no Merkle;
+- web e mobile passam a usar verde somente para verificacao aprovada, azul para processo ativo, amarelo para prazo/retry, cinza para nao aplicavel/legado e vermelho para inconsistencia comprovada.
+
 ## 2026-09-05
 
 - criada `FEAT-INTEGRITY-001` e o contrato `integrity-ledger.md` para canonicalização, assinaturas, Merkle, visibilidade e migração de legado;

@@ -92,6 +92,37 @@ void main() {
     },
   );
 
+  testWidgets('market cards do not hide retry or cryptographic failure', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              MarketCompactCard(
+                market: _market(integrityStatus: 'seal_retry_pending'),
+                api: ApiClient(tokenStore: MemoryTokenStore()),
+              ),
+              MarketCompactCard(
+                market: _market(integrityStatus: 'verification_failed'),
+                api: ApiClient(tokenStore: MemoryTokenStore()),
+              ),
+              MarketCompactCard(
+                market: _market(integrityStatus: 'canceled_preserved'),
+                api: ApiClient(tokenStore: MemoryTokenStore()),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Nova tentativa pendente'), findsOneWidget);
+    expect(find.text('Diferença detectada'), findsOneWidget);
+    expect(find.text('Registros preservados'), findsOneWidget);
+  });
+
   testWidgets('MarketCompactCard shows compact time remaining', (tester) async {
     final market = _market();
 

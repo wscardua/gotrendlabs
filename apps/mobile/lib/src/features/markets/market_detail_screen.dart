@@ -288,12 +288,19 @@ class _OverviewTab extends ConsumerWidget {
                 GtlSectionTitle(
                   title: market.integrity.isSealed
                       ? 'Histórico finalizado e verificável'
+                      : market.integrity.isSealRetryPending
+                      ? 'Finalização aguardando nova tentativa'
+                      : market.integrity.isVerificationFailed
+                      ? 'Diferença de integridade detectada'
+                      : market.integrity.isCanceledPreserved
+                      ? 'Mercado cancelado; registros preservados'
                       : market.integrity.isPendingSeal
                       ? 'Resultado em processo de finalização'
                       : 'Definição registrada',
-                  subtitle:
-                      market.integrity.isPendingSeal &&
-                          market.sealDueAt.isNotEmpty
+                  subtitle: market.integrity.isSealRetryPending
+                      ? 'Os registros existentes foram preservados para uma nova tentativa segura.'
+                      : market.integrity.isPendingSeal &&
+                            market.sealDueAt.isNotEmpty
                       ? 'Previsão de finalização: ${market.sealDueAt}'
                       : 'Registro de Integridade Verificável',
                 ),
@@ -397,18 +404,27 @@ class _IntegritySheet extends StatelessWidget {
             }
             final value = snapshot.data!;
             final verification = value.verification;
-            Widget check(String label, String key, {bool pending = false}) =>
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: Icon(
-                    pending
-                        ? Icons.schedule
-                        : verification[key] == true
-                        ? Icons.check_circle_outline
-                        : Icons.error_outline,
-                  ),
-                  title: Text(label),
-                );
+            final definitionOk =
+                verification['definition_valid'] == true &&
+                verification['definition_matches_current'] != false;
+            final predictionsOk =
+                verification['merkle_root_valid'] == true &&
+                verification['prediction_commitments_valid'] != false;
+            final resultOk =
+                verification['seal_valid'] == true &&
+                verification['result_matches_current'] != false;
+            final finalOk = verification['valid'] == true;
+            Widget check(
+              String label, {
+              required String state,
+              required IconData icon,
+              required Color color,
+            }) => ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(icon, color: color),
+              title: Text(label),
+              trailing: Text(state, style: TextStyle(color: color)),
+            );
             return SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -418,18 +434,104 @@ class _IntegritySheet extends StatelessWidget {
                     subtitle: 'Registro de Integridade Verificável',
                   ),
                   const SizedBox(height: 12),
-                  check('Definição original confirmada', 'definition_valid'),
+                  const Text(
+                    'Comparamos impressões digitais (hashes), assinaturas criptográficas e a sequência conectada dos registros para detectar alterações.',
+                  ),
+                  const SizedBox(height: 8),
                   check(
-                    'Seal final válido',
-                    'seal_valid',
-                    pending: !market.integrity.isSealed,
+                    'Definição publicada',
+                    state: definitionOk ? 'Verificada' : 'Diferença detectada',
+                    icon: definitionOk
+                        ? Icons.check_circle_outline
+                        : Icons.error_outline,
+                    color: definitionOk
+                        ? GtlColors.accentGreen
+                        : GtlColors.accentRed,
                   ),
                   check(
-                    'Histórico de previsões preservado',
-                    'merkle_root_valid',
-                    pending: !market.integrity.isSealed,
+                    'Previsões',
+                    state: market.integrity.isSealed
+                        ? (predictionsOk
+                              ? 'Verificadas'
+                              : 'Diferença detectada')
+                        : market.isOpen
+                        ? 'Comprovantes em registro'
+                        : market.status == 'canceled'
+                        ? 'Registros preservados'
+                        : 'Recebimento encerrado',
+                    icon: market.integrity.isSealed
+                        ? (predictionsOk
+                              ? Icons.check_circle_outline
+                              : Icons.error_outline)
+                        : market.isOpen
+                        ? Icons.sync_outlined
+                        : Icons.inventory_2_outlined,
+                    color: market.integrity.isSealed
+                        ? (predictionsOk
+                              ? GtlColors.accentGreen
+                              : GtlColors.accentRed)
+                        : market.isOpen
+                        ? GtlColors.accentBlue
+                        : GtlColors.muted,
                   ),
-                  check('Cadeia do ledger válida', 'ledger_chain_valid'),
+                  check(
+                    'Resultado',
+                    state: market.integrity.isSealed
+                        ? (resultOk ? 'Verificado' : 'Diferença detectada')
+                        : market.status == 'canceled'
+                        ? 'Não se aplica'
+                        : market.isResolved
+                        ? 'Em revisão operacional'
+                        : 'Aguardando',
+                    icon: market.integrity.isSealed
+                        ? (resultOk
+                              ? Icons.check_circle_outline
+                              : Icons.error_outline)
+                        : market.isResolved
+                        ? Icons.schedule
+                        : Icons.horizontal_rule,
+                    color: market.integrity.isSealed
+                        ? (resultOk
+                              ? GtlColors.accentGreen
+                              : GtlColors.accentRed)
+                        : market.isResolved
+                        ? GtlColors.accentYellow
+                        : GtlColors.muted,
+                  ),
+                  check(
+                    'Histórico final',
+                    state: market.integrity.isSealed
+                        ? (finalOk
+                              ? 'Finalizado e verificado'
+                              : 'Diferença detectada')
+                        : market.integrity.isSealRetryPending
+                        ? 'Nova tentativa pendente'
+                        : market.integrity.isPendingSeal
+                        ? 'Finalização prevista'
+                        : 'Não se aplica',
+                    icon: market.integrity.isSealed
+                        ? (finalOk
+                              ? Icons.verified_outlined
+                              : Icons.error_outline)
+                        : market.integrity.isPendingSeal ||
+                              market.integrity.isSealRetryPending
+                        ? Icons.schedule
+                        : Icons.horizontal_rule,
+                    color: market.integrity.isSealed
+                        ? (finalOk
+                              ? GtlColors.accentGreen
+                              : GtlColors.accentRed)
+                        : market.integrity.isPendingSeal ||
+                              market.integrity.isSealRetryPending
+                        ? GtlColors.accentYellow
+                        : GtlColors.muted,
+                  ),
+                  if (verification['valid'] == true &&
+                      verification['ledger_chain_valid'] == false)
+                    const Text(
+                      'Este mercado foi conferido, mas a cadeia global contém uma chave histórica indisponível e precisa de revisão operacional.',
+                      style: TextStyle(color: GtlColors.accentYellow),
+                    ),
                   const SizedBox(height: 8),
                   Text('Protocolo: ${market.integrity.protocolVersion}'),
                   Text('Chave: ${_shortHash(market.integrity.keyFingerprint)}'),

@@ -2796,6 +2796,17 @@
       },
       "MarketIntegrityVerificationResponse": {
         "properties": {
+          "definition_matches_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition Matches Current"
+          },
           "definition_valid": {
             "anyOf": [
               {
@@ -2819,6 +2830,11 @@
             "title": "Ledger Chain Valid",
             "type": "boolean"
           },
+          "market_events_valid": {
+            "default": false,
+            "title": "Market Events Valid",
+            "type": "boolean"
+          },
           "merkle_root_valid": {
             "anyOf": [
               {
@@ -2829,6 +2845,28 @@
               }
             ],
             "title": "Merkle Root Valid"
+          },
+          "prediction_commitments_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Commitments Valid"
+          },
+          "result_matches_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Matches Current"
           },
           "seal_valid": {
             "anyOf": [

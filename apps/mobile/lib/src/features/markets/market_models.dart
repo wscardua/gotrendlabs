@@ -87,6 +87,9 @@ class MarketIntegritySummary {
 
   bool get isSealed => status == 'sealed';
   bool get isPendingSeal => status == 'resolved_pending_seal';
+  bool get isSealRetryPending => status == 'seal_retry_pending';
+  bool get isVerificationFailed => status == 'verification_failed';
+  bool get isCanceledPreserved => status == 'canceled_preserved';
 
   factory MarketIntegritySummary.fromJson(Map<String, dynamic> json) {
     return MarketIntegritySummary(

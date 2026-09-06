@@ -7229,7 +7229,7 @@ class WebSmokeTests(TransactionTestCase):
             (
                 {"status": "resolved_pending_seal", "protocol_version": "gtl-integrity/v1", "definition": {}, "ledger_events": []},
                 {"valid": True, "definition_valid": True},
-                "Os registros estão consistentes até esta etapa",
+                "Resultado registrado; finalização pendente",
                 "O resultado ainda pode passar pela revisão operacional prevista antes da finalização.",
             ),
             (
@@ -7253,6 +7253,45 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, headline)
             self.assertContains(response, detail)
             self.assertContains(response, "O que esta verificação não faz")
+            self.assertNotContains(response, "Proteção ativa")
+
+    def test_integrity_modal_distinguishes_active_retry_and_canceled_states(self):
+        base_market = get_domain_client().market("openai-gpt6-2026")
+        scenarios = (
+            (
+                {**base_market, "status": "open"},
+                {"status": "registered", "definition": {"hash": "a"}, "ledger_events": []},
+                "Comprovantes em registro",
+            ),
+            (
+                {**base_market, "status": "resolved"},
+                {"status": "seal_retry_pending", "definition": {"hash": "a"}, "ledger_events": []},
+                "Nova tentativa pendente",
+            ),
+            (
+                {**base_market, "status": "canceled"},
+                {"status": "canceled_preserved", "definition": {"hash": "a"}, "ledger_events": []},
+                "Não se aplica",
+            ),
+        )
+        verification = {
+            "valid": True,
+            "definition_valid": True,
+            "definition_matches_current": True,
+            "ledger_chain_valid": True,
+        }
+
+        for market, proof, expected in scenarios:
+            with (
+                self.subTest(status=proof["status"]),
+                patch("apps.web.django.markets.views.get_market", return_value=market),
+                patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
+                patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
+            ):
+                response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
+
+            self.assertContains(response, expected)
+            self.assertNotContains(response, "Proteção ativa")
 
     def test_integrity_package_is_downloaded_through_django_proxy(self):
         package = {"market_slug": "openai-gpt6-2026", "protocol_version": "gtl-integrity/v1"}

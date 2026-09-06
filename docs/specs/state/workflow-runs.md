@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MARKET-INTEGRITY-SEMANTICS-005
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: eliminar ambiguidades entre processo ativo, retry operacional, etapa nao aplicavel e diferenca criptografica, reforcando a verificacao contra o estado operacional atual.
+- Etapa atual: implementacao, migracao, contratos, consumidores e regressao concluidos; ambientes FastAPI/Django reiniciados e demos abertas, pendente e selada conferidas visualmente.
+- Artefatos afetados: feature/contrato de integridade, FastAPI, OpenAPI, Django publico/Admin Ops, Flutter e testes.
+- Impacto arquitetural: mantem FastAPI como autoridade; amplia verificacao v1 com campos aditivos e adiciona registro append-only apenas de chaves publicas historicas.
+- Migration: `markets.0029_integrity_signing_keys` aplicada localmente.
+- Evidencias: `manage.py test --keepdb` com 224 testes; `flutter test` com 96 testes; `flutter analyze`; `makemigrations --check --dry-run`; OpenAPI export/check; `git diff --check`; verificacao visual local dos estados `registered`, `resolved_pending_seal` e `sealed` em modal.
+- Encerrado em: 2026-09-06
+- Reversao logica: clientes antigos ignoram campos aditivos; restaurar os mapeamentos anteriores nao altera provas persistidas.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-MARKET-INTEGRITY-COPY-004
 
 - Tipo: `change-feature`

@@ -1,4 +1,4 @@
-<article class="integrity-report{% if not integrity_error and not verification.valid %} has-verification-failure{% endif %}" data-integrity-report>
+<article class="integrity-report{% if integrity_has_difference %} has-verification-failure{% endif %}" data-integrity-report>
   {% if integrity_error %}
     <header class="integrity-report-intro has-error">
       <span class="integrity-report-mark" aria-hidden="true">!</span>
@@ -13,19 +13,23 @@
       <p>A conferência está temporariamente indisponível. Feche esta janela e tente novamente em alguns instantes.</p>
     </div>
   {% else %}
-    <header class="integrity-report-intro{% if proof.status == 'sealed' and verification.valid %} is-sealed{% elif not verification.valid %} has-error{% endif %}">
+    <header class="integrity-report-intro{% if proof.status == 'sealed' and verification.valid %} is-sealed{% elif integrity_has_difference %} has-error{% endif %}">
       <span class="integrity-report-mark" aria-hidden="true">
-        {% if verification.valid %}
+        {% if integrity_verification_available and not integrity_has_difference %}
           <svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path><path d="m8.4 12 2.2 2.3 5-5.2"></path></svg>
-        {% else %}!{% endif %}
+          {% elif integrity_has_difference %}!{% else %}—{% endif %}
       </span>
       <div>
         <span class="eyebrow">Verificação de integridade</span>
         <h2 id="integrity-dialog-title">
-          {% if not verification.valid %}Encontramos uma diferença nos registros
+          {% if integrity_has_difference %}Encontramos uma diferença nos registros
           {% elif proof.status == "sealed" %}Nenhuma alteração indevida foi detectada
-          {% elif proof.status == "resolved_pending_seal" %}Os registros estão consistentes até esta etapa
-          {% else %}A definição publicada continua a mesma{% endif %}
+          {% elif proof.status == "seal_retry_pending" %}A finalização aguarda uma nova tentativa
+          {% elif proof.status == "resolved_pending_seal" %}Resultado registrado; finalização pendente
+          {% elif proof.status == "canceled_preserved" %}Mercado cancelado; registros preservados
+          {% elif proof.status == "legacy_unregistered" %}Este mercado não possui prova histórica
+          {% elif proof.status == "not_published" %}A prova começa quando o mercado é publicado
+          {% else %}A definição publicada foi verificada{% endif %}
         </h2>
         <p>{{ market.title }}</p>
         <div class="integrity-verification-meta" aria-label="Informações da verificação">
@@ -34,6 +38,13 @@
         </div>
       </div>
     </header>
+
+    {% if global_ledger_warning %}
+      <div class="integrity-report-callout is-warning" role="status">
+        <strong>Este mercado foi conferido, mas a cadeia global precisa de atenção.</strong>
+        <p>Os registros deste mercado correspondem às provas assinadas. A conferência completa do histórico global encontrou uma chave antiga indisponível e deve ser revisada pela operação.</p>
+      </div>
+    {% endif %}
 
     <section class="integrity-purpose" aria-labelledby="integrity-purpose-title">
       <span class="integrity-section-number" aria-hidden="true">1</span>
@@ -54,37 +65,37 @@
         <div><h3 id="integrity-timeline-title">Como este mercado foi protegido</h3><p>Cada etapa deixa um registro que pode ser conferido depois.</p></div>
       </div>
       <ol class="integrity-timeline-list">
-        <li class="integrity-timeline-item{% if verification.definition_valid %} is-valid{% else %} is-failed{% endif %}">
-          <span class="integrity-timeline-marker" aria-hidden="true">{% if verification.definition_valid %}✓{% else %}!{% endif %}</span>
+        <li class="integrity-timeline-item{% if definition_confirmed %} is-valid{% elif integrity_verification_available %} is-failed{% else %} is-waiting{% endif %}">
+          <span class="integrity-timeline-marker" aria-hidden="true">{% if definition_confirmed %}✓{% elif integrity_verification_available %}!{% else %}1{% endif %}</span>
           <div>
             <strong>Quando o mercado abriu</strong>
             <p>A pergunta, as opções, o prazo e o critério de resolução foram registrados.</p>
           </div>
-          <small>{% if verification.definition_valid %}Confirmado{% else %}Diferença detectada{% endif %}</small>
+          <small>{% if definition_confirmed %}Verificado{% elif integrity_verification_available %}Diferença detectada{% else %}Sem prova histórica{% endif %}</small>
         </li>
-        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if verification.merkle_root_valid %} is-valid{% else %} is-failed{% endif %}{% else %} is-current{% endif %}">
-          <span class="integrity-timeline-marker" aria-hidden="true">{% if proof.status == "sealed" and verification.merkle_root_valid %}✓{% else %}2{% endif %}</span>
+        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if predictions_confirmed %} is-valid{% else %} is-failed{% endif %}{% elif market.status == 'open' %} is-active{% else %} is-waiting{% endif %}">
+          <span class="integrity-timeline-marker" aria-hidden="true">{% if predictions_confirmed %}✓{% else %}2{% endif %}</span>
           <div>
             <strong>Enquanto recebeu previsões</strong>
             <p>Cada ação recebeu um comprovante próprio, sem expor publicamente a identidade de quem participou.</p>
           </div>
-          <small>{% if proof.status == "sealed" %}{% if verification.merkle_root_valid %}Confirmado{% else %}Diferença detectada{% endif %}{% else %}Proteção ativa{% endif %}</small>
+          <small>{% if proof.status == "sealed" %}{% if predictions_confirmed %}Verificado{% else %}Diferença detectada{% endif %}{% elif market.status == "open" %}Comprovantes em registro{% elif market.status == "canceled" %}Registros preservados{% elif market.status == "locked" or market.status == "resolved" %}Recebimento encerrado{% else %}Aguardando{% endif %}</small>
         </li>
-        <li class="integrity-timeline-item{% if proof.status == 'sealed' or proof.status == 'resolved_pending_seal' %} is-valid{% else %} is-waiting{% endif %}">
-          <span class="integrity-timeline-marker" aria-hidden="true">{% if proof.status == "sealed" or proof.status == "resolved_pending_seal" %}✓{% else %}3{% endif %}</span>
+        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if result_confirmed %} is-valid{% else %} is-failed{% endif %}{% elif proof.status == 'resolved_pending_seal' or proof.status == 'seal_retry_pending' %} is-current{% else %} is-waiting{% endif %}">
+          <span class="integrity-timeline-marker" aria-hidden="true">{% if result_confirmed %}✓{% else %}3{% endif %}</span>
           <div>
             <strong>Quando o resultado foi publicado</strong>
-            <p>{% if proof.status == "sealed" or proof.status == "resolved_pending_seal" %}O resultado e a evidência utilizada foram registrados no histórico.{% else %}Esta etapa acontecerá depois do fechamento e da apuração do mercado.{% endif %}</p>
+            <p>{% if proof.status == "sealed" or proof.status == "resolved_pending_seal" or proof.status == "seal_retry_pending" %}O resultado e a evidência utilizada foram registrados no histórico.{% elif market.status == "canceled" %}O mercado foi cancelado sem publicação de resultado final.{% else %}Esta etapa acontecerá depois do fechamento e da apuração do mercado.{% endif %}</p>
           </div>
-          <small>{% if proof.status == "sealed" or proof.status == "resolved_pending_seal" %}Registrado{% else %}Aguardando{% endif %}</small>
+          <small>{% if proof.status == "sealed" %}{% if result_confirmed %}Verificado{% else %}Diferença detectada{% endif %}{% elif proof.status == "resolved_pending_seal" or proof.status == "seal_retry_pending" %}Em revisão operacional{% elif market.status == "canceled" %}Não se aplica{% else %}Aguardando{% endif %}</small>
         </li>
-        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if verification.seal_valid and verification.ledger_chain_valid %} is-valid{% else %} is-failed{% endif %}{% elif proof.status == 'resolved_pending_seal' %} is-current{% else %} is-waiting{% endif %}">
-          <span class="integrity-timeline-marker" aria-hidden="true">{% if proof.status == "sealed" and verification.seal_valid and verification.ledger_chain_valid %}✓{% else %}4{% endif %}</span>
+        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if final_history_confirmed %} is-valid{% else %} is-failed{% endif %}{% elif proof.status == 'resolved_pending_seal' or proof.status == 'seal_retry_pending' %} is-current{% else %} is-waiting{% endif %}">
+          <span class="integrity-timeline-marker" aria-hidden="true">{% if final_history_confirmed %}✓{% else %}4{% endif %}</span>
           <div>
             <strong>Depois do prazo operacional</strong>
-            <p>{% if proof.status == "sealed" %}O resultado, as previsões e os registros anteriores foram reunidos em um histórico final assinado.{% elif proof.status == "resolved_pending_seal" %}O resultado ainda pode passar pela revisão operacional prevista antes da finalização.{% else %}O histórico será finalizado depois da publicação do resultado e do prazo operacional.{% endif %}</p>
+            <p>{% if proof.status == "sealed" %}O resultado, as previsões e os registros anteriores foram reunidos em um histórico final assinado.{% elif proof.status == "seal_retry_pending" %}Uma falha operacional impediu a finalização; os registros existentes foram preservados e haverá nova tentativa segura.{% elif proof.status == "resolved_pending_seal" %}O resultado ainda pode passar pela revisão operacional prevista antes da finalização.{% elif market.status == "canceled" %}Mercados cancelados preservam os registros emitidos, mas não recebem Seal final de resultado.{% else %}O histórico será finalizado depois da publicação do resultado e do prazo operacional.{% endif %}</p>
           </div>
-          <small>{% if proof.status == "sealed" %}{% if verification.seal_valid and verification.ledger_chain_valid %}Finalizado{% else %}Diferença detectada{% endif %}{% elif proof.status == "resolved_pending_seal" %}Em andamento{% else %}Aguardando{% endif %}</small>
+          <small>{% if proof.status == "sealed" %}{% if final_history_confirmed %}Finalizado e verificado{% else %}Diferença detectada{% endif %}{% elif proof.status == "seal_retry_pending" %}Nova tentativa pendente{% elif proof.status == "resolved_pending_seal" %}Finalização prevista{% elif market.status == "canceled" %}Não se aplica{% else %}Aguardando{% endif %}</small>
         </li>
       </ol>
     </section>

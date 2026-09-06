@@ -13,7 +13,7 @@ from apps.api.backend_api import integrity_service
 from apps.api.backend_api.daemon_services import seal_due_markets
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.main import _market_lifecycle_engine, app
-from apps.web.django.markets.models import AdminEvent, IntegrityLedgerEvent, Market, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
+from apps.web.django.markets.models import AdminEvent, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
 from tests.test_web_smoke import _seed_test_badges, _seed_test_email_templates, _seed_test_markets
 
 
@@ -91,6 +91,8 @@ class IntegrityProtocolTests(SimpleTestCase):
         migration = (root / "apps/web/django/markets/migrations/0027_market_integrity_ledger.py").read_text()
         self.assertIn("BEFORE UPDATE OR DELETE", migration)
         self.assertIn("REVOKE UPDATE, DELETE", migration)
+        key_migration = (root / "apps/web/django/markets/migrations/0029_integrity_signing_keys.py").read_text()
+        self.assertIn("integrity_signing_keys_append_only", key_migration)
         for relative in (
             "apps/web/django/core/templates/core/security.html",
             "apps/mobile/lib/src/features/info/trust_screen.dart",
@@ -160,6 +162,18 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         market.refresh_from_db()
         return market, prediction.json()["prediction_id"], due
 
+    def test_registered_public_keys_survive_local_signer_rotation(self):
+        first = self.client.get("/markets/openai-gpt6-2026/integrity/verify")
+        self.assertTrue(first.json()["valid"], first.json())
+
+        integrity_service._signer = integrity_service._EphemeralSigner()
+        after_restart = self.client.get("/markets/openai-gpt6-2026/integrity/verify")
+        self.assertTrue(after_restart.json()["valid"], after_restart.json())
+        self.assertTrue(after_restart.json()["ledger_chain_valid"], after_restart.json())
+        signing_key = IntegritySigningKey.objects.first()
+        with self.assertRaises(DatabaseError), transaction.atomic():
+            IntegritySigningKey.objects.filter(pk=signing_key.pk).update(key_fingerprint="0" * 64)
+
     def test_due_sealing_is_concurrent_safe_idempotent_and_publicly_verifiable(self):
         market, prediction_id, due = self._resolve_due_market()
         receipt = self.client.get(
@@ -186,6 +200,25 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         verification = self.client.get(f"/markets/{market.slug}/integrity/verify")
         self.assertEqual(verification.status_code, 200)
         self.assertTrue(verification.json()["valid"], verification.json())
+        self.assertTrue(verification.json()["definition_matches_current"])
+        self.assertTrue(verification.json()["result_matches_current"])
+        self.assertTrue(verification.json()["prediction_commitments_valid"])
+
+        original_title = market.title
+        Market.objects.filter(pk=market.pk).update(title="Título adulterado fora do domínio")
+        changed_definition = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(changed_definition["valid"])
+        self.assertFalse(changed_definition["definition_matches_current"])
+        self.assertIn("definition_changed", changed_definition["errors"])
+        Market.objects.filter(pk=market.pk).update(title=original_title)
+
+        original_note = market.resolution_note
+        Market.objects.filter(pk=market.pk).update(resolution_note="Resultado adulterado fora do domínio")
+        changed_result = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(changed_result["valid"])
+        self.assertFalse(changed_result["result_matches_current"])
+        self.assertIn("result_changed", changed_result["errors"])
+        Market.objects.filter(pk=market.pk).update(resolution_note=original_note)
 
         repeated = seal_due_markets(now=due + timedelta(seconds=3))
         self.assertEqual(repeated, {"sealed": [], "failed": []})
@@ -208,6 +241,8 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertEqual(market.status, "resolved")
         self.assertFalse(MarketSeal.objects.filter(market=market).exists())
         self.assertTrue(AdminEvent.objects.filter(action="integrity.seal_failed", entity_identifier=market.slug).exists())
+        operational_status = self.client.get(f"/markets/{market.slug}/integrity").json()
+        self.assertEqual(operational_status["status"], "seal_retry_pending")
 
         integrity_service._signer = healthy_signer
         retried = seal_due_markets(now=due + timedelta(seconds=3))

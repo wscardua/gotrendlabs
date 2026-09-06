@@ -10742,6 +10742,16 @@ body[data-theme="dark"] .system-log-code {
   color: #7a5300;
 }
 
+.market-integrity-seal.is-failed {
+  background: #fee4df;
+  color: #8c2f27;
+}
+
+.market-integrity-seal.is-neutral {
+  background: #ece9e1;
+  color: #596163;
+}
+
 .market-integrity-seal svg {
   width: 19px;
   height: 19px;
@@ -11159,6 +11169,12 @@ body[data-theme="dark"] .system-log-code {
   color: #7a5300;
 }
 
+.integrity-timeline-item.is-active .integrity-timeline-marker {
+  border-color: rgba(45, 94, 136, 0.2);
+  background: #e1eef8;
+  color: #2d5e88;
+}
+
 .integrity-timeline-item.is-failed .integrity-timeline-marker {
   border-color: rgba(183, 73, 61, 0.2);
   background: #fee4df;
@@ -11197,6 +11213,11 @@ body[data-theme="dark"] .system-log-code {
 .integrity-timeline-item.is-current > small {
   background: #fff0c2;
   color: #7a5300;
+}
+
+.integrity-timeline-item.is-active > small {
+  background: #e1eef8;
+  color: #2d5e88;
 }
 
 .integrity-timeline-item.is-failed > small {
@@ -11446,6 +11467,19 @@ body[data-theme="dark"] .system-log-code {
   margin: 4px 0 0;
 }
 
+.integrity-report-callout.is-warning {
+  margin-block: 18px;
+  border-color: rgba(216, 148, 34, 0.24);
+  background: #fff0c2;
+  color: #614400;
+}
+
+body[data-theme="dark"] .integrity-report-callout.is-warning {
+  border-color: rgba(245, 217, 141, 0.2);
+  background: #4a3d20;
+  color: #f5d98d;
+}
+
 .integrity-fallback-page {
   max-width: 800px;
 }
@@ -11476,6 +11510,16 @@ body[data-theme="dark"] .market-integrity-seal.is-sealed {
 body[data-theme="dark"] .market-integrity-seal.is-pending {
   background: #5a4922;
   color: #f5d98d;
+}
+
+body[data-theme="dark"] .market-integrity-seal.is-failed {
+  background: #542a27;
+  color: #ffc0b8;
+}
+
+body[data-theme="dark"] .market-integrity-seal.is-neutral {
+  background: #303633;
+  color: #c7d4cc;
 }
 
 body[data-theme="dark"] .integrity-report-intro p,
@@ -11584,6 +11628,12 @@ body[data-theme="dark"] .integrity-timeline-item.is-current .integrity-timeline-
   border-color: rgba(245, 217, 141, 0.2);
   background: #4a3d20;
   color: #f5d98d;
+}
+
+body[data-theme="dark"] .integrity-timeline-item.is-active .integrity-timeline-marker {
+  border-color: rgba(126, 182, 230, 0.22);
+  background: #213548;
+  color: #a9d4f7;
 }
 
 body[data-theme="dark"] .integrity-change-explainer {
