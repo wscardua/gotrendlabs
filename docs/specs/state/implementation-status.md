@@ -1,6 +1,6 @@
 # Status de Implementação
 
-Atualização transversal em 2026-09-06: `FEAT-MOBILE-001` passou a apresentar no detalhe autenticado os comprovantes assinados individuais de previsão inicial, reforço e revisão em lista persistente e modal, consumindo exclusivamente o recibo autoritativo da FastAPI; o status geral da feature permanece parcial.
+Atualização transversal em 2026-09-06: `FEAT-MOBILE-001` passou a apresentar no detalhe autenticado os comprovantes assinados individuais de previsão inicial, reforço e revisão em lista persistente e modal, consumindo exclusivamente o recibo autoritativo da FastAPI; os cards exibem o estado de integridade somente por escudo circular sobre a imagem, com tooltip/semantics acessível e sem texto redundante; o status geral da feature permanece parcial.
 
 | Feature | Status spec | Status impl | Última atualização | Observação |
 |---|---|---|---|---|

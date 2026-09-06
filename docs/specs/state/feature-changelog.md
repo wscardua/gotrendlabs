@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 selo compacto nos cards mobile
+
+- Os cards Flutter deixam de exibir o pill textual `Definicao registrada`/`Historico verificavel` e passam a usar somente um escudo circular no canto superior direito da imagem, em paridade visual com o site.
+- Thumbnail e informacoes editoriais permanecem intactas; tooltip e semantics mantem a descricao completa para acessibilidade, e cores/icones continuam distinguindo registro, finalizacao, retry, divergencia e Seal.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes assinados no mobile
 
 - O detalhe mobile autenticado passa a listar separadamente o comprovante da previsao inicial, de cada reforco e de cada revisao, inclusive depois que a posicao deixa de estar ativa.

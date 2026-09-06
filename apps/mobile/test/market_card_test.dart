@@ -87,8 +87,13 @@ void main() {
           ),
         ),
       );
-      expect(find.text('Definição registrada'), findsOneWidget);
-      expect(find.text('Histórico verificável'), findsOneWidget);
+      expect(find.text('Definição registrada'), findsNothing);
+      expect(find.text('Histórico verificável'), findsNothing);
+      expect(find.byTooltip('Definição registrada'), findsOneWidget);
+      expect(
+        find.byTooltip('Histórico finalizado e verificável'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -118,9 +123,18 @@ void main() {
       ),
     );
 
-    expect(find.text('Nova tentativa pendente'), findsOneWidget);
-    expect(find.text('Diferença detectada'), findsOneWidget);
-    expect(find.text('Registros preservados'), findsOneWidget);
+    expect(
+      find.byTooltip('Finalização aguardando nova tentativa'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('Diferença de integridade detectada'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('Mercado cancelado com registros preservados'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('MarketCompactCard shows compact time remaining', (tester) async {

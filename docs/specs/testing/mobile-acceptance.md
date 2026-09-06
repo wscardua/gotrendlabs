@@ -293,6 +293,7 @@ Antes de considerar a UI pronta:
 - testar mercado sem comentarios
 - testar mercado resolvido
 - testar mercado `resolved` aguardando selagem e mercado `sealed`, incluindo selo nos cards, tela de verificacao, recibo proprio, loading, erro e retry
+- confirmar que o selo de integridade dos cards usa somente o icone circular no canto superior direito da imagem, sem substituir thumbnail e sem repetir `Definicao registrada`/`Historico verificavel` como texto visual; tooltip/semantics deve preservar a descricao completa
 - testar erro de rede
 - testar tema dark como padrao
 - confirmar que tema, app shell, cards, detalhe, ticket, wallet, ranking, alertas, busca, perfil, badges e bottom sheets usam o mesmo design system dark-first/editorial, sem cards genéricos ou estados soltos

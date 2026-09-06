@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-MOBILE-SEAL-012
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: simplificar o selo de integridade dos cards mobile para um escudo circular sobre a imagem, em paridade com o site e sem texto redundante.
+- Etapa atual: cards hero/compacto, acessibilidade, specs, testes e validacao visual no iPhone 17 Simulator concluidos.
+- Artefatos afetados: Flutter de cards, testes mobile, specs de UX/aceite, README, changelog e estado operacional.
+- Impacto arquitetural: nenhum; somente apresentacao do resumo de integridade ja retornado pela FastAPI.
+- Reversao logica: restaurar o pill/rotulo textual no card sem alterar contratos ou dados de integridade.
+- Evidencias: `flutter analyze`; 12 testes focados de cards; QA visual no iPhone 17 Simulator; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-MOBILE-RECEIPTS-011
 
 - Tipo: `change-feature` + `implementation-cycle`

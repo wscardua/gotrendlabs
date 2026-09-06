@@ -61,6 +61,7 @@ Specs principais:
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
 - `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
 - cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards
+- cards com selo de integridade circular apenas em icone no canto superior direito da imagem, preservando thumbnail, tooltip/semantics e cores distintas para registro, finalizacao, falha e historico selado
 - detalhe de mercado com hero visual nao navegavel, evitando empilhar a mesma rota ao tocar na imagem
 - grafico de consenso multi-serie, usando uma linha por opcao a partir de `sparkline_series`
 - ranking mobile identificado por `@handle`, com badges compactas e overflow `+N` vindos de `/rankings`
