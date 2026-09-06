@@ -277,8 +277,15 @@ def integrity(request, slug):
         proof = {}
         verification = {}
         error = str(exc)
+    timezone_name = market.get("resolution_timezone") or market.get("close_timezone") or "America/Sao_Paulo"
+    labels = {
+        "verified_at_label": _datetime_label(datetime.now(ZoneInfo("UTC")), timezone_name),
+        "published_at_label": _datetime_label(market.get("published_at"), timezone_name),
+        "seal_due_at_label": _datetime_label(market.get("seal_due_at"), timezone_name),
+        "sealed_at_label": _datetime_label(market.get("sealed_at"), timezone_name),
+    }
     template_name = "markets/_integrity_content.html" if request.GET.get("modal") == "1" else "markets/integrity.html"
-    return render(request, template_name, {"market": market, "proof": proof, "verification": verification, "integrity_error": error})
+    return render(request, template_name, {"market": market, "proof": proof, "verification": verification, "integrity_error": error, **labels})
 
 
 def integrity_package(request, slug):

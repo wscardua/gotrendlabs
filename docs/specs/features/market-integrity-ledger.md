@@ -1,10 +1,10 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: implementada_aguardando_deploy
-ultima_atualizacao: 2026-09-05
+ultima_atualizacao: 2026-09-06
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -109,6 +109,8 @@ Cards web preservam integralmente a thumbnail do mercado e mostram um selo iconi
 O selo nao substitui imagem, fallback ou icone editorial do mercado. Seu nome acessivel comunica o estado sem depender apenas de cor; o texto completo aparece em tooltip e na experiencia de verificacao.
 
 No web, o selo abre a verificacao em modal tanto no card quanto no detalhe do mercado, com a rota publica completa preservada como fallback sem JavaScript. O modal prioriza explicacoes para publico leigo, responde o que foi protegido e o que cada verificacao significa, e deixa hashes, chave, protocolo e pacote em uma secao tecnica progressiva. `resolved` mostra `Resultado em finalizacao` e horario estimado de selagem. A estetica permanece editorial, sem logos cripto, trading ou apostas.
+
+A primeira leitura da verificacao deve responder, nesta ordem: para que a pagina serve; se alguma alteracao indevida foi detectada; quais etapas da vida do mercado ja foram protegidas; o que aconteceria se um registro fosse alterado; e quais sao os limites da prova. Termos como hash, assinatura, chave e protocolo ficam recolhidos em detalhes tecnicos e recebem explicacao por analogia antes de serem exibidos.
 
 ## Configuracao e operacao
 

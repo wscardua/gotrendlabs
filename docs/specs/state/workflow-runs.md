@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MARKET-INTEGRITY-COPY-003
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: tornar a verificacao publica compreensivel para publico leigo, priorizando proposito, resposta objetiva, linha do tempo, efeito de alteracoes e limites antes dos detalhes tecnicos.
+- Etapa atual: concluido; hierarquia de linguagem simples, linha do tempo, limites, detalhes tecnicos progressivos e estados honestos validados em desktop e mobile em 2026-09-06.
+- Artefatos afetados: spec de integridade, arquitetura web, partial Django, CSS e testes de renderizacao.
+- Impacto arquitetural: somente apresentacao Django de dados retornados pela FastAPI; nenhuma regra de validade muda de camada.
+- Evidencias: `manage.py check`, 2 testes focados de renderizacao, suite `tests.test_web_smoke` com 212 testes e inspecao visual em viewport desktop e 390 px, todos aprovados.
+- Encerrado em: 2026-09-06
+- Reversao logica: restaurar a estrutura anterior do partial sem alterar provas, contratos ou persistencia.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260905-MARKET-INTEGRITY-UX-002
 
 - Tipo: `change-feature`

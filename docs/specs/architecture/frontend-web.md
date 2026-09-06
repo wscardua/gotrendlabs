@@ -87,4 +87,5 @@
 - Cards da home/feed e o detalhe do mercado devem exibir contador público de comentários com base em `comment_count`, sem inferir contagem no template.
 - Cards preservam a thumbnail e exibem um selo iconizado sobreposto em seu canto superior direito quando a API confirma a prova; o nome acessivel distingue `Definicao registrada` de `Historico finalizado e verificavel`, e a UI nao infere validade pelo status isolado.
 - O selo de integridade abre uma verificacao publica em modal compartilhado nos cards e no detalhe do mercado, consumindo a rota Django que consulta a FastAPI. A rota completa permanece como fallback sem JavaScript; explicacoes leigas precedem detalhes tecnicos progressivos.
+- A verificacao leiga abre com uma resposta objetiva sobre alteracoes detectadas, explica seu proposito, representa publicacao, previsoes, resultado e finalizacao como linha do tempo e explicita separadamente o que a prova demonstra e o que nao demonstra. Hashes, assinaturas, chave e protocolo permanecem em disclosure tecnico recolhido.
 - Mercado `resolved` mostra `Resultado em finalizacao` e `seal_due_at` como previsao operacional da proxima passagem do daemon.

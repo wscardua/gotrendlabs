@@ -7198,7 +7198,7 @@ class WebSmokeTests(TransactionTestCase):
             "seal": {"hash": "c" * 64},
             "ledger_events": [{"event_type": "market_published"}, {"event_type": "market_sealed"}],
         }
-        verification = {"definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
+        verification = {"valid": True, "definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
 
         with (
             patch("apps.web.django.markets.views.get_market", return_value=market),
@@ -7208,11 +7208,48 @@ class WebSmokeTests(TransactionTestCase):
             response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Histórico finalizado e conferido")
-        self.assertContains(response, "Remover, trocar ou alterar um registro anterior")
-        self.assertContains(response, "não substitui o critério público de resolução")
-        self.assertContains(response, "Como funciona tecnicamente")
+        self.assertContains(response, "Nenhuma alteração indevida foi detectada")
+        self.assertContains(response, "Para que serve esta página?")
+        self.assertContains(response, "o histórico que você vê hoje continua igual")
+        self.assertContains(response, "Como este mercado foi protegido")
+        self.assertContains(response, "E se alguém alterar alguma informação?")
+        self.assertContains(response, "Isso permite detectar alterações silenciosas no histórico")
+        self.assertContains(response, "O que esta verificação não faz")
+        self.assertContains(response, "Ver detalhes técnicos")
+        self.assertContains(response, "Um hash funciona como uma impressão digital do registro")
+        self.assertNotContains(response, "Seal final")
         self.assertNotContains(response, "<!doctype html>")
+
+    def test_integrity_modal_uses_honest_plain_language_for_pending_and_failed_states(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        scenarios = (
+            (
+                {"status": "resolved_pending_seal", "protocol_version": "gtl-integrity/v1", "definition": {}, "ledger_events": []},
+                {"valid": True, "definition_valid": True},
+                "Os registros estão consistentes até esta etapa",
+                "O resultado ainda pode passar pela revisão operacional prevista antes da finalização.",
+            ),
+            (
+                {"status": "sealed", "protocol_version": "gtl-integrity/v1", "definition": {}, "seal": {}, "ledger_events": []},
+                {"valid": False, "definition_valid": False, "seal_valid": False, "merkle_root_valid": False, "ledger_chain_valid": False},
+                "Encontramos uma diferença nos registros",
+                "Diferença detectada",
+            ),
+        )
+
+        for proof, verification, headline, detail in scenarios:
+            with (
+                self.subTest(status=proof["status"], valid=verification["valid"]),
+                patch("apps.web.django.markets.views.get_market", return_value=market),
+                patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
+                patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
+            ):
+                response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, headline)
+            self.assertContains(response, detail)
+            self.assertContains(response, "O que esta verificação não faz")
 
     def test_integrity_package_is_downloaded_through_django_proxy(self):
         package = {"market_slug": "openai-gpt6-2026", "protocol_version": "gtl-integrity/v1"}

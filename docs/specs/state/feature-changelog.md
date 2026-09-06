@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 clareza da verificação pública
+
+- O modal de integridade passou a responder primeiro se alguma alteração indevida foi detectada e para que a conferência existe.
+- Publicação, previsões, resultado e finalização passaram a formar uma linha do tempo em linguagem comum, com estado coerente para mercado registrado, resultado pendente e histórico selado.
+- A experiência agora explica o efeito de uma alteração, os limites da prova e a analogia de impressão digital antes de apresentar hashes, chave e protocolo.
+
 ## 2026-09-05 — FEAT-INTEGRITY-001 Ledger Criptográfico de Integridade
 
 - A sinalização web foi refinada para preservar a thumbnail e usar um selo iconizado sobreposto no canto superior direito, disponível também no detalhe do mercado.
