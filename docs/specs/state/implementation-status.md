@@ -1,5 +1,7 @@
 # Status de Implementação
 
+Atualização transversal em 2026-09-06: `FEAT-MOBILE-001` passou a apresentar no detalhe autenticado os comprovantes assinados individuais de previsão inicial, reforço e revisão em lista persistente e modal, consumindo exclusivamente o recibo autoritativo da FastAPI; o status geral da feature permanece parcial.
+
 | Feature | Status spec | Status impl | Última atualização | Observação |
 |---|---|---|---|---|
 | FEAT-INTEGRITY-001 | draft | implementada_aguardando_deploy | 2026-09-06 | Definições/compromissos/Seal/ledger append-only, chaves públicas históricas append-only, KMS Ed25519, daemon, Admin Ops, OpenAPI, web/mobile, comunicações e textos institucionais implementados; verificação autoritativa compartilhada compara estado atual e provas assinadas, valida compromissos desde a publicação e cadeia, separa retry operacional de diferença criptográfica, abre cada ciclo do daemon para alimentar uma fila deduplicada de alertas `high` e oferece auditoria Admin Ops por camada em qualquer estado; comprovantes individuais de previsão inicial, reforço e revisão permanecem acessíveis em todos os estados posteriores; staging depende de IAM/KMS e da migration `0030_integrity_alert_queue` |

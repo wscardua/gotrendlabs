@@ -132,6 +132,7 @@ Deve mostrar:
 - ticket de previsao para mercado aberto
 - resultado oficial para mercado resolvido
 - selo de definicao registrada, estado de resultado em finalizacao e verificacao do historico `sealed`
+- lista autenticada de comprovantes assinados da propria posicao, com uma entrada separada para previsao inicial, cada reforco e cada revisao; os comprovantes permanecem acessiveis nos estados posteriores e abrem em modal
 
 ### Comunidade
 
@@ -154,6 +155,7 @@ Deve mostrar:
 7. Usuario confirma.
 8. App envia mutacao para FastAPI.
 9. App atualiza detalhe, saldo e estado de previsao a partir da resposta.
+10. App oferece o comprovante emitido imediatamente e o preserva na lista do detalhe para consultas futuras.
 
 Erros esperados:
 

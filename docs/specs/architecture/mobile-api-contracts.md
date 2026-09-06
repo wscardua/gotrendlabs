@@ -31,6 +31,7 @@ aprovacao: pendente
 - `errors` representa apenas inconsistencias da prova do mercado; `warnings` e `ledger_chain_valid` preservam observacoes operacionais globais sem fazer o app rotular como adulterado um mercado com `valid=true`.
 - Campos novos são aditivos. Clientes anteriores devem continuar funcionando e exibir o estado pelo label recebido; releases com enum fechado precisam incluir `sealed` antes do rollout.
 - Comprovantes autenticados pertencem somente ao usuário da previsão. Provas públicas não carregam PII ou identificador interno bruto de usuário.
+- `viewer_position.history` fornece os ids das acoes da propria posicao para o app montar a lista persistente; o conteudo autoritativo de cada modal vem de `GET /markets/{slug}/predictions/{prediction_id}/receipt`, e `merkle_proof` permanece ausente ate a finalizacao quando ainda nao aplicavel.
 
 ## Objetivo
 

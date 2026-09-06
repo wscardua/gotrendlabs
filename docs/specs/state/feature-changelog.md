@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes assinados no mobile
+
+- O detalhe mobile autenticado passa a listar separadamente o comprovante da previsao inicial, de cada reforco e de cada revisao, inclusive depois que a posicao deixa de estar ativa.
+- Cada item abre um modal rolavel com resumo da acao, explicacao leiga de hash/assinatura/encadeamento, detalhes tecnicos, estado da prova individual, copia e retry.
+- A confirmacao imediata de uma mutacao oferece acesso ao recibo completo; Flutter continua consumindo a FastAPI sem recalcular ou assinar dados no aparelho.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 auditoria administrativa por camada
 
 - `Auditar integridade` passa a estar disponível no browse administrativo para qualquer estado e na fila de resolução para todos os itens exibidos.

@@ -179,6 +179,7 @@ Controle de previsao:
 - `Aumentar posição` permanece na mesma escolha ativa quando `can_reinforce=true`, com preview de novo total ativo, aumentos restantes e credito possivel vindo da API
 - `Trocar escolha` permite apenas opcoes diferentes da ativa quando `can_revise=true`, com resumo de movimentos encerrados, custo da troca, nova posicao estimada, trocas restantes e credito possivel vindos da API
 - confirmacao de aumento/troca so aparece depois de preview valido da FastAPI; bloqueios exibem a mensagem retornada pelo backend
+- a confirmacao de cada mutacao oferece acesso imediato ao comprovante assinado, e o detalhe mantem a lista persistente usando `viewer_position.history` e `/predictions/{id}/receipt`
 
 ### ConsensusChart
 
@@ -251,6 +252,7 @@ Deve priorizar:
 - comentario/comunidade
 - previsao com confirmacao explicita
 - paridade com o web para popularidade operacional: abrir o detalhe incrementa `view_count`, e compartilhar pelo app incrementa `share_count` sem bloquear a acao nativa
+- comprovantes assinados da propria posicao em bloco compacto e escaneavel; cada previsao inicial, reforco ou revisao abre modal com resumo leigo, hash, assinatura, chave, protocolo e estado da prova individual
 
 ### Wallet
 

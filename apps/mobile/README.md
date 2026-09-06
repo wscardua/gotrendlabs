@@ -57,6 +57,7 @@ Specs principais:
 - gate de manutencao mobile via `GET /health`: falha de backend, status degradado ou `maintenance.mobile_enabled=true` mostram uma tela dark-first de manutencao; o shell mobile permanece bloqueado enquanto a janela estiver ativa
 - favoritos, curtidas, comentarios, compartilhamento, preview, criacao de previsao inicial, aumento e troca de posicao usando apenas FastAPI; compartilhar pelo app incrementa `share_count` antes de acionar o share nativo
 - mesa de posicao no detalhe: quando `viewer_position.has_position=true`, o ticket mostra escolha atual, movimentos ativos, total ativo, historico resumido e dois frames de acao fechados por padrao, `Aumentar posição` na mesma opcao e `Trocar escolha` para opcao diferente, sempre exigindo preview valido de `/position-preview` antes de confirmar em `/position-actions`
+- comprovantes assinados no detalhe autenticado: previsao inicial, cada reforco e cada revisao aparecem separadamente em todos os estados posteriores; cada item abre modal leigo/tecnico carregado por `/predictions/{id}/receipt`, sem calcular ou assinar no aparelho
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
 - `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
 - cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards

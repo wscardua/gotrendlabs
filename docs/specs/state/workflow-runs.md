@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-MOBILE-RECEIPTS-011
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: dar paridade ao mobile com o web para listar e abrir o comprovante assinado de cada previsao inicial, reforco e revisao.
+- Etapa atual: lista persistente, acesso imediato apos mutacao, modal leigo/tecnico, estados de loading/erro/retry, specs e testes concluidos; validacao visual realizada no iPhone 17 Simulator com tres recibos reais do banco local.
+- Artefatos afetados: Flutter de previsao/detalhe, testes mobile, specs de UX/MVP/contrato/aceite, README e estado operacional.
+- Impacto arquitetural: nenhuma nova fronteira; Flutter usa `viewer_position.history` apenas para descoberta e carrega cada recibo autoritativo da FastAPI, sem recalcular hash ou assinatura.
+- Reversao logica: remover bloco/modal mobile e restaurar a confirmacao simples por hash, sem alterar previsoes, compromissos ou contratos persistidos.
+- Evidencias: `flutter analyze`; 98 testes Flutter; QA visual da lista com previsao inicial, reforco e revisao e do modal de reforco no iPhone 17 Simulator; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-ADMIN-AUDIT-010
 
 - Tipo: `change-feature` + `implementation-cycle`

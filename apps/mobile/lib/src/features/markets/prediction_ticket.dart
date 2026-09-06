@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
@@ -68,10 +69,22 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
   Widget build(BuildContext context) {
     final auth = ref.watch(authControllerProvider);
     final market = widget.market;
-    if (market.viewerPosition.hasPosition) {
-      return _buildPositionDesk(context, auth.isAuthenticated);
-    }
-    return _buildInitialPrediction(context, auth.isAuthenticated);
+    final ticket = market.viewerPosition.hasPosition
+        ? _buildPositionDesk(context, auth.isAuthenticated)
+        : _buildInitialPrediction(context, auth.isAuthenticated);
+    final receipts = market.viewerPosition.history;
+    if (receipts.isEmpty) return ticket;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ticket,
+        const SizedBox(height: 12),
+        _PredictionReceiptsPanel(
+          entries: receipts,
+          onOpen: (entry) => _showPredictionReceipt(entry.id),
+        ),
+      ],
+    );
   }
 
   Widget _buildInitialPrediction(BuildContext context, bool authenticated) {
@@ -443,6 +456,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
       setState(() => _busy = false);
       if (mounted) {
         _showReceiptConfirmation(
+          safeInt(result['prediction_id']),
           safeString(
             ((result['integrity_receipt'] as Map?) ?? {})['commitment_hash'],
           ),
@@ -499,18 +513,27 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
       _invalidateMarketState();
       setState(() => _busy = false);
       if (mounted) {
-        _showReceiptConfirmation(result.commitmentHash);
+        _showReceiptConfirmation(result.predictionId, result.commitmentHash);
       }
     } catch (error) {
       _setFailure(error, busy: false);
     }
   }
 
-  Future<void> _showReceiptConfirmation(String commitmentHash) async {
+  Future<void> _showReceiptConfirmation(
+    int predictionId,
+    String commitmentHash,
+  ) async {
     if (!mounted) return;
-    await showModalBottomSheet<void>(
+    final openReceipt = await showModalBottomSheet<bool>(
       context: context,
-      builder: (context) => SafeArea(
+      backgroundColor: GtlColors.surfaceElevated,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(GtlRadii.large),
+        ),
+      ),
+      builder: (sheetContext) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
@@ -525,18 +548,54 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
               const Text(
                 'A ação e o comprovante foram gravados juntos pela API.',
               ),
+              const SizedBox(height: 6),
+              Text(
+                'Você poderá consultá-lo neste mercado em qualquer etapa futura.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               if (commitmentHash.isNotEmpty) ...[
                 const SizedBox(height: 10),
-                SelectableText(commitmentHash),
+                Text(
+                  'Identificação: ${_shortReceiptValue(commitmentHash)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
               const SizedBox(height: 16),
+              if (predictionId > 0) ...[
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.pop(sheetContext, true),
+                  icon: const Icon(Icons.verified_user_outlined),
+                  label: const Text('Ver comprovante assinado'),
+                ),
+                const SizedBox(height: 8),
+              ],
               FilledButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(sheetContext, false),
                 child: const Text('Concluir'),
               ),
             ],
           ),
         ),
+      ),
+    );
+    if (openReceipt == true && mounted) {
+      await _showPredictionReceipt(predictionId);
+    }
+  }
+
+  Future<void> _showPredictionReceipt(int predictionId) async {
+    if (!mounted || predictionId <= 0) return;
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _PredictionReceiptSheet(
+        predictionId: predictionId,
+        marketTitle: widget.market.title,
+        load: () => ref
+            .read(marketsRepositoryProvider)
+            .predictionReceipt(widget.market.slug, predictionId),
       ),
     );
   }
@@ -1005,6 +1064,601 @@ class _PositionHistoryPanel extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PredictionReceiptsPanel extends StatelessWidget {
+  const _PredictionReceiptsPanel({required this.entries, required this.onOpen});
+
+  final List<ViewerPositionEntry> entries;
+  final ValueChanged<ViewerPositionEntry> onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final ordered = [...entries]
+      ..sort((a, b) => a.positionSequence.compareTo(b.positionSequence));
+    return GtlSurface(
+      color: GtlColors.surfaceGlass,
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: Material(
+          color: Colors.transparent,
+          child: ExpansionTile(
+            initiallyExpanded: true,
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 4,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
+            leading: const Icon(
+              Icons.verified_user_outlined,
+              color: GtlColors.accentGreen,
+            ),
+            title: const Text('Comprovantes assinados'),
+            subtitle: const Text('Um registro protegido para cada ação'),
+            trailing: DecoratedBox(
+              decoration: BoxDecoration(
+                color: GtlColors.accentGreen.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(GtlRadii.pill),
+                border: Border.all(
+                  color: GtlColors.accentGreen.withValues(alpha: 0.32),
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                child: Text(
+                  '${ordered.length}',
+                  style: const TextStyle(
+                    color: GtlColors.accentGreen,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            children: [
+              for (final entry in ordered)
+                Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Material(
+                    color: GtlColors.surfaceInk,
+                    borderRadius: BorderRadius.circular(GtlRadii.small),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(GtlRadii.small),
+                      onTap: () => onOpen(entry),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.shield_outlined,
+                              size: 21,
+                              color: GtlColors.accentGreen,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${_receiptActionLabel(entry.actionType)} #${entry.positionSequence}',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(fontWeight: FontWeight.w900),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${formatGtl(entry.stakeAmount)} · comprovante individual',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodySmall,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.chevron_right,
+                              color: GtlColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PredictionReceiptSheet extends StatefulWidget {
+  const _PredictionReceiptSheet({
+    required this.predictionId,
+    required this.marketTitle,
+    required this.load,
+  });
+
+  final int predictionId;
+  final String marketTitle;
+  final Future<Map<String, dynamic>> Function() load;
+
+  @override
+  State<_PredictionReceiptSheet> createState() =>
+      _PredictionReceiptSheetState();
+}
+
+class _PredictionReceiptSheetState extends State<_PredictionReceiptSheet> {
+  late Future<Map<String, dynamic>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = widget.load();
+  }
+
+  void _retry() {
+    setState(() => _future = widget.load());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FractionallySizedBox(
+      heightFactor: 0.92,
+      child: Material(
+        color: GtlColors.surfaceElevated,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(GtlRadii.large),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _future,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: GtlStatePanel(
+                  icon: Icons.cloud_off,
+                  title: 'Comprovante indisponível',
+                  body: ApiFailure.fromObject(snapshot.error!).message,
+                  color: GtlColors.accentYellow,
+                  action: FilledButton.icon(
+                    onPressed: _retry,
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Tentar novamente'),
+                  ),
+                ),
+              );
+            }
+            return _PredictionReceiptContent(
+              predictionId: widget.predictionId,
+              marketTitle: widget.marketTitle,
+              data: snapshot.data ?? const <String, dynamic>{},
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _PredictionReceiptContent extends StatelessWidget {
+  const _PredictionReceiptContent({
+    required this.predictionId,
+    required this.marketTitle,
+    required this.data,
+  });
+
+  final int predictionId;
+  final String marketTitle;
+  final Map<String, dynamic> data;
+
+  @override
+  Widget build(BuildContext context) {
+    final receipt = Map<String, dynamic>.from((data['receipt'] as Map?) ?? {});
+    final payload = Map<String, dynamic>.from(
+      (receipt['payload'] as Map?) ?? {},
+    );
+    final merkleProof = data['merkle_proof'] as Map?;
+    final hash = safeString(receipt['hash']);
+    final signature = safeString(receipt['signature']);
+    final keyFingerprint = safeString(receipt['key_fingerprint']);
+    final protocol = safeString(receipt['protocol_version']);
+    final sequence = safeInt(payload['position_sequence'], 1);
+    final stake = safeInt(payload['stake']);
+    final action = _receiptActionLabel(safeString(payload['action_type']));
+    final previousHash = safeString(payload['previous_commitment_hash']);
+
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: GtlColors.borderStrong,
+                      borderRadius: BorderRadius.circular(GtlRadii.pill),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: GtlColors.accentGreen.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(GtlRadii.medium),
+                        border: Border.all(
+                          color: GtlColors.accentGreen.withValues(alpha: 0.34),
+                        ),
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.all(11),
+                        child: Icon(
+                          Icons.verified_user_outlined,
+                          color: GtlColors.accentGreen,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'COMPROVANTE INDIVIDUAL',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(color: GtlColors.accentCyan),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Previsão registrada e assinada',
+                            style: Theme.of(context).textTheme.headlineSmall,
+                          ),
+                          const SizedBox(height: 5),
+                          Text(
+                            marketTitle,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Fechar',
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 9,
+                  ),
+                  decoration: BoxDecoration(
+                    color: GtlColors.accentGreen.withValues(alpha: 0.11),
+                    borderRadius: BorderRadius.circular(GtlRadii.small),
+                    border: Border.all(
+                      color: GtlColors.accentGreen.withValues(alpha: 0.30),
+                    ),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        size: 18,
+                        color: GtlColors.accentGreen,
+                      ),
+                      SizedBox(width: 8),
+                      Text(
+                        'Assinatura emitida',
+                        style: TextStyle(
+                          color: GtlColors.accentGreen,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final width = (constraints.maxWidth - 8) / 2;
+                    return Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _ReceiptSummaryItem(
+                          width: width,
+                          label: 'Ação',
+                          value: action,
+                        ),
+                        _ReceiptSummaryItem(
+                          width: width,
+                          label: 'Sequência',
+                          value: '#$sequence',
+                        ),
+                        _ReceiptSummaryItem(
+                          width: width,
+                          label: 'Crédito registrado',
+                          value: formatGtl(stake),
+                        ),
+                        _ReceiptSummaryItem(
+                          width: width,
+                          label: 'Assinado em',
+                          value: _formatReceiptDate(
+                            safeString(payload['server_timestamp']),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'O que este comprovante protege',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 7),
+                Text(
+                  'Ele registra esta ação exatamente como foi aceita. Se a opção, o valor, a ordem ou o horário forem modificados, a assinatura deixa de conferir.',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 12),
+                const _ReceiptExplanationItem(
+                  icon: Icons.fingerprint,
+                  title: 'Hash exclusivo',
+                  body: 'É a impressão digital criptográfica desta ação.',
+                ),
+                const _ReceiptExplanationItem(
+                  icon: Icons.draw_outlined,
+                  title: 'Assinatura criptográfica',
+                  body:
+                      'Confirma que o comprovante foi emitido pelo GoTrendLabs.',
+                ),
+                _ReceiptExplanationItem(
+                  icon: Icons.account_tree_outlined,
+                  title: 'Histórico conectado',
+                  body: previousHash.isEmpty
+                      ? 'Este é o primeiro comprovante desta posição.'
+                      : 'Esta ação referencia o comprovante anterior da posição.',
+                ),
+                const SizedBox(height: 8),
+                GtlSurface(
+                  color: GtlColors.surfaceInk,
+                  padding: EdgeInsets.zero,
+                  child: Theme(
+                    data: Theme.of(
+                      context,
+                    ).copyWith(dividerColor: Colors.transparent),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: ExpansionTile(
+                        title: const Text('Ver detalhes técnicos'),
+                        subtitle: const Text(
+                          'Hash, assinatura, chave e protocolo',
+                        ),
+                        childrenPadding: const EdgeInsets.fromLTRB(
+                          14,
+                          0,
+                          14,
+                          14,
+                        ),
+                        children: [
+                          _ReceiptTechnicalRow(
+                            label: 'Previsão',
+                            value: '#$predictionId',
+                          ),
+                          _ReceiptTechnicalRow(
+                            label: 'Protocolo',
+                            value: protocol,
+                          ),
+                          _ReceiptTechnicalRow(label: 'Hash', value: hash),
+                          _ReceiptTechnicalRow(
+                            label: 'Chave',
+                            value: keyFingerprint,
+                          ),
+                          _ReceiptTechnicalRow(
+                            label: 'Assinatura',
+                            value: signature,
+                          ),
+                          _ReceiptTechnicalRow(
+                            label: 'Histórico final',
+                            value: merkleProof == null
+                                ? 'A prova individual ficará disponível após a finalização.'
+                                : 'Incluído e verificável pela prova individual.',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(18, 10, 18, 14),
+          child: Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: () => _copyReceipt(
+                    context,
+                    predictionId: predictionId,
+                    hash: hash,
+                    signature: signature,
+                    keyFingerprint: keyFingerprint,
+                    protocol: protocol,
+                  ),
+                  icon: const Icon(Icons.copy_outlined),
+                  label: const Text('Copiar detalhes'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Concluir'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _copyReceipt(
+    BuildContext context, {
+    required int predictionId,
+    required String hash,
+    required String signature,
+    required String keyFingerprint,
+    required String protocol,
+  }) async {
+    await Clipboard.setData(
+      ClipboardData(
+        text: [
+          'Comprovante #$predictionId',
+          'Protocolo: $protocol',
+          'Hash: $hash',
+          'Chave: $keyFingerprint',
+          'Assinatura: $signature',
+        ].join('\n'),
+      ),
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Detalhes do comprovante copiados.')),
+      );
+    }
+  }
+}
+
+class _ReceiptSummaryItem extends StatelessWidget {
+  const _ReceiptSummaryItem({
+    required this.width,
+    required this.label,
+    required this.value,
+  });
+
+  final double width;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      child: GtlSurface(
+        color: GtlColors.surfaceInk,
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.labelSmall),
+            const SizedBox(height: 4),
+            Text(
+              value.isEmpty ? '-' : value,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReceiptExplanationItem extends StatelessWidget {
+  const _ReceiptExplanationItem({
+    required this.icon,
+    required this.title,
+    required this.body,
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GtlSurface(
+        color: GtlColors.surfaceInk,
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 20, color: GtlColors.accentBlue),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(body, style: Theme.of(context).textTheme.bodySmall),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReceiptTechnicalRow extends StatelessWidget {
+  const _ReceiptTechnicalRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
+          const SizedBox(height: 3),
+          SelectableText(value.isEmpty ? '-' : value),
+        ],
       ),
     );
   }
@@ -1579,6 +2233,27 @@ String _actionLabel(String action) {
     'revision' => 'Troca',
     _ => 'Entrada inicial',
   };
+}
+
+String _receiptActionLabel(String action) {
+  return switch (action) {
+    'reinforcement' => 'Reforço',
+    'revision' => 'Revisão',
+    _ => 'Previsão inicial',
+  };
+}
+
+String _shortReceiptValue(String value) {
+  if (value.length <= 18) return value;
+  return '${value.substring(0, 10)}…${value.substring(value.length - 6)}';
+}
+
+String _formatReceiptDate(String value) {
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) return value.isEmpty ? '-' : value;
+  final local = parsed.toLocal();
+  String two(int number) => number.toString().padLeft(2, '0');
+  return '${two(local.day)}/${two(local.month)}/${local.year} ${two(local.hour)}:${two(local.minute)}';
 }
 
 String _remainingLabel(
