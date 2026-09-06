@@ -66,17 +66,15 @@ def _datetime_label(value, timezone_name):
 def _existing_prediction(user_id, slug):
     if not user_id:
         return None
-    predictions = list(
-        Prediction.objects.select_related("market_option", "market")
-        .filter(user_id=user_id, market__slug=slug, status="open")
-        .order_by("created_at", "id")
-    )
-    if not predictions:
+    predictions = []
+    for prediction_status in ("open", "resolved", "canceled"):
         predictions = list(
             Prediction.objects.select_related("market_option", "market")
-            .filter(user_id=user_id, market__slug=slug, status="resolved")
+            .filter(user_id=user_id, market__slug=slug, status=prediction_status)
             .order_by("created_at", "id")
         )
+        if predictions:
+            break
     if not predictions:
         return None
     prediction = predictions[-1]

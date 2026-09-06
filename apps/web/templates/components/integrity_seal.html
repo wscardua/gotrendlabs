@@ -2,6 +2,7 @@
   class="market-integrity-seal{% if market.integrity.status == 'sealed' %} is-sealed{% elif market.integrity.status == 'resolved_pending_seal' or market.integrity.status == 'seal_retry_pending' %} is-pending{% elif market.integrity.status == 'verification_failed' %} is-failed{% elif market.integrity.status == 'canceled_preserved' %} is-neutral{% endif %}"
   href="{% url 'market-integrity' market.slug %}"
   data-integrity-modal-link
+  data-integrity-modal-kind="market"
   aria-label="{% if market.integrity.status == 'sealed' %}Histórico finalizado e verificável. Abrir verificação de integridade{% elif market.integrity.status == 'resolved_pending_seal' %}Resultado aguardando finalização. Abrir registro de integridade{% elif market.integrity.status == 'seal_retry_pending' %}Finalização aguardando nova tentativa. Abrir registro de integridade{% elif market.integrity.status == 'verification_failed' %}Diferença de integridade detectada. Abrir verificação{% elif market.integrity.status == 'canceled_preserved' %}Mercado cancelado com registros preservados. Abrir registro de integridade{% else %}Definição registrada. Abrir verificação de integridade{% endif %}"
 >
   <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">

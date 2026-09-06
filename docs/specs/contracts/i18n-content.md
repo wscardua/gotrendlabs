@@ -17,6 +17,7 @@
 - Estados técnicos podem ter rótulos públicos diferentes: `locked` deve aparecer para usuários finais como `Em apuração`, preservando `locked`/`Fechado` apenas em contexto técnico, histórico ou operacional.
 - Integridade usa `Definicao registrada` e `Resultado em finalizacao`; cards e comunicacoes existentes podem usar `Historico finalizado e verificavel`, enquanto o detalhe `sealed` prioriza `Mercado concluido` e o complemento `Concluido e verificavel`. Nao usa descentralizacao, imutabilidade absoluta ou blockchain publica como promessa.
 - No detalhe publico, o ciclo usa `Mercado agendado`, `Mercado em apuracao`, `Resultado publicado`, `Mercado concluido` e `Mercado cancelado`. `Fecha em` fica restrito a mercado `open`; estados posteriores informam encerramento das previsoes e a etapa atual sem jargao operacional.
+- No detalhe autenticado, o bloco pessoal conserva o titulo `Sua posicao` e qualifica a etapa como `Posicao ativa`, `Registrada, aguardando resultado`, `Resultado da sua posicao`, `Posicao concluida` ou `Posicao encerrada, creditos devolvidos`. Resultado oficial e resultado pessoal permanecem visual e semanticamente separados.
 
 ## Campos de conteúdo com potencial multilíngue
 

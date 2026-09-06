@@ -242,44 +242,21 @@
           <span>Resultado oficial</span>
           <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>
           <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span><span>{% if market.status == "sealed" %}Concluído e verificável{% else %}Resultado publicado{% endif %}</span></div>
-          {% if existing_prediction and existing_prediction.status == "resolved" %}
-            {% if existing_prediction.won %}
-              <div class="prediction-result-note success">
-                <strong>Você acertou esta previsão.</strong>
-                <p>Crédito reservado liberado, acerto creditado e leitura registrada no histórico.</p>
-              </div>
-            {% else %}
-              <div class="prediction-result-note miss">
-                <strong>Você não acertou desta vez.</strong>
-                <p>O resultado entrou no seu histórico. Compare sua entrada com o consenso e siga para o próximo mercado.</p>
-              </div>
-            {% endif %}
-          {% endif %}
         </div>
       {% endif %}
-      {% if existing_prediction and market.viewer_position.history %}
-        <section class="closed-position-receipts" aria-label="Comprovantes da sua posição">
-          <span class="eyebrow">Sua posição</span>
-          {% include "markets/partials/position_receipts.html" %}
-        </section>
+      {% if existing_prediction or market.viewer_position.history %}
+        {% include "markets/partials/position_summary.html" %}
       {% endif %}
       {% if market.status == "resolved" or market.status == "sealed" %}<a class="btn primary" href="{% url 'share-result' market.slug %}">Compartilhar resultado</a>{% endif %}
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
-      {% if prediction_result %}
-        <div class="notice green prediction-success-notice">
-          <p>Sua previsão foi registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.</p>
-          {% include "markets/partials/prediction_integrity_confirmation.html" with receipt_result=prediction_result %}
-        </div>
-      {% endif %}
-      {% if position_action_result %}
-        <div class="notice green prediction-success-notice">
-          <p>{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.</p>
-          {% include "markets/partials/prediction_integrity_confirmation.html" with receipt_result=position_action_result %}
-        </div>
-      {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>
+      {% endif %}
+      {% if not is_guest %}
+        {% if existing_prediction or market.viewer_position.has_position or market.viewer_position.history or prediction_result or position_action_result %}
+          {% include "markets/partials/position_summary.html" %}
+        {% endif %}
       {% endif %}
       {% if is_guest %}
         <div class="binary-ticket">
@@ -295,29 +272,6 @@
         </div>
         <a class="btn primary" href="{% url 'login' %}?next={{ request.path }}">Entrar para prever</a>
       {% elif existing_prediction %}
-        <div class="position-summary-card">
-          <span>Sua posição</span>
-          <strong>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</strong>
-          <div class="position-summary-grid">
-            <div><span>Crédito reservado</span><b>{{ existing_prediction.active_stake_amount|default:existing_prediction.stake_amount }} GT₵</b></div>
-            <div><span>Entradas abertas</span><b>{{ existing_prediction.position_count|default:1 }}</b></div>
-            <div><span>Última entrada</span><b>{{ existing_prediction.probability_at_entry }}%</b></div>
-          </div>
-          {% if market.viewer_position.active_entries %}
-            <details class="position-entry-details">
-              <summary>Ver entradas abertas</summary>
-              <div class="position-entry-list">
-                {% for entry in market.viewer_position.active_entries %}
-                  <div>
-                    <span>{% if entry.action_type == "initial" %}Entrada inicial{% elif entry.action_type == "reinforcement" %}Reforço{% else %}Revisão{% endif %} #{{ entry.position_sequence }}</span>
-                    <strong>{{ entry.stake_amount }} GT₵ em {% if entry.option_label == 'NAO' %}NÃO{% else %}{{ entry.option_label }}{% endif %}</strong>
-                  </div>
-                {% endfor %}
-              </div>
-            </details>
-          {% endif %}
-          {% include "markets/partials/position_receipts.html" %}
-        </div>
         <div class="binary-grid option-grid position-option-grid">
           {% for option in market.options %}
             <div class="choice readonly {% if option.id == existing_prediction.option_id or option.label == existing_prediction.option_label %}active{% endif %}">

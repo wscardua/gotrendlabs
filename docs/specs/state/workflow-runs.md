@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MARKET-POSITION-HIERARCHY-016
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-PRED-001`, `FEAT-MARKET-001`
+- Objetivo: padronizar a posição e o conteúdo de `Sua posição` no detalhe web em todo o ciclo do mercado.
+- Etapa atual: specs, componente compartilhado, regressões e QA visual concluídos.
+- Artefatos afetados: detalhe Django, parcial compartilhado de posição, CSS, specs web/i18n, testes, changelog e estado operacional.
+- Impacto arquitetural: nenhum; a UI continua apresentando `viewer_position` e previsões retornadas pelo domínio.
+- Reversão lógica: restaurar os blocos separados por estado sem alterar previsões, compromissos ou contratos da API.
+- Evidências: 4 testes focados e 220 testes de `tests.test_web_smoke` aprovados; `manage.py check`; QA visual autenticado em mercado aberto, em apuração e resolvido; viewport móvel sem overflow; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-MARKET-DETAIL-LIFECYCLE-COPY-015
 
 - Tipo: `change-feature` + `implementation-cycle`

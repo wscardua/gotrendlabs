@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 posição coerente no detalhe web
+
+- `Sua posição` passa a ocupar uma posição fixa entre o estado/resultado oficial e as ações, usando o mesmo componente em mercados abertos, em apuração, resolvidos, selados e cancelados.
+- Resultado pessoal, confirmação de previsão/reforço/revisão e comprovantes assinados ficam reunidos no bloco pessoal; o resultado oficial permanece independente.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 copy coerente do ciclo web
 
 - O detalhe web passa a identificar o bloco como `Ciclo do mercado` e usa mensagens próprias para agendamento, apuração, resultado publicado, conclusão e cancelamento.
