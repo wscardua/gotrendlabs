@@ -256,7 +256,7 @@ Antes de considerar a UI pronta:
 - confirmar que o detalhe mostra pergunta/contexto completo fora do hero truncado
 - confirmar que mercado auto-close vencido aparece como `Fechado` no mobile e bloqueia preview/criacao/reforco/revisao pela FastAPI
 - confirmar que a verificacao de integridade mobile nao apresenta alerta global como falha do mercado quando `valid=true`, mantendo vermelho reservado a diferenca criptografica da prova especifica
-- confirmar que a aba `Visao geral` ordena previsao/posicao e comprovantes antes do criterio/resultado, deixando `Integridade do mercado` por ultimo com copy contextual e CTA `Verificar integridade`
+- confirmar que a aba `Visao geral` apresenta criterio e resultado oficial antes da previsao/posicao, deixando `Integridade do mercado` por ultimo com copy contextual e CTA `Verificar integridade`
 - confirmar que o detalhe autenticado lista um comprovante assinado separado para previsao inicial, cada reforco e cada revisao, inclusive quando a posicao nao estiver mais ativa e nos estados `locked`, `resolved`, `sealed` e `canceled`
 - confirmar que tocar em um comprovante abre modal rolavel com explicacao leiga, resumo da acao, hash, assinatura, chave, protocolo, estado da prova individual e retry honesto em falha de carregamento
 - confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`
@@ -280,7 +280,7 @@ Antes de considerar a UI pronta:
 - confirmar que abrir detalhe mobile incrementa `view_count` via `POST /markets/{slug}/view`
 - confirmar que compartilhar pelo app incrementa `share_count` via `POST /markets/{slug}/share`
 - confirmar que o detalhe nao repete o titulo do mercado logo abaixo do hero
-- confirmar que o ticket de previsao aparece antes do criterio de resolucao no detalhe
+- confirmar que o criterio de resolucao aparece antes do ticket de previsao/posicao no detalhe
 - confirmar que erros de validacao aparecem em linguagem final, sem payload tecnico da API
 - confirmar que `Sobre` mostra o estado informativo de push como item de saude/configuracao quando Firebase não está configurado
 - confirmar que Perfil e Alertas nao mostram painel operacional de push
@@ -301,6 +301,10 @@ Antes de considerar a UI pronta:
 - confirmar que `Mercados` permite alternar `Todos`, `Favoritos` e `Posições`, com estados vazios claros quando não houver itens
 - confirmar que `Hoje` exibe `Sua mesa` para usuário autenticado com favoritos/posições ativas e abre `Mercados` no recorte escolhido
 - confirmar que `Sua mesa` e o recorte `Posições` usam `viewer_position.has_position`, sem contar mercados onde o usuário tem apenas participação histórica
+- confirmar que cada item de `Sua mesa` usa duas linhas visuais, com rotulo na primeira e icone + total na segunda, sem overflow ou truncamento em viewport compacto ou fonte ampliada
+- confirmar que o painel de seis metricas do detalhe usa duas fileiras de tres itens em celular padrao e fallback de duas colunas em largura estreita
+- confirmar que `Comprovantes assinados` inicia recolhido, preserva a contagem e expande cada recibo individual sob demanda
+- confirmar que `Verificar integridade` mantem explicacao leiga antes de `Ver detalhes tecnicos`, que inicia recolhido e expoe protocolo, algoritmo, hashes, assinaturas, chave, raiz, Seal e elos do ledger quando aplicaveis
 - confirmar que `Hoje` nao exibe mercados fechados em destaque/tendencias e prioriza mercados abertos com mais engajamento
 - confirmar que cards exibem prazo restante compacto sem aumentar a altura atual e que a barra muda de cor conforme o fechamento se aproxima
 - confirmar que tocar no hero de imagem dentro do detalhe nao empilha a mesma tela novamente

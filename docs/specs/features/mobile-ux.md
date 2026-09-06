@@ -158,6 +158,8 @@ Metricas recomendadas para o MVP:
 - `Encerra em`
 - `Status`
 
+No detalhe em celular padrao, as seis metricas formam duas fileiras compactas de tres itens. Cada item usa duas linhas visuais, rotulo e valor com icone de apoio, sem perder toque, contraste ou legibilidade. Em larguras muito estreitas, o painel pode voltar para duas colunas sem overflow.
+
 Quando o contador de `Comentarios` aparecer em cards ou metricas do detalhe, o toque deve abrir o mercado na aba `Comunidade`.
 
 Metricas como `liquidez`, `spread`, `last trade` ou equivalentes devem ficar fora do MVP ate existir significado de dominio educativo e contrato backend.
@@ -253,7 +255,11 @@ Deve priorizar:
 - previsao com confirmacao explicita
 - paridade com o web para popularidade operacional: abrir o detalhe incrementa `view_count`, e compartilhar pelo app incrementa `share_count` sem bloquear a acao nativa
 - comprovantes assinados da propria posicao em bloco compacto e escaneavel; cada previsao inicial, reforco ou revisao abre modal com resumo leigo, hash, assinatura, chave, protocolo e estado da prova individual
-- a secao secundaria usa o titulo fixo `Integridade do mercado`, fica depois da previsao/posicao, comprovantes, criterio e resultado e, no estado registrado, explica `A definição publicada foi registrada e pode ser conferida.` antes do CTA `Verificar integridade`
+- o criterio de resolucao aparece em bloco compacto antes da previsao/posicao, para que a regra de apuracao seja conhecida antes da acao; quando houver resultado oficial, ele permanece no mesmo nivel anterior ao resultado pessoal
+- a secao secundaria usa o titulo fixo `Integridade do mercado`, fica depois do criterio, resultado, previsao/posicao e comprovantes e, no estado registrado, explica `A definição publicada foi registrada e pode ser conferida.` antes do CTA `Verificar integridade`
+- `Sua mesa` apresenta posicoes, favoritos e mercados abertos em itens de duas linhas visuais, com o rotulo na primeira e icone + total na segunda, evitando tres niveis verticais por item e truncamento com fonte ampliada
+- comprovantes assinados ficam recolhidos por padrao e preservam a contagem visivel no cabecalho
+- a verificacao do mercado oferece `Ver detalhes tecnicos` recolhido, com protocolo, algoritmo, hashes, assinaturas, identificacao da chave, raiz das previsoes, Seal e elos do ledger quando aplicaveis, mantendo a explicacao leiga como primeira leitura
 
 ### Wallet
 

@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-MOBILE-UX-001 detalhe e painéis compactos
+
+- O critério de resolução passa a anteceder previsão/posição e resultado pessoal no detalhe mobile.
+- `Sua mesa` reduz cada atalho a duas linhas visuais; o painel de seis métricas passa a duas fileiras compactas em celular padrão.
+- Comprovantes assinados iniciam recolhidos e a verificação do mercado ganha detalhes técnicos completos e progressivos, em paridade com o comprovante individual.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 posição coerente no detalhe web
 
 - `Sua posição` passa a ocupar uma posição fixa entre o estado/resultado oficial e as ações, usando o mesmo componente em mercados abertos, em apuração, resolvidos, selados e cancelados.

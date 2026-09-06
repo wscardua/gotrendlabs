@@ -2,10 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
 import '../../core/environment.dart';
+import '../../core/formatters.dart';
 import '../../core/providers.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
@@ -279,8 +281,6 @@ class _OverviewTab extends ConsumerWidget {
         const SizedBox(height: 12),
         MarketSparklineCard(market: market),
         const SizedBox(height: 12),
-        PredictionTicket(market: market),
-        const SizedBox(height: 12),
         GtlSurface(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -308,6 +308,8 @@ class _OverviewTab extends ConsumerWidget {
             ],
           ),
         ),
+        const SizedBox(height: 12),
+        PredictionTicket(market: market),
         if (market.integrity.definitionRegistered) ...[
           const SizedBox(height: 12),
           GtlSurface(
@@ -367,170 +369,323 @@ class _IntegritySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: FutureBuilder(
-          future: load(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState != ConnectionState.done) {
-              return const SizedBox(
-                height: 260,
-                child: Center(child: CircularProgressIndicator()),
+    return FractionallySizedBox(
+      heightFactor: 0.92,
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: FutureBuilder(
+            future: load(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const SizedBox(
+                  height: 260,
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              if (snapshot.hasError || !snapshot.hasData) {
+                return GtlStatePanel(
+                  icon: Icons.cloud_off,
+                  title: 'Verificação indisponível',
+                  body: 'Não foi possível conferir agora. Tente novamente.',
+                  color: GtlColors.accentYellow,
+                );
+              }
+              final value = snapshot.data!;
+              final proof = value.proof;
+              final verification = value.verification;
+              final definition = Map<String, dynamic>.from(
+                (proof['definition'] as Map?) ?? const <String, dynamic>{},
               );
-            }
-            if (snapshot.hasError || !snapshot.hasData) {
-              return GtlStatePanel(
-                icon: Icons.cloud_off,
-                title: 'Verificação indisponível',
-                body: 'Não foi possível conferir agora. Tente novamente.',
-                color: GtlColors.accentYellow,
+              final seal = Map<String, dynamic>.from(
+                (proof['seal'] as Map?) ?? const <String, dynamic>{},
               );
-            }
-            final value = snapshot.data!;
-            final verification = value.verification;
-            final definitionOk =
-                verification['definition_valid'] == true &&
-                verification['definition_matches_current'] != false;
-            final predictionsOk =
-                verification['merkle_root_valid'] == true &&
-                verification['prediction_commitments_valid'] != false;
-            final resultOk =
-                verification['seal_valid'] == true &&
-                verification['result_matches_current'] != false;
-            final finalOk = verification['valid'] == true;
-            Widget check(
-              String label, {
-              required String state,
-              required IconData icon,
-              required Color color,
-            }) => ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(icon, color: color),
-              title: Text(label),
-              trailing: Text(state, style: TextStyle(color: color)),
-            );
-            return SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const GtlSectionTitle(
-                    title: 'Verificar integridade',
-                    subtitle: 'Registro de Integridade Verificável',
+              final sealPayload = Map<String, dynamic>.from(
+                (seal['payload'] as Map?) ?? const <String, dynamic>{},
+              );
+              final ledgerEvents =
+                  (proof['ledger_events'] as List?) ?? const [];
+              final protocol = safeString(
+                proof['protocol_version'],
+                market.integrity.protocolVersion,
+              );
+              final technicalDetails = <(String, String)>[
+                ('Protocolo', protocol),
+                ('Algoritmo', safeString(definition['algorithm'])),
+                ('Hash da definição', safeString(definition['hash'])),
+                ('Identificação da chave', safeString(definition['key_id'])),
+                (
+                  'Fingerprint da chave',
+                  safeString(definition['key_fingerprint']),
+                ),
+                (
+                  'Assinatura da definição',
+                  safeString(definition['signature']),
+                ),
+                ('Eventos do mercado', ledgerEvents.length.toString()),
+                (
+                  'Cadeia de eventos do mercado',
+                  verification['market_events_valid'] == true
+                      ? 'Verificada'
+                      : 'Não verificada',
+                ),
+                (
+                  'Cadeia global do ledger',
+                  verification['ledger_chain_valid'] == true
+                      ? 'Verificada'
+                      : 'Não verificada',
+                ),
+                if (ledgerEvents.isNotEmpty) ...[
+                  (
+                    'Hash do último evento',
+                    safeString((ledgerEvents.last as Map?)?['event_hash']),
                   ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Comparamos impressões digitais (hashes), assinaturas criptográficas e a sequência conectada dos registros para detectar alterações.',
-                  ),
-                  const SizedBox(height: 8),
-                  check(
-                    'Definição publicada',
-                    state: definitionOk ? 'Verificada' : 'Diferença detectada',
-                    icon: definitionOk
-                        ? Icons.check_circle_outline
-                        : Icons.error_outline,
-                    color: definitionOk
-                        ? GtlColors.accentGreen
-                        : GtlColors.accentRed,
-                  ),
-                  check(
-                    'Previsões',
-                    state: market.integrity.isSealed
-                        ? (predictionsOk
-                              ? 'Verificadas'
-                              : 'Diferença detectada')
-                        : market.isOpen
-                        ? 'Comprovantes em registro'
-                        : market.status == 'canceled'
-                        ? 'Registros preservados'
-                        : 'Recebimento encerrado',
-                    icon: market.integrity.isSealed
-                        ? (predictionsOk
-                              ? Icons.check_circle_outline
-                              : Icons.error_outline)
-                        : market.isOpen
-                        ? Icons.sync_outlined
-                        : Icons.inventory_2_outlined,
-                    color: market.integrity.isSealed
-                        ? (predictionsOk
-                              ? GtlColors.accentGreen
-                              : GtlColors.accentRed)
-                        : market.isOpen
-                        ? GtlColors.accentBlue
-                        : GtlColors.muted,
-                  ),
-                  check(
-                    'Resultado',
-                    state: market.integrity.isSealed
-                        ? (resultOk ? 'Verificado' : 'Diferença detectada')
-                        : market.status == 'canceled'
-                        ? 'Não se aplica'
-                        : market.isResolved
-                        ? 'Em revisão operacional'
-                        : 'Aguardando',
-                    icon: market.integrity.isSealed
-                        ? (resultOk
-                              ? Icons.check_circle_outline
-                              : Icons.error_outline)
-                        : market.isResolved
-                        ? Icons.schedule
-                        : Icons.horizontal_rule,
-                    color: market.integrity.isSealed
-                        ? (resultOk
-                              ? GtlColors.accentGreen
-                              : GtlColors.accentRed)
-                        : market.isResolved
-                        ? GtlColors.accentYellow
-                        : GtlColors.muted,
-                  ),
-                  check(
-                    'Histórico final',
-                    state: market.integrity.isSealed
-                        ? (finalOk
-                              ? 'Finalizado e verificado'
-                              : 'Diferença detectada')
-                        : market.integrity.isSealRetryPending
-                        ? 'Nova tentativa pendente'
-                        : market.integrity.isPendingSeal
-                        ? 'Finalização prevista'
-                        : 'Não se aplica',
-                    icon: market.integrity.isSealed
-                        ? (finalOk
-                              ? Icons.verified_outlined
-                              : Icons.error_outline)
-                        : market.integrity.isPendingSeal ||
-                              market.integrity.isSealRetryPending
-                        ? Icons.schedule
-                        : Icons.horizontal_rule,
-                    color: market.integrity.isSealed
-                        ? (finalOk
-                              ? GtlColors.accentGreen
-                              : GtlColors.accentRed)
-                        : market.integrity.isPendingSeal ||
-                              market.integrity.isSealRetryPending
-                        ? GtlColors.accentYellow
-                        : GtlColors.muted,
-                  ),
-                  const SizedBox(height: 8),
-                  Text('Protocolo: ${market.integrity.protocolVersion}'),
-                  Text('Chave: ${_shortHash(market.integrity.keyFingerprint)}'),
-                  const SizedBox(height: 18),
-                  FilledButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Fechar'),
+                  (
+                    'Elo anterior',
+                    safeString(
+                      (ledgerEvents.last as Map?)?['previous_event_hash'],
+                    ),
                   ),
                 ],
-              ),
-            );
-          },
+                if (seal.isNotEmpty) ...[
+                  ('Hash da finalização', safeString(seal['hash'])),
+                  (
+                    'Raiz das previsões',
+                    safeString(sealPayload['predictions_root']),
+                  ),
+                  ('Assinatura da finalização', safeString(seal['signature'])),
+                ],
+              ];
+              final definitionOk =
+                  verification['definition_valid'] == true &&
+                  verification['definition_matches_current'] != false;
+              final predictionsOk =
+                  verification['merkle_root_valid'] == true &&
+                  verification['prediction_commitments_valid'] != false;
+              final resultOk =
+                  verification['seal_valid'] == true &&
+                  verification['result_matches_current'] != false;
+              final finalOk = verification['valid'] == true;
+              Widget check(
+                String label, {
+                required String state,
+                required IconData icon,
+                required Color color,
+              }) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(icon, color: color),
+                title: Text(label),
+                trailing: Text(state, style: TextStyle(color: color)),
+              );
+              return SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const GtlSectionTitle(
+                      title: 'Verificar integridade',
+                      subtitle: 'Registro de Integridade Verificável',
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'Comparamos impressões digitais (hashes), assinaturas criptográficas e a sequência conectada dos registros para detectar alterações.',
+                    ),
+                    const SizedBox(height: 8),
+                    check(
+                      'Definição publicada',
+                      state: definitionOk
+                          ? 'Verificada'
+                          : 'Diferença detectada',
+                      icon: definitionOk
+                          ? Icons.check_circle_outline
+                          : Icons.error_outline,
+                      color: definitionOk
+                          ? GtlColors.accentGreen
+                          : GtlColors.accentRed,
+                    ),
+                    check(
+                      'Previsões',
+                      state: market.integrity.isSealed
+                          ? (predictionsOk
+                                ? 'Verificadas'
+                                : 'Diferença detectada')
+                          : market.isOpen
+                          ? 'Comprovantes em registro'
+                          : market.status == 'canceled'
+                          ? 'Registros preservados'
+                          : 'Recebimento encerrado',
+                      icon: market.integrity.isSealed
+                          ? (predictionsOk
+                                ? Icons.check_circle_outline
+                                : Icons.error_outline)
+                          : market.isOpen
+                          ? Icons.sync_outlined
+                          : Icons.inventory_2_outlined,
+                      color: market.integrity.isSealed
+                          ? (predictionsOk
+                                ? GtlColors.accentGreen
+                                : GtlColors.accentRed)
+                          : market.isOpen
+                          ? GtlColors.accentBlue
+                          : GtlColors.muted,
+                    ),
+                    check(
+                      'Resultado',
+                      state: market.integrity.isSealed
+                          ? (resultOk ? 'Verificado' : 'Diferença detectada')
+                          : market.status == 'canceled'
+                          ? 'Não se aplica'
+                          : market.isResolved
+                          ? 'Em revisão operacional'
+                          : 'Aguardando',
+                      icon: market.integrity.isSealed
+                          ? (resultOk
+                                ? Icons.check_circle_outline
+                                : Icons.error_outline)
+                          : market.isResolved
+                          ? Icons.schedule
+                          : Icons.horizontal_rule,
+                      color: market.integrity.isSealed
+                          ? (resultOk
+                                ? GtlColors.accentGreen
+                                : GtlColors.accentRed)
+                          : market.isResolved
+                          ? GtlColors.accentYellow
+                          : GtlColors.muted,
+                    ),
+                    check(
+                      'Histórico final',
+                      state: market.integrity.isSealed
+                          ? (finalOk
+                                ? 'Finalizado e verificado'
+                                : 'Diferença detectada')
+                          : market.integrity.isSealRetryPending
+                          ? 'Nova tentativa pendente'
+                          : market.integrity.isPendingSeal
+                          ? 'Finalização prevista'
+                          : 'Não se aplica',
+                      icon: market.integrity.isSealed
+                          ? (finalOk
+                                ? Icons.verified_outlined
+                                : Icons.error_outline)
+                          : market.integrity.isPendingSeal ||
+                                market.integrity.isSealRetryPending
+                          ? Icons.schedule
+                          : Icons.horizontal_rule,
+                      color: market.integrity.isSealed
+                          ? (finalOk
+                                ? GtlColors.accentGreen
+                                : GtlColors.accentRed)
+                          : market.integrity.isPendingSeal ||
+                                market.integrity.isSealRetryPending
+                          ? GtlColors.accentYellow
+                          : GtlColors.muted,
+                    ),
+                    const SizedBox(height: 10),
+                    GtlSurface(
+                      color: GtlColors.surfaceInk,
+                      padding: EdgeInsets.zero,
+                      child: Theme(
+                        data: Theme.of(
+                          context,
+                        ).copyWith(dividerColor: Colors.transparent),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: ExpansionTile(
+                            title: const Text('Ver detalhes técnicos'),
+                            subtitle: const Text(
+                              'Hashes, assinaturas, chave, Seal e ledger',
+                            ),
+                            childrenPadding: const EdgeInsets.fromLTRB(
+                              14,
+                              0,
+                              14,
+                              14,
+                            ),
+                            children: [
+                              for (final detail in technicalDetails)
+                                _IntegrityTechnicalRow(
+                                  label: detail.$1,
+                                  value: detail.$2,
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _copyTechnicalDetails(
+                              context,
+                              technicalDetails,
+                            ),
+                            icon: const Icon(Icons.copy_outlined),
+                            label: const Text('Copiar detalhes'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: FilledButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('Fechar'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
         ),
       ),
     );
   }
 
-  String _shortHash(String value) => value.length <= 18
-      ? value
-      : '${value.substring(0, 10)}…${value.substring(value.length - 6)}';
+  Future<void> _copyTechnicalDetails(
+    BuildContext context,
+    List<(String, String)> details,
+  ) async {
+    await Clipboard.setData(
+      ClipboardData(
+        text: details
+            .map(
+              (detail) =>
+                  '${detail.$1}: ${detail.$2.isEmpty ? '-' : detail.$2}',
+            )
+            .join('\n'),
+      ),
+    );
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Detalhes da integridade copiados.')),
+      );
+    }
+  }
+}
+
+class _IntegrityTechnicalRow extends StatelessWidget {
+  const _IntegrityTechnicalRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
+          const SizedBox(height: 3),
+          SelectableText(value.isEmpty ? '-' : value),
+        ],
+      ),
+    );
+  }
 }
 
 class _CommunityTab extends ConsumerStatefulWidget {

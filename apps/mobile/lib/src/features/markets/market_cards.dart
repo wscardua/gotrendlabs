@@ -386,26 +386,25 @@ class MarketMetricPanel extends StatelessWidget {
     ];
     return GtlSurface(
       color: GtlColors.surfaceGlass,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        children: [
-          for (var index = 0; index < metrics.length; index += 2) ...[
-            SizedBox(
-              height: 124,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: _MetricFromRecord(metric: metrics[index])),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MetricFromRecord(metric: metrics[index + 1]),
-                  ),
-                ],
-              ),
-            ),
-            if (index < metrics.length - 2) const SizedBox(height: 10),
-          ],
-        ],
+      padding: const EdgeInsets.all(10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth >= 300 ? 3 : 2;
+          const gap = 8.0;
+          final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final metric in metrics)
+                SizedBox(
+                  width: width,
+                  height: 82,
+                  child: _MetricFromRecord(metric: metric),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -418,12 +417,7 @@ class _MetricFromRecord extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tile = GtlMetricTile(
-      label: metric.$1,
-      value: metric.$2,
-      icon: metric.$3,
-      color: metric.$4,
-    );
+    final tile = _CompactMetricTile(metric: metric);
     if (metric.$5 == null) {
       return tile;
     }
@@ -433,6 +427,60 @@ class _MetricFromRecord extends StatelessWidget {
         borderRadius: BorderRadius.circular(GtlRadii.medium),
         onTap: metric.$5,
         child: tile,
+      ),
+    );
+  }
+}
+
+class _CompactMetricTile extends StatelessWidget {
+  const _CompactMetricTile({required this.metric});
+
+  final (String, String, IconData, Color, VoidCallback?) metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: GtlColors.surfaceInk,
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
+        border: Border.all(color: GtlColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                metric.$1.toUpperCase(),
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(metric.$3, size: 15, color: metric.$4),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      metric.$2,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

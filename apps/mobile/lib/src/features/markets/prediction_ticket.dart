@@ -1087,7 +1087,7 @@ class _PredictionReceiptsPanel extends StatelessWidget {
         child: Material(
           color: Colors.transparent,
           child: ExpansionTile(
-            initiallyExpanded: true,
+            initiallyExpanded: false,
             tilePadding: const EdgeInsets.symmetric(
               horizontal: 14,
               vertical: 4,

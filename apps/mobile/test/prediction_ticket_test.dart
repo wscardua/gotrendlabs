@@ -620,15 +620,18 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Comprovantes assinados'), findsOneWidget);
+    expect(find.text('Previsão inicial #1'), findsNothing);
+    expect(find.text('Reforço #2'), findsNothing);
+    expect(find.text('Revisão #3'), findsNothing);
+    await tester.ensureVisible(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
     expect(find.text('Previsão inicial #1'), findsOneWidget);
     expect(find.text('Reforço #2'), findsOneWidget);
     expect(find.text('Revisão #3'), findsOneWidget);
 
-    await tester.scrollUntilVisible(
-      find.text('Reforço #2'),
-      320,
-      scrollable: find.byType(Scrollable).first,
-    );
+    await tester.ensureVisible(find.text('Reforço #2'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Reforço #2'));
     await tester.pumpAndSettle();
@@ -671,6 +674,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Comprovantes assinados'), findsOneWidget);
+    expect(find.text('Previsão inicial #1'), findsNothing);
+    await tester.ensureVisible(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
     expect(find.text('Previsão inicial #1'), findsOneWidget);
   });
 }

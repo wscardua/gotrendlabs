@@ -97,7 +97,7 @@ void main() {
     expect(find.text('Fechado'), findsWidgets);
   });
 
-  testWidgets('places Integridade do mercado after prediction and resolution', (
+  testWidgets('places resolution before prediction and integrity last', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -134,8 +134,58 @@ void main() {
     final integrityTop = tester
         .getTopLeft(find.text('Integridade do mercado'))
         .dy;
-    expect(predictionTop, lessThan(resolutionTop));
+    expect(resolutionTop, lessThan(predictionTop));
+    expect(predictionTop, lessThan(integrityTop));
     expect(resolutionTop, lessThan(integrityTop));
+  });
+
+  testWidgets('shows complete market integrity details progressively', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketDetailProvider.overrideWith(
+            (ref, slug) async => _market(
+              status: 'sealed',
+              statusLabel: 'Concluído',
+              integrityStatus: 'sealed',
+            ),
+          ),
+          marketsRepositoryProvider.overrideWithValue(
+            _IntegrityMarketsRepository(),
+          ),
+        ],
+        child: const MaterialApp(
+          home: MarketDetailScreen(slug: 'mercado-longo'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Verificar integridade'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Verificar integridade'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ver detalhes técnicos'), findsOneWidget);
+    expect(find.text('hash-definition-completo'), findsNothing);
+    await tester.ensureVisible(find.text('Ver detalhes técnicos'));
+    await tester.tap(find.text('Ver detalhes técnicos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Hash da definição'), findsOneWidget);
+    expect(find.text('hash-definition-completo'), findsOneWidget);
+    expect(find.text('Assinatura da definição'), findsOneWidget);
+    expect(find.text('signature-definition-completa'), findsOneWidget);
+    expect(find.text('Raiz das previsões'), findsOneWidget);
+    expect(find.text('predictions-root-completa'), findsOneWidget);
+    expect(find.text('Hash da finalização'), findsOneWidget);
+    expect(find.text('Assinatura da finalização'), findsOneWidget);
+    expect(find.text('Cadeia global do ledger'), findsOneWidget);
   });
 }
 
@@ -151,6 +201,45 @@ class _NoopMarketsRepository extends MarketsRepository {
 
   @override
   Future<void> trackView(String slug) async {}
+}
+
+class _IntegrityMarketsRepository extends _NoopMarketsRepository {
+  @override
+  Future<Map<String, dynamic>> integrity(String slug) async => {
+    'status': 'sealed',
+    'protocol_version': 'gtl-integrity/v1',
+    'definition': {
+      'hash': 'hash-definition-completo',
+      'signature': 'signature-definition-completa',
+      'algorithm': 'Ed25519',
+      'key_id': 'kms-key-id',
+      'key_fingerprint': 'fingerprint-completo',
+    },
+    'seal': {
+      'hash': 'seal-hash-completo',
+      'signature': 'seal-signature-completa',
+      'payload': {'predictions_root': 'predictions-root-completa'},
+    },
+    'ledger_events': [
+      {
+        'event_hash': 'event-hash-completo',
+        'previous_event_hash': 'previous-event-hash-completo',
+      },
+    ],
+  };
+
+  @override
+  Future<Map<String, dynamic>> verifyIntegrity(String slug) async => {
+    'valid': true,
+    'definition_valid': true,
+    'definition_matches_current': true,
+    'seal_valid': true,
+    'result_matches_current': true,
+    'prediction_commitments_valid': true,
+    'merkle_root_valid': true,
+    'market_events_valid': true,
+    'ledger_chain_valid': true,
+  };
 }
 
 const _longTitle =

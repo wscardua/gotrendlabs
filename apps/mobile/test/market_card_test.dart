@@ -214,6 +214,44 @@ void main() {
     expect(find.text('mercado-teste community'), findsOneWidget);
   });
 
+  testWidgets('MarketMetricPanel fits six metrics into two compact rows', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: MarketMetricPanel(market: _market()),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final firstRow = [
+      find.text('PROBABILIDADE'),
+      find.text('VOLUME GT₵'),
+      find.text('PARTICIPANTES'),
+    ];
+    final secondRow = [
+      find.text('COMENTÁRIOS'),
+      find.text('ENCERRA EM'),
+      find.text('STATUS'),
+    ];
+    final firstTop = tester.getTopLeft(firstRow.first).dy;
+    final secondTop = tester.getTopLeft(secondRow.first).dy;
+    for (final finder in firstRow.skip(1)) {
+      expect(tester.getTopLeft(finder).dy, closeTo(firstTop, 5));
+    }
+    for (final finder in secondRow.skip(1)) {
+      expect(tester.getTopLeft(finder).dy, closeTo(secondTop, 5));
+    }
+    expect(firstTop, lessThan(secondTop));
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('MarketCompactCard time rail changes color with urgency', (
     tester,
   ) async {

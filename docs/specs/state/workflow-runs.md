@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-MOBILE-DETAIL-DENSITY-017
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-UX-001`, `FEAT-MOBILE-001`, `FEAT-INTEGRITY-001`
+- Objetivo: corrigir a hierarquia do critério de resolução, compactar `Sua mesa` e métricas e ampliar os detalhes técnicos da integridade no app.
+- Etapa atual: specs, implementação Flutter, testes e QA visual física concluídos.
+- Artefatos afetados: detalhe, cards/métricas, tela Hoje, comprovantes, testes mobile, specs, changelog e estado operacional.
+- Impacto arquitetural: nenhum; o Flutter apenas reorganiza e apresenta contratos existentes da FastAPI.
+- Reversão lógica: restaurar a ordem e expansões anteriores sem alterar mercados, posições ou provas criptográficas.
+- Evidências: `flutter analyze` sem issues; `flutter test` com 101 testes aprovados; testes de widget cobrem ordem do detalhe, grade compacta de métricas, atalhos de `Sua mesa`, comprovantes recolhidos e conteúdo técnico da integridade; APK debug instalada no Galaxy S20 conectado, usando FastAPI/Django locais via `adb reverse`; QA física confirmou layout sem overflow, grade 3x2, comprovantes fechados e detalhes técnicos expansíveis.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-MARKET-POSITION-HIERARCHY-016
 
 - Tipo: `change-feature` + `implementation-cycle`
