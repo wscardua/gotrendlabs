@@ -6810,6 +6810,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertContains(response, "Comprovante assinado")
             self.assertContains(response, "A assinatura criptográfica confirma a origem deste registro")
             self.assertContains(response, "Ver assinatura")
+            self.assertContains(response, 'data-integrity-modal-kind="receipt"')
 
         with patch("apps.web.django.markets.views.create_prediction", side_effect=AuthAPIError("Você já registrou uma previsão neste mercado.", 409)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
@@ -6937,16 +6938,23 @@ class WebSmokeTests(TransactionTestCase):
                     "created_at": "2026-06-14T12:00:00+00:00",
                 }
             ],
-            "history": [],
+            "history": [
+                {"id": 903, "action_type": "revision", "position_sequence": 3, "stake_amount": 64, "status": "open"},
+                {"id": 902, "action_type": "reinforcement", "position_sequence": 2, "stake_amount": 20, "status": "revised"},
+                {"id": 901, "action_type": "initial", "position_sequence": 1, "stake_amount": 80, "status": "revised"},
+            ],
         }
 
         with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         self.assertContains(response, "position-summary-card")
-        self.assertContains(response, "Comprovante assinado")
-        self.assertContains(response, "Ver assinatura da última entrada")
-        self.assertContains(response, reverse("prediction-integrity-receipt", args=["openai-gpt6-2026", Prediction.objects.get(user=user, market=market).id]))
+        self.assertContains(response, "Comprovantes assinados")
+        self.assertContains(response, "Um registro para cada ação da posição")
+        self.assertContains(response, "Previsão inicial #1")
+        self.assertContains(response, "Reforço #2")
+        self.assertContains(response, "Revisão #3")
+        self.assertEqual(response.content.decode().count('data-integrity-modal-kind="receipt"'), 3)
         self.assertContains(response, "position-action-tabs")
         self.assertContains(response, "Ver entradas abertas")
         self.assertContains(response, "Restam 1 reforço(s) neste mercado.")
@@ -7236,6 +7244,54 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Ver detalhes técnicos")
         self.assertContains(response, "Um hash funciona como uma impressão digital do registro")
         self.assertNotContains(response, "Seal final")
+        self.assertNotContains(response, "<!doctype html>")
+
+    def test_prediction_receipt_opens_as_compact_modal_fragment(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": 40,
+            "handle": "@predictionuser",
+            "email": "prediction-user@example.com",
+            "display_name": "Prediction User",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        market = get_domain_client().market("openai-gpt6-2026")
+        receipt = {
+            "prediction_id": 321,
+            "receipt": {
+                "payload": {
+                    "action_type": "reinforcement",
+                    "position_sequence": 2,
+                    "stake": 20,
+                    "server_timestamp": "2026-09-06T14:30:00+00:00",
+                    "previous_commitment_hash": "a" * 64,
+                },
+                "hash": "b" * 64,
+                "signature": "signed-receipt-value",
+                "key_fingerprint": "c" * 64,
+                "protocol_version": "gtl-integrity/v1",
+            },
+            "merkle_proof": None,
+        }
+
+        with (
+            patch("apps.web.django.markets.views.get_prediction_integrity_receipt", return_value=receipt),
+            patch("apps.web.django.markets.views.get_market", return_value=market),
+        ):
+            response = self.client.get(
+                f'{reverse("prediction-integrity-receipt", args=[market["slug"], 321])}?modal=1'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Previsão registrada e assinada")
+        self.assertContains(response, "Reforço da posição")
+        self.assertContains(response, "Assinatura emitida")
+        self.assertContains(response, "Esta ação referencia o comprovante anterior")
+        self.assertContains(response, "Ver detalhes técnicos")
+        self.assertContains(response, "data-prediction-receipt-report")
         self.assertNotContains(response, "<!doctype html>")
 
     def test_integrity_modal_uses_honest_plain_language_for_pending_and_failed_states(self):

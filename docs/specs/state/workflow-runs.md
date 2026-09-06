@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-PREDICTION-RECEIPT-MODAL-007
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: abrir comprovantes de previsao em modal alinhado ao design system e manter acesso individual a entrada inicial, reforcos e revisoes.
+- Etapa atual: modal responsivo, fallback de pagina completa e lista por acao implementados e validados.
+- Artefatos afetados: feature/arquitetura web, templates e JavaScript/CSS Django, testes e estado operacional.
+- Impacto arquitetural: somente apresentacao Django sobre recibos autenticados da FastAPI; assinatura, ownership e encadeamento continuam autoritativos no backend.
+- Reversao logica: remover o acionamento modal e restaurar links de pagina completa, sem alterar ou apagar compromissos persistidos.
+- Evidencias: QA visual no navegador em mercado real com modal sem overflow; confirmacao de tres recibos encadeados para previsao inicial, reforco e revisao; 215 testes de `tests.test_web_smoke`; `node --check`; `manage.py check`; `makemigrations --check --dry-run`; `git diff --check`.
+- Encerrado em: 2026-09-06
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-MARKET-INTEGRITY-UX-006
 
 - Tipo: `change-feature` + `implementation-cycle`

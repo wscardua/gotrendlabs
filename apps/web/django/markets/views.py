@@ -324,7 +324,27 @@ def prediction_receipt(request, slug, prediction_id):
     except AuthAPIError as exc:
         receipt = {}
         error = str(exc)
-    return render(request, "markets/prediction_receipt.html", {"slug": slug, "prediction_id": prediction_id, "receipt": receipt, "receipt_error": error})
+    try:
+        market = get_market(slug, auth_token(request))
+    except AuthAPIError:
+        market = local_market(slug)
+    payload = (receipt.get("receipt") or {}).get("payload") or {}
+    action_label = {
+        "reinforcement": "Reforço da posição",
+        "revision": "Revisão da posição",
+    }.get(payload.get("action_type"), "Previsão inicial")
+    timezone_name = market.get("resolution_timezone") or market.get("close_timezone") or "America/Sao_Paulo"
+    context = {
+        "slug": slug,
+        "market_title": market.get("title") or slug,
+        "prediction_id": prediction_id,
+        "receipt": receipt,
+        "receipt_error": error,
+        "action_label": action_label,
+        "signed_at_label": _datetime_label(payload.get("server_timestamp"), timezone_name),
+    }
+    template_name = "markets/_prediction_receipt_content.html" if request.GET.get("modal") == "1" else "markets/prediction_receipt.html"
+    return render(request, template_name, context)
 
 
 def prediction_preview(request, slug):

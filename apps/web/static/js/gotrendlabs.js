@@ -46,8 +46,11 @@ const integrityDialogBody = $("[data-integrity-dialog-body]", integrityDialog ||
 const integrityDialogCache = new Map();
 let integrityDialogTrigger = null;
 
-function integrityLoadingMarkup() {
-  return '<div class="integrity-dialog-loading" role="status"><span aria-hidden="true"></span><strong>Conferindo os registros</strong><small>Isso deve levar apenas um instante.</small></div>';
+function integrityLoadingMarkup(kind = "integrity") {
+  const isReceipt = kind === "receipt";
+  const title = isReceipt ? "Abrindo o comprovante" : "Conferindo os registros";
+  const detail = isReceipt ? "Validando a assinatura desta ação." : "Isso deve levar apenas um instante.";
+  return `<div class="integrity-dialog-loading" role="status"><span aria-hidden="true"></span><strong>${title}</strong><small>${detail}</small></div>`;
 }
 
 async function openIntegrityDialog(link) {
@@ -55,8 +58,9 @@ async function openIntegrityDialog(link) {
   integrityDialogTrigger = link;
   const sourceUrl = new URL(link.href, window.location.href);
   const cacheKey = sourceUrl.pathname;
+  const modalKind = link.dataset.integrityModalKind || "integrity";
   sourceUrl.searchParams.set("modal", "1");
-  integrityDialogBody.innerHTML = integrityLoadingMarkup();
+  integrityDialogBody.innerHTML = integrityLoadingMarkup(modalKind);
   integrityDialog.setAttribute("aria-busy", "true");
   integrityDialog.showModal();
 

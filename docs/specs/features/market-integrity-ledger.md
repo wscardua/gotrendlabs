@@ -1,7 +1,7 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.6
+versao: 0.7
 status_spec: draft
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-06
@@ -123,7 +123,9 @@ A primeira leitura da verificacao deve responder, nesta ordem: para que a pagina
 
 Sem alongar a pagina, o bloco introdutorio deve resumir o metodo em tres sinais: impressao digital por hash para detectar mudanca de conteudo, assinatura criptografica para confirmar origem com chave privada protegida e encadeamento para evidenciar alteracao ou remocao na sequencia. No detalhe do mercado, o escudo sobre a thumbnail e o unico acionador de verificacao; nao deve haver botao textual redundante abaixo do titulo.
 
-Depois de previsao inicial, reforco ou revisao, o detalhe do mercado confirma de forma compacta que foi emitido um comprovante assinado, explica que ele permite conferir a origem e detectar alteracoes e oferece acesso ao recibo individual. A interface usa os dados de `integrity_receipt` retornados pela FastAPI e nao simula assinatura no Django.
+Depois de previsao inicial, reforco ou revisao, o detalhe do mercado confirma de forma compacta que foi emitido um comprovante assinado, explica que ele permite conferir a origem e detectar alteracoes e oferece acesso ao recibo individual em modal responsivo. A rota completa continua como fallback sem JavaScript. A interface usa os dados de `integrity_receipt` retornados pela FastAPI e nao simula assinatura no Django.
+
+Cada acao da posicao mantem seu proprio comprovante: entrada inicial, cada reforco e cada revisao aparecem separadamente no historico de comprovantes do detalhe, identificados por tipo e sequencia. Uma acao nova referencia a anterior quando aplicavel; nenhuma assinatura anterior e substituida ou apagada.
 
 A linguagem visual segue esta semantica: verde somente para verificacao executada e aprovada; azul para processo ativo; amarelo para prazo ou retry operacional; cinza para aguardando, nao aplicavel ou ausencia historica; vermelho somente para diferenca criptografica detectada. Em `open`, previsoes aparecem como comprovantes sendo registrados, nao como etapa concluida. Em `locked`, aparecem como registros encerrados. Em `resolved`, resultado registrado e finalizacao pendente ficam distintos. Em `canceled`, resultado e finalizacao sao `Nao se aplica`.
 

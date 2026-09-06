@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes em modal por ação
+
+- O comprovante assinado abre em modal compacto no detalhe do mercado, com a página completa preservada para navegação sem JavaScript.
+- Entrada inicial, reforços e revisões ficam listados como comprovantes independentes, identificados por tipo e sequência, sem substituir assinaturas anteriores.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 confirmação de assinatura e copy compacta
 
 - O modal de verificação remove a ressalva destacada e mantém o foco em como hash, assinatura e histórico conectado detectam alterações.
