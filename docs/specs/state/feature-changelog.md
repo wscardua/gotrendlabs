@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 auditoria antecipada em todos os estados
+
+- A auditoria de integridade passa a abrir cada ciclo do daemon e varre todos os mercados com definição nativa assinada, inclusive abertos, fechados, resolvidos, selados e cancelados.
+- O alerta entra na fila na primeira passagem posterior à divergência, sem depender de `seal_due_at` ou da execução de uma selagem.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes persistentes e auditoria pelo daemon
 
 - Comprovantes do titular permanecem acessiveis no detalhe durante `open`, `locked`, `resolved`, `sealed` e `canceled`; o Seal adiciona a prova Merkle sem esconder recibos anteriores.

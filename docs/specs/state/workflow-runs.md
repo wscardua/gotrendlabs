@@ -2,6 +2,19 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-EARLY-AUDIT-009
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: executar a auditoria de integridade no inicio de todo ciclo, cobrindo qualquer estado e sem dependencia de selagem.
+- Etapa atual: comportamento normativo, ordem do daemon e regressao automatizada concluidos; 15 testes de integridade e 230 testes integrados aprovados.
+- Artefatos afetados: feature, contrato, arquitetura do scheduler, daemon, testes e estado operacional.
+- Impacto arquitetural: nenhuma nova fronteira; o daemon continua chamando o verificador autoritativo da FastAPI em modo interno e somente leitura.
+- Reversao logica: restaurar a ordem anterior do ciclo sem alterar alertas ou provas persistidas.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-AUDIT-UX-008
 
 - Tipo: `change-feature` + `implementation-cycle`

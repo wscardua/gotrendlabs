@@ -1,7 +1,7 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.8
+versao: 0.9
 status_spec: draft
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-06
@@ -140,7 +140,8 @@ A linguagem visual segue esta semantica: verde somente para verificacao executad
 - permissao `kms:Sign` fica limitada ao runtime/adaptador de integridade; verificacao usa chave publica em cache
 - timeouts/retries KMS sao limitados e auditados sem payload sensivel
 - dashboard mostra resolvidos aguardando, proximos do prazo, falhas e selados
-- apos processar selagens, o daemon executa auditoria criptografica somente leitura sobre mercados nativos e a cadeia global
+- no inicio de todo ciclo, antes de fechamento, selagem, comunicacoes ou outras rotinas, o daemon executa auditoria criptografica somente leitura sobre todos os mercados nativos e a cadeia global, independentemente do estado do mercado ou da existencia de selagem pendente
+- a deteccao operacional acontece na primeira passagem do daemon posterior a divergencia; a interface e a documentacao devem comunicar a cadencia real do ambiente, sem prometer deteccao instantanea
 - diferencas de definicao, resultado, compromisso, Merkle, Seal ou elo do ledger criam alerta operacional `high` em fila propria; indisponibilidade de KMS/transporte e retry de selagem nao sao classificados como adulteracao
 - alertas sao deduplicados por escopo e tipo de falha, preservam primeira/ultima deteccao e contagem de ocorrencias; revisao administrativa nao altera a prova e o alerta volta a `pending` se a divergencia persistir no ciclo seguinte
 

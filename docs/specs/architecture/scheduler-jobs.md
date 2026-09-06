@@ -22,7 +22,7 @@
 - O daemon drena a outbox de `communications_emaildelivery`, aplicando provider configurado, retries e resumo de enviados/falhos/suprimidos no heartbeat operacional.
 - O daemon drena a outbox de `communications_pushdelivery`, aplicando provider `none`/dry-run, retries, invalidação automática de tokens rejeitados e resumo de enviados/dry-run/falhos/suprimidos no heartbeat operacional.
 - O daemon sela mercados `resolved` vencidos com `FOR UPDATE SKIP LOCKED`; valida Merkle e assinatura antes do commit e mantem `resolved` em qualquer falha.
-- Depois da tentativa de selagem, o daemon audita as provas nativas e a cadeia global em modo somente leitura. Divergencias criptograficas geram alertas operacionais deduplicados de severidade alta; falhas de infraestrutura e retries continuam em seus rastros proprios e nao sao rotulados como adulteracao.
+- A auditoria das provas nativas e da cadeia global e a primeira rotina de todo ciclo do daemon e independe de estado, vencimento ou selagem. Assim, divergencias em mercados `open`, `locked`, `resolved`, `sealed` ou `canceled` entram na fila na primeira passagem posterior ao problema. Divergencias geram alertas operacionais deduplicados de severidade alta; falhas de infraestrutura e retries continuam em seus rastros proprios e nao sao rotulados como adulteracao.
 
 ## Dependências
 

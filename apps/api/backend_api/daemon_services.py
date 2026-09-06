@@ -341,9 +341,9 @@ def run_daemon_cycle(now=None):
         "reason": "not_run",
     }
     try:
+        integrity_audit_summary = audit_integrity_records(now=now)
         locked_markets = close_due_auto_markets(now=now)
         seal_summary = seal_due_markets(now=now)
-        integrity_audit_summary = audit_integrity_records(now=now)
         pruned_details = prune_expired_operational_records(now=now)
         pruned_logs = pruned_details["total"]
         from apps.web.django.communications.push_services import process_due_push_deliveries

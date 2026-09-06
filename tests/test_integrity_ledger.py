@@ -10,7 +10,7 @@ from django.utils import timezone as django_timezone
 from fastapi.testclient import TestClient
 
 from apps.api.backend_api import integrity_service
-from apps.api.backend_api.daemon_services import audit_integrity_records, seal_due_markets
+from apps.api.backend_api.daemon_services import audit_integrity_records, run_daemon_cycle, seal_due_markets
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.main import _market_lifecycle_engine, app
 from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
@@ -99,6 +99,27 @@ class IntegrityProtocolTests(SimpleTestCase):
         ):
             content = (root / relative).read_text()
             self.assertIn("não equivale a uma blockchain pública ou descentralizada", content)
+
+    def test_daemon_audits_integrity_before_market_mutations(self):
+        order = []
+        audit_summary = {"markets_scanned": 2, "issues_detected": 0}
+        connection = mock.MagicMock()
+
+        with (
+            mock.patch("apps.api.backend_api.daemon_services.audit_integrity_records", side_effect=lambda **_: order.append("audit") or audit_summary),
+            mock.patch("apps.api.backend_api.daemon_services.close_due_auto_markets", side_effect=lambda **_: order.append("close") or []),
+            mock.patch("apps.api.backend_api.daemon_services.seal_due_markets", side_effect=lambda **_: order.append("seal") or {"sealed": [], "failed": []}),
+            mock.patch("apps.api.backend_api.daemon_services.prune_expired_operational_records", return_value={"total": 0}),
+            mock.patch("apps.api.backend_api.daemon_services.get_connection", return_value=connection),
+            mock.patch("apps.api.backend_api.daemon_services.run_ai_agent_cycle", return_value={"enabled": False}),
+            mock.patch("apps.api.backend_api.daemon_services.log_daemon_event"),
+            mock.patch("apps.web.django.communications.services.process_due_email_deliveries", return_value={}),
+            mock.patch("apps.web.django.communications.push_services.process_due_push_deliveries", return_value={}),
+        ):
+            result = run_daemon_cycle(now=datetime(2026, 9, 6, tzinfo=timezone.utc))
+
+        self.assertEqual(order, ["audit", "close", "seal"])
+        self.assertEqual(result["integrity_audit"], audit_summary)
 
 
 class IntegrityLedgerIntegrationTests(TransactionTestCase):
@@ -254,6 +275,7 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
 
     def test_daemon_audit_creates_one_high_alert_and_reopens_it_while_issue_persists(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
+        self.assertEqual(market.status, "open")
         healthy = audit_integrity_records()
         self.assertEqual(healthy["issues_detected"], 0, healthy)
         self.assertFalse(IntegrityAlert.objects.exists())
