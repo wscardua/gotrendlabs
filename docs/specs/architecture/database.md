@@ -12,6 +12,7 @@
 - Modelos críticos devem preservar histórico quando o produto exigir auditabilidade.
 - Tabelas de integridade sao append-only, protegidas contra UPDATE/DELETE, sem cascades destrutivos e fora de purge/retenção comum.
 - `integrity_signing_keys` armazena apenas material publico DER, algoritmo e fingerprint por `key_id`; material privado permanece fora do PostgreSQL e, em producao, exclusivamente no AWS KMS.
+- `gotrendlabs_integrity_alerts` e uma fila operacional mutavel, separada das provas append-only. Deduplica por escopo/tipo de divergencia, preserva primeira e ultima deteccao, ocorrencias e revisao administrativa; nao participa da raiz Merkle nem da cadeia assinada.
 - Wallet deve usar razão de transações (`ledger`) em vez de depender apenas de saldo derivado.
 - Resolução de mercado deve registrar origem, operador, evidência, data efetiva e timezone usado para apresentação/auditoria.
 - Sempre que possível, usar identificadores estáveis independentes de textos traduzidos.

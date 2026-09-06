@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes persistentes e auditoria pelo daemon
+
+- Comprovantes do titular permanecem acessiveis no detalhe durante `open`, `locked`, `resolved`, `sealed` e `canceled`; o Seal adiciona a prova Merkle sem esconder recibos anteriores.
+- Cards finalizados usam o CTA `Resultado` e apresentam compartilhamento como icone secundario acessivel.
+- O daemon audita definicao, resultado, compromissos, Merkle, Seal e cadeia global, criando alertas operacionais `high` deduplicados na fila `Integridade` sem alterar o ledger.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes em modal por ação
 
 - O comprovante assinado abre em modal compacto no detalhe do mercado, com a página completa preservada para navegação sem JavaScript.

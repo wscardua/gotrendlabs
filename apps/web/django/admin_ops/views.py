@@ -2218,7 +2218,7 @@ def moderation(request):
     error = ""
     try:
         if filters["kind"] != "comment":
-            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback", "wallet_recharge"} else ""}
+            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback", "wallet_recharge", "integrity_alert"} else ""}
             queue_data = admin_get_queues(token, **queue_filters)
     except AuthAPIError as exc:
         queue_data = {"items": [], "counts": {}}
@@ -2727,6 +2727,9 @@ def queue_action(request, action, kind=None, item_id=None):
         review_form = QueueReviewForm(initial={"status": item.get("status", "pending"), "note": item.get("admin_note", "")})
         if kind == "comment":
             review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
+        elif kind == "integrity_alert":
+            review_form.fields["status"].choices = (("pending", "Pendente"), ("reviewed", "Revisado"))
+            review_form.fields["note"].required = True
         reward_form = FeedbackRewardForm(initial={"amount_gtl": item.get("reward_gtl") or 50, "note": item.get("admin_note", "")})
         recharge_form = WalletRechargeApprovalForm(initial={"amount_gtl": item.get("reward_gtl") or 250, "note": item.get("admin_note", "")})
         recharge_reject_form = WalletRechargeRejectForm(initial={"note": item.get("admin_note", "")})
@@ -2797,6 +2800,9 @@ def queue_action(request, action, kind=None, item_id=None):
                 error = "Escolha aprovar ou rejeitar a recarga."
             else:
                 review_form = QueueReviewForm(request.POST)
+                if kind == "integrity_alert":
+                    review_form.fields["status"].choices = (("pending", "Pendente"), ("reviewed", "Revisado"))
+                    review_form.fields["note"].required = True
                 if review_form.is_valid():
                     admin_review_queue_item(token, kind, item_id, review_form.cleaned_data["status"], review_form.cleaned_data.get("note") or "")
                     messages.success(request, "Item revisado.")

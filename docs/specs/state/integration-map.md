@@ -29,6 +29,7 @@
 ## Integrações já materializadas
 
 - `FEAT-INTEGRITY-001` integra publicação e previsão atomicamente ao signer, encadeia eventos globais sob advisory lock, sela mercados vencidos no daemon e distribui `market_sealed` por in-app/push/email idempotentes.
+- O daemon reutiliza o verificador autoritativo de `FEAT-INTEGRITY-001` e materializa divergencias confirmadas em `gotrendlabs_integrity_alerts`; FastAPI inclui esses alertas na fila staff e Django Admin Ops apenas os apresenta/revisa.
 - Django Admin Ops configura a janela de 1 a 168 horas e apresenta filas/métricas; cards e detalhe web, Flutter e páginas de confiança consomem status/provas sem assinar ou recalcular autoridade no cliente.
 
 - `FEAT-COMMENT-001` usa `FEAT-AUTH-001` para autor/reação autenticada e staff em moderação.

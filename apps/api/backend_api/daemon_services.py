@@ -1,10 +1,16 @@
 from datetime import datetime, timedelta, timezone
+import hashlib
 
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.agent_services import run_ai_agent_cycle
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
-from apps.api.backend_api.integrity_service import seal_market
+from apps.api.backend_api.integrity_service import (
+    IntegritySigningError,
+    seal_market,
+    verify_integrity_ledger_chain,
+    verify_market_integrity_records,
+)
 from apps.web.django.system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
 
 
@@ -15,6 +21,18 @@ DAEMON_HEARTBEAT_EVENT = "daemon.heartbeat"
 DEFAULT_STALE_AFTER_MINUTES = 5
 DEFAULT_MISSING_AFTER_MINUTES = 15
 MAX_MARKET_SLUGS_IN_MESSAGE = 10
+
+INTEGRITY_ISSUE_LABELS = {
+    "definition_invalid": ("Assinatura da definição não confere", "A definição registrada falhou na validação de hash ou assinatura."),
+    "definition_changed": ("Definição publicada foi alterada", "A definição operacional atual diverge do registro assinado na publicação."),
+    "prediction_commitment_invalid": ("Comprovante de previsão não confere", "Um ou mais compromissos de previsão falharam na validação ou no encadeamento."),
+    "seal_invalid": ("Seal final não confere", "O Seal armazenado falhou na validação de conteúdo, referência ou assinatura."),
+    "result_changed": ("Resultado registrado foi alterado", "O resultado operacional atual diverge do resultado protegido pelo ledger."),
+    "merkle_invalid": ("Histórico Merkle não confere", "A raiz ou uma prova Merkle não corresponde aos compromissos registrados."),
+    "market_events_invalid": ("Evento do mercado rompeu o ledger", "Um evento associado ao mercado falhou na validação da cadeia assinada."),
+    "verification_exception": ("Verificação de integridade falhou", "A auditoria encontrou um registro inválido que não pôde ser interpretado com segurança."),
+    "ledger_chain_invalid": ("Cadeia global do ledger não confere", "A sequência, o elo, o conteúdo ou a assinatura de um evento global falhou na validação."),
+}
 
 
 def _coerce_retention_days(value, default=DEFAULT_RETENTION_DAYS):
@@ -142,6 +160,101 @@ def seal_due_markets(now=None):
     return {"sealed": sealed, "failed": failed}
 
 
+def _enqueue_integrity_alert(cursor, *, issue_code, market, now):
+    scope = market["slug"] if market else "global"
+    dedupe_key = hashlib.sha256(f"{scope}:{issue_code}".encode("utf-8")).hexdigest()
+    title, description = INTEGRITY_ISSUE_LABELS.get(
+        issue_code,
+        INTEGRITY_ISSUE_LABELS["verification_exception"],
+    )
+    cursor.execute(
+        """INSERT INTO gotrendlabs_integrity_alerts
+           (market_id,dedupe_key,issue_code,title,description,severity,status,occurrences,
+            first_detected_at,last_detected_at,admin_note,reviewed_by_id,reviewed_at,created_at,updated_at)
+           VALUES (%s,%s,%s,%s,%s,'high','pending',1,%s,%s,'',NULL,NULL,%s,%s)
+           ON CONFLICT (dedupe_key) DO NOTHING
+           RETURNING id""",
+        (market["id"] if market else None, dedupe_key, issue_code, title, description, now, now, now, now),
+    )
+    created = cursor.fetchone()
+    if created:
+        record_admin_event(
+            cursor,
+            None,
+            "integrity.alert_created",
+            "market" if market else "integrity_ledger",
+            scope,
+            f"Alerta alto criado pelo daemon: {issue_code}.",
+        )
+        return True
+    cursor.execute(
+        """UPDATE gotrendlabs_integrity_alerts
+           SET status='pending',severity='high',occurrences=occurrences+1,last_detected_at=%s,
+               reviewed_by_id=NULL,reviewed_at=NULL,updated_at=%s
+           WHERE dedupe_key=%s""",
+        (now, now, dedupe_key),
+    )
+    return False
+
+
+def audit_integrity_records(now=None):
+    now = now or datetime.now(timezone.utc)
+    summary = {"markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 0}
+    try:
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                ledger_audit = verify_integrity_ledger_chain(cursor)
+                if not ledger_audit["valid"]:
+                    summary["issues_detected"] += 1
+                    summary["alerts_created"] += int(
+                        _enqueue_integrity_alert(cursor, issue_code="ledger_chain_invalid", market=None, now=now)
+                    )
+                cursor.execute(
+                    """SELECT m.* FROM gotrendlabs_markets m
+                       JOIN market_integrity_definitions d ON d.market_id=m.id
+                       ORDER BY m.id"""
+                )
+                markets = cursor.fetchall()
+                for market in markets:
+                    summary["markets_scanned"] += 1
+                    try:
+                        verification = verify_market_integrity_records(cursor, market, ledger_audit=ledger_audit)
+                        issue_codes = verification["errors"]
+                    except IntegritySigningError:
+                        summary["scan_failures"] += 1
+                        continue
+                    except (KeyError, TypeError, ValueError):
+                        issue_codes = ["verification_exception"]
+                    for issue_code in issue_codes:
+                        summary["issues_detected"] += 1
+                        summary["alerts_created"] += int(
+                            _enqueue_integrity_alert(cursor, issue_code=issue_code, market=market, now=now)
+                        )
+    except IntegritySigningError as exc:
+        summary["scan_failures"] += 1
+        log_daemon_event(
+            "daemon.integrity_audit_unavailable",
+            "Auditoria de integridade ficou indisponível neste ciclo; nenhum alerta criptográfico foi inferido.",
+            level="ERROR",
+            context={"error_type": exc.__class__.__name__},
+        )
+    if summary["scan_failures"] and summary["markets_scanned"]:
+        log_daemon_event(
+            "daemon.integrity_audit_partial",
+            "Auditoria de integridade não conseguiu verificar todos os mercados neste ciclo.",
+            level="ERROR",
+            context=summary,
+        )
+    if summary["issues_detected"]:
+        log_daemon_event(
+            "daemon.integrity_issues_detected",
+            f"Auditoria detectou {summary['issues_detected']} problema(s) de integridade.",
+            level="ERROR",
+            context=summary,
+        )
+    return summary
+
+
 def prune_expired_system_logs(now=None):
     now = now or datetime.now(timezone.utc)
     with get_connection() as connection:
@@ -230,6 +343,7 @@ def run_daemon_cycle(now=None):
     try:
         locked_markets = close_due_auto_markets(now=now)
         seal_summary = seal_due_markets(now=now)
+        integrity_audit_summary = audit_integrity_records(now=now)
         pruned_details = prune_expired_operational_records(now=now)
         pruned_logs = pruned_details["total"]
         from apps.web.django.communications.push_services import process_due_push_deliveries
@@ -276,6 +390,7 @@ def run_daemon_cycle(now=None):
             "email": email_summary,
             "push": push_summary,
             "integrity_seals": seal_summary,
+            "integrity_audit": integrity_audit_summary,
         },
     )
     if locked_markets:
@@ -297,6 +412,7 @@ def run_daemon_cycle(now=None):
         "email": email_summary,
         "push": push_summary,
         "integrity_seals": seal_summary,
+        "integrity_audit": integrity_audit_summary,
     }
 
 

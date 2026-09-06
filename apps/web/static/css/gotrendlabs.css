@@ -1574,8 +1574,22 @@ h3 {
   padding-inline: 10px;
 }
 
-.share-symbol {
-  display: none;
+.share-card-button {
+  flex: 0 0 40px !important;
+  width: 40px;
+  min-width: 40px !important;
+  height: 36px;
+  padding: 0 !important;
+}
+
+.share-card-button svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
 }
 
 .market-favorite-form {
@@ -2424,6 +2438,18 @@ input[type="range"] {
 .position-receipts {
   border-top: 1px solid rgba(19, 111, 74, 0.14);
   padding-top: 9px;
+}
+
+.closed-position-receipts {
+  margin: 14px 0;
+  padding: 12px 14px 4px;
+  border: 1px solid rgba(19, 111, 74, 0.16);
+  border-radius: 14px;
+  background: rgba(226, 245, 232, 0.45);
+}
+
+.closed-position-receipts .position-receipts {
+  margin-top: 7px;
 }
 
 .position-receipts summary {
@@ -9560,6 +9586,11 @@ body[data-theme="dark"] .position-receipts {
   border-color: rgba(139, 234, 166, 0.16);
 }
 
+body[data-theme="dark"] .closed-position-receipts {
+  border-color: rgba(139, 234, 166, 0.16);
+  background: rgba(85, 212, 139, 0.08);
+}
+
 body[data-theme="dark"] .position-receipts summary b,
 body[data-theme="dark"] .position-receipt-check {
   background: rgba(85, 212, 139, 0.14);
@@ -9843,16 +9874,6 @@ body[data-theme="dark"] .footer {
     width: 42px;
     min-width: 42px;
     padding-inline: 0;
-  }
-
-  .share-label {
-    display: none;
-  }
-
-  .share-symbol {
-    display: inline;
-    font-size: 16px;
-    line-height: 1;
   }
 
   .market-card-actions {

@@ -33,3 +33,4 @@ Garantir que cada feature tenha critérios de aceite verificáveis e cobertura s
 - `gotrendlabs-test-strategy` define o que deve ser testado; `gotrendlabs-test-engineer` transforma isso em testes executáveis e evidência.
 - Integridade exige testes de adulteracao, assinatura, cadeia, Merkle, concorrencia, atomicidade KMS, ausencia de PII e contratos/UI web e mobile.
 - A regressao de integridade deve distinguir retry operacional de adulteracao, detectar divergencia entre mercado/resultado atuais e snapshots assinados, validar compromissos incluidos no Merkle e garantir que `null`/nao aplicavel/legado/cancelado nao sejam apresentados como falha criptografica.
+- O daemon deve ser testado para criar alerta `high` deduplicado por divergencia, reabrir alerta revisado se a falha persistir, nao alertar mercados validos nem retries operacionais e expor o item na fila staff sem permitir recompensa.

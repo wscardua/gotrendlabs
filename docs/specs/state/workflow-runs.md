@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-AUDIT-UX-008
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MARKET-001`
+- Objetivo: manter comprovantes visiveis apos fechamento, alinhar CTA/compartilhamento dos cards e criar auditoria recorrente de integridade com alerta `high` na fila operacional.
+- Etapa atual: comprovantes persistentes, controles dos cards, auditoria compartilhada, migration e fila operacional implementados e validados.
+- Artefatos afetados: feature/contrato/arquitetura/testes, PostgreSQL/migration, verificador FastAPI, daemon, fila Admin Ops, templates/CSS web, OpenAPI e estado operacional.
+- Impacto arquitetural: FastAPI preserva a verificacao autoritativa; daemon apenas agenda a auditoria; PostgreSQL persiste alertas operacionais separados do ledger append-only; Django apenas apresenta e revisa.
+- Reversao logica: desativar a chamada de auditoria e ocultar `integrity_alert` da fila, preservando alertas e provas existentes; restaurar rotulos/controles web sem alterar dados criptograficos.
+- Migration: `markets.0030_integrity_alert_queue`, aplicada localmente.
+- Evidencias: 229 testes de integridade/web aprovados; QA visual dos cards e da fila/detalhe de alerta; auditoria local de 9 mercados com materializacao dos cenarios de falha conhecidos; `manage.py check`; `makemigrations --check --dry-run`; OpenAPI export/check; compilacao Python; `node --check`; `git diff --check`.
+- Encerrado em: 2026-09-06
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-PREDICTION-RECEIPT-MODAL-007
 
 - Tipo: `change-feature` + `implementation-cycle`

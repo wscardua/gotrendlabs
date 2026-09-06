@@ -4365,6 +4365,11 @@
             "title": "Description",
             "type": "string"
           },
+          "first_detected_at_label": {
+            "default": "",
+            "title": "First Detected At Label",
+            "type": "string"
+          },
           "guest_email": {
             "default": "",
             "title": "Guest Email",
@@ -4379,6 +4384,11 @@
             "title": "Id",
             "type": "integer"
           },
+          "issue_code": {
+            "default": "",
+            "title": "Issue Code",
+            "type": "string"
+          },
           "item_type": {
             "default": "",
             "title": "Item Type",
@@ -4387,6 +4397,21 @@
           "kind": {
             "title": "Kind",
             "type": "string"
+          },
+          "last_detected_at_label": {
+            "default": "",
+            "title": "Last Detected At Label",
+            "type": "string"
+          },
+          "market_slug": {
+            "default": "",
+            "title": "Market Slug",
+            "type": "string"
+          },
+          "occurrences": {
+            "default": 0,
+            "title": "Occurrences",
+            "type": "integer"
           },
           "owner_label": {
             "title": "Owner Label",

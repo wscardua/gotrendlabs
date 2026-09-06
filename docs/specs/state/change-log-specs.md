@@ -2,6 +2,7 @@
 
 ## 2026-09-06
 
+- ampliada `FEAT-INTEGRITY-001` para manter comprovantes do usuario em todos os estados posteriores, ajustar os CTAs dos cards e criar auditoria criptografica recorrente pelo daemon com fila operacional de severidade alta;
 - comprovantes individuais de previsao passam a abrir em modal web responsivo e o detalhe lista separadamente os recibos de entrada inicial, reforcos e revisoes, preservando a rota completa como fallback;
 - refinada a experiencia web de `FEAT-INTEGRITY-001`: o modal compacto deixa de destacar uma secao negativa de limitacoes ou alertas globais que nao invalidam o mercado, o CTA de mercados finalizados volta a `Ver resolução` e a confirmacao de previsao explicita o comprovante assinado emitido pela FastAPI;
 - refinada `FEAT-INTEGRITY-001` para separar retry operacional (`seal_retry_pending`) de diferenca criptografica (`verification_failed`) e representar cancelamento preservado sem etapas eternamente pendentes;

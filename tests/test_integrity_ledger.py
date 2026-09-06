@@ -10,10 +10,10 @@ from django.utils import timezone as django_timezone
 from fastapi.testclient import TestClient
 
 from apps.api.backend_api import integrity_service
-from apps.api.backend_api.daemon_services import seal_due_markets
+from apps.api.backend_api.daemon_services import audit_integrity_records, seal_due_markets
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.main import _market_lifecycle_engine, app
-from apps.web.django.markets.models import AdminEvent, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
+from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
 from tests.test_web_smoke import _seed_test_badges, _seed_test_email_templates, _seed_test_markets
 
 
@@ -251,3 +251,71 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertEqual(len(retried["sealed"]), 1, retried)
         self.assertEqual(MarketSeal.objects.filter(market=market).count(), 1)
         self.assertGreaterEqual(PredictionCommitment.objects.filter(market=market).count(), 1)
+
+    def test_daemon_audit_creates_one_high_alert_and_reopens_it_while_issue_persists(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        healthy = audit_integrity_records()
+        self.assertEqual(healthy["issues_detected"], 0, healthy)
+        self.assertFalse(IntegrityAlert.objects.exists())
+
+        original_title = market.title
+        Market.objects.filter(pk=market.pk).update(title="Definição adulterada para auditoria")
+        first = audit_integrity_records()
+        self.assertGreaterEqual(first["issues_detected"], 1, first)
+        alert = IntegrityAlert.objects.get(market=market, issue_code="definition_changed")
+        self.assertEqual(alert.severity, "high")
+        self.assertEqual(alert.status, "pending")
+        self.assertEqual(alert.occurrences, 1)
+
+        alert.status = "reviewed"
+        alert.admin_note = "Em investigação."
+        alert.save(update_fields=["status", "admin_note", "updated_at"])
+        repeated = audit_integrity_records()
+        self.assertEqual(IntegrityAlert.objects.filter(market=market, issue_code="definition_changed").count(), 1)
+        alert.refresh_from_db()
+        self.assertEqual(alert.status, "pending")
+        self.assertEqual(alert.occurrences, 2)
+        self.assertEqual(repeated["alerts_created"], 0)
+        self.assertEqual(
+            AdminEvent.objects.filter(action="integrity.alert_created", entity_identifier=market.slug).count(),
+            1,
+        )
+        Market.objects.filter(pk=market.pk).update(title=original_title)
+
+    def test_integrity_alert_is_exposed_and_reviewed_only_by_staff(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        Market.objects.filter(pk=market.pk).update(title="Definição adulterada para fila")
+        audit_integrity_records()
+        alert = IntegrityAlert.objects.get(market=market, issue_code="definition_changed")
+
+        queue = self.client.get("/admin/queues", headers=self.staff_headers, params={"kind": "integrity_alert"})
+        self.assertEqual(queue.status_code, 200, queue.text)
+        item = queue.json()["items"][0]
+        self.assertEqual(item["kind"], "integrity_alert")
+        self.assertEqual(item["severity"], "high")
+        self.assertEqual(item["market_slug"], market.slug)
+        self.assertEqual(item["occurrences"], 1)
+
+        missing_note = self.client.post(
+            f"/admin/queues/integrity_alert/{alert.id}/review",
+            headers=self.staff_headers,
+            json={"status": "reviewed", "note": ""},
+        )
+        self.assertEqual(missing_note.status_code, 422)
+        reviewed = self.client.post(
+            f"/admin/queues/integrity_alert/{alert.id}/review",
+            headers=self.staff_headers,
+            json={"status": "reviewed", "note": "Incidente encaminhado para correção append-only."},
+        )
+        self.assertEqual(reviewed.status_code, 200, reviewed.text)
+        self.assertEqual(reviewed.json()["status"], "reviewed")
+
+    def test_daemon_does_not_classify_verification_infrastructure_failure_as_tampering(self):
+        with mock.patch(
+            "apps.api.backend_api.daemon_services.verify_integrity_ledger_chain",
+            side_effect=integrity_service.IntegritySigningError("public key service unavailable"),
+        ):
+            summary = audit_integrity_records()
+        self.assertEqual(summary["scan_failures"], 1)
+        self.assertEqual(summary["issues_detected"], 0)
+        self.assertFalse(IntegrityAlert.objects.exists())

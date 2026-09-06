@@ -1043,6 +1043,11 @@ class QueueItemResponse(BaseModel):
     created_at: str
     created_at_label: str = ""
     reviewed_at: Optional[str] = None
+    issue_code: str = ""
+    market_slug: str = ""
+    occurrences: int = 0
+    first_detected_at_label: str = ""
+    last_detected_at_label: str = ""
 
 
 class QueueListResponse(BaseModel):

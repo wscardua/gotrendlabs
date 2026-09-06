@@ -43,6 +43,7 @@ from apps.api.backend_api.integrity_service import (
     public_key_payload,
     public_key_der_for,
     sha256_hex,
+    verify_market_integrity_records,
     verify_merkle_proof,
     verify_signed_hash,
 )
@@ -3569,6 +3570,40 @@ def _wallet_recharge_response(row):
     }
 
 
+def _integrity_alert_response(row):
+    return {
+        "id": row["id"],
+        "kind": "integrity_alert",
+        "title": row["title"],
+        "category": "Integridade",
+        "queue_label": "Integridade",
+        "item_type": row["issue_code"],
+        "status": row["status"],
+        "status_label": _queue_status_label(row["status"]),
+        "severity": "high",
+        "severity_label": "Alta",
+        "owner_label": "Segurança",
+        "age_label": _age_label(row["first_detected_at"]),
+        "author_handle": None,
+        "author_id": None,
+        "guest_name": "",
+        "guest_email": "",
+        "source": "",
+        "description": row["description"],
+        "admin_note": row["admin_note"] or "",
+        "reward_gtl": None,
+        "converted_market_slug": None,
+        "created_at": row["created_at"].isoformat(),
+        "created_at_label": _date_label(row["created_at"]),
+        "reviewed_at": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
+        "issue_code": row["issue_code"],
+        "market_slug": row["market_slug"] or "",
+        "occurrences": int(row["occurrences"] or 0),
+        "first_detected_at_label": _date_label(row["first_detected_at"]),
+        "last_detected_at_label": _date_label(row["last_detected_at"]),
+    }
+
+
 def _wallet_recharge_public_response(row):
     return {
         "id": row["id"],
@@ -3595,6 +3630,20 @@ def _get_wallet_recharge_request(cursor, request_id):
     row = cursor.fetchone()
     if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Solicitação de recarga não encontrada.")
+    return row
+
+
+def _get_integrity_alert(cursor, alert_id):
+    cursor.execute(
+        """SELECT a.*,m.slug AS market_slug
+           FROM gotrendlabs_integrity_alerts a
+           LEFT JOIN gotrendlabs_markets m ON m.id=a.market_id
+           WHERE a.id=%s""",
+        (alert_id,),
+    )
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Alerta de integridade não encontrado.")
     return row
 
 
@@ -4587,137 +4636,13 @@ def download_market_integrity_package(slug: str, request: Request):
 @app.get("/markets/{slug}/integrity/verify", response_model=MarketIntegrityVerificationResponse)
 def verify_market_integrity(slug: str, request: Request):
     _enforce_rate_limit("market_integrity_verify", _rate_limit_identity(request), limit=60, window_seconds=60)
-    errors = []
-    warnings = []
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute("SELECT * FROM gotrendlabs_markets WHERE slug=%s", (slug,))
             market = cursor.fetchone()
             if not market:
                 raise HTTPException(status_code=404, detail="Mercado não encontrado.")
-            cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market["id"],))
-            definition = cursor.fetchone()
-            definition_valid = definition_matches_current = None
-            if definition:
-                definition_valid = (
-                    hmac.compare_digest(sha256_hex(bytes(definition["canonical_payload"])), definition["payload_hash"])
-                    and hmac.compare_digest(sha256_hex(canonical_json(_json_object(definition["payload_json"]))), definition["payload_hash"])
-                    and verify_signed_hash(definition["payload_hash"], bytes(definition["signature"]), public_key_der_for(definition["key_id"], cursor=cursor))
-                )
-                current_definition = market_definition_payload(
-                    cursor,
-                    market["id"],
-                    published_at=market["published_at"],
-                    definition_version=definition["definition_version"],
-                )
-                definition_matches_current = hmac.compare_digest(
-                    sha256_hex(canonical_json(current_definition)), definition["payload_hash"]
-                )
-                if not definition_valid: errors.append("definition_invalid")
-                if not definition_matches_current: errors.append("definition_changed")
-            cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
-            seal = cursor.fetchone()
-            seal_valid = merkle_valid = result_matches_current = prediction_commitments_valid = None
-            if seal:
-                seal_payload = _json_object(seal["payload_json"])
-                signed_result = seal_payload.get("result") or {}
-                signed_result_hash = sha256_hex(canonical_json(signed_result))
-                seal_valid = (
-                    hmac.compare_digest(sha256_hex(bytes(seal["canonical_payload"])), seal["seal_hash"])
-                    and hmac.compare_digest(sha256_hex(canonical_json(seal_payload)), seal["seal_hash"])
-                    and verify_signed_hash(seal["seal_hash"], bytes(seal["signature"]), public_key_der_for(seal["key_id"], cursor=cursor))
-                    and hmac.compare_digest(seal_payload.get("result_hash", ""), seal["result_hash"])
-                    and hmac.compare_digest(signed_result_hash, seal["result_hash"])
-                    and hmac.compare_digest(seal_payload.get("predictions_root", ""), seal["predictions_root"])
-                    and bool(definition)
-                    and hmac.compare_digest(seal_payload.get("definition_hash", ""), definition["payload_hash"])
-                )
-                current_result_hash = sha256_hex(canonical_json(market_result_payload(market)))
-                result_matches_current = hmac.compare_digest(current_result_hash, seal["result_hash"])
-                cursor.execute("""SELECT ml.commitment_id,ml.leaf_hash,ml.proof,pc.canonical_payload,
-                                  pc.payload_json,pc.commitment_hash,pc.signature,pc.key_id
-                                  FROM market_merkle_leaves ml
-                                  LEFT JOIN prediction_commitments pc ON pc.id=ml.commitment_id
-                                  WHERE ml.seal_id=%s ORDER BY ml.leaf_index""", (seal["id"],))
-                leaves = cursor.fetchall()
-                cursor.execute("SELECT count(*) count FROM prediction_commitments WHERE market_id=%s", (market["id"],))
-                commitment_count = cursor.fetchone()["count"]
-                prediction_commitments_valid = len(leaves) == commitment_count and all(
-                    row["canonical_payload"] is not None
-                    and hmac.compare_digest(sha256_hex(bytes(row["canonical_payload"])), row["commitment_hash"])
-                    and hmac.compare_digest(sha256_hex(canonical_json(_json_object(row["payload_json"]))), row["commitment_hash"])
-                    and hmac.compare_digest(row["leaf_hash"], row["commitment_hash"])
-                    and verify_signed_hash(row["commitment_hash"], bytes(row["signature"]), public_key_der_for(row["key_id"], cursor=cursor))
-                    for row in leaves
-                )
-                calculated_root, _ = build_merkle([row["leaf_hash"] for row in leaves])
-                merkle_valid = hmac.compare_digest(calculated_root, seal["predictions_root"]) and all(verify_merkle_proof(row["leaf_hash"], _json_object(row["proof"]), seal["predictions_root"]) for row in leaves)
-                if not seal_valid: errors.append("seal_invalid")
-                if not result_matches_current: errors.append("result_changed")
-                if not prediction_commitments_valid: errors.append("prediction_commitment_invalid")
-                if not merkle_valid: errors.append("merkle_invalid")
-            elif market["status"] == "resolved":
-                cursor.execute(
-                    """SELECT payload_hash FROM integrity_ledger_events
-                       WHERE market_id=%s AND event_type='market_resolved'
-                       ORDER BY sequence DESC LIMIT 1""",
-                    (market["id"],),
-                )
-                resolution_event = cursor.fetchone()
-                current_resolution = {
-                    "winning_option_id": market["winning_option_id"],
-                    "resolved_at": market["resolved_at"],
-                    "seal_due_at": market["seal_due_at"],
-                    "resolution_note": market["resolution_note"] or "",
-                }
-                result_matches_current = bool(resolution_event) and hmac.compare_digest(
-                    sha256_hex(canonical_json(current_resolution)), resolution_event["payload_hash"]
-                )
-                if not result_matches_current: errors.append("result_changed")
-            cursor.execute("SELECT * FROM integrity_ledger_events ORDER BY sequence")
-            previous_hash, ledger_valid, market_events_valid = "", True, True
-            for event in cursor.fetchall():
-                expected_hash = sha256_hex(bytes(event["canonical_payload"]))
-                event_payload = _json_object(event["payload_json"])
-                valid_event = (
-                    hmac.compare_digest(event["previous_event_hash"], previous_hash)
-                    and hmac.compare_digest(event["event_hash"], expected_hash)
-                    and hmac.compare_digest(sha256_hex(canonical_json(event_payload)), event["event_hash"])
-                    and event_payload.get("sequence") == event["sequence"]
-                    and event_payload.get("event_type") == event["event_type"]
-                    and event_payload.get("payload_hash") == event["payload_hash"]
-                    and event_payload.get("payload_reference") == event["payload_reference"]
-                    and event_payload.get("previous_event_hash") == event["previous_event_hash"]
-                    and verify_signed_hash(event["event_hash"], bytes(event["signature"]), public_key_der_for(event["key_id"], cursor=cursor))
-                )
-                ledger_valid = ledger_valid and valid_event
-                if event["market_id"] == market["id"]:
-                    market_events_valid = market_events_valid and valid_event
-                previous_hash = event["event_hash"]
-            if not ledger_valid: warnings.append("ledger_chain_invalid")
-            if not market_events_valid: errors.append("market_events_invalid")
-            valid = (
-                bool(definition_valid and definition_matches_current)
-                and market_events_valid
-                and (market["status"] != "resolved" or bool(result_matches_current))
-                and (
-                    market["status"] != "sealed"
-                    or bool(seal_valid and result_matches_current and prediction_commitments_valid and merkle_valid)
-                )
-            )
-            return {
-                "valid": valid,
-                "definition_valid": definition_valid,
-                "definition_matches_current": definition_matches_current,
-                "seal_valid": seal_valid,
-                "result_matches_current": result_matches_current,
-                "prediction_commitments_valid": prediction_commitments_valid,
-                "merkle_root_valid": merkle_valid,
-                "market_events_valid": market_events_valid,
-                "ledger_chain_valid": ledger_valid,
-                "errors": errors,
-                "warnings": warnings,
-            }
+            return verify_market_integrity_records(cursor, market)
 
 
 @app.get("/markets/{slug}/predictions/{prediction_id}/receipt", response_model=PredictionIntegrityReceiptResponse)
@@ -5430,6 +5355,8 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                 """
             )
             feedback_severity_counts = {row["severity"]: int(row["total"] or 0) for row in cursor.fetchall()}
+            cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_integrity_alerts WHERE status='pending'")
+            integrity_alerts_pending = int(cursor.fetchone()["total"] or 0)
             cursor.execute(
                 """
                 SELECT
@@ -5571,11 +5498,13 @@ def admin_dashboard_summary(authorization: str = Header(default="")):
                     "suggestions_pending": suggestion_counts.get("pending", 0),
                     "feedback_pending": feedback_counts.get("pending", 0),
                     "feedback_high_pending": feedback_severity_counts.get("high", 0),
+                    "integrity_alerts_pending": integrity_alerts_pending,
                     "comments_hidden": int(comment_counts["hidden"] or 0),
                     "action_total": market_counts.get("locked", 0)
                     + suggestion_counts.get("pending", 0)
                     + feedback_counts.get("pending", 0)
                     + feedback_severity_counts.get("high", 0)
+                    + integrity_alerts_pending
                     + int(comment_counts["hidden"] or 0),
                 },
                 "users": {
@@ -6870,6 +6799,24 @@ def admin_list_queues(
                     params,
                 )
                 items.extend(_wallet_recharge_response(row) for row in cursor.fetchall())
+            if kind in {None, "", "integrity_alert"}:
+                where = []
+                params = []
+                if status_filter:
+                    where.append("a.status = %s")
+                    params.append(status_filter)
+                if severity and severity != "high":
+                    where.append("false")
+                where_sql = "WHERE " + " AND ".join(where) if where else ""
+                cursor.execute(
+                    f"""SELECT a.*,m.slug AS market_slug
+                        FROM gotrendlabs_integrity_alerts a
+                        LEFT JOIN gotrendlabs_markets m ON m.id=a.market_id
+                        {where_sql}
+                        ORDER BY a.last_detected_at ASC,a.id ASC""",
+                    params,
+                )
+                items.extend(_integrity_alert_response(row) for row in cursor.fetchall())
             reverse = order != "created_asc"
             items = sorted(items, key=lambda item: item["created_at"], reverse=reverse)
             cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_market_suggestions GROUP BY status")
@@ -6878,7 +6825,9 @@ def admin_list_queues(
             feedback_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
             cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_wallet_recharge_requests GROUP BY status")
             recharge_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
-            return {"items": items, "counts": {"suggestion": suggestion_counts, "feedback": feedback_counts, "wallet_recharge": recharge_counts}}
+            cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_integrity_alerts GROUP BY status")
+            integrity_alert_counts = {row["status"]: row["total"] for row in cursor.fetchall()}
+            return {"items": items, "counts": {"suggestion": suggestion_counts, "feedback": feedback_counts, "wallet_recharge": recharge_counts, "integrity_alert": integrity_alert_counts}}
 
 
 @app.post("/admin/queues/{kind}/{item_id}/review", response_model=QueueItemResponse)
@@ -6918,6 +6867,20 @@ def admin_review_queue_item(kind: str, item_id: int, payload: QueueReviewPayload
                 )
                 _record_admin_event(cursor, staff["id"], "feedback.review", "product_feedback", str(item_id), payload.note)
                 return _feedback_response(_get_feedback(cursor, item_id))
+            if kind == "integrity_alert":
+                if payload.status not in {"pending", "reviewed"}:
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Status inválido para alerta de integridade.")
+                if payload.status == "reviewed" and not payload.note.strip():
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="A nota operacional é obrigatória para revisar o alerta.")
+                _get_integrity_alert(cursor, item_id)
+                cursor.execute(
+                    """UPDATE gotrendlabs_integrity_alerts
+                       SET status=%s,admin_note=%s,reviewed_by_id=%s,reviewed_at=%s,updated_at=%s
+                       WHERE id=%s""",
+                    (payload.status, payload.note.strip(), staff["id"], now if payload.status == "reviewed" else None, now, item_id),
+                )
+                _record_admin_event(cursor, staff["id"], "integrity.alert_review", "integrity_alert", str(item_id), payload.note.strip())
+                return _integrity_alert_response(_get_integrity_alert(cursor, item_id))
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Fila não encontrada.")
 
 

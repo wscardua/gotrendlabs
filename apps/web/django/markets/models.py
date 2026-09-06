@@ -315,6 +315,33 @@ class IntegrityLedgerEvent(models.Model):
         ordering = ["sequence"]
 
 
+class IntegrityAlert(models.Model):
+    STATUS_CHOICES = (("pending", "Pending"), ("reviewed", "Reviewed"))
+
+    market = models.ForeignKey(Market, on_delete=models.PROTECT, null=True, blank=True, related_name="integrity_alerts")
+    dedupe_key = models.CharField(max_length=64, unique=True)
+    issue_code = models.CharField(max_length=80, db_index=True)
+    title = models.CharField(max_length=180)
+    description = models.TextField()
+    severity = models.CharField(max_length=20, default="high")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending", db_index=True)
+    occurrences = models.PositiveIntegerField(default=1)
+    first_detected_at = models.DateTimeField()
+    last_detected_at = models.DateTimeField()
+    admin_note = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_integrity_alerts")
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gotrendlabs_integrity_alerts"
+        indexes = [
+            models.Index(fields=["status", "-last_detected_at"], name="gtl_ialert_status_seen_idx"),
+            models.Index(fields=["market", "status"], name="gtl_ialert_market_status_idx"),
+        ]
+
+
 class MarketFavorite(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="market_favorites")
     market = models.ForeignKey(Market, on_delete=models.CASCADE, related_name="favorites")

@@ -28,6 +28,8 @@ O registro append-only `integrity_signing_keys` preserva somente a chave publica
 
 Recibos de previsao exigem que o usuario autenticado seja dono da previsao. A prova publica nunca lista previsoes ou identificadores de usuarios.
 
+O daemon reutiliza a mesma verificacao criptografica autoritativa em modo interno, sem rate limit HTTP. Falhas especificas do mercado e falha da cadeia global geram itens `integrity_alert` no contrato staff de filas. Esses itens possuem severidade fixa `high`, status operacional, codigo da divergencia, mercado opcional, primeira/ultima deteccao e numero de ocorrencias. O item e deduplicado enquanto representar o mesmo escopo e tipo de falha.
+
 ## Erros
 
 - `404`: mercado/prova inexistente

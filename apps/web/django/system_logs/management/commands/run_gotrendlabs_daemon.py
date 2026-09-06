@@ -19,6 +19,7 @@ class Command(BaseCommand):
             ai = result.get("ai", {})
             email = result.get("email", {})
             push = result.get("push", {})
+            integrity_audit = result.get("integrity_audit", {})
             pruned = result.get("pruned_log_details", {})
             self.stdout.write(
                 self.style.SUCCESS(
@@ -37,7 +38,10 @@ class Command(BaseCommand):
                     f"push sent {push.get('sent', 0)}, "
                     f"push dry-run {push.get('dry_run', 0)}, "
                     f"push failed {push.get('failed', 0)}, "
-                    f"push suppressed {push.get('suppressed', 0)}."
+                    f"push suppressed {push.get('suppressed', 0)}, "
+                    f"integrity scanned {integrity_audit.get('markets_scanned', 0)}, "
+                    f"integrity issues {integrity_audit.get('issues_detected', 0)}, "
+                    f"integrity alerts created {integrity_audit.get('alerts_created', 0)}."
                 )
             )
             if options["once"]:

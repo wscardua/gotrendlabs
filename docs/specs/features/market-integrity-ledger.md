@@ -1,7 +1,7 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.7
+versao: 0.8
 status_spec: draft
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-06
@@ -127,6 +127,10 @@ Depois de previsao inicial, reforco ou revisao, o detalhe do mercado confirma de
 
 Cada acao da posicao mantem seu proprio comprovante: entrada inicial, cada reforco e cada revisao aparecem separadamente no historico de comprovantes do detalhe, identificados por tipo e sequencia. Uma acao nova referencia a anterior quando aplicavel; nenhuma assinatura anterior e substituida ou apagada.
 
+Os comprovantes permanecem acessiveis ao titular em todos os estados posteriores a publicacao, inclusive `locked`, `resolved`, `sealed` e `canceled`. O fechamento do mercado remove apenas as acoes de previsao; nunca oculta a trilha criptografica ja emitida. Em `sealed`, o mesmo comprovante passa a incluir sua prova Merkle quando aplicavel.
+
+Nos cards, mercados `resolved` e `sealed` usam o CTA curto `Resultado`. A acao secundaria de compartilhamento e um botao iconizado neutro, com nome acessivel e tooltip `Compartilhar mercado`, preservando o estilo editorial e sem competir com o CTA principal.
+
 A linguagem visual segue esta semantica: verde somente para verificacao executada e aprovada; azul para processo ativo; amarelo para prazo ou retry operacional; cinza para aguardando, nao aplicavel ou ausencia historica; vermelho somente para diferenca criptografica detectada. Em `open`, previsoes aparecem como comprovantes sendo registrados, nao como etapa concluida. Em `locked`, aparecem como registros encerrados. Em `resolved`, resultado registrado e finalizacao pendente ficam distintos. Em `canceled`, resultado e finalizacao sao `Nao se aplica`.
 
 ## Configuracao e operacao
@@ -136,6 +140,9 @@ A linguagem visual segue esta semantica: verde somente para verificacao executad
 - permissao `kms:Sign` fica limitada ao runtime/adaptador de integridade; verificacao usa chave publica em cache
 - timeouts/retries KMS sao limitados e auditados sem payload sensivel
 - dashboard mostra resolvidos aguardando, proximos do prazo, falhas e selados
+- apos processar selagens, o daemon executa auditoria criptografica somente leitura sobre mercados nativos e a cadeia global
+- diferencas de definicao, resultado, compromisso, Merkle, Seal ou elo do ledger criam alerta operacional `high` em fila propria; indisponibilidade de KMS/transporte e retry de selagem nao sao classificados como adulteracao
+- alertas sao deduplicados por escopo e tipo de falha, preservam primeira/ultima deteccao e contagem de ocorrencias; revisao administrativa nao altera a prova e o alerta volta a `pending` se a divergencia persistir no ciclo seguinte
 
 ## Comunicacoes
 
@@ -153,6 +160,8 @@ A linguagem visual segue esta semantica: verde somente para verificacao executad
 - estados e selos em cards/detalhe web e mobile
 - OpenAPI sincronizado e notificacao idempotente
 - paginas institucionais sem alegacoes enganosas
+- comprovantes continuam visiveis em `locked`, `resolved`, `sealed` e `canceled`
+- auditoria do daemon detecta cada classe de adulteracao, cria alerta `high`, nao duplica o mesmo problema por ciclo e nao classifica retry operacional como adulteracao
 
 ## Privacidade e retenção
 

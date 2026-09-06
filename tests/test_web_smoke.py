@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
+from copy import deepcopy
 import hashlib
 import httpx
 from io import StringIO
@@ -6967,6 +6968,14 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, "A trilha original permanece auditável")
         self.assertNotContains(response, "Esta ação substitui sua posição ativa")
 
+        for closed_status in ("locked", "resolved", "sealed", "canceled"):
+            closed_market = {**api_market, "status": closed_status, "status_label": closed_status.title()}
+            with patch("apps.web.django.markets.views.get_market", return_value=closed_market):
+                closed_response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+            self.assertContains(closed_response, "Comprovantes assinados")
+            self.assertEqual(closed_response.content.decode().count('data-integrity-modal-kind="receipt"'), 3)
+            self.assertNotContains(closed_response, "position-action-tabs")
+
     def test_market_detail_hides_reinforcement_block_when_revision_is_available(self):
         User = get_user_model()
         user = User.objects.create_user(username="positionlimited", email="position-limited@example.com", password="testpass123")
@@ -7185,8 +7194,9 @@ class WebSmokeTests(TransactionTestCase):
         )
 
     def test_market_card_overlays_integrity_seal_without_replacing_thumbnail(self):
-        market = get_domain_client().market("openai-gpt6-2026")
+        market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
         market["image_url"] = "/media/market_thumbnails/test-thumb.jpg"
+        market["status"] = "sealed"
         market["integrity"] = {"definition_registered": True, "status": "sealed"}
 
         with patch("apps.web.django.core.views.get_markets", return_value=[market]):
@@ -7196,6 +7206,11 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, 'class="market-integrity-seal is-sealed"')
         self.assertContains(response, "Histórico finalizado e verificável. Abrir verificação de integridade")
         self.assertContains(response, "data-integrity-modal-link")
+        self.assertContains(response, ">Resultado</a>")
+        self.assertContains(response, 'class="btn small ghost share-card-button"')
+        self.assertContains(response, 'aria-label="Compartilhar mercado"')
+        self.assertContains(response, '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">')
+        self.assertNotContains(response, '<span class="share-label">Compartilhar</span>')
         self.assertNotContains(response, 'class="integrity-badge')
 
     def test_market_detail_uses_only_thumbnail_integrity_seal_as_modal_action(self):
@@ -7337,7 +7352,7 @@ class WebSmokeTests(TransactionTestCase):
         with patch("apps.web.django.core.views.get_markets", return_value=[market]):
             response = self.client.get(reverse("home"))
 
-        self.assertContains(response, "Ver resolução")
+        self.assertContains(response, "Resultado")
         self.assertNotContains(response, "Ver histórico")
 
     def test_integrity_modal_distinguishes_active_retry_and_canceled_states(self):
@@ -11521,7 +11536,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Inteligência coletiva")
             self.assertNotContains(response, "Modo visitante")
             self.assertNotContains(response, "Como participar em 40 segundos")
-            self.assertContains(response, "Ver resolução")
+            self.assertContains(response, "Resultado")
             self.assertContains(response, 'data-filter-target="[data-market-list]"')
             filter_html = response.content.decode().split('<div class="filters" data-filter-group data-filter-target="[data-market-list]">', 1)[1].split("</div>", 1)[0]
             expected_filter_order = [

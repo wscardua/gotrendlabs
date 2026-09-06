@@ -106,6 +106,7 @@
 - Filas operacionais possuem primeira fatia real para Mercado e Feedback, com dados persistidos e listagem no Admin Ops.
 - Browse de filas operacionais exibe fila, item, tipo, data de criação, severidade interna, status e ação.
 - Browse de filas operacionais permite filtrar por fila/status e ordenar por data de criação.
+- Divergencias criptograficas detectadas pelo daemon entram na fila `Integridade` com severidade `Alta`, codigo tecnico, mercado/escopo, ocorrencias e primeira/ultima deteccao. A revisao exige nota operacional, nao oferece recompensa e nunca altera a prova original.
 - A tela de revisão de item exibe contexto completo, status persistido, recompensa aprovada quando houver e ações disponíveis conforme tipo.
 - Conversão em rascunho aparece apenas para sugestão de mercado; depois de convertida, a seção fica indisponível para novo envio.
 - Aprovação de créditos aparece para Feedback e Mercado quando houver usuário cadastrado; depois de aprovada, a seção fica indisponível para alteração ou reenvio.

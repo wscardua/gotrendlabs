@@ -10,6 +10,7 @@
 - Validar reCAPTCHA server-side nos fluxos públicos protegidos quando configurado.
 - Emitir eventos de negócio consumidos por `communications` e `scheduler-jobs`.
 - Ser autoridade da canonicalizacao, assinatura, ledger, Merkle e verificacao de integridade; clientes apenas apresentam contratos.
+- Expor a mesma verificacao de integridade como servico interno reutilizavel pelo endpoint publico e pelo daemon, evitando duas implementacoes com criterios divergentes.
 
 ## Não Responsabilidades
 
