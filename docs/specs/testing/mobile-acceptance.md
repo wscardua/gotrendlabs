@@ -256,6 +256,7 @@ Antes de considerar a UI pronta:
 - confirmar que o detalhe mostra pergunta/contexto completo fora do hero truncado
 - confirmar que mercado auto-close vencido aparece como `Fechado` no mobile e bloqueia preview/criacao/reforco/revisao pela FastAPI
 - confirmar que a verificacao de integridade mobile nao apresenta alerta global como falha do mercado quando `valid=true`, mantendo vermelho reservado a diferenca criptografica da prova especifica
+- confirmar que a aba `Visao geral` ordena previsao/posicao e comprovantes antes do criterio/resultado, deixando `Integridade do mercado` por ultimo com copy contextual e CTA `Verificar integridade`
 - confirmar que o detalhe autenticado lista um comprovante assinado separado para previsao inicial, cada reforco e cada revisao, inclusive quando a posicao nao estiver mais ativa e nos estados `locked`, `resolved`, `sealed` e `canceled`
 - confirmar que tocar em um comprovante abre modal rolavel com explicacao leiga, resumo da acao, hash, assinatura, chave, protocolo, estado da prova individual e retry honesto em falha de carregamento
 - confirmar que alertas de comentario abrem o mercado direto na aba `Comunidade`

@@ -63,6 +63,7 @@ Specs principais:
 - cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards
 - cards com selo de integridade circular apenas em icone no canto superior direito da imagem, preservando thumbnail, tooltip/semantics e cores distintas para registro, finalizacao, falha e historico selado
 - detalhe de mercado com hero visual nao navegavel, evitando empilhar a mesma rota ao tocar na imagem
+- detalhe com a secao secundaria `Integridade do mercado` depois da previsao/posicao, comprovantes, criterio e resultado, usando copy contextual e `Verificar integridade` sem competir com a acao principal
 - grafico de consenso multi-serie, usando uma linha por opcao a partir de `sparkline_series`
 - ranking mobile identificado por `@handle`, com badges compactas e overflow `+N` vindos de `/rankings`
 - tela `Desempenho` autenticada, acessivel pelo menu e pelo Perfil, consumindo `GET /users/me/performance` para placar, historico de resolucoes, impacto em reputacao, resultado GT₵ educativo e ultimas conquistas sem regra critica local

@@ -253,6 +253,7 @@ Deve priorizar:
 - previsao com confirmacao explicita
 - paridade com o web para popularidade operacional: abrir o detalhe incrementa `view_count`, e compartilhar pelo app incrementa `share_count` sem bloquear a acao nativa
 - comprovantes assinados da propria posicao em bloco compacto e escaneavel; cada previsao inicial, reforco ou revisao abre modal com resumo leigo, hash, assinatura, chave, protocolo e estado da prova individual
+- a secao secundaria usa o titulo fixo `Integridade do mercado`, fica depois da previsao/posicao, comprovantes, criterio e resultado e, no estado registrado, explica `A definição publicada foi registrada e pode ser conferida.` antes do CTA `Verificar integridade`
 
 ### Wallet
 

@@ -131,7 +131,7 @@ Deve mostrar:
 - grafico de consenso baseado em `sparkline_series`
 - ticket de previsao para mercado aberto
 - resultado oficial para mercado resolvido
-- selo de definicao registrada, estado de resultado em finalizacao e verificacao do historico `sealed`
+- escudo compacto no hero e secao secundaria `Integridade do mercado` depois da previsao/posicao, comprovantes, criterio e resultado; a secao explica o estado atual e oferece `Verificar integridade`
 - lista autenticada de comprovantes assinados da propria posicao, com uma entrada separada para previsao inicial, cada reforco e cada revisao; os comprovantes permanecem acessiveis nos estados posteriores e abrem em modal
 
 ### Comunidade

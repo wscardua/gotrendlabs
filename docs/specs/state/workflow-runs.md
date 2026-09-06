@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-MOBILE-HIERARCHY-013
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: renomear e reposicionar a secao de integridade do detalhe mobile para reduzir confusao e preservar a hierarquia da acao principal.
+- Etapa atual: copy `Integridade do mercado`, mensagens contextuais, nova ordem, specs, testes e QA visual concluidos.
+- Artefatos afetados: detalhe Flutter, teste de widget, specs mobile, README, changelog e estado operacional.
+- Impacto arquitetural: nenhum; somente hierarquia e copy sobre os contratos existentes da FastAPI.
+- Reversao logica: restaurar o titulo dinamico e a posicao anterior sem alterar contratos ou provas.
+- Evidencias: `flutter analyze`; suite Flutter; QA visual no iPhone 17 Simulator; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-MOBILE-SEAL-012
 
 - Tipo: `change-feature` + `implementation-cycle`

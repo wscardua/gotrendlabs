@@ -96,6 +96,47 @@ void main() {
     expect(detailCalls, 2);
     expect(find.text('Fechado'), findsWidgets);
   });
+
+  testWidgets('places Integridade do mercado after prediction and resolution', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketDetailProvider.overrideWith(
+            (ref, slug) async => _market(integrityStatus: 'registered'),
+          ),
+          marketsRepositoryProvider.overrideWithValue(_NoopMarketsRepository()),
+        ],
+        child: const MaterialApp(
+          home: MarketDetailScreen(slug: 'mercado-longo'),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+
+    expect(find.text('Integridade do mercado'), findsOneWidget);
+    expect(
+      find.text('A definição publicada foi registrada e pode ser conferida.'),
+      findsOneWidget,
+    );
+    expect(find.text('Definição registrada'), findsNothing);
+    expect(find.text('Verificar integridade'), findsOneWidget);
+
+    final predictionTop = tester.getTopLeft(find.text('Ticket de previsão')).dy;
+    final resolutionTop = tester
+        .getTopLeft(find.text('Critério de resolução'))
+        .dy;
+    final integrityTop = tester
+        .getTopLeft(find.text('Integridade do mercado'))
+        .dy;
+    expect(predictionTop, lessThan(resolutionTop));
+    expect(resolutionTop, lessThan(integrityTop));
+  });
 }
 
 class _UnauthenticatedAuthController extends AuthController {
@@ -117,8 +158,12 @@ const _longTitle =
 const _longSummary =
     'Resumo completo do mercado com contexto suficiente para o usuário entender a condição antes de escolher uma opção.';
 
-Market _market({String status = 'open', String statusLabel = 'Aberto'}) {
-  return Market.fromJson({
+Market _market({
+  String status = 'open',
+  String statusLabel = 'Aberto',
+  String integrityStatus = '',
+}) {
+  final json = <String, dynamic>{
     'slug': 'mercado-longo',
     'title': _longTitle,
     'category': 'Tecnologia',
@@ -161,5 +206,15 @@ Market _market({String status = 'open', String statusLabel = 'Aberto'}) {
         'dislike_count': 0,
       },
     ],
-  });
+  };
+  if (integrityStatus.isNotEmpty) {
+    json['integrity'] = {
+      'status': integrityStatus,
+      'protocol_version': 'gtl-integrity/v1',
+      'definition_registered': true,
+      'verification_available': true,
+      'key_fingerprint': 'fingerprint',
+    };
+  }
+  return Market.fromJson(json);
 }

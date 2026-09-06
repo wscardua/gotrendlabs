@@ -279,42 +279,6 @@ class _OverviewTab extends ConsumerWidget {
         const SizedBox(height: 12),
         MarketSparklineCard(market: market),
         const SizedBox(height: 12),
-        if (market.integrity.definitionRegistered) ...[
-          GtlSurface(
-            color: GtlColors.surfaceGlass,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                GtlSectionTitle(
-                  title: market.integrity.isSealed
-                      ? 'Histórico finalizado e verificável'
-                      : market.integrity.isSealRetryPending
-                      ? 'Finalização aguardando nova tentativa'
-                      : market.integrity.isVerificationFailed
-                      ? 'Diferença de integridade detectada'
-                      : market.integrity.isCanceledPreserved
-                      ? 'Mercado cancelado; registros preservados'
-                      : market.integrity.isPendingSeal
-                      ? 'Resultado em processo de finalização'
-                      : 'Definição registrada',
-                  subtitle: market.integrity.isSealRetryPending
-                      ? 'Os registros existentes foram preservados para uma nova tentativa segura.'
-                      : market.integrity.isPendingSeal &&
-                            market.sealDueAt.isNotEmpty
-                      ? 'Previsão de finalização: ${market.sealDueAt}'
-                      : 'Registro de Integridade Verificável',
-                ),
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () => _showIntegritySheet(context, ref, market),
-                  icon: const Icon(Icons.verified_user_outlined),
-                  label: const Text('Verificar integridade'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
         PredictionTicket(market: market),
         const SizedBox(height: 12),
         GtlSurface(
@@ -344,6 +308,27 @@ class _OverviewTab extends ConsumerWidget {
             ],
           ),
         ),
+        if (market.integrity.definitionRegistered) ...[
+          const SizedBox(height: 12),
+          GtlSurface(
+            color: GtlColors.surfaceGlass,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GtlSectionTitle(
+                  title: 'Integridade do mercado',
+                  subtitle: _integritySummary(market),
+                ),
+                const SizedBox(height: 10),
+                OutlinedButton.icon(
+                  onPressed: () => _showIntegritySheet(context, ref, market),
+                  icon: const Icon(Icons.verified_user_outlined),
+                  label: const Text('Verificar integridade'),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
@@ -728,6 +713,27 @@ class _CommentItem extends ConsumerWidget {
         .reactToComment(comment.id, reaction, enabled);
     ref.invalidate(marketDetailProvider(market.slug));
   }
+}
+
+String _integritySummary(Market market) {
+  if (market.integrity.isSealed) {
+    return 'O histórico foi finalizado e pode ser verificado.';
+  }
+  if (market.integrity.isSealRetryPending) {
+    return 'Os registros foram preservados e aguardam uma nova tentativa de finalização.';
+  }
+  if (market.integrity.isVerificationFailed) {
+    return 'Uma diferença de integridade precisa ser verificada.';
+  }
+  if (market.integrity.isCanceledPreserved) {
+    return 'O mercado foi cancelado e os registros existentes foram preservados.';
+  }
+  if (market.integrity.isPendingSeal) {
+    return market.sealDueAt.isEmpty
+        ? 'O resultado foi registrado e aguarda finalização.'
+        : 'O resultado foi registrado e aguarda finalização prevista para ${market.sealDueAt}.';
+  }
+  return 'A definição publicada foi registrada e pode ser conferida.';
 }
 
 Future<void> _shareMarket(

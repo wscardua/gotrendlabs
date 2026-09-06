@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 hierarquia da integridade no detalhe mobile
+
+- A secao mobile passa a se chamar `Integridade do mercado`; no estado registrado, informa que a definicao publicada foi registrada e pode ser conferida.
+- O bloco deixa de interromper o fluxo principal e aparece depois de previsao/posicao, comprovantes e criterio/resultado, mantendo `Verificar integridade` como acao secundaria.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 selo compacto nos cards mobile
 
 - Os cards Flutter deixam de exibir o pill textual `Definicao registrada`/`Historico verificavel` e passam a usar somente um escudo circular no canto superior direito da imagem, em paridade visual com o site.
