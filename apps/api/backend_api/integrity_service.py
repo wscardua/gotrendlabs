@@ -526,7 +526,7 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         "definition_matches_current": definition_matches_current,
         "seal_valid": seal_valid,
         "result_matches_current": result_matches_current,
-        "prediction_commitments_valid": commitments_valid if seal else None,
+        "prediction_commitments_valid": commitments_valid if definition else None,
         "merkle_root_valid": merkle_valid,
         "market_events_valid": market_events_valid,
         "ledger_chain_valid": ledger_valid,

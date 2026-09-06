@@ -2,6 +2,19 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260906-INTEGRITY-ADMIN-AUDIT-010
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: disponibilizar auditoria administrativa de integridade em todos os estados e identificar precisamente cada controle aprovado, divergente ou ainda nao aplicavel.
+- Etapa atual: specs, contrato, FastAPI, Admin Ops e testes concluidos; 17 testes focados e 232 testes integrados aprovados, com validacao visual desktop/mobile.
+- Artefatos afetados: feature, contrato de verificacao, arquitetura Admin Ops, FastAPI, Django Admin Ops, testes e estado operacional.
+- Impacto arquitetural: nenhuma nova fronteira; Django apresenta o resultado read-only calculado pela FastAPI.
+- Reversao logica: remover os novos acessos e restaurar `prediction_commitments_valid=null` antes do Seal, sem alterar provas persistidas.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
 ## WFLOW-20260906-INTEGRITY-EARLY-AUDIT-009
 
 - Tipo: `change-feature` + `implementation-cycle`

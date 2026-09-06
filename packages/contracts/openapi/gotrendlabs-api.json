@@ -7749,6 +7749,55 @@
         "summary": "Admin Create Integrity Correction"
       }
     },
+    "/admin/markets/{slug}/integrity/verify": {
+      "get": {
+        "operationId": "admin_verify_market_integrity_admin_markets__slug__integrity_verify_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketIntegrityVerificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Verify Market Integrity"
+      }
+    },
     "/admin/markets/{slug}/lock": {
       "post": {
         "operationId": "admin_lock_market_admin_markets__slug__lock_post",

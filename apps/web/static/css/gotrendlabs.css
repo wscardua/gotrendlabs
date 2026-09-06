@@ -4435,6 +4435,216 @@ input[type="range"] {
   margin: 14px 0 18px;
 }
 
+.integrity-admin-head p {
+  max-width: 72ch;
+  margin: 7px 0 0;
+  color: var(--muted);
+}
+
+.integrity-admin-summary {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  margin: 14px 0 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(45, 94, 136, 0.07);
+}
+
+.integrity-admin-summary.is-passed {
+  border-color: rgba(19, 111, 74, 0.28);
+  background: rgba(19, 111, 74, 0.08);
+}
+
+.integrity-admin-summary.is-failed {
+  border-color: rgba(183, 73, 61, 0.32);
+  background: rgba(183, 73, 61, 0.09);
+}
+
+.integrity-admin-summary.is-warning {
+  border-color: rgba(216, 148, 34, 0.34);
+  background: rgba(216, 148, 34, 0.1);
+}
+
+.integrity-admin-summary-mark,
+.integrity-admin-check-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-weight: 900;
+}
+
+.integrity-admin-summary-mark {
+  width: 46px;
+  height: 46px;
+  background: var(--blue);
+  color: #f8faf8;
+  font-size: 20px;
+}
+
+.integrity-admin-summary.is-passed .integrity-admin-summary-mark {
+  background: var(--green-2);
+}
+
+.integrity-admin-summary.is-failed .integrity-admin-summary-mark {
+  background: var(--red);
+}
+
+.integrity-admin-summary.is-warning .integrity-admin-summary-mark {
+  background: var(--amber);
+  color: var(--ink);
+}
+
+.integrity-admin-summary h2,
+.integrity-admin-summary p {
+  margin: 0;
+}
+
+.integrity-admin-summary h2 {
+  margin-top: 3px;
+  font-size: 21px;
+}
+
+.integrity-admin-summary p {
+  margin-top: 5px;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.integrity-admin-issues {
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(183, 73, 61, 0.3);
+  border-radius: 12px;
+  background: rgba(183, 73, 61, 0.08);
+}
+
+.integrity-admin-issues ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
+}
+
+.integrity-admin-issues li + li {
+  margin-top: 5px;
+}
+
+.integrity-admin-section-head {
+  margin: 4px 0 8px;
+}
+
+.integrity-admin-section-head h2,
+.integrity-admin-section-head p {
+  margin: 0;
+}
+
+.integrity-admin-section-head p {
+  margin-top: 4px;
+}
+
+.integrity-admin-checks {
+  border-top: 1px solid var(--line);
+}
+
+.integrity-admin-check {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: center;
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--line);
+}
+
+.integrity-admin-check-mark {
+  width: 26px;
+  height: 26px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.integrity-admin-check.is-passed .integrity-admin-check-mark {
+  background: rgba(19, 111, 74, 0.12);
+  color: var(--green-2);
+}
+
+.integrity-admin-check.is-failed .integrity-admin-check-mark {
+  background: rgba(183, 73, 61, 0.13);
+  color: var(--red);
+}
+
+.integrity-admin-check strong,
+.integrity-admin-check p {
+  margin: 0;
+}
+
+.integrity-admin-check p {
+  margin-top: 3px;
+  max-width: 75ch;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.integrity-admin-check > small {
+  min-width: max-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.integrity-admin-check.is-passed > small {
+  background: rgba(19, 111, 74, 0.1);
+  color: var(--green-2);
+}
+
+.integrity-admin-check.is-failed > small {
+  background: rgba(183, 73, 61, 0.11);
+  color: var(--red);
+}
+
+.integrity-admin-technical {
+  margin-top: 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.integrity-admin-technical summary {
+  cursor: pointer;
+  padding: 13px 15px;
+  font-weight: 850;
+}
+
+.integrity-admin-technical dl {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0 15px 15px;
+}
+
+.integrity-admin-technical dt {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.integrity-admin-technical dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.integrity-admin-events {
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+}
+
 .audit-table-head {
   margin-top: 10px;
 }
@@ -12348,5 +12558,40 @@ body[data-theme="dark"] .integrity-change-icon {
   .integrity-report-footer {
     padding-left: 18px;
     padding-right: 18px;
+  }
+}
+
+@media (max-width: 700px) {
+  .integrity-admin-head {
+    display: grid;
+    gap: 14px;
+  }
+
+  .integrity-admin-head .section-actions {
+    justify-content: flex-start;
+  }
+
+  .integrity-admin-summary {
+    grid-template-columns: 38px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .integrity-admin-summary-mark {
+    width: 38px;
+    height: 38px;
+  }
+
+  .integrity-admin-check {
+    grid-template-columns: 26px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .integrity-admin-check > small {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .integrity-admin-technical dl {
+    grid-template-columns: 1fr;
   }
 }

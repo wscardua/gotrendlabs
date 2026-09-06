@@ -195,6 +195,35 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         with self.assertRaises(DatabaseError), transaction.atomic():
             IntegritySigningKey.objects.filter(pk=signing_key.pk).update(key_fingerprint="0" * 64)
 
+    def test_open_market_reports_prediction_commitment_validity_before_sealing(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = market.options.order_by("display_order", "id").first()
+        prediction = self.client.post(
+            f"/markets/{market.slug}/predict",
+            headers=self.user_headers,
+            json={"option_id": option.id, "stake_amount": 25, "client_locale": "pt-br"},
+        )
+        self.assertEqual(prediction.status_code, 201, prediction.text)
+
+        verification = self.client.get(f"/markets/{market.slug}/integrity/verify")
+
+        self.assertEqual(verification.status_code, 200, verification.text)
+        self.assertTrue(verification.json()["prediction_commitments_valid"])
+        self.assertIsNone(verification.json()["seal_valid"])
+        self.assertIsNone(verification.json()["merkle_root_valid"])
+
+        forbidden = self.client.get(
+            f"/admin/markets/{market.slug}/integrity/verify",
+            headers=self.user_headers,
+        )
+        staff_verification = self.client.get(
+            f"/admin/markets/{market.slug}/integrity/verify",
+            headers=self.staff_headers,
+        )
+        self.assertEqual(forbidden.status_code, 403)
+        self.assertEqual(staff_verification.status_code, 200, staff_verification.text)
+        self.assertTrue(staff_verification.json()["prediction_commitments_valid"])
+
     def test_due_sealing_is_concurrent_safe_idempotent_and_publicly_verifiable(self):
         market, prediction_id, due = self._resolve_due_market()
         receipt = self.client.get(

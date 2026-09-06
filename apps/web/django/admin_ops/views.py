@@ -40,6 +40,7 @@ from apps.web.django.accounts.api_client import (
     admin_get_market,
     admin_get_market_participants,
     admin_get_market_resolution_audit,
+    admin_verify_market_integrity,
     admin_get_markets,
     admin_get_comments,
     admin_get_queues,
@@ -749,6 +750,111 @@ def _market_resolution_meta(market):
     enriched["resolution_timezone"] = resolution_timezone
     enriched["resolved_at_label"] = enriched.get("resolved_at_label") or _datetime_label(enriched.get("resolved_at"), resolution_timezone)
     return enriched
+
+
+INTEGRITY_AUDIT_ISSUE_LABELS = {
+    "definition_invalid": "A assinatura ou o hash da definição não confere.",
+    "definition_changed": "A definição atual diverge do registro assinado na publicação.",
+    "prediction_commitment_invalid": "Um ou mais comprovantes de previsão não conferem ou romperam o encadeamento.",
+    "seal_invalid": "A assinatura ou o conteúdo do Seal final não confere.",
+    "result_changed": "O resultado atual diverge do registro protegido.",
+    "merkle_invalid": "A raiz ou uma prova Merkle não corresponde aos comprovantes registrados.",
+    "market_events_invalid": "Um evento deste mercado rompeu a cadeia assinada.",
+    "ledger_chain_invalid": "A cadeia global possui um elo inconsistente.",
+}
+
+
+def _integrity_audit_check(label, value, *, applicable=True, unavailable_label="Aguardando etapa", detail=""):
+    if not applicable:
+        return {"label": label, "state": "waiting", "state_label": unavailable_label, "detail": detail}
+    if value is True:
+        return {"label": label, "state": "passed", "state_label": "Aprovado", "detail": detail}
+    return {"label": label, "state": "failed", "state_label": "Diferença detectada", "detail": detail}
+
+
+def _market_integrity_audit_context(market, proof, verification):
+    status = market.get("status") or "draft"
+    definition = proof.get("definition")
+    has_definition = bool(definition)
+    is_pre_publication = status in {"draft", "scheduled"} and not has_definition
+    has_result = status in {"resolved", "sealed"}
+    has_seal = bool(proof.get("seal")) or status == "sealed"
+    unavailable_label = "Aguardando publicação" if is_pre_publication else "Sem prova histórica"
+
+    checks = [
+        _integrity_audit_check(
+            "Assinatura da definição",
+            verification.get("definition_valid"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Confere o hash e a assinatura emitidos quando o mercado foi publicado.",
+        ),
+        _integrity_audit_check(
+            "Definição atual",
+            verification.get("definition_matches_current"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Compara pergunta, opções, critérios e datas atuais com o registro original.",
+        ),
+        _integrity_audit_check(
+            "Comprovantes de previsões",
+            verification.get("prediction_commitments_valid"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Valida os comprovantes assinados e o encadeamento entre entrada, reforços e revisões.",
+        ),
+        _integrity_audit_check(
+            "Resultado registrado",
+            verification.get("result_matches_current"),
+            applicable=has_result,
+            detail="Compara o resultado operacional com o registro protegido após a resolução.",
+        ),
+        _integrity_audit_check(
+            "Assinatura do Seal",
+            verification.get("seal_valid"),
+            applicable=has_seal,
+            detail="Confere o snapshot final e a assinatura da finalização.",
+        ),
+        _integrity_audit_check(
+            "Histórico Merkle",
+            verification.get("merkle_root_valid"),
+            applicable=has_seal,
+            detail="Confere se os comprovantes finais pertencem à raiz preservada no Seal.",
+        ),
+        _integrity_audit_check(
+            "Eventos deste mercado",
+            verification.get("market_events_valid"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Valida sequência, conteúdo, assinatura e elo anterior dos eventos do mercado.",
+        ),
+        _integrity_audit_check(
+            "Cadeia global do ledger",
+            verification.get("ledger_chain_valid"),
+            applicable=bool(verification),
+            detail="Verifica a continuidade da cadeia assinada compartilhada por todos os mercados.",
+        ),
+    ]
+    errors = verification.get("errors") or []
+    warnings = verification.get("warnings") or []
+    if errors:
+        overall_state, overall_label = "failed", "Diferença de integridade detectada"
+    elif warnings:
+        overall_state, overall_label = "warning", "Mercado íntegro; cadeia global requer atenção"
+    elif has_definition:
+        overall_state, overall_label = "passed", "Nenhuma diferença detectada"
+    elif is_pre_publication:
+        overall_state, overall_label = "waiting", "Proteção ainda não iniciada"
+    else:
+        overall_state, overall_label = "legacy", "Sem prova histórica nativa"
+    issue_labels = [INTEGRITY_AUDIT_ISSUE_LABELS.get(code, code) for code in [*errors, *warnings]]
+    return {
+        "state": overall_state,
+        "label": overall_label,
+        "checks": checks,
+        "issues": issue_labels,
+        "checked_at": timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M %Z"),
+    }
 
 
 def _safe_image_content(upload, *, prefix):
@@ -2612,6 +2718,7 @@ def resolution_action(request, action, slug=None):
         "resolve": "Resolver mercado",
         "cancel-refund": "Desfazer resolução",
         "audit": "Auditoria da resolução",
+        "integrity": "Auditoria de integridade",
         "review": "Revisar mercado",
         "request-review": "Pedir revisão",
     }
@@ -2624,6 +2731,32 @@ def resolution_action(request, action, slug=None):
             market = admin_get_market(token, slug)
         except AuthAPIError as exc:
             error = str(exc)
+    if action == "integrity" and market:
+        proof = {"status": "not_published", "definition": None, "seal": None, "ledger_events": []}
+        verification = {}
+        if market.get("status") != "draft":
+            try:
+                proof = get_market_integrity(market["slug"])
+            except AuthAPIError as exc:
+                error = str(exc)
+        if not error:
+            try:
+                verification = admin_verify_market_integrity(token, market["slug"])
+            except AuthAPIError as exc:
+                error = str(exc)
+        audit_context = _market_integrity_audit_context(market, proof, verification)
+        return render(
+            request,
+            "admin_ops/integrity_audit.html",
+            {
+                "title": titles[action],
+                "market": _market_resolution_meta(market),
+                "proof": proof,
+                "verification": verification,
+                "integrity_audit": audit_context,
+                "admin_error": error,
+            },
+        )
     if action == "audit" and market:
         try:
             limit = min(100, max(1, int(request.GET.get("limit") or 10)))

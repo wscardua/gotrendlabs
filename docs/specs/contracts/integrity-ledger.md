@@ -19,14 +19,17 @@ O registro append-only `integrity_signing_keys` preserva somente a chave publica
 
 - `GET /markets/{slug}/integrity`
 - `GET /markets/{slug}/integrity/verify`
+- `GET /admin/markets/{slug}/integrity/verify` (staff, auditoria operacional read-only)
 - `GET /markets/{slug}/integrity/package`
 - `GET /markets/{slug}/predictions/{prediction_id}/receipt`
 - `GET /markets/{slug}/predictions/{prediction_id}/merkle-proof`
 - `GET /integrity/public-key`
 
-`GET /markets/{slug}/integrity/verify` retorna, alem dos campos v1 existentes, `definition_matches_current`, `result_matches_current`, `prediction_commitments_valid` e `market_events_valid`. Os campos sao booleanos quando aplicaveis e `null` quando a etapa ainda nao existe. `valid` resume as provas do mercado; `ledger_chain_valid` informa separadamente a cadeia global para que falha historica externa ao mercado nao seja atribuida silenciosamente a ele. `errors` contem somente inconsistencias que invalidam a prova especifica do mercado; observacoes globais que nao mudam `valid` ficam em `warnings`. Indisponibilidade de transporte/KMS e retry de selagem permanecem estados operacionais separados.
+`GET /markets/{slug}/integrity/verify` retorna, alem dos campos v1 existentes, `definition_matches_current`, `result_matches_current`, `prediction_commitments_valid` e `market_events_valid`. Os campos sao booleanos quando aplicaveis e `null` quando a etapa ainda nao existe. `prediction_commitments_valid` passa a ser aplicavel desde que exista definicao nativa assinada, permitindo auditoria administrativa durante `open`, `locked` e `resolved`, sem expor previsoes ou identidades. Seal, resultado final e Merkle permanecem `null` antes de suas respectivas etapas. `valid` resume as provas do mercado; `ledger_chain_valid` informa separadamente a cadeia global para que falha historica externa ao mercado nao seja atribuida silenciosamente a ele. `errors` contem somente inconsistencias que invalidam a prova especifica do mercado; observacoes globais que nao mudam `valid` ficam em `warnings`. Indisponibilidade de transporte/KMS e retry de selagem permanecem estados operacionais separados.
 
 Recibos de previsao exigem que o usuario autenticado seja dono da previsao. A prova publica nunca lista previsoes ou identificadores de usuarios.
+
+O endpoint staff reutiliza o mesmo verificador de `GET /markets/{slug}/integrity/verify`, exige operador autenticado e nao passa pelo limite publico compartilhado. Ele nao altera mercado, prova, alerta ou evento ao ser consultado.
 
 O daemon reutiliza a mesma verificacao criptografica autoritativa em modo interno, sem rate limit HTTP, como primeira rotina de cada ciclo e sobre todos os mercados nativos, nao apenas mercados selados. Falhas especificas do mercado e falha da cadeia global geram itens `integrity_alert` no contrato staff de filas. Esses itens possuem severidade fixa `high`, status operacional, codigo da divergencia, mercado opcional, primeira/ultima deteccao e numero de ocorrencias. O item e deduplicado enquanto representar o mesmo escopo e tipo de falha.
 

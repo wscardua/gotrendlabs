@@ -1,0 +1,77 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout integrity-admin-audit">
+  <section class="panel">
+    <div class="section-head integrity-admin-head">
+      <div>
+        <span class="eyebrow">Auditoria read-only</span>
+        <h1 class="large-title">{{ title }}</h1>
+        <p>{{ market.title }}</p>
+      </div>
+      <div class="section-actions">
+        <a class="btn small ghost" href="{% url 'market-integrity' market.slug %}">Ver visão pública</a>
+        <a class="btn small" href="{% url 'admin-ops-markets' %}" data-context-back>Voltar</a>
+      </div>
+    </div>
+
+    {% if admin_error %}
+      <div class="notice red" role="alert"><strong>Não foi possível concluir a auditoria.</strong> {{ admin_error }}</div>
+    {% else %}
+      <div class="integrity-admin-summary is-{{ integrity_audit.state }}">
+        <span class="integrity-admin-summary-mark" aria-hidden="true">{% if integrity_audit.state == "passed" %}✓{% elif integrity_audit.state == "failed" %}!{% else %}i{% endif %}</span>
+        <div>
+          <span class="eyebrow">Resultado da conferência</span>
+          <h2>{{ integrity_audit.label }}</h2>
+          <p>Status do mercado: <strong>{{ market.status_label|default:market.status }}</strong>. Verificação executada em {{ integrity_audit.checked_at }}.</p>
+        </div>
+      </div>
+
+      {% if integrity_audit.issues %}
+        <div class="integrity-admin-issues" role="alert">
+          <strong>Pontos que exigem investigação</strong>
+          <ul>{% for issue in integrity_audit.issues %}<li>{{ issue }}</li>{% endfor %}</ul>
+        </div>
+      {% endif %}
+
+      <div class="section-head integrity-admin-section-head">
+        <div>
+          <h2>Controles verificados</h2>
+          <p class="muted">Etapas que ainda não aconteceram ficam neutras e não contam como falha.</p>
+        </div>
+        <a class="btn small ghost" href="{% url 'admin-ops-resolution-market-action' market.slug 'integrity' %}">Executar novamente</a>
+      </div>
+
+      <div class="integrity-admin-checks">
+        {% for check in integrity_audit.checks %}
+          <div class="integrity-admin-check is-{{ check.state }}">
+            <span class="integrity-admin-check-mark" aria-hidden="true">{% if check.state == "passed" %}✓{% elif check.state == "failed" %}!{% else %}·{% endif %}</span>
+            <div><strong>{{ check.label }}</strong><p>{{ check.detail }}</p></div>
+            <small>{{ check.state_label }}</small>
+          </div>
+        {% endfor %}
+      </div>
+
+      <details class="integrity-admin-technical">
+        <summary>Metadados e eventos do ledger</summary>
+        <dl>
+          <dt>Protocolo</dt><dd><code>{{ proof.protocol_version|default:"não disponível" }}</code></dd>
+          <dt>Hash da definição</dt><dd><code title="{{ proof.definition.hash }}">{{ proof.definition.hash|default:"não disponível"|truncatechars:34 }}</code></dd>
+          <dt>Chave da definição</dt><dd><code title="{{ proof.definition.key_fingerprint }}">{{ proof.definition.key_fingerprint|default:"não disponível"|truncatechars:34 }}</code></dd>
+          <dt>Hash do Seal</dt><dd><code title="{{ proof.seal.hash }}">{{ proof.seal.hash|default:"não disponível"|truncatechars:34 }}</code></dd>
+        </dl>
+        <div class="integrity-admin-events">
+          <table class="table">
+            <tr><th>Seq.</th><th>Evento</th><th>Payload</th><th>Elo anterior</th><th>Quando</th></tr>
+            {% for event in proof.ledger_events %}
+              <tr><td>{{ event.sequence }}</td><td>{{ event.event_type }}</td><td><code>{{ event.payload_hash|truncatechars:20 }}</code></td><td><code>{{ event.previous_event_hash|default:"início"|truncatechars:20 }}</code></td><td>{{ event.occurred_at }}</td></tr>
+            {% empty %}
+              <tr><td colspan="5">Nenhum evento de integridade emitido para este mercado.</td></tr>
+            {% endfor %}
+          </table>
+        </div>
+      </details>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

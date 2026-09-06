@@ -4645,6 +4645,18 @@ def verify_market_integrity(slug: str, request: Request):
             return verify_market_integrity_records(cursor, market)
 
 
+@app.get("/admin/markets/{slug}/integrity/verify", response_model=MarketIntegrityVerificationResponse)
+def admin_verify_market_integrity(slug: str, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT * FROM gotrendlabs_markets WHERE slug=%s", (slug,))
+            market = cursor.fetchone()
+            if not market:
+                raise HTTPException(status_code=404, detail="Mercado não encontrado.")
+            return verify_market_integrity_records(cursor, market)
+
+
 @app.get("/markets/{slug}/predictions/{prediction_id}/receipt", response_model=PredictionIntegrityReceiptResponse)
 def get_prediction_integrity_receipt(slug: str, prediction_id: int, authorization: str = Header(default="")):
     with get_connection() as connection:

@@ -9348,6 +9348,104 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Popularidade operacional")
         self.assertContains(response, "12 visualizações · 3 compartilhamentos")
 
+    def test_admin_integrity_audit_is_available_and_diagnostic_in_every_market_state(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "@integrityops",
+            "display_name": "Integrity Ops",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        base_market = get_domain_client().market("openai-gpt6-2026")
+        definition = {"hash": "a" * 64, "key_fingerprint": "b" * 64}
+        healthy_verification = {
+            "valid": True,
+            "definition_valid": True,
+            "definition_matches_current": True,
+            "prediction_commitments_valid": True,
+            "result_matches_current": True,
+            "seal_valid": True,
+            "merkle_root_valid": True,
+            "market_events_valid": True,
+            "ledger_chain_valid": True,
+            "errors": [],
+            "warnings": [],
+        }
+
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value={"markets": [base_market], "counts": {"open": 1}}):
+            browse = self.client.get(reverse("admin-ops-markets"))
+        self.assertContains(browse, "Auditar integridade")
+        self.assertContains(browse, reverse("admin-ops-resolution-market-action", args=[base_market["slug"], "integrity"]))
+
+        resolution_rows = {
+            state: [{**base_market, "slug": f"{state}-integrity", "status": state, "status_label": state.title()}]
+            for state in ("locked", "resolved", "sealed")
+        }
+        with patch(
+            "apps.web.django.admin_ops.views.admin_get_markets",
+            side_effect=lambda _token, status="", **_filters: {"markets": resolution_rows.get(status, []), "counts": {}},
+        ):
+            resolution = self.client.get(reverse("admin-ops-resolution"))
+        self.assertContains(resolution, "Auditar integridade", count=3)
+
+        for status in ("draft", "scheduled", "open", "locked", "resolved", "sealed", "canceled"):
+            market = {**base_market, "status": status, "status_label": status.title()}
+            proof = {
+                "status": "not_published" if status in {"draft", "scheduled"} else status,
+                "protocol_version": "gtl-integrity/v1" if status not in {"draft", "scheduled"} else "",
+                "definition": None if status in {"draft", "scheduled"} else definition,
+                "seal": {"hash": "c" * 64} if status == "sealed" else None,
+                "ledger_events": [],
+            }
+            verification = {
+                **healthy_verification,
+                "valid": status not in {"draft", "scheduled"},
+                "definition_valid": None if status in {"draft", "scheduled"} else True,
+                "definition_matches_current": None if status in {"draft", "scheduled"} else True,
+                "prediction_commitments_valid": None if status in {"draft", "scheduled"} else True,
+                "result_matches_current": True if status in {"resolved", "sealed"} else None,
+                "seal_valid": True if status == "sealed" else None,
+                "merkle_root_valid": True if status == "sealed" else None,
+            }
+            with (
+                self.subTest(status=status),
+                patch("apps.web.django.admin_ops.views.admin_get_market", return_value=market),
+                patch("apps.web.django.admin_ops.views.get_market_integrity", return_value=proof),
+                patch("apps.web.django.admin_ops.views.admin_verify_market_integrity", return_value=verification),
+            ):
+                response = self.client.get(reverse("admin-ops-resolution-market-action", args=[market["slug"], "integrity"]))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Auditoria de integridade")
+            self.assertContains(response, "Controles verificados")
+            self.assertContains(response, "Comprovantes de previsões")
+            self.assertContains(response, "Eventos deste mercado")
+            if status in {"draft", "scheduled"}:
+                self.assertContains(response, "Proteção ainda não iniciada")
+                self.assertNotContains(response, "Diferença de integridade detectada")
+            else:
+                self.assertContains(response, "Nenhuma diferença detectada")
+
+        failed_verification = {
+            **healthy_verification,
+            "valid": False,
+            "definition_matches_current": False,
+            "errors": ["definition_changed"],
+        }
+        with (
+            patch("apps.web.django.admin_ops.views.admin_get_market", return_value={**base_market, "status": "open"}),
+            patch("apps.web.django.admin_ops.views.get_market_integrity", return_value={"status": "registered", "definition": definition, "seal": None, "ledger_events": []}),
+            patch("apps.web.django.admin_ops.views.admin_verify_market_integrity", return_value=failed_verification),
+        ):
+            response = self.client.get(reverse("admin-ops-resolution-market-action", args=[base_market["slug"], "integrity"]))
+
+        self.assertContains(response, "Diferença de integridade detectada")
+        self.assertContains(response, "A definição atual diverge do registro assinado na publicação.")
+        self.assertContains(response, "Diferença detectada")
+
     def test_admin_contracts_timeline_uses_active_market_contract_dates(self):
         session = self.client.session
         session[TOKEN_KEY] = "staff-token"

@@ -1,7 +1,7 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 0.9
+versao: 1.0
 status_spec: draft
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-06
@@ -133,6 +133,8 @@ Nos cards, mercados `resolved` e `sealed` usam o CTA curto `Resultado`. A acao s
 
 A linguagem visual segue esta semantica: verde somente para verificacao executada e aprovada; azul para processo ativo; amarelo para prazo ou retry operacional; cinza para aguardando, nao aplicavel ou ausencia historica; vermelho somente para diferenca criptografica detectada. Em `open`, previsoes aparecem como comprovantes sendo registrados, nao como etapa concluida. Em `locked`, aparecem como registros encerrados. Em `resolved`, resultado registrado e finalizacao pendente ficam distintos. Em `canceled`, resultado e finalizacao sao `Nao se aplica`.
 
+No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer mercado, inclusive `draft`, `scheduled`, `open`, `locked`, `resolved`, `sealed` e `canceled`, tanto no browse geral quanto na fila de resolucao quando o mercado estiver presente nela. A tela operacional executa a verificacao autoritativa ao abrir por contrato staff read-only, sem depender do rate limit publico, e separa cada controle em `Aprovado`, `Diferenca detectada`, `Aguardando etapa` ou `Sem prova historica`: assinatura e correspondencia da definicao, compromissos de previsao, resultado, Seal, Merkle, eventos do mercado e cadeia global. Etapa futura ou nao aplicavel nunca aparece como falha. A auditoria de integridade e distinta da auditoria da resolucao, que continua dedicada aos efeitos de participantes, wallet e badges.
+
 ## Configuracao e operacao
 
 - `market_seal_window_hours`: default 12, faixa 1..168, alteracao auditada no Admin Ops
@@ -163,6 +165,7 @@ A linguagem visual segue esta semantica: verde somente para verificacao executad
 - paginas institucionais sem alegacoes enganosas
 - comprovantes continuam visiveis em `locked`, `resolved`, `sealed` e `canceled`
 - auditoria do daemon detecta cada classe de adulteracao, cria alerta `high`, nao duplica o mesmo problema por ciclo e nao classifica retry operacional como adulteracao
+- Admin Ops permite auditar integridade em qualquer estado, identifica o controle que falhou e distingue falha, etapa futura e ausencia historica
 
 ## Privacidade e retenção
 

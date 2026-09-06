@@ -184,6 +184,10 @@ def verify_market_integrity(slug):
     return _request("GET", f"/markets/{slug}/integrity/verify")
 
 
+def admin_verify_market_integrity(token, slug):
+    return _request("GET", f"/admin/markets/{slug}/integrity/verify", token=token)
+
+
 def get_market_integrity_package(slug):
     return _request("GET", f"/markets/{slug}/integrity/package")
 

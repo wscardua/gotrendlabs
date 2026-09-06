@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-09-06 — FEAT-INTEGRITY-001 auditoria administrativa por camada
+
+- `Auditar integridade` passa a estar disponível no browse administrativo para qualquer estado e na fila de resolução para todos os itens exibidos.
+- A visão operacional separa definição, compromissos, resultado, Seal, Merkle, eventos do mercado e cadeia global, sem rotular etapas futuras ou mercados legados como adulteração.
+- Compromissos assinados passam a reportar validade desde a publicação, antes do Seal, sem expor previsões ou usuários.
+- A consulta administrativa usa endpoint staff read-only dedicado e o mesmo verificador autoritativo da FastAPI, sem consumir o rate limit público compartilhado.
+
 ## 2026-09-06 — FEAT-INTEGRITY-001 auditoria antecipada em todos os estados
 
 - A auditoria de integridade passa a abrir cada ciclo do daemon e varre todos os mercados com definição nativa assinada, inclusive abertos, fechados, resolvidos, selados e cancelados.

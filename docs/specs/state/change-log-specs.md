@@ -2,6 +2,7 @@
 
 ## 2026-09-06
 
+- ampliada a auditoria de integridade do Admin Ops para qualquer estado do mercado, com diagnóstico separado por camada e compromissos verificáveis antes da selagem;
 - esclarecido que a auditoria criptografica e a primeira rotina de todo ciclo do daemon, cobre mercados em qualquer estado e nao depende da janela de selagem;
 - ampliada `FEAT-INTEGRITY-001` para manter comprovantes do usuario em todos os estados posteriores, ajustar os CTAs dos cards e criar auditoria criptografica recorrente pelo daemon com fila operacional de severidade alta;
 - comprovantes individuais de previsao passam a abrir em modal web responsivo e o detalhe lista separadamente os recibos de entrada inicial, reforcos e revisoes, preservando a rota completa como fallback;

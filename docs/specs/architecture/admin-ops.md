@@ -4,7 +4,8 @@
 
 - Admin Ops consome da FastAPI o status, hashes abreviados, chave, tentativas/falhas e eventos do ledger; não assina, recalcula ou altera provas.
 - `market_seal_window_hours` aceita 1–168 horas, default 12, e toda mudança gera `AdminEvent`.
-- `locked` permite resolver; `resolved` antes do prazo permite desfazer com motivo obrigatório; `sealed` é somente leitura e oferece auditoria/verificação.
+- `locked` permite resolver; `resolved` antes do prazo permite desfazer com motivo obrigatório; `sealed` é somente leitura. A auditoria de integridade é read-only e permanece disponível em qualquer estado, sem depender da selagem.
+- Browse de mercados e fila de resolução oferecem `Auditar integridade` quando houver mercado. A tela consome o verificador da FastAPI, identifica separadamente definição, compromissos, resultado, Seal, Merkle, eventos do mercado e cadeia global, e não trata etapas futuras ou ausência histórica como adulteração.
 - Campos cobertos pela definição são bloqueados no formulário após publicação, mas a rejeição autoritativa permanece na FastAPI.
 
 ## Responsabilidades
