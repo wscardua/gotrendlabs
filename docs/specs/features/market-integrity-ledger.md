@@ -1,8 +1,8 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 1.1
-status_spec: draft
+versao: 1.2
+status_spec: aprovada
 status_impl: implementada_aguardando_deploy
 ultima_atualizacao: 2026-09-07
 origem:
@@ -27,7 +27,7 @@ impacta:
   - admin-ops
   - frontend-web
   - mobile-flutter
-aprovacao: pendente
+aprovacao: aprovada_pelo_usuario_em_2026-09-07
 ---
 
 # Ledger Criptografico de Integridade para Mercados
@@ -69,7 +69,7 @@ Estado terminal alternativo: `canceled`.
 
 Na publicacao, a FastAPI cria `market_integrity_definitions` na mesma transacao da mudanca para `open`. O payload inclui identificador/versao, titulo, resumo, tipo, taxonomia, opcoes ordenadas, criterio e fonte de resolucao, datas, timezone e regra de fechamento. Sem assinatura valida a transacao falha.
 
-Como a feature ainda nao foi implantada em producao, mercados sem definicao assinada nao sao migrados nem permanecem no catalogo ativo. Um comando operacional explicito, idempotente e protegido por `dry-run` remove apenas mercados sem `market_integrity_definitions` e seus efeitos operacionais relacionados, depois de inventario e backup. Toda publicacao disponivel apos o corte deve ter definicao assinada criada pelo fluxo autoritativo; a API preserva defesa para recusar previsao ou selagem sem essa prova.
+Como a plataforma ainda não foi lançada ao público, mercados atuais sem definição assinada não são migrados nem permanecem no catálogo. Um comando operacional explícito, idempotente e protegido por `dry-run` remove todos os mercados sem `market_integrity_definitions`, inclusive rascunhos/agendados pré-lançamento, e seus efeitos operacionais relacionados, depois de inventário e snapshot validado. Toda publicação criada após o corte deve ter definição assinada pelo fluxo autoritativo; a API preserva defesa para recusar previsão ou selagem sem essa prova.
 
 ## Compromissos de previsao
 
@@ -214,7 +214,7 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 
 ## Rollout e reversao
 
-1. Inventariar e fazer backup do ambiente nao produtivo; executar a limpeza explicita de mercados sem definicao assinada.
+1. Inventariar e criar snapshot validado do banco de produção pré-lançamento; remover todos os mercados atuais sem definição assinada, sem migração retroativa ou modo legado.
 2. Aplicar schema e triggers.
 3. Criar chave KMS/alias e politica IAM minima; configurar segredo de commitment no secret manager/runtime.
 4. Publicar FastAPI/daemon antes de habilitar novos mercados.

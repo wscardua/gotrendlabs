@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260907-INTEGRITY-CLOSEOUT-022
+
+- Tipo: `promote-spec` + `implementation-cycle` + `test-review-cycle`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: promover a spec para aprovada, publicar a implementação na `main`, provisionar KMS/IAM/segredo em produção, executar corte destrutivo controlado dos mercados pré-lançamento, adicionar um segundo worker Django e validar o rollout ponta a ponta.
+- Etapa atual: fechamento documental e preparação do pacote de PR; submissão aguarda autorização explícita do usuário após apresentação do texto.
+- Artefatos afetados: feature/status/changelogs/runbook, Compose de produção, exemplo de ambiente, comando de corte pré-produção, testes, GitHub Actions e recursos AWS de produção.
+- Estado AWS pré-rollout: EC2 `t4g.micro` em execução e SSM online; RDS PostgreSQL 16.13 privado/disponível; alias KMS de integridade ausente; secret `gotrendlabs/prod/app-secrets` ainda sem as duas chaves de integridade; role EC2 ainda sem política KMS; host com 904 MiB de RAM e sem swap.
+- Decisões: aprovação funcional foi dada pelo usuário; status de implementação permanece `implementada_aguardando_deploy` até CI, deploy e smoke reais; Django passa de um para dois workers Uvicorn; rollout cria 1 GiB de swap, monitora memória e preserva um único daemon; todos os mercados atuais sem definição serão removidos após snapshot validado, sem assinatura retroativa nem camada de legado.
+- Reversão lógica: antes do corte criar snapshot manual do RDS; preservar recursos/provas criptográficas após o primeiro registro; rollback de aplicação por commit anterior, retorno temporário do Django a um worker se houver pressão de memória e desativação de novas mutações se o KMS estiver indisponível.
+- Evidências: auditoria read-only confirmou conta AWS `204620194924`, EC2/SSM/RDS saudáveis, quatro containers ativos, workflow automático habilitado e ausência dos pré-requisitos KMS/secret/IAM; execução produtiva anterior do GitHub Actions concluiu com sucesso. Validação local: 253 testes Django/FastAPI aprovados em execução única isolada; 101 testes Flutter aprovados; `flutter analyze`, `manage.py check`, `makemigrations --check --dry-run`, OpenAPI, compilação Python, Compose sem resolução de env e `git diff --check` aprovados. O teste de corte cobre também `draft` pré-lançamento. Evidências de CI/deploy/smoke serão anexadas após autorização.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+
 ## WFLOW-20260907-INTEGRITY-HARDENING-021
 
 - Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`

@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 aprovação e preparação de produção
+
+- A spec funcional/técnica foi aprovada pelo usuário na versão `1.2`; a implementação permanece `implementada_aguardando_deploy` até CI, rollout AWS e smoke produtivo.
+- O corte inicial passa a remover todos os mercados pré-lançamento sem definição assinada, inclusive rascunhos e agendados, sempre após snapshot do RDS e sem assinatura retroativa ou modo legado.
+- O Compose de produção passa o frontend Django de um para dois workers Uvicorn; o runbook exige 1 GiB de swap, monitoramento de memória e rollback operacional para um worker.
+- O runbook consolida criação da chave/alias KMS Ed25519, IAM mínimo no ARN específico, segredo de pseudonimização no Secrets Manager, sincronização segura do runtime e smokes de assinatura/auditoria.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de selagem e prova pública
 
 - A selagem passa a executar auditoria integral fresca da cadeia global sob o mesmo lock transacional; checkpoint anterior continua acelerando consultas públicas, mas não autoriza uma transição irreversível.

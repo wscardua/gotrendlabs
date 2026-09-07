@@ -15,6 +15,7 @@
 - `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
 - `FEAT-MOBILE-001` depende de `FEAT-AUTH-001`, `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-PRED-001`, `FEAT-WALLET-001`, `FEAT-COMMENT-001`, `FEAT-REP-001` e contratos FastAPI/OpenAPI para operar como cliente mobile sem regra crítica local
 - `FEAT-INTEGRITY-001` depende de `FEAT-MARKET-001/002`, `FEAT-PRED-001`, `FEAT-RES-001`, PostgreSQL, daemon, comunicações e AWS KMS; web/mobile dependem somente de seus contratos FastAPI/OpenAPI.
+- O rollout produtivo de `FEAT-INTEGRITY-001` depende do alias KMS `alias/gotrendlabs-integrity-signing`, política IAM restrita na role da EC2, segredo de commitment no Secrets Manager, snapshot/corte dos mercados pré-lançamento e dois workers Django com swap/monitoramento no host único.
 
 ## Contratos com maior reutilização
 

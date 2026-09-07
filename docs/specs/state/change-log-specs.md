@@ -2,6 +2,9 @@
 
 ## 2026-09-07
 
+- promovida `FEAT-INTEGRITY-001` para `aprovada` na versão `1.2`, por autorização explícita do usuário, mantendo implementação aguardando deploy até validação produtiva;
+- definido corte sem legado para remover todos os mercados pré-lançamento sem definição, inclusive `draft`/`scheduled`, após snapshot validado;
+- atualizado runbook AWS com KMS/IAM/Secrets Manager, swap/monitoramento e segundo worker Django;
 - endurecida a selagem para exigir auditoria global integral fresca sob lock, sem confiar apenas em checkpoint historico;
 - removidas da prova publica referencias/eventos individuais de previsao, substituidos por agregado de compromissos;
 - ampliada a verificacao de metadados persistidos de definicao, compromisso, Seal e folhas, e definido backoff de uma hora para divergencia global identica;

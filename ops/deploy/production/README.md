@@ -4,7 +4,7 @@ Este deploy usa uma EC2 publica com Docker Compose para `proxy`, `django`, `fast
 
 ## Infra AWS provisionada
 
-A infraestrutura base de producao foi criada em `us-east-1` via MCP AWS em `2026-05-21`, sem deploy da aplicacao ainda.
+A infraestrutura base de produção foi criada em `us-east-1` via MCP AWS em `2026-05-21`; a aplicação está implantada e recebe atualizações da `main` pelo GitHub Actions/SSM.
 
 - EC2: `i-0fc304f1acb85daea` (`gotrendlabs-prod-host`, `t4g.micro`, Ubuntu ARM64)
 - IP publico/Elastic IP: `32.199.120.235`
@@ -247,9 +247,16 @@ O AAB, APKs, keystores, `apps/mobile/android/key.properties` e `apps/mobile/andr
 ## Observacoes operacionais
 
 - Rode apenas um container `daemon` por ambiente.
+- O container Django executa dois workers Uvicorn. Na EC2 `t4g.micro`, mantenha 1 GiB de swap com `vm.swappiness=10` e monitore memória; reduzir temporariamente para um worker é o rollback operacional caso haja pressão sustentada.
 - O container `daemon` roda `run_gotrendlabs_daemon` a cada 300 segundos; mantenha os limites do Dashboard Admin Ops com folga operacional, por padrão 7 minutos para `Atrasado` e 21 minutos para `Sem sinal`.
 - O RDS deve aceitar `5432` somente a partir do security group da EC2.
 - O acesso administrativo ao banco deve usar tunel SSM pela EC2, nao public access no RDS.
 - A role OIDC do GitHub Actions esta restrita ao repositorio `wscardua/gotrendlabs` e ao branch `main`.
 - OIDC permanece o mecanismo oficial; nao reintroduza `AWS_ACCESS_KEY_ID` ou `AWS_SECRET_ACCESS_KEY` em GitHub Actions para este deploy.
 - Para evoluir para duas VMs, mantenha Django/proxy na EC2 publica e mova FastAPI/daemon para uma EC2 privada.
+
+## Ledger de integridade em produção
+
+O rollout do ledger segue obrigatoriamente `docs/specs/operations/market-integrity-deploy.md`. A chave privada Ed25519 permanece no KMS sob `alias/gotrendlabs-integrity-signing`; a role da EC2 recebe somente assinatura/leitura da chave pública no ARN específico. O segredo de pseudonimização e o identificador KMS ficam no Secrets Manager e são sincronizados para `.env.prod` sem aparecer em logs.
+
+Como o produto ainda não foi lançado, o primeiro rollout cria snapshot do RDS e remove todos os mercados pré-existentes sem definição assinada. Não há migração retroativa, modo legado ou alegação de que registros anteriores possuíam prova original.

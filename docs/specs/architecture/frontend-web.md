@@ -24,6 +24,7 @@
 
 ## Guardrails
 
+- Em produção, o container Django executa dois workers Uvicorn atrás do Caddy. Essa concorrência não cria fonte de verdade local: sessões compartilhadas e todas as mutações críticas continuam dependendo de PostgreSQL/FastAPI; memória e swap do host são monitorados conforme o runbook.
 - Toda ação mutável relevante deve passar pelo `backend-api`.
 - Apps Django ficam em `apps/web/django/`, templates compartilhados ficam em `apps/web/templates/` e assets compartilhados ficam em `apps/web/static/`.
 - Apps Django devem preservar migrations, `AppConfig.label`, imports e comandos locais quando houver reorganizacao estrutural.

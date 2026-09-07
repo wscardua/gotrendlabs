@@ -10,11 +10,8 @@ from apps.api.backend_api.daemon_services import _daemon_lifecycle_engine
 from apps.web.django.markets.models import Market
 
 
-LEGACY_STATES = ("open", "locked", "resolved", "sealed", "canceled")
-
-
 class Command(BaseCommand):
-    help = "Inventory or remove pre-production markets that reached publication states without an integrity definition."
+    help = "Inventory or remove every pre-production market without an integrity definition."
 
     def add_arguments(self, parser):
         parser.add_argument("--execute", action="store_true", help="Apply the purge. Without this flag the command is read-only.")
@@ -30,7 +27,7 @@ class Command(BaseCommand):
             raise CommandError("Use --backup-confirmed somente depois de criar e validar um backup PostgreSQL externo.")
 
         candidates = list(
-            Market.objects.filter(status__in=LEGACY_STATES, integrity_definition__isnull=True)
+            Market.objects.filter(integrity_definition__isnull=True)
             .order_by("id")
             .values("id", "slug", "status")
         )

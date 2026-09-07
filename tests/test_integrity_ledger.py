@@ -426,19 +426,24 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         self.assertEqual(market["integrity"]["status"], "verification_failed")
 
     def test_unsigned_market_purge_is_dry_run_protected_and_idempotent(self):
-        unsigned_before = Market.objects.filter(
-            status__in=("open", "locked", "resolved", "sealed", "canceled"),
-            integrity_definition__isnull=True,
-        ).count()
+        template_market = Market.objects.order_by("id").first()
+        unsigned_draft = Market.objects.create(
+            category=template_market.category,
+            subcategory=template_market.subcategory,
+            slug="unsigned-prelaunch-draft",
+            title="Rascunho pré-lançamento sem prova",
+            kind="binary",
+            status="draft",
+            status_label="Rascunho",
+            primary_outcome="",
+        )
+        unsigned_before = Market.objects.filter(integrity_definition__isnull=True).count()
         self.assertGreater(unsigned_before, 0)
         output = StringIO()
         call_command("purge_unsigned_markets", stdout=output)
         self.assertEqual(json.loads(output.getvalue())["mode"], "dry-run")
         self.assertEqual(
-            Market.objects.filter(
-                status__in=("open", "locked", "resolved", "sealed", "canceled"),
-                integrity_definition__isnull=True,
-            ).count(),
+            Market.objects.filter(integrity_definition__isnull=True).count(),
             unsigned_before,
         )
         with self.assertRaises(CommandError):
@@ -447,10 +452,7 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         from django.contrib.auth import get_user_model
 
         user = get_user_model().objects.get(email="integrity-user@example.com")
-        unsigned_market = Market.objects.filter(
-            status__in=("open", "locked", "resolved", "sealed", "canceled"),
-            integrity_definition__isnull=True,
-        ).first()
+        unsigned_market = Market.objects.filter(integrity_definition__isnull=True).first()
         signed_market = Market.objects.get(slug="openai-gpt6-2026")
         MarketComment.objects.create(market=unsigned_market, author=user, body="Interacao no mercado a remover.")
         removable_alert = IntegrityAlert.objects.create(
@@ -483,12 +485,10 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
 
         call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=StringIO())
         self.assertFalse(
-            Market.objects.filter(
-                status__in=("open", "locked", "resolved", "sealed", "canceled"),
-                integrity_definition__isnull=True,
-            ).exists()
+            Market.objects.filter(integrity_definition__isnull=True).exists()
         )
         self.assertTrue(Market.objects.filter(slug="openai-gpt6-2026").exists())
+        self.assertFalse(Market.objects.filter(pk=unsigned_draft.pk).exists())
         self.assertFalse(IntegrityAlert.objects.filter(pk=removable_alert.pk).exists())
         self.assertTrue(UserBadgeAward.objects.filter(pk=unrelated_award.pk).exists())
         self.assertTrue(UserNotification.objects.filter(pk=unrelated_notification.pk).exists())
