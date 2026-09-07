@@ -1,5 +1,13 @@
 # Admin Ops
 
+## Integridade de mercados
+
+- Admin Ops consome da FastAPI o status, hashes abreviados, chave, tentativas/falhas e eventos do ledger; não assina, recalcula ou altera provas.
+- `market_seal_window_hours` aceita 1–168 horas, default 12, e toda mudança gera `AdminEvent`.
+- `locked` permite resolver; `resolved` antes do prazo permite desfazer com motivo obrigatório; `sealed` é somente leitura. A auditoria de integridade é read-only e permanece disponível em qualquer estado, sem depender da selagem.
+- Browse de mercados e fila de resolução oferecem `Auditar integridade` quando houver mercado. A tela consome o verificador da FastAPI, identifica separadamente definição, compromissos, resultado, Seal, Merkle, eventos do mercado e cadeia global, e não trata etapas futuras ou ausência histórica como adulteração.
+- Campos cobertos pela definição são bloqueados no formulário após publicação, mas a rejeição autoritativa permanece na FastAPI.
+
 ## Responsabilidades
 
 - Criar, editar, revisar e resolver mercados.
@@ -99,6 +107,7 @@
 - Filas operacionais possuem primeira fatia real para Mercado e Feedback, com dados persistidos e listagem no Admin Ops.
 - Browse de filas operacionais exibe fila, item, tipo, data de criação, severidade interna, status e ação.
 - Browse de filas operacionais permite filtrar por fila/status e ordenar por data de criação.
+- Divergencias criptograficas detectadas pelo daemon entram na fila `Integridade` com severidade `Alta`, codigo tecnico, mercado/escopo, ocorrencias e primeira/ultima deteccao. A revisao exige nota operacional, nao oferece recompensa e nunca altera a prova original.
 - A tela de revisão de item exibe contexto completo, status persistido, recompensa aprovada quando houver e ações disponíveis conforme tipo.
 - Conversão em rascunho aparece apenas para sugestão de mercado; depois de convertida, a seção fica indisponível para novo envio.
 - Aprovação de créditos aparece para Feedback e Mercado quando houver usuário cadastrado; depois de aprovada, a seção fica indisponível para alteração ou reenvio.

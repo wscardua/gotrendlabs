@@ -70,6 +70,38 @@ class MarketComment {
   }
 }
 
+class MarketIntegritySummary {
+  const MarketIntegritySummary({
+    required this.status,
+    required this.protocolVersion,
+    required this.definitionRegistered,
+    required this.verificationAvailable,
+    required this.keyFingerprint,
+  });
+
+  final String status;
+  final String protocolVersion;
+  final bool definitionRegistered;
+  final bool verificationAvailable;
+  final String keyFingerprint;
+
+  bool get isSealed => status == 'sealed';
+  bool get isPendingSeal => status == 'resolved_pending_seal';
+  bool get isSealRetryPending => status == 'seal_retry_pending';
+  bool get isVerificationFailed => status == 'verification_failed';
+  bool get isCanceledPreserved => status == 'canceled_preserved';
+
+  factory MarketIntegritySummary.fromJson(Map<String, dynamic> json) {
+    return MarketIntegritySummary(
+      status: safeString(json['status'], 'not_published'),
+      protocolVersion: safeString(json['protocol_version']),
+      definitionRegistered: safeBool(json['definition_registered']),
+      verificationAvailable: safeBool(json['verification_available']),
+      keyFingerprint: safeString(json['key_fingerprint']),
+    );
+  }
+}
+
 class Market {
   const Market({
     required this.slug,
@@ -99,6 +131,10 @@ class Market {
     required this.resolutionCriteria,
     required this.resolutionNote,
     required this.resolvedAtLabel,
+    required this.publishedAt,
+    required this.sealDueAt,
+    required this.sealedAt,
+    required this.integrity,
     required this.viewerHasPrediction,
     required this.viewerHasFavorite,
     required this.viewerHasLike,
@@ -136,6 +172,10 @@ class Market {
   final String resolutionCriteria;
   final String resolutionNote;
   final String resolvedAtLabel;
+  final String publishedAt;
+  final String sealDueAt;
+  final String sealedAt;
+  final MarketIntegritySummary integrity;
   final bool viewerHasPrediction;
   final bool viewerHasFavorite;
   final bool viewerHasLike;
@@ -147,6 +187,7 @@ class Market {
 
   bool get isOpen => status == 'open';
   bool get isResolved => status == 'resolved';
+  bool get isSealed => status == 'sealed';
   bool get isLocked => status == 'locked';
   bool get viewerHasActivePosition => viewerPosition.hasPosition;
   String get probabilityLabel => formatProbability(primaryProbability);
@@ -203,6 +244,12 @@ class Market {
       resolutionCriteria: safeString(json['resolution_criteria']),
       resolutionNote: safeString(json['resolution_note']),
       resolvedAtLabel: safeString(json['resolved_at_label']),
+      publishedAt: safeString(json['published_at']),
+      sealDueAt: safeString(json['seal_due_at']),
+      sealedAt: safeString(json['sealed_at']),
+      integrity: MarketIntegritySummary.fromJson(
+        Map<String, dynamic>.from((json['integrity'] as Map?) ?? {}),
+      ),
       viewerHasPrediction: safeBool(json['viewer_has_prediction']),
       viewerHasFavorite: safeBool(json['viewer_has_favorite']),
       viewerHasLike: safeBool(json['viewer_has_like']),
@@ -459,23 +506,28 @@ class PositionActionPreview {
 
 class PositionActionResult {
   const PositionActionResult({
+    required this.predictionId,
     required this.optionId,
     required this.action,
     required this.stakeAmount,
     required this.penaltyAmount,
     required this.potentialPayout,
     required this.viewerPosition,
+    required this.commitmentHash,
   });
 
+  final int predictionId;
   final int optionId;
   final String action;
   final int stakeAmount;
   final int penaltyAmount;
   final int potentialPayout;
   final ViewerPositionSummary viewerPosition;
+  final String commitmentHash;
 
   factory PositionActionResult.fromJson(Map<String, dynamic> json) {
     return PositionActionResult(
+      predictionId: safeInt(json['prediction_id']),
       optionId: safeInt(json['option_id']),
       action: safeString(json['action']),
       stakeAmount: safeInt(json['stake_amount']),
@@ -483,6 +535,9 @@ class PositionActionResult {
       potentialPayout: safeInt(json['potential_payout']),
       viewerPosition: ViewerPositionSummary.fromJson(
         Map<String, dynamic>.from((json['viewer_position'] as Map?) ?? {}),
+      ),
+      commitmentHash: safeString(
+        ((json['integrity_receipt'] as Map?) ?? {})['commitment_hash'],
       ),
     );
   }

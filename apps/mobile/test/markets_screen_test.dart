@@ -170,6 +170,30 @@ void main() {
       ),
       findsOneWidget,
     );
+    final positionsTile = find.byKey(const ValueKey('desk-tile-positions'));
+    final positionsLabel = find.descendant(
+      of: positionsTile,
+      matching: find.text('Posições'),
+    );
+    final positionsIcon = find.descendant(
+      of: positionsTile,
+      matching: find.byIcon(Icons.stacked_line_chart),
+    );
+    final positionsValue = find.descendant(
+      of: positionsTile,
+      matching: find.text('1'),
+    );
+    expect(tester.getSize(positionsTile).height, lessThan(90));
+    expect(
+      (tester.getTopLeft(positionsValue).dy -
+              tester.getTopLeft(positionsIcon).dy)
+          .abs(),
+      lessThan(4),
+    );
+    expect(
+      tester.getTopLeft(positionsLabel).dy,
+      lessThan(tester.getTopLeft(positionsIcon).dy),
+    );
   });
 
   testWidgets('TodayScreen pull refresh waits for fresh market data', (

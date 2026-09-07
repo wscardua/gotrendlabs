@@ -9,7 +9,7 @@
       {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
       {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
       {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
-      {% if is_readonly %}<div class="notice red market-readonly-notice">Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar.</div>{% endif %}
+      {% if is_readonly %}<div class="notice red market-readonly-notice">{% if market.status == 'sealed' %}Mercado selado é somente leitura; correções exigem novo evento append-only.{% else %}Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar. Essa ação só está disponível antes do prazo de selagem.{% endif %}</div>{% endif %}
       <form id="market-editor" class="form-grid" method="post" enctype="multipart/form-data" data-market-form>
         {% csrf_token %}
         <fieldset class="form-grid full" {% if is_readonly %}disabled{% endif %}>

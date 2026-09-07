@@ -2,6 +2,340 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260907-INTEGRITY-CLOSEOUT-022
+
+- Tipo: `promote-spec` + `implementation-cycle` + `test-review-cycle`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: promover a spec para aprovada, publicar a implementação na `main`, provisionar KMS/IAM/segredo em produção, executar corte destrutivo controlado dos mercados pré-lançamento, adicionar um segundo worker Django e validar o rollout ponta a ponta.
+- Etapa atual: fechamento documental e preparação do pacote de PR; submissão aguarda autorização explícita do usuário após apresentação do texto.
+- Artefatos afetados: feature/status/changelogs/runbook, Compose de produção, exemplo de ambiente, comando de corte pré-produção, testes, GitHub Actions e recursos AWS de produção.
+- Estado AWS pré-rollout: EC2 `t4g.micro` em execução e SSM online; RDS PostgreSQL 16.13 privado/disponível; alias KMS de integridade ausente; secret `gotrendlabs/prod/app-secrets` ainda sem as duas chaves de integridade; role EC2 ainda sem política KMS; host com 904 MiB de RAM e sem swap.
+- Decisões: aprovação funcional foi dada pelo usuário; status de implementação permanece `implementada_aguardando_deploy` até CI, deploy e smoke reais; Django passa de um para dois workers Uvicorn; rollout cria 1 GiB de swap, monitora memória e preserva um único daemon; todos os mercados atuais sem definição serão removidos após snapshot validado, sem assinatura retroativa nem camada de legado.
+- Reversão lógica: antes do corte criar snapshot manual do RDS; preservar recursos/provas criptográficas após o primeiro registro; rollback de aplicação por commit anterior, retorno temporário do Django a um worker se houver pressão de memória e desativação de novas mutações se o KMS estiver indisponível.
+- Evidências: auditoria read-only confirmou conta AWS `204620194924`, EC2/SSM/RDS saudáveis, quatro containers ativos, workflow automático habilitado e ausência dos pré-requisitos KMS/secret/IAM; execução produtiva anterior do GitHub Actions concluiu com sucesso. Validação local: 253 testes Django/FastAPI aprovados em execução única isolada; 101 testes Flutter aprovados; `flutter analyze`, `manage.py check`, `makemigrations --check --dry-run`, OpenAPI, compilação Python, Compose sem resolução de env e `git diff --check` aprovados. O teste de corte cobre também `draft` pré-lançamento. Evidências de CI/deploy/smoke serão anexadas após autorização.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+
+## WFLOW-20260907-INTEGRITY-HARDENING-021
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: fechar achados de revisao sobre selagem apoiada em checkpoint historico, exposicao publica de referencias individuais de previsao, validacao incompleta de metadados persistidos e repeticao custosa de auditoria integral apos divergencia confirmada.
+- Etapa atual: specs, implementação, contratos, consumidores e regressão concluídos.
+- Artefatos afetados: ADR-0007, feature/contrato/arquitetura/testes, verificador FastAPI, daemon, OpenAPI, consumidores Django/Flutter e memoria operacional.
+- Decisoes: Seal exige auditoria global integral fresca sob lock; prova publica agrega compromissos e omite eventos/referencias individuais de previsao; definicao, compromisso, Seal, folhas e checkpoint confrontam metadados persistidos com payload/chave/relacoes; falha global identica usa backoff de uma hora sem novo checkpoint/KMS a cada ciclo e suprime previamente a fila de selagem.
+- Evolucoes registradas: versionamento do segredo de pseudonimizacao e resumo de verificacao materializado por mercado ficam planejados para evolucao da plataforma, sem mudanca de schema nesta execucao.
+- Reversao logica: reverter codigo/contrato por commit preservando eventos, provas e checkpoints append-only; nenhuma migration destrutiva sera criada.
+- Evidencias: 32 testes de `tests.test_integrity_ledger` aprovados; 218 testes web aprovados na regressão combinada e os 3 casos afetados por interferência do servidor local aprovados isoladamente com backend externo desativado; 101 testes Flutter aprovados e `flutter analyze` sem issues; teste focado adicional do modal mobile aprovado; OpenAPI sincronizado; `manage.py check`, `makemigrations --check --dry-run`, compilação Python e `git diff --check` aprovados. Testes dedicados comprovam que adulteração histórica anterior ao checkpoint bloqueia Seal, metadados persistidos adulterados falham, divergência idêntica respeita backoff e estado global `failed` suprime a fila automática de selagem. A infraestrutura de teste desabilita a proteção contra `TRUNCATE` somente no banco isolado e apenas durante o flush do Django, mantendo a trigger de produção inalterada.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
+## WFLOW-20260907-INTEGRITY-CHECKPOINTS-020
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: retirar a varredura integral da cadeia global das requisicoes publicas por meio de checkpoints assinados, auditoria incremental no daemon e auditoria integral periodica, mantendo selagem fail-closed.
+- Etapa atual: arquitetura, contrato, implementacao, corte local, regressao e validacao de indices concluidos.
+- Artefatos afetados: ADR, feature/contrato/arquitetura, PostgreSQL/migration, verificador FastAPI, daemon, OpenAPI, Django, Flutter, Admin Ops, testes e memoria operacional.
+- Decisoes: contrato final sem compatibilidade com builds Flutter pre-producao; estados globais `verified`, `pending`, `failed` e `unavailable`; requisicao publica nunca faz full scan; cards nao oscilam por backlog normal, mas falha confirmada continua removendo sinal positivo; selagem valida delta sob lock.
+- Reversao logica: desativar consumo publico do checkpoint por reversao de codigo, preservar checkpoints/eventos append-only e retornar temporariamente a auditoria integral backend; migration nao sera revertida destrutivamente em ambiente com provas.
+- Evidencias: `ADR-0007`; migration `0031`; 28 testes de `tests.test_integrity_ledger` e 221 de `tests.test_web_smoke` aprovados; 101 testes Flutter aprovados e `flutter analyze` sem issues; OpenAPI regenerado e `--check` aprovado; `manage.py check`, `makemigrations --check --dry-run`, compilacao Python e `git diff --check` aprovados. Teste dedicado bloqueia qualquer chamada ao scanner global no request publico. `EXPLAIN` local confirmou `Index Scan Backward` para o head e `Index Scan` por intervalo/limite em `integrity_ledger_events_sequence_key`.
+- Resultado local: PostgreSQL pre-producao reinicializado conforme autorizacao, migrations reaplicadas, dados anteriores descartados sem assinatura retroativa, tres mercados nativos criados (dois `sealed`, um `open`), checkpoint incremental valido ate o evento 11, nenhum alerta pendente; Django/FastAPI/daemon reiniciados e saudaveis.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
+## WFLOW-20260907-INTEGRITY-REVIEW-019
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: fechar achados de revisao que permitiam selagem de mercado divergente, validade positiva com cadeia global invalida, selo positivo diante de alerta conhecido, assinatura parcial dos metadados do evento, ausencia de auditoria para mercado publicado sem definicao e limpeza excessiva de historico de badges.
+- Etapa atual: specs, implementacao, analise de indices e regressao concluidas.
+- Artefatos afetados: feature/contrato/arquitetura/testes, FastAPI, daemon, comando de corte pre-producao, cards web/mobile por contrato e evidencias operacionais de indices.
+- Decisoes: o Seal exige verificacao integral aprovada; cadeia global invalida torna `valid=false`; alerta de integridade pendente prevalece no resumo visual; todos os metadados persistidos do evento sao vinculados ao payload assinado; mercado publicado sem definicao e divergencia `high`; limpeza remove somente concessoes atribuiveis aos mercados-alvo. O custo linear da cadeia global permanece risco conhecido, com indices avaliados separadamente de cache/checkpoints futuros.
+- Reversao logica: reverter codigo e specs por commit sem reescrever provas existentes; nenhuma migration destrutiva faz parte desta execucao.
+- Evidencias: 25 testes de `tests.test_integrity_ledger` e 221 testes de `tests.test_web_smoke` aprovados; 101 testes Flutter aprovados e `flutter analyze` sem issues; OpenAPI sincronizado; `manage.py check`, `makemigrations --check --dry-run`, compilacao Python e `git diff --check` aprovados. `EXPLAIN` local confirmou indices unicos para definicao/Seal, index-only scan em `gtl_ialert_market_status_idx` e indice de `market_id` para eventos; a cadeia global pequena usa scan sequencial e permanece custo linear documentado.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
+## WFLOW-20260907-INTEGRITY-HARDENING-018
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-PRED-001`, `FEAT-AIAGENT-001`, `FEAT-MOBILE-001`
+- Objetivo: eliminar dados pre-producao sem prova, exigir compromissos para todas as previsoes, estabilizar taxonomia assinada e isolar a auditoria do daemon sem manter compatibilidade com builds mobile ainda nao publicados.
+- Etapa atual: specs, implementacao, corte local, reconciliacao e validacao concluidos.
+- Artefatos afetados: feature/contratos/arquitetura, FastAPI, daemon, comando de limpeza, PostgreSQL, testes, OpenAPI e validacao Django/Flutter.
+- Decisoes: mercados sem definicao assinada serao removidos por comando explicito apos inventario/backup; nao havera assinatura retroativa; previsoes IA usam a mesma garantia transacional; nomes taxonomicos sao snapshot e IDs sao protegidos; falha da auditoria nao encerra o daemon.
+- Reversao logica: restaurar o dump validado em `.runtime/backups/integrity-ledger-cutover-20260907/pre-unsigned-market-purge.dump` para recuperar os dados locais removidos; para provas existentes, nunca apagar ou reescrever eventos, apenas desativar novas mutacoes e corrigir append-only.
+- Evidencias: backup PostgreSQL custom de 1,8 MiB validado antes do corte e copiado com SHA-256 `bd27ef3a77af01fade2d87ab6a745654b170b341a85431442d751560d10c0dbd`; `purge_unsigned_markets` removeu 44 mercados publicados sem prova, 33 previsoes e dependencias, e a segunda execucao encontrou zero candidatos; banco local final com 3 mercados abertos e 6 selados, todos com definicao; 6 demos seguem validas e 3 demos adulteradas permanecem para o caminho de falha; 21 testes de integridade e 221 testes web aprovados; `flutter analyze` sem issues e 101 testes Flutter aprovados; OpenAPI atual; `manage.py check`, `makemigrations --check --dry-run`, compilacao Python e `git diff --check` aprovados.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
+## WFLOW-20260906-MOBILE-DETAIL-DENSITY-017
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-UX-001`, `FEAT-MOBILE-001`, `FEAT-INTEGRITY-001`
+- Objetivo: corrigir a hierarquia do critério de resolução, compactar `Sua mesa` e métricas e ampliar os detalhes técnicos da integridade no app.
+- Etapa atual: specs, implementação Flutter, testes e QA visual física concluídos.
+- Artefatos afetados: detalhe, cards/métricas, tela Hoje, comprovantes, testes mobile, specs, changelog e estado operacional.
+- Impacto arquitetural: nenhum; o Flutter apenas reorganiza e apresenta contratos existentes da FastAPI.
+- Reversão lógica: restaurar a ordem e expansões anteriores sem alterar mercados, posições ou provas criptográficas.
+- Evidências: `flutter analyze` sem issues; `flutter test` com 101 testes aprovados; testes de widget cobrem ordem do detalhe, grade compacta de métricas, atalhos de `Sua mesa`, comprovantes recolhidos e conteúdo técnico da integridade; APK debug instalada no Galaxy S20 conectado, usando FastAPI/Django locais via `adb reverse`; QA física confirmou layout sem overflow, grade 3x2, comprovantes fechados e detalhes técnicos expansíveis.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-MARKET-POSITION-HIERARCHY-016
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-PRED-001`, `FEAT-MARKET-001`
+- Objetivo: padronizar a posição e o conteúdo de `Sua posição` no detalhe web em todo o ciclo do mercado.
+- Etapa atual: specs, componente compartilhado, regressões e QA visual concluídos.
+- Artefatos afetados: detalhe Django, parcial compartilhado de posição, CSS, specs web/i18n, testes, changelog e estado operacional.
+- Impacto arquitetural: nenhum; a UI continua apresentando `viewer_position` e previsões retornadas pelo domínio.
+- Reversão lógica: restaurar os blocos separados por estado sem alterar previsões, compromissos ou contratos da API.
+- Evidências: 4 testes focados e 220 testes de `tests.test_web_smoke` aprovados; `manage.py check`; QA visual autenticado em mercado aberto, em apuração e resolvido; viewport móvel sem overflow; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-MARKET-DETAIL-LIFECYCLE-COPY-015
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MARKET-001`
+- Objetivo: alinhar títulos, descrições, rótulos e métricas do detalhe web ao estado real do ciclo do mercado.
+- Etapa atual: títulos, descrições, linha do tempo, rótulos, métricas, specs, regressões e QA visual concluídos.
+- Artefatos afetados: detalhe Django, contexto de apresentação, specs web/i18n, testes, changelog e estado operacional.
+- Impacto arquitetural: nenhum; a UI continua representando estados e timestamps fornecidos pela FastAPI.
+- Reversão lógica: restaurar a copy e condicionais anteriores sem alterar mercados, previsões ou provas criptográficas.
+- Evidências: 5 testes focados e 219 testes de `tests.test_web_smoke` aprovados; `manage.py check`; QA visual de `locked`, `resolved` e `sealed`; desktop sem sobreposição e viewport móvel sem overflow; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-WEB-COMPLETION-COPY-014
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: deixar claro no detalhe web selado que o mercado foi concluído, mantendo a integridade verificável como informação complementar.
+- Etapa atual: copy, hierarquia, espaçamento, specs, regressão web e QA visual concluídos.
+- Artefatos afetados: detalhe Django, specs web/i18n, teste de renderização, changelog e estado operacional.
+- Impacto arquitetural: nenhum; somente copy e hierarquia de apresentação sobre o estado `sealed` já retornado pela FastAPI.
+- Reversão lógica: restaurar os textos anteriores no template e nas specs, sem alterar contratos, mercado ou provas criptográficas.
+- Evidências: 3 testes focados de detalhe/card aprovados; `manage.py check`; QA visual no mercado local selado; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-MOBILE-HIERARCHY-013
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: renomear e reposicionar a secao de integridade do detalhe mobile para reduzir confusao e preservar a hierarquia da acao principal.
+- Etapa atual: copy `Integridade do mercado`, mensagens contextuais, nova ordem, specs, testes e QA visual concluidos.
+- Artefatos afetados: detalhe Flutter, teste de widget, specs mobile, README, changelog e estado operacional.
+- Impacto arquitetural: nenhum; somente hierarquia e copy sobre os contratos existentes da FastAPI.
+- Reversao logica: restaurar o titulo dinamico e a posicao anterior sem alterar contratos ou provas.
+- Evidencias: `flutter analyze`; suite Flutter; QA visual no iPhone 17 Simulator; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-MOBILE-SEAL-012
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: simplificar o selo de integridade dos cards mobile para um escudo circular sobre a imagem, em paridade com o site e sem texto redundante.
+- Etapa atual: cards hero/compacto, acessibilidade, specs, testes e validacao visual no iPhone 17 Simulator concluidos.
+- Artefatos afetados: Flutter de cards, testes mobile, specs de UX/aceite, README, changelog e estado operacional.
+- Impacto arquitetural: nenhum; somente apresentacao do resumo de integridade ja retornado pela FastAPI.
+- Reversao logica: restaurar o pill/rotulo textual no card sem alterar contratos ou dados de integridade.
+- Evidencias: `flutter analyze`; 12 testes focados de cards; QA visual no iPhone 17 Simulator; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-MOBILE-RECEIPTS-011
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: dar paridade ao mobile com o web para listar e abrir o comprovante assinado de cada previsao inicial, reforco e revisao.
+- Etapa atual: lista persistente, acesso imediato apos mutacao, modal leigo/tecnico, estados de loading/erro/retry, specs e testes concluidos; validacao visual realizada no iPhone 17 Simulator com tres recibos reais do banco local.
+- Artefatos afetados: Flutter de previsao/detalhe, testes mobile, specs de UX/MVP/contrato/aceite, README e estado operacional.
+- Impacto arquitetural: nenhuma nova fronteira; Flutter usa `viewer_position.history` apenas para descoberta e carrega cada recibo autoritativo da FastAPI, sem recalcular hash ou assinatura.
+- Reversao logica: remover bloco/modal mobile e restaurar a confirmacao simples por hash, sem alterar previsoes, compromissos ou contratos persistidos.
+- Evidencias: `flutter analyze`; 98 testes Flutter; QA visual da lista com previsao inicial, reforco e revisao e do modal de reforco no iPhone 17 Simulator; `git diff --check`.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+- Encerrado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-ADMIN-AUDIT-010
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: disponibilizar auditoria administrativa de integridade em todos os estados e identificar precisamente cada controle aprovado, divergente ou ainda nao aplicavel.
+- Etapa atual: specs, contrato, FastAPI, Admin Ops e testes concluidos; 17 testes focados e 232 testes integrados aprovados, com validacao visual desktop/mobile.
+- Artefatos afetados: feature, contrato de verificacao, arquitetura Admin Ops, FastAPI, Django Admin Ops, testes e estado operacional.
+- Impacto arquitetural: nenhuma nova fronteira; Django apresenta o resultado read-only calculado pela FastAPI.
+- Reversao logica: remover os novos acessos e restaurar `prediction_commitments_valid=null` antes do Seal, sem alterar provas persistidas.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-EARLY-AUDIT-009
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: executar a auditoria de integridade no inicio de todo ciclo, cobrindo qualquer estado e sem dependencia de selagem.
+- Etapa atual: comportamento normativo, ordem do daemon e regressao automatizada concluidos; 15 testes de integridade e 230 testes integrados aprovados.
+- Artefatos afetados: feature, contrato, arquitetura do scheduler, daemon, testes e estado operacional.
+- Impacto arquitetural: nenhuma nova fronteira; o daemon continua chamando o verificador autoritativo da FastAPI em modo interno e somente leitura.
+- Reversao logica: restaurar a ordem anterior do ciclo sem alterar alertas ou provas persistidas.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-INTEGRITY-AUDIT-UX-008
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MARKET-001`
+- Objetivo: manter comprovantes visiveis apos fechamento, alinhar CTA/compartilhamento dos cards e criar auditoria recorrente de integridade com alerta `high` na fila operacional.
+- Etapa atual: comprovantes persistentes, controles dos cards, auditoria compartilhada, migration e fila operacional implementados e validados.
+- Artefatos afetados: feature/contrato/arquitetura/testes, PostgreSQL/migration, verificador FastAPI, daemon, fila Admin Ops, templates/CSS web, OpenAPI e estado operacional.
+- Impacto arquitetural: FastAPI preserva a verificacao autoritativa; daemon apenas agenda a auditoria; PostgreSQL persiste alertas operacionais separados do ledger append-only; Django apenas apresenta e revisa.
+- Reversao logica: desativar a chamada de auditoria e ocultar `integrity_alert` da fila, preservando alertas e provas existentes; restaurar rotulos/controles web sem alterar dados criptograficos.
+- Migration: `markets.0030_integrity_alert_queue`, aplicada localmente.
+- Evidencias: 229 testes de integridade/web aprovados; QA visual dos cards e da fila/detalhe de alerta; auditoria local de 9 mercados com materializacao dos cenarios de falha conhecidos; `manage.py check`; `makemigrations --check --dry-run`; OpenAPI export/check; compilacao Python; `node --check`; `git diff --check`.
+- Encerrado em: 2026-09-06
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-PREDICTION-RECEIPT-MODAL-007
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: abrir comprovantes de previsao em modal alinhado ao design system e manter acesso individual a entrada inicial, reforcos e revisoes.
+- Etapa atual: modal responsivo, fallback de pagina completa e lista por acao implementados e validados.
+- Artefatos afetados: feature/arquitetura web, templates e JavaScript/CSS Django, testes e estado operacional.
+- Impacto arquitetural: somente apresentacao Django sobre recibos autenticados da FastAPI; assinatura, ownership e encadeamento continuam autoritativos no backend.
+- Reversao logica: remover o acionamento modal e restaurar links de pagina completa, sem alterar ou apagar compromissos persistidos.
+- Evidencias: QA visual no navegador em mercado real com modal sem overflow; confirmacao de tres recibos encadeados para previsao inicial, reforco e revisao; 215 testes de `tests.test_web_smoke`; `node --check`; `manage.py check`; `makemigrations --check --dry-run`; `git diff --check`.
+- Encerrado em: 2026-09-06
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-MARKET-INTEGRITY-UX-006
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: reduzir ressalvas que assustam no modal, restaurar o CTA `Ver resolução`, evidenciar o comprovante assinado apos a previsao e disponibilizar demos locais validas do caminho feliz.
+- Etapa atual: copy, CTA, comprovante persistente/imediato, contrato de erros/avisos, paridade mobile e dados locais validados.
+- Artefatos afetados: feature de integridade, templates/CSS Django, testes web, changelogs, estado operacional e dados locais de demonstracao.
+- Impacto arquitetural: apresentacao Django consumindo o recibo autoritativo ja retornado pela FastAPI; sem mudanca de contrato ou persistencia produtiva.
+- Reversao logica: restaurar copy/CTA anteriores e remover apenas os novos mercados locais de demonstracao se explicitamente desejado; nenhuma prova existente sera reescrita.
+- Demos locais: `demo-integridade-valida-definicao`, `demo-integridade-valida-resultado` e `demo-integridade-valida-finalizado`; todas retornam `valid=true`, `errors=[]` e verificacoes especificas aplicaveis aprovadas.
+- Evidencias: 214 testes de `tests.test_web_smoke`; 15 testes focados de ledger/web; 96 testes Flutter; `flutter analyze`; `manage.py check`; `makemigrations --check --dry-run`; OpenAPI export/check; `git diff --check`; QA visual no modal registrado e selado e no CTA do card.
+- Encerrado em: 2026-09-06
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-MARKET-INTEGRITY-SEMANTICS-005
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: eliminar ambiguidades entre processo ativo, retry operacional, etapa nao aplicavel e diferenca criptografica, reforcando a verificacao contra o estado operacional atual.
+- Etapa atual: implementacao, migracao, contratos, consumidores e regressao concluidos; ambientes FastAPI/Django reiniciados e demos abertas, pendente e selada conferidas visualmente.
+- Artefatos afetados: feature/contrato de integridade, FastAPI, OpenAPI, Django publico/Admin Ops, Flutter e testes.
+- Impacto arquitetural: mantem FastAPI como autoridade; amplia verificacao v1 com campos aditivos e adiciona registro append-only apenas de chaves publicas historicas.
+- Migration: `markets.0029_integrity_signing_keys` aplicada localmente.
+- Evidencias: `manage.py test --keepdb` com 224 testes; `flutter test` com 96 testes; `flutter analyze`; `makemigrations --check --dry-run`; OpenAPI export/check; `git diff --check`; verificacao visual local dos estados `registered`, `resolved_pending_seal` e `sealed` em modal.
+- Encerrado em: 2026-09-06
+- Reversao logica: clientes antigos ignoram campos aditivos; restaurar os mapeamentos anteriores nao altera provas persistidas.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-MARKET-INTEGRITY-COPY-004
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: explicar de forma compacta hash, assinatura, encadeamento e deteccao de manipulacao, removendo o botao redundante do detalhe do mercado.
+- Etapa atual: concluido; metodo criptografico compacto e acionador unico no escudo validados em desktop e mobile em 2026-09-06.
+- Artefatos afetados: spec de integridade, arquitetura web, partial de verificacao, detalhe do mercado, CSS e testes de renderizacao.
+- Impacto arquitetural: apenas apresentacao Django; contratos, regras de verificacao e persistencia nao mudam.
+- Evidencias: `manage.py check`, 3 testes focados, suite `tests.test_web_smoke` com 212 testes e inspecao visual em desktop e 390 px, todos aprovados; console sem erros.
+- Encerrado em: 2026-09-06
+- Reversao logica: restaurar a copy anterior e o acionador textual do detalhe sem alterar provas ou dados.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260906-MARKET-INTEGRITY-COPY-003
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: tornar a verificacao publica compreensivel para publico leigo, priorizando proposito, resposta objetiva, linha do tempo, efeito de alteracoes e limites antes dos detalhes tecnicos.
+- Etapa atual: concluido; hierarquia de linguagem simples, linha do tempo, limites, detalhes tecnicos progressivos e estados honestos validados em desktop e mobile em 2026-09-06.
+- Artefatos afetados: spec de integridade, arquitetura web, partial Django, CSS e testes de renderizacao.
+- Impacto arquitetural: somente apresentacao Django de dados retornados pela FastAPI; nenhuma regra de validade muda de camada.
+- Evidencias: `manage.py check`, 2 testes focados de renderizacao, suite `tests.test_web_smoke` com 212 testes e inspecao visual em viewport desktop e 390 px, todos aprovados.
+- Encerrado em: 2026-09-06
+- Reversao logica: restaurar a estrutura anterior do partial sem alterar provas, contratos ou persistencia.
+- Iniciado em: 2026-09-06
+- Atualizado em: 2026-09-06
+
+## WFLOW-20260905-MARKET-INTEGRITY-UX-002
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: refinar a sinalizacao de integridade nos cards e no detalhe web, preservar thumbnails e apresentar a verificacao em modal acessivel com linguagem para publico leigo.
+- Etapa atual: implementacao concluida e validada localmente em desktop e viewport mobile.
+- Artefatos afetados: `docs/specs/`, templates Django, CSS/JavaScript web e testes de regressao.
+- Impacto arquitetural: apenas apresentacao Django; FastAPI, OpenAPI, persistencia, daemon e Flutter permanecem inalterados.
+- Reversao logica: restaurar os links de pagina inteira e o badge textual anterior, sem alterar provas ou dados de integridade.
+- Iniciado em: 2026-09-05
+- Atualizado em: 2026-09-05
+- Encerrado em: 2026-09-05
+- Evidencias: `manage.py check`; quatro testes focados de selo/modal/fallback/download; `manage.py test tests.test_web_smoke --keepdb` com 211 testes; `node --check`; download JSON via rota Django com HTTP 200; QA visual no feed, detalhe e modal em desktop/mobile, sem overflow horizontal ou erros no console.
+
+## WFLOW-20260905-MARKET-INTEGRITY-001
+
+- Tipo: `new-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: implementar ledger criptografico interno assinado cobrindo publicacao, previsoes, resolucao, selagem, verificacao, Admin Ops, web, mobile, comunicacoes e paginas institucionais.
+- Etapa atual: implementação local concluída e validada; aguardando rollout controlado com IAM/KMS, secrets e migrations de produção.
+- Artefatos afetados: `docs/specs/`, `apps/api/backend_api/`, `apps/web/django/`, `apps/web/templates/`, `apps/web/static/`, `apps/mobile/`, `packages/contracts/openapi/`, `requirements.txt`, migrations e testes.
+- Decisoes: assinatura sincrona/atomica; KMS Ed25519 em producao; chave efemera apenas em desenvolvimento/testes; HMAC-SHA-256 para pseudonimo; Merkle deterministica; ledger global sob lock; legado sem assinatura retroativa.
+- Bloqueios: configuracao IAM/KMS e segredo de commitment sao requisitos de deploy, nao bloqueiam implementacao/testes locais.
+- Iniciado em: 2026-09-05
+- Atualizado em: 2026-09-05
+- Encerrado em: 2026-09-05
+- Retomada: executar o runbook `docs/specs/operations/market-integrity-deploy.md` em staging, provisionar a chave KMS Ed25519 e validar o smoke concorrente antes de produção. Mercados legados permanecem `legacy_unregistered` e não devem ser apresentados como prova original.
+- Reversao logica: desabilitar novas mutacoes dependentes do signer, preservar integralmente provas ja emitidas e manter mercados `resolved` para retry; nunca apagar o ledger.
+- Evidências de validação local: `.venv/bin/python manage.py check`; `.venv/bin/python manage.py makemigrations --check --dry-run`; `.venv/bin/python packages/contracts/export_openapi.py --check`; `.venv/bin/python manage.py test` com 217 testes; `cd apps/mobile && flutter analyze`; `cd apps/mobile && flutter test` com 95 testes; teste dedicado cobre dois workers concorrentes, idempotência, falha/retry de assinatura, prova Merkle, verificação pública e trigger append-only.
+- Limitações conhecidas: integração real com AWS KMS, políticas IAM e alarmes CloudWatch exigem validação de staging; não há ancoragem Polygon; mercados legados não recebem assinatura retroativa; o pacote público v1 é JSON servido pela API, sem formato ZIP independente.
+
 ## WFLOW-20260829-MARKET-CARD-LAYOUT-001
 
 - Tipo: `change-feature`

@@ -131,6 +131,10 @@ Deve mostrar:
 - grafico de consenso baseado em `sparkline_series`
 - ticket de previsao para mercado aberto
 - resultado oficial para mercado resolvido
+- criterio de resolucao compacto antes do ticket/posicao, permitindo compreender a regra antes de prever; resultado oficial tambem precede o resultado pessoal quando aplicavel
+- escudo compacto no hero e secao secundaria `Integridade do mercado` depois do criterio, resultado, previsao/posicao e comprovantes; a secao explica o estado atual e oferece `Verificar integridade`
+- lista autenticada de comprovantes assinados da propria posicao, com uma entrada separada para previsao inicial, cada reforco e cada revisao; os comprovantes permanecem acessiveis nos estados posteriores e abrem em modal
+- lista de comprovantes recolhida por padrao e verificacao do mercado com detalhes tecnicos progressivos equivalentes aos comprovantes individuais
 
 ### Comunidade
 
@@ -153,6 +157,7 @@ Deve mostrar:
 7. Usuario confirma.
 8. App envia mutacao para FastAPI.
 9. App atualiza detalhe, saldo e estado de previsao a partir da resposta.
+10. App oferece o comprovante emitido imediatamente e o preserva na lista do detalhe para consultas futuras.
 
 Erros esperados:
 

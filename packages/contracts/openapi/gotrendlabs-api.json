@@ -1009,6 +1009,27 @@
         "title": "AdminMarketActionPayload",
         "type": "object"
       },
+      "AdminMarketIntegrityCorrectionPayload": {
+        "properties": {
+          "correction": {
+            "additionalProperties": true,
+            "title": "Correction",
+            "type": "object"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "reason",
+          "correction"
+        ],
+        "title": "AdminMarketIntegrityCorrectionPayload",
+        "type": "object"
+      },
       "AdminMarketListResponse": {
         "properties": {
           "counts": {
@@ -2543,6 +2564,110 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "IntegrityLedgerStatusResponse": {
+        "properties": {
+          "audit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Type"
+          },
+          "current_sequence": {
+            "default": 0,
+            "title": "Current Sequence",
+            "type": "integer"
+          },
+          "ledger_chain_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Chain Valid"
+          },
+          "pending_events": {
+            "default": 0,
+            "title": "Pending Events",
+            "type": "integer"
+          },
+          "protocol_version": {
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "verification_status": {
+            "title": "Verification Status",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "verified_through_sequence": {
+            "default": 0,
+            "title": "Verified Through Sequence",
+            "type": "integer"
+          },
+          "verifier_version": {
+            "title": "Verifier Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "verification_status",
+          "protocol_version",
+          "verifier_version"
+        ],
+        "title": "IntegrityLedgerStatusResponse",
+        "type": "object"
+      },
+      "IntegrityPublicKeyResponse": {
+        "properties": {
+          "algorithm": {
+            "title": "Algorithm",
+            "type": "string"
+          },
+          "fingerprint": {
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "key_id": {
+            "title": "Key Id",
+            "type": "string"
+          },
+          "protocol_version": {
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "public_key_pem": {
+            "title": "Public Key Pem",
+            "type": "string"
+          }
+        },
+        "required": [
+          "protocol_version",
+          "algorithm",
+          "key_id",
+          "fingerprint",
+          "public_key_pem"
+        ],
+        "title": "IntegrityPublicKeyResponse",
+        "type": "object"
+      },
       "LedgerEntryResponse": {
         "properties": {
           "amount": {
@@ -2652,6 +2777,263 @@
           "password"
         ],
         "title": "LoginPayload",
+        "type": "object"
+      },
+      "MarketIntegrityResponse": {
+        "properties": {
+          "definition": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition"
+          },
+          "ledger_events": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Ledger Events",
+            "type": "array"
+          },
+          "market_slug": {
+            "title": "Market Slug",
+            "type": "string"
+          },
+          "prediction_commitments": {
+            "$ref": "#/components/schemas/PublicPredictionCommitmentsSummary"
+          },
+          "protocol_version": {
+            "default": "",
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "seal": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seal"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_slug",
+          "status"
+        ],
+        "title": "MarketIntegrityResponse",
+        "type": "object"
+      },
+      "MarketIntegritySummary": {
+        "properties": {
+          "definition_registered": {
+            "default": false,
+            "title": "Definition Registered",
+            "type": "boolean"
+          },
+          "key_fingerprint": {
+            "default": "",
+            "title": "Key Fingerprint",
+            "type": "string"
+          },
+          "protocol_version": {
+            "default": "",
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "status": {
+            "default": "not_published",
+            "title": "Status",
+            "type": "string"
+          },
+          "verification_available": {
+            "default": false,
+            "title": "Verification Available",
+            "type": "boolean"
+          }
+        },
+        "title": "MarketIntegritySummary",
+        "type": "object"
+      },
+      "MarketIntegrityVerificationResponse": {
+        "properties": {
+          "definition_matches_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition Matches Current"
+          },
+          "definition_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Definition Valid"
+          },
+          "errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "ledger_audit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Audit Type"
+          },
+          "ledger_chain_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Chain Valid"
+          },
+          "ledger_current_sequence": {
+            "default": 0,
+            "title": "Ledger Current Sequence",
+            "type": "integer"
+          },
+          "ledger_pending_events": {
+            "default": 0,
+            "title": "Ledger Pending Events",
+            "type": "integer"
+          },
+          "ledger_verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Verified At"
+          },
+          "ledger_verified_through_sequence": {
+            "default": 0,
+            "title": "Ledger Verified Through Sequence",
+            "type": "integer"
+          },
+          "market_events_valid": {
+            "default": false,
+            "title": "Market Events Valid",
+            "type": "boolean"
+          },
+          "market_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Valid"
+          },
+          "merkle_root_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merkle Root Valid"
+          },
+          "overall_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Valid"
+          },
+          "prediction_commitments_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prediction Commitments Valid"
+          },
+          "result_matches_current": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Matches Current"
+          },
+          "seal_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seal Valid"
+          },
+          "verification_status": {
+            "title": "Verification Status",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "required": [
+          "verification_status"
+        ],
+        "title": "MarketIntegrityVerificationResponse",
         "type": "object"
       },
       "MarketListResponse": {
@@ -2799,6 +3181,9 @@
             "title": "Image Url",
             "type": "string"
           },
+          "integrity": {
+            "$ref": "#/components/schemas/MarketIntegritySummary"
+          },
           "is_featured": {
             "default": false,
             "title": "Is Featured",
@@ -2837,6 +3222,17 @@
             "title": "Primary Probability Exact",
             "type": "number"
           },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
           "resolution_criteria": {
             "title": "Resolution Criteria",
             "type": "string"
@@ -2871,6 +3267,28 @@
             "default": "",
             "title": "Resolved At Label",
             "type": "string"
+          },
+          "seal_due_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seal Due At"
+          },
+          "sealed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sealed At"
           },
           "secondary_probability": {
             "title": "Secondary Probability",
@@ -3385,6 +3803,18 @@
             "title": "Action",
             "type": "string"
           },
+          "integrity_receipt": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Integrity Receipt"
+          },
           "market_id": {
             "title": "Market Id",
             "type": "integer"
@@ -3469,6 +3899,18 @@
             "title": "Accepted At",
             "type": "string"
           },
+          "integrity_receipt": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Integrity Receipt"
+          },
           "market_id": {
             "title": "Market Id",
             "type": "integer"
@@ -3511,6 +3953,37 @@
           "potential_payout"
         ],
         "title": "PredictionCreateResponse",
+        "type": "object"
+      },
+      "PredictionIntegrityReceiptResponse": {
+        "properties": {
+          "merkle_proof": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merkle Proof"
+          },
+          "prediction_id": {
+            "title": "Prediction Id",
+            "type": "integer"
+          },
+          "receipt": {
+            "additionalProperties": true,
+            "title": "Receipt",
+            "type": "object"
+          }
+        },
+        "required": [
+          "prediction_id",
+          "receipt"
+        ],
+        "title": "PredictionIntegrityReceiptResponse",
         "type": "object"
       },
       "PredictionPreviewResponse": {
@@ -3694,6 +4167,27 @@
           }
         },
         "title": "ProfileUpdatePayload",
+        "type": "object"
+      },
+      "PublicPredictionCommitmentsSummary": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "included_in_seal": {
+            "default": false,
+            "title": "Included In Seal",
+            "type": "boolean"
+          },
+          "predictions_root": {
+            "default": "",
+            "title": "Predictions Root",
+            "type": "string"
+          }
+        },
+        "title": "PublicPredictionCommitmentsSummary",
         "type": "object"
       },
       "PublicUserProfileResponse": {
@@ -4031,6 +4525,11 @@
             "title": "Description",
             "type": "string"
           },
+          "first_detected_at_label": {
+            "default": "",
+            "title": "First Detected At Label",
+            "type": "string"
+          },
           "guest_email": {
             "default": "",
             "title": "Guest Email",
@@ -4045,6 +4544,11 @@
             "title": "Id",
             "type": "integer"
           },
+          "issue_code": {
+            "default": "",
+            "title": "Issue Code",
+            "type": "string"
+          },
           "item_type": {
             "default": "",
             "title": "Item Type",
@@ -4053,6 +4557,21 @@
           "kind": {
             "title": "Kind",
             "type": "string"
+          },
+          "last_detected_at_label": {
+            "default": "",
+            "title": "Last Detected At Label",
+            "type": "string"
+          },
+          "market_slug": {
+            "default": "",
+            "title": "Market Slug",
+            "type": "string"
+          },
+          "occurrences": {
+            "default": 0,
+            "title": "Occurrences",
+            "type": "integer"
           },
           "owner_label": {
             "title": "Owner Label",
@@ -7333,6 +7852,112 @@
         "summary": "Admin Cancel Market"
       }
     },
+    "/admin/markets/{slug}/integrity/corrections": {
+      "post": {
+        "operationId": "admin_create_integrity_correction_admin_markets__slug__integrity_corrections_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminMarketIntegrityCorrectionPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Create Integrity Correction"
+      }
+    },
+    "/admin/markets/{slug}/integrity/verify": {
+      "get": {
+        "operationId": "admin_verify_market_integrity_admin_markets__slug__integrity_verify_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketIntegrityVerificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Verify Market Integrity"
+      }
+    },
     "/admin/markets/{slug}/lock": {
       "post": {
         "operationId": "admin_lock_market_admin_markets__slug__lock_post",
@@ -9763,6 +10388,70 @@
         "summary": "Health"
       }
     },
+    "/integrity/public-key": {
+      "get": {
+        "operationId": "integrity_public_key_integrity_public_key_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "key_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Key Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrityPublicKeyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Integrity Public Key"
+      }
+    },
+    "/integrity/status": {
+      "get": {
+        "operationId": "get_integrity_ledger_status_integrity_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrityLedgerStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Integrity Ledger Status"
+      }
+    },
     "/markets": {
       "get": {
         "operationId": "list_markets_markets_get",
@@ -10102,6 +10791,123 @@
         "summary": "Favorite Market"
       }
     },
+    "/markets/{slug}/integrity": {
+      "get": {
+        "operationId": "get_market_integrity_markets__slug__integrity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketIntegrityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Market Integrity"
+      }
+    },
+    "/markets/{slug}/integrity/package": {
+      "get": {
+        "operationId": "download_market_integrity_package_markets__slug__integrity_package_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketIntegrityResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Market Integrity Package"
+      }
+    },
+    "/markets/{slug}/integrity/verify": {
+      "get": {
+        "operationId": "verify_market_integrity_markets__slug__integrity_verify_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketIntegrityVerificationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Market Integrity"
+      }
+    },
     "/markets/{slug}/like": {
       "delete": {
         "operationId": "unlike_market_markets__slug__like_delete",
@@ -10422,6 +11228,122 @@
           }
         },
         "summary": "Preview Prediction"
+      }
+    },
+    "/markets/{slug}/predictions/{prediction_id}/merkle-proof": {
+      "get": {
+        "operationId": "get_prediction_merkle_proof_markets__slug__predictions__prediction_id__merkle_proof_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prediction_id",
+            "required": true,
+            "schema": {
+              "title": "Prediction Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionIntegrityReceiptResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Prediction Merkle Proof"
+      }
+    },
+    "/markets/{slug}/predictions/{prediction_id}/receipt": {
+      "get": {
+        "operationId": "get_prediction_integrity_receipt_markets__slug__predictions__prediction_id__receipt_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "prediction_id",
+            "required": true,
+            "schema": {
+              "title": "Prediction Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PredictionIntegrityReceiptResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Prediction Integrity Receipt"
       }
     },
     "/markets/{slug}/share": {

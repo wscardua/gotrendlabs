@@ -25,12 +25,18 @@
           </div>
           <h2>{{ item.title }}</h2>
           <dl class="queue-detail-list">
-            <div><dt>Autor</dt><dd>{% if item.author_handle %}{{ item.author_handle }}{% elif item.guest_name %}{{ item.guest_name }} · {{ item.guest_email }}{% else %}Visitante não identificado{% endif %}</dd></div>
+            <div><dt>Origem</dt><dd>{% if item.kind == 'integrity_alert' %}Auditoria automática do daemon{% elif item.author_handle %}{{ item.author_handle }}{% elif item.guest_name %}{{ item.guest_name }} · {{ item.guest_email }}{% else %}Visitante não identificado{% endif %}</dd></div>
             <div><dt>Tipo</dt><dd>{{ item.item_type }}</dd></div>
             <div><dt>Criado em</dt><dd>{{ item.created_at_label }}</dd></div>
             <div><dt>Severidade</dt><dd>{{ item.severity_label }}</dd></div>
             {% if item.source %}<div><dt>Fonte</dt><dd>{{ item.source }}</dd></div>{% endif %}
             {% if item.converted_market_slug %}<div><dt>Mercado criado</dt><dd>{{ item.converted_market_slug }}</dd></div>{% endif %}
+            {% if item.kind == 'integrity_alert' %}
+              <div><dt>Mercado</dt><dd>{{ item.market_slug|default:"Cadeia global" }}</dd></div>
+              <div><dt>Ocorrências</dt><dd>{{ item.occurrences }}</dd></div>
+              <div><dt>Primeira detecção</dt><dd>{{ item.first_detected_at_label }}</dd></div>
+              <div><dt>Última detecção</dt><dd>{{ item.last_detected_at_label }}</dd></div>
+            {% endif %}
           </dl>
           {% if item.description %}
             <div class="queue-description">
@@ -102,7 +108,7 @@
             </form>
           {% endif %}
 
-          {% if item.kind != "comment" and item.kind != "wallet_recharge" %}
+          {% if item.kind != "comment" and item.kind != "wallet_recharge" and item.kind != "integrity_alert" %}
             <form class="panel queue-action-card" method="post">
               {% csrf_token %}
               <input type="hidden" name="operation" value="reward">

@@ -22,6 +22,9 @@
     {% else %}
       <span class="thumb-fallback">{{ market.thumb|default:"GT" }}</span>
     {% endif %}
+    {% if market.integrity.definition_registered %}
+      {% include "components/integrity_seal.html" with market=market %}
+    {% endif %}
   </div>
   <div class="market-card-summary">
     <div class="market-title">
@@ -35,8 +38,8 @@
       <span class="tag">{{ market.event }}</span>
       <span class="tag {% if market.status == 'open' %}safe{% endif %}">{% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span>
     </div>
-    <div class="prob-row {% if market.status == 'resolved' %}resolved{% endif %}">
-      {% if market.status == "resolved" %}
+    <div class="prob-row {% if market.status == 'resolved' or market.status == 'sealed' %}resolved{% endif %}">
+      {% if market.status == "resolved" or market.status == "sealed" %}
         <span class="market-final-consensus">Consenso final</span>
       {% else %}
         <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %} {{ market.primary_probability }}%</strong>
@@ -66,8 +69,10 @@
       {% endfor %}
     </div>
     <div class="market-foot">
-      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "resolved" %}Ver resolução{% elif market.status == "locked" %}Em apuração{% else %}Prever{% endif %}</a>
-      <a class="btn small ghost share-card-button" href="{% if market.status == 'resolved' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}" aria-label="Compartilhar mercado" title="Compartilhar mercado"><span class="share-label">Compartilhar</span><span class="share-symbol" aria-hidden="true">↗</span></a>
+      <a class="btn small primary" href="{% url 'market-detail' market.slug %}">{% if market.status == "sealed" or market.status == "resolved" %}Resultado{% elif market.status == "locked" %}Em apuração{% else %}Prever{% endif %}</a>
+      <a class="btn small ghost share-card-button" href="{% if market.status == 'resolved' or market.status == 'sealed' %}{% url 'share-result' market.slug %}{% else %}{% url 'share-market' market.slug %}{% endif %}" aria-label="Compartilhar mercado" title="Compartilhar mercado">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="18" cy="5" r="2.25"></circle><circle cx="6" cy="12" r="2.25"></circle><circle cx="18" cy="19" r="2.25"></circle><path d="m8 11 7.8-4.7M8 13l7.8 4.7"></path></svg>
+      </a>
       <div class="market-card-actions">
         <a class="market-comment-count" href="{% url 'market-detail' market.slug %}#comments" aria-label="{% if market.comment_count == 1 %}1 comentário{% else %}{{ market.comment_count|default:0 }} comentários{% endif %}" title="Ver comentários">
           <span aria-hidden="true">💬</span>

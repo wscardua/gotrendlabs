@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
+from copy import deepcopy
 import hashlib
 import httpx
 from io import StringIO
@@ -15,14 +16,16 @@ import unicodedata
 from urllib.parse import quote, urlparse
 
 from django.conf import settings
+from django.db import connection
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.contrib.staticfiles import finders
-from django.test import TestCase, TransactionTestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from fastapi.testclient import TestClient
+from psycopg.rows import dict_row
 from unittest.mock import patch
 
 from apps.web.django.accounts.api_client import AuthAPIError, get_market as api_get_market, get_markets as api_get_markets
@@ -42,8 +45,10 @@ from apps.api.backend_api.main import app
 from apps.api.backend_api.main import _ensure_user_core
 from apps.api.backend_api.main import _record_wallet_entry
 from apps.api.backend_api.main import _clear_rate_limits
+from apps.api.backend_api.integrity_service import PROTOCOL_VERSION, register_market_definition
 from apps.api.backend_api.security import hash_token, issue_token, make_password
 from apps.api.backend_api.social_oauth import SocialProfile
+from tests.test_cases import AppendOnlyTransactionTestCase
 from config.recaptcha import RecaptchaError
 from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
 from apps.web.django.communications.push_services import create_test_push_delivery, enqueue_push_for_notification, process_due_push_deliveries
@@ -52,7 +57,7 @@ from apps.web.django.core.domain_client import get_domain_client, local_market, 
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
 from apps.web.django.core.social_share import public_badge_share_token
 from apps.web.django.admin_ops.views import _safe_image_content
-from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback, UserNotification
+from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, PredictionCommitment, ProductFeedback, UserNotification
 from apps.web.django.system_logs.models import SystemLog
 from apps.web.django.system_logs.services import request_headers, sanitize_context, log_system_event
 
@@ -120,6 +125,14 @@ def _seed_test_markets():
                     "display_order": option_index,
                 },
             )
+        if market.status == "open":
+            published_at = timezone.now()
+            Market.objects.filter(pk=market.pk).update(
+                published_at=published_at,
+                integrity_version=PROTOCOL_VERSION,
+            )
+            with connection.connection.cursor(row_factory=dict_row) as cursor:
+                register_market_definition(cursor, market.id, occurred_at=published_at)
 
 
 def _seed_test_badges():
@@ -196,7 +209,7 @@ class FixtureDomainClientTests(TestCase):
             self.assertEqual(api_get_markets()[0]["volume_gtl"], "1355 GT₵")
 
 
-class SecurityHardeningTests(TransactionTestCase):
+class SecurityHardeningTests(AppendOnlyTransactionTestCase):
     def _api_token_for(self, user):
         token = issue_token()
         AuthSession.objects.create(
@@ -332,7 +345,7 @@ class SecurityHardeningTests(TransactionTestCase):
         self.assertIn("default-src 'none'", caddyfile)
 
 
-class MobileMaintenanceGateTests(TransactionTestCase):
+class MobileMaintenanceGateTests(AppendOnlyTransactionTestCase):
     def _runtime_path(self):
         return Path(self._tmp.name) / "platform_config.json"
 
@@ -591,7 +604,7 @@ class MobileMaintenanceGateTests(TransactionTestCase):
         self.assertEqual(superuser_response.json()["code"], "mobile_maintenance")
 
 
-class BackendAuthAPITests(TransactionTestCase):
+class BackendAuthAPITests(AppendOnlyTransactionTestCase):
     def setUp(self):
         _seed_test_badges()
         _seed_test_markets()
@@ -3037,8 +3050,50 @@ class BackendAuthAPITests(TransactionTestCase):
                 summary = run_ai_agent_cycle(cursor, now=timezone.now())
 
         self.assertEqual(summary["predictions_created"], 1)
-        self.assertTrue(Prediction.objects.filter(user=bot, market=second).exists())
+        bot_prediction = Prediction.objects.get(user=bot, market=second)
+        self.assertTrue(PredictionCommitment.objects.filter(prediction=bot_prediction, market=second).exists())
         self.assertEqual(Prediction.objects.filter(user=bot, market=first).count(), 1)
+
+    def test_ai_prediction_signing_failure_rolls_back_prediction_and_wallet(self):
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = False
+        site_config.ai_predictions_enabled = True
+        site_config.ai_min_humans_for_prediction = 1
+        site_config.ai_max_stake_gtl = 5
+        site_config.save()
+        User = get_user_model()
+        human = User.objects.create_user(username="@sign_human", email="sign-human@example.com", password="x")
+        bot = User.objects.create_user(username="@sign_liquidity_bot", email="sign-liquidity@example.com", password="x", is_bot=True)
+        AiAgent.objects.create(name="GoTrendLabs Liquidity Sign", agent_type="liquidity", user=bot, is_active=True)
+        WalletBalance.objects.create(user=bot, available_gtl=100, locked_gtl=0, total_earned_gtl=0)
+        market = Market.objects.filter(status="open").order_by("id").first()
+        option = market.options.first()
+        Prediction.objects.create(
+            user=human,
+            market=market,
+            market_option=option,
+            stake_amount=10,
+            probability_at_entry=50,
+            weight_at_entry=1000,
+            potential_payout=20,
+            status="open",
+        )
+
+        with patch(
+            "apps.api.backend_api.prediction_write_service.commit_prediction",
+            side_effect=RuntimeError("kms unavailable"),
+        ):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    summary = run_ai_agent_cycle(cursor, now=timezone.now())
+
+        self.assertEqual(summary["predictions_created"], 0)
+        self.assertEqual(summary["errors"], 1)
+        self.assertFalse(Prediction.objects.filter(user=bot, market=market).exists())
+        balance = WalletBalance.objects.get(user=bot)
+        self.assertEqual(balance.available_gtl, 100)
+        self.assertEqual(balance.locked_gtl, 0)
 
     def test_system_log_capture_and_python_logging_handler(self):
         client = TestClient(app)
@@ -4141,7 +4196,7 @@ class BackendAuthAPITests(TransactionTestCase):
         token = response.json()["session"]["token"]
         headers = {"Authorization": f"Bearer {token}"}
         user = get_user_model().objects.get(username="@policycase")
-        self.assertEqual(user.terms_version, "2026-05-17")
+        self.assertEqual(user.terms_version, "2026-09-05")
         self.assertIsNotNone(user.terms_accepted_at)
 
         updated = client.patch(
@@ -5037,6 +5092,7 @@ class BackendAuthAPITests(TransactionTestCase):
             json={"winning_option_id": winning_option.id, "source_url": "https://fonte.example/resolucao", "note": "Duplicada."},
         )
         self.assertEqual(duplicate.status_code, 422)
+        Market.objects.filter(slug="resolucao-mvp-teste").update(seal_due_at=timezone.now() + timedelta(hours=1))
         cancel_resolved = client.post("/admin/markets/resolucao-mvp-teste/cancel", headers=staff_headers, json={"note": "cancelar resolução e aplicar refund"})
         self.assertEqual(cancel_resolved.status_code, 200)
         self.assertEqual(cancel_resolved.json()["status"], "locked")
@@ -5466,7 +5522,7 @@ class BackendAuthAPITests(TransactionTestCase):
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
-                "auto_close_enabled": True,
+                "auto_close_enabled": False,
             },
         )
         self.assertEqual(created.status_code, 201)
@@ -5496,8 +5552,8 @@ class BackendAuthAPITests(TransactionTestCase):
             ],
         }
         edited = client.patch("/admin/markets/preserva-dados-internos", headers=staff_headers, json=dangerous_payload)
-        self.assertEqual(edited.status_code, 200)
-        edited_payload = edited.json()
+        self.assertEqual(edited.status_code, 422)
+        edited_payload = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
         self.assertFalse(edited_payload["auto_close_enabled"])
         self.assertEqual(edited_payload["status_label"], before["status_label"])
         self.assertEqual(edited_payload["volume_gtl"], before["volume_gtl"])
@@ -5889,7 +5945,7 @@ class BackendAuthAPITests(TransactionTestCase):
         make_featured = client.patch(
             "/admin/markets/energia-solar-maioria-2030",
             headers=headers,
-            json={**valid_market.json(), "is_featured": True},
+            json={**valid_market.json(), "is_featured": True, "auto_close_enabled": False},
         )
         self.assertEqual(make_featured.status_code, 200)
         self.assertTrue(make_featured.json()["is_featured"])
@@ -5956,8 +6012,9 @@ class BackendAuthAPITests(TransactionTestCase):
             headers=headers,
             json=edited_market_payload,
         )
-        self.assertEqual(edit_after_prediction.status_code, 200)
-        self.assertEqual(edit_after_prediction.json()["title"], "Energia solar será maioria em 2030? Revisado")
+        self.assertEqual(edit_after_prediction.status_code, 422)
+        edit_after_prediction = client.get("/admin/markets/energia-solar-maioria-2030", headers=headers)
+        self.assertEqual(edit_after_prediction.json()["title"], valid_market.json()["title"])
         self.assertFalse(edit_after_prediction.json()["auto_close_enabled"])
         self.assertEqual(edit_after_prediction.json()["status_label"], "Aberto")
         self.assertEqual(edit_after_prediction.json()["volume_gtl"], "20 GT₵")
@@ -6364,7 +6421,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(blocked_reward.status_code, 422)
 
 
-class WebSmokeTests(TransactionTestCase):
+class WebSmokeTests(AppendOnlyTransactionTestCase):
     def setUp(self):
         _seed_test_badges()
         _seed_test_markets()
@@ -6423,7 +6480,7 @@ class WebSmokeTests(TransactionTestCase):
                     self.assertNotContains(response, subcategory_notice)
                     self.assertNotContains(response, event_notice)
                 if route == reverse("market-detail", args=["openai-gpt6-2026"]):
-                    self.assertContains(response, "Sua previsão")
+                    self.assertContains(response, "Ciclo do mercado")
                     self.assertContains(response, "detail-title-block")
                     self.assertContains(response, "detail-title-row")
                     self.assertContains(response, "detail-market-thumb")
@@ -6781,11 +6838,26 @@ class WebSmokeTests(TransactionTestCase):
         session.save()
         api_market = get_domain_client().market("openai-gpt6-2026")
         api_market["options"] = [{**option, "id": index} for index, option in enumerate(api_market["options"], start=1)]
-        result = {"stake_amount": 80, "potential_payout": 160}
+        result = {
+            "prediction_id": 321,
+            "stake_amount": 80,
+            "potential_payout": 160,
+            "integrity_receipt": {
+                "signature": "signed-receipt-value",
+                "key_fingerprint": "fingerprint-value",
+            },
+        }
 
         with patch("apps.web.django.markets.views.create_prediction", return_value=result), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
-            self.assertContains(response, "Previsão registrada")
+            self.assertContains(response, "Sua previsão foi registrada")
+            self.assertContains(response, "Comprovante assinado")
+            self.assertContains(response, "A assinatura criptográfica confirma a origem deste registro")
+            self.assertContains(response, "Ver assinatura")
+            self.assertContains(response, 'data-integrity-modal-kind="receipt"')
+            html = response.content.decode()
+            self.assertEqual(html.count("data-viewer-position"), 1)
+            self.assertLess(html.index("data-viewer-position"), html.index("Sua previsão foi registrada"))
 
         with patch("apps.web.django.markets.views.create_prediction", side_effect=AuthAPIError("Você já registrou uma previsão neste mercado.", 409)), patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.post(route, {"option_id": 1, "stake_amount": 80})
@@ -6913,13 +6985,24 @@ class WebSmokeTests(TransactionTestCase):
                     "created_at": "2026-06-14T12:00:00+00:00",
                 }
             ],
-            "history": [],
+            "history": [
+                {"id": 903, "action_type": "revision", "position_sequence": 3, "stake_amount": 64, "status": "open"},
+                {"id": 902, "action_type": "reinforcement", "position_sequence": 2, "stake_amount": 20, "status": "revised"},
+                {"id": 901, "action_type": "initial", "position_sequence": 1, "stake_amount": 80, "status": "revised"},
+            ],
         }
 
         with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
 
         self.assertContains(response, "position-summary-card")
+        self.assertContains(response, "Posição ativa")
+        self.assertContains(response, "Comprovantes assinados")
+        self.assertContains(response, "Um registro para cada ação da posição")
+        self.assertContains(response, "Previsão inicial #1")
+        self.assertContains(response, "Reforço #2")
+        self.assertContains(response, "Revisão #3")
+        self.assertEqual(response.content.decode().count('data-integrity-modal-kind="receipt"'), 3)
         self.assertContains(response, "position-action-tabs")
         self.assertContains(response, "Ver entradas abertas")
         self.assertContains(response, "Restam 1 reforço(s) neste mercado.")
@@ -6931,6 +7014,29 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Você vai encerrar 1 entrada(s) em SIM, aplicar 16 GT₵ de custo de revisão (20%)")
         self.assertNotContains(response, "A trilha original permanece auditável")
         self.assertNotContains(response, "Esta ação substitui sua posição ativa")
+        open_html = response.content.decode()
+        self.assertEqual(open_html.count("data-viewer-position"), 1)
+        self.assertLess(open_html.index("market-lifecycle-card"), open_html.index("data-viewer-position"))
+        self.assertLess(open_html.index("data-viewer-position"), open_html.index("position-action-tabs"))
+
+        position_state_labels = {
+            "locked": "Registrada, aguardando resultado",
+            "resolved": "Resultado da sua posição",
+            "sealed": "Posição concluída",
+            "canceled": "Posição encerrada, créditos devolvidos",
+        }
+        for closed_status, position_state_label in position_state_labels.items():
+            closed_market = {**api_market, "status": closed_status, "status_label": closed_status.title()}
+            with patch("apps.web.django.markets.views.get_market", return_value=closed_market):
+                closed_response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+            self.assertContains(closed_response, position_state_label)
+            self.assertContains(closed_response, "Comprovantes assinados")
+            closed_html = closed_response.content.decode()
+            self.assertEqual(closed_html.count("data-viewer-position"), 1)
+            self.assertEqual(closed_html.count('data-integrity-modal-kind="receipt"'), 3)
+            self.assertLess(closed_html.index("market-state-title"), closed_html.index("data-viewer-position"))
+            self.assertNotContains(closed_response, "position-action-tabs")
+            self.assertNotContains(closed_response, "closed-position-receipts")
 
     def test_market_detail_hides_reinforcement_block_when_revision_is_available(self):
         User = get_user_model()
@@ -6998,6 +7104,61 @@ class WebSmokeTests(TransactionTestCase):
         self.assertContains(response, "Revisar posição")
         self.assertNotContains(response, "Limite de reforços atingido neste mercado.")
 
+    def test_market_detail_keeps_canceled_position_and_receipt_summary(self):
+        User = get_user_model()
+        user = User.objects.create_user(username="canceledposition", email="canceled-position@example.com", password="testpass123")
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = MarketOption.objects.get(market=market, label="SIM")
+        prediction = Prediction.objects.create(
+            user=user,
+            market=market,
+            market_option=option,
+            stake_amount=80,
+            probability_at_entry=Decimal("50.0000"),
+            weight_at_entry=8000,
+            potential_payout=160,
+            status="canceled",
+            action_type="initial",
+            position_sequence=1,
+        )
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": user.id,
+            "handle": user.username,
+            "email": user.email,
+            "display_name": user.username,
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        api_market = {
+            **get_domain_client().market("openai-gpt6-2026"),
+            "status": "canceled",
+            "status_label": "Cancelado",
+            "viewer_position": {
+                "has_position": False,
+                "history": [
+                    {
+                        "id": prediction.id,
+                        "action_type": "initial",
+                        "position_sequence": 1,
+                        "stake_amount": 80,
+                        "status": "canceled",
+                    }
+                ],
+            },
+        }
+
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
+            response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+
+        self.assertContains(response, "Posição encerrada, créditos devolvidos")
+        self.assertContains(response, "80 GT₵")
+        self.assertContains(response, "as GT₵ reservadas nesta posição foram devolvidas")
+        self.assertContains(response, "Comprovantes assinados")
+        self.assertEqual(response.content.decode().count("data-viewer-position"), 1)
+
     def test_resolved_market_detail_shows_resolution_time_and_personal_outcome(self):
         User = get_user_model()
         user = User.objects.create_user(username="resolvedviewer", email="resolved-viewer@example.com", password="testpass123")
@@ -7055,6 +7216,10 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, '<div class="resolution-meta"><span>18/05/2026 09:30 America/Sao_Paulo</span><span>America/Sao_Paulo</span></div>', html=True)
         self.assertContains(response, "Você acertou esta previsão.")
         self.assertContains(response, "acerto creditado")
+        html = response.content.decode()
+        self.assertEqual(html.count("data-viewer-position"), 1)
+        self.assertLess(html.index("result-highlight"), html.index("data-viewer-position"))
+        self.assertLess(html.index("data-viewer-position"), html.index("Você acertou esta previsão."))
 
     def test_market_detail_renders_comments_and_comment_actions_use_api(self):
         session = self.client.session
@@ -7148,6 +7313,316 @@ class WebSmokeTests(TransactionTestCase):
             '<img src="/media/market_thumbnails/test-thumb.jpg" alt="" loading="lazy" decoding="async" data-thumb-image>',
             html=True,
         )
+
+    def test_market_card_overlays_integrity_seal_without_replacing_thumbnail(self):
+        market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        market["image_url"] = "/media/market_thumbnails/test-thumb.jpg"
+        market["status"] = "sealed"
+        market["integrity"] = {"definition_registered": True, "status": "sealed"}
+
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, 'src="/media/market_thumbnails/test-thumb.jpg"')
+        self.assertContains(response, 'class="market-integrity-seal is-sealed"')
+        self.assertContains(response, "Histórico finalizado e verificável. Abrir verificação de integridade")
+        self.assertContains(response, "data-integrity-modal-link")
+        self.assertContains(response, ">Resultado</a>")
+        self.assertContains(response, 'class="btn small ghost share-card-button"')
+        self.assertContains(response, 'aria-label="Compartilhar mercado"')
+        self.assertContains(response, '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">')
+        self.assertNotContains(response, '<span class="share-label">Compartilhar</span>')
+        self.assertNotContains(response, 'class="integrity-badge')
+
+    def test_market_detail_uses_only_thumbnail_integrity_seal_as_modal_action(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        market["integrity"] = {"definition_registered": True, "status": "registered"}
+
+        with patch("apps.web.django.markets.views.get_market", return_value=market):
+            response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+        self.assertContains(response, 'class="market-integrity-seal"')
+        self.assertContains(response, "Definição registrada")
+        self.assertContains(response, "Abrir verificação de integridade")
+        self.assertNotContains(response, 'class="detail-integrity-action"')
+        self.assertEqual(response.content.decode().count('data-integrity-modal-kind="market"'), 1)
+
+    def test_sealed_market_detail_prioritizes_completion_and_explains_integrity(self):
+        market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        market["status"] = "sealed"
+        market["status_label"] = "Selado"
+        market["close_label"] = "Fecha em uma data antiga"
+        market["integrity"] = {"definition_registered": True, "status": "sealed"}
+
+        with patch("apps.web.django.markets.views.get_market", return_value=market):
+            response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+        self.assertContains(response, "Mercado concluído")
+        self.assertContains(response, "O resultado já foi publicado e o registro de integridade deste mercado foi finalizado.")
+        self.assertContains(response, "A definição, as previsões e o resultado podem ser conferidos.")
+        self.assertContains(response, "Concluído e verificável")
+        self.assertContains(response, "Ciclo do mercado")
+        self.assertContains(response, "Encerrado")
+        self.assertNotContains(response, "Fecha em uma data antiga")
+        self.assertNotContains(response, "até fechar previsões")
+        self.assertNotContains(response, "Resultado publicado para consulta.")
+        self.assertNotContains(response, '<h2 class="market-state-title">Histórico finalizado</h2>')
+        self.assertRegex(
+            response.content.decode(),
+            r'<div class="lifecycle-step done">\s*<span>6</span>\s*<strong>Concluído</strong>',
+        )
+        self.assertEqual(response.content.decode().count('data-integrity-modal-kind="market"'), 1)
+
+    def test_market_detail_uses_clear_copy_for_each_non_open_lifecycle_state(self):
+        base_market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        cases = (
+            (
+                "scheduled",
+                {"definition_registered": False, "status": "not_published"},
+                "Mercado agendado",
+                "As previsões ainda não começaram. A abertura ocorrerá conforme a programação do mercado.",
+                "Agendado",
+            ),
+            (
+                "locked",
+                {"definition_registered": True, "status": "registered"},
+                "Mercado em apuração",
+                "As previsões foram encerradas. Agora aguardamos a publicação do resultado.",
+                "Em apuração",
+            ),
+            (
+                "resolved",
+                {"definition_registered": True, "status": "resolved_pending_seal"},
+                "Resultado publicado",
+                "A finalização do registro de integridade está prevista para",
+                "Finalização",
+            ),
+            (
+                "canceled",
+                {"definition_registered": True, "status": "canceled_preserved"},
+                "Mercado cancelado",
+                "Este mercado foi encerrado sem resultado. As GT₵ reservadas foram devolvidas integralmente.",
+                "Cancelado",
+            ),
+        )
+
+        for status, integrity, title, summary, lifecycle_label in cases:
+            with self.subTest(status=status):
+                market = {
+                    **base_market,
+                    "status": status,
+                    "status_label": status.title(),
+                    "close_label": "Fecha em uma data antiga",
+                    "seal_due_at": "2026-10-01T21:00:00+00:00" if status == "resolved" else None,
+                    "integrity": integrity,
+                }
+                with patch("apps.web.django.markets.views.get_market", return_value=market):
+                    response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+                self.assertContains(response, title)
+                self.assertContains(response, summary)
+                self.assertContains(response, lifecycle_label)
+                self.assertContains(response, "Ciclo do mercado")
+                self.assertNotContains(response, "Fecha em uma data antiga")
+                self.assertNotContains(response, "até fechar previsões")
+                self.assertNotContains(response, "Resultado publicado para consulta.")
+
+    def test_resolved_legacy_market_does_not_promise_retroactive_integrity(self):
+        market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        market.update(
+            status="resolved",
+            status_label="Resolvido",
+            integrity={"definition_registered": False, "status": "legacy_unregistered"},
+        )
+
+        with patch("apps.web.django.markets.views.get_market", return_value=market):
+            response = self.client.get(reverse("market-detail", args=[market["slug"]]))
+
+        self.assertContains(response, "Resultado publicado")
+        self.assertContains(response, "não recebe comprovação retroativa")
+        self.assertContains(response, "Sem registro")
+        self.assertNotContains(response, "finalização do registro de integridade está prevista")
+
+    def test_integrity_modal_fragment_explains_verification_in_plain_language(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        proof = {
+            "status": "sealed",
+            "protocol_version": "gtl-integrity/v1",
+            "definition": {"hash": "a" * 64, "key_fingerprint": "b" * 64},
+            "seal": {"hash": "c" * 64},
+            "prediction_commitments": {"count": 3, "included_in_seal": True},
+            "ledger_events": [{"event_type": "market_published"}, {"event_type": "market_sealed"}],
+        }
+        verification = {"verification_status": "verified", "overall_valid": True, "definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
+
+        with (
+            patch("apps.web.django.markets.views.get_market", return_value=market),
+            patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
+            patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
+        ):
+            response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Nenhuma alteração indevida foi detectada")
+        self.assertContains(response, "Para que serve esta página?")
+        self.assertContains(response, "Métodos de proteção criptográfica")
+        self.assertContains(response, "Impressão digital que muda se o conteúdo mudar")
+        self.assertContains(response, "Confirma a origem sem expor a chave privada protegida")
+        self.assertContains(response, "Revela remoções ou trocas na ordem dos registros")
+        self.assertContains(response, "Como este mercado foi protegido")
+        self.assertContains(response, "Proteção contra manipulações")
+        self.assertContains(response, "tentativas de manipulação se tornam detectáveis")
+        self.assertNotContains(response, "mas não impede fisicamente toda tentativa")
+        self.assertNotContains(response, "O que esta verificação não faz")
+        self.assertContains(response, "Ver detalhes técnicos")
+        self.assertContains(response, "Um hash funciona como uma impressão digital do registro")
+        self.assertContains(response, "Comprovantes agregados")
+        self.assertContains(response, ">3</dd>", html=False)
+        self.assertNotContains(response, "Seal final")
+        self.assertNotContains(response, "<!doctype html>")
+
+    def test_prediction_receipt_opens_as_compact_modal_fragment(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "api-token"
+        session[USER_KEY] = {
+            "id": 40,
+            "handle": "@predictionuser",
+            "email": "prediction-user@example.com",
+            "display_name": "Prediction User",
+            "preferred_language": "pt-br",
+            "is_staff": False,
+        }
+        session.save()
+        market = get_domain_client().market("openai-gpt6-2026")
+        receipt = {
+            "prediction_id": 321,
+            "receipt": {
+                "payload": {
+                    "action_type": "reinforcement",
+                    "position_sequence": 2,
+                    "stake": 20,
+                    "server_timestamp": "2026-09-06T14:30:00+00:00",
+                    "previous_commitment_hash": "a" * 64,
+                },
+                "hash": "b" * 64,
+                "signature": "signed-receipt-value",
+                "key_fingerprint": "c" * 64,
+                "protocol_version": "gtl-integrity/v1",
+            },
+            "merkle_proof": None,
+        }
+
+        with (
+            patch("apps.web.django.markets.views.get_prediction_integrity_receipt", return_value=receipt),
+            patch("apps.web.django.markets.views.get_market", return_value=market),
+        ):
+            response = self.client.get(
+                f'{reverse("prediction-integrity-receipt", args=[market["slug"], 321])}?modal=1'
+            )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Previsão registrada e assinada")
+        self.assertContains(response, "Reforço da posição")
+        self.assertContains(response, "Assinatura emitida")
+        self.assertContains(response, "Esta ação referencia o comprovante anterior")
+        self.assertContains(response, "Ver detalhes técnicos")
+        self.assertContains(response, "data-prediction-receipt-report")
+        self.assertNotContains(response, "<!doctype html>")
+
+    def test_integrity_modal_uses_honest_plain_language_for_pending_and_failed_states(self):
+        market = get_domain_client().market("openai-gpt6-2026")
+        scenarios = (
+            (
+                {"status": "resolved_pending_seal", "protocol_version": "gtl-integrity/v1", "definition": {}, "ledger_events": []},
+                {"verification_status": "verified", "overall_valid": True, "definition_valid": True},
+                "Resultado registrado; finalização pendente",
+                "O resultado ainda pode passar pela revisão operacional prevista antes da finalização.",
+            ),
+            (
+                {"status": "sealed", "protocol_version": "gtl-integrity/v1", "definition": {}, "seal": {}, "ledger_events": []},
+                {"verification_status": "failed", "overall_valid": False, "definition_valid": False, "seal_valid": False, "merkle_root_valid": False, "ledger_chain_valid": False},
+                "Encontramos uma diferença nos registros",
+                "Diferença detectada",
+            ),
+        )
+
+        for proof, verification, headline, detail in scenarios:
+            with (
+                self.subTest(status=proof["status"], valid=verification["overall_valid"]),
+                patch("apps.web.django.markets.views.get_market", return_value=market),
+                patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
+                patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
+            ):
+                response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, headline)
+            self.assertContains(response, detail)
+            self.assertNotContains(response, "O que esta verificação não faz")
+            self.assertNotContains(response, "Proteção ativa")
+
+    def test_sealed_market_card_keeps_resolution_call_to_action(self):
+        market = {
+            **get_domain_client().market("openai-gpt6-2026"),
+            "status": "sealed",
+            "status_label": "Finalizado",
+            "integrity": {"definition_registered": True, "status": "sealed"},
+        }
+
+        with patch("apps.web.django.core.views.get_markets", return_value=[market]):
+            response = self.client.get(reverse("home"))
+
+        self.assertContains(response, "Resultado")
+        self.assertNotContains(response, "Ver histórico")
+
+    def test_integrity_modal_distinguishes_active_retry_and_canceled_states(self):
+        base_market = get_domain_client().market("openai-gpt6-2026")
+        scenarios = (
+            (
+                {**base_market, "status": "open"},
+                {"status": "registered", "definition": {"hash": "a"}, "ledger_events": []},
+                "Comprovantes em registro",
+            ),
+            (
+                {**base_market, "status": "resolved"},
+                {"status": "seal_retry_pending", "definition": {"hash": "a"}, "ledger_events": []},
+                "Nova tentativa pendente",
+            ),
+            (
+                {**base_market, "status": "canceled"},
+                {"status": "canceled_preserved", "definition": {"hash": "a"}, "ledger_events": []},
+                "Não se aplica",
+            ),
+        )
+        verification = {
+            "verification_status": "verified",
+            "overall_valid": True,
+            "definition_valid": True,
+            "definition_matches_current": True,
+            "ledger_chain_valid": True,
+        }
+
+        for market, proof, expected in scenarios:
+            with (
+                self.subTest(status=proof["status"]),
+                patch("apps.web.django.markets.views.get_market", return_value=market),
+                patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
+                patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
+            ):
+                response = self.client.get(f'{reverse("market-integrity", args=[market["slug"]])}?modal=1')
+
+            self.assertContains(response, expected)
+            self.assertNotContains(response, "Proteção ativa")
+
+    def test_integrity_package_is_downloaded_through_django_proxy(self):
+        package = {"market_slug": "openai-gpt6-2026", "protocol_version": "gtl-integrity/v1"}
+        with patch("apps.web.django.markets.views.get_market_integrity_package", return_value=package):
+            response = self.client.get(reverse("market-integrity-package", args=["openai-gpt6-2026"]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), package)
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertIn("openai-gpt6-2026-integrity-proof.json", response["Content-Disposition"])
 
     def test_market_card_title_links_to_market_detail(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -9093,6 +9568,106 @@ class WebSmokeTests(TransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Popularidade operacional")
         self.assertContains(response, "12 visualizações · 3 compartilhamentos")
+
+    def test_admin_integrity_audit_is_available_and_diagnostic_in_every_market_state(self):
+        session = self.client.session
+        session[TOKEN_KEY] = "staff-token"
+        session[USER_KEY] = {
+            "id": 41,
+            "handle": "@integrityops",
+            "display_name": "Integrity Ops",
+            "preferred_language": "pt-br",
+            "is_staff": True,
+        }
+        session.save()
+        base_market = get_domain_client().market("openai-gpt6-2026")
+        definition = {"hash": "a" * 64, "key_fingerprint": "b" * 64}
+        healthy_verification = {
+            "verification_status": "verified",
+            "overall_valid": True,
+            "definition_valid": True,
+            "definition_matches_current": True,
+            "prediction_commitments_valid": True,
+            "result_matches_current": True,
+            "seal_valid": True,
+            "merkle_root_valid": True,
+            "market_events_valid": True,
+            "ledger_chain_valid": True,
+            "errors": [],
+            "warnings": [],
+        }
+
+        with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value={"markets": [base_market], "counts": {"open": 1}}):
+            browse = self.client.get(reverse("admin-ops-markets"))
+        self.assertContains(browse, "Auditar integridade")
+        self.assertContains(browse, reverse("admin-ops-resolution-market-action", args=[base_market["slug"], "integrity"]))
+
+        resolution_rows = {
+            state: [{**base_market, "slug": f"{state}-integrity", "status": state, "status_label": state.title()}]
+            for state in ("locked", "resolved", "sealed")
+        }
+        with patch(
+            "apps.web.django.admin_ops.views.admin_get_markets",
+            side_effect=lambda _token, status="", **_filters: {"markets": resolution_rows.get(status, []), "counts": {}},
+        ):
+            resolution = self.client.get(reverse("admin-ops-resolution"))
+        self.assertContains(resolution, "Auditar integridade", count=3)
+
+        for status in ("draft", "scheduled", "open", "locked", "resolved", "sealed", "canceled"):
+            market = {**base_market, "status": status, "status_label": status.title()}
+            proof = {
+                "status": "not_published" if status in {"draft", "scheduled"} else status,
+                "protocol_version": "gtl-integrity/v1" if status not in {"draft", "scheduled"} else "",
+                "definition": None if status in {"draft", "scheduled"} else definition,
+                "seal": {"hash": "c" * 64} if status == "sealed" else None,
+                "ledger_events": [],
+            }
+            verification = {
+                **healthy_verification,
+                "overall_valid": None if status in {"draft", "scheduled"} else True,
+                "definition_valid": None if status in {"draft", "scheduled"} else True,
+                "definition_matches_current": None if status in {"draft", "scheduled"} else True,
+                "prediction_commitments_valid": None if status in {"draft", "scheduled"} else True,
+                "result_matches_current": True if status in {"resolved", "sealed"} else None,
+                "seal_valid": True if status == "sealed" else None,
+                "merkle_root_valid": True if status == "sealed" else None,
+            }
+            with (
+                self.subTest(status=status),
+                patch("apps.web.django.admin_ops.views.admin_get_market", return_value=market),
+                patch("apps.web.django.admin_ops.views.get_market_integrity", return_value=proof),
+                patch("apps.web.django.admin_ops.views.admin_verify_market_integrity", return_value=verification),
+            ):
+                response = self.client.get(reverse("admin-ops-resolution-market-action", args=[market["slug"], "integrity"]))
+
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Auditoria de integridade")
+            self.assertContains(response, "Controles verificados")
+            self.assertContains(response, "Comprovantes de previsões")
+            self.assertContains(response, "Eventos deste mercado")
+            if status in {"draft", "scheduled"}:
+                self.assertContains(response, "Proteção ainda não iniciada")
+                self.assertNotContains(response, "Diferença de integridade detectada")
+            else:
+                self.assertContains(response, "Nenhuma diferença detectada")
+
+        failed_verification = {
+            **healthy_verification,
+            "verification_status": "failed",
+            "overall_valid": False,
+            "definition_matches_current": False,
+            "errors": ["definition_changed"],
+        }
+        with (
+            patch("apps.web.django.admin_ops.views.admin_get_market", return_value={**base_market, "status": "open"}),
+            patch("apps.web.django.admin_ops.views.get_market_integrity", return_value={"status": "registered", "definition": definition, "seal": None, "ledger_events": []}),
+            patch("apps.web.django.admin_ops.views.admin_verify_market_integrity", return_value=failed_verification),
+        ):
+            response = self.client.get(reverse("admin-ops-resolution-market-action", args=[base_market["slug"], "integrity"]))
+
+        self.assertContains(response, "Diferença de integridade detectada")
+        self.assertContains(response, "A definição atual diverge do registro assinado na publicação.")
+        self.assertContains(response, "Diferença detectada")
 
     def test_admin_contracts_timeline_uses_active_market_contract_dates(self):
         session = self.client.session
@@ -11282,7 +11857,7 @@ class WebSmokeTests(TransactionTestCase):
             self.assertNotContains(response, "Inteligência coletiva")
             self.assertNotContains(response, "Modo visitante")
             self.assertNotContains(response, "Como participar em 40 segundos")
-            self.assertContains(response, "Ver resolução")
+            self.assertContains(response, "Resultado")
             self.assertContains(response, 'data-filter-target="[data-market-list]"')
             filter_html = response.content.decode().split('<div class="filters" data-filter-group data-filter-target="[data-market-list]">', 1)[1].split("</div>", 1)[0]
             expected_filter_order = [
@@ -11353,7 +11928,8 @@ class WebSmokeTests(TransactionTestCase):
 
         with patch("apps.web.django.markets.views.get_market", side_effect=AuthAPIError("api off")):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
-        self.assertContains(response, "Mercado fechado")
+        self.assertContains(response, "Mercado em apuração")
+        self.assertContains(response, "As previsões foram encerradas. Agora aguardamos a publicação do resultado.")
         self.assertContains(response, "Em apuração")
         self.assertNotContains(response, "Registrar previsão")
 

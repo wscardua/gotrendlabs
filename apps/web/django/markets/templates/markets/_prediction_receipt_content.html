@@ -1,0 +1,58 @@
+<article class="prediction-receipt-report" data-prediction-receipt-report>
+  {% if receipt_error %}
+    <header class="prediction-receipt-intro has-error">
+      <span class="prediction-receipt-mark" aria-hidden="true">!</span>
+      <div>
+        <span class="eyebrow">Comprovante individual</span>
+        <h2 id="integrity-dialog-title">Não foi possível abrir o comprovante</h2>
+        <p>{{ receipt_error }}</p>
+      </div>
+    </header>
+  {% else %}
+    <header class="prediction-receipt-intro">
+      <span class="prediction-receipt-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path><path d="m8.4 12 2.2 2.3 5-5.2"></path></svg>
+      </span>
+      <div>
+        <span class="eyebrow">Comprovante individual</span>
+        <h2 id="integrity-dialog-title">Previsão registrada e assinada</h2>
+        <p>{{ market_title|default:slug }}</p>
+      </div>
+      <span class="prediction-receipt-status">Assinatura emitida</span>
+    </header>
+
+    <section class="prediction-receipt-summary" aria-label="Resumo do comprovante">
+      <div><span>Ação</span><strong>{{ action_label }}</strong></div>
+      <div><span>Sequência</span><strong>#{{ receipt.receipt.payload.position_sequence }}</strong></div>
+      <div><span>Crédito registrado</span><strong>{{ receipt.receipt.payload.stake }} GT₵</strong></div>
+      <div><span>Assinado em</span><strong>{{ signed_at_label }}</strong></div>
+    </section>
+
+    <section class="prediction-receipt-explanation">
+      <h3>O que este comprovante protege</h3>
+      <p>Ele registra esta ação exatamente como foi aceita pelo GoTrendLabs. Se opção, valor, ordem ou horário forem alterados, a assinatura deixa de conferir.</p>
+      <ul>
+        <li><span aria-hidden="true">#</span><div><strong>Hash exclusivo</strong><small>Funciona como a impressão digital desta ação.</small></div></li>
+        <li><span aria-hidden="true">✓</span><div><strong>Assinatura criptográfica</strong><small>Confirma que o comprovante foi emitido pelo GoTrendLabs.</small></div></li>
+        <li><span aria-hidden="true">↗</span><div><strong>Histórico conectado</strong><small>{% if receipt.receipt.payload.previous_commitment_hash %}Esta ação referencia o comprovante anterior da posição.{% else %}Este é o primeiro comprovante desta posição.{% endif %}</small></div></li>
+      </ul>
+    </section>
+
+    <details class="prediction-receipt-technical">
+      <summary><span>Ver detalhes técnicos</span><small>Hash, assinatura, chave e protocolo</small></summary>
+      <dl>
+        <dt>Previsão</dt><dd>#{{ prediction_id }}</dd>
+        <dt>Protocolo</dt><dd><code>{{ receipt.receipt.protocol_version }}</code></dd>
+        <dt>Hash</dt><dd><code title="{{ receipt.receipt.hash }}">{{ receipt.receipt.hash }}</code></dd>
+        <dt>Chave</dt><dd><code title="{{ receipt.receipt.key_fingerprint }}">{{ receipt.receipt.key_fingerprint }}</code></dd>
+        <dt>Assinatura</dt><dd><code title="{{ receipt.receipt.signature }}">{{ receipt.receipt.signature }}</code></dd>
+        <dt>Histórico final</dt><dd>{% if receipt.merkle_proof %}Incluído e verificável pela prova individual{% else %}A prova individual ficará disponível após a finalização{% endif %}</dd>
+      </dl>
+    </details>
+
+    <footer class="prediction-receipt-footer">
+      <span>Comprovante #{{ prediction_id }}</span>
+      <a class="btn small ghost" href="{% url 'market-integrity' slug %}" data-integrity-modal-link>Ver integridade do mercado</a>
+    </footer>
+  {% endif %}
+</article>

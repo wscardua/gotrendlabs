@@ -74,32 +74,43 @@ class MarketHeroCard extends StatelessWidget {
                 ),
               ),
             ),
+            if (market.integrity.definitionRegistered)
+              Positioned(
+                top: 14,
+                right: 14,
+                child: _IntegrityShield(integrity: market.integrity),
+              ),
             Padding(
               padding: const EdgeInsets.all(18),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      GtlPill(
-                        label: market.category.isEmpty
-                            ? 'Mercado'
-                            : market.category,
-                        icon: Icons.category_outlined,
-                      ),
-                      if (showStatus)
+                  Padding(
+                    padding: EdgeInsets.only(
+                      right: market.integrity.definitionRegistered ? 40 : 0,
+                    ),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
                         GtlPill(
-                          label: market.statusLabel,
-                          icon: market.isOpen
-                              ? Icons.radio_button_checked
-                              : Icons.lock_clock,
-                          color: _statusColor(market),
-                          filled: true,
+                          label: market.category.isEmpty
+                              ? 'Mercado'
+                              : market.category,
+                          icon: Icons.category_outlined,
                         ),
-                      ..._viewerPills(market),
-                    ],
+                        if (showStatus)
+                          GtlPill(
+                            label: market.statusLabel,
+                            icon: market.isOpen
+                                ? Icons.radio_button_checked
+                                : Icons.lock_clock,
+                            color: _statusColor(market),
+                            filled: true,
+                          ),
+                        ..._viewerPills(market),
+                      ],
+                    ),
                   ),
                   const Spacer(),
                   Text(
@@ -216,6 +227,15 @@ class MarketCompactCard extends StatelessWidget {
                           label: market.statusLabel,
                           color: _statusColor(market),
                           filled: true,
+                        ),
+                      ),
+                    if (market.integrity.definitionRegistered)
+                      Positioned(
+                        top: 7,
+                        right: 7,
+                        child: _IntegrityShield(
+                          integrity: market.integrity,
+                          dense: true,
                         ),
                       ),
                   ],
@@ -366,26 +386,25 @@ class MarketMetricPanel extends StatelessWidget {
     ];
     return GtlSurface(
       color: GtlColors.surfaceGlass,
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        children: [
-          for (var index = 0; index < metrics.length; index += 2) ...[
-            SizedBox(
-              height: 124,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(child: _MetricFromRecord(metric: metrics[index])),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MetricFromRecord(metric: metrics[index + 1]),
-                  ),
-                ],
-              ),
-            ),
-            if (index < metrics.length - 2) const SizedBox(height: 10),
-          ],
-        ],
+      padding: const EdgeInsets.all(10),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final columns = constraints.maxWidth >= 300 ? 3 : 2;
+          const gap = 8.0;
+          final width = (constraints.maxWidth - gap * (columns - 1)) / columns;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: [
+              for (final metric in metrics)
+                SizedBox(
+                  width: width,
+                  height: 82,
+                  child: _MetricFromRecord(metric: metric),
+                ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -398,12 +417,7 @@ class _MetricFromRecord extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tile = GtlMetricTile(
-      label: metric.$1,
-      value: metric.$2,
-      icon: metric.$3,
-      color: metric.$4,
-    );
+    final tile = _CompactMetricTile(metric: metric);
     if (metric.$5 == null) {
       return tile;
     }
@@ -413,6 +427,60 @@ class _MetricFromRecord extends StatelessWidget {
         borderRadius: BorderRadius.circular(GtlRadii.medium),
         onTap: metric.$5,
         child: tile,
+      ),
+    );
+  }
+}
+
+class _CompactMetricTile extends StatelessWidget {
+  const _CompactMetricTile({required this.metric});
+
+  final (String, String, IconData, Color, VoidCallback?) metric;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: GtlColors.surfaceInk,
+        borderRadius: BorderRadius.circular(GtlRadii.medium),
+        border: Border.all(color: GtlColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                metric.$1.toUpperCase(),
+                maxLines: 1,
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(metric.$3, size: 15, color: metric.$4),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      metric.$2,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -793,12 +861,86 @@ class _ProbabilityPill extends StatelessWidget {
   }
 }
 
+class _IntegrityShield extends StatelessWidget {
+  const _IntegrityShield({required this.integrity, this.dense = false});
+
+  final MarketIntegritySummary integrity;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = integrity.isSealed
+        ? GtlColors.accentCyan
+        : integrity.isSealRetryPending
+        ? GtlColors.accentYellow
+        : integrity.isVerificationFailed
+        ? GtlColors.accentRed
+        : integrity.isCanceledPreserved
+        ? GtlColors.muted
+        : GtlColors.accentGreen;
+    final icon = integrity.isSealed
+        ? Icons.verified_user_outlined
+        : integrity.isSealRetryPending
+        ? Icons.sync_problem_outlined
+        : integrity.isVerificationFailed
+        ? Icons.error_outline
+        : Icons.shield_outlined;
+    final label = integrity.isSealed
+        ? 'Histórico finalizado e verificável'
+        : integrity.isSealRetryPending
+        ? 'Finalização aguardando nova tentativa'
+        : integrity.isVerificationFailed
+        ? 'Diferença de integridade detectada'
+        : integrity.isCanceledPreserved
+        ? 'Mercado cancelado com registros preservados'
+        : 'Definição registrada';
+    final size = dense ? 28.0 : 32.0;
+
+    return Tooltip(
+      message: label,
+      child: Semantics(
+        label: label,
+        image: true,
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: integrity.isSealed
+                ? color.withValues(alpha: 0.88)
+                : GtlColors.surfaceElevated.withValues(alpha: 0.96),
+            border: Border.all(
+              color: integrity.isSealed ? GtlColors.textPrimary : color,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.34),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            size: dense ? 17 : 19,
+            color: integrity.isSealed ? GtlColors.background : color,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Color _statusColor(Market market) {
   if (market.isOpen) {
     return GtlColors.accentGreen;
   }
   if (market.isResolved) {
     return GtlColors.accentViolet;
+  }
+  if (market.isSealed) {
+    return GtlColors.accentCyan;
   }
   if (market.isLocked) {
     return GtlColors.accentYellow;

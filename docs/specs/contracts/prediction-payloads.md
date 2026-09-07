@@ -19,6 +19,7 @@ Saída mínima:
 - `wallet_balance_after`
 - `market_probability_snapshot`
 - `potential_payout`
+- `integrity_receipt`
 
 ## Prévia de previsão
 
@@ -132,6 +133,8 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - Revisão troca para uma opção diferente, supersede posições ativas anteriores, aplica o percentual de custo configurado para troca de posição e cria nova posição `open` com o valor restante.
 - `viewer_position` deve expor posição ativa agregada, entradas abertas resumidas, limite/restante de reforços, limite/restante de revisões, percentual de custo de revisão, custo estimado em GT₵ e nova posição estimada para a UI explicar o que será encerrado antes da confirmação.
 - Cada entrada, reforço ou revisão gera linha própria em `gotrendlabs_predictions`; posições substituídas ficam como `revised` com `superseded_by` e `superseded_at`.
+- Cada entrada, reforco ou revisao gera compromisso assinado e evento encadeado na mesma transacao; falha do signer aborta toda a acao.
+- O compromisso usa identificador pseudonimo e nunca inclui PII ou id bruto do usuario.
 - Mutações de posição devem ser serializadas por usuário/mercado em lock transacional; a checagem de `/predict` precisa ocorrer depois desse lock para impedir duas previsões iniciais concorrentes quando ainda não existe linha bloqueável.
 - O frontend não deve enviar previsão sem `option_id`; a UI deve iniciar sem seleção padrão e usar validação nativa obrigatória para escolha explícita.
 - O snapshot retornado precisa ser compatível com o frontend, mas a fonte de verdade permanece no backend.
@@ -143,5 +146,6 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - Séries visuais devem considerar previsões `open` e `resolved`; previsões `revised` entram no ponto de criação e saem no ponto `superseded_at`; previsões `canceled` não participam do histórico visual.
 - `resolved_at_label` é campo de apresentação derivado de `resolved_at` + `resolution_timezone`; cálculos e ordenação devem usar `resolved_at`.
 - Previsões bot oficiais são `Prediction` reais de usuários `is_bot=true`, criadas somente pelo backend/daemon quando flags e limites permitirem.
+- Previsoes bot usam o mesmo escritor transacional de previsao inicial e geram compromisso e evento de integridade antes do commit; falha do signer reverte previsao, wallet e metricas do agente naquele savepoint.
 - Previsão bot é bloqueada quando `human_participants=0` ou abaixo de `ai_min_humans_for_prediction`.
 - Respostas de mercado expõem `human_participants`, `bot_participants`, `human_volume_gtl`, `bot_volume_gtl` e `total_volume_gtl`; `participants` e `volume_gtl` legados representam humanos.

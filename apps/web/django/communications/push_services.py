@@ -22,6 +22,7 @@ from apps.web.django.markets.models import UserNotification
 
 
 IMMEDIATE_PUSH_EVENTS = {
+    "market_sealed",
     "market_resolved",
     "market_locked",
     "wallet_credit",
@@ -33,6 +34,11 @@ OFF_BY_DEFAULT_PUSH_EVENTS = {"market_prediction", "market_like"}
 PUSH_SENDING_STALE_AFTER = timedelta(minutes=15)
 
 DEFAULT_PUSH_TEMPLATES = {
+    "market_sealed": {
+        "title": "Histórico finalizado e verificável",
+        "body": "O registro deste mercado está disponível para conferência.",
+        "allowed_variables": ["market_title", "market_slug", "notification_id"],
+    },
     "market_resolved": {
         "title": "Resultado publicado",
         "body": "{{ market_title|default:\"Um mercado\" }} foi resolvido. Abra o app para ver o resultado.",

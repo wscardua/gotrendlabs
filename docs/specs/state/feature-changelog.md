@@ -1,5 +1,146 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 aprovação e preparação de produção
+
+- A spec funcional/técnica foi aprovada pelo usuário na versão `1.2`; a implementação permanece `implementada_aguardando_deploy` até CI, rollout AWS e smoke produtivo.
+- O corte inicial passa a remover todos os mercados pré-lançamento sem definição assinada, inclusive rascunhos e agendados, sempre após snapshot do RDS e sem assinatura retroativa ou modo legado.
+- O Compose de produção passa o frontend Django de um para dois workers Uvicorn; o runbook exige 1 GiB de swap, monitoramento de memória e rollback operacional para um worker.
+- O runbook consolida criação da chave/alias KMS Ed25519, IAM mínimo no ARN específico, segredo de pseudonimização no Secrets Manager, sincronização segura do runtime e smokes de assinatura/auditoria.
+
+## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de selagem e prova pública
+
+- A selagem passa a executar auditoria integral fresca da cadeia global sob o mesmo lock transacional; checkpoint anterior continua acelerando consultas públicas, mas não autoriza uma transição irreversível.
+- A prova pública deixa de expor eventos e referências de compromissos individuais; web e mobile recebem somente o total agregado, a raiz final e os eventos de ciclo do mercado.
+- O verificador confronta o envelope criptográfico e os metadados persistidos de definição, compromissos, Seal e folhas Merkle, incluindo relações, timestamps, protocolo, algoritmo e fingerprint.
+- Divergência global idêntica, sem mudança no head, respeita backoff de uma hora no daemon para evitar repetição de varredura e assinatura a cada ciclo; a falha continua visível e suprime as selagens antes da iteração dos mercados vencidos.
+- Rotação versionada do segredo de pseudonimização e resumo materializado por mercado ficam registrados para evolução da plataforma.
+
+## 2026-09-07 — FEAT-INTEGRITY-001 checkpoints assinados
+
+- O daemon passa a criar checkpoints globais canonicos, assinados, encadeados e append-only, com auditoria incremental em cada ciclo e integral no bootstrap/primeiro ciclo apos 24 horas.
+- A verificacao publica deixa de percorrer todos os eventos e passa a validar checkpoint, head e limite por consultas indexadas; novo `GET /integrity/status` expoe a situacao global sem dados de mercado.
+- O contrato substitui `valid` por `verification_status`, `market_valid`, `ledger_chain_valid` e `overall_valid`, distinguindo atraso normal (`pending`) de divergencia (`failed`) e indisponibilidade.
+- Selagem permanece fail-closed sob advisory lock; a otimização incremental serve às auditorias recorrentes e às leituras públicas, sem substituir a auditoria integral exigida pelo Seal.
+- Django/Admin Ops e Flutter apresentam sequencia auditada, head, pendencias e horario da ultima auditoria sem disparar full scan; Flutter avanca para `1.2.0+13` sem camada legada.
+- Migration `0031_integrity_ledger_checkpoints` adiciona indices, assinatura historica, trigger contra mutacao/truncate e privilegios minimos.
+- O corte pre-producao remove alertas operacionais mutaveis dos mercados candidatos antes da FK `PROTECT`, sem tocar provas append-only.
+
+## 2026-09-07 — FEAT-INTEGRITY-001 fechamento dos achados de revisao
+
+- A selagem passa a exigir a verificacao integral aprovada, incluindo definicao/resultado atuais, compromissos, eventos do mercado e cadeia global; qualquer divergencia mantem o mercado em `resolved` para retry seguro.
+- `valid=false` passa a ser obrigatorio quando a cadeia global falha, ainda que `ledger_chain_valid` e `warnings` preservem o diagnostico de escopo.
+- Alertas pendentes prevalecem no resumo de integridade, impedindo cards web/mobile de exibirem selo positivo para mercado com falha conhecida.
+- O verificador da cadeia vincula protocolo, entidade, mercado, timestamp, correlacao/causalidade, algoritmo, fingerprint e `created_at` aos dados assinados ou a metadados criptograficamente conferidos.
+- A auditoria passa a varrer tambem mercados sem definicao e cria `definition_missing` de severidade alta quando a prova e obrigatoria.
+- O purge pre-producao remove somente badges causalmente ligados aos mercados eliminados e preserva concessoes/notificacoes independentes.
+- O risco de escala da verificacao global integral foi encaminhado para checkpoints assinados; medicao com volume representativo continua pendente em staging.
+
+## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de cobertura e corte pre-producao
+
+- Mercados publicados sem definicao assinada deixam de ser mantidos como legado ativo; comando `purge_unsigned_markets` inventaria em `dry-run`, exige backup confirmado, recusa provas protegidas, remove dependencias operacionais e reconcilia wallet/reputacao/badges.
+- Previsoes iniciais humanas e de agentes IA compartilham escritor transacional com wallet, compromisso e evento; falha do signer no agente reverte o savepoint antes da auditoria da falha.
+- Verificacao compara previsoes com compromissos em cobertura exata e valida opcao, stake, tipo, sequencia, timestamp, pseudonimo e definicao; ausencia ou adulteracao impede Seal.
+- Definicoes novas protegem IDs taxonomicos e preservam nomes como snapshot, permitindo renomeacao editorial sem esconder troca de associacao.
+- Auditoria indisponivel adia apenas a selagem do ciclo; fechamento, retencao, email, push e processo daemon continuam isolados.
+- Flutter avanca para `1.1.0+12`; como ainda nao esta em producao, nao foi criada camada de compatibilidade com builds anteriores.
+
+## 2026-09-06 — FEAT-MOBILE-UX-001 detalhe e painéis compactos
+
+- O critério de resolução passa a anteceder previsão/posição e resultado pessoal no detalhe mobile.
+- `Sua mesa` reduz cada atalho a duas linhas visuais; o painel de seis métricas passa a duas fileiras compactas em celular padrão.
+- Comprovantes assinados iniciam recolhidos e a verificação do mercado ganha detalhes técnicos completos e progressivos, em paridade com o comprovante individual.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 posição coerente no detalhe web
+
+- `Sua posição` passa a ocupar uma posição fixa entre o estado/resultado oficial e as ações, usando o mesmo componente em mercados abertos, em apuração, resolvidos, selados e cancelados.
+- Resultado pessoal, confirmação de previsão/reforço/revisão e comprovantes assinados ficam reunidos no bloco pessoal; o resultado oficial permanece independente.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 copy coerente do ciclo web
+
+- O detalhe web passa a identificar o bloco como `Ciclo do mercado` e usa mensagens próprias para agendamento, apuração, resultado publicado, conclusão e cancelamento.
+- Rótulos e métricas deixam de mostrar `Fecha em` ou contagem regressiva depois que as previsões foram encerradas.
+- A finalização pendente diferencia prazo normal, retry operacional e mercado legado; a etapa final selada aparece concluída.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 conclusão clara no detalhe web
+
+- O detalhe de mercado selado passa a comunicar primeiro `Mercado concluído`, deixando explícito que o ciclo de previsões, apuração e resultado terminou.
+- A integridade aparece como complemento `Concluído e verificável`, com explicação curta sobre resultado publicado e registro finalizado; o escudo permanece como único acesso à verificação.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 hierarquia da integridade no detalhe mobile
+
+- A secao mobile passa a se chamar `Integridade do mercado`; no estado registrado, informa que a definicao publicada foi registrada e pode ser conferida.
+- O bloco deixa de interromper o fluxo principal e aparece depois de previsao/posicao, comprovantes e criterio/resultado, mantendo `Verificar integridade` como acao secundaria.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 selo compacto nos cards mobile
+
+- Os cards Flutter deixam de exibir o pill textual `Definicao registrada`/`Historico verificavel` e passam a usar somente um escudo circular no canto superior direito da imagem, em paridade visual com o site.
+- Thumbnail e informacoes editoriais permanecem intactas; tooltip e semantics mantem a descricao completa para acessibilidade, e cores/icones continuam distinguindo registro, finalizacao, retry, divergencia e Seal.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes assinados no mobile
+
+- O detalhe mobile autenticado passa a listar separadamente o comprovante da previsao inicial, de cada reforco e de cada revisao, inclusive depois que a posicao deixa de estar ativa.
+- Cada item abre um modal rolavel com resumo da acao, explicacao leiga de hash/assinatura/encadeamento, detalhes tecnicos, estado da prova individual, copia e retry.
+- A confirmacao imediata de uma mutacao oferece acesso ao recibo completo; Flutter continua consumindo a FastAPI sem recalcular ou assinar dados no aparelho.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 auditoria administrativa por camada
+
+- `Auditar integridade` passa a estar disponível no browse administrativo para qualquer estado e na fila de resolução para todos os itens exibidos.
+- A visão operacional separa definição, compromissos, resultado, Seal, Merkle, eventos do mercado e cadeia global, sem rotular etapas futuras ou mercados legados como adulteração.
+- Compromissos assinados passam a reportar validade desde a publicação, antes do Seal, sem expor previsões ou usuários.
+- A consulta administrativa usa endpoint staff read-only dedicado e o mesmo verificador autoritativo da FastAPI, sem consumir o rate limit público compartilhado.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 auditoria antecipada em todos os estados
+
+- A auditoria de integridade passa a abrir cada ciclo do daemon e varre todos os mercados com definição nativa assinada, inclusive abertos, fechados, resolvidos, selados e cancelados.
+- O alerta entra na fila na primeira passagem posterior à divergência, sem depender de `seal_due_at` ou da execução de uma selagem.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes persistentes e auditoria pelo daemon
+
+- Comprovantes do titular permanecem acessiveis no detalhe durante `open`, `locked`, `resolved`, `sealed` e `canceled`; o Seal adiciona a prova Merkle sem esconder recibos anteriores.
+- Cards finalizados usam o CTA `Resultado` e apresentam compartilhamento como icone secundario acessivel.
+- O daemon audita definicao, resultado, compromissos, Merkle, Seal e cadeia global, criando alertas operacionais `high` deduplicados na fila `Integridade` sem alterar o ledger.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 comprovantes em modal por ação
+
+- O comprovante assinado abre em modal compacto no detalhe do mercado, com a página completa preservada para navegação sem JavaScript.
+- Entrada inicial, reforços e revisões ficam listados como comprovantes independentes, identificados por tipo e sequência, sem substituir assinaturas anteriores.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 confirmação de assinatura e copy compacta
+
+- O modal de verificação remove a ressalva destacada e mantém o foco em como hash, assinatura e histórico conectado detectam alterações.
+- Alertas da cadeia global que não invalidam as provas específicas do mercado ficam no contrato e na auditoria operacional, sem parecer falha do mercado nas experiências públicas web/mobile.
+- Cards resolvidos e selados voltam a usar o CTA familiar `Ver resolução`.
+- A confirmação de previsão, reforço ou revisão passa a informar que o comprovante foi assinado e oferece acesso ao recibo individual emitido pela FastAPI.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 semântica e verificação reforçadas
+
+- Estados visuais agora distinguem registro em curso, prazo/retry operacional, etapa não aplicável e diferença criptográfica, com cores coerentes em web, Admin Ops e mobile.
+- A verificação compara definição e resultado atuais aos snapshots assinados e valida compromissos, folhas/provas Merkle, Seal, eventos do mercado e cadeia global.
+- Chaves públicas históricas passam a ser preservadas em registro append-only, mantendo a verificação após rotação ou reinício local sem armazenar chave privada.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 método criptográfico compacto
+
+- A primeira leitura passou a resumir hash, assinatura criptográfica e encadeamento sem expandir a página com nova seção longa.
+- A comunicação diferencia detecção de manipulação de impedimento absoluto e informa que a chave privada permanece protegida.
+- O botão textual redundante foi removido do detalhe; o escudo sobre a thumbnail permanece como acionador acessível da verificação.
+
+## 2026-09-06 — FEAT-INTEGRITY-001 clareza da verificação pública
+
+- O modal de integridade passou a responder primeiro se alguma alteração indevida foi detectada e para que a conferência existe.
+- Publicação, previsões, resultado e finalização passaram a formar uma linha do tempo em linguagem comum, com estado coerente para mercado registrado, resultado pendente e histórico selado.
+- A experiência agora explica o efeito de uma alteração, os limites da prova e a analogia de impressão digital antes de apresentar hashes, chave e protocolo.
+
+## 2026-09-05 — FEAT-INTEGRITY-001 Ledger Criptográfico de Integridade
+
+- A sinalização web foi refinada para preservar a thumbnail e usar um selo iconizado sobreposto no canto superior direito, disponível também no detalhe do mercado.
+- A verificação web passou a abrir em modal compartilhado, responsivo e acessível, com conteúdo leigo antes dos detalhes técnicos e rota completa mantida como fallback.
+- Publicação passa a registrar definição canônica assinada; previsão inicial, reforço e revisão geram comprovantes pseudonimizados na mesma transação.
+- Ciclo de mercado ganhou `seal_due_at` e estado terminal `sealed`, com reversão auditável antes do prazo e selagem idempotente pelo daemon usando Merkle Tree.
+- Ledger global encadeado e assinado ganhou proteção append-only no PostgreSQL; correções pós-selagem são novos eventos e nunca reescrevem a prova anterior.
+- FastAPI/OpenAPI expõem resumo, verificação, chave pública, pacote e comprovante individual; Django e Flutter apenas consomem e apresentam esses contratos.
+- Cards web/mobile distinguem “Definição registrada” de “Histórico verificável”; páginas institucionais explicam limites sem alegar blockchain pública, descentralização ou imutabilidade absoluta.
+- Produção exige AWS KMS Ed25519 e segredo de pseudonimização; signer efêmero permanece restrito a desenvolvimento/testes.
+
 ## 2026-08-29 — FEAT-MARKET-001 compactação dos cards do feed web
 
 - Cards do feed/home mantêm a classificação por categoria, subcategoria, evento e status em uma faixa própria abaixo do cabeçalho de título/miniatura, aproveitando a largura disponível do card.

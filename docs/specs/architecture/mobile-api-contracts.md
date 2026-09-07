@@ -22,6 +22,18 @@ aprovacao: pendente
 
 # Contratos API para mobile
 
+## Integridade verificável
+
+- `MarketResponse` inclui `published_at`, `seal_due_at`, `sealed_at` e `integrity` com status/protocolo/disponibilidade.
+- O app consome `GET /markets/{slug}/integrity`, `/integrity/verify`, `/predictions/{id}/receipt` e `/merkle-proof`; não assina nem trata cálculo local como autoridade.
+- O app reconhece `seal_retry_pending` como pendencia operacional, `canceled_preserved` como registros preservados sem Seal aplicavel e `verification_failed` exclusivamente como inconsistencia criptografica. Campos nullable da verificacao nao podem ser renderizados como falha.
+- `/integrity/verify` inclui `verification_status`, `market_valid`, `overall_valid`, `ledger_chain_valid`, `definition_matches_current`, `result_matches_current`, `prediction_commitments_valid`, sequencias, pendencias e horario/tipo da auditoria global.
+- `/integrity` e o pacote publico omitem eventos/referencias individuais de previsao e expoem `prediction_commitments` somente como agregado (`count`, `included_in_seal`, `predictions_root`). O Flutter nao depende de IDs ou timestamps de terceiros; comprovantes individuais continuam vindo das rotas autenticadas do titular.
+- `pending` usa valores globais nullable e significa somente que o daemon ainda nao cobriu eventos recentes; `failed` e reservado a divergencia confirmada. O app nao deriva esses estados nem executa hash como autoridade.
+- O app ainda nao esta em producao: o contrato final substitui diretamente o shape anterior, sem parser ou fallback para builds antigos. FastAPI, OpenAPI, Django e Flutter avancam juntos.
+- Comprovantes autenticados pertencem somente ao usuário da previsão. Provas públicas não carregam PII ou identificador interno bruto de usuário.
+- `viewer_position.history` fornece os ids das acoes da propria posicao para o app montar a lista persistente; o conteudo autoritativo de cada modal vem de `GET /markets/{slug}/predictions/{prediction_id}/receipt`, e `merkle_proof` permanece ausente ate a finalizacao quando ainda nao aplicavel.
+
 ## Objetivo
 
 Definir o conjunto inicial de contratos FastAPI que o app Flutter deve consumir no MVP, evitando acoplamento com templates Django e evitando endpoints novos sem necessidade comprovada.

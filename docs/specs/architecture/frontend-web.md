@@ -24,6 +24,7 @@
 
 ## Guardrails
 
+- Em produção, o container Django executa dois workers Uvicorn atrás do Caddy. Essa concorrência não cria fonte de verdade local: sessões compartilhadas e todas as mutações críticas continuam dependendo de PostgreSQL/FastAPI; memória e swap do host são monitorados conforme o runbook.
 - Toda ação mutável relevante deve passar pelo `backend-api`.
 - Apps Django ficam em `apps/web/django/`, templates compartilhados ficam em `apps/web/templates/` e assets compartilhados ficam em `apps/web/static/`.
 - Apps Django devem preservar migrations, `AppConfig.label`, imports e comandos locais quando houver reorganizacao estrutural.
@@ -85,3 +86,16 @@
 - Usuários autenticados veem sino de notificações com contador de não lidas, dropdown das últimas notificações e ação para marcar todas como lidas; visitantes podem ver affordance desabilitada, sem navegação para login.
 - Itens do dropdown devem navegar para o contexto persistido: `badge_awarded` para `/badges/`, `wallet_credit` para `/wallet/`, eventos de mercado para o detalhe do mercado e notificações com comentário para `#comments`.
 - Cards da home/feed e o detalhe do mercado devem exibir contador público de comentários com base em `comment_count`, sem inferir contagem no template.
+- Cards preservam a thumbnail e exibem um selo iconizado sobreposto em seu canto superior direito quando a API confirma a prova; o nome acessivel distingue `Definicao registrada` de `Historico finalizado e verificavel`, e a UI nao infere validade pelo status isolado.
+- O selo de integridade abre uma verificacao publica em modal compartilhado nos cards e no detalhe do mercado, consumindo a rota Django que consulta a FastAPI. A rota completa permanece como fallback sem JavaScript; explicacoes leigas precedem detalhes tecnicos progressivos.
+- A verificacao leiga abre com uma resposta objetiva sobre alteracoes detectadas, explica seu proposito e representa publicacao, previsoes, resultado e finalizacao como linha do tempo. Hashes, assinaturas, chave e protocolo permanecem em disclosure tecnico recolhido.
+- A introducao da verificacao resume hash, assinatura criptografica e encadeamento em tres sinais compactos, sempre como deteccao de manipulacao. No detalhe, somente o escudo sobreposto a thumbnail abre o modal; um segundo botao textual de integridade nao deve ser renderizado.
+- Mercado `resolved` mostra `Resultado em finalizacao` e `seal_due_at` como previsao operacional da proxima passagem do daemon.
+- No detalhe de mercado `sealed`, o titulo de estado e `Mercado concluido`, acompanhado de explicacao curta sobre resultado publicado e registro de integridade finalizado; o rotulo complementar e `Concluido e verificavel`, sem criar um segundo acionador textual para o modal.
+- O bloco lateral usa `Ciclo do mercado`, nunca `Sua previsao`, como rotulo da linha do tempo. `scheduled`, `locked`, `resolved`, `sealed` e `canceled` recebem titulo e explicacao proprios; somente `open` exibe contagem regressiva de fechamento. Rotulos do cabecalho e metricas nao podem continuar mostrando `Fecha em` depois que as previsoes forem encerradas.
+- Em `resolved`, a copy informa a previsao de `seal_due_at` somente quando houver integridade nativa pendente; retry operacional e mercado legado recebem mensagens honestas distintas. Em `sealed`, a etapa final aparece como `Concluido` e visualmente encerrada.
+- O titular continua vendo os comprovantes individuais da previsao inicial, reforcos e revisoes quando o mercado estiver `locked`, `resolved`, `sealed` ou `canceled`; apenas os controles de nova acao desaparecem.
+- O detalhe autenticado preserva a ordem `ciclo e estado/resultado oficial -> Sua posicao -> acoes disponiveis -> compartilhar/voltar`. `Sua posicao` usa um unico componente em todos os estados, concentra o resultado pessoal e as confirmacoes de mutacao e depende de `viewer_position`/previsao retornados pelo dominio, sem inferir saldo, payout ou validade criptografica no template.
+- Cards `resolved`/`sealed` usam CTA `Resultado`; compartilhar e uma acao secundaria somente por icone, com `aria-label` e tooltip explicitos.
+- Estados de integridade usam verde apenas para verificacao aprovada, azul para registro em curso, amarelo para prazo/retry operacional, cinza para aguardando/nao aplicavel/legado e vermelho apenas para diferenca criptografica. Mercado cancelado informa registros preservados e marca resultado/finalizacao como `Nao se aplica`.
+- Recibos autenticados de previsao usam o mesmo modal compartilhado, com rota completa como fallback. O detalhe lista cada acao da posicao por `prediction_id`, tipo e sequencia, permitindo abrir separadamente a assinatura da entrada inicial, de cada reforco e de cada revisao.

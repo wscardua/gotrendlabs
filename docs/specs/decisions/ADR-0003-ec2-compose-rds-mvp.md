@@ -16,6 +16,7 @@ O MVP precisa de deploy simples, barato e auditável, com Django server-rendered
 - O PostgreSQL de produção fica fora do Compose, em serviço gerenciado como Amazon RDS.
 - O deploy inicial usa o fluxo `git pull` na EC2, build local da imagem, migrations, `collectstatic` e `docker compose up`.
 - Deve existir apenas um container `daemon` por ambiente.
+- O Django usa dois workers Uvicorn no container web; a EC2 `t4g.micro` mantém swap operacional e monitoramento de memória, com rollback para um worker sem impacto de domínio.
 
 ## Implantação base executada
 

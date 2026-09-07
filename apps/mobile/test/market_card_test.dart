@@ -66,6 +66,77 @@ void main() {
     expect(find.text('Favorito'), findsOneWidget);
   });
 
+  testWidgets(
+    'market cards distinguish registered definition from sealed history',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                MarketHeroCard(
+                  market: _market(integrityStatus: 'registered'),
+                  api: ApiClient(tokenStore: MemoryTokenStore()),
+                ),
+                MarketCompactCard(
+                  market: _market(integrityStatus: 'sealed'),
+                  api: ApiClient(tokenStore: MemoryTokenStore()),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      expect(find.text('Definição registrada'), findsNothing);
+      expect(find.text('Histórico verificável'), findsNothing);
+      expect(find.byTooltip('Definição registrada'), findsOneWidget);
+      expect(
+        find.byTooltip('Histórico finalizado e verificável'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('market cards do not hide retry or cryptographic failure', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ListView(
+            children: [
+              MarketCompactCard(
+                market: _market(integrityStatus: 'seal_retry_pending'),
+                api: ApiClient(tokenStore: MemoryTokenStore()),
+              ),
+              MarketCompactCard(
+                market: _market(integrityStatus: 'verification_failed'),
+                api: ApiClient(tokenStore: MemoryTokenStore()),
+              ),
+              MarketCompactCard(
+                market: _market(integrityStatus: 'canceled_preserved'),
+                api: ApiClient(tokenStore: MemoryTokenStore()),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byTooltip('Finalização aguardando nova tentativa'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('Diferença de integridade detectada'),
+      findsOneWidget,
+    );
+    expect(
+      find.byTooltip('Mercado cancelado com registros preservados'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('MarketCompactCard shows compact time remaining', (tester) async {
     final market = _market();
 
@@ -141,6 +212,44 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('mercado-teste community'), findsOneWidget);
+  });
+
+  testWidgets('MarketMetricPanel fits six metrics into two compact rows', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Center(
+            child: SizedBox(
+              width: 360,
+              child: MarketMetricPanel(market: _market()),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final firstRow = [
+      find.text('PROBABILIDADE'),
+      find.text('VOLUME GT₵'),
+      find.text('PARTICIPANTES'),
+    ];
+    final secondRow = [
+      find.text('COMENTÁRIOS'),
+      find.text('ENCERRA EM'),
+      find.text('STATUS'),
+    ];
+    final firstTop = tester.getTopLeft(firstRow.first).dy;
+    final secondTop = tester.getTopLeft(secondRow.first).dy;
+    for (final finder in firstRow.skip(1)) {
+      expect(tester.getTopLeft(finder).dy, closeTo(firstTop, 5));
+    }
+    for (final finder in secondRow.skip(1)) {
+      expect(tester.getTopLeft(finder).dy, closeTo(secondTop, 5));
+    }
+    expect(firstTop, lessThan(secondTop));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('MarketCompactCard time rail changes color with urgency', (
@@ -244,6 +353,7 @@ Market _market({
   String statusLabel = 'Aberto',
   String closesIn = '3d',
   String closeLabel = 'Fecha em 3 dias',
+  String integrityStatus = '',
 }) {
   return Market.fromJson({
     'slug': 'mercado-teste',
@@ -272,6 +382,14 @@ Market _market({
     'resolution_criteria': 'Critério',
     'viewer_has_favorite': favorite,
     'viewer_has_prediction': prediction,
+    if (integrityStatus.isNotEmpty)
+      'integrity': {
+        'status': integrityStatus,
+        'protocol_version': 'gtl-integrity/v1',
+        'definition_registered': true,
+        'verification_available': true,
+        'key_fingerprint': 'abc123',
+      },
     'options': [
       {'id': 1, 'label': 'SIM', 'probability': 64, 'probability_exact': 64.0},
       {'id': 2, 'label': 'NÃO', 'probability': 36, 'probability_exact': 36.0},

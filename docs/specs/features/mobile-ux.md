@@ -134,6 +134,7 @@ Card de lista/grid:
 - volume, comentarios e prazo compacto; o prazo deve aparecer como barra curta de regressao/urgencia no canto inferior direito, ao lado do contador de comentarios, mudando de cor conforme o tempo restante diminui
 - status fechado/resolvido visivel nos recortes que permitem estes estados
 - estado de favorito/curtida quando autenticado
+- selo circular somente com icone de escudo/check no canto superior direito da imagem para `Definicao registrada` e, quando `sealed`, `Historico finalizado e verificavel`; o card nao repete o texto visualmente, mas preserva tooltip/semantics acessivel e estados por cor sem estetica cripto
 
 ### MarketMetricPanel
 
@@ -157,6 +158,8 @@ Metricas recomendadas para o MVP:
 - `Encerra em`
 - `Status`
 
+No detalhe em celular padrao, as seis metricas formam duas fileiras compactas de tres itens. Cada item usa duas linhas visuais, rotulo e valor com icone de apoio, sem perder toque, contraste ou legibilidade. Em larguras muito estreitas, o painel pode voltar para duas colunas sem overflow.
+
 Quando o contador de `Comentarios` aparecer em cards ou metricas do detalhe, o toque deve abrir o mercado na aba `Comunidade`.
 
 Metricas como `liquidez`, `spread`, `last trade` ou equivalentes devem ficar fora do MVP ate existir significado de dominio educativo e contrato backend.
@@ -178,6 +181,7 @@ Controle de previsao:
 - `Aumentar posição` permanece na mesma escolha ativa quando `can_reinforce=true`, com preview de novo total ativo, aumentos restantes e credito possivel vindo da API
 - `Trocar escolha` permite apenas opcoes diferentes da ativa quando `can_revise=true`, com resumo de movimentos encerrados, custo da troca, nova posicao estimada, trocas restantes e credito possivel vindos da API
 - confirmacao de aumento/troca so aparece depois de preview valido da FastAPI; bloqueios exibem a mensagem retornada pelo backend
+- a confirmacao de cada mutacao oferece acesso imediato ao comprovante assinado, e o detalhe mantem a lista persistente usando `viewer_position.history` e `/predictions/{id}/receipt`
 
 ### ConsensusChart
 
@@ -250,6 +254,12 @@ Deve priorizar:
 - comentario/comunidade
 - previsao com confirmacao explicita
 - paridade com o web para popularidade operacional: abrir o detalhe incrementa `view_count`, e compartilhar pelo app incrementa `share_count` sem bloquear a acao nativa
+- comprovantes assinados da propria posicao em bloco compacto e escaneavel; cada previsao inicial, reforco ou revisao abre modal com resumo leigo, hash, assinatura, chave, protocolo e estado da prova individual
+- o criterio de resolucao aparece em bloco compacto antes da previsao/posicao, para que a regra de apuracao seja conhecida antes da acao; quando houver resultado oficial, ele permanece no mesmo nivel anterior ao resultado pessoal
+- a secao secundaria usa o titulo fixo `Integridade do mercado`, fica depois do criterio, resultado, previsao/posicao e comprovantes e, no estado registrado, explica `A definição publicada foi registrada e pode ser conferida.` antes do CTA `Verificar integridade`
+- `Sua mesa` apresenta posicoes, favoritos e mercados abertos em itens de duas linhas visuais, com o rotulo na primeira e icone + total na segunda, evitando tres niveis verticais por item e truncamento com fonte ampliada
+- comprovantes assinados ficam recolhidos por padrao e preservam a contagem visivel no cabecalho
+- a verificacao do mercado oferece `Ver detalhes tecnicos` recolhido, com protocolo, algoritmo, hashes, assinaturas, identificacao da chave, raiz das previsoes, Seal e elos do ledger quando aplicaveis, mantendo a explicacao leiga como primeira leitura
 
 ### Wallet
 

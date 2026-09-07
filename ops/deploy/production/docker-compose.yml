@@ -24,9 +24,13 @@ services:
       context: ../../..
       dockerfile: Dockerfile
     restart: unless-stopped
-    command: uvicorn config.asgi:application --host 0.0.0.0 --port 8000
+    command: uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --workers 2
     env_file:
       - ../../../.env.prod
+    environment:
+      # Django não assina registros. Evita descoberta acidental da role da EC2
+      # por SDKs dentro deste processo; FastAPI e daemon mantêm acesso ao KMS.
+      AWS_EC2_METADATA_DISABLED: "true"
     volumes:
       - staticfiles:/app/staticfiles
       - mediafiles:/app/media

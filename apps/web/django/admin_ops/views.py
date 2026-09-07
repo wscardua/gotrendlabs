@@ -40,6 +40,7 @@ from apps.web.django.accounts.api_client import (
     admin_get_market,
     admin_get_market_participants,
     admin_get_market_resolution_audit,
+    admin_verify_market_integrity,
     admin_get_markets,
     admin_get_comments,
     admin_get_queues,
@@ -50,6 +51,7 @@ from apps.web.django.accounts.api_client import (
     admin_get_users,
     admin_request_user_password_reset,
     get_backend_health,
+    get_market_integrity,
     admin_lock_market,
     admin_moderate_comment,
     admin_publish_market,
@@ -92,6 +94,7 @@ from apps.web.django.admin_ops.forms import (
     EconomyConfigForm,
     EmailTemplateForm,
     FeedbackRewardForm,
+    IntegrityConfigForm,
     MaintenanceConfigForm,
     MarketResolutionForm,
     MobileCompatibilityConfigForm,
@@ -749,6 +752,122 @@ def _market_resolution_meta(market):
     return enriched
 
 
+INTEGRITY_AUDIT_ISSUE_LABELS = {
+    "definition_invalid": "A assinatura ou o hash da definição não confere.",
+    "definition_changed": "A definição atual diverge do registro assinado na publicação.",
+    "prediction_commitment_invalid": "Um ou mais comprovantes de previsão não conferem ou romperam o encadeamento.",
+    "seal_invalid": "A assinatura ou o conteúdo do Seal final não confere.",
+    "result_changed": "O resultado atual diverge do registro protegido.",
+    "merkle_invalid": "A raiz ou uma prova Merkle não corresponde aos comprovantes registrados.",
+    "market_events_invalid": "Um evento deste mercado rompeu a cadeia assinada.",
+    "ledger_chain_invalid": "A cadeia global possui um elo inconsistente.",
+    "ledger_verification_pending": "Há eventos novos aguardando o próximo ciclo de auditoria do daemon.",
+    "ledger_verification_unavailable": "Ainda não há checkpoint assinado disponível para a cadeia global.",
+}
+
+
+def _integrity_audit_check(label, value, *, applicable=True, unavailable_label="Aguardando etapa", detail=""):
+    if not applicable:
+        return {"label": label, "state": "waiting", "state_label": unavailable_label, "detail": detail}
+    if value is True:
+        return {"label": label, "state": "passed", "state_label": "Aprovado", "detail": detail}
+    if value is None:
+        return {"label": label, "state": "waiting", "state_label": unavailable_label, "detail": detail}
+    return {"label": label, "state": "failed", "state_label": "Diferença detectada", "detail": detail}
+
+
+def _market_integrity_audit_context(market, proof, verification):
+    status = market.get("status") or "draft"
+    definition = proof.get("definition")
+    has_definition = bool(definition)
+    is_pre_publication = status in {"draft", "scheduled"} and not has_definition
+    has_result = status in {"resolved", "sealed"}
+    has_seal = bool(proof.get("seal")) or status == "sealed"
+    unavailable_label = "Aguardando publicação" if is_pre_publication else "Sem prova histórica"
+
+    checks = [
+        _integrity_audit_check(
+            "Assinatura da definição",
+            verification.get("definition_valid"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Confere o hash e a assinatura emitidos quando o mercado foi publicado.",
+        ),
+        _integrity_audit_check(
+            "Definição atual",
+            verification.get("definition_matches_current"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Compara pergunta, opções, critérios e datas atuais com o registro original.",
+        ),
+        _integrity_audit_check(
+            "Comprovantes de previsões",
+            verification.get("prediction_commitments_valid"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Valida os comprovantes assinados e o encadeamento entre entrada, reforços e revisões.",
+        ),
+        _integrity_audit_check(
+            "Resultado registrado",
+            verification.get("result_matches_current"),
+            applicable=has_result,
+            detail="Compara o resultado operacional com o registro protegido após a resolução.",
+        ),
+        _integrity_audit_check(
+            "Assinatura do Seal",
+            verification.get("seal_valid"),
+            applicable=has_seal,
+            detail="Confere o snapshot final e a assinatura da finalização.",
+        ),
+        _integrity_audit_check(
+            "Histórico Merkle",
+            verification.get("merkle_root_valid"),
+            applicable=has_seal,
+            detail="Confere se os comprovantes finais pertencem à raiz preservada no Seal.",
+        ),
+        _integrity_audit_check(
+            "Eventos deste mercado",
+            verification.get("market_events_valid"),
+            applicable=has_definition,
+            unavailable_label=unavailable_label,
+            detail="Valida sequência, conteúdo, assinatura e elo anterior dos eventos do mercado.",
+        ),
+        _integrity_audit_check(
+            "Cadeia global do ledger",
+            verification.get("ledger_chain_valid"),
+            applicable=bool(verification),
+            unavailable_label="Auditoria pendente",
+            detail="Usa o último checkpoint assinado pelo daemon para conferir a cadeia compartilhada por todos os mercados.",
+        ),
+    ]
+    errors = verification.get("errors") or []
+    warnings = verification.get("warnings") or []
+    if errors:
+        overall_state, overall_label = "failed", "Diferença de integridade detectada"
+    elif verification.get("verification_status") in {"pending", "unavailable"}:
+        overall_state, overall_label = "warning", "Mercado sem diferença local; auditoria global pendente"
+    elif warnings:
+        overall_state, overall_label = "warning", "Mercado íntegro; cadeia global requer atenção"
+    elif has_definition:
+        overall_state, overall_label = "passed", "Nenhuma diferença detectada"
+    elif is_pre_publication:
+        overall_state, overall_label = "waiting", "Proteção ainda não iniciada"
+    else:
+        overall_state, overall_label = "legacy", "Sem prova histórica nativa"
+    issue_labels = [INTEGRITY_AUDIT_ISSUE_LABELS.get(code, code) for code in [*errors, *warnings]]
+    return {
+        "state": overall_state,
+        "label": overall_label,
+        "checks": checks,
+        "issues": issue_labels,
+        "checked_at": timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M %Z"),
+        "ledger_verified_at": verification.get("ledger_verified_at"),
+        "ledger_verified_through_sequence": verification.get("ledger_verified_through_sequence", 0),
+        "ledger_current_sequence": verification.get("ledger_current_sequence", 0),
+        "ledger_pending_events": verification.get("ledger_pending_events", 0),
+    }
+
+
 def _safe_image_content(upload, *, prefix):
     if upload.size > MAX_UPLOAD_IMAGE_BYTES:
         raise ValueError("Imagem excede o limite de 5 MB.")
@@ -1216,6 +1335,12 @@ def config(request):
         },
         prefix="daemon",
     )
+    integrity_post_data = request.POST if request.method == "POST" and any(key.startswith("integrity-") for key in request.POST) else None
+    integrity_form = IntegrityConfigForm(
+        integrity_post_data,
+        initial={"market_seal_window_hours": site_config.market_seal_window_hours},
+        prefix="integrity",
+    )
     retention_form = RetentionConfigForm(
         request.POST or None,
         initial={
@@ -1237,6 +1362,7 @@ def config(request):
     position_form_valid = position_post_data is None or position_form.is_valid()
     mobile_compatibility_form_valid = mobile_compatibility_post_data is None or mobile_compatibility_form.is_valid()
     ai_form_valid = ai_post_data is None or ai_form.is_valid()
+    integrity_form_valid = integrity_post_data is None or integrity_form.is_valid()
     if request.method == "POST" and request.POST.get("action") == "resend_test":
         try:
             call_command("send_resend_test_email")
@@ -1254,6 +1380,7 @@ def config(request):
         and position_form_valid
         and mobile_compatibility_form_valid
         and daemon_form.is_valid()
+        and integrity_form_valid
         and retention_form.is_valid()
         and ai_form_valid
     ):
@@ -1278,15 +1405,20 @@ def config(request):
         if mobile_compatibility_post_data is not None:
             for field, value in mobile_compatibility_form.cleaned_data.items():
                 setattr(site_config, field, value)
+        previous_seal_window = site_config.market_seal_window_hours
         site_config.daemon_stale_after_minutes = daemon_form.cleaned_data["daemon_stale_after_minutes"]
         site_config.daemon_missing_after_minutes = daemon_form.cleaned_data["daemon_missing_after_minutes"]
         site_config.system_log_retention_days = retention_form.cleaned_data["system_log_retention_days"]
         site_config.ai_audit_retention_days = retention_form.cleaned_data["ai_audit_retention_days"]
+        if integrity_post_data is not None:
+            site_config.market_seal_window_hours = integrity_form.cleaned_data["market_seal_window_hours"]
         if ai_post_data is not None:
             for field, value in ai_form.cleaned_data.items():
                 setattr(site_config, field, value)
         site_config.updated_by = _admin_model_user(request)
         site_config.save()
+        if previous_seal_window != site_config.market_seal_window_hours:
+            AdminEvent.objects.create(actor=_admin_model_user(request), action="integrity.seal_window_update", entity_type="site_config", entity_identifier="market_seal_window_hours", note=f"{previous_seal_window}h -> {site_config.market_seal_window_hours}h")
         current_mobile_compatibility = _mobile_compatibility_values(site_config)
         if previous_mobile_compatibility != current_mobile_compatibility:
             AdminEvent.objects.create(
@@ -1322,6 +1454,7 @@ def config(request):
             "economy_form": economy_form,
             "position_form": position_form,
             "daemon_form": daemon_form,
+            "integrity_form": integrity_form,
             "retention_form": retention_form,
             "ai_form": ai_form,
             "platform_config": platform_config,
@@ -2202,7 +2335,7 @@ def moderation(request):
     error = ""
     try:
         if filters["kind"] != "comment":
-            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback", "wallet_recharge"} else ""}
+            queue_filters = {**filters, "kind": filters["kind"] if filters["kind"] in {"suggestion", "feedback", "wallet_recharge", "integrity_alert"} else ""}
             queue_data = admin_get_queues(token, **queue_filters)
     except AuthAPIError as exc:
         queue_data = {"items": [], "counts": {}}
@@ -2247,9 +2380,10 @@ def resolution(request):
     try:
         locked_data = admin_get_markets(token, status="locked", order=active_order)
         resolved_data = admin_get_markets(token, status="resolved", order=active_order)
+        sealed_data = admin_get_markets(token, status="sealed", order=active_order)
         market_data = {
-            "markets": [*locked_data.get("markets", []), *resolved_data.get("markets", [])],
-            "counts": {**locked_data.get("counts", {}), **resolved_data.get("counts", {})},
+            "markets": [*locked_data.get("markets", []), *resolved_data.get("markets", []), *sealed_data.get("markets", [])],
+            "counts": {**locked_data.get("counts", {}), **resolved_data.get("counts", {}), **sealed_data.get("counts", {})},
         }
     except AuthAPIError as exc:
         market_data = {"markets": [], "counts": {}}
@@ -2511,13 +2645,13 @@ def market_form(request, mode="new", slug=None):
     form = AdminMarketForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
     if upload_error:
         form.add_error(None, upload_error)
-    is_readonly = bool(market and market.get("status") == "resolved")
+    is_readonly = bool(market and market.get("status") in {"resolved", "sealed"})
     if is_readonly:
         for field in form.fields.values():
             field.disabled = True
     if request.method == "POST" and request.POST.get("action") != "lock" and not upload_error and form.is_valid():
         if is_readonly:
-            error = "Mercados resolvidos não podem ser alterados. Desfaça a resolução antes de editar."
+            error = "Mercados resolvidos ou selados não podem ser alterados."
             return render(
                 request,
                 "admin_ops/market_form.html",
@@ -2595,6 +2729,7 @@ def resolution_action(request, action, slug=None):
         "resolve": "Resolver mercado",
         "cancel-refund": "Desfazer resolução",
         "audit": "Auditoria da resolução",
+        "integrity": "Auditoria de integridade",
         "review": "Revisar mercado",
         "request-review": "Pedir revisão",
     }
@@ -2607,6 +2742,32 @@ def resolution_action(request, action, slug=None):
             market = admin_get_market(token, slug)
         except AuthAPIError as exc:
             error = str(exc)
+    if action == "integrity" and market:
+        proof = {"status": "not_published", "definition": None, "seal": None, "ledger_events": []}
+        verification = {}
+        if market.get("status") != "draft":
+            try:
+                proof = get_market_integrity(market["slug"])
+            except AuthAPIError as exc:
+                error = str(exc)
+        if not error:
+            try:
+                verification = admin_verify_market_integrity(token, market["slug"])
+            except AuthAPIError as exc:
+                error = str(exc)
+        audit_context = _market_integrity_audit_context(market, proof, verification)
+        return render(
+            request,
+            "admin_ops/integrity_audit.html",
+            {
+                "title": titles[action],
+                "market": _market_resolution_meta(market),
+                "proof": proof,
+                "verification": verification,
+                "integrity_audit": audit_context,
+                "admin_error": error,
+            },
+        )
     if action == "audit" and market:
         try:
             limit = min(100, max(1, int(request.GET.get("limit") or 10)))
@@ -2615,11 +2776,16 @@ def resolution_action(request, action, slug=None):
             limit = 10
             offset = 0
         audit_data = None
+        integrity_data = None
         if not error:
             try:
                 audit_data = _audit_pagination(admin_get_market_resolution_audit(token, market["slug"], limit=limit, offset=offset))
             except AuthAPIError as exc:
                 error = str(exc)
+            try:
+                integrity_data = get_market_integrity(market["slug"])
+            except AuthAPIError as exc:
+                error = error or str(exc)
         return render(
             request,
             "admin_ops/resolution_audit.html",
@@ -2629,6 +2795,7 @@ def resolution_action(request, action, slug=None):
                 "slug": slug,
                 "market": _market_resolution_meta(market),
                 "audit": audit_data,
+                "integrity": integrity_data,
                 "admin_error": error,
             },
         )
@@ -2653,7 +2820,10 @@ def resolution_action(request, action, slug=None):
             error = "Informe resultado e evidência da resolução."
     elif action == "cancel-refund" and market:
         if request.method == "POST":
-            note = request.POST.get("note") or "Resolução cancelada pelo Admin Ops com refund operacional."
+            note = (request.POST.get("note") or "").strip()
+            if not note:
+                error = "A justificativa é obrigatória para desfazer uma resolução."
+                return render(request, "admin_ops/resolution_action.html", {"title": titles[action], "action": action, "slug": slug, "market": market, "form": form, "admin_error": error})
             try:
                 canceled = admin_cancel_market(token, market["slug"], note)
                 messages.success(request, f"Resolução desfeita: {canceled['title']}")
@@ -2701,6 +2871,9 @@ def queue_action(request, action, kind=None, item_id=None):
         review_form = QueueReviewForm(initial={"status": item.get("status", "pending"), "note": item.get("admin_note", "")})
         if kind == "comment":
             review_form.fields["status"].choices = (("visible", "Visível"), ("hidden", "Oculto"))
+        elif kind == "integrity_alert":
+            review_form.fields["status"].choices = (("pending", "Pendente"), ("reviewed", "Revisado"))
+            review_form.fields["note"].required = True
         reward_form = FeedbackRewardForm(initial={"amount_gtl": item.get("reward_gtl") or 50, "note": item.get("admin_note", "")})
         recharge_form = WalletRechargeApprovalForm(initial={"amount_gtl": item.get("reward_gtl") or 250, "note": item.get("admin_note", "")})
         recharge_reject_form = WalletRechargeRejectForm(initial={"note": item.get("admin_note", "")})
@@ -2771,6 +2944,9 @@ def queue_action(request, action, kind=None, item_id=None):
                 error = "Escolha aprovar ou rejeitar a recarga."
             else:
                 review_form = QueueReviewForm(request.POST)
+                if kind == "integrity_alert":
+                    review_form.fields["status"].choices = (("pending", "Pendente"), ("reviewed", "Revisado"))
+                    review_form.fields["note"].required = True
                 if review_form.is_valid():
                     admin_review_queue_item(token, kind, item_id, review_form.cleaned_data["status"], review_form.cleaned_data.get("note") or "")
                     messages.success(request, "Item revisado.")

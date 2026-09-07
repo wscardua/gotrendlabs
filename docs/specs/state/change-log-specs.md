@@ -1,5 +1,46 @@
 # Change Log de Specs
 
+## 2026-09-07
+
+- promovida `FEAT-INTEGRITY-001` para `aprovada` na versão `1.2`, por autorização explícita do usuário, mantendo implementação aguardando deploy até validação produtiva;
+- definido corte sem legado para remover todos os mercados pré-lançamento sem definição, inclusive `draft`/`scheduled`, após snapshot validado;
+- atualizado runbook AWS com KMS/IAM/Secrets Manager, swap/monitoramento e segundo worker Django;
+- endurecida a selagem para exigir auditoria global integral fresca sob lock, sem confiar apenas em checkpoint historico;
+- removidas da prova publica referencias/eventos individuais de previsao, substituidos por agregado de compromissos;
+- ampliada a verificacao de metadados persistidos de definicao, compromisso, Seal e folhas, e definido backoff de uma hora para divergencia global identica;
+- definido que cadeia global em `failed` suprime a fila de selagem antes da iteração dos mercados, sem interromper as demais tarefas do daemon;
+- registradas como evolucao futura a rotacao versionada do segredo de pseudonimizacao e a materializacao de resumo autoritativo por mercado;
+- aprovada `ADR-0007` para checkpoints assinados, auditoria incremental por ciclo, auditoria integral no primeiro ciclo apos 24 horas e leitura publica sem full scan;
+- substituido o booleano ambiguo `valid` pelos estados `verification_status` e resultados nullable separados para mercado, cadeia e conjunto;
+- adicionado `GET /integrity/status`, metadados de checkpoint no contrato de verificacao e build Flutter `1.2.0+13` sem compatibilidade pre-producao;
+- endurecida a semantica de verificacao para que cadeia global invalida torne `valid=false` e qualquer falha aplicavel bloqueie Seal;
+- definido que alertas pendentes prevalecem nos selos visuais e que auditoria cobre mercado publicado sem definicao;
+- ampliada a cobertura assinada/conferida dos metadados persistidos do ledger e restringida a causalidade do purge de badges;
+- registrado o risco de desempenho linear da verificacao global, separado da cobertura adequada dos indices de lookup existentes;
+- substituida a convivencia com mercados pre-producao sem prova por corte destrutivo controlado, com inventario, backup, `dry-run` e recusa de registros criptograficos protegidos;
+- previsoes humanas e de agentes IA passam a compartilhar persistencia inicial atomica e cobertura obrigatoria um-para-um por compromisso;
+- IDs taxonomicos tornam a associacao parte da prova enquanto nomes permanecem snapshot editorial renomeavel;
+- falha da auditoria deixa de derrubar o daemon, adia apenas selagem e preserva tarefas independentes;
+- removida a necessidade de compatibilidade com builds Flutter anteriores, ainda nao publicados; o build desta fatia passa a `1.2.0+13`.
+
+## 2026-09-06
+
+- ampliada a auditoria de integridade do Admin Ops para qualquer estado do mercado, com diagnóstico separado por camada e compromissos verificáveis antes da selagem;
+- esclarecido que a auditoria criptografica e a primeira rotina de todo ciclo do daemon, cobre mercados em qualquer estado e nao depende da janela de selagem;
+- ampliada `FEAT-INTEGRITY-001` para manter comprovantes do usuario em todos os estados posteriores, ajustar os CTAs dos cards e criar auditoria criptografica recorrente pelo daemon com fila operacional de severidade alta;
+- comprovantes individuais de previsao passam a abrir em modal web responsivo e o detalhe lista separadamente os recibos de entrada inicial, reforcos e revisoes, preservando a rota completa como fallback;
+- refinada a experiencia web de `FEAT-INTEGRITY-001`: o modal compacto deixa de destacar uma secao negativa de limitacoes ou alertas globais que nao invalidam o mercado, o CTA de mercados finalizados volta a `Ver resolução` e a confirmacao de previsao explicita o comprovante assinado emitido pela FastAPI;
+- refinada `FEAT-INTEGRITY-001` para separar retry operacional (`seal_retry_pending`) de diferenca criptografica (`verification_failed`) e representar cancelamento preservado sem etapas eternamente pendentes;
+- a verificacao passa a comparar definicao e resultado operacionais com os snapshots assinados e a validar os compromissos incluidos no Merkle;
+- web e mobile passam a usar verde somente para verificacao aprovada, azul para processo ativo, amarelo para prazo/retry, cinza para nao aplicavel/legado e vermelho para inconsistencia comprovada.
+
+## 2026-09-05
+
+- criada `FEAT-INTEGRITY-001` e o contrato `integrity-ledger.md` para canonicalização, assinaturas, Merkle, visibilidade e migração de legado;
+- ciclo de mercado, previsões, eventos, notificações, backend, banco, daemon, web, mobile e testes foram atualizados para `sealed` e provas verificáveis;
+- aprovadas ADR-0004, ADR-0005 e ADR-0006 para ledger interno, AWS KMS Ed25519 e correções append-only;
+- comunicação institucional passou a distinguir claramente ledger interno de blockchain pública/descentralizada.
+
 ## 2026-08-29
 
 - atualizada a especificação de `FEAT-MARKET-001` e a arquitetura web para definir cards compactos: classificação e prazo relativo permanecem no feed, enquanto volume reservado, participantes, `close_label` e fonte ficam fora dessa superfície.

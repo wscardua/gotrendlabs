@@ -215,7 +215,8 @@ void main() {
     expect(walletCalls, greaterThanOrEqualTo(2));
     expect(ledgerCalls, 2);
     expect(rechargeCalls, 2);
-    expect(find.text('Previsão registrada pela API.'), findsOneWidget);
+    expect(find.text('Sua previsão foi registrada'), findsOneWidget);
+    expect(find.text('Comprovante de integridade'), findsOneWidget);
   });
 
   testWidgets('Prediction confirmation sheet fits compact physical screens', (
@@ -367,7 +368,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(paths, contains('/markets/mercado-aberto/position-actions'));
-    expect(find.text('Posição aumentada.'), findsOneWidget);
+    expect(find.text('Sua previsão foi registrada'), findsOneWidget);
+    expect(
+      find.text('A ação e o comprovante foram gravados juntos pela API.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('Position desk previews revision with backend penalty', (
@@ -537,6 +542,144 @@ void main() {
       find.widgetWithText(FilledButton, 'Pré-visualizar aumento'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('lists one signed receipt per position action and opens modal', (
+    tester,
+  ) async {
+    final history = [
+      ...(_viewerPosition()['history'] as List<dynamic>),
+      {
+        'id': 101,
+        'option_id': 1,
+        'option_label': 'SIM',
+        'action_type': 'reinforcement',
+        'position_sequence': 2,
+        'stake_amount': 40,
+        'status': 'open',
+        'created_at': '2026-06-14T11:00:00Z',
+      },
+      {
+        'id': 102,
+        'option_id': 2,
+        'option_label': 'NÃO',
+        'action_type': 'revision',
+        'position_sequence': 3,
+        'stake_amount': 108,
+        'status': 'open',
+        'created_at': '2026-06-14T12:00:00Z',
+      },
+    ];
+    final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+    dio.httpClientAdapter = _Adapter((options) {
+      expect(options.method, 'GET');
+      expect(options.path, '/markets/mercado-aberto/predictions/101/receipt');
+      return {
+        'prediction_id': 101,
+        'receipt': {
+          'payload': {
+            'action_type': 'reinforcement',
+            'position_sequence': 2,
+            'stake': 40,
+            'server_timestamp': '2026-06-14T11:00:00Z',
+            'previous_commitment_hash': 'previous-hash',
+          },
+          'hash': 'commitment-hash-101',
+          'signature': 'signature-101',
+          'key_fingerprint': 'fingerprint-101',
+          'protocol_version': 'gtl-integrity/v1',
+        },
+        'merkle_proof': null,
+      };
+    });
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          apiClientProvider.overrideWithValue(
+            ApiClient(dio: dio, tokenStore: MemoryTokenStore()),
+          ),
+          walletProvider.overrideWith((ref) async => _wallet()),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                PredictionTicket(
+                  market: _positionMarket(
+                    viewerPosition: {..._viewerPosition(), 'history': history},
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Comprovantes assinados'), findsOneWidget);
+    expect(find.text('Previsão inicial #1'), findsNothing);
+    expect(find.text('Reforço #2'), findsNothing);
+    expect(find.text('Revisão #3'), findsNothing);
+    await tester.ensureVisible(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
+    expect(find.text('Previsão inicial #1'), findsOneWidget);
+    expect(find.text('Reforço #2'), findsOneWidget);
+    expect(find.text('Revisão #3'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Reforço #2'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Reforço #2'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Previsão registrada e assinada'), findsOneWidget);
+    expect(find.text('O que este comprovante protege'), findsOneWidget);
+    expect(find.text('Assinatura emitida'), findsOneWidget);
+    expect(find.text('Histórico conectado'), findsOneWidget);
+  });
+
+  testWidgets('keeps receipts visible without an active position', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          walletProvider.overrideWith((ref) async => _wallet()),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: ListView(
+              children: [
+                PredictionTicket(
+                  market: _market(
+                    viewerPosition: {
+                      ..._viewerPosition(),
+                      'has_position': false,
+                      'option_id': null,
+                      'active_entries': <dynamic>[],
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Comprovantes assinados'), findsOneWidget);
+    expect(find.text('Previsão inicial #1'), findsNothing);
+    await tester.ensureVisible(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Comprovantes assinados'));
+    await tester.pumpAndSettle();
+    expect(find.text('Previsão inicial #1'), findsOneWidget);
   });
 }
 

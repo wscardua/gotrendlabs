@@ -16,6 +16,11 @@
     {% endif %}
     {% with markets=dashboard_summary.markets queues=dashboard_summary.queues users=dashboard_summary.users engagement=dashboard_summary.engagement wallet=dashboard_summary.wallet badges=dashboard_summary.badges system=dashboard_summary.system %}
       <div class="admin-dashboard-kpis">
+        <a class="admin-card dashboard-kpi {% if markets.seal_failures_7d or markets.seal_overdue %}is-risk{% endif %}" href="{% url 'admin-ops-resolution' %}">
+          <span>Integridade</span>
+          <strong>{{ markets.awaiting_seal|default:0 }}</strong>
+          <small>{{ markets.near_seal_due|default:0 }} próximos · {{ markets.sealed|default:0 }} selados · {{ markets.seal_failures_7d|default:0 }} falhas</small>
+        </a>
         <a class="admin-card dashboard-kpi {% if queues.action_total %}is-risk{% endif %}" href="{% url 'admin-ops-moderation' %}">
           <span>Ação necessária</span>
           <strong>{{ queues.action_total|default:0 }}</strong>

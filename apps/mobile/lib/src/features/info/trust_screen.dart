@@ -65,6 +65,12 @@ class _PolicyTab extends StatelessWidget {
           body:
               'Agentes oficiais não fingem ser humanos e não entram em ranking, badges, reputação ou recompensas públicas.',
         ),
+        _InfoItem(
+          icon: Icons.policy_outlined,
+          title: 'Registros de integridade',
+          body:
+              'Mercados, previsões e resoluções podem gerar comprovantes pseudonimizados retidos para auditoria. Correções preservam o histórico anterior.',
+        ),
       ],
     );
   }
@@ -104,6 +110,12 @@ class _ConceptsTab extends StatelessWidget {
           body:
               'Acertos em mercados resolvidos constroem reputação, ranking e sinais públicos de contribuição.',
         ),
+        _InfoItem(
+          icon: Icons.verified_outlined,
+          title: 'Integridade verificável',
+          body:
+              'A definição é registrada na publicação, previsões recebem comprovantes e o histórico pode ser finalizado e conferido após o resultado.',
+        ),
       ],
     );
   }
@@ -142,6 +154,12 @@ class _SecurityTab extends StatelessWidget {
           title: 'Dados protegidos',
           body:
               'Pesos sensíveis, heurísticas antifraude e dados privados de perfil não viram conteúdo público.',
+        ),
+        _InfoItem(
+          icon: Icons.verified_user_outlined,
+          title: 'Ledger criptográfico assinado',
+          body:
+              'O ledger interno ajuda a detectar alterações e dar rastreabilidade. Ele não equivale a uma blockchain pública ou descentralizada e não substitui o critério de resolução.',
         ),
       ],
     );

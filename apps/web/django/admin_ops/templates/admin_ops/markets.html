@@ -56,7 +56,12 @@
               <span class="popularity-chip shares"><small>Shares</small><strong>{{ market.share_count|default:0 }}</strong></span>
             </div>
           </td>
-          <td><a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a></td>
+          <td>
+            <div class="table-actions">
+              <a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a>
+              <a class="btn small ghost" href="{% url 'admin-ops-resolution-market-action' market.slug 'integrity' %}">Auditar integridade</a>
+            </div>
+          </td>
         </tr>
       {% empty %}
         <tr><td colspan="8">Nenhum mercado cadastrado.</td></tr>

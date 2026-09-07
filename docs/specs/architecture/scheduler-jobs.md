@@ -21,6 +21,10 @@
 - Fechamento automático deve cancelar mercados sem participantes humanos, liberando previsões abertas existentes, inclusive stakes bot criados por falha/configuração.
 - O daemon drena a outbox de `communications_emaildelivery`, aplicando provider configurado, retries e resumo de enviados/falhos/suprimidos no heartbeat operacional.
 - O daemon drena a outbox de `communications_pushdelivery`, aplicando provider `none`/dry-run, retries, invalidação automática de tokens rejeitados e resumo de enviados/dry-run/falhos/suprimidos no heartbeat operacional.
+- O daemon sela mercados `resolved` vencidos com `FOR UPDATE SKIP LOCKED`; valida Merkle e assinatura antes do commit e mantem `resolved` em qualquer falha.
+- A auditoria das provas nativas e da cadeia global e iniciada antes das mutacoes de mercado e independe de estado, vencimento ou selagem. Assim, divergencias em mercados `open`, `locked`, `resolved`, `sealed` ou `canceled` entram na fila na primeira passagem posterior ao problema. Divergencias geram alertas operacionais deduplicados de severidade alta; falhas de infraestrutura e retries continuam em seus rastros proprios e nao sao rotulados como adulteracao.
+- Auditoria, fechamento, selagem, retencao, email, push e agentes possuem isolamento de falha por tarefa. Indisponibilidade da auditoria nunca encerra o processo daemon nem impede fechamento e comunicacoes independentes; por seguranca, a selagem do ciclo pode ser suprimida quando a auditoria nao conclui.
+- A auditoria global usa checkpoint assinado: incremental em cada ciclo e integral no bootstrap ou a cada 24 horas. O head é capturado como fronteira; eventos posteriores ficam pendentes para o ciclo seguinte, sem serem classificados como adulteração. Estado global `failed` suprime todas as selagens antes de iterar os mercados vencidos. Quando aprovada, cada selagem executa auditoria integral fresca sob lock. Divergência idêntica no mesmo head respeita backoff de uma hora para evitar full scan e assinatura KMS a cada ciclo, sem deixar de reapresentar o alerta deduplicado.
 
 ## Dependências
 

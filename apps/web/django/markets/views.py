@@ -18,6 +18,10 @@ from apps.web.django.accounts.api_client import (
     preview_position_action,
     track_market_view,
     get_market,
+    get_market_integrity,
+    get_market_integrity_package,
+    get_prediction_integrity_receipt,
+    verify_market_integrity,
     like_market,
     react_to_comment,
     unfavorite_market,
@@ -62,17 +66,15 @@ def _datetime_label(value, timezone_name):
 def _existing_prediction(user_id, slug):
     if not user_id:
         return None
-    predictions = list(
-        Prediction.objects.select_related("market_option", "market")
-        .filter(user_id=user_id, market__slug=slug, status="open")
-        .order_by("created_at", "id")
-    )
-    if not predictions:
+    predictions = []
+    for prediction_status in ("open", "resolved", "canceled"):
         predictions = list(
             Prediction.objects.select_related("market_option", "market")
-            .filter(user_id=user_id, market__slug=slug, status="resolved")
+            .filter(user_id=user_id, market__slug=slug, status=prediction_status)
             .order_by("created_at", "id")
         )
+        if predictions:
+            break
     if not predictions:
         return None
     prediction = predictions[-1]
@@ -203,6 +205,7 @@ def _detail_context(request, slug, market, **extra):
         "event_notice": market.get("event_notice") or "",
         "resolution_timezone": resolution_timezone,
         "resolved_at_label": market.get("resolved_at_label") or _datetime_label(market.get("resolved_at"), resolution_timezone),
+        "seal_due_at_label": _datetime_label(market.get("seal_due_at"), resolution_timezone),
     }
     user = auth_user(request) or {}
     if is_authenticated(request) and not market.get("viewer_has_favorite") and user.get("id"):
@@ -260,6 +263,88 @@ def detail(request, slug):
     response = render(request, "markets/detail.html", _detail_context(request, slug, market))
     _track_market_view(slug)
     return response
+
+
+def integrity(request, slug):
+    try:
+        market = get_market(slug, auth_token(request) if is_authenticated(request) else None)
+        proof = get_market_integrity(slug)
+        verification = verify_market_integrity(slug)
+        error = ""
+    except AuthAPIError as exc:
+        market = local_market(slug)
+        proof = {}
+        verification = {}
+        error = str(exc)
+    timezone_name = market.get("resolution_timezone") or market.get("close_timezone") or "America/Sao_Paulo"
+    labels = {
+        "verified_at_label": _datetime_label(verification.get("ledger_verified_at"), timezone_name),
+        "published_at_label": _datetime_label(market.get("published_at"), timezone_name),
+        "seal_due_at_label": _datetime_label(market.get("seal_due_at"), timezone_name),
+        "sealed_at_label": _datetime_label(market.get("sealed_at"), timezone_name),
+    }
+    proof_status = proof.get("status", "")
+    verification_available = proof.get("definition") is not None
+    labels.update(
+        {
+            "integrity_verification_available": verification_available,
+            "integrity_has_difference": verification_available and verification.get("verification_status") == "failed",
+            "integrity_verification_pending": verification.get("verification_status") in {"pending", "unavailable"},
+            "definition_confirmed": verification.get("definition_valid") is True
+            and verification.get("definition_matches_current", True) is True,
+            "predictions_confirmed": proof_status == "sealed"
+            and verification.get("prediction_commitments_valid") is True
+            and verification.get("merkle_root_valid") is True,
+            "result_confirmed": proof_status == "sealed"
+            and verification.get("result_matches_current") is True
+            and verification.get("seal_valid") is True,
+            "final_history_confirmed": proof_status == "sealed" and verification.get("overall_valid") is True,
+        }
+    )
+    template_name = "markets/_integrity_content.html" if request.GET.get("modal") == "1" else "markets/integrity.html"
+    return render(request, template_name, {"market": market, "proof": proof, "verification": verification, "integrity_error": error, **labels})
+
+
+def integrity_package(request, slug):
+    try:
+        package = get_market_integrity_package(slug)
+    except AuthAPIError as exc:
+        return JsonResponse({"error": str(exc)}, status=exc.status_code or 502)
+    response = JsonResponse(package, json_dumps_params={"ensure_ascii": False, "indent": 2})
+    response["Content-Disposition"] = f'attachment; filename="{slug}-integrity-proof.json"'
+    return response
+
+
+def prediction_receipt(request, slug, prediction_id):
+    if not is_authenticated(request):
+        return redirect(login_url_with_next(request, request.path))
+    try:
+        receipt = get_prediction_integrity_receipt(auth_token(request), slug, prediction_id)
+        error = ""
+    except AuthAPIError as exc:
+        receipt = {}
+        error = str(exc)
+    try:
+        market = get_market(slug, auth_token(request))
+    except AuthAPIError:
+        market = local_market(slug)
+    payload = (receipt.get("receipt") or {}).get("payload") or {}
+    action_label = {
+        "reinforcement": "Reforço da posição",
+        "revision": "Revisão da posição",
+    }.get(payload.get("action_type"), "Previsão inicial")
+    timezone_name = market.get("resolution_timezone") or market.get("close_timezone") or "America/Sao_Paulo"
+    context = {
+        "slug": slug,
+        "market_title": market.get("title") or slug,
+        "prediction_id": prediction_id,
+        "receipt": receipt,
+        "receipt_error": error,
+        "action_label": action_label,
+        "signed_at_label": _datetime_label(payload.get("server_timestamp"), timezone_name),
+    }
+    template_name = "markets/_prediction_receipt_content.html" if request.GET.get("modal") == "1" else "markets/prediction_receipt.html"
+    return render(request, template_name, context)
 
 
 def prediction_preview(request, slug):

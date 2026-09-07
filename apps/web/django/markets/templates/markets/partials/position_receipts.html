@@ -1,0 +1,14 @@
+{% if market.viewer_position.history %}
+  <details class="position-receipts">
+    <summary><span><strong>Comprovantes assinados</strong><small>Um registro para cada ação da posição</small></span><b>{{ market.viewer_position.history|length }}</b></summary>
+    <div class="position-receipt-list">
+      {% for entry in market.viewer_position.history %}
+        <a href="{% url 'prediction-integrity-receipt' market.slug entry.id %}" data-integrity-modal-link data-integrity-modal-kind="receipt">
+          <span class="position-receipt-check" aria-hidden="true">✓</span>
+          <span><strong>{% if entry.action_type == 'reinforcement' %}Reforço{% elif entry.action_type == 'revision' %}Revisão{% else %}Previsão inicial{% endif %} #{{ entry.position_sequence }}</strong><small>{{ entry.stake_amount }} GT₵ · comprovante individual</small></span>
+          <span>Ver assinatura</span>
+        </a>
+      {% endfor %}
+    </div>
+  </details>
+{% endif %}

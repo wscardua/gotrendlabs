@@ -6,7 +6,7 @@
     <div class="section-head">
       <div>
         <h1 class="large-title">Filas operacionais</h1>
-        <p class="muted">Gerencie filas de mercado, feedback, comentários e créditos usados para manter a operação auditável.</p>
+        <p class="muted">Gerencie alertas de integridade, mercado, feedback, comentários e créditos com trilha operacional.</p>
       </div>
     </div>
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
@@ -16,6 +16,7 @@
       <a class="filter {% if active_kind == 'suggestion' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=suggestion">Mercado {{ queue_data.counts.suggestion.pending|default:0 }}</a>
       <a class="filter {% if active_kind == 'feedback' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=feedback">Feedback {{ queue_data.counts.feedback.pending|default:0 }}</a>
       <a class="filter {% if active_kind == 'wallet_recharge' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=wallet_recharge">Recarga {{ queue_data.counts.wallet_recharge.pending|default:0 }}</a>
+      <a class="filter {% if active_kind == 'integrity_alert' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=integrity_alert">Integridade {{ queue_data.counts.integrity_alert.pending|default:0 }}</a>
       <a class="filter {% if active_kind == 'comment' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=comment">Comentários {{ queue_data.counts.comment.visible|default:0 }}</a>
       <a class="filter {% if active_status == 'pending' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?status=pending">Pendentes</a>
       <a class="filter {% if active_status == 'hidden' %}active{% endif %}" href="{% url 'admin-ops-moderation' %}?kind=comment&status=hidden">Ocultos</a>

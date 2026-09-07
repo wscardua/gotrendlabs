@@ -14,6 +14,8 @@
 - `FEAT-I18N-001` é transversal às demais features
 - `FEAT-OPSLOG-001` depende de `FEAT-AUTH-001` para autorização staff dos contratos administrativos
 - `FEAT-MOBILE-001` depende de `FEAT-AUTH-001`, `FEAT-MARKET-001`, `FEAT-MARKET-002`, `FEAT-PRED-001`, `FEAT-WALLET-001`, `FEAT-COMMENT-001`, `FEAT-REP-001` e contratos FastAPI/OpenAPI para operar como cliente mobile sem regra crítica local
+- `FEAT-INTEGRITY-001` depende de `FEAT-MARKET-001/002`, `FEAT-PRED-001`, `FEAT-RES-001`, PostgreSQL, daemon, comunicações e AWS KMS; web/mobile dependem somente de seus contratos FastAPI/OpenAPI.
+- O rollout produtivo de `FEAT-INTEGRITY-001` depende do alias KMS `alias/gotrendlabs-integrity-signing`, política IAM restrita na role da EC2, segredo de commitment no Secrets Manager, snapshot/corte dos mercados pré-lançamento e dois workers Django com swap/monitoramento no host único.
 
 ## Contratos com maior reutilização
 
@@ -23,8 +25,17 @@
 - `reputation-ranking.md`
 - `i18n-content.md`
 - `domain-events.md`
+- `integrity-ledger.md`
 
 ## Integrações já materializadas
+
+- `FEAT-INTEGRITY-001` integra publicação e previsão atomicamente ao signer, encadeia eventos globais sob advisory lock, sela mercados vencidos no daemon e distribui `market_sealed` por in-app/push/email idempotentes.
+- `FEAT-INTEGRITY-001` usa checkpoints globais assinados: o daemon audita delta por ciclo e cadeia integral diariamente; FastAPI valida checkpoint/head na consulta publica sem full scan; selagem executa auditoria global integral fresca sob lock; Django e Flutter apresentam somente o contrato publico agregado, sem referencias individuais de previsoes de terceiros.
+- O daemon reutiliza o verificador autoritativo de `FEAT-INTEGRITY-001` e materializa divergencias confirmadas em `gotrendlabs_integrity_alerts`; FastAPI inclui esses alertas na fila staff e Django Admin Ops apenas os apresenta/revisa.
+- Previsoes iniciais humanas e de agentes IA compartilham `prediction_write_service`; reforcos/revisoes usam o mesmo `commit_prediction`. A auditoria exige correspondencia exata entre cada linha de previsao e seu compromisso antes de permitir Seal.
+- Nomes taxonomicos sao snapshots editoriais na definicao; IDs de categoria/subcategoria/evento protegem a associacao estavel sem gerar falso alerta em renomeacao.
+- O daemon isola auditoria, fechamento, selagem, retencao, email e push. Auditoria indisponivel adia a selagem do ciclo, mas nao derruba o processo nem impede tarefas independentes.
+- Django Admin Ops configura a janela de 1 a 168 horas e apresenta filas/métricas; cards e detalhe web, Flutter e páginas de confiança consomem status/provas sem assinar ou recalcular autoridade no cliente.
 
 - `FEAT-COMMENT-001` usa `FEAT-AUTH-001` para autor/reação autenticada e staff em moderação.
 - `FEAT-COMMENT-001` usa `FEAT-MARKET-002` para vínculo com mercado e exposição em `MarketResponse.comments`.
@@ -53,6 +64,7 @@
 - `FEAT-AIAGENT-001` integra `apps/api/backend_api/agent_services.py` ao daemon operacional, usa `gotrendlabs_site_config` para flags/limites/retenção de auditoria, `gotrendlabs_ai_agents` para personas oficiais, `gotrendlabs_ai_agent_actions` para auditoria e exclui bots de ranking/badges/reputação pública.
 - Admin Ops consome contratos staff de mercado para busca textual no browse e detalhe de participantes por mercado, mantendo Django como camada de exibição e FastAPI/backend como fonte das métricas humano/bot/total.
 - `FEAT-MOBILE-001` integra o app Flutter em `apps/mobile` à FastAPI como cliente JSON, reutilizando `GET /markets`, `GET /markets/{slug}`, `POST /markets/{slug}/view`, `POST /markets/{slug}/share`, `GET /taxonomy`, `GET /stats`, `GET /health`, contratos autenticados de sessão/usuário, favoritos, curtidas, comentários, preview/criação de previsão inicial, reforço/revisão de posição, wallet/recarga, ranking, badges, desempenho e alertas; flags autenticados como `viewer_has_favorite`, `viewer_has_prediction` e `viewer_position` alimentam recortes pessoais, mesa de posição e ações de reforço/revisão no app sem recalcular domínio no cliente.
+- `FEAT-MOBILE-001` usa `viewer_position.history` para listar as acoes da propria posicao e carrega cada comprovante assinado por `GET /markets/{slug}/predictions/{prediction_id}/receipt`; a assinatura, o payload e a prova Merkle continuam autoritativos na FastAPI, e o app apenas os apresenta ao titular.
 - `FEAT-MOBILE-001` consome `GET /users/me/performance` para a tela autenticada `Desempenho`, exibindo placar, historico de resolucoes, resultado GT₵ educativo, impacto em reputacao e ultimas conquistas; o app reconsulta esse contrato ao abrir a tela, voltar do background, usar pull-to-refresh e apos mutacoes de previsao/posicao.
 - `FEAT-MOBILE-001` consome `GET /anti-abuse/challenge` para cadastro, feedback e sugestão de mercado de visitantes, mantendo o desafio dentro do app e validado pela FastAPI; usuários autenticados enviam feedback/sugestão sem desafio.
 - `FEAT-MOBILE-001` usa `GET /health` enriquecido para o boot gate de manutencao mobile; Admin Ops controla `mobile_maintenance_enabled` em runtime JSON separado do modo web, FastAPI bloqueia chamadas mobile por `X-GoTrendLabs-Client: mobile`, e nao ha excecao por papel no app.

@@ -46,15 +46,18 @@
         <span class="tag">{{ market.subcategory }}</span>
         <span class="tag">{{ market.event }}</span>
         <span class="tag safe">Critério auditável</span>
-        <span class="tag">{% if market.status == "locked" %}Em apuração{% else %}{{ market.close_label|default:market.status_label }}{% endif %}</span>
+        <span class="tag">{% if market.status == "open" %}{{ market.close_label|default:market.status_label }}{% elif market.status == "scheduled" %}Agendado{% elif market.status == "locked" %}Em apuração{% elif market.status == "resolved" %}Resultado publicado{% elif market.status == "sealed" %}Concluído{% elif market.status == "canceled" %}Cancelado{% else %}{{ market.status_label }}{% endif %}</span>
       </div>
       <div class="detail-title-row">
-        <div class="detail-market-thumb" style="--thumb:{{ market.thumb_color }}" aria-hidden="true">
+        <div class="detail-market-thumb" style="--thumb:{{ market.thumb_color }}">
           {% if market.image_url %}
             <img src="{{ market.image_url }}" alt="" data-thumb-image>
             <span class="thumb-fallback" hidden>{{ market.thumb|default:"GT" }}</span>
           {% else %}
             <span class="thumb-fallback">{{ market.thumb|default:"GT" }}</span>
+          {% endif %}
+          {% if market.integrity.definition_registered %}
+            {% include "components/integrity_seal.html" with market=market %}
           {% endif %}
         </div>
         <h1 class="large-title">{{ market.title }}</h1>
@@ -83,14 +86,19 @@
     <div class="admin-grid">
       <div class="metric"><strong>{{ market.volume_gtl }}</strong><span>GT₵ reservadas</span></div>
       <div class="metric"><strong>{{ market.participants }}</strong><span>participação</span></div>
-      <div class="metric"><strong>{{ market.closes_in }}</strong><span>até fechar previsões</span></div>
+      <div class="metric">
+        {% if market.status == "open" %}<strong>{{ market.closes_in }}</strong><span>até fechar previsões</span>
+        {% elif market.status == "scheduled" %}<strong>Agendado</strong><span>aguardando abertura</span>
+        {% elif market.status == "canceled" %}<strong>Cancelado</strong><span>sem resultado</span>
+        {% else %}<strong>Encerrado</strong><span>para novas previsões</span>{% endif %}
+      </div>
     </div>
     <section class="panel" style="margin-top:16px">
-      <h3>{% if market.status == "resolved" %}Resultado oficial{% elif market.status == "canceled" %}Mercado cancelado{% else %}Critério de resolução{% endif %}</h3>
-      {% if market.status == "resolved" %}
+      <h3>{% if market.status == "resolved" or market.status == "sealed" %}Resultado oficial{% elif market.status == "canceled" %}Mercado cancelado{% else %}Critério de resolução{% endif %}</h3>
+      {% if market.status == "resolved" or market.status == "sealed" %}
         <p>Resultado final: <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>.</p>
         {% if market.resolution_note %}<p>{{ market.resolution_note|linebreaksbr }}</p>{% endif %}
-        <div class="tags"><span class="tag">Resolvido em: {{ market.resolved_at_label|default:"data registrada" }}</span><span class="tag">Timezone: {{ market.resolution_timezone|default:"UTC" }}</span><span class="tag">Status: {{ market.status_label }}</span></div>
+        <div class="tags"><span class="tag">Resolvido em: {{ market.resolved_at_label|default:"data registrada" }}</span><span class="tag">Timezone: {{ market.resolution_timezone|default:"UTC" }}</span><span class="tag">Status: {% if market.status == "sealed" %}Concluído e verificável{% else %}Resultado publicado{% endif %}</span></div>
       {% elif market.status == "canceled" %}
         <p>Este mercado foi cancelado pela operação. GT₵ reservadas foram devolvidas integralmente e reputação não foi alterada.</p>
         <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span></div>
@@ -183,68 +191,72 @@
     </section>
   </section>
   <aside class="panel trade-box">
-    <span class="eyebrow">Sua previsão</span>
+    <span class="eyebrow">Ciclo do mercado</span>
     <div class="market-lifecycle-card" aria-label="Ciclo deste mercado">
       <div class="lifecycle-step done">
         <span>1</span>
         <strong>Criação</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'open' or market.status == 'scheduled' %}active{% elif market.status == 'locked' or market.status == 'resolved' or market.status == 'canceled' %}done{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'open' or market.status == 'scheduled' %}active{% elif market.status == 'locked' or market.status == 'resolved' or market.status == 'sealed' or market.status == 'canceled' %}done{% endif %}">
         <span>2</span>
         <strong>Aberto</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'locked' %}active{% elif market.status == 'resolved' or market.status == 'canceled' %}done{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'locked' %}active{% elif market.status == 'resolved' or market.status == 'sealed' or market.status == 'canceled' %}done{% endif %}">
         <span>3</span>
         <strong>Fechamento</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'resolved' %}done{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'resolved' or market.status == 'sealed' %}done{% endif %}">
         <span>4</span>
         <strong>Resolução</strong>
       </div>
-      <div class="lifecycle-step {% if market.status == 'resolved' %}active{% endif %}">
+      <div class="lifecycle-step {% if market.status == 'resolved' or market.status == 'sealed' %}done{% endif %}">
         <span>5</span>
         <strong>Distribuição</strong>
       </div>
+      <div class="lifecycle-step {% if market.status == 'sealed' %}done{% elif market.status == 'resolved' and market.integrity.status != 'legacy_unregistered' %}active{% elif market.status == 'canceled' %}active{% endif %}">
+        <span>6</span>
+        <strong>{% if market.status == 'sealed' %}Concluído{% elif market.status == 'canceled' %}Cancelado{% elif market.status == 'resolved' and market.integrity.status == 'legacy_unregistered' %}Sem registro{% else %}Finalização{% endif %}</strong>
+      </div>
     </div>
     {% if market.status != "open" %}
-      <h2 class="market-state-title">{% if market.status == "resolved" %}Mercado resolvido{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado fechado{% endif %}</h2>
-      {% if market.status == "resolved" %}
+      <h2 class="market-state-title">{% if market.status == "scheduled" %}Mercado agendado{% elif market.status == "locked" %}Mercado em apuração{% elif market.status == "resolved" %}Resultado publicado{% elif market.status == "sealed" %}Mercado concluído{% elif market.status == "canceled" %}Mercado cancelado{% else %}Mercado indisponível{% endif %}</h2>
+      {% if market.status == "scheduled" %}
+        <p class="muted market-state-summary">As previsões ainda não começaram. A abertura ocorrerá conforme a programação do mercado.</p>
+      {% elif market.status == "locked" %}
+        <p class="muted market-state-summary">As previsões foram encerradas. Agora aguardamos a publicação do resultado.</p>
+      {% elif market.status == "resolved" and market.integrity.status == "resolved_pending_seal" %}
+        <p class="muted market-state-summary">O resultado já foi definido. {% if market.seal_due_at_label %}A finalização do registro de integridade está prevista para {{ market.seal_due_at_label }}.{% else %}A finalização do registro de integridade está em andamento.{% endif %}</p>
+      {% elif market.status == "resolved" and market.integrity.status == "seal_retry_pending" %}
+        <p class="muted market-state-summary">O resultado já foi definido. A finalização do registro de integridade aguarda uma nova tentativa segura.</p>
+      {% elif market.status == "resolved" and market.integrity.status == "legacy_unregistered" %}
+        <p class="muted market-state-summary">O resultado já foi definido e publicado. Este mercado é anterior ao Registro de Integridade Verificável e não recebe comprovação retroativa.</p>
+      {% elif market.status == "resolved" %}
+        <p class="muted market-state-summary">O resultado já foi definido e publicado.</p>
+      {% elif market.status == "sealed" %}
+        <p class="muted market-state-summary">O resultado já foi publicado e o registro de integridade deste mercado foi finalizado. A definição, as previsões e o resultado podem ser conferidos.</p>
+      {% elif market.status == "canceled" %}
+        <p class="muted market-state-summary">Este mercado foi encerrado sem resultado. As GT₵ reservadas foram devolvidas integralmente.</p>
+      {% endif %}
+      {% if market.status == "resolved" or market.status == "sealed" %}
         <div class="result-highlight">
           <span>Resultado oficial</span>
           <strong>{% if market.primary_outcome == 'NAO' %}NÃO{% else %}{{ market.primary_outcome }}{% endif %}</strong>
-          <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span><span>{{ market.status_label }}</span></div>
-          {% if existing_prediction and existing_prediction.status == "resolved" %}
-            {% if existing_prediction.won %}
-              <div class="prediction-result-note success">
-                <strong>Você acertou esta previsão.</strong>
-                <p>Crédito reservado liberado, acerto creditado e leitura registrada no histórico.</p>
-              </div>
-            {% else %}
-              <div class="prediction-result-note miss">
-                <strong>Você não acertou desta vez.</strong>
-                <p>O resultado entrou no seu histórico. Compare sua entrada com o consenso e siga para o próximo mercado.</p>
-              </div>
-            {% endif %}
-          {% else %}
-            <div class="ticket-note">Resultado auditado publicado. Entre em novos mercados para construir histórico e reputação.</div>
-          {% endif %}
+          <div class="resolution-meta"><span>{{ market.resolved_at_label|default:"data registrada" }}</span><span>{% if market.status == "sealed" %}Concluído e verificável{% else %}Resultado publicado{% endif %}</span></div>
         </div>
-      {% elif market.status == "canceled" %}
-        <p>Mercado cancelado com devolução total das GT₵ reservadas.</p>
-      {% else %}
-        <p>Este mercado não aceita novas previsões neste momento.</p>
       {% endif %}
-      {% if market.status == "resolved" %}<a class="btn primary" href="{% url 'share-result' market.slug %}">Compartilhar resultado</a>{% endif %}
+      {% if existing_prediction or market.viewer_position.history %}
+        {% include "markets/partials/position_summary.html" %}
+      {% endif %}
+      {% if market.status == "resolved" or market.status == "sealed" %}<a class="btn primary" href="{% url 'share-result' market.slug %}">Compartilhar resultado</a>{% endif %}
       <a class="btn ghost" href="{% url 'home' %}">Voltar ao feed</a>
     {% else %}
-      {% if prediction_result %}
-        <div class="notice green">Previsão registrada: {{ prediction_result.stake_amount }} GT₵ reservadas. Crédito possível se acertar: {{ prediction_result.potential_payout }} GT₵.</div>
-      {% endif %}
-      {% if position_action_result %}
-        <div class="notice green">{% if position_action_result.action == "revision" %}Posição revisada{% else %}Posição reforçada{% endif %}: {{ position_action_result.stake_amount }} GT₵ ativas. Crédito possível se acertar: {{ position_action_result.potential_payout }} GT₵.</div>
-      {% endif %}
       {% if prediction_error %}
         <div class="notice red">{{ prediction_error }}</div>
+      {% endif %}
+      {% if not is_guest %}
+        {% if existing_prediction or market.viewer_position.has_position or market.viewer_position.history or prediction_result or position_action_result %}
+          {% include "markets/partials/position_summary.html" %}
+        {% endif %}
       {% endif %}
       {% if is_guest %}
         <div class="binary-ticket">
@@ -260,28 +272,6 @@
         </div>
         <a class="btn primary" href="{% url 'login' %}?next={{ request.path }}">Entrar para prever</a>
       {% elif existing_prediction %}
-        <div class="position-summary-card">
-          <span>Sua posição</span>
-          <strong>{% if existing_prediction.option_label == 'NAO' %}NÃO{% else %}{{ existing_prediction.option_label }}{% endif %}</strong>
-          <div class="position-summary-grid">
-            <div><span>Crédito reservado</span><b>{{ existing_prediction.active_stake_amount|default:existing_prediction.stake_amount }} GT₵</b></div>
-            <div><span>Entradas abertas</span><b>{{ existing_prediction.position_count|default:1 }}</b></div>
-            <div><span>Última entrada</span><b>{{ existing_prediction.probability_at_entry }}%</b></div>
-          </div>
-          {% if market.viewer_position.active_entries %}
-            <details class="position-entry-details">
-              <summary>Ver entradas abertas</summary>
-              <div class="position-entry-list">
-                {% for entry in market.viewer_position.active_entries %}
-                  <div>
-                    <span>{% if entry.action_type == "initial" %}Entrada inicial{% elif entry.action_type == "reinforcement" %}Reforço{% else %}Revisão{% endif %} #{{ entry.position_sequence }}</span>
-                    <strong>{{ entry.stake_amount }} GT₵ em {% if entry.option_label == 'NAO' %}NÃO{% else %}{{ entry.option_label }}{% endif %}</strong>
-                  </div>
-                {% endfor %}
-              </div>
-            </details>
-          {% endif %}
-        </div>
         <div class="binary-grid option-grid position-option-grid">
           {% for option in market.options %}
             <div class="choice readonly {% if option.id == existing_prediction.option_id or option.label == existing_prediction.option_label %}active{% endif %}">
