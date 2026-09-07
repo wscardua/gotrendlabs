@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260907-INTEGRITY-REVIEW-019
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`
+- Objetivo: fechar achados de revisao que permitiam selagem de mercado divergente, validade positiva com cadeia global invalida, selo positivo diante de alerta conhecido, assinatura parcial dos metadados do evento, ausencia de auditoria para mercado publicado sem definicao e limpeza excessiva de historico de badges.
+- Etapa atual: specs, implementacao, analise de indices e regressao concluidas.
+- Artefatos afetados: feature/contrato/arquitetura/testes, FastAPI, daemon, comando de corte pre-producao, cards web/mobile por contrato e evidencias operacionais de indices.
+- Decisoes: o Seal exige verificacao integral aprovada; cadeia global invalida torna `valid=false`; alerta de integridade pendente prevalece no resumo visual; todos os metadados persistidos do evento sao vinculados ao payload assinado; mercado publicado sem definicao e divergencia `high`; limpeza remove somente concessoes atribuiveis aos mercados-alvo. O custo linear da cadeia global permanece risco conhecido, com indices avaliados separadamente de cache/checkpoints futuros.
+- Reversao logica: reverter codigo e specs por commit sem reescrever provas existentes; nenhuma migration destrutiva faz parte desta execucao.
+- Evidencias: 25 testes de `tests.test_integrity_ledger` e 221 testes de `tests.test_web_smoke` aprovados; 101 testes Flutter aprovados e `flutter analyze` sem issues; OpenAPI sincronizado; `manage.py check`, `makemigrations --check --dry-run`, compilacao Python e `git diff --check` aprovados. `EXPLAIN` local confirmou indices unicos para definicao/Seal, index-only scan em `gtl_ialert_market_status_idx` e indice de `market_id` para eventos; a cadeia global pequena usa scan sequencial e permanece custo linear documentado.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
 ## WFLOW-20260907-INTEGRITY-HARDENING-018
 
 - Tipo: `change-feature` + `implementation-cycle`

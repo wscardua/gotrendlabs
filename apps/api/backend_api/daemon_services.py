@@ -211,9 +211,7 @@ def audit_integrity_records(now=None):
                         _enqueue_integrity_alert(cursor, issue_code="ledger_chain_invalid", market=None, now=now)
                     )
                 cursor.execute(
-                    """SELECT m.* FROM gotrendlabs_markets m
-                       JOIN market_integrity_definitions d ON d.market_id=m.id
-                       ORDER BY m.id"""
+                    "SELECT m.* FROM gotrendlabs_markets m ORDER BY m.id"
                 )
                 markets = cursor.fetchall()
                 for market in markets:

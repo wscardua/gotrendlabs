@@ -15,7 +15,8 @@ from apps.api.backend_api import integrity_service
 from apps.api.backend_api.daemon_services import audit_integrity_records, run_daemon_cycle, seal_due_markets
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.main import _market_lifecycle_engine, app
-from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
+from apps.web.django.accounts.models import BadgeDefinition, UserBadgeAward
+from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketComment, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
 from tests.test_web_smoke import _seed_test_badges, _seed_test_email_templates, _seed_test_markets
 
 
@@ -39,6 +40,50 @@ class IntegrityProtocolTests(SimpleTestCase):
         self.assertTrue(integrity_service.verify_signed_hash(digest, signature.value, signature.public_key_der))
         tampered = integrity_service.sha256_hex(canonical.replace(b"SIM", b"NAO"))
         self.assertFalse(integrity_service.verify_signed_hash(tampered, signature.value, signature.public_key_der))
+
+    def test_ledger_signature_binds_all_persisted_event_metadata(self):
+        occurred_at = datetime(2026, 9, 7, 15, 30, tzinfo=timezone.utc)
+        payload = {
+            "causation_id": None,
+            "correlation_id": None,
+            "entity_identifier": "market-slug",
+            "entity_type": "market",
+            "event_type": "market_published",
+            "market_id": 7,
+            "occurred_at": occurred_at,
+            "payload_hash": "a" * 64,
+            "payload_reference": "market_definition:4",
+            "payload_snapshot": None,
+            "previous_event_hash": "",
+            "protocol_version": integrity_service.PROTOCOL_VERSION,
+            "sequence": 12,
+        }
+        canonical, event_hash, signed = integrity_service.sign_payload(payload)
+        event = {
+            **payload,
+            "canonical_payload": canonical,
+            "payload_json": json.loads(canonical),
+            "event_hash": event_hash,
+            "signature": signed.value,
+            "algorithm": signed.algorithm,
+            "key_id": signed.key_id,
+            "key_fingerprint": signed.key_fingerprint,
+            "created_at": occurred_at,
+        }
+        self.assertTrue(integrity_service._ledger_event_is_valid(event, signed.public_key_der))
+        for field, tampered_value in (
+            ("protocol_version", "gtl-integrity/v2"),
+            ("entity_type", "prediction"),
+            ("entity_identifier", "other-market"),
+            ("market_id", 8),
+            ("occurred_at", occurred_at + timedelta(seconds=1)),
+            ("correlation_id", "00000000-0000-0000-0000-000000000001"),
+            ("algorithm", "OTHER"),
+            ("key_fingerprint", "0" * 64),
+            ("created_at", occurred_at + timedelta(seconds=1)),
+        ):
+            changed = {**event, field: tampered_value}
+            self.assertFalse(integrity_service._ledger_event_is_valid(changed, signed.public_key_der), field)
 
     def test_merkle_proof_validates_each_leaf_and_rejects_tampering(self):
         leaves = [integrity_service.sha256_hex(f"prediction:{index}".encode()) for index in range(5)]
@@ -201,9 +246,8 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
             json={"winning_option_id": option.id, "source_url": "https://example.com/evidence", "note": "Evidência conferida"},
         )
         self.assertEqual(resolved.status_code, 200, resolved.text)
-        due = django_timezone.now() - timedelta(seconds=1)
-        Market.objects.filter(pk=market.pk).update(seal_due_at=due)
         market.refresh_from_db()
+        due = market.seal_due_at
         return market, prediction.json()["prediction_id"], due
 
     def test_registered_public_keys_survive_local_signer_rotation(self):
@@ -237,6 +281,34 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         with self.assertRaises(CommandError):
             call_command("purge_unsigned_markets", execute=True)
 
+        from django.contrib.auth import get_user_model
+
+        user = get_user_model().objects.get(email="integrity-user@example.com")
+        unsigned_market = Market.objects.filter(
+            status__in=("open", "locked", "resolved", "sealed", "canceled"),
+            integrity_definition__isnull=True,
+        ).first()
+        signed_market = Market.objects.get(slug="openai-gpt6-2026")
+        MarketComment.objects.create(market=unsigned_market, author=user, body="Interacao no mercado a remover.")
+        unrelated_badge = BadgeDefinition.objects.create(
+            code="unrelated-resolution-history",
+            name="Historico independente",
+            description="Concessao ligada a outro mercado.",
+        )
+        unrelated_award = UserBadgeAward.objects.create(
+            user=user,
+            badge=unrelated_badge,
+            awarded_at=django_timezone.now(),
+            reason_snapshot=f"market_resolved:{signed_market.id}; resolved_predictions_count=1",
+        )
+        unrelated_notification = UserNotification.objects.create(
+            recipient=user,
+            event_type="badge_awarded",
+            source_key=f"badge_awarded:{unrelated_badge.code}",
+            title="Badge recebida",
+            body="Historico independente.",
+        )
+
         call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=StringIO())
         self.assertFalse(
             Market.objects.filter(
@@ -245,6 +317,8 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
             ).exists()
         )
         self.assertTrue(Market.objects.filter(slug="openai-gpt6-2026").exists())
+        self.assertTrue(UserBadgeAward.objects.filter(pk=unrelated_award.pk).exists())
+        self.assertTrue(UserNotification.objects.filter(pk=unrelated_notification.pk).exists())
         second = StringIO()
         call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=second)
         self.assertEqual(json.loads(second.getvalue())["market_count"], 0)
@@ -309,6 +383,43 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor, self.assertRaises(integrity_service.IntegritySigningError):
                 integrity_service.seal_market(cursor, dict(cursor.execute("SELECT * FROM gotrendlabs_markets WHERE id=%s", (market.id,)).fetchone()), sealed_at=now)
+
+    def test_global_ledger_failure_invalidates_market_and_blocks_sealing(self):
+        market, _prediction_id, due = self._resolve_due_market()
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM gotrendlabs_markets WHERE id=%s", (market.id,))
+                verification = integrity_service.verify_market_integrity_records(
+                    cursor,
+                    cursor.fetchone(),
+                    ledger_audit={"valid": False, "invalid_market_ids": set()},
+                )
+        self.assertFalse(verification["valid"])
+        self.assertFalse(verification["ledger_chain_valid"])
+        self.assertIn("ledger_chain_invalid", verification["warnings"])
+
+        with mock.patch(
+            "apps.api.backend_api.integrity_service.verify_integrity_ledger_chain",
+            return_value={"valid": False, "invalid_market_ids": set()},
+        ):
+            sealed = seal_due_markets(now=due + timedelta(seconds=2))
+        self.assertEqual(sealed["sealed"], [])
+        self.assertEqual(len(sealed["failed"]), 1)
+        market.refresh_from_db()
+        self.assertEqual(market.status, "resolved")
+        self.assertFalse(MarketSeal.objects.filter(market=market).exists())
+
+    def test_changed_resolution_blocks_sealing(self):
+        market, _prediction_id, due = self._resolve_due_market("tiktok-ban-eua-2026")
+        Market.objects.filter(pk=market.pk).update(resolution_note="Resultado alterado apos a resolucao")
+
+        sealed = seal_due_markets(now=due + timedelta(seconds=2))
+
+        self.assertEqual(sealed["sealed"], [])
+        self.assertEqual(len(sealed["failed"]), 1)
+        market.refresh_from_db()
+        self.assertEqual(market.status, "resolved")
+        self.assertFalse(MarketSeal.objects.filter(market=market).exists())
 
     def test_prediction_row_tampering_is_detected_against_signed_commitment(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
@@ -422,9 +533,14 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
     def test_daemon_audit_creates_one_high_alert_and_reopens_it_while_issue_persists(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
         self.assertEqual(market.status, "open")
+        unsigned_count = Market.objects.filter(
+            status__in=("open", "locked", "resolved", "sealed", "canceled"),
+            integrity_definition__isnull=True,
+        ).count()
         healthy = audit_integrity_records()
-        self.assertEqual(healthy["issues_detected"], 0, healthy)
-        self.assertFalse(IntegrityAlert.objects.exists())
+        self.assertGreaterEqual(healthy["issues_detected"], unsigned_count, healthy)
+        self.assertEqual(IntegrityAlert.objects.filter(issue_code="definition_missing").count(), unsigned_count)
+        self.assertFalse(IntegrityAlert.objects.filter(market=market).exists())
 
         original_title = market.title
         Market.objects.filter(pk=market.pk).update(title="Definição adulterada para auditoria")
@@ -450,6 +566,18 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         )
         Market.objects.filter(pk=market.pk).update(title=original_title)
 
+    def test_pending_integrity_alert_overrides_positive_card_status(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        Market.objects.filter(pk=market.pk).update(title="Definicao adulterada para o card")
+        audit_integrity_records()
+
+        detail = self.client.get(f"/markets/{market.slug}")
+        summary = self.client.get(f"/markets/{market.slug}/integrity")
+
+        self.assertEqual(detail.status_code, 200, detail.text)
+        self.assertEqual(detail.json()["integrity"]["status"], "verification_failed")
+        self.assertEqual(summary.json()["status"], "verification_failed")
+
     def test_integrity_alert_is_exposed_and_reviewed_only_by_staff(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
         Market.objects.filter(pk=market.pk).update(title="Definição adulterada para fila")
@@ -458,7 +586,7 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
 
         queue = self.client.get("/admin/queues", headers=self.staff_headers, params={"kind": "integrity_alert"})
         self.assertEqual(queue.status_code, 200, queue.text)
-        item = queue.json()["items"][0]
+        item = next(item for item in queue.json()["items"] if item["market_slug"] == market.slug and item["issue_code"] == "definition_changed")
         self.assertEqual(item["kind"], "integrity_alert")
         self.assertEqual(item["severity"], "high")
         self.assertEqual(item["market_slug"], market.slug)

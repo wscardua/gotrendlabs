@@ -341,28 +341,48 @@ def _json_object(value):
     return json.loads(value) if isinstance(value, str) else (value or {})
 
 
+def _ledger_event_is_valid(event: dict, public_key_der: bytes) -> bool:
+    """Validate the signed snapshot and every persisted event metadata field."""
+    event_payload = _json_object(event["payload_json"])
+    expected_correlation_id = str(event["correlation_id"]) if event["correlation_id"] else None
+    expected_causation_id = str(event["causation_id"]) if event["causation_id"] else None
+    return (
+        hmac.compare_digest(event["previous_event_hash"], event_payload.get("previous_event_hash", ""))
+        and hmac.compare_digest(event["event_hash"], sha256_hex(bytes(event["canonical_payload"])))
+        and hmac.compare_digest(sha256_hex(canonical_json(event_payload)), event["event_hash"])
+        and event_payload.get("sequence") == event["sequence"]
+        and event_payload.get("protocol_version") == event["protocol_version"] == PROTOCOL_VERSION
+        and event_payload.get("event_type") == event["event_type"]
+        and event_payload.get("entity_type") == event["entity_type"]
+        and event_payload.get("entity_identifier") == event["entity_identifier"]
+        and event_payload.get("market_id") == event["market_id"]
+        and event_payload.get("payload_hash") == event["payload_hash"]
+        and event_payload.get("payload_reference") == event["payload_reference"]
+        and event_payload.get("occurred_at") == _json_default(event["occurred_at"])
+        and event_payload.get("correlation_id") == expected_correlation_id
+        and event_payload.get("causation_id") == expected_causation_id
+        and event["created_at"] == event["occurred_at"]
+        and event["algorithm"] == SIGNING_ALGORITHM
+        and hmac.compare_digest(sha256_hex(public_key_der), event["key_fingerprint"])
+        and verify_signed_hash(event["event_hash"], bytes(event["signature"]), public_key_der)
+    )
+
+
 def verify_integrity_ledger_chain(cursor):
     cursor.execute("SELECT * FROM integrity_ledger_events ORDER BY sequence")
     previous_hash = ""
     valid = True
     invalid_market_ids = set()
+    public_keys = {}
     for event in cursor.fetchall():
         try:
-            event_payload = _json_object(event["payload_json"])
+            public_key_der = public_keys.get(event["key_id"])
+            if public_key_der is None:
+                public_key_der = public_key_der_for(event["key_id"], cursor=cursor)
+                public_keys[event["key_id"]] = public_key_der
             valid_event = (
                 hmac.compare_digest(event["previous_event_hash"], previous_hash)
-                and hmac.compare_digest(event["event_hash"], sha256_hex(bytes(event["canonical_payload"])))
-                and hmac.compare_digest(sha256_hex(canonical_json(event_payload)), event["event_hash"])
-                and event_payload.get("sequence") == event["sequence"]
-                and event_payload.get("event_type") == event["event_type"]
-                and event_payload.get("payload_hash") == event["payload_hash"]
-                and event_payload.get("payload_reference") == event["payload_reference"]
-                and event_payload.get("previous_event_hash") == event["previous_event_hash"]
-                and verify_signed_hash(
-                    event["event_hash"],
-                    bytes(event["signature"]),
-                    public_key_der_for(event["key_id"], cursor=cursor),
-                )
+                and _ledger_event_is_valid(event, public_key_der)
             )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             valid_event = False
@@ -411,6 +431,8 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
             errors.append("definition_invalid")
         if not definition_matches_current:
             errors.append("definition_changed")
+    elif market["status"] not in {"draft", "scheduled"}:
+        errors.append("definition_missing")
 
     cursor.execute(
         """SELECT pc.id,pc.market_id commitment_market_id,pc.definition_id,pc.previous_commitment_id,pc.protocol_version,
@@ -561,6 +583,7 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         bool(definition_valid and definition_matches_current)
         and commitments_valid
         and market_events_valid
+        and ledger_valid
         and (market["status"] != "resolved" or bool(result_matches_current))
         and (
             market["status"] != "sealed"
@@ -595,8 +618,10 @@ def seal_market(cursor, market: dict, *, sealed_at: datetime | None = None):
     if not definition:
         raise IntegritySigningError("Mercado legado sem definicao original nao pode ser selado como prova nativa.")
     verification = verify_market_integrity_records(cursor, market)
-    if verification["prediction_commitments_valid"] is not True:
-        raise IntegritySigningError("Mercado possui previsao sem compromisso de integridade valido.")
+    if verification["valid"] is not True:
+        issue_codes = verification["errors"] + verification["warnings"]
+        details = ", ".join(issue_codes) if issue_codes else "verification_failed"
+        raise IntegritySigningError(f"Mercado nao pode ser selado porque sua integridade falhou: {details}.")
     cursor.execute("""SELECT pc.*,p.position_sequence,p.id prediction_id FROM prediction_commitments pc
         JOIN gotrendlabs_predictions p ON p.id=pc.prediction_id
         WHERE pc.market_id=%s ORDER BY p.position_sequence,p.id,pc.id""", (market["id"],))

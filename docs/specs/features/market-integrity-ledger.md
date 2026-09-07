@@ -81,6 +81,8 @@ O payload inclui id estavel da acao, mercado, versao da definicao, opcao, stake,
 
 `integrity_ledger_events` e uma cadeia global append-only. Cada insercao obtém lock transacional global, calcula sequencia monotona, `previous_event_hash`, hash canonico e assinatura. Eventos v1: `market_published`, `prediction_committed`, `market_locked`, `market_reopened`, `market_resolved`, `market_resolution_undone`, `market_sealed`, `market_canceled` e `market_corrected`.
 
+A assinatura de cada evento vincula todos os seus metadados persistidos: protocolo, tipo de evento, tipo/identificador da entidade, mercado, referencia/hash do payload, sequencia, elo anterior, timestamp e IDs opcionais de correlacao/causalidade. A verificacao tambem confere algoritmo e fingerprint contra a chave publica historica identificada por `key_id`; alterar qualquer coluna protegida invalida o evento.
+
 Triggers PostgreSQL rejeitam `UPDATE` e `DELETE`; FKs nao usam cascata destrutiva. As tabelas de integridade ficam fora das rotinas comuns de retencao.
 
 ## Selagem e Merkle
@@ -104,11 +106,11 @@ Estados publicos de integridade: `not_published`, `registered`, `resolved_pendin
 
 - `seal_retry_pending` significa falha operacional de assinatura/persistencia com nova tentativa segura pendente; nao indica adulteracao.
 - `canceled_preserved` significa que o mercado foi cancelado e os registros de integridade ja emitidos foram preservados; resultado e Seal sao etapas nao aplicaveis.
-- `verification_failed` fica reservado a inconsistencia criptografica comprovada ou ausencia de prova obrigatoria em mercado marcado como `sealed`.
+- `verification_failed` fica reservado a inconsistencia criptografica comprovada ou ausencia de prova obrigatoria em qualquer estado publicado. Um alerta de integridade pendente prevalece sobre `registered`, `resolved_pending_seal` e `sealed` nos resumos consumidos por cards web/mobile, impedindo selo verde enquanto a divergencia conhecida nao for resolvida e revalidada.
 
 A verificacao publica nao valida apenas os bytes armazenados contra si mesmos. Ela tambem reconstrói a definicao atual do mercado e o resultado operacional atual para compara-los aos snapshots assinados. Em mercado selado, valida ainda cada compromisso assinado incluido nas folhas, a raiz/provas Merkle, o Seal e a cadeia global. Campos nao aplicaveis sao `null`, nunca tratados como falha.
 
-O resultado `valid` resume as provas relacionadas ao mercado e `ledger_chain_valid` reporta separadamente a cadeia global. `errors` inclui apenas inconsistencias que tornam `valid=false`; observacoes globais independentes usam `warnings`. Uma falha global externa ao mercado deve permanecer disponivel no contrato e na auditoria operacional, sem ser apresentada como falha daquele mercado no modal publico quando suas provas especificas continuam validas.
+O resultado `valid` somente e verdadeiro quando todas as provas aplicaveis relacionadas ao mercado e a cadeia global estao validas. `ledger_chain_valid` continua separado para localizar o escopo da divergencia; uma falha global externa ao mercado pode ser contextualizada em `warnings`, sem ser atribuida como adulteracao daquele mercado, mas obrigatoriamente torna `valid=false` e bloqueia a selagem.
 
 ## Experiencia web e mobile
 
@@ -150,7 +152,7 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - permissao `kms:Sign` fica limitada ao runtime/adaptador de integridade; verificacao usa chave publica em cache
 - timeouts/retries KMS sao limitados e auditados sem payload sensivel
 - dashboard mostra resolvidos aguardando, proximos do prazo, falhas e selados
-- no inicio de todo ciclo, antes de fechamento, selagem, comunicacoes ou outras rotinas, o daemon executa auditoria criptografica somente leitura sobre todos os mercados nativos e a cadeia global, independentemente do estado do mercado ou da existencia de selagem pendente
+- no inicio de todo ciclo, antes de fechamento, selagem, comunicacoes ou outras rotinas, o daemon executa auditoria criptografica somente leitura sobre todos os mercados e a cadeia global, independentemente do estado, da existencia de definicao ou de selagem pendente; ausencia de definicao e esperada apenas em `draft`/`scheduled`
 - a deteccao operacional acontece na primeira passagem do daemon posterior a divergencia; a interface e a documentacao devem comunicar a cadencia real do ambiente, sem prometer deteccao instantanea
 - diferencas de definicao, resultado, compromisso, Merkle, Seal ou elo do ledger criam alerta operacional `high` em fila propria; indisponibilidade de KMS/transporte e retry de selagem nao sao classificados como adulteracao
 - alertas sao deduplicados por escopo e tipo de falha, preservam primeira/ultima deteccao e contagem de ocorrencias; revisao administrativa nao altera a prova e o alerta volta a `pending` se a divergencia persistir no ciclo seguinte
@@ -178,6 +180,10 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - comando de limpeza inicia em `dry-run`, recusa mercados com prova assinada e pode ser reexecutado sem duplicar efeitos
 - auditoria do daemon detecta cada classe de adulteracao, cria alerta `high`, nao duplica o mesmo problema por ciclo e nao classifica retry operacional como adulteracao
 - Admin Ops permite auditar integridade em qualquer estado, identifica o controle que falhou e distingue falha, etapa futura e ausencia historica
+- mercado com qualquer verificacao aplicavel invalida, inclusive cadeia global, nunca transita para `sealed`
+- alterar metadado persistido do evento que nao esteja no snapshot de negocio tambem invalida a cadeia
+- cards web/mobile nunca exibem sinal positivo quando existe alerta de integridade pendente para o mercado
+- limpeza pre-producao preserva concessoes/notificacoes de badge sem causalidade comprovada com os mercados removidos
 
 ## Privacidade e retenção
 

@@ -2,6 +2,10 @@
 
 ## 2026-09-07
 
+- endurecida a semantica de verificacao para que cadeia global invalida torne `valid=false` e qualquer falha aplicavel bloqueie Seal;
+- definido que alertas pendentes prevalecem nos selos visuais e que auditoria cobre mercado publicado sem definicao;
+- ampliada a cobertura assinada/conferida dos metadados persistidos do ledger e restringida a causalidade do purge de badges;
+- registrado o risco de desempenho linear da verificacao global, separado da cobertura adequada dos indices de lookup existentes;
 - substituida a convivencia com mercados pre-producao sem prova por corte destrutivo controlado, com inventario, backup, `dry-run` e recusa de registros criptograficos protegidos;
 - previsoes humanas e de agentes IA passam a compartilhar persistencia inicial atomica e cobertura obrigatoria um-para-um por compromisso;
 - IDs taxonomicos tornam a associacao parte da prova enquanto nomes permanecem snapshot editorial renomeavel;

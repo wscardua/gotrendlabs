@@ -1960,10 +1960,17 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         )
         viewer_has_like = bool(cursor.fetchone())
     public_metrics = market_public_metrics(cursor, row["id"])
-    cursor.execute("""SELECT d.protocol_version,d.key_fingerprint,s.id seal_id
-                      FROM market_integrity_definitions d LEFT JOIN market_seals s ON s.market_id=d.market_id
-                      WHERE d.market_id=%s""", (row["id"],))
+    cursor.execute("""SELECT d.protocol_version,d.key_fingerprint,s.id seal_id,
+                             EXISTS(
+                                 SELECT 1 FROM gotrendlabs_integrity_alerts a
+                                 WHERE a.market_id=target.market_id AND a.status='pending'
+                             ) integrity_alert_pending
+                      FROM (SELECT %s::bigint market_id) target
+                      LEFT JOIN market_integrity_definitions d ON d.market_id=target.market_id
+                      LEFT JOIN market_seals s ON s.market_id=target.market_id""", (row["id"],))
     integrity_row = cursor.fetchone()
+    definition_registered = bool(integrity_row and integrity_row["protocol_version"])
+    integrity_alert_pending = bool(integrity_row and integrity_row["integrity_alert_pending"])
     cursor.execute(
         """SELECT 1 FROM gotrendlabs_admin_events
            WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s
@@ -1974,7 +1981,9 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
     has_integrity_failure = bool(cursor.fetchone())
     if row["status"] in {"draft", "scheduled"}:
         integrity_status = "not_published"
-    elif not integrity_row:
+    elif integrity_alert_pending:
+        integrity_status = "verification_failed"
+    elif not definition_registered:
         integrity_status = "legacy_unregistered"
     elif row["status"] == "sealed" and integrity_row["seal_id"]:
         integrity_status = "sealed"
@@ -2049,10 +2058,10 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "comments": _market_comments(cursor, row["id"], viewer_id=viewer_id) if include_comments else [],
         "integrity": {
             "status": integrity_status,
-            "protocol_version": integrity_row["protocol_version"] if integrity_row else "",
-            "definition_registered": bool(integrity_row),
-            "verification_available": bool(integrity_row),
-            "key_fingerprint": integrity_row["key_fingerprint"] if integrity_row else "",
+            "protocol_version": integrity_row["protocol_version"] if definition_registered else "",
+            "definition_registered": definition_registered,
+            "verification_available": definition_registered,
+            "key_fingerprint": integrity_row["key_fingerprint"] if definition_registered else "",
         },
     }
 
@@ -4590,8 +4599,14 @@ def _market_integrity_contract(cursor, slug):
     events = [{**dict(row), "occurred_at": row["occurred_at"].isoformat()} for row in cursor.fetchall()]
     cursor.execute("SELECT 1 FROM gotrendlabs_admin_events WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s AND created_at >= COALESCE(%s, created_at) LIMIT 1", (slug, market["resolved_at"]))
     failed = bool(cursor.fetchone())
+    cursor.execute(
+        "SELECT 1 FROM gotrendlabs_integrity_alerts WHERE market_id=%s AND status='pending' LIMIT 1",
+        (market["id"],),
+    )
+    integrity_alert_pending = bool(cursor.fetchone())
     integrity_status = (
         "not_published" if market["status"] in {"draft", "scheduled"}
+        else "verification_failed" if integrity_alert_pending
         else "legacy_unregistered" if not definition
         else "sealed" if seal and market["status"] == "sealed"
         else "verification_failed" if market["status"] == "sealed"

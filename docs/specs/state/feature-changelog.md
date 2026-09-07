@@ -1,5 +1,15 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 fechamento dos achados de revisao
+
+- A selagem passa a exigir a verificacao integral aprovada, incluindo definicao/resultado atuais, compromissos, eventos do mercado e cadeia global; qualquer divergencia mantem o mercado em `resolved` para retry seguro.
+- `valid=false` passa a ser obrigatorio quando a cadeia global falha, ainda que `ledger_chain_valid` e `warnings` preservem o diagnostico de escopo.
+- Alertas pendentes prevalecem no resumo de integridade, impedindo cards web/mobile de exibirem selo positivo para mercado com falha conhecida.
+- O verificador da cadeia vincula protocolo, entidade, mercado, timestamp, correlacao/causalidade, algoritmo, fingerprint e `created_at` aos dados assinados ou a metadados criptograficamente conferidos.
+- A auditoria passa a varrer tambem mercados sem definicao e cria `definition_missing` de severidade alta quando a prova e obrigatoria.
+- O purge pre-producao remove somente badges causalmente ligados aos mercados eliminados e preserva concessoes/notificacoes independentes.
+- O risco de escala da verificacao global integral fica registrado: indices atuais atendem lookups, mas cache/checkpoints verificaveis e medicao com volume representativo continuam pendentes.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de cobertura e corte pre-producao
 
 - Mercados publicados sem definicao assinada deixam de ser mantidos como legado ativo; comando `purge_unsigned_markets` inventaria em `dry-run`, exige backup confirmado, recusa provas protegidas, remove dependencias operacionais e reconcilia wallet/reputacao/badges.

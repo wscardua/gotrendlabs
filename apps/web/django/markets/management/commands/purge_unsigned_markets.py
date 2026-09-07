@@ -158,14 +158,27 @@ class Command(BaseCommand):
                 )
 
             if affected_users:
+                resolution_reasons = [f"market_resolved:{market_id}" for market_id in market_ids]
                 cursor.execute(
-                    "DELETE FROM gotrendlabs_user_badge_awards WHERE user_id = ANY(%s) AND reason_snapshot LIKE 'market_resolved:%%'",
-                    [affected_users],
+                    """SELECT a.id,a.user_id,b.code
+                       FROM gotrendlabs_user_badge_awards a
+                       JOIN gotrendlabs_badge_definitions b ON b.id=a.badge_id
+                       WHERE a.user_id = ANY(%s)
+                         AND split_part(a.reason_snapshot, ';', 1) = ANY(%s)""",
+                    [affected_users, resolution_reasons],
                 )
-                cursor.execute(
-                    "DELETE FROM gotrendlabs_user_notifications WHERE recipient_id = ANY(%s) AND event_type='badge_awarded'",
-                    [affected_users],
-                )
+                removed_awards = cursor.fetchall()
+                if removed_awards:
+                    cursor.execute(
+                        "DELETE FROM gotrendlabs_user_badge_awards WHERE id = ANY(%s)",
+                        [[row["id"] for row in removed_awards]],
+                    )
+                    for award in removed_awards:
+                        cursor.execute(
+                            """DELETE FROM gotrendlabs_user_notifications
+                               WHERE recipient_id=%s AND event_type='badge_awarded' AND source_key=%s""",
+                            [award["user_id"], f"badge_awarded:{award['code']}"],
+                        )
                 engine = _daemon_lifecycle_engine(cursor)
                 for user_id in affected_users:
                     engine._recalculate_user_reputation(user_id, now)
