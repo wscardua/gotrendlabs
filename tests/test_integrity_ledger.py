@@ -16,6 +16,7 @@ from apps.api.backend_api.daemon_services import audit_integrity_records, run_da
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.main import _market_lifecycle_engine, app
 from apps.web.django.accounts.models import BadgeDefinition, UserBadgeAward
+from apps.web.django.communications.models import PushDelivery, PushDevice
 from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerCheckpoint, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketComment, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
 from tests.test_web_smoke import _seed_test_badges, _seed_test_email_templates, _seed_test_markets
 from tests.test_cases import AppendOnlyTransactionTestCase
@@ -482,6 +483,32 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
             title="Badge recebida",
             body="Historico independente.",
         )
+        removable_notification = UserNotification.objects.create(
+            recipient=user,
+            market=unsigned_market,
+            event_type="market_comment",
+            source_key="unsigned-market-push",
+            title="Mercado removível",
+            body="Notificação do mercado pré-lançamento.",
+        )
+        push_device = PushDevice.objects.create(
+            user=user,
+            platform="android",
+            token="integrity-purge-device",
+            token_hash="a" * 64,
+        )
+        removable_delivery = PushDelivery.objects.create(
+            notification=removable_notification,
+            device=push_device,
+            event_type="market_comment",
+            idempotency_key="unsigned-market-push:delivery",
+        )
+        unrelated_delivery = PushDelivery.objects.create(
+            notification=unrelated_notification,
+            device=push_device,
+            event_type="badge_awarded",
+            idempotency_key="unrelated-market-push:delivery",
+        )
 
         call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=StringIO())
         self.assertFalse(
@@ -490,8 +517,10 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         self.assertTrue(Market.objects.filter(slug="openai-gpt6-2026").exists())
         self.assertFalse(Market.objects.filter(pk=unsigned_draft.pk).exists())
         self.assertFalse(IntegrityAlert.objects.filter(pk=removable_alert.pk).exists())
+        self.assertFalse(PushDelivery.objects.filter(pk=removable_delivery.pk).exists())
         self.assertTrue(UserBadgeAward.objects.filter(pk=unrelated_award.pk).exists())
         self.assertTrue(UserNotification.objects.filter(pk=unrelated_notification.pk).exists())
+        self.assertTrue(PushDelivery.objects.filter(pk=unrelated_delivery.pk).exists())
         second = StringIO()
         call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=second)
         self.assertEqual(json.loads(second.getvalue())["market_count"], 0)
