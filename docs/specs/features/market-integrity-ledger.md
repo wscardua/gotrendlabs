@@ -3,7 +3,7 @@ id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
 versao: 1.2
 status_spec: aprovada
-status_impl: implementada_aguardando_deploy
+status_impl: implementada_validada
 ultima_atualizacao: 2026-09-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md

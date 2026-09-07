@@ -5,17 +5,18 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260907-INTEGRITY-CLOSEOUT-022
 
 - Tipo: `promote-spec` + `implementation-cycle` + `test-review-cycle`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-INTEGRITY-001`
 - Objetivo: promover a spec para aprovada, publicar a implementação na `main`, provisionar KMS/IAM/segredo em produção, executar corte destrutivo controlado dos mercados pré-lançamento, adicionar um segundo worker Django e validar o rollout ponta a ponta.
-- Etapa atual: fechamento documental e preparação do pacote de PR; submissão aguarda autorização explícita do usuário após apresentação do texto.
+- Etapa atual: implementação, rollout AWS, corte pré-lançamento, deploy, smoke produtivo e fechamento documental concluídos.
 - Artefatos afetados: feature/status/changelogs/runbook, Compose de produção, exemplo de ambiente, comando de corte pré-produção, testes, GitHub Actions e recursos AWS de produção.
-- Estado AWS pré-rollout: EC2 `t4g.micro` em execução e SSM online; RDS PostgreSQL 16.13 privado/disponível; alias KMS de integridade ausente; secret `gotrendlabs/prod/app-secrets` ainda sem as duas chaves de integridade; role EC2 ainda sem política KMS; host com 904 MiB de RAM e sem swap.
-- Decisões: aprovação funcional foi dada pelo usuário; status de implementação permanece `implementada_aguardando_deploy` até CI, deploy e smoke reais; Django passa de um para dois workers Uvicorn; rollout cria 1 GiB de swap, monitora memória e preserva um único daemon; todos os mercados atuais sem definição serão removidos após snapshot validado, sem assinatura retroativa nem camada de legado.
+- Estado AWS pós-rollout: snapshot criptografado `gotrendlabs-prod-pre-integrity-20260907-01` disponível; chave KMS Ed25519 `bcbb43d0-cfba-465d-9c1d-500776ede30c` habilitada sob `alias/gotrendlabs-integrity-signing`; role EC2 com política restrita ao ARN da chave; segredo de commitment presente no Secrets Manager/runtime; alarme `gotrendlabs-prod-kms-sign-volume-high`; 1 GiB de swap persistente com `swappiness=10`.
+- Decisões: aprovação funcional e execução produtiva foram autorizadas pelo usuário; implementação promovida para `implementada_validada`; Django opera com dois workers Uvicorn e o daemon permanece único; todos os mercados anteriores sem definição foram removidos sem assinatura retroativa nem camada de legado.
 - Reversão lógica: antes do corte criar snapshot manual do RDS; preservar recursos/provas criptográficas após o primeiro registro; rollback de aplicação por commit anterior, retorno temporário do Django a um worker se houver pressão de memória e desativação de novas mutações se o KMS estiver indisponível.
-- Evidências: auditoria read-only confirmou conta AWS `204620194924`, EC2/SSM/RDS saudáveis, quatro containers ativos, workflow automático habilitado e ausência dos pré-requisitos KMS/secret/IAM; execução produtiva anterior do GitHub Actions concluiu com sucesso. Validação local: 253 testes Django/FastAPI aprovados em execução única isolada; 101 testes Flutter aprovados; `flutter analyze`, `manage.py check`, `makemigrations --check --dry-run`, OpenAPI, compilação Python, Compose sem resolução de env e `git diff --check` aprovados. O teste de corte cobre também `draft` pré-lançamento. Evidências de CI/deploy/smoke serão anexadas após autorização.
+- Evidências: PR principal `#114` e hotfix `#115` integradas por merge commit; workflows `34157223820` e `34158379066` aprovados com suíte completa e deploy. O primeiro corte foi revertido atomicamente por FK de `PushDelivery`; o hotfix adicionou inventário/remoção estritamente relacionada e regressão. A execução corrigida removeu 30 mercados, 4 previsões, 43 comentários, 7 notificações e 21 entregas push; a repetição retornou zero. Produção confirmou commit `c40fd61`, migrations `markets 0027–0031`, `admin_ops 0018–0019` e `communications 0008`, assinatura KMS real válida, fingerprint `b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a`, cadeia `verified`/válida sem pendências, FastAPI/banco `ok`, dois workers Django, um daemon e 101 testes Flutter locais aprovados.
 - Iniciado em: 2026-09-07
 - Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
 
 ## WFLOW-20260907-INTEGRITY-HARDENING-021
 
