@@ -6,9 +6,9 @@ import re
 
 from apps.api.backend_api.agent_llm import AgentLLMError, request_market_comment
 from apps.api.backend_api.agent_prompts import PROMPT_TEMPLATE_VERSION, build_comment_prompt, template_hash
+from apps.api.backend_api.prediction_write_service import create_initial_prediction_with_integrity
 
 
-INITIAL_REPUTATION = 100
 BASE_PREDICTION_WEIGHT = 10_000
 PROBABILITY_QUANT = Decimal("0.0001")
 
@@ -539,10 +539,11 @@ def _run_comment_cycle(cursor, config, summary, now):
 def _candidate_prediction_market(cursor, config, now, min_humans=None, user_id=None):
     cursor.execute(
         """
-        SELECT id, slug, title
-        FROM gotrendlabs_markets
-        WHERE status = 'open'
-        ORDER BY is_featured DESC, view_count DESC, id ASC
+        SELECT m.id, m.slug, m.title
+        FROM gotrendlabs_markets m
+        JOIN market_integrity_definitions d ON d.market_id = m.id
+        WHERE m.status = 'open'
+        ORDER BY m.is_featured DESC, m.view_count DESC, m.id ASC
         LIMIT 50
         """
     )
@@ -575,39 +576,6 @@ def _conservative_option(cursor, market_id):
     return cursor.fetchone()
 
 
-def _record_wallet_entry(cursor, user_id, *, entry_type, amount, direction, description, reference_type="", reference_id=""):
-    now = datetime.now(timezone.utc)
-    cursor.execute(
-        """
-        INSERT INTO gotrendlabs_wallet_ledger
-            (user_id, entry_type, amount, direction, description, reference_type, reference_id, created_by_id, created_at)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, NULL, %s)
-        """,
-        (user_id, entry_type, amount, direction, description, reference_type, reference_id, now),
-    )
-    cursor.execute("SELECT user_id FROM gotrendlabs_wallet_balances WHERE user_id = %s", (user_id,))
-    if not cursor.fetchone():
-        cursor.execute(
-            """
-            INSERT INTO gotrendlabs_wallet_balances (user_id, available_gtl, locked_gtl, total_earned_gtl, updated_at)
-            VALUES (%s, 0, 0, 0, %s)
-            ON CONFLICT (user_id) DO NOTHING
-            """,
-            (user_id, now),
-        )
-    if direction == "lock":
-        cursor.execute(
-            """
-            UPDATE gotrendlabs_wallet_balances
-            SET available_gtl = available_gtl - %s,
-                locked_gtl = locked_gtl + %s,
-                updated_at = %s
-            WHERE user_id = %s
-            """,
-            (amount, amount, now, user_id),
-        )
-
-
 def _create_bot_prediction(cursor, agent, market, option, stake):
     user_id = agent["user_id"]
     cursor.execute("SELECT id FROM gotrendlabs_predictions WHERE user_id = %s AND market_id = %s", (user_id, market["id"]))
@@ -617,34 +585,15 @@ def _create_bot_prediction(cursor, agent, market, option, stake):
     balance = cursor.fetchone()
     if not balance or int(balance["available_gtl"] or 0) < stake:
         raise ValueError("insufficient_bot_balance")
-    cursor.execute("SELECT reputation_score FROM gotrendlabs_user_reputations WHERE user_id = %s", (user_id,))
-    reputation = cursor.fetchone()
-    reputation_score = int(reputation["reputation_score"] if reputation else INITIAL_REPUTATION)
-    probability_at_entry = max(_decimal_probability(option["probability_exact"]), PROBABILITY_QUANT)
-    weight_at_entry = reputation_score * stake
-    potential_payout = int((Decimal(stake) * Decimal("100") / probability_at_entry).to_integral_value())
-    now = datetime.now(timezone.utc)
-    cursor.execute(
-        """
-        INSERT INTO gotrendlabs_predictions
-            (user_id, market_id, market_option_id, action_type, position_sequence, stake_amount, probability_at_entry,
-             weight_at_entry, potential_payout, status, won, created_at, updated_at)
-        VALUES (%s, %s, %s, 'initial', 1, %s, %s, %s, %s, 'open', NULL, %s, %s)
-        RETURNING id
-        """,
-        (user_id, market["id"], option["id"], stake, probability_at_entry, weight_at_entry, potential_payout, now, now),
-    )
-    prediction_id = cursor.fetchone()["id"]
-    _record_wallet_entry(
+    prediction = create_initial_prediction_with_integrity(
         cursor,
-        user_id,
-        entry_type="prediction_stake_lock",
-        amount=stake,
-        direction="lock",
-        description=f"Stake bot oficial em previsão: {market['slug']}",
-        reference_type="prediction",
-        reference_id=str(prediction_id),
+        user_id=user_id,
+        market=market,
+        option=option,
+        stake_amount=stake,
+        wallet_description=f"Stake bot oficial em previsão: {market['slug']}",
     )
+    prediction_id = prediction["id"]
     _recalculate_market_probabilities(cursor, market["id"])
     refresh_market_public_metrics(cursor, market["id"])
     return prediction_id
@@ -689,7 +638,10 @@ def _run_prediction_cycle(cursor, config, summary, now):
         option = _conservative_option(cursor, market["id"])
         stake = min(int(config.get("ai_max_stake_gtl") or 25), int(agent.get("max_stake_gtl") or config.get("ai_max_stake_gtl") or 25))
         try:
-            prediction_id = _create_bot_prediction(cursor, agent, market, option, stake)
+            # The nested transaction is a savepoint: if signing fails, the bot
+            # prediction and wallet lock are rolled back before failure audit.
+            with cursor.connection.transaction():
+                prediction_id = _create_bot_prediction(cursor, agent, market, option, stake)
             _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="prediction", status="created", reason="prediction_created", payload={"stake_gtl": stake, "option_id": option["id"], "human_participants": humans, "min_humans": min_humans}, prediction_id=prediction_id)
             cursor.execute("UPDATE gotrendlabs_ai_agents SET last_action_at = %s, last_error = '', updated_at = %s WHERE id = %s", (now, now, agent["id"]))
             created += 1

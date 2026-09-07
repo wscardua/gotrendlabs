@@ -1,10 +1,10 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 1.0
+versao: 1.1
 status_spec: draft
 status_impl: implementada_aguardando_deploy
-ultima_atualizacao: 2026-09-06
+ultima_atualizacao: 2026-09-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -69,7 +69,7 @@ Estado terminal alternativo: `canceled`.
 
 Na publicacao, a FastAPI cria `market_integrity_definitions` na mesma transacao da mudanca para `open`. O payload inclui identificador/versao, titulo, resumo, tipo, taxonomia, opcoes ordenadas, criterio e fonte de resolucao, datas, timezone e regra de fechamento. Sem assinatura valida a transacao falha.
 
-Mercados legados ja publicados recebem `integrity_status=legacy_unregistered`; nunca sao assinados retroativamente como prova original.
+Como a feature ainda nao foi implantada em producao, mercados sem definicao assinada nao sao migrados nem permanecem no catalogo ativo. Um comando operacional explicito, idempotente e protegido por `dry-run` remove apenas mercados sem `market_integrity_definitions` e seus efeitos operacionais relacionados, depois de inventario e backup. Toda publicacao disponivel apos o corte deve ter definicao assinada criada pelo fluxo autoritativo; a API preserva defesa para recusar previsao ou selagem sem essa prova.
 
 ## Compromissos de previsao
 
@@ -98,7 +98,9 @@ O Seal referencia definicao, versao, raiz, resultado/evidencia/timestamps, merca
 - admin: estado operacional, falhas/tentativas e auditoria completa
 - clientes nao assinam nem decidem validade
 
-Estados publicos de integridade: `not_published`, `legacy_unregistered`, `registered`, `resolved_pending_seal`, `seal_retry_pending`, `canceled_preserved`, `sealed`, `verification_failed`.
+Estados publicos de integridade: `not_published`, `registered`, `resolved_pending_seal`, `seal_retry_pending`, `canceled_preserved`, `sealed`, `verification_failed`.
+
+`legacy_unregistered` permanece apenas como valor defensivo temporario para diagnosticar dado inconsistente durante a limpeza; nao pode ser estado de um mercado ativo apresentado no catalogo apos o corte.
 
 - `seal_retry_pending` significa falha operacional de assinatura/persistencia com nova tentativa segura pendente; nao indica adulteracao.
 - `canceled_preserved` significa que o mercado foi cancelado e os registros de integridade ja emitidos foram preservados; resultado e Seal sao etapas nao aplicaveis.
@@ -121,7 +123,7 @@ No web, o selo abre a verificacao em modal tanto no card quanto no detalhe do me
 
 No detalhe de um mercado `sealed`, o estado principal aparece como `Mercado concluido` para deixar claro que previsoes, apuracao e resultado ja terminaram. A explicacao complementar informa que o resultado foi publicado e que o registro de integridade foi finalizado; o rotulo compacto usa `Concluido e verificavel`. A verificacao continua acessivel somente pelo escudo sobre a thumbnail, sem botao textual redundante.
 
-O bloco lateral do detalhe se apresenta como `Ciclo do mercado` e usa copy publica coerente em todos os estados: `Mercado agendado`, `Mercado em apuracao`, `Resultado publicado`, `Mercado concluido` e `Mercado cancelado`. Mercados que ja nao aceitam previsoes nunca exibem `Fecha em` nem contagem regressiva de fechamento. O estado `resolved` diferencia resultado publicado de registro de integridade ainda em finalizacao; mercado legado nao promete uma selagem retroativa. Em `sealed`, a ultima etapa do ciclo aparece concluida, nao em processamento.
+O bloco lateral do detalhe se apresenta como `Ciclo do mercado` e usa copy publica coerente em todos os estados: `Mercado agendado`, `Mercado em apuracao`, `Resultado publicado`, `Mercado concluido` e `Mercado cancelado`. Mercados que ja nao aceitam previsoes nunca exibem `Fecha em` nem contagem regressiva de fechamento. O estado `resolved` diferencia resultado publicado de registro de integridade ainda em finalizacao. Em `sealed`, a ultima etapa do ciclo aparece concluida, nao em processamento.
 
 A primeira leitura da verificacao deve responder, nesta ordem: para que a pagina serve; se alguma alteracao indevida foi detectada; quais etapas da vida do mercado ja foram protegidas; e o que aconteceria se um registro fosse alterado. Limites e ressalvas nao formam uma secao destacada no modal compacto; a transparencia institucional e tecnica permanece no rodape, nas paginas publicas e nos detalhes progressivos. Termos como hash, assinatura, chave e protocolo ficam recolhidos em detalhes tecnicos e recebem explicacao por analogia antes de serem exibidos.
 
@@ -170,6 +172,10 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - OpenAPI sincronizado e notificacao idempotente
 - paginas institucionais sem alegacoes enganosas
 - comprovantes continuam visiveis em `locked`, `resolved`, `sealed` e `canceled`
+- toda previsao persistida, humana ou de agente IA, possui exatamente um compromisso; ausencia, duplicidade ou compromisso divergente invalida a auditoria e impede a selagem
+- renomear categoria, subcategoria ou evento preserva a prova; trocar a associacao taxonomica protegida do mercado invalida a definicao
+- falha ou timeout da auditoria gera indisponibilidade observavel sem impedir fechamento, comunicacoes ou a continuidade do processo daemon
+- comando de limpeza inicia em `dry-run`, recusa mercados com prova assinada e pode ser reexecutado sem duplicar efeitos
 - auditoria do daemon detecta cada classe de adulteracao, cria alerta `high`, nao duplica o mesmo problema por ciclo e nao classifica retry operacional como adulteracao
 - Admin Ops permite auditar integridade em qualquer estado, identifica o controle que falhou e distingue falha, etapa futura e ausencia historica
 
@@ -181,10 +187,11 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 
 ## Rollout e reversao
 
-1. Aplicar schema e triggers.
-2. Criar chave KMS/alias e politica IAM minima; configurar segredo de commitment no secret manager/runtime.
-3. Publicar FastAPI/daemon antes de habilitar novos mercados.
-4. Validar chave publica e teste de assinatura.
-5. Liberar web/mobile compatíveis.
+1. Inventariar e fazer backup do ambiente nao produtivo; executar a limpeza explicita de mercados sem definicao assinada.
+2. Aplicar schema e triggers.
+3. Criar chave KMS/alias e politica IAM minima; configurar segredo de commitment no secret manager/runtime.
+4. Publicar FastAPI/daemon antes de habilitar novos mercados.
+5. Validar chave publica e teste de assinatura.
+6. Liberar web/mobile alinhados ao contrato final; nao ha compatibilidade obrigatoria com builds pre-producao anteriores.
 
 Rollback desabilita novas publicacoes/previsoes se o signer estiver indisponivel, preserva tabelas/provas e retorna daemon para retry. Nunca remover nem reescrever eventos existentes.

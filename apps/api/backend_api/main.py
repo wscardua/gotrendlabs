@@ -47,6 +47,7 @@ from apps.api.backend_api.integrity_service import (
     verify_merkle_proof,
     verify_signed_hash,
 )
+from apps.api.backend_api.prediction_write_service import create_initial_prediction_with_integrity
 from apps.api.backend_api.schemas import (
     AdminCategoryPayload,
     AdminBadgeListResponse,
@@ -5001,18 +5002,15 @@ def create_prediction(slug: str, payload: PredictionCreatePayload, authorization
             if int(balance["available_gtl"] or 0) < payload.stake_amount:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Saldo insuficiente para esta previsão.")
 
-            prediction = _insert_prediction_position(cursor, user["id"], market, option, payload.stake_amount, "initial")
-            _record_wallet_entry(
+            prediction = create_initial_prediction_with_integrity(
                 cursor,
-                user["id"],
-                entry_type="prediction_stake_lock",
-                amount=payload.stake_amount,
-                direction="lock",
-                description=f"Stake bloqueado em previsão: {slug}",
-                reference_type="prediction",
-                reference_id=str(prediction["id"]),
+                user_id=user["id"],
+                market=market,
+                option=option,
+                stake_amount=payload.stake_amount,
+                wallet_description=f"Stake bloqueado em previsão: {slug}",
             )
-            commitment = commit_prediction(cursor, prediction_id=prediction["id"], user_id=user["id"], occurred_at=prediction["created_at"])
+            commitment = prediction["commitment"]
             _notify_market_participants(
                 cursor,
                 actor=user,

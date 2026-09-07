@@ -205,7 +205,14 @@ def append_ledger_event(cursor, *, event_type: str, entity_type: str, entity_ide
     return cursor.fetchone()
 
 
-def market_definition_payload(cursor, market_id: int, *, published_at: datetime, definition_version: int = 1):
+def market_definition_payload(
+    cursor,
+    market_id: int,
+    *,
+    published_at: datetime,
+    definition_version: int = 1,
+    signed_snapshot: dict | None = None,
+):
     cursor.execute("""SELECT m.*, c.name category_name, sc.name subcategory_name, ev.name event_name
                     FROM gotrendlabs_markets m JOIN gotrendlabs_market_categories c ON c.id=m.category_id
                     JOIN gotrendlabs_market_subcategories sc ON sc.id=m.subcategory_id
@@ -215,16 +222,29 @@ def market_definition_payload(cursor, market_id: int, *, published_at: datetime,
         raise IntegritySigningError("Mercado inexistente para definicao de integridade.")
     cursor.execute("SELECT id,label,hint,display_order FROM gotrendlabs_market_options WHERE market_id=%s ORDER BY display_order,id", (market_id,))
     options = cursor.fetchall()
-    return {
-        "auto_close_enabled": bool(market["auto_close_enabled"]), "category": market["category_name"],
+    payload = {
+        "auto_close_enabled": bool(market["auto_close_enabled"]),
+        "category": (signed_snapshot or {}).get("category", market["category_name"]),
         "close_at": market["close_at"], "close_timezone": market["close_timezone"] or "UTC",
-        "definition_version": definition_version, "event": market["event_name"] or "", "kind": market["kind"],
+        "definition_version": definition_version,
+        "event": (signed_snapshot or {}).get("event", market["event_name"] or ""),
+        "kind": market["kind"],
         "market_id": market_id, "market_slug": market["slug"],
         "options": [{"id": row["id"], "label": row["label"], "hint": row["hint"] or "", "order": row["display_order"]} for row in options],
         "protocol_version": PROTOCOL_VERSION, "published_at": published_at,
         "resolution_criteria": market["resolution_criteria"] or "", "resolution_source": market["source"] or "",
-        "subcategory": market["subcategory_name"], "summary": market["summary"] or "", "title": market["title"],
+        "subcategory": (signed_snapshot or {}).get("subcategory", market["subcategory_name"]),
+        "summary": market["summary"] or "", "title": market["title"],
     }
+    # New definitions protect stable taxonomy associations while retaining names as
+    # an editorial snapshot. Old pre-deploy fixtures remain verifiable until reset.
+    if signed_snapshot is None or "category_id" in signed_snapshot:
+        payload["category_id"] = market["category_id"]
+    if signed_snapshot is None or "subcategory_id" in signed_snapshot:
+        payload["subcategory_id"] = market["subcategory_id"]
+    if signed_snapshot is None or "event_id" in signed_snapshot:
+        payload["event_id"] = market["event_id"]
+    return payload
 
 
 def market_result_payload(market: dict):
@@ -379,6 +399,7 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
                 market["id"],
                 published_at=market["published_at"],
                 definition_version=definition["definition_version"],
+                signed_snapshot=definition_payload,
             )
             definition_matches_current = hmac.compare_digest(
                 sha256_hex(canonical_json(current_definition)), definition["payload_hash"]
@@ -392,39 +413,65 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
             errors.append("definition_changed")
 
     cursor.execute(
-        """SELECT pc.*,p.user_id,p.position_sequence
-           FROM prediction_commitments pc
-           JOIN gotrendlabs_predictions p ON p.id=pc.prediction_id
-           WHERE pc.market_id=%s
+        """SELECT pc.id,pc.market_id commitment_market_id,pc.definition_id,pc.previous_commitment_id,pc.protocol_version,
+                  pc.canonical_payload,pc.payload_json,pc.commitment_hash,pc.signature,
+                  pc.algorithm,pc.key_id,pc.key_fingerprint,pc.signed_at,
+                  p.id prediction_id,p.user_id,p.market_id prediction_market_id,
+                  p.market_option_id,p.action_type,p.position_sequence,p.stake_amount,p.created_at prediction_created_at
+           FROM gotrendlabs_predictions p
+           LEFT JOIN prediction_commitments pc ON pc.prediction_id=p.id
+           WHERE p.market_id=%s
            ORDER BY p.user_id,p.position_sequence,p.id,pc.id""",
         (market["id"],),
     )
     commitments = cursor.fetchall()
     previous_by_user = {}
     commitments_valid = True
+    missing_commitment = False
     for commitment in commitments:
         previous = previous_by_user.get(commitment["user_id"])
+        if commitment["id"] is None:
+            missing_commitment = True
+            commitments_valid = False
+            continue
         payload = _json_object(commitment["payload_json"])
         expected_previous_id = previous["id"] if previous else None
         expected_previous_hash = previous["commitment_hash"] if previous else None
         try:
+            commitment_public_key = public_key_der_for(commitment["key_id"], cursor=cursor)
             valid_commitment = (
                 hmac.compare_digest(sha256_hex(bytes(commitment["canonical_payload"])), commitment["commitment_hash"])
                 and hmac.compare_digest(sha256_hex(canonical_json(payload)), commitment["commitment_hash"])
                 and verify_signed_hash(
                     commitment["commitment_hash"],
                     bytes(commitment["signature"]),
-                    public_key_der_for(commitment["key_id"], cursor=cursor),
+                    commitment_public_key,
                 )
+                and hmac.compare_digest(sha256_hex(commitment_public_key), commitment["key_fingerprint"])
+                and commitment["protocol_version"] == PROTOCOL_VERSION
+                and payload.get("protocol_version") == commitment["protocol_version"]
                 and commitment["previous_commitment_id"] == expected_previous_id
                 and payload.get("previous_commitment_hash") == expected_previous_hash
                 and payload.get("position_sequence") == commitment["position_sequence"]
+                and payload.get("action_id") == f"prediction:{commitment['prediction_id']}"
+                and payload.get("action_type") == commitment["action_type"]
+                and payload.get("market_id") == commitment["prediction_market_id"]
+                and commitment["commitment_market_id"] == commitment["prediction_market_id"]
+                and payload.get("option_id") == commitment["market_option_id"]
+                and payload.get("stake") == int(commitment["stake_amount"])
+                and payload.get("server_timestamp") == _json_default(commitment["prediction_created_at"])
+                and payload.get("user_commitment") == _user_commitment(commitment["user_id"])
+                and bool(definition)
+                and commitment["definition_id"] == definition["id"]
+                and payload.get("definition_version") == definition["definition_version"]
             )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             valid_commitment = False
         commitments_valid = commitments_valid and valid_commitment
         previous_by_user[commitment["user_id"]] = commitment
-    if not commitments_valid:
+    if missing_commitment:
+        errors.append("prediction_commitment_missing")
+    if not commitments_valid and not missing_commitment:
         errors.append("prediction_commitment_invalid")
 
     cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
@@ -547,6 +594,9 @@ def seal_market(cursor, market: dict, *, sealed_at: datetime | None = None):
     definition = cursor.fetchone()
     if not definition:
         raise IntegritySigningError("Mercado legado sem definicao original nao pode ser selado como prova nativa.")
+    verification = verify_market_integrity_records(cursor, market)
+    if verification["prediction_commitments_valid"] is not True:
+        raise IntegritySigningError("Mercado possui previsao sem compromisso de integridade valido.")
     cursor.execute("""SELECT pc.*,p.position_sequence,p.id prediction_id FROM prediction_commitments pc
         JOIN gotrendlabs_predictions p ON p.id=pc.prediction_id
         WHERE pc.market_id=%s ORDER BY p.position_sequence,p.id,pc.id""", (market["id"],))

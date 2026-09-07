@@ -15,6 +15,8 @@ Usar ledger global assinado, encadeado e append-only no PostgreSQL, complementad
 
 Adulteracoes passam a ser detectaveis e auditaveis. A garantia continua dependente dos controles do operador, banco, KMS e verificadores; nao equivale a consenso descentralizado.
 
+Como a implementacao ainda nao chegou a producao, o corte inicial remove do ambiente mercados sem definicao assinada em vez de criar provas retroativas. O procedimento exige inventario, backup, `dry-run` e recusa qualquer mercado que ja possua prova/evento de integridade. Depois do corte, todo mercado ativo nasce pelo fluxo atomico de publicacao e toda previsao, humana ou de agente IA, possui compromisso correspondente.
+
 ## Alternativas rejeitadas
 
 - apenas armazenar hashes sem assinatura/encadeamento

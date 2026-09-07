@@ -15,6 +15,8 @@ O registro append-only `integrity_signing_keys` preserva somente a chave publica
 
 `integrity.status` usa `seal_retry_pending` para indisponibilidade operacional de selagem e reserva `verification_failed` para diferenca criptografica detectada. `canceled_preserved` evita apresentar mercados cancelados como eternamente pendentes.
 
+Mercado ativo sem `market_integrity_definitions` e inconsistencia operacional: nao aceita previsao nem selagem e deve ser removido pelo corte controlado do ambiente pre-producao. `legacy_unregistered` nao faz parte do catalogo normal apos esse corte.
+
 ## Endpoints
 
 - `GET /markets/{slug}/integrity`
@@ -32,6 +34,8 @@ Recibos de previsao exigem que o usuario autenticado seja dono da previsao. A pr
 O endpoint staff reutiliza o mesmo verificador de `GET /markets/{slug}/integrity/verify`, exige operador autenticado e nao passa pelo limite publico compartilhado. Ele nao altera mercado, prova, alerta ou evento ao ser consultado.
 
 O daemon reutiliza a mesma verificacao criptografica autoritativa em modo interno, sem rate limit HTTP, como primeira rotina de cada ciclo e sobre todos os mercados nativos, nao apenas mercados selados. Falhas especificas do mercado e falha da cadeia global geram itens `integrity_alert` no contrato staff de filas. Esses itens possuem severidade fixa `high`, status operacional, codigo da divergencia, mercado opcional, primeira/ultima deteccao e numero de ocorrencias. O item e deduplicado enquanto representar o mesmo escopo e tipo de falha.
+
+A verificacao exige cobertura exata entre `gotrendlabs_predictions` e `prediction_commitments`, inclusive para usuarios `is_bot=true`. A unicidade de `prediction_id` impede duplicidade no banco; previsao sem compromisso produz `prediction_commitment_missing`, enquanto compromisso orfao ou divergente produz `prediction_commitment_invalid`. Qualquer caso impede o Seal.
 
 ## Erros
 

@@ -1,9 +1,11 @@
 import json
+from io import StringIO
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta, timezone
 from unittest import mock
 
+from django.core.management import call_command, CommandError
 from django.db import DatabaseError, transaction
 from django.test import SimpleTestCase, TransactionTestCase
 from django.utils import timezone as django_timezone
@@ -121,6 +123,27 @@ class IntegrityProtocolTests(SimpleTestCase):
         self.assertEqual(order, ["audit", "close", "seal"])
         self.assertEqual(result["integrity_audit"], audit_summary)
 
+    def test_daemon_continues_independent_tasks_when_integrity_audit_crashes(self):
+        order = []
+        connection = mock.MagicMock()
+        with (
+            mock.patch("apps.api.backend_api.daemon_services.audit_integrity_records", side_effect=DatabaseError("timeout")),
+            mock.patch("apps.api.backend_api.daemon_services.close_due_auto_markets", side_effect=lambda **_: order.append("close") or []),
+            mock.patch("apps.api.backend_api.daemon_services.seal_due_markets") as seal,
+            mock.patch("apps.api.backend_api.daemon_services.prune_expired_operational_records", side_effect=lambda **_: order.append("prune") or {"total": 0}),
+            mock.patch("apps.api.backend_api.daemon_services.get_connection", return_value=connection),
+            mock.patch("apps.api.backend_api.daemon_services.run_ai_agent_cycle", side_effect=lambda *_args, **_kwargs: order.append("ai") or {"enabled": False}),
+            mock.patch("apps.api.backend_api.daemon_services.log_daemon_event"),
+            mock.patch("apps.web.django.communications.services.process_due_email_deliveries", side_effect=lambda **_: order.append("email") or {}),
+            mock.patch("apps.web.django.communications.push_services.process_due_push_deliveries", side_effect=lambda **_: order.append("push") or {}),
+        ):
+            result = run_daemon_cycle(now=datetime(2026, 9, 7, tzinfo=timezone.utc))
+
+        self.assertFalse(result["integrity_audit"]["available"])
+        self.assertEqual(result["integrity_seals"]["skipped_reason"], "integrity_audit_unavailable")
+        seal.assert_not_called()
+        self.assertEqual(order, ["close", "prune", "email", "push", "ai"])
+
 
 class IntegrityLedgerIntegrationTests(TransactionTestCase):
     def setUp(self):
@@ -195,6 +218,37 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         with self.assertRaises(DatabaseError), transaction.atomic():
             IntegritySigningKey.objects.filter(pk=signing_key.pk).update(key_fingerprint="0" * 64)
 
+    def test_unsigned_market_purge_is_dry_run_protected_and_idempotent(self):
+        unsigned_before = Market.objects.filter(
+            status__in=("open", "locked", "resolved", "sealed", "canceled"),
+            integrity_definition__isnull=True,
+        ).count()
+        self.assertGreater(unsigned_before, 0)
+        output = StringIO()
+        call_command("purge_unsigned_markets", stdout=output)
+        self.assertEqual(json.loads(output.getvalue())["mode"], "dry-run")
+        self.assertEqual(
+            Market.objects.filter(
+                status__in=("open", "locked", "resolved", "sealed", "canceled"),
+                integrity_definition__isnull=True,
+            ).count(),
+            unsigned_before,
+        )
+        with self.assertRaises(CommandError):
+            call_command("purge_unsigned_markets", execute=True)
+
+        call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=StringIO())
+        self.assertFalse(
+            Market.objects.filter(
+                status__in=("open", "locked", "resolved", "sealed", "canceled"),
+                integrity_definition__isnull=True,
+            ).exists()
+        )
+        self.assertTrue(Market.objects.filter(slug="openai-gpt6-2026").exists())
+        second = StringIO()
+        call_command("purge_unsigned_markets", execute=True, backup_confirmed=True, stdout=second)
+        self.assertEqual(json.loads(second.getvalue())["market_count"], 0)
+
     def test_open_market_reports_prediction_commitment_validity_before_sealing(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
         option = market.options.order_by("display_order", "id").first()
@@ -223,6 +277,69 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertEqual(forbidden.status_code, 403)
         self.assertEqual(staff_verification.status_code, 200, staff_verification.text)
         self.assertTrue(staff_verification.json()["prediction_commitments_valid"])
+
+    def test_prediction_without_commitment_is_detected_and_cannot_be_sealed(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = market.options.order_by("display_order", "id").first()
+        from django.contrib.auth import get_user_model
+
+        user_id = get_user_model().objects.get(email="integrity-user@example.com").id
+        now = django_timezone.now()
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """INSERT INTO gotrendlabs_predictions
+                       (user_id,market_id,market_option_id,action_type,position_sequence,stake_amount,
+                        probability_at_entry,weight_at_entry,potential_payout,status,won,created_at,updated_at)
+                       VALUES (%s,%s,%s,'initial',1,10,50,1000,20,'open',NULL,%s,%s)""",
+                    (user_id, market.id, option.id, now, now),
+                )
+        verification = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(verification["prediction_commitments_valid"])
+        self.assertIn("prediction_commitment_missing", verification["errors"])
+
+        Market.objects.filter(pk=market.pk).update(
+            status="resolved",
+            resolved_at=now,
+            seal_due_at=now - timedelta(seconds=1),
+            winning_option=option,
+            resolution_timezone="UTC",
+        )
+        market.refresh_from_db()
+        with get_connection() as connection:
+            with connection.cursor() as cursor, self.assertRaises(integrity_service.IntegritySigningError):
+                integrity_service.seal_market(cursor, dict(cursor.execute("SELECT * FROM gotrendlabs_markets WHERE id=%s", (market.id,)).fetchone()), sealed_at=now)
+
+    def test_prediction_row_tampering_is_detected_against_signed_commitment(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = market.options.order_by("display_order", "id").first()
+        created = self.client.post(
+            f"/markets/{market.slug}/predict",
+            headers=self.user_headers,
+            json={"option_id": option.id, "stake_amount": 25, "client_locale": "pt-br"},
+        )
+        self.assertEqual(created.status_code, 201, created.text)
+        prediction_id = created.json()["prediction_id"]
+        from apps.web.django.markets.models import Prediction
+
+        Prediction.objects.filter(pk=prediction_id).update(stake_amount=26)
+        verification = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(verification["prediction_commitments_valid"])
+        self.assertIn("prediction_commitment_invalid", verification["errors"])
+
+    def test_taxonomy_rename_preserves_definition_but_association_change_does_not(self):
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        original_category_id = market.category_id
+        MarketCategory = market.category.__class__
+        MarketCategory.objects.filter(pk=original_category_id).update(name="Tecnologia renomeada")
+        renamed = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertTrue(renamed["definition_matches_current"], renamed)
+
+        replacement = MarketCategory.objects.exclude(pk=original_category_id).first()
+        Market.objects.filter(pk=market.pk).update(category=replacement)
+        reassociated = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(reassociated["definition_matches_current"])
+        self.assertIn("definition_changed", reassociated["errors"])
 
     def test_due_sealing_is_concurrent_safe_idempotent_and_publicly_verifiable(self):
         market, prediction_id, due = self._resolve_due_market()

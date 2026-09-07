@@ -56,7 +56,7 @@ from apps.web.django.core.domain_client import get_domain_client, local_market, 
 from apps.web.django.core.platform_config import load_platform_config, save_platform_config
 from apps.web.django.core.social_share import public_badge_share_token
 from apps.web.django.admin_ops.views import _safe_image_content
-from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, ProductFeedback, UserNotification
+from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, PredictionCommitment, ProductFeedback, UserNotification
 from apps.web.django.system_logs.models import SystemLog
 from apps.web.django.system_logs.services import request_headers, sanitize_context, log_system_event
 
@@ -3049,8 +3049,50 @@ class BackendAuthAPITests(TransactionTestCase):
                 summary = run_ai_agent_cycle(cursor, now=timezone.now())
 
         self.assertEqual(summary["predictions_created"], 1)
-        self.assertTrue(Prediction.objects.filter(user=bot, market=second).exists())
+        bot_prediction = Prediction.objects.get(user=bot, market=second)
+        self.assertTrue(PredictionCommitment.objects.filter(prediction=bot_prediction, market=second).exists())
         self.assertEqual(Prediction.objects.filter(user=bot, market=first).count(), 1)
+
+    def test_ai_prediction_signing_failure_rolls_back_prediction_and_wallet(self):
+        site_config = SiteConfig.get_solo()
+        site_config.ai_agents_enabled = True
+        site_config.ai_commenting_enabled = False
+        site_config.ai_predictions_enabled = True
+        site_config.ai_min_humans_for_prediction = 1
+        site_config.ai_max_stake_gtl = 5
+        site_config.save()
+        User = get_user_model()
+        human = User.objects.create_user(username="@sign_human", email="sign-human@example.com", password="x")
+        bot = User.objects.create_user(username="@sign_liquidity_bot", email="sign-liquidity@example.com", password="x", is_bot=True)
+        AiAgent.objects.create(name="GoTrendLabs Liquidity Sign", agent_type="liquidity", user=bot, is_active=True)
+        WalletBalance.objects.create(user=bot, available_gtl=100, locked_gtl=0, total_earned_gtl=0)
+        market = Market.objects.filter(status="open").order_by("id").first()
+        option = market.options.first()
+        Prediction.objects.create(
+            user=human,
+            market=market,
+            market_option=option,
+            stake_amount=10,
+            probability_at_entry=50,
+            weight_at_entry=1000,
+            potential_payout=20,
+            status="open",
+        )
+
+        with patch(
+            "apps.api.backend_api.prediction_write_service.commit_prediction",
+            side_effect=RuntimeError("kms unavailable"),
+        ):
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    summary = run_ai_agent_cycle(cursor, now=timezone.now())
+
+        self.assertEqual(summary["predictions_created"], 0)
+        self.assertEqual(summary["errors"], 1)
+        self.assertFalse(Prediction.objects.filter(user=bot, market=market).exists())
+        balance = WalletBalance.objects.get(user=bot)
+        self.assertEqual(balance.available_gtl, 100)
+        self.assertEqual(balance.locked_gtl, 0)
 
     def test_system_log_capture_and_python_logging_handler(self):
         client = TestClient(app)

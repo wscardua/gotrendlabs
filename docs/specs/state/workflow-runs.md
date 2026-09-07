@@ -2,6 +2,21 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260907-INTEGRITY-HARDENING-018
+
+- Tipo: `change-feature` + `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-PRED-001`, `FEAT-AIAGENT-001`, `FEAT-MOBILE-001`
+- Objetivo: eliminar dados pre-producao sem prova, exigir compromissos para todas as previsoes, estabilizar taxonomia assinada e isolar a auditoria do daemon sem manter compatibilidade com builds mobile ainda nao publicados.
+- Etapa atual: specs, implementacao, corte local, reconciliacao e validacao concluidos.
+- Artefatos afetados: feature/contratos/arquitetura, FastAPI, daemon, comando de limpeza, PostgreSQL, testes, OpenAPI e validacao Django/Flutter.
+- Decisoes: mercados sem definicao assinada serao removidos por comando explicito apos inventario/backup; nao havera assinatura retroativa; previsoes IA usam a mesma garantia transacional; nomes taxonomicos sao snapshot e IDs sao protegidos; falha da auditoria nao encerra o daemon.
+- Reversao logica: restaurar o dump validado em `.runtime/backups/integrity-ledger-cutover-20260907/pre-unsigned-market-purge.dump` para recuperar os dados locais removidos; para provas existentes, nunca apagar ou reescrever eventos, apenas desativar novas mutacoes e corrigir append-only.
+- Evidencias: backup PostgreSQL custom de 1,8 MiB validado antes do corte e copiado com SHA-256 `bd27ef3a77af01fade2d87ab6a745654b170b341a85431442d751560d10c0dbd`; `purge_unsigned_markets` removeu 44 mercados publicados sem prova, 33 previsoes e dependencias, e a segunda execucao encontrou zero candidatos; banco local final com 3 mercados abertos e 6 selados, todos com definicao; 6 demos seguem validas e 3 demos adulteradas permanecem para o caminho de falha; 21 testes de integridade e 221 testes web aprovados; `flutter analyze` sem issues e 101 testes Flutter aprovados; OpenAPI atual; `manage.py check`, `makemigrations --check --dry-run`, compilacao Python e `git diff --check` aprovados.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
 ## WFLOW-20260906-MOBILE-DETAIL-DENSITY-017
 
 - Tipo: `change-feature` + `implementation-cycle`

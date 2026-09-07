@@ -146,5 +146,6 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - Séries visuais devem considerar previsões `open` e `resolved`; previsões `revised` entram no ponto de criação e saem no ponto `superseded_at`; previsões `canceled` não participam do histórico visual.
 - `resolved_at_label` é campo de apresentação derivado de `resolved_at` + `resolution_timezone`; cálculos e ordenação devem usar `resolved_at`.
 - Previsões bot oficiais são `Prediction` reais de usuários `is_bot=true`, criadas somente pelo backend/daemon quando flags e limites permitirem.
+- Previsoes bot usam o mesmo escritor transacional de previsao inicial e geram compromisso e evento de integridade antes do commit; falha do signer reverte previsao, wallet e metricas do agente naquele savepoint.
 - Previsão bot é bloqueada quando `human_participants=0` ou abaixo de `ai_min_humans_for_prediction`.
 - Respostas de mercado expõem `human_participants`, `bot_participants`, `human_volume_gtl`, `bot_volume_gtl` e `total_volume_gtl`; `participants` e `volume_gtl` legados representam humanos.

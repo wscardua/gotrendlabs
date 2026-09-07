@@ -1,5 +1,13 @@
 # Change Log de Specs
 
+## 2026-09-07
+
+- substituida a convivencia com mercados pre-producao sem prova por corte destrutivo controlado, com inventario, backup, `dry-run` e recusa de registros criptograficos protegidos;
+- previsoes humanas e de agentes IA passam a compartilhar persistencia inicial atomica e cobertura obrigatoria um-para-um por compromisso;
+- IDs taxonomicos tornam a associacao parte da prova enquanto nomes permanecem snapshot editorial renomeavel;
+- falha da auditoria deixa de derrubar o daemon, adia apenas selagem e preserva tarefas independentes;
+- removida a necessidade de compatibilidade com builds Flutter anteriores, ainda nao publicados, e definido o build `1.1.0+12`.
+
 ## 2026-09-06
 
 - ampliada a auditoria de integridade do Admin Ops para qualquer estado do mercado, com diagnóstico separado por camada e compromissos verificáveis antes da selagem;

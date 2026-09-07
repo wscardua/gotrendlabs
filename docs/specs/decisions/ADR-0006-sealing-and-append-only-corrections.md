@@ -9,4 +9,4 @@
 
 ## Consequencias
 
-O resultado continua operacionalmente corrigivel durante a janela, mas o historico final passa a ser verificavel. Mercados legados permanecem identificados como sem prova original.
+O resultado continua operacionalmente corrigivel durante a janela, mas o historico final passa a ser verificavel. Como o recurso ainda nao foi implantado em producao, mercados pre-producao sem prova original sao removidos por corte controlado e nao recebem assinatura retroativa.

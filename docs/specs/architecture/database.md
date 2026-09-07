@@ -16,6 +16,8 @@
 - Wallet deve usar razão de transações (`ledger`) em vez de depender apenas de saldo derivado.
 - Resolução de mercado deve registrar origem, operador, evidência, data efetiva e timezone usado para apresentação/auditoria.
 - Sempre que possível, usar identificadores estáveis independentes de textos traduzidos.
+- Definicoes assinadas guardam IDs estaveis de categoria, subcategoria e evento como campos protegidos e os nomes como snapshot editorial. Renomear o cadastro taxonomico nao altera a prova; trocar a associacao do mercado altera campo protegido.
+- O corte de dados pre-producao sem prova e executado por comando operacional em `dry-run` por padrao, nunca por migration destrutiva automatica. O comando recusa mercados com definicao ou eventos assinados e reconcilia projecoes de wallet depois de remover referencias de previsoes eliminadas.
 - Categorias, subcategorias e eventos vinculados a mercados devem usar bloqueio lógico (`is_blocked`, motivo e data) em vez de exclusão física operacional; eventos sem mercados vinculados podem ser excluídos para limpeza de cadastros criados por engano.
 - Eventos ficam em `gotrendlabs_market_events`, pertencem a uma subcategoria e formam a terceira camada da taxonomia `categoria -> subcategoria -> evento`.
 - `gotrendlabs_market_categories.notice`, `gotrendlabs_market_subcategories.notice` e `gotrendlabs_market_events.notice` guardam avisos opcionais, vazios por padrão, para exibição contextual no detalhe/ticket de mercados sensíveis vinculados.

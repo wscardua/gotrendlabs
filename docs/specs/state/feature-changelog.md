@@ -1,5 +1,14 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de cobertura e corte pre-producao
+
+- Mercados publicados sem definicao assinada deixam de ser mantidos como legado ativo; comando `purge_unsigned_markets` inventaria em `dry-run`, exige backup confirmado, recusa provas protegidas, remove dependencias operacionais e reconcilia wallet/reputacao/badges.
+- Previsoes iniciais humanas e de agentes IA compartilham escritor transacional com wallet, compromisso e evento; falha do signer no agente reverte o savepoint antes da auditoria da falha.
+- Verificacao compara previsoes com compromissos em cobertura exata e valida opcao, stake, tipo, sequencia, timestamp, pseudonimo e definicao; ausencia ou adulteracao impede Seal.
+- Definicoes novas protegem IDs taxonomicos e preservam nomes como snapshot, permitindo renomeacao editorial sem esconder troca de associacao.
+- Auditoria indisponivel adia apenas a selagem do ciclo; fechamento, retencao, email, push e processo daemon continuam isolados.
+- Flutter avanca para `1.1.0+12`; como ainda nao esta em producao, nao foi criada camada de compatibilidade com builds anteriores.
+
 ## 2026-09-06 — FEAT-MOBILE-UX-001 detalhe e painéis compactos
 
 - O critério de resolução passa a anteceder previsão/posição e resultado pessoal no detalhe mobile.

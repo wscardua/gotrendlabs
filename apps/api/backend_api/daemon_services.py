@@ -26,6 +26,7 @@ INTEGRITY_ISSUE_LABELS = {
     "definition_invalid": ("Assinatura da definição não confere", "A definição registrada falhou na validação de hash ou assinatura."),
     "definition_changed": ("Definição publicada foi alterada", "A definição operacional atual diverge do registro assinado na publicação."),
     "prediction_commitment_invalid": ("Comprovante de previsão não confere", "Um ou mais compromissos de previsão falharam na validação ou no encadeamento."),
+    "prediction_commitment_missing": ("Previsão sem comprovante", "Uma ou mais previsões persistidas não possuem compromisso de integridade correspondente."),
     "seal_invalid": ("Seal final não confere", "O Seal armazenado falhou na validação de conteúdo, referência ou assinatura."),
     "result_changed": ("Resultado registrado foi alterado", "O resultado operacional atual diverge do resultado protegido pelo ledger."),
     "merkle_invalid": ("Histórico Merkle não confere", "A raiz ou uma prova Merkle não corresponde aos compromissos registrados."),
@@ -199,7 +200,7 @@ def _enqueue_integrity_alert(cursor, *, issue_code, market, now):
 
 def audit_integrity_records(now=None):
     now = now or datetime.now(timezone.utc)
-    summary = {"markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 0}
+    summary = {"available": True, "markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 0}
     try:
         with get_connection() as connection:
             with connection.cursor() as cursor:
@@ -230,7 +231,8 @@ def audit_integrity_records(now=None):
                         summary["alerts_created"] += int(
                             _enqueue_integrity_alert(cursor, issue_code=issue_code, market=market, now=now)
                         )
-    except IntegritySigningError as exc:
+    except Exception as exc:
+        summary["available"] = False
         summary["scan_failures"] += 1
         log_daemon_event(
             "daemon.integrity_audit_unavailable",
@@ -253,6 +255,31 @@ def audit_integrity_records(now=None):
             context=summary,
         )
     return summary
+
+
+def _run_isolated_task(task_name, operation, *, fallback):
+    try:
+        return operation()
+    except Exception as exc:
+        log_daemon_event(
+            f"daemon.{task_name}_failed",
+            f"Tarefa isolada do daemon falhou: {task_name} ({exc.__class__.__name__}).",
+            level="ERROR",
+            context={"error": str(exc), "error_type": exc.__class__.__name__, "task": task_name},
+        )
+        return fallback
+
+
+def _process_due_email(now):
+    from apps.web.django.communications.services import process_due_email_deliveries
+
+    return process_due_email_deliveries(now=now)
+
+
+def _process_due_push(now):
+    from apps.web.django.communications.push_services import process_due_push_deliveries
+
+    return process_due_push_deliveries(now=now)
 
 
 def prune_expired_system_logs(now=None):
@@ -340,25 +367,33 @@ def run_daemon_cycle(now=None):
         "errors": 0,
         "reason": "not_run",
     }
-    try:
-        integrity_audit_summary = audit_integrity_records(now=now)
-        locked_markets = close_due_auto_markets(now=now)
-        seal_summary = seal_due_markets(now=now)
-        pruned_details = prune_expired_operational_records(now=now)
-        pruned_logs = pruned_details["total"]
-        from apps.web.django.communications.push_services import process_due_push_deliveries
-        from apps.web.django.communications.services import process_due_email_deliveries
-
-        email_summary = process_due_email_deliveries(now=now)
-        push_summary = process_due_push_deliveries(now=now)
-    except Exception as exc:
-        log_daemon_event(
-            "daemon.run_failed",
-            f"Daemon operacional falhou: {exc.__class__.__name__}",
-            level="ERROR",
-            context={"error": str(exc), "error_type": exc.__class__.__name__},
+    integrity_audit_summary = _run_isolated_task(
+        "integrity_audit",
+        lambda: audit_integrity_records(now=now),
+        fallback={"available": False, "markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 1},
+    )
+    locked_markets = _run_isolated_task("market_close", lambda: close_due_auto_markets(now=now), fallback=[])
+    if integrity_audit_summary.get("available", True):
+        seal_summary = _run_isolated_task(
+            "market_seal",
+            lambda: seal_due_markets(now=now),
+            fallback={"sealed": [], "failed": [{"error_type": "TaskFailure"}]},
         )
-        raise
+    else:
+        seal_summary = {"sealed": [], "failed": [], "skipped_reason": "integrity_audit_unavailable"}
+        log_daemon_event(
+            "daemon.market_seal_suppressed",
+            "Selagem foi adiada porque a auditoria de integridade nao concluiu neste ciclo.",
+            level="ERROR",
+        )
+    pruned_details = _run_isolated_task(
+        "retention",
+        lambda: prune_expired_operational_records(now=now),
+        fallback={"system_logs": 0, "ai_agent_actions": 0, "total": 0},
+    )
+    pruned_logs = pruned_details["total"]
+    email_summary = _run_isolated_task("email", lambda: _process_due_email(now), fallback={"sent": 0, "failed": 1})
+    push_summary = _run_isolated_task("push", lambda: _process_due_push(now), fallback={"sent": 0, "failed": 1})
     try:
         with get_connection() as connection:
             with connection.cursor() as cursor:
