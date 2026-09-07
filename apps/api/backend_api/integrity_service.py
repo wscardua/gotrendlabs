@@ -26,6 +26,7 @@ SIGNING_ALGORITHM = "ED25519_SHA_512"
 LEDGER_LOCK_ID = 0x47544C49
 CHECKPOINT_VERIFIER_VERSION = "gtl-ledger-verifier/v1"
 FULL_AUDIT_INTERVAL = timedelta(hours=24)
+INVALID_AUDIT_RETRY_INTERVAL = timedelta(hours=1)
 
 
 class IntegritySigningError(RuntimeError):
@@ -162,6 +163,20 @@ def verify_signed_hash(digest_hex: str, signature: bytes, public_key_der: bytes)
         return True
     except Exception:
         return False
+
+
+def _signed_record_core_is_valid(record: dict, *, hash_field: str, payload: dict, public_key_der: bytes) -> bool:
+    """Validate the common cryptographic envelope stored with signed records."""
+    digest = record[hash_field]
+    return (
+        hmac.compare_digest(sha256_hex(bytes(record["canonical_payload"])), digest)
+        and hmac.compare_digest(sha256_hex(canonical_json(payload)), digest)
+        and verify_signed_hash(digest, bytes(record["signature"]), public_key_der)
+        and record["algorithm"] == SIGNING_ALGORITHM
+        and hmac.compare_digest(sha256_hex(public_key_der), record["key_fingerprint"])
+        and record["protocol_version"] == PROTOCOL_VERSION
+        and payload.get("protocol_version") == record["protocol_version"]
+    )
 
 
 def _user_commitment(user_id: int) -> str:
@@ -621,6 +636,20 @@ def audit_integrity_ledger(cursor, *, now: datetime | None = None, force_full: b
         raise IntegritySigningError("O checkpoint anterior não pôde ser validado com segurança.")
     if latest and checkpoint_status["status"] == "failed" and latest["status"] == "valid":
         return checkpoint_status
+    if (
+        latest
+        and latest["status"] == "invalid"
+        and checkpoint_status["status"] == "failed"
+        and checkpoint_status["issue_code"] == "ledger_chain_invalid"
+        and not force_full
+    ):
+        same_head = (
+            head["sequence"] == latest["observed_head_sequence"]
+            and hmac.compare_digest(head["event_hash"], latest["observed_head_hash"])
+        )
+        retry_due = latest["verified_at"] <= now - INVALID_AUDIT_RETRY_INTERVAL
+        if same_head and not retry_due:
+            return checkpoint_status
     cursor.execute(
         """SELECT verified_at FROM integrity_ledger_checkpoints
            WHERE audit_type='full' AND status='valid'
@@ -681,14 +710,20 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
     if definition:
         try:
             definition_payload = _json_object(definition["payload_json"])
+            definition_public_key = public_key_der_for(definition["key_id"], cursor=cursor)
             definition_valid = (
-                hmac.compare_digest(sha256_hex(bytes(definition["canonical_payload"])), definition["payload_hash"])
-                and hmac.compare_digest(sha256_hex(canonical_json(definition_payload)), definition["payload_hash"])
-                and verify_signed_hash(
-                    definition["payload_hash"],
-                    bytes(definition["signature"]),
-                    public_key_der_for(definition["key_id"], cursor=cursor),
+                _signed_record_core_is_valid(
+                    definition,
+                    hash_field="payload_hash",
+                    payload=definition_payload,
+                    public_key_der=definition_public_key,
                 )
+                and definition["market_id"] == market["id"]
+                and definition_payload.get("market_id") == definition["market_id"]
+                and definition_payload.get("market_slug") == market["slug"]
+                and definition_payload.get("definition_version") == definition["definition_version"]
+                and definition_payload.get("published_at") == _json_default(definition["signed_at"])
+                and definition["signed_at"] == market["published_at"]
             )
             current_definition = market_definition_payload(
                 cursor,
@@ -715,9 +750,11 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
                   pc.canonical_payload,pc.payload_json,pc.commitment_hash,pc.signature,
                   pc.algorithm,pc.key_id,pc.key_fingerprint,pc.signed_at,
                   p.id prediction_id,p.user_id,p.market_id prediction_market_id,
-                  p.market_option_id,p.action_type,p.position_sequence,p.stake_amount,p.created_at prediction_created_at
+                  p.market_option_id,p.action_type,p.position_sequence,p.stake_amount,p.created_at prediction_created_at,
+                  m.slug prediction_market_slug
            FROM gotrendlabs_predictions p
            LEFT JOIN prediction_commitments pc ON pc.prediction_id=p.id
+           JOIN gotrendlabs_markets m ON m.id=p.market_id
            WHERE p.market_id=%s
            ORDER BY p.user_id,p.position_sequence,p.id,pc.id""",
         (market["id"],),
@@ -738,16 +775,12 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         try:
             commitment_public_key = public_key_der_for(commitment["key_id"], cursor=cursor)
             valid_commitment = (
-                hmac.compare_digest(sha256_hex(bytes(commitment["canonical_payload"])), commitment["commitment_hash"])
-                and hmac.compare_digest(sha256_hex(canonical_json(payload)), commitment["commitment_hash"])
-                and verify_signed_hash(
-                    commitment["commitment_hash"],
-                    bytes(commitment["signature"]),
-                    commitment_public_key,
+                _signed_record_core_is_valid(
+                    commitment,
+                    hash_field="commitment_hash",
+                    payload=payload,
+                    public_key_der=commitment_public_key,
                 )
-                and hmac.compare_digest(sha256_hex(commitment_public_key), commitment["key_fingerprint"])
-                and commitment["protocol_version"] == PROTOCOL_VERSION
-                and payload.get("protocol_version") == commitment["protocol_version"]
                 and commitment["previous_commitment_id"] == expected_previous_id
                 and payload.get("previous_commitment_hash") == expected_previous_hash
                 and payload.get("position_sequence") == commitment["position_sequence"]
@@ -755,9 +788,11 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
                 and payload.get("action_type") == commitment["action_type"]
                 and payload.get("market_id") == commitment["prediction_market_id"]
                 and commitment["commitment_market_id"] == commitment["prediction_market_id"]
+                and payload.get("market_slug") == commitment["prediction_market_slug"]
                 and payload.get("option_id") == commitment["market_option_id"]
                 and payload.get("stake") == int(commitment["stake_amount"])
                 and payload.get("server_timestamp") == _json_default(commitment["prediction_created_at"])
+                and payload.get("server_timestamp") == _json_default(commitment["signed_at"])
                 and payload.get("user_commitment") == _user_commitment(commitment["user_id"])
                 and bool(definition)
                 and commitment["definition_id"] == definition["id"]
@@ -780,14 +815,23 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
             seal_payload = _json_object(seal["payload_json"])
             signed_result = seal_payload.get("result") or {}
             signed_result_hash = sha256_hex(canonical_json(signed_result))
+            seal_public_key = public_key_der_for(seal["key_id"], cursor=cursor)
             seal_valid = (
-                hmac.compare_digest(sha256_hex(bytes(seal["canonical_payload"])), seal["seal_hash"])
-                and hmac.compare_digest(sha256_hex(canonical_json(seal_payload)), seal["seal_hash"])
-                and verify_signed_hash(
-                    seal["seal_hash"],
-                    bytes(seal["signature"]),
-                    public_key_der_for(seal["key_id"], cursor=cursor),
+                _signed_record_core_is_valid(
+                    seal,
+                    hash_field="seal_hash",
+                    payload=seal_payload,
+                    public_key_der=seal_public_key,
                 )
+                and seal["market_id"] == market["id"]
+                and seal_payload.get("market_id") == seal["market_id"]
+                and seal_payload.get("market_slug") == market["slug"]
+                and seal["definition_id"] == definition["id"]
+                and seal_payload.get("definition_version") == definition["definition_version"]
+                and seal_payload.get("sealed_at") == _json_default(seal["sealed_at"])
+                and market["status"] == "sealed"
+                and seal["sealed_at"] == market["sealed_at"]
+                and seal_payload.get("previous_event_hash") == seal["previous_event_hash"]
                 and hmac.compare_digest(seal_payload.get("result_hash", ""), seal["result_hash"])
                 and hmac.compare_digest(signed_result_hash, seal["result_hash"])
                 and hmac.compare_digest(seal_payload.get("predictions_root", ""), seal["predictions_root"])
@@ -798,7 +842,7 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
                 sha256_hex(canonical_json(market_result_payload(market))), seal["result_hash"]
             )
             cursor.execute(
-                """SELECT ml.commitment_id,ml.leaf_hash,ml.proof
+                """SELECT ml.market_id,ml.seal_id,ml.commitment_id,ml.leaf_index,ml.leaf_hash,ml.proof
                    FROM market_merkle_leaves ml
                    WHERE ml.seal_id=%s ORDER BY ml.leaf_index""",
                 (seal["id"],),
@@ -806,9 +850,12 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
             leaves = cursor.fetchall()
             commitment_by_id = {row["id"]: row for row in commitments}
             leaves_match = len(leaves) == len(commitments) and all(
-                row["commitment_id"] in commitment_by_id
+                row["leaf_index"] == index
+                and row["market_id"] == market["id"]
+                and row["seal_id"] == seal["id"]
+                and row["commitment_id"] in commitment_by_id
                 and hmac.compare_digest(row["leaf_hash"], commitment_by_id[row["commitment_id"]]["commitment_hash"])
-                for row in leaves
+                for index, row in enumerate(leaves)
             )
             calculated_root, _ = build_merkle([row["leaf_hash"] for row in leaves])
             merkle_valid = (
@@ -915,7 +962,7 @@ def seal_market(cursor, market: dict, *, sealed_at: datetime | None = None):
     definition = cursor.fetchone()
     if not definition:
         raise IntegritySigningError("Mercado legado sem definicao original nao pode ser selado como prova nativa.")
-    ledger_audit = audit_integrity_ledger(cursor, now=sealed_at)
+    ledger_audit = audit_integrity_ledger(cursor, now=sealed_at, force_full=True)
     verification = verify_market_integrity_records(cursor, market, ledger_audit=ledger_audit)
     if verification["overall_valid"] is not True:
         issue_codes = verification["errors"] + verification["warnings"]

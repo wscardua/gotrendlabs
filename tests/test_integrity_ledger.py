@@ -7,7 +7,7 @@ from unittest import mock
 
 from django.core.management import call_command, CommandError
 from django.db import DatabaseError, transaction
-from django.test import SimpleTestCase, TransactionTestCase
+from django.test import SimpleTestCase
 from django.utils import timezone as django_timezone
 from fastapi.testclient import TestClient
 
@@ -18,6 +18,7 @@ from apps.api.backend_api.main import _market_lifecycle_engine, app
 from apps.web.django.accounts.models import BadgeDefinition, UserBadgeAward
 from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerCheckpoint, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketComment, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
 from tests.test_web_smoke import _seed_test_badges, _seed_test_email_templates, _seed_test_markets
+from tests.test_cases import AppendOnlyTransactionTestCase
 
 
 class IntegrityProtocolTests(SimpleTestCase):
@@ -194,7 +195,7 @@ class IntegrityProtocolTests(SimpleTestCase):
         self.assertEqual(order, ["close", "prune", "email", "push", "ai"])
 
 
-class IntegrityLedgerIntegrationTests(TransactionTestCase):
+class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
     def setUp(self):
         self.previous_signer = integrity_service._signer
         integrity_service._signer = integrity_service._EphemeralSigner()
@@ -223,6 +224,23 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 return integrity_service.audit_integrity_ledger(cursor, now=now, force_full=force_full)
+
+    def _privileged_integrity_update(self, table, set_sql, params):
+        allowed_tables = {
+            "integrity_ledger_events",
+            "market_integrity_definitions",
+            "prediction_commitments",
+            "market_seals",
+            "market_merkle_leaves",
+        }
+        self.assertIn(table, allowed_tables)
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute(f'ALTER TABLE "{table}" DISABLE TRIGGER USER')
+                try:
+                    cursor.execute(f'UPDATE "{table}" SET {set_sql}', params)
+                finally:
+                    cursor.execute(f'ALTER TABLE "{table}" ENABLE TRIGGER USER')
 
     def _resolve_due_market(self, slug="openai-gpt6-2026"):
         market = Market.objects.get(slug=slug)
@@ -328,6 +346,36 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertFalse(integrity_service._checkpoint_is_valid(changed, public_key))
         with self.assertRaises(DatabaseError), transaction.atomic():
             IntegrityLedgerCheckpoint.objects.filter(pk=checkpoint.pk).update(issue_code="tampered")
+
+    def test_identical_invalid_checkpoint_uses_backoff_until_retry_is_due(self):
+        now = django_timezone.now()
+        invalid_result = {
+            "valid": False,
+            "invalid_market_ids": {Market.objects.get(slug="openai-gpt6-2026").id},
+            "first_invalid_sequence": 1,
+            "last_verified_sequence": 0,
+            "last_verified_hash": "",
+            "verified_event_count": 0,
+        }
+        with mock.patch.object(integrity_service, "_verify_integrity_ledger_segment", return_value=invalid_result):
+            first = self._audit_ledger(now=now, force_full=True)
+        self.assertEqual(first["status"], "failed")
+        self.assertEqual(IntegrityLedgerCheckpoint.objects.count(), 1)
+
+        with mock.patch.object(
+            integrity_service,
+            "_verify_integrity_ledger_segment",
+            side_effect=AssertionError("identical failure must respect backoff"),
+        ):
+            repeated = self._audit_ledger(now=now + timedelta(minutes=5))
+        self.assertEqual(repeated["status"], "failed")
+        self.assertEqual(IntegrityLedgerCheckpoint.objects.count(), 1)
+
+        with mock.patch.object(integrity_service, "_verify_integrity_ledger_segment", wraps=integrity_service._verify_integrity_ledger_segment) as scan:
+            retried = self._audit_ledger(now=now + timedelta(hours=1, seconds=1))
+        scan.assert_called_once()
+        self.assertEqual(retried["audit_type"], "full")
+        self.assertEqual(IntegrityLedgerCheckpoint.objects.count(), 2)
 
     def test_global_integrity_alert_suppresses_positive_market_badges(self):
         now = django_timezone.now()
@@ -613,9 +661,86 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertEqual(UserNotification.objects.filter(market=market, event_type="market_sealed").count(), 1)
         self.assertTrue(IntegrityLedgerEvent.objects.filter(market=market, event_type="market_sealed").exists())
 
+        public_proof = self.client.get(f"/markets/{market.slug}/integrity")
+        self.assertEqual(public_proof.status_code, 200, public_proof.text)
+        public_payload = public_proof.json()
+        self.assertEqual(public_payload["prediction_commitments"]["count"], 1)
+        self.assertTrue(public_payload["prediction_commitments"]["included_in_seal"])
+        self.assertEqual(public_payload["prediction_commitments"]["predictions_root"], merkle["predictions_root"])
+        self.assertNotIn("prediction_committed", [event["event_type"] for event in public_payload["ledger_events"]])
+        self.assertNotIn("prediction_commitment:", json.dumps(public_payload))
+
         definition = MarketIntegrityDefinition.objects.get(market=market)
         with self.assertRaises(DatabaseError), transaction.atomic():
             MarketIntegrityDefinition.objects.filter(pk=definition.pk).update(payload_hash="0" * 64)
+
+    def test_sealing_full_audit_detects_historical_tampering_before_checkpoint(self):
+        market, _prediction_id, due = self._resolve_due_market()
+        checkpoint = self._audit_ledger(now=due, force_full=True)
+        self.assertEqual(checkpoint["status"], "verified")
+        event = IntegrityLedgerEvent.objects.filter(market=market, event_type="market_published").get()
+        self.assertLess(event.sequence, checkpoint["verified_through_sequence"])
+
+        self._privileged_integrity_update(
+            "integrity_ledger_events",
+            "entity_identifier=%s WHERE id=%s",
+            ["historical-tampering", event.id],
+        )
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cached = integrity_service.ledger_checkpoint_status(cursor)
+        self.assertEqual(cached["status"], "verified")
+
+        outcome = seal_due_markets(now=due + timedelta(seconds=2))
+        self.assertEqual(outcome["sealed"], [])
+        self.assertEqual(len(outcome["failed"]), 1)
+        market.refresh_from_db()
+        self.assertEqual(market.status, "resolved")
+        self.assertFalse(MarketSeal.objects.filter(market=market).exists())
+
+    def test_persisted_definition_commitment_seal_and_leaf_metadata_are_verified(self):
+        market, prediction_id, due = self._resolve_due_market()
+        sealed = seal_due_markets(now=due + timedelta(seconds=2))
+        self.assertEqual([item["slug"] for item in sealed["sealed"]], [market.slug], sealed)
+        market.refresh_from_db()
+        definition = MarketIntegrityDefinition.objects.get(market=market)
+        commitment = PredictionCommitment.objects.get(prediction_id=prediction_id)
+        seal = MarketSeal.objects.get(market=market)
+
+        self._privileged_integrity_update(
+            "market_integrity_definitions", "algorithm=%s WHERE id=%s", ["OTHER", definition.id]
+        )
+        changed_definition = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(changed_definition["definition_valid"])
+        self._privileged_integrity_update(
+            "market_integrity_definitions", "algorithm=%s WHERE id=%s", [definition.algorithm, definition.id]
+        )
+
+        self._privileged_integrity_update(
+            "prediction_commitments",
+            "signed_at=%s WHERE id=%s",
+            [commitment.signed_at + timedelta(seconds=1), commitment.id],
+        )
+        changed_commitment = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(changed_commitment["prediction_commitments_valid"])
+        self._privileged_integrity_update(
+            "prediction_commitments", "signed_at=%s WHERE id=%s", [commitment.signed_at, commitment.id]
+        )
+
+        self._privileged_integrity_update(
+            "market_seals", "previous_event_hash=%s WHERE id=%s", ["0" * 64, seal.id]
+        )
+        changed_seal = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(changed_seal["seal_valid"])
+        self._privileged_integrity_update(
+            "market_seals", "previous_event_hash=%s WHERE id=%s", [seal.previous_event_hash, seal.id]
+        )
+
+        self._privileged_integrity_update(
+            "market_merkle_leaves", "leaf_index=1 WHERE seal_id=%s", [seal.id]
+        )
+        changed_leaf = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
+        self.assertFalse(changed_leaf["merkle_root_valid"])
 
     def test_signing_failure_keeps_market_resolved_and_retry_seals_once(self):
         market, _prediction_id, due = self._resolve_due_market("tiktok-ban-eua-2026")

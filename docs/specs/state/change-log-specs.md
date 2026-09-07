@@ -2,6 +2,10 @@
 
 ## 2026-09-07
 
+- endurecida a selagem para exigir auditoria global integral fresca sob lock, sem confiar apenas em checkpoint historico;
+- removidas da prova publica referencias/eventos individuais de previsao, substituidos por agregado de compromissos;
+- ampliada a verificacao de metadados persistidos de definicao, compromisso, Seal e folhas, e definido backoff de uma hora para divergencia global identica;
+- registradas como evolucao futura a rotacao versionada do segredo de pseudonimizacao e a materializacao de resumo autoritativo por mercado;
 - aprovada `ADR-0007` para checkpoints assinados, auditoria incremental por ciclo, auditoria integral no primeiro ciclo apos 24 horas e leitura publica sem full scan;
 - substituido o booleano ambiguo `valid` pelos estados `verification_status` e resultados nullable separados para mercado, cadeia e conjunto;
 - adicionado `GET /integrity/status`, metadados de checkpoint no contrato de verificacao e build Flutter `1.2.0+13` sem compatibilidade pre-producao;

@@ -13,12 +13,15 @@ O daemon produz checkpoints globais canonicos, assinados e append-only. Cada che
 
 A auditoria incremental roda no inicio de cada ciclo do daemon. A auditoria integral roda quando nao existe checkpoint valido e, depois, ao menos a cada 24 horas. A verificacao publica valida o ultimo checkpoint e compara seu head ao head atual em tempo constante; ela nunca dispara silenciosamente uma varredura integral. Eventos posteriores ao checkpoint produzem estado `pending`, nao adulteracao.
 
-Antes de selar, o backend adquire o lock global, valida o checkpoint e verifica qualquer delta posterior. Seal continua bloqueado enquanto a cadeia estiver pendente, indisponivel ou invalida.
+Antes de selar, o backend adquire o lock global e executa auditoria integral fresca ate o head capturado na mesma transacao. O checkpoint acelera leituras publicas, mas nao autoriza sozinho uma transicao irreversivel. Seal continua bloqueado enquanto qualquer evento global ou registro aplicavel ao mercado estiver invalido ou indisponivel.
+
+Depois de uma divergencia confirmada, o mesmo head e a mesma falha usam backoff de uma hora antes de outra varredura integral/assinatura. Mudanca do head e solicitacao explicita eliminam o backoff. O alerta operacional continua deduplicado e atualizado em todo ciclo.
 
 ## Consequencias
 
 - A leitura publica global deixa de ser `O(E)` e passa a exigir poucos lookups e uma verificacao de assinatura.
 - Auditoria integral independente continua existindo para detectar defeitos no verificador incremental ou no checkpoint.
+- Cada selagem assume custo `O(E)` da auditoria global integral nesta fase, em troca de nao confiar em atestacao historica no ponto irreversivel; segmentacao autenticada fica como evolucao futura se a carga exigir.
 - Checkpoints exigem assinatura KMS somente quando o head/estado muda ou quando a auditoria integral periodica e executada.
 - Web e mobile distinguem `verified`, `pending`, `failed` e `unavailable`; `pending` nao e exibido como adulteracao.
 - O mecanismo permanece um ledger interno e nao elimina a dependencia dos controles de banco, KMS e operacao.

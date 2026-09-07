@@ -89,9 +89,9 @@ Triggers PostgreSQL rejeitam `UPDATE` e `DELETE`; FKs nao usam cascata destrutiv
 
 `integrity_ledger_checkpoints` preserva atestacoes assinadas e append-only da auditoria global. O payload inclui intervalo e quantidade de eventos verificados, head observado, ultimo hash valido, checkpoint anterior, tipo `full`/`incremental`, versao do verificador, estado e eventual sequencia/codigo da primeira divergencia.
 
-O daemon verifica somente eventos posteriores ao ultimo checkpoint valido em cada ciclo. Sem checkpoint, diante de checkpoint invalido ou ao completar 24 horas desde a ultima auditoria integral, percorre a cadeia desde o primeiro evento. Checkpoint sem mudanca de head nao e duplicado, exceto pela nova atestacao integral periodica.
+O daemon verifica somente eventos posteriores ao ultimo checkpoint valido em cada ciclo. Sem checkpoint ou ao completar 24 horas desde a ultima auditoria integral, percorre a cadeia desde o primeiro evento. Depois de divergencia confirmada, uma falha identica no mesmo head e reutilizada por ate uma hora sem nova assinatura; mudanca do head, solicitacao explicita ou fim do backoff dispara nova auditoria integral. Isso preserva alerta recorrente sem varredura `O(E)` e chamada KMS a cada ciclo de cinco minutos.
 
-A consulta publica valida assinatura/hash do checkpoint mais recente e compara sua sequencia/hash ao head atual; nunca percorre toda a cadeia. Head posterior gera `pending`, head regressivo ou divergente gera `failed`, e ausencia de checkpoint gera `unavailable`. A selagem adquire o lock global e verifica/persiste qualquer delta antes de avaliar o mercado, portanto nunca confia apenas em estado materializado antigo.
+A consulta publica valida assinatura/hash do checkpoint mais recente e compara sua sequencia/hash ao head atual; nunca percorre toda a cadeia. Head posterior gera `pending`, head regressivo ou divergente gera `failed`, e ausencia de checkpoint gera `unavailable`. A selagem adquire o lock global e executa auditoria integral fresca ate o head capturado na mesma transacao antes de avaliar o mercado. Assim, nenhum evento historico fica confiado apenas ao checkpoint anterior no momento irreversivel do Seal.
 
 ## Selagem e Merkle
 
@@ -103,7 +103,7 @@ O Seal referencia definicao, versao, raiz, resultado/evidencia/timestamps, merca
 
 ## Contratos e visibilidade
 
-- visitante: resumo, definicao, Seal, verificacao publica, chave/fingerprint e pacote de prova sem PII
+- visitante: resumo, definicao, Seal, eventos publicos do ciclo do mercado, totais agregados de compromissos, chave/fingerprint e pacote de prova sem PII nem referencia individual de previsao
 - usuario autenticado: recibo e prova Merkle apenas das proprias previsoes
 - admin: estado operacional, falhas/tentativas e auditoria completa
 - clientes nao assinam nem decidem validade
@@ -116,7 +116,9 @@ Estados publicos de integridade: `not_published`, `registered`, `resolved_pendin
 - `canceled_preserved` significa que o mercado foi cancelado e os registros de integridade ja emitidos foram preservados; resultado e Seal sao etapas nao aplicaveis.
 - `verification_failed` fica reservado a inconsistencia criptografica comprovada ou ausencia de prova obrigatoria em qualquer estado publicado. Um alerta de integridade pendente prevalece sobre `registered`, `resolved_pending_seal` e `sealed` nos resumos consumidos por cards web/mobile, impedindo selo verde enquanto a divergencia conhecida nao for resolvida e revalidada.
 
-A verificacao publica nao valida apenas os bytes armazenados contra si mesmos. Ela tambem reconstrói a definicao atual do mercado e o resultado operacional atual para compara-los aos snapshots assinados. Em mercado selado, valida ainda cada compromisso assinado incluido nas folhas, a raiz/provas Merkle, o Seal e a cadeia global. Campos nao aplicaveis sao `null`, nunca tratados como falha.
+A verificacao publica nao valida apenas os bytes armazenados contra si mesmos. Ela tambem reconstrói a definicao atual do mercado e o resultado operacional atual para compara-los aos snapshots assinados. Em mercado selado, valida ainda cada compromisso assinado incluido nas folhas, a raiz/provas Merkle, o Seal e a cadeia global. Validadores confrontam payload, chave publica, algoritmo, fingerprint, protocolo, timestamps, identificadores relacionais, referencias anteriores e demais metadados persistidos aplicaveis. Campos nao aplicaveis sao `null`, nunca tratados como falha.
+
+A prova publica omite eventos `prediction_committed`, IDs de compromisso, timestamps individuais de previsao e qualquer outra referencia que permita individualizar uma acao. Ela expoe apenas `count`, inclusao no Seal e `predictions_root` agregado quando existente. Recibos e provas individuais continuam restritos ao proprio usuario; a auditoria completa continua restrita ao Admin Ops.
 
 O contrato final usa `market_valid`, `ledger_chain_valid` e `overall_valid`, todos nullable quando ainda nao existe evidencia suficiente. `verification_status` distingue `verified`, `pending`, `failed` e `unavailable`. Falha especifica do mercado ou global produz `overall_valid=false`; backlog normal do daemon produz `overall_valid=null`, nunca falso positivo nem alegacao de adulteracao. Seal exige `overall_valid=true`.
 
@@ -164,7 +166,8 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - a deteccao operacional acontece na primeira passagem do daemon posterior a divergencia; a interface e a documentacao devem comunicar a cadencia real do ambiente, sem prometer deteccao instantanea
 - diferencas de definicao, resultado, compromisso, Merkle, Seal ou elo do ledger criam alerta operacional `high` em fila propria; indisponibilidade de KMS/transporte e retry de selagem nao sao classificados como adulteracao
 - alertas sao deduplicados por escopo e tipo de falha, preservam primeira/ultima deteccao e contagem de ocorrencias; revisao administrativa nao altera a prova e o alerta volta a `pending` se a divergencia persistir no ciclo seguinte
-- auditoria incremental abre cada ciclo; auditoria integral ocorre no bootstrap e no maximo a cada 24 horas, sem depender de requisicao publica
+- auditoria incremental abre cada ciclo; auditoria integral ocorre no bootstrap, no maximo a cada 24 horas e imediatamente antes de cada Seal, sem depender de requisicao publica
+- divergencia global identica no mesmo head nao cria novo checkpoint nem chama KMS em todo ciclo; o daemon reapresenta o alerta deduplicado e repete a auditoria integral depois de uma hora, quando o head mudar ou por solicitacao explicita
 - a interface informa sequencia verificada, sequencia atual, eventos pendentes e horario/tipo da ultima auditoria sem prometer atualizacao instantanea
 
 ## Comunicacoes
@@ -197,6 +200,10 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - checkpoint adulterado, ausente, regressivo ou desconectado nunca produz estado verificado
 - endpoint publico nao executa consulta que percorra todos os eventos globais
 - auditoria incremental valida somente o delta e auditoria integral periodica chega ao mesmo resultado
+- selagem executa auditoria global integral fresca e detecta adulteracao anterior ao ultimo checkpoint
+- prova publica agrega compromissos e nunca retorna evento, ID, referencia ou timestamp individual de previsao
+- alterar metadados persistidos de definicao, compromisso, Seal ou folha Merkle invalida a verificacao
+- divergencia global identica no mesmo head respeita backoff e nao cria checkpoint/KMS a cada ciclo
 
 ## Privacidade e retenção
 

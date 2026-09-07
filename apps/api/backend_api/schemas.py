@@ -743,12 +743,19 @@ class IntegrityPublicKeyResponse(BaseModel):
     public_key_pem: str
 
 
+class PublicPredictionCommitmentsSummary(BaseModel):
+    count: int = 0
+    included_in_seal: bool = False
+    predictions_root: str = ""
+
+
 class MarketIntegrityResponse(BaseModel):
     market_slug: str
     status: str
     protocol_version: str = ""
     definition: Optional[dict] = None
     seal: Optional[dict] = None
+    prediction_commitments: PublicPredictionCommitmentsSummary = Field(default_factory=PublicPredictionCommitmentsSummary)
     ledger_events: List[dict] = Field(default_factory=list)
 
 

@@ -1,11 +1,19 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de selagem e prova pública
+
+- A selagem passa a executar auditoria integral fresca da cadeia global sob o mesmo lock transacional; checkpoint anterior continua acelerando consultas públicas, mas não autoriza uma transição irreversível.
+- A prova pública deixa de expor eventos e referências de compromissos individuais; web e mobile recebem somente o total agregado, a raiz final e os eventos de ciclo do mercado.
+- O verificador confronta o envelope criptográfico e os metadados persistidos de definição, compromissos, Seal e folhas Merkle, incluindo relações, timestamps, protocolo, algoritmo e fingerprint.
+- Divergência global idêntica, sem mudança no head, respeita backoff de uma hora no daemon para evitar repetição de varredura e assinatura a cada ciclo; a falha continua visível e bloqueando Seal.
+- Rotação versionada do segredo de pseudonimização e resumo materializado por mercado ficam registrados para evolução da plataforma.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 checkpoints assinados
 
 - O daemon passa a criar checkpoints globais canonicos, assinados, encadeados e append-only, com auditoria incremental em cada ciclo e integral no bootstrap/primeiro ciclo apos 24 horas.
 - A verificacao publica deixa de percorrer todos os eventos e passa a validar checkpoint, head e limite por consultas indexadas; novo `GET /integrity/status` expoe a situacao global sem dados de mercado.
 - O contrato substitui `valid` por `verification_status`, `market_valid`, `ledger_chain_valid` e `overall_valid`, distinguindo atraso normal (`pending`) de divergencia (`failed`) e indisponibilidade.
-- Selagem valida qualquer delta sob advisory lock e permanece fail-closed; alertas globais pendentes tambem suprimem o selo positivo dos cards.
+- Selagem permanece fail-closed sob advisory lock; a otimização incremental serve às auditorias recorrentes e às leituras públicas, sem substituir a auditoria integral exigida pelo Seal.
 - Django/Admin Ops e Flutter apresentam sequencia auditada, head, pendencias e horario da ultima auditoria sem disparar full scan; Flutter avanca para `1.2.0+13` sem camada legada.
 - Migration `0031_integrity_ledger_checkpoints` adiciona indices, assinatura historica, trigger contra mutacao/truncate e privilegios minimos.
 - O corte pre-producao remove alertas operacionais mutaveis dos mercados candidatos antes da FK `PROTECT`, sem tocar provas append-only.

@@ -113,6 +113,7 @@
           <dt>Protocolo</dt><dd><code>{{ proof.protocol_version|default:"não disponível" }}</code></dd>
           <dt>Hash da definição</dt><dd><code title="{{ proof.definition.hash }}">{{ proof.definition.hash|default:"não disponível"|truncatechars:30 }}</code></dd>
           <dt>Identificação da chave</dt><dd><code title="{{ proof.definition.key_fingerprint }}">{{ proof.definition.key_fingerprint|default:"não disponível"|truncatechars:30 }}</code></dd>
+          <dt>Comprovantes agregados</dt><dd>{{ proof.prediction_commitments.count|default:0 }}</dd>
           <dt>Eventos conferidos</dt><dd>{{ proof.ledger_events|length }}</dd>
           <dt>Ledger global</dt><dd>{% if verification.ledger_chain_valid %}Verificado até o evento {{ verification.ledger_verified_through_sequence }}{% elif verification.verification_status == "pending" %}{{ verification.ledger_pending_events }} evento(s) aguardando auditoria{% elif verification.verification_status == "unavailable" %}Checkpoint ainda indisponível{% else %}Diferença detectada{% endif %}</dd>
           {% if verified_at_label %}<dt>Última auditoria global</dt><dd>{{ verified_at_label }}</dd>{% endif %}

@@ -2805,6 +2805,9 @@
             "title": "Market Slug",
             "type": "string"
           },
+          "prediction_commitments": {
+            "$ref": "#/components/schemas/PublicPredictionCommitmentsSummary"
+          },
           "protocol_version": {
             "default": "",
             "title": "Protocol Version",
@@ -4164,6 +4167,27 @@
           }
         },
         "title": "ProfileUpdatePayload",
+        "type": "object"
+      },
+      "PublicPredictionCommitmentsSummary": {
+        "properties": {
+          "count": {
+            "default": 0,
+            "title": "Count",
+            "type": "integer"
+          },
+          "included_in_seal": {
+            "default": false,
+            "title": "Included In Seal",
+            "type": "boolean"
+          },
+          "predictions_root": {
+            "default": "",
+            "title": "Predictions Root",
+            "type": "string"
+          }
+        },
+        "title": "PublicPredictionCommitmentsSummary",
         "type": "object"
       },
       "PublicUserProfileResponse": {

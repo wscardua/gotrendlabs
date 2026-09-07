@@ -20,7 +20,7 @@ from django.db import connection
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.management import call_command
 from django.contrib.staticfiles import finders
-from django.test import TestCase, TransactionTestCase, override_settings
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
@@ -48,6 +48,7 @@ from apps.api.backend_api.main import _clear_rate_limits
 from apps.api.backend_api.integrity_service import PROTOCOL_VERSION, register_market_definition
 from apps.api.backend_api.security import hash_token, issue_token, make_password
 from apps.api.backend_api.social_oauth import SocialProfile
+from tests.test_cases import AppendOnlyTransactionTestCase
 from config.recaptcha import RecaptchaError
 from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
 from apps.web.django.communications.push_services import create_test_push_delivery, enqueue_push_for_notification, process_due_push_deliveries
@@ -208,7 +209,7 @@ class FixtureDomainClientTests(TestCase):
             self.assertEqual(api_get_markets()[0]["volume_gtl"], "1355 GT₵")
 
 
-class SecurityHardeningTests(TransactionTestCase):
+class SecurityHardeningTests(AppendOnlyTransactionTestCase):
     def _api_token_for(self, user):
         token = issue_token()
         AuthSession.objects.create(
@@ -344,7 +345,7 @@ class SecurityHardeningTests(TransactionTestCase):
         self.assertIn("default-src 'none'", caddyfile)
 
 
-class MobileMaintenanceGateTests(TransactionTestCase):
+class MobileMaintenanceGateTests(AppendOnlyTransactionTestCase):
     def _runtime_path(self):
         return Path(self._tmp.name) / "platform_config.json"
 
@@ -603,7 +604,7 @@ class MobileMaintenanceGateTests(TransactionTestCase):
         self.assertEqual(superuser_response.json()["code"], "mobile_maintenance")
 
 
-class BackendAuthAPITests(TransactionTestCase):
+class BackendAuthAPITests(AppendOnlyTransactionTestCase):
     def setUp(self):
         _seed_test_badges()
         _seed_test_markets()
@@ -6420,7 +6421,7 @@ class BackendAuthAPITests(TransactionTestCase):
         self.assertEqual(blocked_reward.status_code, 422)
 
 
-class WebSmokeTests(TransactionTestCase):
+class WebSmokeTests(AppendOnlyTransactionTestCase):
     def setUp(self):
         _seed_test_badges()
         _seed_test_markets()
@@ -7449,6 +7450,7 @@ class WebSmokeTests(TransactionTestCase):
             "protocol_version": "gtl-integrity/v1",
             "definition": {"hash": "a" * 64, "key_fingerprint": "b" * 64},
             "seal": {"hash": "c" * 64},
+            "prediction_commitments": {"count": 3, "included_in_seal": True},
             "ledger_events": [{"event_type": "market_published"}, {"event_type": "market_sealed"}],
         }
         verification = {"verification_status": "verified", "overall_valid": True, "definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
@@ -7474,6 +7476,8 @@ class WebSmokeTests(TransactionTestCase):
         self.assertNotContains(response, "O que esta verificação não faz")
         self.assertContains(response, "Ver detalhes técnicos")
         self.assertContains(response, "Um hash funciona como uma impressão digital do registro")
+        self.assertContains(response, "Comprovantes agregados")
+        self.assertContains(response, ">3</dd>", html=False)
         self.assertNotContains(response, "Seal final")
         self.assertNotContains(response, "<!doctype html>")
 

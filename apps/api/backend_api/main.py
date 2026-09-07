@@ -4598,8 +4598,10 @@ def _market_integrity_contract(cursor, slug):
     definition = cursor.fetchone()
     cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
     seal = cursor.fetchone()
-    cursor.execute("SELECT sequence,event_type,payload_reference,payload_hash,previous_event_hash,event_hash,key_id,key_fingerprint,occurred_at FROM integrity_ledger_events WHERE market_id=%s ORDER BY sequence", (market["id"],))
+    cursor.execute("SELECT sequence,event_type,payload_reference,payload_hash,previous_event_hash,event_hash,key_id,key_fingerprint,occurred_at FROM integrity_ledger_events WHERE market_id=%s AND event_type <> 'prediction_committed' ORDER BY sequence", (market["id"],))
     events = [{**dict(row), "occurred_at": row["occurred_at"].isoformat()} for row in cursor.fetchall()]
+    cursor.execute("SELECT COUNT(*) commitment_count FROM prediction_commitments WHERE market_id=%s", (market["id"],))
+    commitment_count = int(cursor.fetchone()["commitment_count"])
     cursor.execute("SELECT 1 FROM gotrendlabs_admin_events WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s AND created_at >= COALESCE(%s, created_at) LIMIT 1", (slug, market["resolved_at"]))
     failed = bool(cursor.fetchone())
     cursor.execute(
@@ -4618,7 +4620,19 @@ def _market_integrity_contract(cursor, slug):
         else "canceled_preserved" if market["status"] == "canceled"
         else "registered"
     )
-    return {"market_slug": slug, "status": integrity_status, "protocol_version": definition["protocol_version"] if definition else "", "definition": _signed_record(definition, "payload_hash"), "seal": _signed_record(seal, "seal_hash"), "ledger_events": events}
+    return {
+        "market_slug": slug,
+        "status": integrity_status,
+        "protocol_version": definition["protocol_version"] if definition else "",
+        "definition": _signed_record(definition, "payload_hash"),
+        "seal": _signed_record(seal, "seal_hash"),
+        "prediction_commitments": {
+            "count": commitment_count,
+            "included_in_seal": bool(seal),
+            "predictions_root": seal["predictions_root"] if seal else "",
+        },
+        "ledger_events": events,
+    }
 
 
 @app.get("/integrity/public-key", response_model=IntegrityPublicKeyResponse)

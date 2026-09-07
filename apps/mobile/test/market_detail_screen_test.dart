@@ -181,6 +181,8 @@ void main() {
     expect(find.text('hash-definition-completo'), findsOneWidget);
     expect(find.text('Assinatura da definição'), findsOneWidget);
     expect(find.text('signature-definition-completa'), findsOneWidget);
+    expect(find.text('Comprovantes agregados'), findsOneWidget);
+    expect(find.text('3'), findsOneWidget);
     expect(find.text('Raiz das previsões'), findsOneWidget);
     expect(find.text('predictions-root-completa'), findsOneWidget);
     expect(find.text('Hash da finalização'), findsOneWidget);
@@ -219,6 +221,11 @@ class _IntegrityMarketsRepository extends _NoopMarketsRepository {
       'hash': 'seal-hash-completo',
       'signature': 'seal-signature-completa',
       'payload': {'predictions_root': 'predictions-root-completa'},
+    },
+    'prediction_commitments': {
+      'count': 3,
+      'included_in_seal': true,
+      'predictions_root': 'predictions-root-completa',
     },
     'ledger_events': [
       {

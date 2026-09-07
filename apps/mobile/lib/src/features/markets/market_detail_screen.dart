@@ -403,6 +403,10 @@ class _IntegritySheet extends StatelessWidget {
               final sealPayload = Map<String, dynamic>.from(
                 (seal['payload'] as Map?) ?? const <String, dynamic>{},
               );
+              final predictionCommitments = Map<String, dynamic>.from(
+                (proof['prediction_commitments'] as Map?) ??
+                    const <String, dynamic>{},
+              );
               final ledgerEvents =
                   (proof['ledger_events'] as List?) ?? const [];
               final protocol = safeString(
@@ -421,6 +425,10 @@ class _IntegritySheet extends StatelessWidget {
                 (
                   'Assinatura da definição',
                   safeString(definition['signature']),
+                ),
+                (
+                  'Comprovantes agregados',
+                  safeString(predictionCommitments['count'], '0'),
                 ),
                 ('Eventos do mercado', ledgerEvents.length.toString()),
                 (
