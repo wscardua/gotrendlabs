@@ -39,3 +39,14 @@
 - não executar migration reversa destrutiva nem apagar eventos, Seals ou chaves públicas históricas;
 - restaurar o snapshot somente para desastre integral durante o corte pré-lançamento; depois da primeira prova real, preferir correção append-only e nunca apagar história válida;
 - registrar toda correção pós-selagem por `market_corrected`, nunca por `UPDATE` no registro original.
+
+## Registro da implantação — 2026-09-07
+
+- PR principal `#114`, merge `c2e75b6`; hotfix transacional `#115`, merge final `c40fd61`.
+- GitHub Actions `34157223820` e `34158379066`: testes e deploy concluídos com sucesso.
+- Snapshot RDS criptografado: `gotrendlabs-prod-pre-integrity-20260907-01`, estado `available` antes do corte.
+- KMS: chave `bcbb43d0-cfba-465d-9c1d-500776ede30c`, `ECC_NIST_EDWARDS25519`, `SIGN_VERIFY`, alias de produção e IAM limitado ao ARN exato.
+- Fingerprint público validado: `b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a`; segredo de commitment permaneceu apenas no Secrets Manager e runtime.
+- Primeira tentativa de corte: FK defensiva de `PushDelivery` abortou o commit e o PostgreSQL reverteu a transação integralmente. O hotfix passou por 32 testes especializados e pela suíte completa antes da nova execução.
+- Corte final: 30 mercados, 4 previsões, 43 comentários, 7 notificações e 21 entregas push relacionadas removidos; repetição retornou zero em todas as contagens.
+- Smoke: cadeia `verified`, auditoria integral, sequência atual/verificada `0`, zero pendências, assinatura KMS real válida, API/banco `ok`, dois workers Django, um daemon, swap de 1 GiB ativo. O site permaneceu intencionalmente em manutenção web pré-lançamento.

@@ -2,6 +2,8 @@
 
 ## 2026-09-07
 
+- encerrado `WFLOW-20260907-INTEGRITY-CLOSEOUT-022` e promovida `FEAT-INTEGRITY-001` para `implementada_validada` após PRs, CI/deploy, rollout AWS, corte idempotente e smoke produtivo;
+- registrada a regressão operacional que remove `PushDelivery` somente quando vinculada às notificações dos mercados eliminados, preservando históricos não relacionados;
 - promovida `FEAT-INTEGRITY-001` para `aprovada` na versão `1.2`, por autorização explícita do usuário, mantendo implementação aguardando deploy até validação produtiva;
 - definido corte sem legado para remover todos os mercados pré-lançamento sem definição, inclusive `draft`/`scheduled`, após snapshot validado;
 - atualizado runbook AWS com KMS/IAM/Secrets Manager, swap/monitoramento e segundo worker Django;

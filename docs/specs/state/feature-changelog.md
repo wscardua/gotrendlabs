@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 encerramento produtivo
+
+- PRs `#114` e `#115` integradas por merge commit; workflows de CI/deploy `34157223820` e `34158379066` concluídos com sucesso.
+- AWS KMS Ed25519, alias, IAM mínimo, segredo de commitment, snapshot RDS, alarme de volume de assinatura e 1 GiB de swap foram configurados em produção.
+- O corte idempotente removeu todos os 30 mercados pré-lançamento sem definição assinada e efeitos estritamente relacionados; a primeira tentativa foi revertida integralmente por FK de push e originou regressão específica antes da execução final.
+- Smoke produtivo confirmou assinatura/verificação KMS real, chave pública/fingerprint coerentes, checkpoint integral, cadeia global válida sem pendências, FastAPI/banco saudáveis, dois workers Django e um daemon.
+- A implementação passa para `implementada_validada`; carga representativa, observação da auditoria por 24 horas, identidade IAM por workload e rotação versionada do segredo permanecem evoluções documentadas.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 aprovação e preparação de produção
 
 - A spec funcional/técnica foi aprovada pelo usuário na versão `1.2`; a implementação permanece `implementada_aguardando_deploy` até CI, rollout AWS e smoke produtivo.
