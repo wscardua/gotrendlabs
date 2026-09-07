@@ -753,7 +753,9 @@ class MarketIntegrityResponse(BaseModel):
 
 
 class MarketIntegrityVerificationResponse(BaseModel):
-    valid: bool
+    verification_status: str
+    market_valid: Optional[bool] = None
+    overall_valid: Optional[bool] = None
     definition_valid: Optional[bool] = None
     definition_matches_current: Optional[bool] = None
     seal_valid: Optional[bool] = None
@@ -761,9 +763,26 @@ class MarketIntegrityVerificationResponse(BaseModel):
     prediction_commitments_valid: Optional[bool] = None
     merkle_root_valid: Optional[bool] = None
     market_events_valid: bool = False
-    ledger_chain_valid: bool = False
+    ledger_chain_valid: Optional[bool] = None
+    ledger_verified_through_sequence: int = 0
+    ledger_current_sequence: int = 0
+    ledger_pending_events: int = 0
+    ledger_verified_at: Optional[str] = None
+    ledger_audit_type: Optional[str] = None
     errors: List[str] = Field(default_factory=list)
     warnings: List[str] = Field(default_factory=list)
+
+
+class IntegrityLedgerStatusResponse(BaseModel):
+    verification_status: str
+    ledger_chain_valid: Optional[bool] = None
+    verified_through_sequence: int = 0
+    current_sequence: int = 0
+    pending_events: int = 0
+    verified_at: Optional[str] = None
+    audit_type: Optional[str] = None
+    protocol_version: str
+    verifier_version: str
 
 
 class PredictionIntegrityReceiptResponse(BaseModel):

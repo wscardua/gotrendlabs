@@ -13,7 +13,7 @@ import json
 import os
 import threading
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
@@ -24,6 +24,8 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey,
 PROTOCOL_VERSION = "gtl-integrity/v1"
 SIGNING_ALGORITHM = "ED25519_SHA_512"
 LEDGER_LOCK_ID = 0x47544C49
+CHECKPOINT_VERIFIER_VERSION = "gtl-ledger-verifier/v1"
+FULL_AUDIT_INTERVAL = timedelta(hours=24)
 
 
 class IntegritySigningError(RuntimeError):
@@ -236,14 +238,10 @@ def market_definition_payload(
         "subcategory": (signed_snapshot or {}).get("subcategory", market["subcategory_name"]),
         "summary": market["summary"] or "", "title": market["title"],
     }
-    # New definitions protect stable taxonomy associations while retaining names as
-    # an editorial snapshot. Old pre-deploy fixtures remain verifiable until reset.
-    if signed_snapshot is None or "category_id" in signed_snapshot:
-        payload["category_id"] = market["category_id"]
-    if signed_snapshot is None or "subcategory_id" in signed_snapshot:
-        payload["subcategory_id"] = market["subcategory_id"]
-    if signed_snapshot is None or "event_id" in signed_snapshot:
-        payload["event_id"] = market["event_id"]
+    # Stable associations are always protected; names remain editorial snapshots.
+    payload["category_id"] = market["category_id"]
+    payload["subcategory_id"] = market["subcategory_id"]
+    payload["event_id"] = market["event_id"]
     return payload
 
 
@@ -368,11 +366,26 @@ def _ledger_event_is_valid(event: dict, public_key_der: bytes) -> bool:
     )
 
 
-def verify_integrity_ledger_chain(cursor):
-    cursor.execute("SELECT * FROM integrity_ledger_events ORDER BY sequence")
-    previous_hash = ""
+def _verify_integrity_ledger_segment(
+    cursor,
+    *,
+    start_sequence: int,
+    through_sequence: int,
+    expected_previous_hash: str,
+):
+    cursor.execute(
+        """SELECT * FROM integrity_ledger_events
+           WHERE sequence >= %s AND sequence <= %s ORDER BY sequence""",
+        (start_sequence, through_sequence),
+    )
+    previous_hash = expected_previous_hash
+    expected_sequence = start_sequence
     valid = True
     invalid_market_ids = set()
+    first_invalid_sequence = None
+    last_verified_sequence = start_sequence - 1
+    last_verified_hash = expected_previous_hash
+    verified_event_count = 0
     public_keys = {}
     for event in cursor.fetchall():
         try:
@@ -381,23 +394,286 @@ def verify_integrity_ledger_chain(cursor):
                 public_key_der = public_key_der_for(event["key_id"], cursor=cursor)
                 public_keys[event["key_id"]] = public_key_der
             valid_event = (
-                hmac.compare_digest(event["previous_event_hash"], previous_hash)
+                event["sequence"] == expected_sequence
+                and hmac.compare_digest(event["previous_event_hash"], previous_hash)
                 and _ledger_event_is_valid(event, public_key_der)
             )
         except (KeyError, TypeError, ValueError, json.JSONDecodeError):
             valid_event = False
         if not valid_event:
             valid = False
+            if first_invalid_sequence is None:
+                first_invalid_sequence = expected_sequence
             if event["market_id"] is not None:
                 invalid_market_ids.add(event["market_id"])
+        elif first_invalid_sequence is None:
+            last_verified_sequence = event["sequence"]
+            last_verified_hash = event["event_hash"]
+            verified_event_count += 1
         previous_hash = event["event_hash"]
-    return {"valid": valid, "invalid_market_ids": invalid_market_ids}
+        expected_sequence = event["sequence"] + 1
+    if expected_sequence <= through_sequence:
+        valid = False
+        if first_invalid_sequence is None:
+            first_invalid_sequence = expected_sequence
+    return {
+        "valid": valid,
+        "invalid_market_ids": invalid_market_ids,
+        "first_invalid_sequence": first_invalid_sequence,
+        "last_verified_sequence": last_verified_sequence,
+        "last_verified_hash": last_verified_hash,
+        "verified_event_count": verified_event_count,
+    }
+
+
+def _ledger_head(cursor):
+    cursor.execute("SELECT sequence,event_hash FROM integrity_ledger_events ORDER BY sequence DESC LIMIT 1")
+    row = cursor.fetchone()
+    return {
+        "sequence": int(row["sequence"]) if row else 0,
+        "event_hash": row["event_hash"] if row else "",
+    }
+
+
+def verify_integrity_ledger_chain(cursor):
+    head = _ledger_head(cursor)
+    verification = _verify_integrity_ledger_segment(
+        cursor,
+        start_sequence=1,
+        through_sequence=head["sequence"],
+        expected_previous_hash="",
+    )
+    verification.update(
+        {
+            "status": "verified" if verification["valid"] else "failed",
+            "current_sequence": head["sequence"],
+            "current_event_hash": head["event_hash"],
+            "verified_through_sequence": verification["last_verified_sequence"],
+            "verified_at": None,
+            "audit_type": "full",
+            "pending_events": 0,
+            "issue_code": "" if verification["valid"] else "ledger_chain_invalid",
+        }
+    )
+    return verification
+
+
+def _checkpoint_is_valid(checkpoint: dict, public_key_der: bytes) -> bool:
+    payload = _json_object(checkpoint["payload_json"])
+    return (
+        hmac.compare_digest(sha256_hex(bytes(checkpoint["canonical_payload"])), checkpoint["checkpoint_hash"])
+        and hmac.compare_digest(sha256_hex(canonical_json(payload)), checkpoint["checkpoint_hash"])
+        and verify_signed_hash(checkpoint["checkpoint_hash"], bytes(checkpoint["signature"]), public_key_der)
+        and checkpoint["algorithm"] == SIGNING_ALGORITHM
+        and hmac.compare_digest(sha256_hex(public_key_der), checkpoint["key_fingerprint"])
+        and payload.get("checkpoint_sequence") == checkpoint["checkpoint_sequence"]
+        and payload.get("audit_type") == checkpoint["audit_type"]
+        and payload.get("status") == checkpoint["status"]
+        and payload.get("first_event_sequence") == checkpoint["first_event_sequence"]
+        and payload.get("last_event_sequence") == checkpoint["last_event_sequence"]
+        and payload.get("last_event_hash") == checkpoint["last_event_hash"]
+        and payload.get("observed_head_sequence") == checkpoint["observed_head_sequence"]
+        and payload.get("observed_head_hash") == checkpoint["observed_head_hash"]
+        and payload.get("verified_event_count") == checkpoint["verified_event_count"]
+        and payload.get("previous_checkpoint_hash") == checkpoint["previous_checkpoint_hash"]
+        and payload.get("failure_sequence") == checkpoint["failure_sequence"]
+        and payload.get("issue_code") == checkpoint["issue_code"]
+        and payload.get("protocol_version") == checkpoint["protocol_version"] == PROTOCOL_VERSION
+        and payload.get("verifier_version") == checkpoint["verifier_version"] == CHECKPOINT_VERIFIER_VERSION
+        and payload.get("verified_at") == _json_default(checkpoint["verified_at"])
+        and checkpoint["created_at"] == checkpoint["verified_at"]
+        and checkpoint["status"] in {"valid", "invalid"}
+        and checkpoint["audit_type"] in {"full", "incremental"}
+    )
+
+
+def _latest_checkpoint(cursor):
+    cursor.execute("SELECT * FROM integrity_ledger_checkpoints ORDER BY checkpoint_sequence DESC LIMIT 1")
+    return cursor.fetchone()
+
+
+def ledger_checkpoint_status(cursor):
+    checkpoint = _latest_checkpoint(cursor)
+    # Read the checkpoint first: a concurrent append can then only turn the result
+    # into pending, never into a false head-regression failure.
+    head = _ledger_head(cursor)
+    base = {
+        "invalid_market_ids": set(),
+        "current_sequence": head["sequence"],
+        "current_event_hash": head["event_hash"],
+        "verified_through_sequence": 0,
+        "verified_at": None,
+        "audit_type": None,
+        "pending_events": head["sequence"],
+        "checkpoint": checkpoint,
+        "issue_code": "checkpoint_unavailable",
+    }
+    if not checkpoint:
+        return {**base, "status": "unavailable", "valid": None}
+    checkpoint_payload = {}
+    try:
+        checkpoint_payload = _json_object(checkpoint["payload_json"])
+        public_key = public_key_der_for(checkpoint["key_id"], cursor=cursor)
+        checkpoint_valid = _checkpoint_is_valid(checkpoint, public_key)
+        if checkpoint["checkpoint_sequence"] > 1:
+            cursor.execute(
+                "SELECT checkpoint_hash FROM integrity_ledger_checkpoints WHERE checkpoint_sequence=%s",
+                (checkpoint["checkpoint_sequence"] - 1,),
+            )
+            previous = cursor.fetchone()
+            checkpoint_valid = checkpoint_valid and bool(previous) and hmac.compare_digest(
+                checkpoint["previous_checkpoint_hash"], previous["checkpoint_hash"]
+            )
+        else:
+            checkpoint_valid = checkpoint_valid and checkpoint["previous_checkpoint_hash"] == ""
+    except IntegritySigningError:
+        return {**base, "status": "unavailable", "valid": None, "issue_code": "checkpoint_key_unavailable"}
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        checkpoint_valid = False
+    details = {
+        **base,
+        "invalid_market_ids": set(checkpoint_payload.get("invalid_market_ids") or []),
+        "verified_through_sequence": int(checkpoint["last_event_sequence"]),
+        "verified_at": checkpoint["verified_at"],
+        "audit_type": checkpoint["audit_type"],
+    }
+    if not checkpoint_valid:
+        return {**details, "status": "failed", "valid": False, "issue_code": "checkpoint_invalid"}
+    if checkpoint["status"] == "invalid":
+        return {**details, "status": "failed", "valid": False, "issue_code": checkpoint["issue_code"] or "ledger_chain_invalid"}
+    if checkpoint["last_event_sequence"] != checkpoint["observed_head_sequence"] or not hmac.compare_digest(
+        checkpoint["last_event_hash"], checkpoint["observed_head_hash"]
+    ):
+        return {**details, "status": "failed", "valid": False, "issue_code": "checkpoint_invalid"}
+    if head["sequence"] < checkpoint["observed_head_sequence"]:
+        return {**details, "status": "failed", "valid": False, "issue_code": "ledger_head_regressed"}
+    if head["sequence"] == checkpoint["observed_head_sequence"]:
+        if not hmac.compare_digest(head["event_hash"], checkpoint["observed_head_hash"]):
+            return {**details, "status": "failed", "valid": False, "issue_code": "ledger_head_changed"}
+        return {**details, "status": "verified", "valid": True, "pending_events": 0, "issue_code": ""}
+    cursor.execute(
+        "SELECT event_hash FROM integrity_ledger_events WHERE sequence=%s",
+        (checkpoint["last_event_sequence"],),
+    )
+    boundary = cursor.fetchone() if checkpoint["last_event_sequence"] else {"event_hash": ""}
+    if not boundary or not hmac.compare_digest(boundary["event_hash"], checkpoint["last_event_hash"]):
+        return {**details, "status": "failed", "valid": False, "issue_code": "checkpoint_boundary_invalid"}
+    return {
+        **details,
+        "status": "pending",
+        "valid": None,
+        "pending_events": head["sequence"] - checkpoint["last_event_sequence"],
+        "issue_code": "ledger_verification_pending",
+    }
+
+
+def _create_ledger_checkpoint(cursor, verification: dict, *, audit_type: str, verified_at: datetime):
+    latest = _latest_checkpoint(cursor)
+    checkpoint_sequence = int(latest["checkpoint_sequence"]) + 1 if latest else 1
+    previous_checkpoint_hash = latest["checkpoint_hash"] if latest else ""
+    payload = {
+        "audit_type": audit_type,
+        "checkpoint_sequence": checkpoint_sequence,
+        "failure_sequence": verification.get("first_invalid_sequence"),
+        "first_event_sequence": verification.get("first_event_sequence"),
+        "issue_code": "" if verification["valid"] else "ledger_chain_invalid",
+        "invalid_market_ids": sorted(verification["invalid_market_ids"]),
+        "last_event_hash": verification["last_verified_hash"],
+        "last_event_sequence": verification["last_verified_sequence"],
+        "observed_head_hash": verification["current_event_hash"],
+        "observed_head_sequence": verification["current_sequence"],
+        "previous_checkpoint_hash": previous_checkpoint_hash,
+        "protocol_version": PROTOCOL_VERSION,
+        "status": "valid" if verification["valid"] else "invalid",
+        "verified_at": verified_at,
+        "verified_event_count": verification["verified_event_count"],
+        "verifier_version": CHECKPOINT_VERIFIER_VERSION,
+    }
+    canonical, checkpoint_hash, signed = sign_payload(payload)
+    remember_public_key(cursor, signed, created_at=verified_at)
+    cursor.execute(
+        """INSERT INTO integrity_ledger_checkpoints
+           (checkpoint_sequence,audit_type,status,first_event_sequence,last_event_sequence,last_event_hash,
+            observed_head_sequence,observed_head_hash,verified_event_count,previous_checkpoint_hash,
+            failure_sequence,issue_code,protocol_version,verifier_version,canonical_payload,payload_json,
+            checkpoint_hash,signature,algorithm,key_id,key_fingerprint,verified_at,created_at)
+           VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,%s,%s,%s,%s,%s,%s,%s)
+           RETURNING *""",
+        (
+            checkpoint_sequence, audit_type, payload["status"], payload["first_event_sequence"],
+            payload["last_event_sequence"], payload["last_event_hash"], payload["observed_head_sequence"],
+            payload["observed_head_hash"], payload["verified_event_count"], previous_checkpoint_hash,
+            payload["failure_sequence"], payload["issue_code"], PROTOCOL_VERSION, CHECKPOINT_VERIFIER_VERSION,
+            canonical, json.dumps(payload, default=_json_default), checkpoint_hash, signed.value, signed.algorithm,
+            signed.key_id, signed.key_fingerprint, verified_at, verified_at,
+        ),
+    )
+    return cursor.fetchone()
+
+
+def audit_integrity_ledger(cursor, *, now: datetime | None = None, force_full: bool = False):
+    now = now or datetime.now(timezone.utc)
+    cursor.execute("SELECT pg_advisory_xact_lock(%s)", (LEDGER_LOCK_ID,))
+    head = _ledger_head(cursor)
+    latest = _latest_checkpoint(cursor)
+    checkpoint_status = ledger_checkpoint_status(cursor) if latest else None
+    if latest and checkpoint_status["status"] == "unavailable":
+        raise IntegritySigningError("O checkpoint anterior não pôde ser validado com segurança.")
+    if latest and checkpoint_status["status"] == "failed" and latest["status"] == "valid":
+        return checkpoint_status
+    cursor.execute(
+        """SELECT verified_at FROM integrity_ledger_checkpoints
+           WHERE audit_type='full' AND status='valid'
+           ORDER BY checkpoint_sequence DESC LIMIT 1"""
+    )
+    last_full = cursor.fetchone()
+    full_due = not last_full or last_full["verified_at"] <= now - FULL_AUDIT_INTERVAL
+    audit_type = "full" if force_full or not latest or latest["status"] == "invalid" or full_due else "incremental"
+    if (
+        audit_type == "incremental"
+        and checkpoint_status
+        and checkpoint_status["status"] == "verified"
+    ):
+        return checkpoint_status
+    if audit_type == "full":
+        start_sequence = 1
+        expected_previous_hash = ""
+    else:
+        start_sequence = int(latest["last_event_sequence"]) + 1
+        expected_previous_hash = latest["last_event_hash"]
+    verification = _verify_integrity_ledger_segment(
+        cursor,
+        start_sequence=start_sequence,
+        through_sequence=head["sequence"],
+        expected_previous_hash=expected_previous_hash,
+    )
+    verification.update(
+        {
+            "first_event_sequence": start_sequence if start_sequence <= head["sequence"] else None,
+            "current_sequence": head["sequence"],
+            "current_event_hash": head["event_hash"],
+        }
+    )
+    checkpoint = _create_ledger_checkpoint(cursor, verification, audit_type=audit_type, verified_at=now)
+    return {
+        "status": "verified" if verification["valid"] else "failed",
+        "valid": bool(verification["valid"]),
+        "invalid_market_ids": verification["invalid_market_ids"],
+        "current_sequence": head["sequence"],
+        "current_event_hash": head["event_hash"],
+        "verified_through_sequence": checkpoint["last_event_sequence"],
+        "verified_at": checkpoint["verified_at"],
+        "audit_type": checkpoint["audit_type"],
+        "pending_events": 0,
+        "issue_code": checkpoint["issue_code"],
+        "checkpoint": checkpoint,
+    }
 
 
 def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
     errors = []
     warnings = []
-    ledger_audit = ledger_audit or verify_integrity_ledger_chain(cursor)
+    ledger_audit = ledger_audit or ledger_checkpoint_status(cursor)
 
     cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market["id"],))
     definition = cursor.fetchone()
@@ -573,25 +849,42 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         if not result_matches_current:
             errors.append("result_changed")
 
-    ledger_valid = bool(ledger_audit["valid"])
+    ledger_valid = ledger_audit.get("valid")
     market_events_valid = market["id"] not in ledger_audit["invalid_market_ids"]
-    if not ledger_valid:
+    if ledger_audit["status"] == "failed":
         warnings.append("ledger_chain_invalid")
+    elif ledger_audit["status"] == "pending":
+        warnings.append("ledger_verification_pending")
+    elif ledger_audit["status"] == "unavailable":
+        warnings.append("ledger_verification_unavailable")
     if not market_events_valid:
         errors.append("market_events_invalid")
-    valid = (
+    definition_applicable = market["status"] not in {"draft", "scheduled"}
+    market_valid = None if not definition_applicable and not definition else (
         bool(definition_valid and definition_matches_current)
         and commitments_valid
         and market_events_valid
-        and ledger_valid
         and (market["status"] != "resolved" or bool(result_matches_current))
-        and (
-            market["status"] != "sealed"
-            or bool(seal_valid and result_matches_current and commitments_valid and merkle_valid)
-        )
+        and (market["status"] != "sealed" or bool(seal_valid and result_matches_current and merkle_valid))
     )
+    if market_valid is False or ledger_valid is False:
+        overall_valid = False
+    elif market_valid is None or ledger_valid is None:
+        overall_valid = None
+    else:
+        overall_valid = True
+    if overall_valid is False:
+        verification_status = "failed"
+    elif ledger_audit["status"] == "unavailable":
+        verification_status = "unavailable"
+    elif overall_valid is None:
+        verification_status = "pending"
+    else:
+        verification_status = "verified"
     return {
-        "valid": valid,
+        "verification_status": verification_status,
+        "market_valid": market_valid,
+        "overall_valid": overall_valid,
         "definition_valid": definition_valid,
         "definition_matches_current": definition_matches_current,
         "seal_valid": seal_valid,
@@ -600,6 +893,11 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         "merkle_root_valid": merkle_valid,
         "market_events_valid": market_events_valid,
         "ledger_chain_valid": ledger_valid,
+        "ledger_verified_through_sequence": ledger_audit["verified_through_sequence"],
+        "ledger_current_sequence": ledger_audit["current_sequence"],
+        "ledger_pending_events": ledger_audit["pending_events"],
+        "ledger_verified_at": _json_default(ledger_audit["verified_at"]) if ledger_audit["verified_at"] else None,
+        "ledger_audit_type": ledger_audit["audit_type"],
         "errors": list(dict.fromkeys(errors)),
         "warnings": warnings,
     }
@@ -617,8 +915,9 @@ def seal_market(cursor, market: dict, *, sealed_at: datetime | None = None):
     definition = cursor.fetchone()
     if not definition:
         raise IntegritySigningError("Mercado legado sem definicao original nao pode ser selado como prova nativa.")
-    verification = verify_market_integrity_records(cursor, market)
-    if verification["valid"] is not True:
+    ledger_audit = audit_integrity_ledger(cursor, now=sealed_at)
+    verification = verify_market_integrity_records(cursor, market, ledger_audit=ledger_audit)
+    if verification["overall_valid"] is not True:
         issue_codes = verification["errors"] + verification["warnings"]
         details = ", ".join(issue_codes) if issue_codes else "verification_failed"
         raise IntegritySigningError(f"Mercado nao pode ser selado porque sua integridade falhou: {details}.")
@@ -706,7 +1005,14 @@ def public_key_der_for(key_id: str, *, cursor=None) -> bytes:
         return signer.public_key()
     if key_id.startswith("local-ephemeral-ed25519"):
         return b""
-    return _KMSSigner(key_id)._public_key()
+    try:
+        return _KMSSigner(key_id)._public_key()
+    except IntegritySigningError:
+        raise
+    except Exception as exc:
+        raise IntegritySigningError(
+            f"A chave publica historica ficou indisponivel ({exc.__class__.__name__})."
+        ) from exc
 
 
 def encode_signature(value: bytes) -> str:

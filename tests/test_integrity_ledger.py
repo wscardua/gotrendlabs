@@ -16,7 +16,7 @@ from apps.api.backend_api.daemon_services import audit_integrity_records, run_da
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.main import _market_lifecycle_engine, app
 from apps.web.django.accounts.models import BadgeDefinition, UserBadgeAward
-from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketComment, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
+from apps.web.django.markets.models import AdminEvent, IntegrityAlert, IntegrityLedgerCheckpoint, IntegrityLedgerEvent, IntegritySigningKey, Market, MarketComment, MarketIntegrityDefinition, MarketSeal, PredictionCommitment, UserNotification
 from tests.test_web_smoke import _seed_test_badges, _seed_test_email_templates, _seed_test_markets
 
 
@@ -140,6 +140,10 @@ class IntegrityProtocolTests(SimpleTestCase):
         self.assertIn("REVOKE UPDATE, DELETE", migration)
         key_migration = (root / "apps/web/django/markets/migrations/0029_integrity_signing_keys.py").read_text()
         self.assertIn("integrity_signing_keys_append_only", key_migration)
+        checkpoint_migration = (root / "apps/web/django/markets/migrations/0031_integrity_ledger_checkpoints.py").read_text()
+        self.assertIn("integrity_ledger_checkpoints_append_only", checkpoint_migration)
+        self.assertIn("BEFORE TRUNCATE", checkpoint_migration)
+        self.assertIn("REVOKE UPDATE, DELETE, TRUNCATE", checkpoint_migration)
         for relative in (
             "apps/web/django/core/templates/core/security.html",
             "apps/mobile/lib/src/features/info/trust_screen.dart",
@@ -215,6 +219,11 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertEqual(response.status_code, 201, response.text)
         return {"Authorization": f"Bearer {response.json()['session']['token']}"}
 
+    def _audit_ledger(self, *, now=None, force_full=False):
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                return integrity_service.audit_integrity_ledger(cursor, now=now, force_full=force_full)
+
     def _resolve_due_market(self, slug="openai-gpt6-2026"):
         market = Market.objects.get(slug=slug)
         option = market.options.order_by("display_order", "id").first()
@@ -251,16 +260,94 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         return market, prediction.json()["prediction_id"], due
 
     def test_registered_public_keys_survive_local_signer_rotation(self):
+        self._audit_ledger()
         first = self.client.get("/markets/openai-gpt6-2026/integrity/verify")
-        self.assertTrue(first.json()["valid"], first.json())
+        self.assertTrue(first.json()["overall_valid"], first.json())
 
         integrity_service._signer = integrity_service._EphemeralSigner()
         after_restart = self.client.get("/markets/openai-gpt6-2026/integrity/verify")
-        self.assertTrue(after_restart.json()["valid"], after_restart.json())
+        self.assertTrue(after_restart.json()["overall_valid"], after_restart.json())
         self.assertTrue(after_restart.json()["ledger_chain_valid"], after_restart.json())
         signing_key = IntegritySigningKey.objects.first()
         with self.assertRaises(DatabaseError), transaction.atomic():
             IntegritySigningKey.objects.filter(pk=signing_key.pk).update(key_fingerprint="0" * 64)
+
+    def test_signed_checkpoints_support_pending_incremental_and_periodic_full_audits(self):
+        first_at = django_timezone.now()
+        first = self._audit_ledger(now=first_at, force_full=True)
+        self.assertEqual(first["status"], "verified")
+        self.assertEqual(first["audit_type"], "full")
+
+        status = self.client.get("/integrity/status")
+        self.assertEqual(status.status_code, 200, status.text)
+        self.assertEqual(status.json()["verification_status"], "verified")
+        self.assertEqual(status.json()["pending_events"], 0)
+
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        option = market.options.order_by("display_order", "id").first()
+        prediction = self.client.post(
+            f"/markets/{market.slug}/predict",
+            headers=self.user_headers,
+            json={"option_id": option.id, "stake_amount": 25, "client_locale": "pt-br"},
+        )
+        self.assertEqual(prediction.status_code, 201, prediction.text)
+
+        with mock.patch.object(
+            integrity_service,
+            "_verify_integrity_ledger_segment",
+            side_effect=AssertionError("public verification must not scan the global ledger"),
+        ):
+            pending = self.client.get(f"/markets/{market.slug}/integrity/verify")
+            global_pending = self.client.get("/integrity/status")
+        self.assertEqual(pending.status_code, 200, pending.text)
+        self.assertEqual(pending.json()["verification_status"], "pending")
+        self.assertIsNone(pending.json()["overall_valid"])
+        self.assertTrue(pending.json()["market_valid"])
+        self.assertEqual(global_pending.json()["pending_events"], 1)
+
+        incremental = self._audit_ledger(now=first_at + timedelta(minutes=1))
+        self.assertEqual(incremental["audit_type"], "incremental")
+        self.assertEqual(incremental["status"], "verified")
+        self.assertEqual(IntegrityLedgerCheckpoint.objects.count(), 2)
+
+        periodic = self._audit_ledger(now=first_at + timedelta(hours=25))
+        self.assertEqual(periodic["audit_type"], "full")
+        self.assertEqual(periodic["status"], "verified")
+        self.assertEqual(IntegrityLedgerCheckpoint.objects.count(), 3)
+
+    def test_checkpoint_is_signed_linked_and_append_only(self):
+        self._audit_ledger(force_full=True)
+        checkpoint = IntegrityLedgerCheckpoint.objects.get()
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT * FROM integrity_ledger_checkpoints WHERE id=%s", (checkpoint.id,))
+                row = cursor.fetchone()
+                public_key = integrity_service.public_key_der_for(row["key_id"], cursor=cursor)
+        self.assertTrue(integrity_service._checkpoint_is_valid(row, public_key))
+        changed = {**row, "observed_head_hash": "0" * 64}
+        self.assertFalse(integrity_service._checkpoint_is_valid(changed, public_key))
+        with self.assertRaises(DatabaseError), transaction.atomic():
+            IntegrityLedgerCheckpoint.objects.filter(pk=checkpoint.pk).update(issue_code="tampered")
+
+    def test_global_integrity_alert_suppresses_positive_market_badges(self):
+        now = django_timezone.now()
+        IntegrityAlert.objects.create(
+            market=None,
+            dedupe_key="global-checkpoint-test",
+            issue_code="ledger_chain_invalid",
+            title="Cadeia global não confere",
+            description="Falha global confirmada para teste.",
+            severity="high",
+            status="pending",
+            first_detected_at=now,
+            last_detected_at=now,
+        )
+        detail = self.client.get("/markets/openai-gpt6-2026")
+        self.assertEqual(detail.status_code, 200, detail.text)
+        self.assertEqual(detail.json()["integrity"]["status"], "verification_failed")
+        listing = self.client.get("/markets")
+        market = next(item for item in listing.json()["markets"] if item["slug"] == "openai-gpt6-2026")
+        self.assertEqual(market["integrity"]["status"], "verification_failed")
 
     def test_unsigned_market_purge_is_dry_run_protected_and_idempotent(self):
         unsigned_before = Market.objects.filter(
@@ -290,6 +377,15 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         ).first()
         signed_market = Market.objects.get(slug="openai-gpt6-2026")
         MarketComment.objects.create(market=unsigned_market, author=user, body="Interacao no mercado a remover.")
+        removable_alert = IntegrityAlert.objects.create(
+            market=unsigned_market,
+            dedupe_key=f"unsigned-market:{unsigned_market.id}",
+            issue_code="definition_missing",
+            title="Definição ausente",
+            description="Alerta operacional do mercado removível.",
+            first_detected_at=django_timezone.now(),
+            last_detected_at=django_timezone.now(),
+        )
         unrelated_badge = BadgeDefinition.objects.create(
             code="unrelated-resolution-history",
             name="Historico independente",
@@ -317,6 +413,7 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
             ).exists()
         )
         self.assertTrue(Market.objects.filter(slug="openai-gpt6-2026").exists())
+        self.assertFalse(IntegrityAlert.objects.filter(pk=removable_alert.pk).exists())
         self.assertTrue(UserBadgeAward.objects.filter(pk=unrelated_award.pk).exists())
         self.assertTrue(UserNotification.objects.filter(pk=unrelated_notification.pk).exists())
         second = StringIO()
@@ -392,15 +489,23 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
                 verification = integrity_service.verify_market_integrity_records(
                     cursor,
                     cursor.fetchone(),
-                    ledger_audit={"valid": False, "invalid_market_ids": set()},
+                    ledger_audit={
+                        "status": "failed", "valid": False, "invalid_market_ids": set(),
+                        "verified_through_sequence": 0, "current_sequence": 1, "pending_events": 0,
+                        "verified_at": None, "audit_type": "full",
+                    },
                 )
-        self.assertFalse(verification["valid"])
+        self.assertFalse(verification["overall_valid"])
         self.assertFalse(verification["ledger_chain_valid"])
         self.assertIn("ledger_chain_invalid", verification["warnings"])
 
         with mock.patch(
-            "apps.api.backend_api.integrity_service.verify_integrity_ledger_chain",
-            return_value={"valid": False, "invalid_market_ids": set()},
+            "apps.api.backend_api.integrity_service.audit_integrity_ledger",
+            return_value={
+                "status": "failed", "valid": False, "invalid_market_ids": set(),
+                "verified_through_sequence": 0, "current_sequence": 1, "pending_events": 0,
+                "verified_at": None, "audit_type": "full", "issue_code": "ledger_chain_invalid",
+            },
         ):
             sealed = seal_due_markets(now=due + timedelta(seconds=2))
         self.assertEqual(sealed["sealed"], [])
@@ -477,7 +582,10 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         self.assertTrue(integrity_service.verify_merkle_proof(merkle["leaf_hash"], merkle["proof"], merkle["predictions_root"]))
         verification = self.client.get(f"/markets/{market.slug}/integrity/verify")
         self.assertEqual(verification.status_code, 200)
-        self.assertTrue(verification.json()["valid"], verification.json())
+        self.assertEqual(verification.json()["verification_status"], "pending", verification.json())
+        self._audit_ledger()
+        verification = self.client.get(f"/markets/{market.slug}/integrity/verify")
+        self.assertTrue(verification.json()["overall_valid"], verification.json())
         self.assertTrue(verification.json()["definition_matches_current"])
         self.assertTrue(verification.json()["result_matches_current"])
         self.assertTrue(verification.json()["prediction_commitments_valid"])
@@ -487,7 +595,7 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         original_title = market.title
         Market.objects.filter(pk=market.pk).update(title="Título adulterado fora do domínio")
         changed_definition = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
-        self.assertFalse(changed_definition["valid"])
+        self.assertFalse(changed_definition["overall_valid"])
         self.assertFalse(changed_definition["definition_matches_current"])
         self.assertIn("definition_changed", changed_definition["errors"])
         Market.objects.filter(pk=market.pk).update(title=original_title)
@@ -495,7 +603,7 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
         original_note = market.resolution_note
         Market.objects.filter(pk=market.pk).update(resolution_note="Resultado adulterado fora do domínio")
         changed_result = self.client.get(f"/markets/{market.slug}/integrity/verify").json()
-        self.assertFalse(changed_result["valid"])
+        self.assertFalse(changed_result["overall_valid"])
         self.assertFalse(changed_result["result_matches_current"])
         self.assertIn("result_changed", changed_result["errors"])
         Market.objects.filter(pk=market.pk).update(resolution_note=original_note)
@@ -608,7 +716,7 @@ class IntegrityLedgerIntegrationTests(TransactionTestCase):
 
     def test_daemon_does_not_classify_verification_infrastructure_failure_as_tampering(self):
         with mock.patch(
-            "apps.api.backend_api.daemon_services.verify_integrity_ledger_chain",
+            "apps.api.backend_api.daemon_services.audit_integrity_ledger",
             side_effect=integrity_service.IntegritySigningError("public key service unavailable"),
         ):
             summary = audit_integrity_records()

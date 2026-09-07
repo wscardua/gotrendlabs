@@ -278,7 +278,7 @@ def integrity(request, slug):
         error = str(exc)
     timezone_name = market.get("resolution_timezone") or market.get("close_timezone") or "America/Sao_Paulo"
     labels = {
-        "verified_at_label": _datetime_label(datetime.now(ZoneInfo("UTC")), timezone_name),
+        "verified_at_label": _datetime_label(verification.get("ledger_verified_at"), timezone_name),
         "published_at_label": _datetime_label(market.get("published_at"), timezone_name),
         "seal_due_at_label": _datetime_label(market.get("seal_due_at"), timezone_name),
         "sealed_at_label": _datetime_label(market.get("sealed_at"), timezone_name),
@@ -288,7 +288,8 @@ def integrity(request, slug):
     labels.update(
         {
             "integrity_verification_available": verification_available,
-            "integrity_has_difference": verification_available and verification.get("valid") is False,
+            "integrity_has_difference": verification_available and verification.get("verification_status") == "failed",
+            "integrity_verification_pending": verification.get("verification_status") in {"pending", "unavailable"},
             "definition_confirmed": verification.get("definition_valid") is True
             and verification.get("definition_matches_current", True) is True,
             "predictions_confirmed": proof_status == "sealed"
@@ -297,7 +298,7 @@ def integrity(request, slug):
             "result_confirmed": proof_status == "sealed"
             and verification.get("result_matches_current") is True
             and verification.get("seal_valid") is True,
-            "final_history_confirmed": proof_status == "sealed" and verification.get("valid") is True,
+            "final_history_confirmed": proof_status == "sealed" and verification.get("overall_valid") is True,
         }
     )
     template_name = "markets/_integrity_content.html" if request.GET.get("modal") == "1" else "markets/integrity.html"

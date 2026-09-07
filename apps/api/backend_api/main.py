@@ -30,6 +30,7 @@ from apps.api.backend_api.daemon_services import daemon_dashboard_status
 from apps.api.backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, enqueue_welcome_email, issue_email_confirmation, public_url
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from apps.api.backend_api.integrity_service import (
+    CHECKPOINT_VERIFIER_VERSION,
     IntegritySigningError,
     PROTOCOL_VERSION,
     append_ledger_event,
@@ -38,6 +39,7 @@ from apps.api.backend_api.integrity_service import (
     commit_prediction,
     encode_signature,
     get_signer,
+    ledger_checkpoint_status,
     market_definition_payload,
     market_result_payload,
     public_key_payload,
@@ -93,6 +95,7 @@ from apps.api.backend_api.schemas import (
     MarketListResponse,
     MarketIntegrityResponse,
     MarketIntegrityVerificationResponse,
+    IntegrityLedgerStatusResponse,
     MarketResponse,
     MarketSuggestionPayload,
     NotificationListResponse,
@@ -1963,7 +1966,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
     cursor.execute("""SELECT d.protocol_version,d.key_fingerprint,s.id seal_id,
                              EXISTS(
                                  SELECT 1 FROM gotrendlabs_integrity_alerts a
-                                 WHERE a.market_id=target.market_id AND a.status='pending'
+                                 WHERE (a.market_id=target.market_id OR a.market_id IS NULL) AND a.status='pending'
                              ) integrity_alert_pending
                       FROM (SELECT %s::bigint market_id) target
                       LEFT JOIN market_integrity_definitions d ON d.market_id=target.market_id
@@ -4600,7 +4603,7 @@ def _market_integrity_contract(cursor, slug):
     cursor.execute("SELECT 1 FROM gotrendlabs_admin_events WHERE action='integrity.seal_failed' AND entity_type='market' AND entity_identifier=%s AND created_at >= COALESCE(%s, created_at) LIMIT 1", (slug, market["resolved_at"]))
     failed = bool(cursor.fetchone())
     cursor.execute(
-        "SELECT 1 FROM gotrendlabs_integrity_alerts WHERE market_id=%s AND status='pending' LIMIT 1",
+        "SELECT 1 FROM gotrendlabs_integrity_alerts WHERE (market_id=%s OR market_id IS NULL) AND status='pending' LIMIT 1",
         (market["id"],),
     )
     integrity_alert_pending = bool(cursor.fetchone())
@@ -4642,6 +4645,25 @@ def get_market_integrity(slug: str, request: Request):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             return _market_integrity_contract(cursor, slug)
+
+
+@app.get("/integrity/status", response_model=IntegrityLedgerStatusResponse)
+def get_integrity_ledger_status(request: Request):
+    _enforce_rate_limit("integrity_status", _rate_limit_identity(request), limit=120, window_seconds=60)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            result = ledger_checkpoint_status(cursor)
+            return {
+                "verification_status": result["status"],
+                "ledger_chain_valid": result["valid"],
+                "verified_through_sequence": result["verified_through_sequence"],
+                "current_sequence": result["current_sequence"],
+                "pending_events": result["pending_events"],
+                "verified_at": result["verified_at"].isoformat() if result["verified_at"] else None,
+                "audit_type": result["audit_type"],
+                "protocol_version": PROTOCOL_VERSION,
+                "verifier_version": CHECKPOINT_VERIFIER_VERSION,
+            }
 
 
 @app.get("/markets/{slug}/integrity/package", response_model=MarketIntegrityResponse)

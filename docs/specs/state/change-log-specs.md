@@ -2,6 +2,9 @@
 
 ## 2026-09-07
 
+- aprovada `ADR-0007` para checkpoints assinados, auditoria incremental por ciclo, auditoria integral no primeiro ciclo apos 24 horas e leitura publica sem full scan;
+- substituido o booleano ambiguo `valid` pelos estados `verification_status` e resultados nullable separados para mercado, cadeia e conjunto;
+- adicionado `GET /integrity/status`, metadados de checkpoint no contrato de verificacao e build Flutter `1.2.0+13` sem compatibilidade pre-producao;
 - endurecida a semantica de verificacao para que cadeia global invalida torne `valid=false` e qualquer falha aplicavel bloqueie Seal;
 - definido que alertas pendentes prevalecem nos selos visuais e que auditoria cobre mercado publicado sem definicao;
 - ampliada a cobertura assinada/conferida dos metadados persistidos do ledger e restringida a causalidade do purge de badges;
@@ -10,7 +13,7 @@
 - previsoes humanas e de agentes IA passam a compartilhar persistencia inicial atomica e cobertura obrigatoria um-para-um por compromisso;
 - IDs taxonomicos tornam a associacao parte da prova enquanto nomes permanecem snapshot editorial renomeavel;
 - falha da auditoria deixa de derrubar o daemon, adia apenas selagem e preserva tarefas independentes;
-- removida a necessidade de compatibilidade com builds Flutter anteriores, ainda nao publicados, e definido o build `1.1.0+12`.
+- removida a necessidade de compatibilidade com builds Flutter anteriores, ainda nao publicados; o build desta fatia passa a `1.2.0+13`.
 
 ## 2026-09-06
 

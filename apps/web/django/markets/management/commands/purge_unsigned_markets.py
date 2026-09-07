@@ -125,6 +125,9 @@ class Command(BaseCommand):
                 cursor.execute("DELETE FROM gotrendlabs_market_funnel_market_links WHERE market_id = ANY(%s)", [market_ids])
             # Use Django's deletion collector for presentation/engagement tables,
             # whose PostgreSQL constraints are intentionally NO ACTION.
+            # Integrity alerts are mutable operational findings, not cryptographic
+            # proofs. Remove findings scoped to candidates before the PROTECT FK.
+            cursor.execute("DELETE FROM gotrendlabs_integrity_alerts WHERE market_id = ANY(%s)", [market_ids])
             Market.objects.filter(id__in=market_ids).delete()
             cursor.execute(
                 """INSERT INTO gotrendlabs_admin_events

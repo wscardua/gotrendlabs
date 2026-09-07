@@ -305,6 +305,7 @@ Antes de considerar a UI pronta:
 - confirmar que o painel de seis metricas do detalhe usa duas fileiras de tres itens em celular padrao e fallback de duas colunas em largura estreita
 - confirmar que `Comprovantes assinados` inicia recolhido, preserva a contagem e expande cada recibo individual sob demanda
 - confirmar que `Verificar integridade` mantem explicacao leiga antes de `Ver detalhes tecnicos`, que inicia recolhido e expoe protocolo, algoritmo, hashes, assinaturas, chave, raiz, Seal e elos do ledger quando aplicaveis
+- confirmar que a verificacao diferencia checkpoint global `verified`, `pending`, `failed` e `unavailable`; backlog normal aparece como atualizacao em andamento, nunca como adulteracao, e o app nao mantem parser do contrato pre-producao anterior
 - confirmar que `Hoje` nao exibe mercados fechados em destaque/tendencias e prioriza mercados abertos com mais engajamento
 - confirmar que cards exibem prazo restante compacto sem aumentar a altura atual e que a barra muda de cor conforme o fechamento se aproxima
 - confirmar que tocar no hero de imagem dentro do detalhe nao empilha a mesma tela novamente

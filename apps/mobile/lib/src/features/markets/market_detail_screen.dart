@@ -433,8 +433,21 @@ class _IntegritySheet extends StatelessWidget {
                   'Cadeia global do ledger',
                   verification['ledger_chain_valid'] == true
                       ? 'Verificada'
-                      : 'Não verificada',
+                      : verification['ledger_chain_valid'] == false
+                      ? 'Diferença detectada'
+                      : verification['verification_status'] == 'unavailable'
+                      ? 'Checkpoint ainda indisponível'
+                      : 'Aguardando o próximo ciclo',
                 ),
+                (
+                  'Checkpoint verificado até',
+                  'Evento ${verification['ledger_verified_through_sequence'] ?? 0} de ${verification['ledger_current_sequence'] ?? 0}',
+                ),
+                if (verification['ledger_verified_at'] != null)
+                  (
+                    'Última auditoria global',
+                    safeString(verification['ledger_verified_at']),
+                  ),
                 if (ledgerEvents.isNotEmpty) ...[
                   (
                     'Hash do último evento',
@@ -465,7 +478,9 @@ class _IntegritySheet extends StatelessWidget {
               final resultOk =
                   verification['seal_valid'] == true &&
                   verification['result_matches_current'] != false;
-              final finalOk = verification['valid'] == true;
+              final finalOk = verification['overall_valid'] == true;
+              final finalFailed =
+                  verification['verification_status'] == 'failed';
               Widget check(
                 String label, {
                 required String state,
@@ -557,7 +572,9 @@ class _IntegritySheet extends StatelessWidget {
                       state: market.integrity.isSealed
                           ? (finalOk
                                 ? 'Finalizado e verificado'
-                                : 'Diferença detectada')
+                                : finalFailed
+                                ? 'Diferença detectada'
+                                : 'Conferência global pendente')
                           : market.integrity.isSealRetryPending
                           ? 'Nova tentativa pendente'
                           : market.integrity.isPendingSeal
@@ -566,7 +583,9 @@ class _IntegritySheet extends StatelessWidget {
                       icon: market.integrity.isSealed
                           ? (finalOk
                                 ? Icons.verified_outlined
-                                : Icons.error_outline)
+                                : finalFailed
+                                ? Icons.error_outline
+                                : Icons.sync_outlined)
                           : market.integrity.isPendingSeal ||
                                 market.integrity.isSealRetryPending
                           ? Icons.schedule
@@ -574,7 +593,9 @@ class _IntegritySheet extends StatelessWidget {
                       color: market.integrity.isSealed
                           ? (finalOk
                                 ? GtlColors.accentGreen
-                                : GtlColors.accentRed)
+                                : finalFailed
+                                ? GtlColors.accentRed
+                                : GtlColors.accentBlue)
                           : market.integrity.isPendingSeal ||
                                 market.integrity.isSealRetryPending
                           ? GtlColors.accentYellow

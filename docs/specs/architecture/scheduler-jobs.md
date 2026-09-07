@@ -24,6 +24,7 @@
 - O daemon sela mercados `resolved` vencidos com `FOR UPDATE SKIP LOCKED`; valida Merkle e assinatura antes do commit e mantem `resolved` em qualquer falha.
 - A auditoria das provas nativas e da cadeia global e iniciada antes das mutacoes de mercado e independe de estado, vencimento ou selagem. Assim, divergencias em mercados `open`, `locked`, `resolved`, `sealed` ou `canceled` entram na fila na primeira passagem posterior ao problema. Divergencias geram alertas operacionais deduplicados de severidade alta; falhas de infraestrutura e retries continuam em seus rastros proprios e nao sao rotulados como adulteracao.
 - Auditoria, fechamento, selagem, retencao, email, push e agentes possuem isolamento de falha por tarefa. Indisponibilidade da auditoria nunca encerra o processo daemon nem impede fechamento e comunicacoes independentes; por seguranca, a selagem do ciclo pode ser suprimida quando a auditoria nao conclui.
+- A auditoria global usa checkpoint assinado: incremental em cada ciclo e integral no bootstrap ou a cada 24 horas. O head e capturado como fronteira; eventos posteriores ficam pendentes para o ciclo seguinte, sem serem classificados como adulteracao. Selagem valida o delta sob lock antes de prosseguir.
 
 ## Dependências
 

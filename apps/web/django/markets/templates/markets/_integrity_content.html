@@ -13,7 +13,7 @@
       <p>A conferência está temporariamente indisponível. Feche esta janela e tente novamente em alguns instantes.</p>
     </div>
   {% else %}
-    <header class="integrity-report-intro{% if proof.status == 'sealed' and verification.valid %} is-sealed{% elif integrity_has_difference %} has-error{% endif %}">
+    <header class="integrity-report-intro{% if proof.status == 'sealed' and verification.overall_valid %} is-sealed{% elif integrity_has_difference %} has-error{% endif %}">
       <span class="integrity-report-mark" aria-hidden="true">
         {% if integrity_verification_available and not integrity_has_difference %}
           <svg viewBox="0 0 24 24" focusable="false"><path d="M12 2.8 19 5.7v5.5c0 4.4-2.8 8.1-7 10-4.2-1.9-7-5.6-7-10V5.7L12 2.8Z"></path><path d="m8.4 12 2.2 2.3 5-5.2"></path></svg>
@@ -23,6 +23,7 @@
         <span class="eyebrow">Verificação de integridade</span>
         <h2 id="integrity-dialog-title">
           {% if integrity_has_difference %}Encontramos uma diferença nos registros
+          {% elif integrity_verification_pending %}Conferência global aguardando atualização
           {% elif proof.status == "sealed" %}Nenhuma alteração indevida foi detectada
           {% elif proof.status == "seal_retry_pending" %}A finalização aguarda uma nova tentativa
           {% elif proof.status == "resolved_pending_seal" %}Resultado registrado; finalização pendente
@@ -33,7 +34,8 @@
         </h2>
         <p>{{ market.title }}</p>
         <div class="integrity-verification-meta" aria-label="Informações da verificação">
-          {% if verified_at_label %}<span>Conferido em {{ verified_at_label }}</span>{% endif %}
+          {% if verified_at_label %}<span>Ledger conferido em {{ verified_at_label }}</span>{% endif %}
+          {% if verification.ledger_pending_events %}<span>{{ verification.ledger_pending_events }} novo{{ verification.ledger_pending_events|pluralize }} registro{{ verification.ledger_pending_events|pluralize }} aguardando o próximo ciclo</span>{% endif %}
           {% if sealed_at_label %}<span>Histórico finalizado em {{ sealed_at_label }}</span>{% elif seal_due_at_label %}<span>Finalização prevista para {{ seal_due_at_label }}</span>{% endif %}
         </div>
       </div>
@@ -82,13 +84,13 @@
           </div>
           <small>{% if proof.status == "sealed" %}{% if result_confirmed %}Verificado{% else %}Diferença detectada{% endif %}{% elif proof.status == "resolved_pending_seal" or proof.status == "seal_retry_pending" %}Em revisão operacional{% elif market.status == "canceled" %}Não se aplica{% else %}Aguardando{% endif %}</small>
         </li>
-        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if final_history_confirmed %} is-valid{% else %} is-failed{% endif %}{% elif proof.status == 'resolved_pending_seal' or proof.status == 'seal_retry_pending' %} is-current{% else %} is-waiting{% endif %}">
+        <li class="integrity-timeline-item{% if proof.status == 'sealed' %}{% if final_history_confirmed %} is-valid{% elif integrity_has_difference %} is-failed{% else %} is-current{% endif %}{% elif proof.status == 'resolved_pending_seal' or proof.status == 'seal_retry_pending' %} is-current{% else %} is-waiting{% endif %}">
           <span class="integrity-timeline-marker" aria-hidden="true">{% if final_history_confirmed %}✓{% else %}4{% endif %}</span>
           <div>
             <strong>Depois do prazo operacional</strong>
             <p>{% if proof.status == "sealed" %}O resultado, as previsões e os registros anteriores foram reunidos em um histórico final assinado.{% elif proof.status == "seal_retry_pending" %}Uma falha operacional impediu a finalização; os registros existentes foram preservados e haverá nova tentativa segura.{% elif proof.status == "resolved_pending_seal" %}O resultado ainda pode passar pela revisão operacional prevista antes da finalização.{% elif market.status == "canceled" %}Mercados cancelados preservam os registros emitidos, mas não recebem Seal final de resultado.{% else %}O histórico será finalizado depois da publicação do resultado e do prazo operacional.{% endif %}</p>
           </div>
-          <small>{% if proof.status == "sealed" %}{% if final_history_confirmed %}Finalizado e verificado{% else %}Diferença detectada{% endif %}{% elif proof.status == "seal_retry_pending" %}Nova tentativa pendente{% elif proof.status == "resolved_pending_seal" %}Finalização prevista{% elif market.status == "canceled" %}Não se aplica{% else %}Aguardando{% endif %}</small>
+          <small>{% if proof.status == "sealed" %}{% if final_history_confirmed %}Finalizado e verificado{% elif integrity_has_difference %}Diferença detectada{% else %}Conferência global pendente{% endif %}{% elif proof.status == "seal_retry_pending" %}Nova tentativa pendente{% elif proof.status == "resolved_pending_seal" %}Finalização prevista{% elif market.status == "canceled" %}Não se aplica{% else %}Aguardando{% endif %}</small>
         </li>
       </ol>
     </section>
@@ -112,6 +114,8 @@
           <dt>Hash da definição</dt><dd><code title="{{ proof.definition.hash }}">{{ proof.definition.hash|default:"não disponível"|truncatechars:30 }}</code></dd>
           <dt>Identificação da chave</dt><dd><code title="{{ proof.definition.key_fingerprint }}">{{ proof.definition.key_fingerprint|default:"não disponível"|truncatechars:30 }}</code></dd>
           <dt>Eventos conferidos</dt><dd>{{ proof.ledger_events|length }}</dd>
+          <dt>Ledger global</dt><dd>{% if verification.ledger_chain_valid %}Verificado até o evento {{ verification.ledger_verified_through_sequence }}{% elif verification.verification_status == "pending" %}{{ verification.ledger_pending_events }} evento(s) aguardando auditoria{% elif verification.verification_status == "unavailable" %}Checkpoint ainda indisponível{% else %}Diferença detectada{% endif %}</dd>
+          {% if verified_at_label %}<dt>Última auditoria global</dt><dd>{{ verified_at_label }}</dd>{% endif %}
           {% if proof.seal %}<dt>Hash da finalização</dt><dd><code title="{{ proof.seal.hash }}">{{ proof.seal.hash|truncatechars:30 }}</code></dd>{% endif %}
         </dl>
         <a class="btn small ghost" href="{% url 'market-integrity-package' market.slug %}">Baixar pacote de verificação</a>

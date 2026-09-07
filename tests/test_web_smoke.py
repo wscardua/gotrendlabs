@@ -7451,7 +7451,7 @@ class WebSmokeTests(TransactionTestCase):
             "seal": {"hash": "c" * 64},
             "ledger_events": [{"event_type": "market_published"}, {"event_type": "market_sealed"}],
         }
-        verification = {"valid": True, "definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
+        verification = {"verification_status": "verified", "overall_valid": True, "definition_valid": True, "seal_valid": True, "merkle_root_valid": True, "ledger_chain_valid": True}
 
         with (
             patch("apps.web.django.markets.views.get_market", return_value=market),
@@ -7530,13 +7530,13 @@ class WebSmokeTests(TransactionTestCase):
         scenarios = (
             (
                 {"status": "resolved_pending_seal", "protocol_version": "gtl-integrity/v1", "definition": {}, "ledger_events": []},
-                {"valid": True, "definition_valid": True},
+                {"verification_status": "verified", "overall_valid": True, "definition_valid": True},
                 "Resultado registrado; finalização pendente",
                 "O resultado ainda pode passar pela revisão operacional prevista antes da finalização.",
             ),
             (
                 {"status": "sealed", "protocol_version": "gtl-integrity/v1", "definition": {}, "seal": {}, "ledger_events": []},
-                {"valid": False, "definition_valid": False, "seal_valid": False, "merkle_root_valid": False, "ledger_chain_valid": False},
+                {"verification_status": "failed", "overall_valid": False, "definition_valid": False, "seal_valid": False, "merkle_root_valid": False, "ledger_chain_valid": False},
                 "Encontramos uma diferença nos registros",
                 "Diferença detectada",
             ),
@@ -7544,7 +7544,7 @@ class WebSmokeTests(TransactionTestCase):
 
         for proof, verification, headline, detail in scenarios:
             with (
-                self.subTest(status=proof["status"], valid=verification["valid"]),
+                self.subTest(status=proof["status"], valid=verification["overall_valid"]),
                 patch("apps.web.django.markets.views.get_market", return_value=market),
                 patch("apps.web.django.markets.views.get_market_integrity", return_value=proof),
                 patch("apps.web.django.markets.views.verify_market_integrity", return_value=verification),
@@ -7591,7 +7591,8 @@ class WebSmokeTests(TransactionTestCase):
             ),
         )
         verification = {
-            "valid": True,
+            "verification_status": "verified",
+            "overall_valid": True,
             "definition_valid": True,
             "definition_matches_current": True,
             "ledger_chain_valid": True,
@@ -9578,7 +9579,8 @@ class WebSmokeTests(TransactionTestCase):
         base_market = get_domain_client().market("openai-gpt6-2026")
         definition = {"hash": "a" * 64, "key_fingerprint": "b" * 64}
         healthy_verification = {
-            "valid": True,
+            "verification_status": "verified",
+            "overall_valid": True,
             "definition_valid": True,
             "definition_matches_current": True,
             "prediction_commitments_valid": True,
@@ -9618,7 +9620,7 @@ class WebSmokeTests(TransactionTestCase):
             }
             verification = {
                 **healthy_verification,
-                "valid": status not in {"draft", "scheduled"},
+                "overall_valid": None if status in {"draft", "scheduled"} else True,
                 "definition_valid": None if status in {"draft", "scheduled"} else True,
                 "definition_matches_current": None if status in {"draft", "scheduled"} else True,
                 "prediction_commitments_valid": None if status in {"draft", "scheduled"} else True,
@@ -9647,7 +9649,8 @@ class WebSmokeTests(TransactionTestCase):
 
         failed_verification = {
             **healthy_verification,
-            "valid": False,
+            "verification_status": "failed",
+            "overall_valid": False,
             "definition_matches_current": False,
             "errors": ["definition_changed"],
         }

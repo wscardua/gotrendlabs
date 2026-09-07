@@ -29,6 +29,7 @@
 ## Integrações já materializadas
 
 - `FEAT-INTEGRITY-001` integra publicação e previsão atomicamente ao signer, encadeia eventos globais sob advisory lock, sela mercados vencidos no daemon e distribui `market_sealed` por in-app/push/email idempotentes.
+- `FEAT-INTEGRITY-001` usa checkpoints globais assinados: o daemon audita delta por ciclo e cadeia integral diariamente; FastAPI valida checkpoint/head na consulta publica sem full scan; selagem valida delta sob lock; Django e Flutter apenas apresentam o contrato final.
 - O daemon reutiliza o verificador autoritativo de `FEAT-INTEGRITY-001` e materializa divergencias confirmadas em `gotrendlabs_integrity_alerts`; FastAPI inclui esses alertas na fila staff e Django Admin Ops apenas os apresenta/revisa.
 - Previsoes iniciais humanas e de agentes IA compartilham `prediction_write_service`; reforcos/revisoes usam o mesmo `commit_prediction`. A auditoria exige correspondencia exata entre cada linha de previsao e seu compromisso antes de permitir Seal.
 - Nomes taxonomicos sao snapshots editoriais na definicao; IDs de categoria/subcategoria/evento protegem a associacao estavel sem gerar falso alerta em renomeacao.

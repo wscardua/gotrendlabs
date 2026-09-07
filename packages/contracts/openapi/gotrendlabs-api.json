@@ -2564,6 +2564,77 @@
         "title": "HealthResponse",
         "type": "object"
       },
+      "IntegrityLedgerStatusResponse": {
+        "properties": {
+          "audit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Type"
+          },
+          "current_sequence": {
+            "default": 0,
+            "title": "Current Sequence",
+            "type": "integer"
+          },
+          "ledger_chain_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Chain Valid"
+          },
+          "pending_events": {
+            "default": 0,
+            "title": "Pending Events",
+            "type": "integer"
+          },
+          "protocol_version": {
+            "title": "Protocol Version",
+            "type": "string"
+          },
+          "verification_status": {
+            "title": "Verification Status",
+            "type": "string"
+          },
+          "verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Verified At"
+          },
+          "verified_through_sequence": {
+            "default": 0,
+            "title": "Verified Through Sequence",
+            "type": "integer"
+          },
+          "verifier_version": {
+            "title": "Verifier Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "verification_status",
+          "protocol_version",
+          "verifier_version"
+        ],
+        "title": "IntegrityLedgerStatusResponse",
+        "type": "object"
+      },
       "IntegrityPublicKeyResponse": {
         "properties": {
           "algorithm": {
@@ -2825,15 +2896,69 @@
             "title": "Errors",
             "type": "array"
           },
+          "ledger_audit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Audit Type"
+          },
           "ledger_chain_valid": {
-            "default": false,
-            "title": "Ledger Chain Valid",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Chain Valid"
+          },
+          "ledger_current_sequence": {
+            "default": 0,
+            "title": "Ledger Current Sequence",
+            "type": "integer"
+          },
+          "ledger_pending_events": {
+            "default": 0,
+            "title": "Ledger Pending Events",
+            "type": "integer"
+          },
+          "ledger_verified_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ledger Verified At"
+          },
+          "ledger_verified_through_sequence": {
+            "default": 0,
+            "title": "Ledger Verified Through Sequence",
+            "type": "integer"
           },
           "market_events_valid": {
             "default": false,
             "title": "Market Events Valid",
             "type": "boolean"
+          },
+          "market_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Valid"
           },
           "merkle_root_valid": {
             "anyOf": [
@@ -2845,6 +2970,17 @@
               }
             ],
             "title": "Merkle Root Valid"
+          },
+          "overall_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Overall Valid"
           },
           "prediction_commitments_valid": {
             "anyOf": [
@@ -2879,9 +3015,9 @@
             ],
             "title": "Seal Valid"
           },
-          "valid": {
-            "title": "Valid",
-            "type": "boolean"
+          "verification_status": {
+            "title": "Verification Status",
+            "type": "string"
           },
           "warnings": {
             "items": {
@@ -2892,7 +3028,7 @@
           }
         },
         "required": [
-          "valid"
+          "verification_status"
         ],
         "title": "MarketIntegrityVerificationResponse",
         "type": "object"
@@ -10272,6 +10408,24 @@
           }
         },
         "summary": "Integrity Public Key"
+      }
+    },
+    "/integrity/status": {
+      "get": {
+        "operationId": "get_integrity_ledger_status_integrity_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrityLedgerStatusResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Integrity Ledger Status"
       }
     },
     "/markets": {

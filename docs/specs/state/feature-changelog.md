@@ -1,5 +1,15 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 checkpoints assinados
+
+- O daemon passa a criar checkpoints globais canonicos, assinados, encadeados e append-only, com auditoria incremental em cada ciclo e integral no bootstrap/primeiro ciclo apos 24 horas.
+- A verificacao publica deixa de percorrer todos os eventos e passa a validar checkpoint, head e limite por consultas indexadas; novo `GET /integrity/status` expoe a situacao global sem dados de mercado.
+- O contrato substitui `valid` por `verification_status`, `market_valid`, `ledger_chain_valid` e `overall_valid`, distinguindo atraso normal (`pending`) de divergencia (`failed`) e indisponibilidade.
+- Selagem valida qualquer delta sob advisory lock e permanece fail-closed; alertas globais pendentes tambem suprimem o selo positivo dos cards.
+- Django/Admin Ops e Flutter apresentam sequencia auditada, head, pendencias e horario da ultima auditoria sem disparar full scan; Flutter avanca para `1.2.0+13` sem camada legada.
+- Migration `0031_integrity_ledger_checkpoints` adiciona indices, assinatura historica, trigger contra mutacao/truncate e privilegios minimos.
+- O corte pre-producao remove alertas operacionais mutaveis dos mercados candidatos antes da FK `PROTECT`, sem tocar provas append-only.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 fechamento dos achados de revisao
 
 - A selagem passa a exigir a verificacao integral aprovada, incluindo definicao/resultado atuais, compromissos, eventos do mercado e cadeia global; qualquer divergencia mantem o mercado em `resolved` para retry seguro.
@@ -8,7 +18,7 @@
 - O verificador da cadeia vincula protocolo, entidade, mercado, timestamp, correlacao/causalidade, algoritmo, fingerprint e `created_at` aos dados assinados ou a metadados criptograficamente conferidos.
 - A auditoria passa a varrer tambem mercados sem definicao e cria `definition_missing` de severidade alta quando a prova e obrigatoria.
 - O purge pre-producao remove somente badges causalmente ligados aos mercados eliminados e preserva concessoes/notificacoes independentes.
-- O risco de escala da verificacao global integral fica registrado: indices atuais atendem lookups, mas cache/checkpoints verificaveis e medicao com volume representativo continuam pendentes.
+- O risco de escala da verificacao global integral foi encaminhado para checkpoints assinados; medicao com volume representativo continua pendente em staging.
 
 ## 2026-09-07 — FEAT-INTEGRITY-001 endurecimento de cobertura e corte pre-producao
 

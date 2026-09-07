@@ -315,6 +315,40 @@ class IntegrityLedgerEvent(models.Model):
         ordering = ["sequence"]
 
 
+class IntegrityLedgerCheckpoint(models.Model):
+    checkpoint_sequence = models.PositiveBigIntegerField(unique=True)
+    audit_type = models.CharField(max_length=20)
+    status = models.CharField(max_length=20)
+    first_event_sequence = models.PositiveBigIntegerField(null=True, blank=True)
+    last_event_sequence = models.PositiveBigIntegerField(default=0)
+    last_event_hash = models.CharField(max_length=64, blank=True)
+    observed_head_sequence = models.PositiveBigIntegerField(default=0)
+    observed_head_hash = models.CharField(max_length=64, blank=True)
+    verified_event_count = models.PositiveBigIntegerField(default=0)
+    previous_checkpoint_hash = models.CharField(max_length=64, blank=True)
+    failure_sequence = models.PositiveBigIntegerField(null=True, blank=True)
+    issue_code = models.CharField(max_length=80, blank=True)
+    protocol_version = models.CharField(max_length=40)
+    verifier_version = models.CharField(max_length=40)
+    canonical_payload = models.BinaryField()
+    payload_json = models.JSONField(default=dict)
+    checkpoint_hash = models.CharField(max_length=64, unique=True)
+    signature = models.BinaryField()
+    algorithm = models.CharField(max_length=40)
+    key_id = models.CharField(max_length=255)
+    key_fingerprint = models.CharField(max_length=64)
+    verified_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "integrity_ledger_checkpoints"
+        ordering = ["checkpoint_sequence"]
+        indexes = [
+            models.Index(fields=["-last_event_sequence"], name="gtl_icheck_last_seq_idx"),
+            models.Index(fields=["audit_type", "-verified_at"], name="gtl_icheck_type_time_idx"),
+        ]
+
+
 class IntegrityAlert(models.Model):
     STATUS_CHOICES = (("pending", "Pending"), ("reviewed", "Reviewed"))
 

@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260907-INTEGRITY-CHECKPOINTS-020
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-MOBILE-001`
+- Objetivo: retirar a varredura integral da cadeia global das requisicoes publicas por meio de checkpoints assinados, auditoria incremental no daemon e auditoria integral periodica, mantendo selagem fail-closed.
+- Etapa atual: arquitetura, contrato, implementacao, corte local, regressao e validacao de indices concluidos.
+- Artefatos afetados: ADR, feature/contrato/arquitetura, PostgreSQL/migration, verificador FastAPI, daemon, OpenAPI, Django, Flutter, Admin Ops, testes e memoria operacional.
+- Decisoes: contrato final sem compatibilidade com builds Flutter pre-producao; estados globais `verified`, `pending`, `failed` e `unavailable`; requisicao publica nunca faz full scan; cards nao oscilam por backlog normal, mas falha confirmada continua removendo sinal positivo; selagem valida delta sob lock.
+- Reversao logica: desativar consumo publico do checkpoint por reversao de codigo, preservar checkpoints/eventos append-only e retornar temporariamente a auditoria integral backend; migration nao sera revertida destrutivamente em ambiente com provas.
+- Evidencias: `ADR-0007`; migration `0031`; 28 testes de `tests.test_integrity_ledger` e 221 de `tests.test_web_smoke` aprovados; 101 testes Flutter aprovados e `flutter analyze` sem issues; OpenAPI regenerado e `--check` aprovado; `manage.py check`, `makemigrations --check --dry-run`, compilacao Python e `git diff --check` aprovados. Teste dedicado bloqueia qualquer chamada ao scanner global no request publico. `EXPLAIN` local confirmou `Index Scan Backward` para o head e `Index Scan` por intervalo/limite em `integrity_ledger_events_sequence_key`.
+- Resultado local: PostgreSQL pre-producao reinicializado conforme autorizacao, migrations reaplicadas, dados anteriores descartados sem assinatura retroativa, tres mercados nativos criados (dois `sealed`, um `open`), checkpoint incremental valido ate o evento 11, nenhum alerta pendente; Django/FastAPI/daemon reiniciados e saudaveis.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
 ## WFLOW-20260907-INTEGRITY-REVIEW-019
 
 - Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`

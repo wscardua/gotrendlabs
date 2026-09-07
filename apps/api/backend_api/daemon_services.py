@@ -7,8 +7,8 @@ from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from apps.api.backend_api.integrity_service import (
     IntegritySigningError,
+    audit_integrity_ledger,
     seal_market,
-    verify_integrity_ledger_chain,
     verify_market_integrity_records,
 )
 from apps.web.django.system_logs.services import DEFAULT_RETENTION_DAYS, log_system_event
@@ -33,6 +33,10 @@ INTEGRITY_ISSUE_LABELS = {
     "market_events_invalid": ("Evento do mercado rompeu o ledger", "Um evento associado ao mercado falhou na validação da cadeia assinada."),
     "verification_exception": ("Verificação de integridade falhou", "A auditoria encontrou um registro inválido que não pôde ser interpretado com segurança."),
     "ledger_chain_invalid": ("Cadeia global do ledger não confere", "A sequência, o elo, o conteúdo ou a assinatura de um evento global falhou na validação."),
+    "checkpoint_invalid": ("Checkpoint do ledger não confere", "O checkpoint assinado mais recente falhou na validação criptográfica ou no encadeamento."),
+    "checkpoint_boundary_invalid": ("Limite do checkpoint não confere", "O evento usado como limite pelo checkpoint não corresponde ao ledger persistido."),
+    "ledger_head_changed": ("Cabeça do ledger foi alterada", "O último evento já auditado não corresponde ao checkpoint assinado."),
+    "ledger_head_regressed": ("Ledger perdeu eventos auditados", "A sequência atual do ledger é anterior ao checkpoint assinado mais recente."),
 }
 
 
@@ -204,11 +208,12 @@ def audit_integrity_records(now=None):
     try:
         with get_connection() as connection:
             with connection.cursor() as cursor:
-                ledger_audit = verify_integrity_ledger_chain(cursor)
-                if not ledger_audit["valid"]:
+                ledger_audit = audit_integrity_ledger(cursor, now=now)
+                if ledger_audit["status"] == "failed":
+                    issue_code = ledger_audit.get("issue_code") or "ledger_chain_invalid"
                     summary["issues_detected"] += 1
                     summary["alerts_created"] += int(
-                        _enqueue_integrity_alert(cursor, issue_code="ledger_chain_invalid", market=None, now=now)
+                        _enqueue_integrity_alert(cursor, issue_code=issue_code, market=None, now=now)
                     )
                 cursor.execute(
                     "SELECT m.* FROM gotrendlabs_markets m ORDER BY m.id"

@@ -27,9 +27,9 @@ aprovacao: pendente
 - `MarketResponse` inclui `published_at`, `seal_due_at`, `sealed_at` e `integrity` com status/protocolo/disponibilidade.
 - O app consome `GET /markets/{slug}/integrity`, `/integrity/verify`, `/predictions/{id}/receipt` e `/merkle-proof`; não assina nem trata cálculo local como autoridade.
 - O app reconhece `seal_retry_pending` como pendencia operacional, `canceled_preserved` como registros preservados sem Seal aplicavel e `verification_failed` exclusivamente como inconsistencia criptografica. Campos nullable da verificacao nao podem ser renderizados como falha.
-- `/integrity/verify` inclui `definition_matches_current`, `result_matches_current` e `prediction_commitments_valid`; o estado verde final exige todas as verificacoes aplicaveis.
-- `errors` representa apenas inconsistencias da prova do mercado; `warnings` e `ledger_chain_valid` preservam observacoes operacionais globais sem fazer o app rotular como adulterado um mercado com `valid=true`.
-- Campos novos são aditivos. Clientes anteriores devem continuar funcionando e exibir o estado pelo label recebido; releases com enum fechado precisam incluir `sealed` antes do rollout.
+- `/integrity/verify` inclui `verification_status`, `market_valid`, `overall_valid`, `ledger_chain_valid`, `definition_matches_current`, `result_matches_current`, `prediction_commitments_valid`, sequencias, pendencias e horario/tipo da auditoria global.
+- `pending` usa valores globais nullable e significa somente que o daemon ainda nao cobriu eventos recentes; `failed` e reservado a divergencia confirmada. O app nao deriva esses estados nem executa hash como autoridade.
+- O app ainda nao esta em producao: o contrato final substitui diretamente o shape anterior, sem parser ou fallback para builds antigos. FastAPI, OpenAPI, Django e Flutter avancam juntos.
 - Comprovantes autenticados pertencem somente ao usuário da previsão. Provas públicas não carregam PII ou identificador interno bruto de usuário.
 - `viewer_position.history` fornece os ids das acoes da propria posicao para o app montar a lista persistente; o conteudo autoritativo de cada modal vem de `GET /markets/{slug}/predictions/{prediction_id}/receipt`, e `merkle_proof` permanece ausente ate a finalizacao quando ainda nao aplicavel.
 

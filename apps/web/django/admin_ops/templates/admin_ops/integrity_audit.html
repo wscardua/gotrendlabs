@@ -23,7 +23,8 @@
         <div>
           <span class="eyebrow">Resultado da conferência</span>
           <h2>{{ integrity_audit.label }}</h2>
-          <p>Status do mercado: <strong>{{ market.status_label|default:market.status }}</strong>. Verificação executada em {{ integrity_audit.checked_at }}.</p>
+          <p>Status do mercado: <strong>{{ market.status_label|default:market.status }}</strong>. Consulta executada em {{ integrity_audit.checked_at }}.</p>
+          {% if integrity_audit.ledger_verified_at %}<p>Checkpoint global verificado até o evento {{ integrity_audit.ledger_verified_through_sequence }} em {{ integrity_audit.ledger_verified_at }}{% if integrity_audit.ledger_pending_events %}; {{ integrity_audit.ledger_pending_events }} evento(s) novo(s) aguardam o daemon{% endif %}.</p>{% endif %}
         </div>
       </div>
 
@@ -59,6 +60,7 @@
           <dt>Hash da definição</dt><dd><code title="{{ proof.definition.hash }}">{{ proof.definition.hash|default:"não disponível"|truncatechars:34 }}</code></dd>
           <dt>Chave da definição</dt><dd><code title="{{ proof.definition.key_fingerprint }}">{{ proof.definition.key_fingerprint|default:"não disponível"|truncatechars:34 }}</code></dd>
           <dt>Hash do Seal</dt><dd><code title="{{ proof.seal.hash }}">{{ proof.seal.hash|default:"não disponível"|truncatechars:34 }}</code></dd>
+          <dt>Checkpoint do ledger</dt><dd>evento {{ integrity_audit.ledger_verified_through_sequence }} de {{ integrity_audit.ledger_current_sequence }}</dd>
         </dl>
         <div class="integrity-admin-events">
           <table class="table">

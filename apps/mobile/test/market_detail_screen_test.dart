@@ -230,7 +230,9 @@ class _IntegrityMarketsRepository extends _NoopMarketsRepository {
 
   @override
   Future<Map<String, dynamic>> verifyIntegrity(String slug) async => {
-    'valid': true,
+    'verification_status': 'verified',
+    'market_valid': true,
+    'overall_valid': true,
     'definition_valid': true,
     'definition_matches_current': true,
     'seal_valid': true,
@@ -239,6 +241,11 @@ class _IntegrityMarketsRepository extends _NoopMarketsRepository {
     'merkle_root_valid': true,
     'market_events_valid': true,
     'ledger_chain_valid': true,
+    'ledger_verified_through_sequence': 18,
+    'ledger_current_sequence': 18,
+    'ledger_pending_events': 0,
+    'ledger_verified_at': '2026-09-07T12:00:00Z',
+    'ledger_audit_type': 'incremental',
   };
 }
 

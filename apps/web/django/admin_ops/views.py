@@ -761,6 +761,8 @@ INTEGRITY_AUDIT_ISSUE_LABELS = {
     "merkle_invalid": "A raiz ou uma prova Merkle não corresponde aos comprovantes registrados.",
     "market_events_invalid": "Um evento deste mercado rompeu a cadeia assinada.",
     "ledger_chain_invalid": "A cadeia global possui um elo inconsistente.",
+    "ledger_verification_pending": "Há eventos novos aguardando o próximo ciclo de auditoria do daemon.",
+    "ledger_verification_unavailable": "Ainda não há checkpoint assinado disponível para a cadeia global.",
 }
 
 
@@ -769,6 +771,8 @@ def _integrity_audit_check(label, value, *, applicable=True, unavailable_label="
         return {"label": label, "state": "waiting", "state_label": unavailable_label, "detail": detail}
     if value is True:
         return {"label": label, "state": "passed", "state_label": "Aprovado", "detail": detail}
+    if value is None:
+        return {"label": label, "state": "waiting", "state_label": unavailable_label, "detail": detail}
     return {"label": label, "state": "failed", "state_label": "Diferença detectada", "detail": detail}
 
 
@@ -832,13 +836,16 @@ def _market_integrity_audit_context(market, proof, verification):
             "Cadeia global do ledger",
             verification.get("ledger_chain_valid"),
             applicable=bool(verification),
-            detail="Verifica a continuidade da cadeia assinada compartilhada por todos os mercados.",
+            unavailable_label="Auditoria pendente",
+            detail="Usa o último checkpoint assinado pelo daemon para conferir a cadeia compartilhada por todos os mercados.",
         ),
     ]
     errors = verification.get("errors") or []
     warnings = verification.get("warnings") or []
     if errors:
         overall_state, overall_label = "failed", "Diferença de integridade detectada"
+    elif verification.get("verification_status") in {"pending", "unavailable"}:
+        overall_state, overall_label = "warning", "Mercado sem diferença local; auditoria global pendente"
     elif warnings:
         overall_state, overall_label = "warning", "Mercado íntegro; cadeia global requer atenção"
     elif has_definition:
@@ -854,6 +861,10 @@ def _market_integrity_audit_context(market, proof, verification):
         "checks": checks,
         "issues": issue_labels,
         "checked_at": timezone.localtime(timezone.now()).strftime("%d/%m/%Y %H:%M %Z"),
+        "ledger_verified_at": verification.get("ledger_verified_at"),
+        "ledger_verified_through_sequence": verification.get("ledger_verified_through_sequence", 0),
+        "ledger_current_sequence": verification.get("ledger_current_sequence", 0),
+        "ledger_pending_events": verification.get("ledger_pending_events", 0),
     }
 
 
