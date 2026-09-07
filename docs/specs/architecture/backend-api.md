@@ -28,6 +28,7 @@
 - Estados de mercado devem ser explícitos e consistentes.
 - Regras de saldo devem usar ledger, não apenas campo de total agregado.
 - Erros devem ser previsíveis e mapeados para UX e operação.
+- Respostas publicas da FastAPI devem receber headers defensivos no boundary HTTP comum (proxy ou middleware), incluindo ao menos HSTS em HTTPS e `X-Content-Type-Options: nosniff`, sem introduzir cache de respostas autenticadas ou de verificacao. Smoke e testes de contrato devem conferir a politica no endpoint de health e nos endpoints publicos de integridade.
 - reCAPTCHA v2 é configurável por ambiente; cadastro protegido exige token válido, e sugestão/feedback exigem token apenas para visitante.
 - Mudanças de schema que removem colunas consumidas por SQL direto exigem reinício do processo FastAPI em ambientes locais/long-running.
 - Comentários são expostos pela FastAPI como fonte de verdade para criação, listagem, reação e moderação.

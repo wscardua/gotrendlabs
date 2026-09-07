@@ -2,6 +2,9 @@
 
 ## 2026-09-07
 
+- registrado `WFLOW-20260907-PRODUCTION-AUDIT-FOLLOWUPS-023` para consolidar os achados produtivos como evolucoes planejadas, sem alterar o estado validado de `FEAT-INTEGRITY-001`;
+- priorizada a separacao de owner/migrator das roles runtime do ledger e a ativacao/teste dos destinos de alarmes, incluindo correcao das dimensoes do disco;
+- documentados capacidade/HA, retencao operacional, identidade por workload, rotacao versionada do commitment secret, headers FastAPI, tratamento de push terminal e validacao continuada como proximos ciclos;
 - encerrado `WFLOW-20260907-INTEGRITY-CLOSEOUT-022` e promovida `FEAT-INTEGRITY-001` para `implementada_validada` após PRs, CI/deploy, rollout AWS, corte idempotente e smoke produtivo;
 - registrada a regressão operacional que remove `PushDelivery` somente quando vinculada às notificações dos mercados eliminados, preservando históricos não relacionados;
 - promovida `FEAT-INTEGRITY-001` para `aprovada` na versão `1.2`, por autorização explícita do usuário, mantendo implementação aguardando deploy até validação produtiva;
