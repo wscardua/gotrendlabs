@@ -43,6 +43,7 @@
 - `PushEventPolicy` define `off`, `immediate` ou `digest` por evento; `digest` não envia nesta primeira fase.
 - `PushTemplate` guarda título/corpo curto por evento/idioma, com preview seguro no Admin Ops.
 - `PushDelivery` é a outbox idempotente por `UserNotification` e dispositivo, drenada pelo daemon.
+- Entregas que esgotarem retries entram em estado terminal operacional e nao devem permanecer em retry cego. A evolucao do Admin Ops deve permitir arquivar/encerrar ou solicitar reprocessamento manual com permissao, motivo obrigatorio, idempotencia e `AdminEvent`, preservando a `UserNotification` de origem e o historico da entrega.
 - Provider `none` com dry-run marca entregas como `dry_run` sem chamada externa.
 - A saúde operacional de push é agregada para o Dashboard Admin Ops com flags/provider, devices ativos, fila pendente/vencida, entregas dry-run/enviadas, falhas recentes e tokens inválidos, sem expor token bruto ou payload sensível.
 - Admin Ops lista dispositivos de push registrados com estado operacional, app version/build, hash parcial e agregados de entrega, mas nunca renderiza token bruto.
@@ -59,6 +60,7 @@
 - `market.sealed` gera comunicacao idempotente para participantes humanos, sem hashes extensos ou dados sensiveis.
 - Envio FCM real exige `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON` com o service account JSON cru ou base64 fora do banco/Git/Admin Ops.
 - O daemon envia FCM via Firebase Admin SDK, grava `provider_message_id` em sucesso, agenda retry em falha transitória e invalida o `PushDevice` quando o provedor rejeita o token.
+- A classificacao do erro deve distinguir falha transitoria, token invalido e falha terminal; somente falhas transitorias elegiveis retornam automaticamente a fila.
 - O daemon faz claim de `PushDelivery` em transação curta, libera locks antes da chamada externa ao FCM e recupera entregas presas em `sending` há mais de 15 minutos.
 - TLS e SSL são mutuamente exclusivos.
 - Produção usa Resend como provider transacional preferencial; SMTP permanece apenas como fallback genérico configurável.

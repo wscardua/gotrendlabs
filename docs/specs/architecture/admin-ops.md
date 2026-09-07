@@ -132,6 +132,7 @@
 - Modo manutenção é persistido em arquivo runtime fora do banco para desviar acesso público para página estática de manutenção mesmo quando a conexão com PostgreSQL/FastAPI estiver indisponível.
 - Config SMTP persiste parâmetros não sensíveis no banco; senha/API key ficam exclusivamente em variáveis de ambiente ou secret manager.
 - Push mobile possui área operacional própria para políticas por evento, templates PT-BR e logs de entrega, sem expor tokens de dispositivo, payload sensível ou segredo Firebase.
+- A evolucao da area de Push mobile deve oferecer tratamento explicito para entregas terminais: encerrar/arquivar ou reprocessar manualmente, sempre com permissao adequada, motivo obrigatorio, acao idempotente e `AdminEvent`; a notificacao in-app de origem e o historico de tentativas permanecem preservados.
 - A área de Push mobile possui aba `Dispositivos` para consulta operacional de `PushDevice`, com filtros por status/plataforma/provider, status mutuamente exclusivo, versão/build, hash parcial do token, última atividade e contadores de entrega, sem exibir token bruto.
 - Admin Ops pode exibir presença/ausência da credencial FCM futura em Config, mas não salva, edita nem renderiza o segredo; credenciais ficam exclusivamente em variáveis de ambiente ou secret manager.
 - A tela de templates de push deve mostrar o fallback seguro do código junto do texto editável para reduzir ambiguidade operacional.

@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260907-PRODUCTION-AUDIT-FOLLOWUPS-023
+
+- Tipo: `change-feature` + revisao operacional documental
+- Status: `concluido`
+- Feature alvo: `FEAT-INTEGRITY-001`, `FEAT-NOTIFY-001` e infraestrutura produtiva
+- Objetivo: registrar como evolucoes planejadas os achados da auditoria posterior ao rollout, sem alterar runtime, reabrir a feature validada ou confundir hardening de infraestrutura com falha criptografica atual.
+- Artefatos afetados: feature de integridade, arquiteturas de banco/API/scheduler/comunicacoes/Admin Ops, estrategia de testes, runbook de producao, known gaps e changelogs.
+- Prioridades: P1 para separar owner/migrator das roles runtime do ledger e tornar alarmes realmente notificantes; P2 para capacidade/HA, retencao operacional, identidade por workload, rotacao versionada do commitment secret, headers FastAPI, tratamento de push terminal e carga/observacao continuada.
+- Evidencias: cadeia/checkpoint e assinatura KMS permaneceram validos; API/banco e containers saudaveis. A auditoria encontrou ownership/privilegios amplos apesar dos triggers, alarmes sem destino, alarme de disco com dimensao incorreta, host/RDS pequenos e Single-AZ, retencao de logs de um dia, ausencia de fluxo permanente para push terminal e headers defensivos incompletos na FastAPI.
+- Limpeza operacional associada: quatro `PushDelivery` antigas que haviam esgotado retries foram removidas em transacao, preservando duas `UserNotification` de origem e registrando `AdminEvent` id 96; nenhum retry pendente permaneceu. A spec registra o mecanismo definitivo ainda necessario, nao uma pendencia de dados atual.
+- Decisao: nenhuma alteracao de infraestrutura ou codigo faz parte deste workflow; cada item futuro exige ciclo proprio, teste proporcional, rollback e atualizacao das evidencias.
+- Validacao: revisao de consistencia documental e `git diff --check`.
+- Iniciado em: 2026-09-07
+- Atualizado em: 2026-09-07
+- Encerrado em: 2026-09-07
+
 ## WFLOW-20260907-INTEGRITY-CLOSEOUT-022
 
 - Tipo: `promote-spec` + `implementation-cycle` + `test-review-cycle`

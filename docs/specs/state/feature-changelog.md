@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-07 — FEAT-INTEGRITY-001 evolucoes pos-auditoria
+
+- O smoke criptografico permanece valido; foram registrados, sem mudanca de runtime, hardenings P1 para ownership/grants append-only e entrega efetiva dos alarmes.
+- Capacidade/HA, retencao operacional, identidade IAM por workload, rotacao versionada do commitment secret, headers publicos da FastAPI e ensaio de carga/observacao por 24 horas ficam como P2 antes do lancamento irrestrito.
+- FEAT-NOTIFY-001 passa a prever tratamento administrativo auditado e idempotente de entregas push terminais; as quatro falhas antigas foram limpas preservando as notificacoes de origem, mas o mecanismo permanente continua planejado.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 encerramento produtivo
 
 - PRs `#114` e `#115` integradas por merge commit; workflows de CI/deploy `34157223820` e `34158379066` concluídos com sucesso.

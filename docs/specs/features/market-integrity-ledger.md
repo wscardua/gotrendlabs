@@ -171,6 +171,14 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - enquanto a auditoria global estiver em `failed`, o ciclo suprime todas as tentativas de Seal antes de iterar mercados vencidos, evitando que cada candidato contorne o backoff; fechamento, retenção e comunicações continuam isolados
 - a interface informa sequencia verificada, sequencia atual, eventos pendentes e horario/tipo da ultima auditoria sem prometer atualizacao instantanea
 
+### Evolucoes operacionais pos-rollout
+
+- separar ownership/migrations das roles de aplicacao e remover de todos os runtimes `UPDATE`, `DELETE` e `TRUNCATE` sobre tabelas append-only, mantendo triggers uniformes como defesa adicional
+- substituir o isolamento apenas por configuracao do processo por identidade IAM propria do signer/FastAPI/daemon quando os workloads forem separados; o host compartilhado permanece limitacao conhecida do MVP
+- antes da primeira rotacao de `GOTRENDLABS_USER_COMMITMENT_SECRET`, versionar o segredo no protocolo e manter keyring historico somente no Secrets Manager
+- ligar alarmes de KMS, daemon, memoria, swap, disco e banco a um destino operacional testado e validar dimensoes reais das metricas; `INSUFFICIENT_DATA` critico deve gerar diagnostico
+- executar ensaio de carga representativo da verificacao publica e observar ao menos 24 horas de checkpoints/auditorias automaticas antes do lancamento irrestrito
+
 ## Comunicacoes
 
 `market.sealed` cria notificacao idempotente in-app/push/email para participantes humanos: "Historico finalizado e verificavel: o registro deste mercado esta disponivel para conferencia." Payload externo nao inclui hashes extensos nem dados sensiveis.

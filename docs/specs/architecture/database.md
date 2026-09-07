@@ -11,6 +11,8 @@
 
 - Modelos críticos devem preservar histórico quando o produto exigir auditabilidade.
 - Tabelas de integridade sao append-only, protegidas contra UPDATE/DELETE, sem cascades destrutivos e fora de purge/retenção comum.
+- O estado alvo de producao separa a role proprietaria/migradora das roles de runtime. FastAPI e daemon recebem apenas `SELECT`, `INSERT` e uso das sequences estritamente necessarias; Django recebe somente as leituras/contratos requeridos. Nenhuma role de aplicacao deve ser proprietaria das tabelas append-only nem possuir `UPDATE`, `DELETE` ou `TRUNCATE` nelas.
+- A defesa append-only deve ser uniforme: triggers contra `UPDATE`, `DELETE` e `TRUNCATE`, grants minimos e ausencia de ownership runtime sao controles complementares, validados com as roles reais de producao apos cada migration/deploy.
 - `integrity_signing_keys` armazena apenas material publico DER, algoritmo e fingerprint por `key_id`; material privado permanece fora do PostgreSQL e, em producao, exclusivamente no AWS KMS.
 - `gotrendlabs_integrity_alerts` e uma fila operacional mutavel, separada das provas append-only. Deduplica por escopo/tipo de divergencia, preserva primeira e ultima deteccao, ocorrencias e revisao administrativa; nao participa da raiz Merkle nem da cadeia assinada.
 - Wallet deve usar razão de transações (`ledger`) em vez de depender apenas de saldo derivado.

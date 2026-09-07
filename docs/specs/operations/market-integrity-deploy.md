@@ -50,3 +50,18 @@
 - Primeira tentativa de corte: FK defensiva de `PushDelivery` abortou o commit e o PostgreSQL reverteu a transação integralmente. O hotfix passou por 32 testes especializados e pela suíte completa antes da nova execução.
 - Corte final: 30 mercados, 4 previsões, 43 comentários, 7 notificações e 21 entregas push relacionadas removidos; repetição retornou zero em todas as contagens.
 - Smoke: cadeia `verified`, auditoria integral, sequência atual/verificada `0`, zero pendências, assinatura KMS real válida, API/banco `ok`, dois workers Django, um daemon, swap de 1 GiB ativo. O site permaneceu intencionalmente em manutenção web pré-lançamento.
+
+## Backlog pos-auditoria de producao — 2026-09-07
+
+Os itens abaixo sao evolucoes planejadas e nao invalidam o smoke criptografico aprovado. Devem ser concluidos antes de lancamento publico irrestrito, conforme prioridade:
+
+1. **P1 — Banco append-only:** criar role proprietaria/migradora separada; retirar ownership e privilegios `UPDATE`, `DELETE` e `TRUNCATE` das roles runtime; aplicar defesa de `TRUNCATE` uniformemente e validar grants usando as credenciais reais de cada workload.
+2. **P1 — Entrega de alarmes:** configurar destino SNS/operacional para todos os alarmes criticos, testar a entrega e corrigir o alarme de disco para as dimensoes efetivas do CWAgent (`path=/`, `device=nvme0n1p1`, `fstype=ext4`, `InstanceId`). Tratar `INSUFFICIENT_DATA` persistente como falha de observabilidade.
+3. **P2 — Capacidade e disponibilidade:** definir gatilhos de escala a partir de memoria, swap, CPU, disco e latencia; revisar a EC2 unica `t4g.micro`, o RDS `db.t4g.micro` Single-AZ e a retencao de backup de um dia antes do lancamento publico. Considerar Multi-AZ e retencao de sete dias quando o plano permitir.
+4. **P2 — Retencao operacional:** elevar `system_log_retention_days` e `ai_audit_retention_days` acima do valor produtivo observado de um dia, segundo politica aprovada de investigacao. O ledger criptografico continua fora desse purge.
+5. **P2 — Isolamento e segredos:** evoluir para identidade IAM por workload e implementar versao/keyring historico do segredo de commitment antes da primeira rotacao.
+6. **P2 — Superficie HTTP:** aplicar e testar headers defensivos tambem nas respostas publicas da FastAPI, preferencialmente no boundary comum, sem cache indevido.
+7. **P2 — Push terminal:** implementar acao Admin Ops auditada para encerrar/arquivar ou reprocessar entregas que esgotaram retries. As quatro falhas antigas encontradas na auditoria foram removidas de forma controlada, com as notificacoes de origem preservadas e `AdminEvent` registrado; a pendencia e o mecanismo operacional permanente.
+8. **P2 — Validacao continuada:** executar carga representativa da verificacao publica e observar checkpoints/auditoria integral automatica por pelo menos 24 horas.
+
+Evidencia de capacidade no momento da auditoria: containers sem restart/OOM; EC2 com dois workers Django e um daemon, uso de memoria em torno de 619 MiB de 904 MiB, swap em uso e disco entre 67% e 70%; RDS com baixa CPU, memoria livre aproximada de 161–198 MiB e amplo espaco livre. Esses valores sao fotografia operacional, nao limites de seguranca ou promessa de capacidade.
