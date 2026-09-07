@@ -59,7 +59,13 @@ class Command(BaseCommand):
     @staticmethod
     def _inventory(market_ids):
         if not market_ids:
-            return {"market_count": 0, "prediction_count": 0, "comment_count": 0, "notification_count": 0}
+            return {
+                "market_count": 0,
+                "prediction_count": 0,
+                "comment_count": 0,
+                "notification_count": 0,
+                "push_delivery_count": 0,
+            }
         with connection.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) FROM gotrendlabs_predictions WHERE market_id = ANY(%s)", [market_ids])
             predictions = cursor.fetchone()[0]
@@ -67,11 +73,21 @@ class Command(BaseCommand):
             comments = cursor.fetchone()[0]
             cursor.execute("SELECT COUNT(*) FROM gotrendlabs_user_notifications WHERE market_id = ANY(%s)", [market_ids])
             notifications = cursor.fetchone()[0]
+            cursor.execute(
+                """SELECT COUNT(*)
+                   FROM gotrendlabs_push_deliveries d
+                   JOIN gotrendlabs_user_notifications n ON n.id=d.notification_id
+                   LEFT JOIN gotrendlabs_market_comments c ON c.id=n.comment_id
+                   WHERE n.market_id = ANY(%s) OR c.market_id = ANY(%s)""",
+                [market_ids, market_ids],
+            )
+            push_deliveries = cursor.fetchone()[0]
         return {
             "market_count": len(market_ids),
             "prediction_count": predictions,
             "comment_count": comments,
             "notification_count": notifications,
+            "push_delivery_count": push_deliveries,
         }
 
     @staticmethod
@@ -116,6 +132,17 @@ class Command(BaseCommand):
                     "DELETE FROM gotrendlabs_user_activities WHERE reference_type='prediction' AND reference_id = ANY(%s)",
                     [prediction_ids],
                 )
+            # PostgreSQL uses defensive NO ACTION constraints. Remove only push
+            # attempts whose notification belongs directly to a candidate market
+            # or to one of its comments before Django's collector removes them.
+            cursor.execute(
+                """DELETE FROM gotrendlabs_push_deliveries d
+                   USING gotrendlabs_user_notifications n
+                   LEFT JOIN gotrendlabs_market_comments c ON c.id=n.comment_id
+                   WHERE d.notification_id=n.id
+                     AND (n.market_id = ANY(%s) OR c.market_id = ANY(%s))""",
+                [market_ids, market_ids],
+            )
             cursor.execute("DELETE FROM gotrendlabs_predictions WHERE market_id = ANY(%s)", [market_ids])
             cursor.execute("SELECT to_regclass('public.gotrendlabs_market_funnel_market_links') AS table_name")
             if cursor.fetchone()["table_name"]:
@@ -174,6 +201,15 @@ class Command(BaseCommand):
                         [[row["id"] for row in removed_awards]],
                     )
                     for award in removed_awards:
+                        cursor.execute(
+                            """DELETE FROM gotrendlabs_push_deliveries d
+                               USING gotrendlabs_user_notifications n
+                               WHERE d.notification_id=n.id
+                                 AND n.recipient_id=%s
+                                 AND n.event_type='badge_awarded'
+                                 AND n.source_key=%s""",
+                            [award["user_id"], f"badge_awarded:{award['code']}"],
+                        )
                         cursor.execute(
                             """DELETE FROM gotrendlabs_user_notifications
                                WHERE recipient_id=%s AND event_type='badge_awarded' AND source_key=%s""",
