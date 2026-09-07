@@ -5,7 +5,7 @@
 - A selagem passa a executar auditoria integral fresca da cadeia global sob o mesmo lock transacional; checkpoint anterior continua acelerando consultas públicas, mas não autoriza uma transição irreversível.
 - A prova pública deixa de expor eventos e referências de compromissos individuais; web e mobile recebem somente o total agregado, a raiz final e os eventos de ciclo do mercado.
 - O verificador confronta o envelope criptográfico e os metadados persistidos de definição, compromissos, Seal e folhas Merkle, incluindo relações, timestamps, protocolo, algoritmo e fingerprint.
-- Divergência global idêntica, sem mudança no head, respeita backoff de uma hora no daemon para evitar repetição de varredura e assinatura a cada ciclo; a falha continua visível e bloqueando Seal.
+- Divergência global idêntica, sem mudança no head, respeita backoff de uma hora no daemon para evitar repetição de varredura e assinatura a cada ciclo; a falha continua visível e suprime as selagens antes da iteração dos mercados vencidos.
 - Rotação versionada do segredo de pseudonimização e resumo materializado por mercado ficam registrados para evolução da plataforma.
 
 ## 2026-09-07 — FEAT-INTEGRITY-001 checkpoints assinados

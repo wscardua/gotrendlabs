@@ -204,11 +204,19 @@ def _enqueue_integrity_alert(cursor, *, issue_code, market, now):
 
 def audit_integrity_records(now=None):
     now = now or datetime.now(timezone.utc)
-    summary = {"available": True, "markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 0}
+    summary = {
+        "available": True,
+        "ledger_status": "unavailable",
+        "markets_scanned": 0,
+        "issues_detected": 0,
+        "alerts_created": 0,
+        "scan_failures": 0,
+    }
     try:
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 ledger_audit = audit_integrity_ledger(cursor, now=now)
+                summary["ledger_status"] = ledger_audit["status"]
                 if ledger_audit["status"] == "failed":
                     issue_code = ledger_audit.get("issue_code") or "ledger_chain_invalid"
                     summary["issues_detected"] += 1
@@ -373,21 +381,27 @@ def run_daemon_cycle(now=None):
     integrity_audit_summary = _run_isolated_task(
         "integrity_audit",
         lambda: audit_integrity_records(now=now),
-        fallback={"available": False, "markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 1},
+        fallback={"available": False, "ledger_status": "unavailable", "markets_scanned": 0, "issues_detected": 0, "alerts_created": 0, "scan_failures": 1},
     )
     locked_markets = _run_isolated_task("market_close", lambda: close_due_auto_markets(now=now), fallback=[])
-    if integrity_audit_summary.get("available", True):
+    if integrity_audit_summary.get("available", True) and integrity_audit_summary.get("ledger_status") != "failed":
         seal_summary = _run_isolated_task(
             "market_seal",
             lambda: seal_due_markets(now=now),
             fallback={"sealed": [], "failed": [{"error_type": "TaskFailure"}]},
         )
     else:
-        seal_summary = {"sealed": [], "failed": [], "skipped_reason": "integrity_audit_unavailable"}
+        skipped_reason = (
+            "integrity_ledger_failed"
+            if integrity_audit_summary.get("ledger_status") == "failed"
+            else "integrity_audit_unavailable"
+        )
+        seal_summary = {"sealed": [], "failed": [], "skipped_reason": skipped_reason}
         log_daemon_event(
             "daemon.market_seal_suppressed",
-            "Selagem foi adiada porque a auditoria de integridade nao concluiu neste ciclo.",
+            "Selagem foi adiada porque a auditoria global nao aprovou a cadeia neste ciclo.",
             level="ERROR",
+            context={"reason": skipped_reason},
         )
     pruned_details = _run_isolated_task(
         "retention",

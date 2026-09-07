@@ -194,6 +194,34 @@ class IntegrityProtocolTests(SimpleTestCase):
         seal.assert_not_called()
         self.assertEqual(order, ["close", "prune", "email", "push", "ai"])
 
+    def test_daemon_suppresses_sealing_while_global_ledger_is_failed(self):
+        order = []
+        connection = mock.MagicMock()
+        audit_summary = {
+            "available": True,
+            "ledger_status": "failed",
+            "markets_scanned": 3,
+            "issues_detected": 1,
+            "alerts_created": 0,
+            "scan_failures": 0,
+        }
+        with (
+            mock.patch("apps.api.backend_api.daemon_services.audit_integrity_records", return_value=audit_summary),
+            mock.patch("apps.api.backend_api.daemon_services.close_due_auto_markets", side_effect=lambda **_: order.append("close") or []),
+            mock.patch("apps.api.backend_api.daemon_services.seal_due_markets") as seal,
+            mock.patch("apps.api.backend_api.daemon_services.prune_expired_operational_records", return_value={"total": 0}),
+            mock.patch("apps.api.backend_api.daemon_services.get_connection", return_value=connection),
+            mock.patch("apps.api.backend_api.daemon_services.run_ai_agent_cycle", return_value={"enabled": False}),
+            mock.patch("apps.api.backend_api.daemon_services.log_daemon_event"),
+            mock.patch("apps.web.django.communications.services.process_due_email_deliveries", return_value={}),
+            mock.patch("apps.web.django.communications.push_services.process_due_push_deliveries", return_value={}),
+        ):
+            result = run_daemon_cycle(now=datetime(2026, 9, 7, tzinfo=timezone.utc))
+
+        seal.assert_not_called()
+        self.assertEqual(order, ["close"])
+        self.assertEqual(result["integrity_seals"]["skipped_reason"], "integrity_ledger_failed")
+
 
 class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
     def setUp(self):

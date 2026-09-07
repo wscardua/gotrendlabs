@@ -168,6 +168,7 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 - alertas sao deduplicados por escopo e tipo de falha, preservam primeira/ultima deteccao e contagem de ocorrencias; revisao administrativa nao altera a prova e o alerta volta a `pending` se a divergencia persistir no ciclo seguinte
 - auditoria incremental abre cada ciclo; auditoria integral ocorre no bootstrap, no maximo a cada 24 horas e imediatamente antes de cada Seal, sem depender de requisicao publica
 - divergencia global identica no mesmo head nao cria novo checkpoint nem chama KMS em todo ciclo; o daemon reapresenta o alerta deduplicado e repete a auditoria integral depois de uma hora, quando o head mudar ou por solicitacao explicita
+- enquanto a auditoria global estiver em `failed`, o ciclo suprime todas as tentativas de Seal antes de iterar mercados vencidos, evitando que cada candidato contorne o backoff; fechamento, retenção e comunicações continuam isolados
 - a interface informa sequencia verificada, sequencia atual, eventos pendentes e horario/tipo da ultima auditoria sem prometer atualizacao instantanea
 
 ## Comunicacoes
