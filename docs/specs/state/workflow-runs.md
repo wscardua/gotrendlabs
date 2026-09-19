@@ -2,6 +2,19 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260919-DAEMON-DB-CONNECTIONS-024
+
+- Tipo: `bugfix` + `test-review-cycle`
+- Status: `concluido_local_aguardando_pr_e_deploy`
+- Feature alvo: `FEAT-OPSLOG-001`, `FEAT-NOTIFY-001`
+- Objetivo: evitar que o processo contínuo do daemon reutilize conexões Django encerradas entre ciclos, o que interrompia as rotinas de outbox de email e push em produção.
+- Evidência produtiva: entre `2026-09-18 13:42 UTC` e `2026-09-19 13:42 UTC`, `daemon.email_failed` e `daemon.push_failed` ocorreram 287 vezes cada, em ciclos de cinco minutos, com `OperationalError` de conexão fechada/perdida.
+- Implementação: `run_gotrendlabs_daemon` chama `close_old_connections()` antes e no `finally` de cada ciclo; nenhuma regra de domínio, contrato, migration ou configuração produtiva foi alterada.
+- Validação local: 2 testes focados aprovados; `manage.py check`, `makemigrations --check --dry-run`, compilação Python e `git diff --check` aprovados.
+- Reversão lógica: reverter somente o comando e seu teste; dados, filas e eventos persistidos permanecem intactos.
+- Iniciado em: 2026-09-19
+- Atualizado em: 2026-09-19
+
 ## WFLOW-20260907-PRODUCTION-AUDIT-FOLLOWUPS-023
 
 - Tipo: `change-feature` + revisao operacional documental

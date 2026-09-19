@@ -1,6 +1,7 @@
 import time
 
 from django.core.management.base import BaseCommand
+from django.db import close_old_connections
 
 from apps.api.backend_api.daemon_services import run_daemon_cycle
 
@@ -15,7 +16,15 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         interval_seconds = max(1, int(options["interval_seconds"]))
         while True:
-            result = run_daemon_cycle()
+            # This command is a long-lived process, unlike Django's request
+            # lifecycle. Revalidate connections at the cycle boundary so a
+            # connection closed by PostgreSQL between daemon runs is not
+            # reused by the email or push outbox handlers.
+            close_old_connections()
+            try:
+                result = run_daemon_cycle()
+            finally:
+                close_old_connections()
             ai = result.get("ai", {})
             email = result.get("email", {})
             push = result.get("push", {})

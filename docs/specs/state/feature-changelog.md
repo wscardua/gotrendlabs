@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-19 — FEAT-OPSLOG-001 conexão do daemon entre ciclos
+
+- O comando contínuo `run_gotrendlabs_daemon` passa a revalidar conexões Django antes e depois de cada ciclo, evitando que as outboxes de email e push reutilizem uma conexão PostgreSQL encerrada durante o intervalo de 300 segundos.
+- A correção preserva o isolamento de falhas, a idempotência e os contratos das outboxes; não altera schema, eventos de domínio ou regras de retry.
+- A regressão cobre os dois limites de conexão de um ciclo `--once`.
+
 ## 2026-09-07 — FEAT-INTEGRITY-001 evolucoes pos-auditoria
 
 - O smoke criptografico permanece valido; foram registrados, sem mudanca de runtime, hardenings P1 para ownership/grants append-only e entrega efetiva dos alarmes.
