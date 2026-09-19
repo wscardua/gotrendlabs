@@ -1,10 +1,10 @@
 ---
 id: FEAT-OPSLOG-001
 titulo: "Logs técnicos de troubleshooting"
-versao: 0.1
-status_spec: draft
-status_impl: parcial
-ultima_atualizacao: 2026-05-24
+versao: 0.2
+status_spec: aprovada
+status_impl: implementada_validada
+ultima_atualizacao: 2026-09-19
 origem:
   - solicitação operacional de troubleshooting
 contratos_afetados:
@@ -16,7 +16,7 @@ impacta:
   - frontend-web
   - database
   - admin-ops
-aprovacao: pendente
+aprovacao: usuario em 2026-09-19
 ---
 
 # Logs técnicos de troubleshooting
@@ -55,6 +55,7 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - contexto e textos longos devem ser truncados com indicação explícita
 - falha ao persistir log não pode quebrar a request principal
 - logs do daemon usam `logger_name=gotrendlabs.daemon` e eventos como `daemon.heartbeat`, `daemon.run_started`, `daemon.markets_locked`, `daemon.logs_pruned` e `daemon.run_failed`
+- o comando contínuo do daemon deve revalidar conexões Django no início e no fim de cada ciclo, impedindo que outboxes reutilizem uma conexão PostgreSQL encerrada durante o intervalo operacional
 - ausência ou atraso de heartbeat deve aparecer no Dashboard Admin Ops como status operacional do daemon
 - status do daemon usa limites configuráveis em `gotrendlabs_site_config`: `daemon_stale_after_minutes` e `daemon_missing_after_minutes`, com defaults de 7 e 21 minutos para a cadência de produção de 300 segundos
 - retenção de logs técnicos usa `gotrendlabs_site_config.system_log_retention_days`, default 90 dias, e o purge aplica o prazo atual por `created_at` também a registros antigos
@@ -82,3 +83,4 @@ Persistir logs técnicos detalhados do sistema para diagnóstico operacional por
 - Admin Ops Config permite ajustar os limites de heartbeat do daemon, validando que `Sem sinal` seja maior que `Atrasado`
 - Admin Ops Config permite ajustar a retenção de logs técnicos e auditoria IA, com valores separados de 1 a 3650 dias
 - Dashboard Admin Ops exibe `Backend API` como online quando `GET /health` retorna `status=ok` e offline quando a consulta falha ou retorna payload inesperado
+- comando contínuo do daemon revalida conexões antes e depois de um ciclo, preservando a execução das outboxes de email e push após conexões ociosas/encerradas

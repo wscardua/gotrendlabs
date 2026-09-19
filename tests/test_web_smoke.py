@@ -2415,6 +2415,21 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         prune.assert_called_once()
         self.assertIn("Removed 3 expired system logs and 2 expired AI audit actions.", out.getvalue())
 
+    def test_daemon_management_command_revalidates_connections_at_cycle_boundaries(self):
+        out = StringIO()
+        with (
+            patch(
+                "apps.web.django.system_logs.management.commands.run_gotrendlabs_daemon.run_daemon_cycle",
+                return_value={"locked_markets": [], "pruned_logs": 0, "pruned_log_details": {}},
+            ),
+            patch(
+                "apps.web.django.system_logs.management.commands.run_gotrendlabs_daemon.close_old_connections"
+            ) as close_connections,
+        ):
+            call_command("run_gotrendlabs_daemon", "--once", stdout=out)
+
+        self.assertEqual(close_connections.call_count, 2)
+
     def test_daemon_locked_markets_message_includes_market_slugs(self):
         self.assertEqual(
             _locked_markets_message([{"slug": "mercado-a"}]),

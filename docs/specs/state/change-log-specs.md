@@ -1,5 +1,10 @@
 # Change Log de Specs
 
+## 2026-09-19
+
+- aprovada e marcada como `implementada_validada` a `FEAT-OPSLOG-001`; o daemon contínuo revalida conexões Django nos limites de cada ciclo para impedir falhas recorrentes das outboxes após conexão PostgreSQL encerrada;
+- registrado o critério de aceite e a regressão automatizada para os limites de conexão do ciclo, sem alterar contratos, schema, eventos de domínio ou consumidores web/mobile.
+
 ## 2026-09-07
 
 - registrado `WFLOW-20260907-PRODUCTION-AUDIT-FOLLOWUPS-023` para consolidar os achados produtivos como evolucoes planejadas, sem alterar o estado validado de `FEAT-INTEGRITY-001`;
