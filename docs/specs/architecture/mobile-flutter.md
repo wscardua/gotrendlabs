@@ -61,7 +61,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 
 ## Skills de governanca mobile
 
-Mudancas mobile devem usar as skills locais apropriadas em `tools/skills/gotrendlabs/`:
+Mudancas mobile devem usar as skills locais apropriadas em `.agents/skills/`:
 
 - `gotrendlabs-mobile-docs-governor`: abrir/fechar workflow, atualizar estado, changelog, integration map, README e memoria operacional.
 - `gotrendlabs-mobile-architect`: revisar arquitetura Flutter, estrutura, navegacao, estado, ambiente e fronteiras.

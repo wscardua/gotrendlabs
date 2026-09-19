@@ -21,7 +21,7 @@ GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao public
 - `apps/web/static/`: assets compartilhados da camada web Django.
 - `packages/contracts/openapi/gotrendlabs-api.json`: snapshot OpenAPI versionado da FastAPI.
 - `docs/specs/`: fonte principal de arquitetura, features, fluxos e criterios de aceite.
-- `tools/skills/gotrendlabs/`: skills locais usadas para orientar implementacao por camada.
+- `.agents/skills/`: skills locais, descobertas automaticamente pelo Codex, usadas para orientar implementacao por camada.
 
 ### Estrutura alvo do monorepo
 
@@ -33,7 +33,8 @@ A reorganizacao esta sendo feita em etapas para reduzir risco. FastAPI, operacao
 - `packages/contracts/`: snapshot OpenAPI versionado e futura casa de clientes gerados quando houver consumidor real.
 - `ops/`: deploy de producao, scripts operacionais e estado Docker local ignorado pelo Git.
 - `docs/audits/`: relatorios de auditoria e seguranca.
-- `tools/`: ferramentas de desenvolvimento e skills locais do repositorio inteiro.
+- `tools/`: ferramentas de desenvolvimento do repositorio inteiro.
+- `.agents/skills/`: skills versionadas e descobertas pelo Codex para todo o repositorio.
 
 Guardrail arquitetural: FastAPI concentra dominio, inteligencia, IA, wallet, reputacao, badges, resolucao, auditoria e integracoes. Django web/Admin Ops e o futuro mobile sao clientes desses contratos e nao devem duplicar regra critica.
 
@@ -171,12 +172,13 @@ Antes de alterar comportamento, consulte:
 
 Skills locais uteis:
 
-- `tools/skills/gotrendlabs/gotrendlabs-architecture-guard/SKILL.md`
-- `tools/skills/gotrendlabs/gotrendlabs-django-web/SKILL.md`
-- `tools/skills/gotrendlabs/gotrendlabs-fastapi-domain/SKILL.md`
-- `tools/skills/gotrendlabs/gotrendlabs-test-strategy/SKILL.md`
-- `tools/skills/gotrendlabs/gotrendlabs-postgres-modeling/SKILL.md`
-- `tools/skills/gotrendlabs/gotrendlabs-software-architect/SKILL.md`
+- `.agents/skills/gotrendlabs-architecture-guard/SKILL.md`
+- `.agents/skills/gotrendlabs-django-web/SKILL.md`
+- `.agents/skills/gotrendlabs-fastapi-domain/SKILL.md`
+- `.agents/skills/gotrendlabs-test-strategy/SKILL.md`
+- `.agents/skills/gotrendlabs-postgres-modeling/SKILL.md`
+- `.agents/skills/gotrendlabs-software-architect/SKILL.md`
+- `.agents/skills/gotrendlabs-review-branch-impact/SKILL.md`
 
 ## Regras atuais importantes
 

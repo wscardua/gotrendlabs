@@ -18,7 +18,7 @@ Evitar que o mobile avance sem atualizar a memória operacional geral do GoTrend
 3. Atualizar `docs/specs/state/feature-changelog.md` com mudanças relevantes.
 4. Atualizar `docs/specs/state/integration-map.md` quando houver nova relação mobile/API.
 5. Atualizar `apps/mobile/README.md` quando o estado local mudar.
-6. Atualizar `tools/skills/gotrendlabs/README.md` quando criar/renomear skills.
+6. Atualizar `.agents/skills/README.md` quando criar, mover ou renomear skills.
 7. Criar nota de memória em `.codex/memories/extensions/ad_hoc/notes/` somente para fechamento/retomada relevante fora do repo.
 
 ## Regras
@@ -37,7 +37,7 @@ Evitar que o mobile avance sem atualizar a memória operacional geral do GoTrend
 - `docs/specs/state/feature-changelog.md`
 - `docs/specs/state/integration-map.md`
 - `apps/mobile/README.md`
-- `tools/skills/gotrendlabs/README.md`
+- `.agents/skills/README.md`
 - `.codex/memories/`
 
 ## Saídas esperadas

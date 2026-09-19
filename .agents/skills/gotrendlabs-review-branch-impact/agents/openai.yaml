@@ -1,0 +1,4 @@
+interface:
+  display_name: "GoTrendLabs Branch Impact Review"
+  short_description: "Revisa impactos e contratos da branch"
+  default_prompt: "Revise as mudanças atuais desta branch em relação à sua base. Não altere código; reporte apenas findings sustentados por evidência."

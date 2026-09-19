@@ -19,7 +19,7 @@ Este guia mostra como usar as specs e as skills do GoTrendLabs para evoluir o pr
 
 ## Quando usar cada skill
 
-Índice completo: [../../tools/skills/gotrendlabs/README.md](../../tools/skills/gotrendlabs/README.md).
+Índice completo: [../../.agents/skills/README.md](../../.agents/skills/README.md).
 
 - `gotrendlabs-workflow-governor`: abrir, acompanhar, retomar, bloquear, concluir, cancelar ou substituir workflows multi-documento
 - `gotrendlabs-spec-editor`: criar, traduzir, refinar ou alterar specs
@@ -28,6 +28,7 @@ Este guia mostra como usar as specs e as skills do GoTrendLabs para evoluir o pr
 - `gotrendlabs-architecture-guard`: validar separação entre camadas
 - `gotrendlabs-test-strategy`: definir critérios de aceite, regressão e cobertura
 - `gotrendlabs-test-engineer`: implementar, revisar e executar testes concretos de backend, frontend, contratos e fluxos
+- `gotrendlabs-review-branch-impact`: revisar branch contra sua base e relatar impactos em segurança, contratos e consumidores
 - `gotrendlabs-django-web`: implementar frontend server-rendered, HTMX, Alpine.js, i18n de interface e admin Django
 - `gotrendlabs-fastapi-domain`: implementar domínio, autenticação, endpoints e regras centrais em FastAPI/Python
 - `gotrendlabs-postgres-modeling`: desenhar modelos relacionais, ledger, constraints, índices e rastreabilidade
@@ -41,6 +42,7 @@ Este guia mostra como usar as specs e as skills do GoTrendLabs para evoluir o pr
 - validação de fronteira: `gotrendlabs-architecture-guard`
 - definição de aceite e regressão: `gotrendlabs-test-strategy`
 - execução de testes concretos: `gotrendlabs-test-engineer`
+- code review de branch: `gotrendlabs-review-branch-impact`
 - execução técnica:
   - UI e admin: `gotrendlabs-django-web`
   - domínio e API: `gotrendlabs-fastapi-domain`
