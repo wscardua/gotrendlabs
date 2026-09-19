@@ -4,6 +4,8 @@
 
 - aprovada e marcada como `implementada_validada` a `FEAT-OPSLOG-001`; o daemon contínuo revalida conexões Django nos limites de cada ciclo para impedir falhas recorrentes das outboxes após conexão PostgreSQL encerrada;
 - registrado o critério de aceite e a regressão automatizada para os limites de conexão do ciclo, sem alterar contratos, schema, eventos de domínio ou consumidores web/mobile.
+- migradas as skills versionadas do GoTrendLabs de `tools/skills/gotrendlabs/` para `.agents/skills/`, o caminho de descoberta automática do Codex para o repositório;
+- atualizados o índice, README, guia de workflow, arquitetura geral e arquitetura mobile; registros históricos continuam preservando o caminho usado no momento de cada execução.
 
 ## 2026-09-07
 

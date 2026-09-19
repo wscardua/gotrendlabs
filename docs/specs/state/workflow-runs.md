@@ -2724,3 +2724,25 @@ Primeira versão de teste fechado do app GoTrendLabs no Google Play. Inclui feed
 - Encerrado em: 2026-06-07
 - Retomada: ampliar QA autenticado real em emulador, avaliar refresh token/offline/push/iOS e consolidar cliente gerado quando contratos estabilizarem
 - Reversão lógica: ocultar entrada mobile/reverter `apps/mobile`, manter contratos backend compatíveis de recarga como extensao segura, e preservar docs para retomada futura
+
+## WFLOW-20260919-SKILLS-DISCOVERY-001
+
+- Tipo: `architecture-change`
+- Status: `concluido`
+- Feature alvo: governança de skills do repositório
+- Objetivo: tornar as skills versionadas do GoTrendLabs automaticamente descobertas pelo Codex, sem duplicar sua fonte de verdade
+- Etapa atual: concluído; as 19 skills foram movidas para `.agents/skills/`, o índice e as referências vigentes foram atualizados, e os `SKILL.md`/`openai.yaml` passaram por validação estrutural em 2026-09-19
+- Artefatos afetados:
+  - `.agents/skills/`
+  - `README.md`
+  - `docs/guides/ia-spec-workflow.md`
+  - `docs/specs/architecture/system-overview.md`
+  - `docs/specs/architecture/mobile-flutter.md`
+  - `docs/specs/state/change-log-specs.md`
+  - `docs/specs/state/workflow-runs.md`
+- Bloqueios: nenhum
+- Iniciado em: 2026-09-19
+- Atualizado em: 2026-09-19
+- Encerrado em: 2026-09-19
+- Retomada: use `$gotrendlabs-review-branch-impact` para revisar branches; ao criar ou renomear skills, atualize `.agents/skills/README.md`
+- Reversão lógica: mover as skills de volta para `tools/skills/gotrendlabs/` e restaurar as referências vigentes se a política de descoberta do Codex for substituída por outra

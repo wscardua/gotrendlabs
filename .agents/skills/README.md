@@ -8,7 +8,7 @@ Fonte canônica das skills do GoTrendLabs. Essas skills orientam agentes de IA a
 - A estrutura alvo é documentada em `apps/api/`, `apps/web/`, `apps/mobile/`, `ops/` e `packages/contracts/`.
 - `apps/mobile/` é a casa reservada para o app Flutter; as specs iniciais mobile já vivem em `docs/specs/architecture/mobile-*.md`, `docs/specs/features/mobile-*.md` e `docs/specs/testing/mobile-acceptance.md`, mas o projeto Flutter ainda não foi criado.
 - `packages/contracts/openapi/gotrendlabs-api.json` é o snapshot OpenAPI versionado da FastAPI; regenere com `python packages/contracts/export_openapi.py` ao mudar endpoints, payloads ou schemas.
-- `tools/skills/gotrendlabs/` permanece na raiz como ferramenta de desenvolvimento e governança do monorepo inteiro.
+- `.agents/skills/` é a fonte canônica das skills do monorepo e é descoberta automaticamente pelo Codex.
 - Guardrail central: Django web/Admin Ops e futuro mobile são clientes; FastAPI concentra domínio, inteligência, IA, wallet, reputação, badges, resolução, auditoria e integrações.
 - Apps Django em `apps/web/django/` devem preservar `AppConfig.label` historico e migrations estaveis.
 
@@ -23,6 +23,7 @@ Fonte canônica das skills do GoTrendLabs. Essas skills orientam agentes de IA a
 | `gotrendlabs-architecture-guard` | validar fronteiras técnicas | alertas de acoplamento e necessidade de ADR |
 | `gotrendlabs-test-strategy` | definir aceite, cobertura e regressões | testes esperados e critérios verificáveis |
 | `gotrendlabs-test-engineer` | implementar, revisar e executar testes concretos | testes executáveis, evidência e lacunas registradas |
+| `gotrendlabs-review-branch-impact` | revisar uma branch contra sua base, com impacto em contratos, segurança e consumidores | findings priorizados, triagem mobile e lacunas de teste |
 | `gotrendlabs-mobile-docs-governor` | manter docs, status, changelog, workflow, integration map, README e memória sincronizados para mobile | memória operacional mobile coerente e retomável |
 
 ## Skills técnicas
