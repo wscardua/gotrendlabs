@@ -2731,7 +2731,7 @@ Primeira versão de teste fechado do app GoTrendLabs no Google Play. Inclui feed
 - Status: `concluido`
 - Feature alvo: governança de skills do repositório
 - Objetivo: tornar as skills versionadas do GoTrendLabs automaticamente descobertas pelo Codex, sem duplicar sua fonte de verdade
-- Etapa atual: concluído; as 19 skills foram movidas para `.agents/skills/`, o índice e as referências vigentes foram atualizados, e os `SKILL.md`/`openai.yaml` passaram por validação estrutural em 2026-09-19
+- Etapa atual: concluído; as 19 skills foram movidas para `.agents/skills/`, o índice e as referências vigentes foram atualizados, os `SKILL.md`/`openai.yaml` passaram por validação estrutural, a PR #119 foi integrada em `main` e o workflow GitHub Actions 35449181143 concluiu CI, validação OpenAPI, suíte de testes e deploy SSM em produção com sucesso em 2026-09-19
 - Artefatos afetados:
   - `.agents/skills/`
   - `README.md`
