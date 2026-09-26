@@ -423,6 +423,14 @@ Usuário acompanha resultado no perfil e ranking
 
 ---
 
+## Governança editorial de mercados
+
+A criação e revisão seguem o [manual editorial](../editorial/manual-editorial.md), a [ficha reutilizável](../editorial/ficha-de-mercado.md), o [checklist de publicação](../editorial/checklist-de-publicacao.md) e a [FEAT-EDITORIAL-001](features/editorial-governance.md). O manual parte do conceito de mercado de previsão e suas opções de resposta. Diversidade temática orienta o planejamento do catálogo, sem cotas como requisito de aprovação individual. Cada proposta deve justificar relevância, incerteza, anti-repetição, fonte verificável, critérios objetivos, opções, encerramento/observação/apuração, exceções e responsável antes da aprovação editorial.
+
+O parecer operacional (`aprovar`, `devolver`, `rejeitar`) não altera estados de mercado nem publica automaticamente. Pendências obrigatórias impedem aprovação editorial; a publicação continua pelos contratos staff existentes. A entrega inclui consulta dos documentos no Admin Ops para staff e critérios versionados para evolução futura, sem bloqueio automático adicional na API. A definição assinada permanece protegida depois da publicação; revisões e correções obedecem o ciclo de vida e a selagem vigentes.
+
+---
+
 ## Categorias Iniciais
 
 - IA

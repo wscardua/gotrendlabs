@@ -13,6 +13,7 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Max, Q
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_GET
 from django.utils import timezone
 
 from apps.web.django.accounts.api_client import (
@@ -110,6 +111,7 @@ from apps.web.django.admin_ops.forms import (
     WalletRechargeRejectForm,
 )
 from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
+from apps.web.django.admin_ops.editorial_content import load_editorial_reference
 from apps.web.django.communications.models import EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushEventPolicy, PushTemplate
 from apps.web.django.communications.services import TRANSACTIONAL_FOOTER_TEMPLATE_KEY, transactional_footer_preview
 from apps.web.django.communications.push_services import (
@@ -2604,6 +2606,18 @@ def taxonomy(request):
             "admin_error": error,
         },
     )
+
+
+@admin_api_required
+@require_GET
+def editorial_reference(request):
+    response = render(
+        request,
+        "admin_ops/editorial_reference.html",
+        load_editorial_reference(request.GET.get("view", "manual")),
+    )
+    response["Cache-Control"] = "private, no-store"
+    return response
 
 
 @admin_api_required

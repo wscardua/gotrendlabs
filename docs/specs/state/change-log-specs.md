@@ -1,5 +1,31 @@
 # Change Log de Specs
 
+## 2026-09-26 — Fechamento do escopo editorial
+
+- FEAT-EDITORIAL-001 passa a `implementada_aguardando_deploy`: conteúdo aprovado, consulta staff e critérios versionados implementados com testes locais e validação visual. Avaliação IA e parecer persistido são evolução separada; produção será marcada validada apenas depois de CI/deploy/smoke.
+
+## 2026-09-26 — Consulta editorial local
+
+- FEAT-EDITORIAL-001 passa a `parcial`: Admin Ops exibe os documentos aprovados e o JSON dos critérios prepara integração futura. Arquitetura, integration map, aceite e testes atualizados; conteúdo editorial v1.2 permanece aprovado.
+
+## 2026-09-26 — Aprovação do editorial
+
+- Promovida a spec editorial v1.2 por aprovação explícita do usuário; conteúdo e contratos preservados. A proposta de integração administrativa/IA não altera o estado da entrega documental.
+
+## 2026-09-26 — Editorial v1.2
+
+- Atualizadas origem funcional e spec editorial: mercados de previsão são o núcleo; categorias orientam catálogo. Manual, ficha e checklist independente sincronizados; percentuais de diversidade da v1.1 substituídos por planejamento sem cotas de aprovação. Sem alterações de código, contratos ou mercados.
+
+## 2026-09-26 — Editorial v1.1
+
+- Separadas orientações operacionais e referências técnicas. Manual/ficha passam a usar exemplos didáticos, mantendo E01–E11; removidas duração, cadência e distribuição temática do piloto. Acompanhamento editorial permanece sem telemetria nova.
+
+## 2026-09-26 — Editorial
+
+- Criada `FEAT-EDITORIAL-001` com escopo documental, contratos revisados sem alteração, fronteiras e critérios de aceite.
+- Manual e ficha definem seleção, redação, validação de fonte, horários, exceções, parecer e tratamento pós-publicação.
+- Atualizadas origem funcional, descoberta no README, arquitetura Admin Ops, integration map e status; preservada distinção entre processo humano e gate automatizado futuro.
+
 ## 2026-09-26
 
 - evoluídas arquitetura e feature mobile para incluir AAB assinado no Google Play Closed testing, mantendo publicação pública/open testing fora do escopo e o canal APK direto independente;

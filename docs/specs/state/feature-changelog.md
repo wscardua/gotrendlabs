@@ -1,5 +1,32 @@
 # Feature Changelog
 
+## 2026-09-26 — FEAT-EDITORIAL-001 fechamento do escopo local
+
+- Manual/ficha/checklist v1.2 aprovados; consulta staff no Admin Ops e critérios JSON E01–E11 implementados e validados localmente. Revisão visual do usuário concluída; documentação, testes e memória alinhados. Estado `implementada_aguardando_deploy` até CI/deploy/smoke produtivo. Avaliação por IA e parecer estruturado ficam para evolução futura separada.
+
+## 2026-09-26 — FEAT-EDITORIAL-001 consulta Admin Ops local
+
+- Criada página staff de consulta ao manual, checklist e ficha, com atalhos na lista e no editor de mercados. Critérios E01–E11 versionados em JSON e confrontados com documentos por testes. Conteúdo read-only; sem execução de IA, parecer persistido ou gate novo.
+
+## 2026-09-26 — FEAT-EDITORIAL-001 versão 1.2 aprovada
+
+- Usuário aprovou o editorial v1.2. Status documental promovido a `aprovada`, mantendo implementação `documentada`. Consulta administrativa e futura avaliação por IA são evolução separada, ainda não implementada.
+
+## 2026-09-26 — FEAT-EDITORIAL-001 mercados de previsão (v1.2)
+
+- Reorganizado manual a partir de incerteza, pergunta, opções/regras, apuração, revisão e resolução. Incluída introdução sobre mercados de previsão e opções de resposta. Checklist E01–E11 separado e ficha alinhada; removidas cotas de categorias como requisito de publicação, preservando anti-repetição. Indicadores agrupados em participação/acompanhamento e qualidade das perguntas/resolução.
+
+## 2026-09-26 — FEAT-EDITORIAL-001 revisão de clareza (v1.1)
+
+- Manual e ficha reescritos para staff sem conhecimento técnico, com exemplos de diversidade, perguntas, fontes, prazos e comunicação de percentuais. Removido o piloto; acompanhamento dos indicadores explica leitura, limitações e ações. Regras de domínio preservadas.
+
+## 2026-09-26 — FEAT-EDITORIAL-001 governança documental
+
+- Criados manual editorial e ficha reutilizável para pauta, fonte, critérios, prazos, exceções, revisão E01–E11 e acompanhamento.
+- Registrados pareceres operacionais, rechecagem da versão antes de publicar, responsabilidade humana e compatibilidade com definição assinada/selagem.
+- Integradas spec funcional, arquitetura Admin Ops, README e memória operacional; sem alteração de runtime, contratos ou mercados reais.
+- Piloto temático e cadência permanecem hipóteses; aprovação estruturada e bloqueio automático não foram implementados.
+
 ## 2026-09-26 — FEAT-MOBILE-001 AAB Google Play Closed testing
 
 - Versão mobile avançada para `1.2.0+14`, preservando o APK público direto `1.0.7 (8)` e a política produtiva de compatibilidade.

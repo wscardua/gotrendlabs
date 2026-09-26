@@ -1,0 +1,37 @@
+{% extends "admin_base.html" %}
+{% block title %}GoTrendLabs Admin | Editorial{% endblock %}
+{% block content %}
+<main class="shell admin-layout editorial-reference">
+  <section class="panel">
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">Consulta da equipe</span>
+        <h1 class="large-title">Editorial de mercados de previsão</h1>
+        <p class="muted">Versão {{ editorial_version }} · aprovada em {{ approved_on }}. Consulte as regras antes de publicar um mercado.</p>
+      </div>
+      <a class="btn small" href="{% url 'admin-ops-market-new' %}">Criar mercado</a>
+    </div>
+    <nav class="editorial-tabs" aria-label="Documentos editoriais">
+      <a class="btn small {% if active_view == 'manual' %}primary{% else %}ghost{% endif %}" href="{% url 'admin-ops-editorial' %}?view=manual">Manual</a>
+      <a class="btn small {% if active_view == 'checklist' %}primary{% else %}ghost{% endif %}" href="{% url 'admin-ops-editorial' %}?view=checklist">Checklist</a>
+      <a class="btn small {% if active_view == 'ficha' %}primary{% else %}ghost{% endif %}" href="{% url 'admin-ops-editorial' %}?view=ficha">Ficha</a>
+    </nav>
+  </section>
+  <div class="editorial-layout">
+    <article class="panel editorial-document">
+      <h2>{{ document_title }}</h2>
+      {{ document_html|safe }}
+    </article>
+    <aside class="panel editorial-criteria" aria-label="Critérios de publicação">
+      <h2>Conferência rápida</h2>
+      <p class="muted">Os mesmos critérios E01–E11 aparecem no checklist e na ficha.</p>
+      {% for criterion in criteria %}
+        <div class="editorial-criterion" id="{{ criterion.id }}">
+          <strong>{{ criterion.id }} · {{ criterion.question }}</strong>
+          <p>{{ criterion.evidence }}</p>
+        </div>
+      {% endfor %}
+    </aside>
+  </div>
+</main>
+{% endblock %}

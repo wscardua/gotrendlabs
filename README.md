@@ -188,3 +188,7 @@ Skills locais uteis:
 - Os filtros da home sao ordenacoes/recortes client-side: tendencia, novos, aberto, encerrado, resolvidos, volume, mais curtidas, favoritos pessoais autenticados e minhas previsoes.
 - O dashboard do Admin Ops consome o resumo staff da FastAPI (`/admin/dashboard-summary`) e acompanha saúde operacional; criação de mercados fica concentrada na área `Mercados`.
 - GTL Credits sao educativos e nao representam dinheiro real.
+
+## Operação editorial
+
+Para criar e revisar mercados, consulte o [manual editorial](docs/editorial/manual-editorial.md) e copie a [ficha de mercado](docs/editorial/ficha-de-mercado.md); use o [checklist de publicação](docs/editorial/checklist-de-publicacao.md) na revisão final. O processo cobre pauta, fonte, critérios, revisão antes da publicação, acompanhamento e resolução. Staff consulta os três documentos em `/admin-ops/editorial/` e encontra atalhos no editor de mercados. A [spec editorial](docs/specs/features/editorial-governance.md) define o escopo implementado; o checklist é operacional e não cria bloqueio automatizado de publicação no Admin Ops/API.
