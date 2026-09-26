@@ -1,10 +1,10 @@
 ---
 id: ARCH-MOBILE-001
 titulo: "Arquitetura mobile Flutter"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-20
+ultima_atualizacao: 2026-09-26
 origem:
   - docs/specs/architecture/system-overview.md
   - apps/mobile/README.md
@@ -39,6 +39,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - identidade nativa de launcher e splash alinhada ao site: nome exibido `GoTrendLabs`, icone derivado do simbolo de constelacao da marca e transicao de abertura em fundo escuro
 - integracao Android com Firebase Cloud Messaging para registro autenticado de token e abertura segura de rotas por payload
 - assinatura release Android e distribuicao beta por APK no site oficial
+- Android App Bundle assinado para Google Play Closed testing, em canal separado do APK direto
 
 ## Escopo excluido
 
@@ -48,7 +49,7 @@ Definir a primeira arquitetura do app Flutter mobile do GoTrendLabs, mantendo o 
 - modo offline completo
 - streaming em tempo real
 - entrega FCM em producao sem credencial backend em ambiente e aprovacao operacional
-- publicacao na Google Play nesta etapa
+- publicacao publica/producao na Google Play; somente o track Closed testing esta incluido
 
 ## Principios
 
@@ -119,12 +120,21 @@ Regras:
 - O APK beta de producao usa `GTL_API_BASE_URL=https://gotrendlabs.com.br/api` e `GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br`.
 - Push FCM real no APK depende de `google-services.json` local no build Android e backend com `GOTRENDLABS_PUSH_ENABLED=1`, `GOTRENDLABS_PUSH_PROVIDER=fcm`, `GOTRENDLABS_PUSH_DRY_RUN=0` e `GOTRENDLABS_FCM_CREDENTIALS_JSON`.
 - `/app/android/latest.json` permanece como metadado publico para o site; o app usa o bloco `mobile` do `GET /health` como fonte autoritativa de atualização.
-- Publicacao na Google Play continua fora do escopo desta fase.
+- O Google Play Closed testing usa AAB assinado, `versionCode` monotônico e as mesmas bases de produção, sem alterar o APK ativo do canal direto.
+- Publicação pública, open testing e rollout de produção na Google Play continuam fora do escopo desta fase.
 
 Comando padrao:
 
 ```bash
 flutter build apk --release \
+  --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
+  --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
+```
+
+Comando para Google Play Closed testing:
+
+```bash
+flutter build appbundle --release \
   --dart-define=GTL_API_BASE_URL=https://gotrendlabs.com.br/api \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```

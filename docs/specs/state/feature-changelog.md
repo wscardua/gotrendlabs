@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-09-26 — FEAT-MOBILE-001 AAB Google Play Closed testing
+
+- Versão mobile avançada para `1.2.0+14`, preservando o APK público direto `1.0.7 (8)` e a política produtiva de compatibilidade.
+- AAB assinado gerado com bases de produção, `targetSdk=36`, três ABIs, SHA-256 `0f87b9634be842f69c0c257b6a41c35313a29750c13ae3cba9cd25068b172a16` e tamanho `57524579` bytes.
+- Specs passam a distinguir Closed testing suportado de publicação pública ainda fora do escopo; a release usa o nome automático `14 (1.2.0)` e notas gerais em `pt-BR`.
+- Bundle 14 publicado no track `Closed testing - Alpha`, ativo e `Available to testers on Google Play`, com rollout de 100% para o grupo configurado e disponibilidade em 177 países/regiões; notas `pt-BR` confirmadas no Console.
+
 ## 2026-09-26 — FEAT-AUTH-001 maioridade publicada
 
 - PR `#121` integrada em `main`; CI, suíte completa, migration `accounts 0022` e deploy produtivo concluídos com sucesso no workflow `36246617456`.

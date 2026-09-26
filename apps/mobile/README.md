@@ -122,7 +122,7 @@ Depois do build, suba o APK pelo Admin Ops em `/admin-ops/mobile-releases/`; o s
 
 ## Google Play closed testing
 
-O primeiro pacote para Google Play Closed testing usa Android App Bundle assinado localmente, sem passar pelo upload de APK do Admin Ops e sem alterar o APK ativo no canal direto do site.
+O pacote para Google Play Closed testing usa Android App Bundle assinado localmente, sem passar pelo upload de APK do Admin Ops e sem alterar o APK ativo no canal direto do site.
 
 Build padrao do AAB para Play Console:
 
@@ -132,17 +132,19 @@ flutter build appbundle --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao alvo atual do AAB: `1.0.10+11`.
+Versao alvo atual do AAB: `1.2.0+14`.
 
-Release name no Play Console: `1.0.10+11 - Closed testing Android`.
+Release name no Play Console: `14 (1.2.0)` (nome automático).
 
 Release notes em `pt-BR`:
 
 ```text
 <pt-BR>
-Nova versão para teste fechado do GoTrendLabs no Android, mantendo o app conectado à produção e preservando o canal beta direto do site. Esta rodada atualiza o bundle da Google Play para validação interna, sem alterar as regras de negócio nem o canal APK público atual.
+Conheça o GoTrendLabs, uma plataforma social de previsões sobre temas e acontecimentos relevantes. Explore mercados, registre suas previsões com créditos educativos, acompanhe seu desempenho, construa reputação e participe da comunidade. Tudo com resultados transparentes e verificáveis — sem envolver dinheiro real.
 </pt-BR>
 ```
+
+Estado no Play Console em 2026-09-26: bundle `14 (1.2.0)` ativo no track `Closed testing - Alpha`, com status `Available to testers on Google Play`, rollout de 100% para o grupo configurado e disponibilidade em 177 países/regiões. As notas gerais acima estão publicadas como idioma padrão `pt-BR`.
 
 O AAB esperado fica em `build/app/outputs/bundle/release/app-release.aab`. O arquivo `.aab`, APKs, keystores, `android/key.properties` e `google-services.json` permanecem fora do Git.
 

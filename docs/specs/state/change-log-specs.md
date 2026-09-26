@@ -2,6 +2,8 @@
 
 ## 2026-09-26
 
+- evoluídas arquitetura e feature mobile para incluir AAB assinado no Google Play Closed testing, mantendo publicação pública/open testing fora do escopo e o canal APK direto independente;
+- registrados build `1.2.0+14`, assinatura, hash, tamanho, ABIs, bases produtivas e publicação concluída no Closed testing com notas `pt-BR`;
 - explicitado em UX e aceite mobile que `birth_date` permanece obrigatória também na edição do perfil, sem ação de limpeza, com entrada `DD/MM/AAAA` normalizada para o contrato `YYYY-MM-DD`;
 - mantida a FastAPI como autoridade exclusiva da maioridade; a validação Flutter continua limitada a presença e formato para UX;
 - encerrado o workflow de maioridade após revisão de branch, 106 testes Flutter, QA físico no Galaxy S20, PR `#121`, CI/deploy `36246617456`, migration e smokes produtivos de API, web, política pública e contrato mobile.
