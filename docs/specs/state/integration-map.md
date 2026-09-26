@@ -2,7 +2,7 @@
 
 ## Governança editorial — FEAT-EDITORIAL-001
 
-- Implementação: `docs/editorial/*.md` e `criteria-v1.2.json` → `apps/web/django/admin_ops/editorial_content.py` → `GET /admin-ops/editorial/` e atalhos do editor. A leitura é staff/read-only; critérios JSON são insumo versionado futuro, sem avaliação/parecer/gate em FastAPI. Implantação produtiva pendente.
+- Implementação: `docs/editorial/*.md` e `criteria-v1.2.json` → `apps/web/django/admin_ops/editorial_content.py` → `GET /admin-ops/editorial/` e atalhos do editor. A leitura é staff/read-only; critérios JSON são insumo versionado futuro, sem avaliação/parecer/gate em FastAPI. Implantação produtiva validada em 2026-09-26.
 
 - Spec funcional → `features/editorial-governance.md` → `docs/editorial/manual-editorial.md`, `docs/editorial/ficha-de-mercado.md` e `docs/editorial/checklist-de-publicacao.md`.
 - Dependências documentais: feed/taxonomia (`FEAT-MARKET-001`), sugestões (`FEAT-SUGGEST-001`), resolução (`FEAT-RES-001`) e integridade (`FEAT-INTEGRITY-001`).

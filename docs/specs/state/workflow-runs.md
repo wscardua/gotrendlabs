@@ -5,19 +5,23 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260926-EDITORIAL-CLOSEOUT-032
 
 - Tipo: `implementation-cycle` + `test-review-cycle` + fechamento de feature.
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-EDITORIAL-001`.
 - Objetivo: fechar o escopo aprovado (manual/ficha/checklist e consulta staff no Admin Ops), publicar via PR e comprovar funcionamento em produção.
-- Etapa atual: documentação e testes locais concluídos; preparar commit/push e aguardar autorização do usuário para criar PR depois de apresentar a descrição.
+- Etapa atual: escopo editorial implantado e validado em produção.
 - Artefatos afetados: feature spec, status, arquitetura Admin Ops, changelogs, integration map, known-gaps, README, código Django/CSS, requisitos, testes e workflow.
 - Decisão: avaliação por IA, parecer estruturado e gate autoritativo não integram esta feature; serão evolução futura. O usuário aceitou manter o conteúdo editorial no repositório público, com a limitação registrada na spec.
 - Fronteiras: Django apresenta material versionado somente a staff; FastAPI continua autoridade de domínio; sem alteração de OpenAPI, banco, migrações, mobile ou fórmulas. Nenhum ADR necessário.
 - Validação local: 261 testes passaram com `BACKEND_API_URL=http://127.0.0.1:9`, isolando a API local de desenvolvimento; os três testes web que falharam na primeira execução haviam recebido um mercado já resolvido dessa API e passaram no isolamento. OpenAPI `--check`, `manage.py check`, `makemigrations --check --dry-run`, links locais e `git diff --check` aprovados; visual do Admin Ops aprovado pelo usuário.
-- Estado de implementação: `implementada_aguardando_deploy`; promover a `implementada_validada` somente após CI/deploy/smoke produtivo e atualizar memória em mudança documental posterior, se necessário.
-- Pendências: commit/push, autorização de PR, merge, GitHub Actions e smoke produtivo.
+- Entrega: commit `a1b4eca` da branch `feat/editorial-market-guidelines` integrado pela PR `#124` via squash `e4b4081` na `main`; a branch local foi preservada.
+- Validação produtiva: GitHub Action `36275879637` concluiu detect-changes, suíte completa e deploy via SSM com sucesso. Antes do deploy, `GET /admin-ops/editorial/` retornava `404`; depois, visitante recebeu `302` para `/login/`, `/api/health` retornou `200` e cada um dos três documentos renderizou `200` com sessão staff no container produtivo (`SSM 0b0c6f07-a5bc-4fec-a57d-e6b4008901f2`). O primeiro smoke interno usou uma sessão sintética incompleta e foi repetido com os campos exigidos pelo layout; nenhum ajuste de produto ou configuração produtiva foi necessário.
+- Checklist universal: origem funcional, feature spec, arquitetura, testes, changelogs, implementation status, integration map e known gaps alinhados; contratos revisados sem alteração, sem migrations ou ADR. Evolução de IA e parecer estruturado permanece registrada fora deste escopo. Documentos no repositório público conforme decisão do usuário.
+- Estado de implementação: `implementada_validada`.
+- Pendências: nenhuma para a entrega editorial aprovada.
 - Iniciado em: 2026-09-26
 - Atualizado em: 2026-09-26
-- Próxima ação: fazer commit/push da branch e exibir título/descrição da PR antes de submetê-la.
+- Encerrado em: 2026-09-26
+- Próxima ação: abrir novo ciclo se a equipe decidir implementar avaliação assistida por IA ou privacidade dos arquivos fora do site.
 
 ## WFLOW-20260926-EDITORIAL-ADMIN-031
 

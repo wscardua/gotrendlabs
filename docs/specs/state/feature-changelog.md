@@ -1,5 +1,9 @@
 # Feature Changelog
 
+## 2026-09-26 — FEAT-EDITORIAL-001 implantada e validada
+
+- PR `#124` integrada à `main`; GitHub Action `36275879637` concluiu testes e deploy com sucesso. Rota produtiva redireciona visitantes ao login; manual, checklist e ficha renderizam `200` para sessão staff no container. Estado promovido a `implementada_validada`; IA e parecer estruturado seguem como evolução futura.
+
 ## 2026-09-26 — FEAT-EDITORIAL-001 fechamento do escopo local
 
 - Manual/ficha/checklist v1.2 aprovados; consulta staff no Admin Ops e critérios JSON E01–E11 implementados e validados localmente. Revisão visual do usuário concluída; documentação, testes e memória alinhados. Estado `implementada_aguardando_deploy` até CI/deploy/smoke produtivo. Avaliação por IA e parecer estruturado ficam para evolução futura separada.
