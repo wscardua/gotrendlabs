@@ -4,6 +4,7 @@
 
 - Ser a fonte principal da verdade do domínio.
 - Autenticar usuários e emitir/validar sessão.
+- Validar data de nascimento e maioridade de contas humanas como regra autoritativa de cadastro e perfil.
 - Emitir e validar tokens de recuperação de senha de uso único.
 - Expor contratos JSON consumidos pelo frontend web, pelo admin e pelo futuro cliente mobile.
 - Centralizar regras de mercado, previsão, stake, wallet, indicação, reputação, ranking e resolução.
@@ -28,6 +29,7 @@
 - Estados de mercado devem ser explícitos e consistentes.
 - Regras de saldo devem usar ledger, não apenas campo de total agregado.
 - Erros devem ser previsíveis e mapeados para UX e operação.
+- Cadastro por senha e criação de conta por provedor social devem rejeitar `birth_date` ausente, futura ou incompatível com 18 anos completos; clientes não podem substituir essa decisão.
 - Respostas publicas da FastAPI devem receber headers defensivos no boundary HTTP comum (proxy ou middleware), incluindo ao menos HSTS em HTTPS e `X-Content-Type-Options: nosniff`, sem introduzir cache de respostas autenticadas ou de verificacao. Smoke e testes de contrato devem conferir a politica no endpoint de health e nos endpoints publicos de integridade.
 - reCAPTCHA v2 é configurável por ambiente; cadastro protegido exige token válido, e sugestão/feedback exigem token apenas para visitante.
 - Mudanças de schema que removem colunas consumidas por SQL direto exigem reinício do processo FastAPI em ambientes locais/long-running.

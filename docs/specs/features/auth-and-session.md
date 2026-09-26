@@ -1,10 +1,10 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-06
+ultima_atualizacao: 2026-09-19
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -28,6 +28,7 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 ## Escopo incluído
 
 - cadastro
+- restrição de cadastro e uso de conta humana a pessoas com 18 anos completos
 - aceite obrigatório da política de uso no cadastro
 - página pública de política de uso e leitura em modal no fluxo de cadastro
 - proteção anti-abuso com reCAPTCHA v2 checkbox no cadastro quando configurado
@@ -63,6 +64,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - login social cria ou vincula conta de forma rastreável para `google`, `facebook` e `x`
 - idioma preferencial acompanha a sessão
 - cadastro sem aceite da política de uso é rejeitado
+- cadastro humano exige data de nascimento e rejeita quem ainda não completou 18 anos
 - link da política de uso no cadastro abre resumo em modal sem perder o formulário e mantém acesso à página completa
 - telas de login, cadastro e recuperação de senha mantêm navegação pública para feed/mercados, badges e ranking, alternância de tema, rodapé público e retorno compacto `← Voltar` no primeiro painel de conteúdo, usando origem local confiável quando existir e fallback para o feed
 - rodapé público mantém links institucionais, produto, confiança e suporte; links de conta, mercados e operações administrativas não aparecem no rodapé
@@ -75,6 +77,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - usuário com email ainda não confirmado pode corrigir apenas o email no perfil para receber novo link de confirmação; demais campos privados continuam bloqueados até a confirmação
 - login e cadastro exibem affordances iconizadas para provedores sociais iniciais (`google`, `facebook`, `x`) e iniciam OAuth real via Django, mantendo a FastAPI como fonte de verdade do vínculo e da sessão
 - clique em login social registra aceite da política de uso vigente; email verificado pelo provedor nasce confirmado, email não verificado nasce em login limitado e recebe link de confirmação; quando uma identidade social nova não retorna email, a FastAPI emite token pendente assinado/expirável e a web solicita email antes de criar a conta limitada
+- login social de identidade já vinculada continua direto; uma identidade social nova conclui o cadastro informando data de nascimento antes da criação da conta, com email solicitado também quando o provedor não o fornecer
 - tela de cadastro pode exibir prévia não personalizada do produto usando mercado público real como exemplo de ticket
 - cadastro sem reCAPTCHA válido é rejeitado quando a proteção estiver habilitada
 - cadastro iniciado por `?ref=` preserva o código de indicação e o envia à FastAPI; código inválido não bloqueia criação de conta
@@ -96,6 +99,9 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - login social não pode gerar duplicidade silenciosa de contas; identidade externa existente faz login direto mesmo quando o provedor não retorna email, email existente só é vinculado automaticamente quando o provedor retornar email verificado, e email existente sem verificação confiável deve ser bloqueado com orientação para login normal
 - login social sem email do provedor não cria conta automaticamente; exige email informado pelo usuário junto de token pendente assinado pela FastAPI, cria conta com email não confirmado e dispara confirmação imediata quando emails transacionais estiverem ativos
 - aceite de política de uso deve guardar data e versão aceita
+- a FastAPI deve calcular maioridade por data civil e aceitar cadastro humano somente com 18 anos completos na data corrente
+- `birth_date` é dado privado obrigatório para contas humanas, não pode ser futura, não pode ser removida e não pode ser alterada para uma data que represente menoridade
+- perfis pré-produção anteriores a esta regra recebem `1990-01-01` por migration; não existe fluxo de regularização de legado nesta fase
 - reCAPTCHA protege criação de conta contra abuso automatizado sem substituir validações de identidade, senha e aceite
 - exclusão lógica deve preservar histórico e bloquear uso normal
 - ações administrativas sobre conta exigem usuário staff, nota operacional e auditoria
@@ -122,7 +128,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 - usuário
 - perfil básico
-- data de nascimento e sexo opcionais no perfil privado/editável (`birth_date` em `YYYY-MM-DD`; `sex` como `male`, `female`, `other` ou `prefer_not_to_say`)
+- data de nascimento obrigatória e privada para contas humanas (`birth_date` em `YYYY-MM-DD`) e sexo opcional/editável (`sex` como `male`, `female`, `other` ou `prefer_not_to_say`)
 - provedores externos vinculados
 - preferência de idioma
 - sessões e rastros de autenticação
@@ -156,6 +162,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - unitários para vínculo e validação de sessão
 - integração para login social real, vínculo seguro de conta existente, criação de conta nova e persistência de preferência de idioma
 - fluxo de cadastro, login e logout
+- cadastro por senha aceita exatamente 18 anos e rejeita menoridade, data futura, data ausente e formato inválido
+- cadastro social de identidade nova exige conclusão com data de nascimento adulta antes de criar a conta
 - fluxo de recuperação de senha com solicitação, token válido, token inválido/expirado e token reutilizado
 - fluxo de confirmação de email com token válido, token inválido/expirado, uso único e reenvio
 - login limitado para usuário sem email confirmado e bloqueio de ações sensíveis
@@ -171,7 +179,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo de edição de perfil na própria página autenticada
 - regressão para `/profile/` renderizar dados reais de `gotrendlabs_user_profiles`, incluindo `display_name`, `bio`, `birth_date` e `sex`
 - regressão para usuário em login limitado corrigir email e receber nova confirmação sem liberar edição de bio/data antes da confirmação
-- fluxo de edição de data de nascimento e sexo opcionais sem exposição no perfil público
+- fluxo de edição de data de nascimento adulta e sexo opcional sem permitir remoção/menoridade nem exposição no perfil público
 - fluxo de exclusão lógica
 - fluxo staff de listagem/detalhe administrativo de usuário
 - detalhe administrativo exibe badges adquiridas sem recalcular elegibilidade na UI
@@ -185,6 +193,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 ## Critérios de aceite
 
 - usuário consegue criar e acessar conta
+- somente pessoa com 18 anos completos consegue criar conta humana; nascimento permanece privado
 - usuário consegue solicitar recuperação e definir nova senha com link válido
 - usuário recebe link de recuperação por email sem que a resposta pública revele o link
 - usuário recém-cadastrado consegue entrar em modo limitado e confirma email por link expirável para liberar ações sensíveis

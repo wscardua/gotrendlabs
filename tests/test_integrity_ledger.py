@@ -244,7 +244,7 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
     def _register(self, display_name, email):
         response = self.client.post(
             "/auth/register",
-            json={"display_name": display_name, "email": email, "language": "pt-br", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": display_name, "email": email, "language": "pt-br", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(response.status_code, 201, response.text)
         return {"Authorization": f"Bearer {response.json()['session']['token']}"}

@@ -146,6 +146,30 @@ void main() {
     expect(failure.message, 'Informe um email válido.');
   });
 
+  test('ApiFailure exposes safe domain validation messages', () {
+    final failure = ApiFailure.fromObject(
+      DioException(
+        requestOptions: RequestOptions(path: '/auth/register'),
+        response: Response<Object?>(
+          requestOptions: RequestOptions(path: '/auth/register'),
+          statusCode: 422,
+          data: {
+            'detail': {
+              'code': 'minimum_age_required',
+              'message': 'A GoTrendLabs é exclusiva para maiores de 18 anos.',
+            },
+          },
+        ),
+      ),
+    );
+
+    expect(failure.category, 'validation');
+    expect(
+      failure.message,
+      'A GoTrendLabs é exclusiva para maiores de 18 anos.',
+    );
+  });
+
   test('ApiFailure maps app update required response', () {
     final failure = ApiFailure.fromObject(
       DioException(

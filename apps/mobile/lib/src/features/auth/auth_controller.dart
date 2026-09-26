@@ -137,6 +137,7 @@ class AuthController extends Notifier<AuthState> {
   Future<void> register(
     String name,
     String email,
+    String birthDate,
     String password,
     bool acceptedTerms, {
     bool protectWithBiometrics = false,
@@ -149,6 +150,7 @@ class AuthController extends Notifier<AuthState> {
           .register(
             displayName: name,
             email: email,
+            birthDate: birthDate,
             password: password,
             termsAccepted: acceptedTerms,
             antiAbuseToken: antiAbuseToken,

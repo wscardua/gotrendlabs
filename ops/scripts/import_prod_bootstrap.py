@@ -8,7 +8,7 @@ import json
 import os
 import shutil
 import sys
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -163,7 +163,7 @@ def import_admin(data):
                 "display_name": profile.get("display_name") or user.first_name or user.username,
                 "bio": profile.get("bio", ""),
                 "strong_category": profile.get("strong_category", ""),
-                "birth_date": date_value(profile.get("birth_date")),
+                "birth_date": date_value(profile.get("birth_date")) or date(1990, 1, 1),
                 "sex": profile.get("sex", ""),
                 "is_public": profile.get("is_public", True),
             },

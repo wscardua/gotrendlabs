@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
+import '../../core/birth_date_input.dart';
 import '../anti_abuse/anti_abuse_challenge_field.dart';
 import '../anti_abuse/anti_abuse_repository.dart';
 import 'auth_controller.dart';
@@ -29,6 +30,7 @@ class LoginSheet extends ConsumerStatefulWidget {
 class _LoginSheetState extends ConsumerState<LoginSheet> {
   final _name = TextEditingController();
   final _email = TextEditingController();
+  final _birthDate = TextEditingController();
   final _password = TextEditingController();
   final _antiAbuseAnswer = TextEditingController();
   bool _register = false;
@@ -41,6 +43,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
   void dispose() {
     _name.dispose();
     _email.dispose();
+    _birthDate.dispose();
     _password.dispose();
     _antiAbuseAnswer.dispose();
     super.dispose();
@@ -175,6 +178,20 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
                 textInputAction: TextInputAction.next,
                 decoration: const InputDecoration(labelText: 'Email'),
               ),
+              if (_register) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _birthDate,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  inputFormatters: const [BirthDateInputFormatter()],
+                  decoration: const InputDecoration(
+                    labelText: 'Data de nascimento',
+                    hintText: 'DD/MM/AAAA',
+                    helperText: 'Uso exclusivo para maiores de 18 anos.',
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               TextField(
                 controller: _password,
@@ -188,7 +205,9 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
                   contentPadding: EdgeInsets.zero,
                   onChanged: (value) =>
                       setState(() => _acceptedTerms = value ?? false),
-                  title: const Text('Aceito a política de uso da GoTrendLabs'),
+                  title: const Text(
+                    'Confirmo que tenho 18 anos ou mais e aceito a política de uso',
+                  ),
                 ),
                 if (biometricSupported)
                   SwitchListTile(
@@ -273,6 +292,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
     }
     setState(() => _localError = null);
     if (_register) {
+      final birthDate = normalizeBirthDateForApi(_birthDate.text)!;
       final challenge = ref
           .read(antiAbuseChallengeProvider)
           .maybeWhen(data: (value) => value, orElse: () => null);
@@ -289,6 +309,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
           .register(
             _name.text.trim(),
             email,
+            birthDate,
             password,
             _acceptedTerms,
             protectWithBiometrics: _protectWithBiometrics,
@@ -335,6 +356,9 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
     }
     if (_register && _name.text.trim().isEmpty) {
       return 'Informe um nome público.';
+    }
+    if (_register && normalizeBirthDateForApi(_birthDate.text) == null) {
+      return 'Informe uma data válida no formato DD/MM/AAAA.';
     }
     if (_register && !_acceptedTerms) {
       return 'Aceite a política de uso para criar sua conta.';

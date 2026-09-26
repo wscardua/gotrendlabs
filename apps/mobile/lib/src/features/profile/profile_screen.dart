@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../core/api_client.dart';
+import '../../core/birth_date_input.dart';
 import '../../core/environment.dart';
 import '../../core/formatters.dart';
 import '../../core/providers.dart';
@@ -522,30 +522,15 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
                 enabled: !_busy && emailConfirmed,
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
-                inputFormatters: const [_BirthDateInputFormatter()],
+                inputFormatters: const [BirthDateInputFormatter()],
                 decoration: InputDecoration(
                   labelText: 'Data de nascimento',
                   hintText: 'DD/MM/AAAA',
                   helperText: 'Digite só números ou use o calendário.',
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (_birthDate.text.isNotEmpty)
-                        IconButton(
-                          tooltip: 'Limpar data',
-                          onPressed: _busy || !emailConfirmed
-                              ? null
-                              : () => setState(() => _birthDate.clear()),
-                          icon: const Icon(Icons.close),
-                        ),
-                      IconButton(
-                        tooltip: 'Escolher data',
-                        onPressed: _busy || !emailConfirmed
-                            ? null
-                            : _pickBirthDate,
-                        icon: const Icon(Icons.calendar_month_outlined),
-                      ),
-                    ],
+                  suffixIcon: IconButton(
+                    tooltip: 'Escolher data',
+                    onPressed: _busy || !emailConfirmed ? null : _pickBirthDate,
+                    icon: const Icon(Icons.calendar_month_outlined),
                   ),
                 ),
               ),
@@ -623,11 +608,9 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
     }
     final emailConfirmed =
         ref.read(authControllerProvider).user?.emailConfirmed == true;
-    final birthDate = _normalizeBirthDateInput(_birthDate.text);
-    if (emailConfirmed &&
-        _birthDate.text.trim().isNotEmpty &&
-        birthDate == null) {
-      setState(() => _error = 'Use uma data válida no formato DD/MM/AAAA.');
+    final birthDate = normalizeBirthDateForApi(_birthDate.text);
+    if (emailConfirmed && birthDate == null) {
+      setState(() => _error = 'Informe uma data válida no formato DD/MM/AAAA.');
       return;
     }
     setState(() {
@@ -639,7 +622,7 @@ class _ProfileEditSheetState extends ConsumerState<_ProfileEditSheet> {
       final updated = emailConfirmed
           ? await repository.updatePrivateProfile(
               email: email,
-              birthDate: birthDate ?? '',
+              birthDate: birthDate!,
               bio: _bio.text.trim(),
             )
           : await repository.updateEmail(email: email);
@@ -714,18 +697,6 @@ DateTime? _parseBirthDateInput(String value) {
   return _parseIsoDate(normalized);
 }
 
-String? _normalizeBirthDateInput(String value) {
-  final normalized = value.trim();
-  if (normalized.isEmpty) {
-    return '';
-  }
-  final date = _parseBirthDateInput(normalized);
-  if (date == null) {
-    return null;
-  }
-  return _toIsoDate(date);
-}
-
 DateTime? _parseIsoDate(String value) {
   final normalized = value.trim();
   if (normalized.isEmpty) {
@@ -738,37 +709,6 @@ String _toDisplayDate(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');
   final day = date.day.toString().padLeft(2, '0');
   return '$day/$month/${date.year}';
-}
-
-String _toIsoDate(DateTime date) {
-  final month = date.month.toString().padLeft(2, '0');
-  final day = date.day.toString().padLeft(2, '0');
-  return '${date.year}-$month-$day';
-}
-
-class _BirthDateInputFormatter extends TextInputFormatter {
-  const _BirthDateInputFormatter();
-
-  @override
-  TextEditingValue formatEditUpdate(
-    TextEditingValue oldValue,
-    TextEditingValue newValue,
-  ) {
-    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
-    final limited = digits.length > 8 ? digits.substring(0, 8) : digits;
-    final buffer = StringBuffer();
-    for (var index = 0; index < limited.length; index += 1) {
-      if (index == 2 || index == 4) {
-        buffer.write('/');
-      }
-      buffer.write(limited[index]);
-    }
-    final formatted = buffer.toString();
-    return TextEditingValue(
-      text: formatted,
-      selection: TextSelection.collapsed(offset: formatted.length),
-    );
-  }
 }
 
 class _ReputationPanel extends StatelessWidget {

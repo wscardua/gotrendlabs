@@ -1,3 +1,5 @@
+from datetime import date
+
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.db import models
@@ -118,7 +120,7 @@ class UserProfile(models.Model):
     display_name = models.CharField(max_length=150)
     bio = models.TextField(blank=True)
     strong_category = models.CharField(max_length=80, blank=True)
-    birth_date = models.DateField(null=True, blank=True)
+    birth_date = models.DateField(default=date(1990, 1, 1))
     sex = models.CharField(max_length=32, blank=True, choices=SEX_CHOICES, default="")
     is_public = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -20,6 +20,7 @@ class AuthRepository {
   Future<AuthResult> register({
     required String displayName,
     required String email,
+    required String birthDate,
     required String password,
     required bool termsAccepted,
     String antiAbuseToken = '',
@@ -30,6 +31,7 @@ class AuthRepository {
       data: {
         'display_name': displayName,
         'email': email,
+        'birth_date': birthDate,
         'password': password,
         'language': 'pt-br',
         'terms_accepted': termsAccepted,

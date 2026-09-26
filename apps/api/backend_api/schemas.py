@@ -7,6 +7,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 class RegisterPayload(BaseModel):
     display_name: str = Field(min_length=1, max_length=150)
     email: EmailStr
+    birth_date: date
     language: str = "pt-br"
     password: str = Field(min_length=8, max_length=128)
     terms_accepted: bool = False
@@ -40,11 +41,13 @@ class SocialAuthCallbackPayload(BaseModel):
     oauth_verifier: str = Field(default="", max_length=1000)
     oauth_token_secret: str = Field(default="", max_length=1000)
     referral_code: str = Field(default="", max_length=32)
+    birth_date: Optional[date] = None
 
 
 class SocialAuthCompleteEmailPayload(BaseModel):
     pending_token: str = Field(min_length=20, max_length=2000)
     email: EmailStr
+    birth_date: date
 
 
 class PasswordResetRequestPayload(BaseModel):

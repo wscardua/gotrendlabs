@@ -48,7 +48,7 @@ O APK deve ser gerenciado no Admin Ops, armazenado em `MEDIA_ROOT/app_releases/a
 - browse de mercados por categoria/status
 - busca simples por texto quando houver contrato adequado ou filtro local sobre lista carregada
 - detalhe de mercado com hero visual, probabilidade, metricas, grafico compacto, opcoes e comentarios
-- login, cadastro e recuperacao conforme contratos disponiveis
+- login, cadastro com `birth_date` obrigatoria e limite autoritativo de 18 anos pela FastAPI, e recuperacao conforme contratos disponiveis
 - preview de previsao via backend
 - criacao de previsao autenticada
 - favoritos e curtidas de mercado
@@ -203,6 +203,7 @@ Perfil no MVP:
 - acesso a suporte/feedback
 - acesso a sugestao de mercado
 - desafio anti-abuso dentro do app para cadastro, feedback e sugestao de visitantes
+- cadastro envia `birth_date` e apresenta erro de menoridade do backend sem calcular elegibilidade local
 
 ## Regras de dominio
 

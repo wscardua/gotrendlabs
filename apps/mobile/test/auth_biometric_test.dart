@@ -137,6 +137,16 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Proteger sessão com biometria'), findsOneWidget);
+    expect(
+      find.widgetWithText(TextField, 'Data de nascimento'),
+      findsOneWidget,
+    );
+    final birthDateField = tester.widget<TextField>(
+      find.widgetWithText(TextField, 'Data de nascimento'),
+    );
+    expect(birthDateField.keyboardType, TextInputType.number);
+    expect(find.text('DD/MM/AAAA'), findsOneWidget);
+    expect(find.text('Uso exclusivo para maiores de 18 anos.'), findsOneWidget);
     final biometricSwitch = tester.widget<SwitchListTile>(
       find.widgetWithText(SwitchListTile, 'Proteger sessão com biometria'),
     );
@@ -284,6 +294,7 @@ void main() {
           .register(
             'Tester',
             'tester@example.com',
+            '1990-01-01',
             'password',
             true,
             protectWithBiometrics: true,
@@ -366,6 +377,7 @@ class _FakeAuthRepository extends AuthRepository {
   Future<AuthResult> register({
     required String displayName,
     required String email,
+    required String birthDate,
     required String password,
     required bool termsAccepted,
     String antiAbuseToken = '',

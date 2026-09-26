@@ -3,6 +3,7 @@
 ## Dependências principais
 
 - `FEAT-AUTH-001` suporta as demais features autenticadas
+- `FEAT-AUTH-001` centraliza na FastAPI a maioridade de contas humanas; Django e Flutter enviam `birth_date`, e novos cadastros sociais concluem o perfil privado antes da criação da conta.
 - `FEAT-MARKET-001` depende de `FEAT-AUTH-001` para visão autenticada e personalização
 - `FEAT-MARKET-002` depende de `FEAT-MARKET-001`
 - `FEAT-PRED-001` depende de `FEAT-MARKET-002`, `FEAT-WALLET-001` e `FEAT-AUTH-001`

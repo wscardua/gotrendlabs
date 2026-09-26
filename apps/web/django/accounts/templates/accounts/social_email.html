@@ -44,7 +44,13 @@
             <input id="{{ form.email.id_for_label }}" name="{{ form.email.name }}" type="email" value="{{ form.email.value|default:'' }}" autocomplete="email" autofocus>
             {% if form.email.errors %}<small>{{ form.email.errors|join:", " }}</small>{% endif %}
           </div>
-          <button class="btn primary full" type="submit">Concluir login</button>
+          <div class="field full">
+            <label for="{{ form.birth_date.id_for_label }}">Data de nascimento</label>
+            <input id="{{ form.birth_date.id_for_label }}" name="{{ form.birth_date.name }}" type="date" value="{{ form.birth_date.value|default:'' }}" autocomplete="bday" required max="{% now 'Y-m-d' %}">
+            <small>A GoTrendLabs é exclusiva para maiores de 18 anos.</small>
+            {% if form.birth_date.errors %}<small>{{ form.birth_date.errors|join:", " }}</small>{% endif %}
+          </div>
+          <button class="btn primary full" type="submit">Concluir cadastro</button>
         </form>
         <div class="auth-footer">
           <a href="{% url 'login' %}">Voltar para login</a>

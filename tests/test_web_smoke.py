@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from copy import deepcopy
 import hashlib
@@ -259,6 +259,7 @@ class SecurityHardeningTests(AppendOnlyTransactionTestCase):
                         "display_name": "Rate Register",
                         "email": "rate-register@example.com",
                         "password": "testpass123",
+                        "birth_date": "1990-01-01",
                         "terms_accepted": True,
                     },
                 )
@@ -269,6 +270,7 @@ class SecurityHardeningTests(AppendOnlyTransactionTestCase):
                     "display_name": "Rate Register",
                     "email": "rate-register@example.com",
                     "password": "testpass123",
+                    "birth_date": "1990-01-01",
                     "terms_accepted": True,
                 },
             )
@@ -676,7 +678,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with patch("apps.api.backend_api.main.fetch_social_profile", return_value=profile):
             response = client.post(
                 "/auth/social/google/callback",
-                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-1"},
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-1", "birth_date": "1990-01-01"},
             )
         self.assertEqual(response.status_code, 200, response.json())
         payload = response.json()
@@ -723,11 +725,44 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                     "oauth_token": "x-token",
                     "oauth_verifier": "x-verifier",
                     "oauth_token_secret": "x-token-secret",
+                    "birth_date": "1990-01-01",
                 },
             )
         self.assertEqual(x_linked.status_code, 200, x_linked.json())
         self.assertEqual(x_linked.json()["user"]["email"], "social-x@example.com")
         self.assertTrue(ExternalIdentity.objects.filter(provider="x", subject="x-subject-1").exists())
+
+    def test_new_social_account_requires_adult_birth_date(self):
+        client = TestClient(app)
+        profile = SocialProfile(
+            provider="google",
+            subject="google-adult-gate",
+            email="social-adult-gate@example.com",
+            email_verified=True,
+            display_name="Social Adult Gate",
+            preferred_language="pt-br",
+        )
+        with patch("apps.api.backend_api.main.fetch_social_profile", return_value=profile):
+            callback = client.post(
+                "/auth/social/google/callback",
+                json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-adult-gate"},
+            )
+
+        self.assertEqual(callback.status_code, 422)
+        self.assertEqual(callback.json()["detail"]["code"], "social_profile_required")
+        self.assertFalse(get_user_model().objects.filter(email=profile.email).exists())
+
+        underage = client.post(
+            "/auth/social/google/complete-email",
+            json={
+                "pending_token": callback.json()["detail"]["pending_token"],
+                "email": profile.email,
+                "birth_date": date.today().isoformat(),
+            },
+        )
+        self.assertEqual(underage.status_code, 422)
+        self.assertEqual(underage.json()["detail"]["code"], "minimum_age_required")
+        self.assertFalse(get_user_model().objects.filter(email=profile.email).exists())
 
     def test_verified_social_signup_sends_welcome_without_confirmation(self):
         site_config = SiteConfig.get_solo()
@@ -760,7 +795,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
                     response = client.post(
                         "/auth/social/google/callback",
-                        json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-welcome"},
+                        json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-welcome", "birth_date": "1990-01-01"},
                     )
         self.assertEqual(response.status_code, 200, response.json())
         self.assertTrue(response.json()["user"]["email_confirmed"])
@@ -836,7 +871,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 with patch("apps.web.django.communications.services.httpx.post", return_value=ResendResponse()) as post:
                     response = client.post(
                         "/auth/social/google/callback",
-                        json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-4"},
+                        json={"redirect_uri": "https://gotrendlabs.com.br/auth/social/google/callback/", "code": "code-4", "birth_date": "1990-01-01"},
                     )
         self.assertEqual(response.status_code, 200, response.json())
         self.assertFalse(response.json()["user"]["email_confirmed"])
@@ -866,7 +901,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 },
             )
         self.assertEqual(callback.status_code, 422)
-        self.assertEqual(callback.json()["detail"]["code"], "social_email_required")
+        self.assertEqual(callback.json()["detail"]["code"], "social_profile_required")
         pending_token = callback.json()["detail"]["pending_token"]
         self.assertGreater(len(pending_token), 40)
 
@@ -883,7 +918,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(rejected.status_code, 422)
         tampered = client.post(
             "/auth/social/x/complete-email",
-            json={"pending_token": pending_token + "x", "email": "x-forged@example.com"},
+            json={"pending_token": pending_token + "x", "email": "x-forged@example.com", "birth_date": "1990-01-01"},
         )
         self.assertEqual(tampered.status_code, 422)
 
@@ -910,6 +945,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                     json={
                         "pending_token": pending_token,
                         "email": "x-complete@example.com",
+                        "birth_date": "1990-01-01",
                     },
                 )
         self.assertEqual(completed.status_code, 200, completed.json())
@@ -1090,6 +1126,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "feed-prediction-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1122,6 +1159,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "favorite-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1159,6 +1197,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "like-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1169,6 +1208,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "second-like-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1219,6 +1259,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "notification-first@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1229,6 +1270,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "notification-second@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1312,6 +1354,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "push-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1322,6 +1365,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "push-other@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1376,6 +1420,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "push-wallet@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1463,6 +1508,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "push-invalid@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1631,7 +1677,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         staff_email = f"metrics-staff-{initial_views}-{initial_shares}@example.com"
         user = client.post(
             "/auth/register",
-            json={"display_name": "Metrics Staff", "email": staff_email, "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Metrics Staff", "email": staff_email, "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(user.status_code, 201)
         with get_connection() as connection:
@@ -1656,6 +1702,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "carol-api@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -1688,11 +1735,11 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         staff = client.post(
             "/auth/register",
-            json={"display_name": "User Admin Staff", "email": "user-admin-staff@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "User Admin Staff", "email": "user-admin-staff@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         target = client.post(
             "/auth/register",
-            json={"display_name": "Managed User", "email": "managed-user@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Managed User", "email": "managed-user@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(staff.status_code, 201)
         self.assertEqual(target.status_code, 201)
@@ -1812,15 +1859,15 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         superuser = client.post(
             "/auth/register",
-            json={"display_name": "Root Admin", "email": "root-admin@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Root Admin", "email": "root-admin@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Role Staff", "email": "role-staff@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Role Staff", "email": "role-staff@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         target = client.post(
             "/auth/register",
-            json={"display_name": "Role Target", "email": "role-target@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Role Target", "email": "role-target@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(superuser.status_code, 201)
         self.assertEqual(staff.status_code, 201)
@@ -1881,23 +1928,23 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Reset Staff", "email": "reset-staff@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Reset Staff", "email": "reset-staff@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         superuser = client.post(
             "/auth/register",
-            json={"display_name": "Reset Super", "email": "reset-super@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Reset Super", "email": "reset-super@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         target = client.post(
             "/auth/register",
-            json={"display_name": "Reset Target", "email": "reset-target@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Reset Target", "email": "reset-target@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         admin_target = client.post(
             "/auth/register",
-            json={"display_name": "Reset Admin Target", "email": "reset-admin-target@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Reset Admin Target", "email": "reset-admin-target@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         disabled = client.post(
             "/auth/register",
-            json={"display_name": "Reset Disabled", "email": "reset-disabled@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Reset Disabled", "email": "reset-disabled@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(staff.status_code, 201)
         self.assertEqual(superuser.status_code, 201)
@@ -1966,7 +2013,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         registered = client.post(
             "/auth/register",
-            json={"display_name": "Reset User", "email": "reset-user@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Reset User", "email": "reset-user@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(registered.status_code, 201)
         old_headers = {"Authorization": f"Bearer {registered.json()['session']['token']}"}
@@ -2029,11 +2076,11 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Logs Staff", "email": "logs-staff@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Logs Staff", "email": "logs-staff@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         user = client.post(
             "/auth/register",
-            json={"display_name": "Logs User", "email": "logs-user@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Logs User", "email": "logs-user@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(staff.status_code, 201)
         self.assertEqual(user.status_code, 201)
@@ -2096,11 +2143,11 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Dashboard Staff", "email": "dashboard-staff@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Dashboard Staff", "email": "dashboard-staff@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         user = client.post(
             "/auth/register",
-            json={"display_name": "Dashboard User", "email": "dashboard-user@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Dashboard User", "email": "dashboard-user@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(staff.status_code, 201)
         self.assertEqual(user.status_code, 201)
@@ -3132,6 +3179,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "collision-one@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3142,6 +3190,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "collision-two@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3160,6 +3209,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "user-core@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3174,7 +3224,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertIn("profile_id", me.json())
         self.assertIn("profile_created_at", me.json())
         self.assertIn("profile_updated_at", me.json())
-        self.assertIsNone(me.json()["birth_date"])
+        self.assertEqual(me.json()["birth_date"], "1990-01-01")
         self.assertEqual(me.json()["sex"], "")
 
         wallet = client.get("/users/me/wallet", headers=headers)
@@ -3237,6 +3287,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "referral-owner@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3258,6 +3309,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "invited-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
                 "referral_code": code.lower(),
             },
@@ -3289,6 +3341,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "invalid-referral@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
                 "referral_code": "MISSINGCODE",
             },
@@ -3299,7 +3352,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         SiteConfig.objects.update_or_create(singleton_key=1, defaults={"referral_bonus_gtl": 0})
         owner = client.post(
             "/auth/register",
-            json={"display_name": "Disabled Referral Owner", "email": "disabled-referral-owner@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Disabled Referral Owner", "email": "disabled-referral-owner@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         headers = {"Authorization": f"Bearer {owner.json()['session']['token']}"}
         referral = client.get("/users/me/referral", headers=headers)
@@ -3316,6 +3369,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "referral-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3342,6 +3396,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "confirm-email-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3386,6 +3441,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "wrong-email-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -3437,6 +3493,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                         "email": "welcome-register@example.com",
                         "language": "pt-br",
                         "password": "testpass123",
+                        "birth_date": "1990-01-01",
                         "terms_accepted": True,
                     },
                 )
@@ -3692,11 +3749,11 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         user = client.post(
             "/auth/register",
-            json={"display_name": "Badge User", "email": "badge-user@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Badge User", "email": "badge-user@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Badge Staff", "email": "badge-staff@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Badge Staff", "email": "badge-staff@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(user.status_code, 201)
         self.assertEqual(staff.status_code, 201)
@@ -3839,7 +3896,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         user = client.post(
             "/auth/register",
-            json={"display_name": "Badge Auto", "email": "badge-auto@example.com", "password": "testpass123", "terms_accepted": True},
+            json={"display_name": "Badge Auto", "email": "badge-auto@example.com", "password": "testpass123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(user.status_code, 201)
         headers = {"Authorization": f"Bearer {user.json()['session']['token']}"}
@@ -4016,15 +4073,15 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         alpha = client.post(
             "/auth/register",
-            json={"display_name": "Theme Alpha", "email": "theme-alpha@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Theme Alpha", "email": "theme-alpha@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         beta = client.post(
             "/auth/register",
-            json={"display_name": "Theme Beta", "email": "theme-beta@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Theme Beta", "email": "theme-beta@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Theme Staff", "email": "theme-staff@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Theme Staff", "email": "theme-staff@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         with get_connection() as connection:
             with connection.cursor() as cursor:
@@ -4128,19 +4185,19 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         client = TestClient(app)
         regular = client.post(
             "/auth/register",
-            json={"display_name": "Ranking Regular", "email": "ranking-regular@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Ranking Regular", "email": "ranking-regular@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         staff = client.post(
             "/auth/register",
-            json={"display_name": "Ranking Staff", "email": "ranking-staff@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Ranking Staff", "email": "ranking-staff@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         superuser = client.post(
             "/auth/register",
-            json={"display_name": "Ranking Super", "email": "ranking-super@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Ranking Super", "email": "ranking-super@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         dev_user = client.post(
             "/auth/register",
-            json={"display_name": "Dev Ranking", "email": "dev-ranking@example.com", "password": "supersecret123", "terms_accepted": True},
+            json={"display_name": "Dev Ranking", "email": "dev-ranking@example.com", "password": "supersecret123", "birth_date": "1990-01-01", "terms_accepted": True},
         )
         self.assertEqual(regular.status_code, 201)
         self.assertEqual(staff.status_code, 201)
@@ -4185,6 +4242,47 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
 
     def test_register_requires_terms_profile_update_and_logical_deletion(self):
         client = TestClient(app)
+        today = date.today()
+        try:
+            adult_cutoff = today.replace(year=today.year - 18)
+        except ValueError:
+            adult_cutoff = today.replace(year=today.year - 18, day=28)
+
+        missing_birth_date = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Missing Birth Date",
+                "email": "missing-birth-date@example.com",
+                "password": "testpass123",
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(missing_birth_date.status_code, 422)
+
+        underage = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Underage Case",
+                "email": "underage-case@example.com",
+                "password": "testpass123",
+                "birth_date": (adult_cutoff + timedelta(days=1)).isoformat(),
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(underage.status_code, 422)
+        self.assertEqual(underage.json()["detail"]["code"], "minimum_age_required")
+
+        exact_age = client.post(
+            "/auth/register",
+            json={
+                "display_name": "Exact Adult",
+                "email": "exact-adult@example.com",
+                "password": "testpass123",
+                "birth_date": adult_cutoff.isoformat(),
+                "terms_accepted": True,
+            },
+        )
+        self.assertEqual(exact_age.status_code, 201, exact_age.json())
         missing_terms = client.post(
             "/auth/register",
             json={
@@ -4192,6 +4290,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "policy-case@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": False,
             },
         )
@@ -4204,6 +4303,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "policy-case@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4211,7 +4311,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         token = response.json()["session"]["token"]
         headers = {"Authorization": f"Bearer {token}"}
         user = get_user_model().objects.get(username="@policycase")
-        self.assertEqual(user.terms_version, "2026-09-05")
+        self.assertEqual(user.terms_version, "2026-09-19")
         self.assertIsNotNone(user.terms_accepted_at)
 
         updated = client.patch(
@@ -4248,9 +4348,9 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             headers=headers,
             json={"birth_date": None, "sex": ""},
         )
-        self.assertEqual(cleared.status_code, 200)
-        self.assertIsNone(cleared.json()["birth_date"])
-        self.assertEqual(cleared.json()["sex"], "")
+        self.assertEqual(cleared.status_code, 422)
+        user.profile.refresh_from_db()
+        self.assertEqual(user.profile.birth_date.isoformat(), "1990-04-23")
 
         future_date = client.patch("/users/me", headers=headers, json={"birth_date": "2999-01-01"})
         self.assertEqual(future_date.status_code, 422)
@@ -4293,6 +4393,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                     "email": "captcha-user@example.com",
                     "language": "pt-br",
                     "password": "testpass123",
+                    "birth_date": "1990-01-01",
                     "terms_accepted": True,
                 },
             )
@@ -4339,6 +4440,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                     "email": "mobile-challenge@example.com",
                     "language": "pt-br",
                     "password": "testpass123",
+                    "birth_date": "1990-01-01",
                     "terms_accepted": True,
                     "anti_abuse_token": register_challenge["token"],
                     "anti_abuse_answer": _anti_abuse_answer(register_challenge),
@@ -4437,6 +4539,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "captcha-bypass@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4500,6 +4603,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "prediction-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4546,6 +4650,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "other-prediction-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4597,6 +4702,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "expired-auto-close-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4625,6 +4731,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "expired-auto-close-new-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4667,6 +4774,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "position-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4677,6 +4785,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "position-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4773,6 +4882,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "race-position-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4822,6 +4932,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "reinforcement-limit-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4873,6 +4984,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "cutoff-position-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4904,6 +5016,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "resolution-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4914,6 +5027,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "resolution-winner@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -4924,6 +5038,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "resolution-loser@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5155,6 +5270,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                     "email": email,
                     "language": "pt-br",
                     "password": "testpass123",
+                    "birth_date": "1990-01-01",
                     "terms_accepted": True,
                 },
             )
@@ -5305,6 +5421,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "cancel-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5315,6 +5432,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "cancel-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5386,6 +5504,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "reconcile-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5396,6 +5515,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "reconcile-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5489,6 +5609,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "preserve-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5499,6 +5620,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "preserve-first@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5509,6 +5631,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "preserve-second@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5617,6 +5740,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "comment-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5683,6 +5807,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "comment-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5725,6 +5850,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "common-admin@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5739,6 +5865,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "staff-admin@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -5996,6 +6123,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "admin-edit-predictor@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -6183,6 +6311,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "queue-user@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -6309,6 +6438,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "email": "queue-staff@example.com",
                 "language": "pt-br",
                 "password": "testpass123",
+                "birth_date": "1990-01-01",
                 "terms_accepted": True,
             },
         )
@@ -6559,8 +6689,9 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             "Informe um email para concluir o login social.",
             status_code=422,
             detail={
-                "code": "social_email_required",
+                "code": "social_profile_required",
                 "pending_token": "pending-token-web-123",
+                "email": "",
             },
         )
 
@@ -6585,10 +6716,16 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             "session": {"token": "x-web-token"},
         }
         with patch("apps.web.django.accounts.views.social_auth_complete_email", return_value=auth_response) as complete:
-            completed = self.client.post(reverse("social-auth-email"), {"email": "x-web@example.com"})
+            completed = self.client.post(
+                reverse("social-auth-email"),
+                {"email": "x-web@example.com", "birth_date": "1990-01-01"},
+            )
 
         self.assertRedirects(completed, reverse("rankings"), fetch_redirect_response=False)
-        complete.assert_called_once_with("x", {"pending_token": "pending-token-web-123", "email": "x-web@example.com"})
+        complete.assert_called_once_with(
+            "x",
+            {"pending_token": "pending-token-web-123", "email": "x-web@example.com", "birth_date": "1990-01-01"},
+        )
         session = self.client.session
         self.assertEqual(session[TOKEN_KEY], "x-web-token")
         self.assertEqual(session[USER_KEY]["email"], "x-web@example.com")
@@ -6712,7 +6849,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
                 "preferred_language": "pt-br",
             },
             "reputation": {},
-            "birth_date": "",
+            "birth_date": "1990-01-01",
             "sex": "",
             "bio": "",
         }
@@ -6797,7 +6934,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
                 "preferred_language": "pt-br",
             },
             "reputation": {},
-            "birth_date": "",
+            "birth_date": "1990-01-01",
             "sex": "",
             "bio": "",
         }
@@ -6818,7 +6955,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
                     "handle": "newhandle",
                     "email": user.email,
                     "preferred_language": "pt-br",
-                    "birth_date": "",
+                    "birth_date": "1990-01-01",
                     "sex": "",
                     "bio": "",
                 },
@@ -11714,7 +11851,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             "profile_id": 21,
             "bio": "",
             "strong_category": "Geral",
-            "birth_date": "",
+            "birth_date": "1990-01-01",
             "sex": "",
             "profile_created_at": "2026-05-17T00:00:00+00:00",
             "profile_updated_at": "2026-05-17T00:00:00+00:00",
@@ -11966,6 +12103,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
                 {
                     "display_name": "Carol Vision",
                     "email": "carol@gotrendlabs.com.br",
+                    "birth_date": "1990-01-01",
                     "language": "pt-br",
                     "password": "testpass123",
                     "terms_accepted": "on",
@@ -11974,6 +12112,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             )
         self.assertRedirects(response, reverse("home"))
         self.assertEqual(register_user.call_args.args[0]["recaptcha_token"], "captcha-token")
+        self.assertEqual(register_user.call_args.args[0]["birth_date"], "1990-01-01")
 
         with patch("apps.web.django.accounts.views.logout_user", return_value={}):
             self.client.get(reverse("logout"))
