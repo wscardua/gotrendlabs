@@ -1,7 +1,15 @@
 # Change Log de Specs
 
+## 2026-09-26
+
+- explicitado em UX e aceite mobile que `birth_date` permanece obrigatória também na edição do perfil, sem ação de limpeza, com entrada `DD/MM/AAAA` normalizada para o contrato `YYYY-MM-DD`;
+- mantida a FastAPI como autoridade exclusiva da maioridade; a validação Flutter continua limitada a presença e formato para UX;
+- atualizado o workflow de maioridade com revisão de branch, 106 testes Flutter e QA físico no Galaxy S20, mantendo o encerramento final condicionado a PR, CI, deploy e smoke produtivo.
+
 ## 2026-09-19
 
+- evoluída `FEAT-AUTH-001` para exigir data de nascimento privada e restringir contas humanas a pessoas com 18 anos completos, com FastAPI como autoridade nos cadastros por senha/social e na edição de perfil;
+- definido corte pré-produção simples: perfis legados sem nascimento recebem `1990-01-01`, sem fluxo de regularização, e web/mobile apenas coletam e apresentam a decisão do backend;
 - aprovada e marcada como `implementada_validada` a `FEAT-OPSLOG-001`; o daemon contínuo revalida conexões Django nos limites de cada ciclo para impedir falhas recorrentes das outboxes após conexão PostgreSQL encerrada;
 - registrado o critério de aceite e a regressão automatizada para os limites de conexão do ciclo, sem alterar contratos, schema, eventos de domínio ou consumidores web/mobile.
 - migradas as skills versionadas do GoTrendLabs de `tools/skills/gotrendlabs/` para `.agents/skills/`, o caminho de descoberta automática do Codex para o repositório;

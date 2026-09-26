@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260919-ADULT-ONLY-AUTH-025
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `em_andamento`
+- Feature alvo: `FEAT-AUTH-001`, `FEAT-MOBILE-001`
+- Objetivo: restringir a criação de contas humanas a pessoas com 18 anos completos, usando data de nascimento obrigatória e validação autoritativa na FastAPI em cadastro por senha e social.
+- Etapa atual: specs, migration, contratos, implementação web/API/mobile, revisão de branch, regressão automatizada e QA físico Android concluídos localmente; aguardando PR, CI, deploy e smoke produtivo.
+- Artefatos afetados: spec funcional, feature de autenticação, arquiteturas backend/web/mobile, política de uso, schema/modelo/migration de perfil, contratos FastAPI/OpenAPI, cadastro Django/Flutter, OAuth social, testes e memória operacional.
+- Decisões: `birth_date` passa a ser obrigatória e privada para contas humanas; maioridade é calculada pela FastAPI por data civil com limite de 18 anos completos; perfis pré-produção sem nascimento recebem `1990-01-01` em migration e não haverá fluxo de regularização de legado; contas técnicas internas criadas fora do cadastro público usam o mesmo fallback pré-produção; UI pode validar formato/completude, mas não decide elegibilidade.
+- Reversão lógica: reverter contrato/UI e tornar a coluna novamente anulável em migration posterior; não apagar datas já coletadas.
+- Arquitetura e segurança: FastAPI permanece autoridade única da maioridade; Django/Flutter apenas coletam e exibem; não houve mudança de fronteira que exija ADR; nascimento continua ausente de contratos públicos.
+- Evidências: suíte Django/FastAPI completa com 255 testes aprovada usando `BACKEND_API_URL` isolada do servidor local; 3 testes focados adicionais de limite exato, menoridade, perfil, OAuth e formulário web aprovados após os últimos ajustes; revisão de branch corrigiu a possibilidade de limpar `birth_date` no perfil mobile; `flutter analyze` sem issues e 106 testes Flutter aprovados; cadastro e edição de perfil foram validados no Galaxy S20 físico com formato `DD/MM/AAAA`, normalização para `YYYY-MM-DD` e bloqueio local de data vazia; OpenAPI regenerado e validado; `manage.py check`, `makemigrations --check --dry-run`, `sqlmigrate accounts 0022`, compilação Python e `git diff --check` aprovados.
+- Iniciado em: 2026-09-19
+- Atualizado em: 2026-09-26
+- Próxima ação: publicar a branch, integrar a PR após CI verde, acompanhar o deploy produtivo, aplicar a migration e concluir smoke de cadastro por senha/social, política pública e contrato mobile; então promover este workflow para `concluido` com as evidências remotas.
+
 ## WFLOW-20260919-DAEMON-DB-CONNECTIONS-024
 
 - Tipo: `bugfix` + `test-review-cycle`

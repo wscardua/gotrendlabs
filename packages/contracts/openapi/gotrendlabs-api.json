@@ -4923,6 +4923,11 @@
             "title": "Anti Abuse Token",
             "type": "string"
           },
+          "birth_date": {
+            "format": "date",
+            "title": "Birth Date",
+            "type": "string"
+          },
           "display_name": {
             "maxLength": 150,
             "minLength": 1,
@@ -4965,6 +4970,7 @@
         "required": [
           "display_name",
           "email",
+          "birth_date",
           "password"
         ],
         "title": "RegisterPayload",
@@ -5050,6 +5056,18 @@
       },
       "SocialAuthCallbackPayload": {
         "properties": {
+          "birth_date": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Birth Date"
+          },
           "code": {
             "default": "",
             "maxLength": 1000,
@@ -5101,6 +5119,11 @@
       },
       "SocialAuthCompleteEmailPayload": {
         "properties": {
+          "birth_date": {
+            "format": "date",
+            "title": "Birth Date",
+            "type": "string"
+          },
           "email": {
             "format": "email",
             "title": "Email",
@@ -5115,7 +5138,8 @@
         },
         "required": [
           "pending_token",
-          "email"
+          "email",
+          "birth_date"
         ],
         "title": "SocialAuthCompleteEmailPayload",
         "type": "object"

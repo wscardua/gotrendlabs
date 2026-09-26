@@ -33,6 +33,7 @@ class PasswordResetConfirmForm(forms.Form):
 class RegisterForm(forms.Form):
     display_name = forms.CharField(label="Nome público", max_length=150)
     email = forms.EmailField(label="Email")
+    birth_date = forms.DateField(label="Data de nascimento", widget=forms.DateInput(attrs={"type": "date"}))
     language = forms.ChoiceField(label="Idioma", choices=(("pt-br", "PT-BR"), ("en", "EN")))
     password = forms.CharField(label="Senha", widget=forms.PasswordInput)
     terms_accepted = forms.BooleanField(label="Aceito a política de uso", required=True)
@@ -40,6 +41,9 @@ class RegisterForm(forms.Form):
 
     def clean_email(self):
         return self.cleaned_data["email"]
+
+    def clean_birth_date(self):
+        return self.cleaned_data["birth_date"].isoformat()
 
     def clean_password(self):
         password = self.cleaned_data["password"]
@@ -49,6 +53,10 @@ class RegisterForm(forms.Form):
 
 class SocialEmailForm(forms.Form):
     email = forms.EmailField(label="Email")
+    birth_date = forms.DateField(label="Data de nascimento", widget=forms.DateInput(attrs={"type": "date"}))
+
+    def clean_birth_date(self):
+        return self.cleaned_data["birth_date"].isoformat()
 
 
 class ProfileForm(forms.Form):
@@ -64,7 +72,7 @@ class ProfileForm(forms.Form):
     handle = forms.CharField(label="Identificador", max_length=149)
     email = forms.EmailField(label="Email")
     preferred_language = forms.ChoiceField(label="Idioma", choices=(("pt-br", "PT-BR"), ("en", "EN")))
-    birth_date = forms.DateField(label="Data de nascimento", required=False, widget=forms.DateInput(attrs={"type": "date"}))
+    birth_date = forms.DateField(label="Data de nascimento", widget=forms.DateInput(attrs={"type": "date"}))
     sex = forms.ChoiceField(label="Sexo", choices=SEX_CHOICES, required=False)
     bio = forms.CharField(label="Bio", max_length=1000, required=False, widget=forms.Textarea)
 
@@ -76,4 +84,4 @@ class ProfileForm(forms.Form):
 
     def clean_birth_date(self):
         value = self.cleaned_data["birth_date"]
-        return value.isoformat() if value else ""
+        return value.isoformat()

@@ -1,10 +1,10 @@
 ---
 id: FEAT-MOBILE-UX-001
 titulo: "UX e design mobile"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-16
+ultima_atualizacao: 2026-09-26
 origem:
   - docs/specs/features/mobile-mvp.md
   - referencias_visuais_fornecidas_pelo_usuario
@@ -282,7 +282,7 @@ Deve priorizar:
 
 - handle
 - dados privados conferiveis pelo usuario autenticado: email, data de nascimento e bio
-- edicao privada desses dados em bottom sheet, com data de nascimento digitavel so com numeros e barras automaticas em `DD/MM/AAAA`, ou selecionavel por calendario
+- edicao privada desses dados em bottom sheet, com data de nascimento obrigatoria, sem acao de limpeza, digitavel so com numeros e barras automaticas em `DD/MM/AAAA`, ou selecionavel por calendario; o app valida presenca/formato para UX e envia `YYYY-MM-DD`, enquanto a FastAPI decide a maioridade
 - reputacao
 - badges
 - posicao real quando existir

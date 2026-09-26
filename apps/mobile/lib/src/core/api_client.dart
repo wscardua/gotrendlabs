@@ -314,7 +314,7 @@ class ApiFailure implements Exception {
   static String? _detailItemMessage(Object? item) {
     if (item is Map) {
       final loc = (item['loc'] as List?)?.join('.') ?? '';
-      final msg = item['msg']?.toString() ?? '';
+      final msg = item['message']?.toString() ?? item['msg']?.toString() ?? '';
       final reason = item['ctx'] is Map
           ? (item['ctx'] as Map)['reason']?.toString() ?? ''
           : '';

@@ -84,6 +84,7 @@ void main() {
     );
     expect(birthDateField.controller?.text, '18/06/1990');
     expect(birthDateField.keyboardType, TextInputType.number);
+    expect(find.byTooltip('Limpar data'), findsNothing);
     await tester.enterText(
       find.widgetWithText(TextField, 'Email'),
       'novo@example.com',
@@ -105,6 +106,50 @@ void main() {
     expect(repo.lastBio, 'Bio atualizada');
     expect(find.text('novo@example.com'), findsOneWidget);
     expect(find.text('Bio atualizada'), findsOneWidget);
+  });
+
+  testWidgets('Profile requires birth date before saving', (tester) async {
+    final repo = _FakeProfileRepository(
+      onUpdate: ({required email, required birthDate, required bio}) async {
+        throw AssertionError('Invalid birth date must not reach repository');
+      },
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          profileProvider.overrideWith((ref) async => _profilePayload()),
+          profileRepositoryProvider.overrideWithValue(repo),
+          badgesProvider.overrideWith((ref) async => []),
+          biometricCapabilityProvider.overrideWith((ref) async => true),
+          biometricPreferenceProvider.overrideWith((ref) async => false),
+          rememberedSessionProvider.overrideWith((ref) async => true),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const ProfileScreen(),
+        ),
+      ),
+    );
+
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Editar'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Limpar data'), findsNothing);
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Data de nascimento'),
+      '',
+    );
+    await tester.tap(find.text('Salvar dados'));
+    await tester.pump();
+
+    expect(
+      find.text('Informe uma data válida no formato DD/MM/AAAA.'),
+      findsOneWidget,
+    );
+    expect(repo.lastBirthDate, isNull);
   });
 
   testWidgets('Unconfirmed profile edit only corrects email', (tester) async {

@@ -244,10 +244,11 @@ def social_auth_callback_view(request, provider):
     try:
         response = social_auth_callback(provider, payload)
     except AuthAPIError as exc:
-        if isinstance(exc.detail, dict) and exc.detail.get("code") == "social_email_required":
+        if isinstance(exc.detail, dict) and exc.detail.get("code") == "social_profile_required":
             request.session[SOCIAL_EMAIL_SESSION_KEY] = {
                 "provider": provider,
                 "pending_token": exc.detail.get("pending_token", ""),
+                "email": exc.detail.get("email", ""),
                 "next": session_state.get("next", reverse("home")),
             }
             request.session.pop(SOCIAL_AUTH_SESSION_KEY, None)
@@ -266,11 +267,12 @@ def social_auth_email_view(request):
     if not pending.get("provider") or not pending.get("pending_token"):
         messages.error(request, "Não foi possível encontrar o login social pendente.")
         return redirect("login")
-    form = SocialEmailForm(request.POST or None)
+    form = SocialEmailForm(request.POST or None, initial={"email": pending.get("email", "")})
     if request.method == "POST" and form.is_valid():
         payload = {
             "pending_token": pending["pending_token"],
             "email": form.cleaned_data["email"],
+            "birth_date": form.cleaned_data["birth_date"],
         }
         try:
             response = social_auth_complete_email(pending["provider"], payload)

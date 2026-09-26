@@ -154,9 +154,11 @@ INITIAL_REPUTATION = 100
 BASE_PREDICTION_WEIGHT = 10_000
 PROBABILITY_QUANT = Decimal("0.0001")
 REPUTATION_K_FACTOR = Decimal("10")
-TERMS_VERSION = "2026-09-05"
+TERMS_VERSION = "2026-09-19"
 IMMEDIATE_AUTH_EMAIL_EVENTS = ("account.password_reset", "user.email_confirmation", "user.welcome")
 SOCIAL_EMAIL_PENDING_TTL_SECONDS = 15 * 60
+MINIMUM_ACCOUNT_AGE = 18
+PREPRODUCTION_DEFAULT_BIRTH_DATE = date(1990, 1, 1)
 ANTI_ABUSE_CHALLENGE_TTL_SECONDS = 10 * 60
 BADGE_RULE_TYPES = {
     "founding_member",
@@ -745,7 +747,7 @@ def _public_user_response(row, *, display_name=None):
     }
 
 
-def _ensure_user_core(cursor, user_id, *, display_name=None):
+def _ensure_user_core(cursor, user_id, *, display_name=None, birth_date=None):
     now = datetime.now(timezone.utc)
     cursor.execute("SELECT id, username, first_name, is_staff, is_superuser, is_bot FROM gotrendlabs_users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
@@ -757,10 +759,10 @@ def _ensure_user_core(cursor, user_id, *, display_name=None):
     cursor.execute(
         """
         INSERT INTO gotrendlabs_user_profiles (user_id, display_name, bio, strong_category, birth_date, sex, is_public, created_at, updated_at)
-        VALUES (%s, %s, '', '', NULL, '', true, %s, %s)
+        VALUES (%s, %s, '', '', %s, '', true, %s, %s)
         ON CONFLICT (user_id) DO NOTHING
         """,
-        (user_id, profile_name, now, now),
+        (user_id, profile_name, birth_date or PREPRODUCTION_DEFAULT_BIRTH_DATE, now, now),
     )
     if is_operator:
         _ensure_wallet_balance(cursor, user_id)
@@ -4255,6 +4257,24 @@ def _record_event(cursor, event_type, *, user_id=None, email="", provider="", ip
     )
 
 
+def _validate_adult_birth_date(birth_date, *, today=None):
+    current_date = today or date.today()
+    if birth_date > current_date:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "invalid_birth_date", "message": "Data de nascimento não pode ser futura."},
+        )
+    age = current_date.year - birth_date.year - (
+        (current_date.month, current_date.day) < (birth_date.month, birth_date.day)
+    )
+    if age < MINIMUM_ACCOUNT_AGE:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": "minimum_age_required", "message": "A GoTrendLabs é exclusiva para maiores de 18 anos."},
+        )
+    return birth_date
+
+
 def _create_session(cursor, user_id, request):
     token = issue_token()
     expires_at = datetime.now(timezone.utc) + SESSION_TTL
@@ -4350,6 +4370,8 @@ def _social_email_pending_token(profile, referral_code):
         "subject": profile.subject,
         "display_name": profile.display_name,
         "preferred_language": profile.preferred_language or "pt-br",
+        "email": profile.email or "",
+        "email_verified": bool(profile.email_verified),
         "referral_code": referral_code or "",
         "iat": now,
         "exp": now + SOCIAL_EMAIL_PENDING_TTL_SECONDS,
@@ -4374,18 +4396,20 @@ def _social_profile_from_pending_token(pending_token, email):
     subject = str(payload.get("subject") or "")
     if provider not in {"google", "facebook", "x"} or not subject:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Login social pendente inválido.")
+    original_email = str(payload.get("email") or "").lower()
+    supplied_email = str(email).lower()
     profile = SocialProfile(
         provider=provider,
         subject=subject,
-        email=str(email).lower(),
-        email_verified=False,
+        email=supplied_email,
+        email_verified=bool(payload.get("email_verified")) and supplied_email == original_email,
         display_name=str(payload.get("display_name") or email),
         preferred_language=str(payload.get("preferred_language") or "pt-br"),
     )
     return profile, str(payload.get("referral_code") or "")
 
 
-def _create_social_user(cursor, profile, referral_code, now):
+def _create_social_user(cursor, profile, referral_code, birth_date, now):
     handle = _unique_handle(cursor, profile.display_name or profile.email)
     cursor.execute("SELECT email_enabled FROM gotrendlabs_site_config WHERE singleton_key = 1")
     site_config = cursor.fetchone()
@@ -4417,7 +4441,7 @@ def _create_social_user(cursor, profile, referral_code, now):
         ),
     )
     user = cursor.fetchone()
-    _ensure_user_core(cursor, user["id"], display_name=profile.display_name)
+    _ensure_user_core(cursor, user["id"], display_name=profile.display_name, birth_date=birth_date)
     _award_referral_bonus(cursor, referral_code, user["id"])
     _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
     should_process_email = False
@@ -4451,9 +4475,10 @@ def _social_auth_response(cursor, profile, payload, request):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail={
-                "code": "social_email_required",
-                "message": "Informe um email para concluir o login social.",
+                "code": "social_profile_required",
+                "message": "Informe email e data de nascimento para concluir o cadastro social.",
                 "pending_token": _social_email_pending_token(profile, getattr(payload, "referral_code", "")),
+                "email": "",
             },
         )
     user = _social_user_by_email(cursor, profile.email)
@@ -4467,7 +4492,25 @@ def _social_auth_response(cursor, profile, payload, request):
             )
         _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
     else:
-        user, should_process_email = _create_social_user(cursor, profile, getattr(payload, "referral_code", ""), now)
+        birth_date = getattr(payload, "birth_date", None)
+        if birth_date is None:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "code": "social_profile_required",
+                    "message": "Informe a data de nascimento para concluir o cadastro social.",
+                    "pending_token": _social_email_pending_token(profile, getattr(payload, "referral_code", "")),
+                    "email": profile.email,
+                },
+            )
+        _validate_adult_birth_date(birth_date)
+        user, should_process_email = _create_social_user(
+            cursor,
+            profile,
+            getattr(payload, "referral_code", ""),
+            birth_date,
+            now,
+        )
         is_new_user = True
         _record_event(cursor, "register", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=_client_meta(request)[0], user_agent=_client_meta(request)[1])
     cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
@@ -7656,6 +7699,7 @@ def register(payload: RegisterPayload, request: Request):
     _enforce_rate_limit("register", _rate_limit_identity(request, payload.email), limit=10, window_seconds=3600)
     if not payload.terms_accepted:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="É preciso aceitar a política de uso para criar conta.")
+    _validate_adult_birth_date(payload.birth_date)
     _ensure_human_verification(payload, request)
 
     language = payload.language if payload.language in {"pt-br", "en"} else "pt-br"
@@ -7701,7 +7745,12 @@ def register(payload: RegisterPayload, request: Request):
                 ),
             )
             user = cursor.fetchone()
-            _ensure_user_core(cursor, user["id"], display_name=payload.display_name.strip())
+            _ensure_user_core(
+                cursor,
+                user["id"],
+                display_name=payload.display_name.strip(),
+                birth_date=payload.birth_date,
+            )
             _award_referral_bonus(cursor, payload.referral_code, user["id"])
             session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "register", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
@@ -7959,7 +8008,12 @@ def social_login_complete_email(provider: str, payload: SocialAuthCompleteEmailP
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Provedor social inconsistente.")
     with get_connection() as connection:
         with connection.cursor() as cursor:
-            response, should_process_email, _ = _social_auth_response(cursor, profile, SimpleNamespace(referral_code=referral_code), request)
+            response, should_process_email, _ = _social_auth_response(
+                cursor,
+                profile,
+                SimpleNamespace(referral_code=referral_code, birth_date=payload.birth_date),
+                request,
+            )
     if should_process_email:
         _process_immediate_auth_email_now()
     return response
@@ -8178,8 +8232,12 @@ def update_me(payload: ProfileUpdatePayload, authorization: str = Header(default
                 cursor.execute("UPDATE gotrendlabs_users SET preferred_language = %s WHERE id = %s", (language, user["id"]))
                 user["preferred_language"] = language
             if "birth_date" in payload.model_fields_set:
-                if payload.birth_date and payload.birth_date > date.today():
-                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Data de nascimento não pode ser futura.")
+                if payload.birth_date is None:
+                    raise HTTPException(
+                        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                        detail={"code": "birth_date_required", "message": "Data de nascimento é obrigatória."},
+                    )
+                _validate_adult_birth_date(payload.birth_date)
                 updates.append("birth_date = %s")
                 values.append(payload.birth_date)
             if "sex" in payload.model_fields_set:

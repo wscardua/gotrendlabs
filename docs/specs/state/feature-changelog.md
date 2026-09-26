@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-09-19 — FEAT-AUTH-001 maioridade obrigatória
+
+- Cadastro humano por senha e por provedor social passa a exigir `birth_date` privada e aceita somente pessoas com 18 anos completos, com decisão autoritativa na FastAPI.
+- Django web e Flutter coletam a data, exibem a política etária e preservam mensagens seguras do backend; perfil não permite remover a data nem alterá-la para uma condição de menoridade.
+- Migration pré-produção preenche perfis legados sem nascimento com `1990-01-01` antes de tornar a coluna obrigatória; a versão fixa da política passa a `2026-09-19`.
+- No Flutter, cadastro e perfil reutilizam o formatador `DD/MM/AAAA`, enviam `YYYY-MM-DD` à FastAPI e bloqueiam data vazia ou inválida antes do envio sem duplicar a decisão autoritativa de maioridade.
+
 ## 2026-09-19 — FEAT-OPSLOG-001 conexão do daemon entre ciclos
 
 - O comando contínuo `run_gotrendlabs_daemon` passa a revalidar conexões Django antes e depois de cada ciclo, evitando que as outboxes de email e push reutilizem uma conexão PostgreSQL encerrada durante o intervalo de 300 segundos.

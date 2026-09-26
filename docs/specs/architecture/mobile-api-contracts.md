@@ -128,6 +128,13 @@ Requisitos mobile:
 - reCAPTCHA v2 continua sendo o mecanismo web; o desafio mobile e usado apenas para clientes com `X-GoTrendLabs-Client: mobile`
 - usuario autenticado nao precisa de desafio para feedback/sugestao
 
+## Maioridade no cadastro
+
+- `POST /auth/register` exige `birth_date` no formato `YYYY-MM-DD` para contas humanas.
+- A FastAPI aceita somente pessoa com 18 anos completos e retorna erro de validacao previsivel para data ausente, futura ou menoridade.
+- Flutter coleta a data e a envia; qualquer validação local serve apenas à UX e não substitui a decisão do backend.
+- A data permanece privada e não integra perfil público.
+
 ## Contratos de leitura publica
 
 ### Feed de mercados

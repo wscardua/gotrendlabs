@@ -65,6 +65,7 @@
 - A tela autenticada de perfil deve preencher campos com dados reais retornados por `/users/me`, priorizando `gotrendlabs_user_profiles.display_name` para o nome editável.
 - A tela autenticada de perfil deve renderizar o prefixo `@` do identificador como parte fixa da UI, permitindo edição apenas do nome do handle e enviando valor normalizado ao backend.
 - A UI de perfil não deve exibir dados privados em blocos públicos/resumo; email, data de nascimento, sexo e bio aparecem somente como campos editáveis do usuário autenticado.
+- Cadastro web e conclusão de cadastro social coletam `birth_date`, explicam o limite de 18 anos e apresentam os erros retornados pela FastAPI; o Django não calcula maioridade como fonte de verdade.
 - A indicação bonificada deve aparecer como componente contextual na carteira e no perfil autenticado, usando o código retornado por `/users/me/referral`; a UI não calcula elegibilidade nem concede bônus.
 - Quando um visitante chega com `?ref=...`, o Django pode preservar o código em sessão e enviá-lo no cadastro; links sociais de mercado/resultado para usuário autenticado podem carregar `ref`, mas a validação e crédito permanecem no backend.
 - O ticket de previsão deve iniciar sem opção marcada, orientar a seleção explícita e usar controle nativo obrigatório para impedir confirmação ambígua.

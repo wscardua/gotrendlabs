@@ -1557,6 +1557,7 @@ Esta é uma decisão em aberto e deve ser fechada antes da implementação do ba
 - Django deve reutilizar o contexto autenticado para páginas e ações protegidas;
 - não deve existir sistema duplo e concorrente de autenticação;
 - usuário pode criar conta;
+- criação de conta humana exige data de nascimento e é permitida somente para pessoas com 18 anos completos, com validação autoritativa no FastAPI;
 - criação de conta pode exigir reCAPTCHA v2 checkbox quando a proteção anti-abuso estiver configurada;
 - usuário pode fazer login;
 - usuário pode se registrar e autenticar com provedores sociais suportados;
@@ -1614,7 +1615,7 @@ Observação: a arquitetura deve permitir adicionar outros provedores no futuro 
 
 - exibir carteira com saldo disponível, saldo bloqueado, ganhos, cargas de `GTL Credits` e extrato;
 - exibir reputação;
-- permitir edição privada e opcional, na própria tela de perfil, de email, idioma, bio, data de nascimento (`birth_date`, formato `YYYY-MM-DD`) e sexo (`male`, `female`, `other`, `prefer_not_to_say`);
+- permitir edição privada, na própria tela de perfil, de email, idioma, bio, data de nascimento obrigatória (`birth_date`, formato `YYYY-MM-DD`, sempre compatível com 18 anos completos) e sexo opcional (`male`, `female`, `other`, `prefer_not_to_say`);
 - não expor email, data de nascimento, sexo nem metadados privados no perfil público;
 - exibir total de previsões;
 - exibir taxa de acerto;
