@@ -5,18 +5,20 @@ Use este arquivo como memória operacional de processos em andamento, concluído
 ## WFLOW-20260919-ADULT-ONLY-AUTH-025
 
 - Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: `FEAT-AUTH-001`, `FEAT-MOBILE-001`
 - Objetivo: restringir a criação de contas humanas a pessoas com 18 anos completos, usando data de nascimento obrigatória e validação autoritativa na FastAPI em cadastro por senha e social.
-- Etapa atual: specs, migration, contratos, implementação web/API/mobile, revisão de branch, regressão automatizada e QA físico Android concluídos localmente; aguardando PR, CI, deploy e smoke produtivo.
+- Etapa atual: implementação integrada, migration aplicada e validada em produção na API/web; fluxo mobile validado no Galaxy S20 contra o contrato publicado.
 - Artefatos afetados: spec funcional, feature de autenticação, arquiteturas backend/web/mobile, política de uso, schema/modelo/migration de perfil, contratos FastAPI/OpenAPI, cadastro Django/Flutter, OAuth social, testes e memória operacional.
 - Decisões: `birth_date` passa a ser obrigatória e privada para contas humanas; maioridade é calculada pela FastAPI por data civil com limite de 18 anos completos; perfis pré-produção sem nascimento recebem `1990-01-01` em migration e não haverá fluxo de regularização de legado; contas técnicas internas criadas fora do cadastro público usam o mesmo fallback pré-produção; UI pode validar formato/completude, mas não decide elegibilidade.
 - Reversão lógica: reverter contrato/UI e tornar a coluna novamente anulável em migration posterior; não apagar datas já coletadas.
 - Arquitetura e segurança: FastAPI permanece autoridade única da maioridade; Django/Flutter apenas coletam e exibem; não houve mudança de fronteira que exija ADR; nascimento continua ausente de contratos públicos.
-- Evidências: suíte Django/FastAPI completa com 255 testes aprovada usando `BACKEND_API_URL` isolada do servidor local; 3 testes focados adicionais de limite exato, menoridade, perfil, OAuth e formulário web aprovados após os últimos ajustes; revisão de branch corrigiu a possibilidade de limpar `birth_date` no perfil mobile; `flutter analyze` sem issues e 106 testes Flutter aprovados; cadastro e edição de perfil foram validados no Galaxy S20 físico com formato `DD/MM/AAAA`, normalização para `YYYY-MM-DD` e bloqueio local de data vazia; OpenAPI regenerado e validado; `manage.py check`, `makemigrations --check --dry-run`, `sqlmigrate accounts 0022`, compilação Python e `git diff --check` aprovados.
+- Evidências locais: suíte Django/FastAPI completa com 255 testes aprovada usando `BACKEND_API_URL` isolada do servidor local; 3 testes focados adicionais de limite exato, menoridade, perfil, OAuth e formulário web aprovados após os últimos ajustes; revisão de branch corrigiu a possibilidade de limpar `birth_date` no perfil mobile; `flutter analyze` sem issues e 106 testes Flutter aprovados; cadastro e edição de perfil foram validados no Galaxy S20 físico com formato `DD/MM/AAAA`, normalização para `YYYY-MM-DD` e bloqueio local de data vazia; OpenAPI regenerado e validado; `manage.py check`, `makemigrations --check --dry-run`, `sqlmigrate accounts 0022`, compilação Python e `git diff --check` aprovados.
+- Evidências de publicação: PR `#121` mergeada em `main` pelo merge commit `340ea869ea66891d2dc0f7bd262107b76f72e21c`; GitHub Actions `GoTrendLabs CI and Deploy` run `36246617456` concluiu teste e deploy com sucesso; o deploy executou a migration `accounts 0022` antes de subir os serviços.
+- Evidências de produção: `/api/health` respondeu `status=ok`, `maintenance.web_enabled=false`, `maintenance.mobile_enabled=false`, `checks.api=ok` e `checks.database=ok`; OpenAPI exige `birth_date` nos contratos de cadastro por senha e conclusão social; cadastro sem nascimento, com nascimento futuro e de menor de idade retornou `422`, usando `code=minimum_age_required` no caso de menoridade; a data de limite exato de 18 anos ultrapassou a validação etária e foi interrompida no aceite de política, sem criação de conta. Após autorização explícita do proprietário, a manutenção web foi desativada via SSM `cc54c81d-a0cb-4dc3-9a9e-4f8eb563f79e`; home, `/register/` e `/use-policy/` responderam `HTTP 200`, e cadastro/política exibiram data obrigatória, aviso de 18 anos completos e privacidade do nascimento.
 - Iniciado em: 2026-09-19
 - Atualizado em: 2026-09-26
-- Próxima ação: publicar a branch, integrar a PR após CI verde, acompanhar o deploy produtivo, aplicar a migration e concluir smoke de cadastro por senha/social, política pública e contrato mobile; então promover este workflow para `concluido` com as evidências remotas.
+- Encerrado em: 2026-09-26
 
 ## WFLOW-20260919-DAEMON-DB-CONNECTIONS-024
 
