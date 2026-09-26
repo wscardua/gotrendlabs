@@ -3,7 +3,7 @@ id: FEAT-EDITORIAL-001
 titulo: "Governança editorial de mercados"
 versao: 1.2
 status_spec: aprovada
-status_impl: implementada_aguardando_deploy
+status_impl: implementada_validada
 ultima_atualizacao: 2026-09-26
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
@@ -28,7 +28,7 @@ aprovacao: versao_1_2_aprovada_pelo_usuario_em_2026-09-26
 
 Estabelecer um processo operacional reutilizável de seleção, redação, revisão, publicação e acompanhamento de mercados de previsão, com consulta para staff no Admin Ops e critérios versionados que possam ser reutilizados em uma evolução futura de IA.
 
-O usuário aprovou a versão editorial `1.2` em 2026-09-26. Ela inclui [manual editorial](../../editorial/manual-editorial.md), [ficha de mercado](../../editorial/ficha-de-mercado.md), [checklist de publicação](../../editorial/checklist-de-publicacao.md), critérios de aceite e referências nas specs. A implementação local oferece consulta somente leitura no Admin Ops e critérios versionados. O escopo desta feature está implementado e validado localmente; `implementada_aguardando_deploy` registra que CI, implantação e smoke produtivo ainda precisam ocorrer. Avaliação assistida por IA e registro estruturado de pareceres pertencem a uma evolução futura separada.
+O usuário aprovou a versão editorial `1.2` em 2026-09-26. Ela inclui [manual editorial](../../editorial/manual-editorial.md), [ficha de mercado](../../editorial/ficha-de-mercado.md), [checklist de publicação](../../editorial/checklist-de-publicacao.md), critérios de aceite e referências nas specs. A implementação oferece consulta somente leitura no Admin Ops e critérios versionados. O escopo desta feature foi integrado pela PR `#124`, implantado e validado em produção em 2026-09-26. Avaliação assistida por IA e registro estruturado de pareceres pertencem a uma evolução futura separada.
 
 Permanecem fora do escopo: modelos/migrations, parecer persistido, avaliação por IA, aprovação por API, publicação automática, alteração de mercados reais, telemetria, notificações e mudança de ranking/destaque do feed. Não há piloto, metas de volume ou distribuição temática nesta versão. O manual orienta o acompanhamento dos indicadores disponíveis, sem criar telemetria.
 
@@ -97,7 +97,7 @@ Antes de acrescentar informações confidenciais ao editorial ou exigir privacid
 | Indicador de retorno não disponível | Registrar indisponibilidade, sem usar views como substituto |
 | Ficha completa e checagens atuais | Aprovação editorial; publicação ainda pelo fluxo staff |
 
-Evidência de aceite: leitura cruzada de manual/ficha/checklist/contratos, paridade E01–E11 entre checklist e JSON, links locais, frontmatter e rastreabilidade; testes Django de acesso visitante/staff/usuário comum, GET exclusivo, escape de HTML, navegação no editor e renderização dos três documentos; `manage.py check`, OpenAPI `--check` e `git diff --check`. A validação produtiva exige CI/deploy bem-sucedidos e smoke da rota autenticada como staff. Registrar o resultado no workflow.
+Evidência de aceite: leitura cruzada de manual/ficha/checklist/contratos, paridade E01–E11 entre checklist e JSON, links locais, frontmatter e rastreabilidade; testes Django de acesso visitante/staff/usuário comum, GET exclusivo, escape de HTML, navegação no editor e renderização dos três documentos; `manage.py check`, OpenAPI `--check` e `git diff --check`. A PR `#124` passou no CI e no deploy produtivo da GitHub Action `36275879637`; o smoke público retornou `302` para login, e a renderização dos três documentos com sessão staff retornou `200` no container produtivo. Evidências detalhadas no workflow.
 
 ## Evolução separada
 

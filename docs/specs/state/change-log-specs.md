@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-09-26 — Validação produtiva do editorial
+
+- `FEAT-EDITORIAL-001` promovida a `implementada_validada` após PR `#124`, CI/deploy `36275879637` e smoke produtivo de acesso e renderização dos três documentos para staff. Workflow de fechamento concluído; limites de IA e visibilidade dos arquivos no repositório público preservados.
+
 ## 2026-09-26 — Fechamento do escopo editorial
 
 - FEAT-EDITORIAL-001 passa a `implementada_aguardando_deploy`: conteúdo aprovado, consulta staff e critérios versionados implementados com testes locais e validação visual. Avaliação IA e parecer persistido são evolução separada; produção será marcada validada apenas depois de CI/deploy/smoke.
