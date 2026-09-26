@@ -4,7 +4,7 @@
 
 - explicitado em UX e aceite mobile que `birth_date` permanece obrigatória também na edição do perfil, sem ação de limpeza, com entrada `DD/MM/AAAA` normalizada para o contrato `YYYY-MM-DD`;
 - mantida a FastAPI como autoridade exclusiva da maioridade; a validação Flutter continua limitada a presença e formato para UX;
-- atualizado o workflow de maioridade com revisão de branch, 106 testes Flutter e QA físico no Galaxy S20, mantendo o encerramento final condicionado a PR, CI, deploy e smoke produtivo.
+- encerrado o workflow de maioridade após revisão de branch, 106 testes Flutter, QA físico no Galaxy S20, PR `#121`, CI/deploy `36246617456`, migration e smokes produtivos de API, web, política pública e contrato mobile.
 
 ## 2026-09-19
 

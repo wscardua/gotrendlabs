@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-26 — FEAT-AUTH-001 maioridade publicada
+
+- PR `#121` integrada em `main`; CI, suíte completa, migration `accounts 0022` e deploy produtivo concluídos com sucesso no workflow `36246617456`.
+- Smokes produtivos confirmaram `birth_date` obrigatória nos contratos, rejeição de ausência, menoridade e data futura, além da aceitação do limite exato de 18 anos antes das demais regras do cadastro, sem criar conta de teste.
+- Após autorização do proprietário, a manutenção web foi desativada; home, cadastro e política pública responderam normalmente e exibiram a restrição a pessoas com 18 anos completos.
+
 ## 2026-09-19 — FEAT-AUTH-001 maioridade obrigatória
 
 - Cadastro humano por senha e por provedor social passa a exigir `birth_date` privada e aceita somente pessoas com 18 anos completos, com decisão autoritativa na FastAPI.
