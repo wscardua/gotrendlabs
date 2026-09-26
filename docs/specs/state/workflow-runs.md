@@ -2,6 +2,34 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260926-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-026
+
+- Tipo: `release-prep`
+- Status: `concluido`
+- Feature alvo: `FEAT-MOBILE-001`
+- Objetivo: preparar, submeter e acompanhar o Android App Bundle assinado `1.2.0+14` para uma nova rodada de Google Play Closed testing, usando bases de produção e preservando o canal APK direto do site.
+- Etapa atual: release `14 (1.2.0)` disponível aos testadores selecionados no track `Closed testing - Alpha`, com rollout de 100% para a audiência configurada.
+- Artefatos afetados: `apps/mobile/pubspec.yaml`, `apps/mobile/README.md`, specs mobile, critérios de aceite e memória operacional.
+- Release name preparado: `1.2.0+14 - Closed testing Android`; o envio foi submetido com o nome automático `14 (1.2.0)`.
+- Release notes publicadas no Play Console (`pt-BR`):
+
+```text
+<pt-BR>
+Conheça o GoTrendLabs, uma plataforma social de previsões sobre temas e acontecimentos relevantes. Explore mercados, registre suas previsões com créditos educativos, acompanhe seu desempenho, construa reputação e participe da comunidade. Tudo com resultados transparentes e verificáveis — sem envolver dinheiro real.
+</pt-BR>
+```
+
+- Decisões: `versionCode 14` evita reutilizar builds anteriores; o AAB usa a assinatura release local e não altera `/app/android/latest.json`, o APK ativo `1.0.7 (8)` nem a política produtiva de build mínimo.
+- Pendências: nenhuma para esta rodada de Closed testing; publicação pública/open testing permanece fora do escopo.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Encerrado em: 2026-09-26
+- Retomada: acompanhar instalações e feedback dos testadores pelo canal configurado. O canal direto do site permanece no APK `1.0.7 (8)` e não foi alterado por esta publicação.
+- Reversão operacional: interromper a disponibilidade da release no track Alpha pelo Play Console se surgir regressão crítica; preservar o registro documental e usar um novo `versionCode` para qualquer bundle corretivo.
+- Evidências de validação local: `flutter pub get`; `flutter analyze` sem issues; `flutter test` com 106 testes aprovados; build release com bases `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`; manifest processado com package `br.com.gotrendlabs.gotrendlabs_mobile`, `versionCode=14`, `versionName=1.2.0`, `minSdk=24` e `targetSdk=36`; ABIs `arm64-v8a`, `armeabi-v7a` e `x86_64`; URLs de produção confirmadas nos binários AOT.
+- Evidências do AAB: assinatura verificada por `jarsigner` com certificado de upload `CN=GoTrendLabs, OU=Mobile, O=GoTrendLabs, L=Sao Paulo, ST=SP, C=BR`, fingerprint SHA-256 `3B:54:9C:B7:58:24:73:32:D5:EC:1C:DD:55:22:D3:5F:B1:53:60:D2:40:BD:39:74:E4:C4:AC:1D:4E:2B:E0:5F`; tamanho `57524579` bytes; SHA-256 do bundle `0f87b9634be842f69c0c257b6a41c35313a29750c13ae3cba9cd25068b172a16`.
+- Evidências do Google Play: em 2026-09-26, a visão geral mostrou `14 (1.2.0)` como `Available to testers on Google Play`, `Full rollout`, ativa e habilitada em 177 países/regiões; os detalhes confirmaram `Available to selected testers`, rollout de 100% e publicação às 11:54. O App Bundle `Enhanced` inclui ReTrace mapping e símbolos nativos, API mínima 24, target SDK 36, quatro layouts, três ABIs e um recurso obrigatório; entrega estimada de `9.83 MB` em nova instalação e `2.24 MB` em atualização; o bundle 11 foi desativado. As notas gerais em `pt-BR` estão presentes no Console. Testadores usam o Google Group `gotrendlabs-testers@googlegroups.com`, feedback aponta para `https://gotrendlabs.com.br/feedback/` e adesão web usa `https://play.google.com/apps/testing/br.com.gotrendlabs.gotrendlabs_mobile`.
+
 ## WFLOW-20260919-ADULT-ONLY-AUTH-025
 
 - Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
