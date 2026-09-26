@@ -2,6 +2,114 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260926-EDITORIAL-CLOSEOUT-032
+
+- Tipo: `implementation-cycle` + `test-review-cycle` + fechamento de feature.
+- Status: `em_andamento`
+- Feature alvo: `FEAT-EDITORIAL-001`.
+- Objetivo: fechar o escopo aprovado (manual/ficha/checklist e consulta staff no Admin Ops), publicar via PR e comprovar funcionamento em produção.
+- Etapa atual: documentação e testes locais concluídos; preparar commit/push e aguardar autorização do usuário para criar PR depois de apresentar a descrição.
+- Artefatos afetados: feature spec, status, arquitetura Admin Ops, changelogs, integration map, known-gaps, README, código Django/CSS, requisitos, testes e workflow.
+- Decisão: avaliação por IA, parecer estruturado e gate autoritativo não integram esta feature; serão evolução futura. O usuário aceitou manter o conteúdo editorial no repositório público, com a limitação registrada na spec.
+- Fronteiras: Django apresenta material versionado somente a staff; FastAPI continua autoridade de domínio; sem alteração de OpenAPI, banco, migrações, mobile ou fórmulas. Nenhum ADR necessário.
+- Validação local: 261 testes passaram com `BACKEND_API_URL=http://127.0.0.1:9`, isolando a API local de desenvolvimento; os três testes web que falharam na primeira execução haviam recebido um mercado já resolvido dessa API e passaram no isolamento. OpenAPI `--check`, `manage.py check`, `makemigrations --check --dry-run`, links locais e `git diff --check` aprovados; visual do Admin Ops aprovado pelo usuário.
+- Estado de implementação: `implementada_aguardando_deploy`; promover a `implementada_validada` somente após CI/deploy/smoke produtivo e atualizar memória em mudança documental posterior, se necessário.
+- Pendências: commit/push, autorização de PR, merge, GitHub Actions e smoke produtivo.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Próxima ação: fazer commit/push da branch e exibir título/descrição da PR antes de submetê-la.
+
+## WFLOW-20260926-EDITORIAL-ADMIN-031
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`
+- Status: `concluido_local`
+- Feature alvo: `FEAT-EDITORIAL-001`
+- Objetivo: disponibilizar editorial aprovado no Admin Ops local e critérios estruturados para futura avaliação de mercados por IA.
+- Etapa atual: implementação local concluída; disponível em `http://127.0.0.1:8000/admin-ops/editorial/` para avaliação do usuário.
+- Artefatos afetados: Django Admin Ops, conteúdo editorial versionado, requisitos, testes e estado documental.
+- Limites: consulta read-only, sem avaliação por IA, parecer persistido ou publicação automática; nenhuma operação em produção.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Implementação: rota GET staff, manual/checklist/ficha renderizados do repositório, critérios JSON v1.2, menu, lista e atalhos no editor, CSS responsivo e dependência Markdown.
+- Arquitetura e segurança: Django apenas lê o editorial e apresenta orientações; `admin_api_required`, GET exclusivo, escape de HTML bruto e `Cache-Control: private, no-store`. FastAPI continua responsável por mercado/publicação; nenhuma avaliação IA ou parecer persistido.
+- Evidência local: 7 testes focados passaram (`tests.test_editorial_admin` e smoke real do editor); `manage.py check`, OpenAPI `--check` e `git diff --check` passaram. O banco de testes pré-existente foi reutilizado com `--keepdb`; não foi removido. `curl` confirmou redirect ao login no Django e `200` no health FastAPI.
+- Ambiente para avaliação: PostgreSQL local já saudável; Django em `127.0.0.1:8000` e FastAPI em `127.0.0.1:8001` iniciados nesta sessão. Sem deploy ou alteração de mercados.
+- Pendências: avaliação visual/funcional pelo usuário e revisão em PR antes de qualquer publicação. Automação de IA continua como evolução futura, fora do escopo.
+- Atualizado em: 2026-09-26
+- Encerrado localmente em: 2026-09-26
+- Próxima ação: usuário testar a página como staff e retornar ajustes, se houver.
+
+## WFLOW-20260926-EDITORIAL-030
+
+- Tipo: `promote-spec`
+- Status: `concluido`
+- Feature alvo: `FEAT-EDITORIAL-001`, versão `1.2`
+- Objetivo: registrar aprovação explícita do usuário à versão documental vigente.
+- Decisão: spec `aprovada`; implementação permanece `documentada`. Integração Admin Ops e IA será uma evolução separada.
+- Artefatos afetados: frontmatter e escopo da feature, implementation-status, changelogs e workflow.
+- Validação: escopo, dependências, responsabilidades, contratos revisados e critérios de aceite conferidos; promoção sem mudança de conteúdo editorial, runtime ou contratos; `git diff --check` aprovado.
+- Arquitetura: consultadas estrutura de navegação/editor Admin Ops e integração LLM existente para fundamentar recomendação; nenhuma alteração no site ou chamada a provedor.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Encerrado em: 2026-09-26
+- Próxima ação: definir evolução de consulta administrativa e pacote editorial versionado para avaliação assistida, sem presumir implementação ou aprovação automática.
+
+## WFLOW-20260926-EDITORIAL-029
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-EDITORIAL-001`
+- Objetivo: organizar o editorial pela construção de mercados de previsão, incluir contexto inicial sobre mercados/opções, separar checklist de publicação e planejamento de categorias, e agrupar indicadores por participação e qualidade.
+- Artefatos afetados: manual, ficha, checklist, spec editorial, origem funcional, README e memória operacional.
+- Decisões: usar mercado de previsão como termo do produto; explicar opções como respostas possíveis. Diversidade orienta catálogo, sem cotas obrigatórias para aprovar um mercado.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Entrega: manual/ficha/checklist v1.2 com contexto de mercados de previsão e opções de resposta, seis etapas, planejamento de categorias separado e indicadores agrupados por participação e qualidade.
+- Validação: `.venv/bin/python` verificou 27 links locais novos/alterados, sequência das seis etapas, introdução antes do processo, grupos de indicadores, correspondência E01–E11 e remoção das cotas/piloto nos guias; `git diff --check` aprovado. Leitura cruzada preservou definição protegida, prazo de correção e selagem.
+- Arquitetura e testes: alteração documental, sem contratos novos ou mudanças de domínio. Aceite ampliado para definição do produto, fonte/critério acima do consenso e ausência de cotas de aprovação. Não requer ADR, testes de runtime ou deploy.
+- Estado: origem funcional, spec, arquitetura Admin Ops, README, integration map, status e changelogs sincronizados. Nenhuma pendência desta entrega.
+- Encerrado em: 2026-09-26
+- Próxima ação: revisar conteúdo em PR; uso operacional e automação permanecem separados desta entrega.
+
+## WFLOW-20260926-EDITORIAL-028
+
+- Tipo: `change-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-EDITORIAL-001`
+- Objetivo: reescrever manual e ficha para staff sem conhecimento técnico, explicar regras com exemplos e substituir o piloto por acompanhamento dos indicadores.
+- Artefatos afetados: manual, ficha, spec editorial e memória operacional.
+- Decisão: preservar regras de publicação/integridade; linguagem técnica permanece na spec. Remover metas de cadência, duração e distribuição temática do piloto.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Entrega: manual/ficha v1.1 com exemplos e orientações para staff; nomes de campos e contratos concentrados na spec; seção de indicadores sem metas de piloto.
+- Validação: `.venv/bin/python` verificou 9 links locais, correspondência E01–E11, remoção do piloto e ausência dos termos técnicos revisados no manual/ficha; leitura cruzada preservou regras de integridade e publicação. `git diff --check` aprovado.
+- Arquitetura e testes: sem alteração de contrato ou runtime; sem necessidade de ADR ou testes executáveis novos. Critérios de aceite ampliados para compreensão por staff e dados indisponíveis.
+- Estado: changelogs, status e lacunas atualizados. Nenhuma pendência desta revisão documental.
+- Encerrado em: 2026-09-26
+- Próxima ação: revisão do conteúdo pelo usuário; publicação/automação continuam fora desta entrega.
+
+## WFLOW-20260926-EDITORIAL-027
+
+- Tipo: `new-feature`
+- Status: `concluido`
+- Feature alvo: `FEAT-EDITORIAL-001`
+- Objetivo: entregar manual editorial, ficha reutilizável e critérios de revisão/publicação como processo operacional documentado.
+- Etapa atual: entrega documental concluída localmente; manual, ficha, spec e referências integrados.
+- Artefatos afetados: spec funcional, feature editorial, manual e ficha em `docs/editorial/`, README, arquitetura Admin Ops e memória operacional.
+- Escopo: documentação; sem novos campos, endpoints, bloqueio automático de publicação ou alterações de mercados.
+- Base: `origin/main` atualizada por fetch, commit `6f156cc`, branch `feat/editorial-market-guidelines`.
+- Iniciado em: 2026-09-26
+- Atualizado em: 2026-09-26
+- Encerrado em: 2026-09-26
+- Arquitetura e segurança: revisadas com as skills software-architect/architecture-guard; FastAPI preserva autoridade, definição assinada não muda e selagem mantém correções append-only. Sem mudança estrutural, ADR, schema ou contrato.
+- Aceite: estratégia de testes revisada com test-strategy; cenários de fonte inválida, duplicidade, ambiguidade, prazo incorreto, edição pós-parecer e correção pós-selagem documentados na feature e confrontados com manual/ficha.
+- Validação: Python do ambiente `.venv` existente verificou 18 links locais novos/alterados, paridade E01–E11, campos de frontmatter e escopo docs-only; `git diff --check` aprovado. Leitura cruzada dos contratos de ciclo de vida/integridade realizada. Sem testes de runtime ou deploy, pois não há código alterado.
+- Checklist universal: origem, dependências, feature-changelog, change-log-specs, implementation-status, integration-map e known-gaps sincronizados; contratos revisados sem alteração; nenhuma pendência para a entrega documental.
+- Limites: nenhum mercado real criado/publicado, nenhuma consulta de métricas de produção e nenhuma alegação de gate automático. Parecer estruturado, enforcement e telemetria são evolução opcional separada.
+- Próxima ação: revisar a entrega em PR; para operar uma pauta, copiar a ficha e aplicar o manual. Automação futura exige ciclo próprio.
+- Reversão lógica: registrar revisão posterior do manual/spec e atualizar referências; preservar este histórico.
+- Alterações locais pré-existentes preservadas: diretórios não rastreados `apps/mobile/ios/Runner.xcworkspace/xcshareddata/swiftpm/` e `apps/mobile/store-assets/`.
+
 ## WFLOW-20260926-MOBILE-GOOGLE-PLAY-CLOSED-TESTING-026
 
 - Tipo: `release-prep`

@@ -6,6 +6,12 @@
     <div class="panel">
       <span class="eyebrow">Editor operacional</span>
       <h1 class="large-title">{{ title }}</h1>
+      <nav class="editorial-form-links" aria-label="Orientações editoriais" data-editorial-links>
+        <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}" target="_blank" rel="noopener">Consultar editorial<span class="sr-only"> (abre nova aba)</span></a>
+        <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}?view=checklist#E04" target="_blank" rel="noopener">Pergunta e opções<span class="sr-only"> (abre nova aba)</span></a>
+        <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}?view=checklist#E06" target="_blank" rel="noopener">Fonte<span class="sr-only"> (abre nova aba)</span></a>
+        <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}?view=checklist#E07" target="_blank" rel="noopener">Prazos<span class="sr-only"> (abre nova aba)</span></a>
+      </nav>
       {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
       {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
       {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}

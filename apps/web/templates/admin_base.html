@@ -10,7 +10,7 @@
   <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml">
   <meta name="theme-color" content="#F4F2E9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
-  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260906-admin-integrity-audit">
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260926-editorial-reference">
   <script src="{% static 'js/gotrendlabs.js' %}?v=20260611-email-preview-footer" defer></script>
 </head>
 <body>
@@ -35,6 +35,7 @@
         <a class="nav-link {% if 'taxonomy' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>
         <a class="nav-link {% if 'badge' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-badges' %}">Badge</a>
         <a class="nav-link {% if 'market' in request.resolver_match.url_name and 'resolution' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-markets' %}">Mercado</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-editorial' %}active{% endif %}" href="{% url 'admin-ops-editorial' %}">Editorial</a>
         <a class="nav-link {% if 'resolution' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-resolution' %}">Resolução</a>
         <a class="nav-link {% if 'moderation' in request.resolver_match.url_name or 'queue' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Filas</a>
         <a class="nav-link {% if 'system-log' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-system-logs' %}">Logs</a>

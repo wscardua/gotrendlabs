@@ -148,3 +148,11 @@
 - Dashboard exibe saúde dos agentes IA com último ciclo, último sucesso, erro recente, ações 24h e estado das flags principais.
 - Auditoria de agentes IA usa blocos de 10 ações com `Carregar mais`, filtros por agente, mercado, tipo, status, período e motivo, além de tela de detalhe focada em contexto, payload resumido, hash/versão de prompt e vínculos com comentário/previsão.
 - Denúncias por usuários, moderação avançada, comunicações assíncronas de resolução, gestão de operadores e ajuste manual de reputação permanecem fora desta fatia.
+
+## Processo editorial documentado
+
+A [FEAT-EDITORIAL-001](../features/editorial-governance.md) orienta a revisão humana antes de publicar pelos fluxos staff existentes. O operador utiliza o [manual](../../editorial/manual-editorial.md) e o [checklist de publicação](../../editorial/checklist-de-publicacao.md), mantém a [ficha](../../editorial/ficha-de-mercado.md) em registro restrito e referencia sua versão em `admin_notes` do rascunho. Os documentos têm consulta read-only no Admin Ops; checklist preenchido e parecer não possuem UI/persistência estruturada ou gate de API nesta entrega. A aprovação operacional não substitui validações FastAPI nem a definição assinada; critérios completos devem constar no conteúdo público do mercado.
+
+## Consulta editorial no Admin Ops
+
+Admin Ops apresenta `/admin-ops/editorial/` ao staff, com manual, checklist e ficha renderizados dos arquivos versionados. O editor de mercado abre a consulta em nova aba por links contextuais. `criteria-v1.2.json` mantém os IDs E01–E11 legíveis por software e sincronizados por teste com o checklist. A interface não executa IA, não registra parecer estruturado e não muda as validações FastAPI de publicação. Avaliação futura deverá pertencer à autoridade de domínio da FastAPI.

@@ -1,0 +1,107 @@
+{
+  "version": "1.2",
+  "status": "approved",
+  "approved_on": "2026-09-26",
+  "source": "docs/editorial/checklist-de-publicacao.md",
+  "criteria": [
+    {
+      "id": "E01",
+      "question": "A resposta ainda é desconhecida e o assunto interessa ao público?",
+      "evidence": "Última consulta e motivo da escolha",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "1"
+    },
+    {
+      "id": "E02",
+      "question": "O conteúdo respeita as pessoas e a proposta educativa?",
+      "evidence": "Cuidados necessários, avisos e eventuais conflitos",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "1"
+    },
+    {
+      "id": "E03",
+      "question": "Conferimos se já existe uma pergunta equivalente?",
+      "evidence": "Onde e quando pesquisamos; mercados semelhantes encontrados",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "1"
+    },
+    {
+      "id": "E04",
+      "question": "O leitor entenderá a mesma pergunta no título e nas regras?",
+      "evidence": "Dúvidas encontradas e texto final conferido",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "2"
+    },
+    {
+      "id": "E05",
+      "question": "Conseguiremos indicar uma única opção vencedora?",
+      "evidence": "Condição para cada resposta, incluindo empate quando possível",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "3"
+    },
+    {
+      "id": "E06",
+      "question": "Abrimos a fonte e ela permitirá comprovar a resposta?",
+      "evidence": "Endereço, informação localizada, responsável e data da consulta",
+      "publication_blocking": true,
+      "source_access_required": true,
+      "manual_section": "4"
+    },
+    {
+      "id": "E07",
+      "question": "Os prazos estão claros e permitem participar antes de conhecer a resposta?",
+      "evidence": "Horários, fuso e plano de acompanhamento",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "3"
+    },
+    {
+      "id": "E08",
+      "question": "Sabemos o que fazer se houver um imprevisto?",
+      "evidence": "Regras de adiamento, indisponibilidade e demais situações possíveis",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "3"
+    },
+    {
+      "id": "E09",
+      "question": "Categoria, imagem, avisos e traduções estão corretos?",
+      "evidence": "Conferência da página que o usuário verá",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "5"
+    },
+    {
+      "id": "E10",
+      "question": "Alguém está responsável por acompanhar e apurar?",
+      "evidence": "Nome, disponibilidade e agenda de consultas",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "5"
+    },
+    {
+      "id": "E11",
+      "question": "O conteúdo no painel é exatamente o que foi revisado?",
+      "evidence": "Número/data da versão da ficha e conferência final",
+      "publication_blocking": true,
+      "source_access_required": false,
+      "manual_section": "5"
+    }
+  ],
+  "review_statuses": [
+    "atendido",
+    "pendente",
+    "nao_aplicavel"
+  ],
+  "decision_values": [
+    "aprovar",
+    "devolver",
+    "rejeitar"
+  ],
+  "human_decision_required": true
+}

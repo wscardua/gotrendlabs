@@ -1,5 +1,12 @@
 # Known Gaps
 
+## Editorial — evoluções futuras
+
+- `FEAT-EDITORIAL-001` entrega manual/ficha, consulta read-only no Admin Ops e critérios versionados. Avaliação assistida por IA, parecer estruturado e bloqueio de publicação por aprovação editorial são evolução futura separada; a API atual não os exige.
+- Automatização futura precisa de aprovação vinculada à versão, invalidação após edição, autorização, auditoria e cobertura de publicação direta/agendada na FastAPI; não implementar regra crítica apenas no Django.
+- Não há telemetria nova; indicadores ausentes devem ser registrados como indisponíveis. O piloto foi removido na revisão v1.1. Esses itens estão fora do escopo desta entrega, não são bloqueios da implantação.
+
+
 - FEAT-INTEGRITY-001 usa checkpoints assinados e verificação incremental para retirar full scan das requisições públicas. A assinatura KMS real e o primeiro checkpoint integral foram validados em produção; ainda falta validar carga representativa e observar a cadência integral automática durante pelo menos 24 horas. Ancoragem pública/Polygon permanece somente como extensão arquitetural futura, fora do protocolo atual.
 - FEAT-INTEGRITY-001 ainda usa uma unica versao ativa de `GOTRENDLABS_USER_COMMITMENT_SECRET`; antes da primeira rotacao desse segredo, evoluir o protocolo para persistir um identificador de versao nao sensivel e manter keyring historico somente no secret manager, sem expor segredos em banco, payload ou logs.
 - FEAT-INTEGRITY-001 ainda verifica sob demanda todos os compromissos e folhas do mercado solicitado. Antes de volume elevado por mercado, materializar um resumo autoritativo por mercado atualizado pelo daemon e validar carga de 10 mil/100 mil compromissos, mantendo verificacao profunda para selagem, Admin Ops e acao explicita.

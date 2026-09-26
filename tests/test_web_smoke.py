@@ -9720,6 +9720,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Popularidade operacional")
         self.assertContains(response, "12 visualizações · 3 compartilhamentos")
+        self.assertContains(response, f'{reverse("admin-ops-editorial")}?view=checklist#E06')
+        self.assertContains(response, "Consultar editorial")
 
     def test_admin_integrity_audit_is_available_and_diagnostic_in_every_market_state(self):
         session = self.client.session
