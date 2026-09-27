@@ -1,6 +1,6 @@
 # Known Gaps
 
-- FEAT-AUTH-001: a fronteira PostgreSQL e o preflight foram implementados e validados localmente, mas ainda nao aplicados na producao. Antes de qualquer deploy desta branch, provisionar `.env.auth.prod` so para FastAPI e `.env.migrate.prod` so para o servico operacional, confirmar permissoes da credencial migradora no RDS e executar inventario/reset ou recriacao das contas PBKDF2. Medir latencia/memoria/creditos de CPU em host de ensaio equivalente a `t4g.micro`; o benchmark Mac local nao comprova capacidade produtiva.
+- FEAT-AUTH-001: a fronteira PostgreSQL e o preflight foram implementados e validados localmente, mas ainda nao aplicados na producao. Antes de qualquer deploy desta branch, provisionar `.env.auth.prod` e `.env.fastapi-db.prod` so para FastAPI e `.env.migrate.prod` so para o servico operacional, confirmar permissoes da credencial migradora no RDS e executar inventario/reset ou recriacao das contas PBKDF2. O usuario dispensou ensaio externo isolado nesta fase por falta de recursos e ausencia de uso produtivo informado; latencia, memoria e creditos de CPU devem ser medidos no primeiro corte com criterios de interrupcao/rollback. O benchmark Mac local nao comprova capacidade produtiva.
 
 ## Editorial — evoluções futuras
 
