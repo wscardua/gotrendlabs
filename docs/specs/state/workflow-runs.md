@@ -2,6 +2,20 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260927-AUTH-AI-TEST-ACCOUNTS-035
+
+- Tipo: `operational-validation` + `change-feature` documental.
+- Status: `concluido` operacionalmente; publicacao documental aguardando PR.
+- Features alvo: `FEAT-AUTH-001` e `FEAT-AIAGENT-001`.
+- Objetivo: conferir impacto do corte Argon2id nas identidades dos agentes IA e devolver acesso a conta produtiva de teste.
+- Inventario produtivo: `@gotrendlabs_ai_analyst` e `@gotrendlabs_ai_liquidity` sao usuarios bot ativos, vinculados a agentes ativos, com senha inutilizavel por desenho; `@test` e usuario humano ativo/email confirmado; `@karlascardua` e conta staff ativa com senha inutilizavel apos o corte; `@admin` tem Argon2id.
+- Verificacao de arquitetura: `agent_services._active_agents` seleciona por `gotrendlabs_ai_agents.user_id`, `agent_type`, `is_active` e `users.is_bot/is_active`. Comentarios e previsoes sao gravados pelo backend/daemon como identidade vinculada, sem login ou verificacao de senha bot. Flags produtivas de agentes, comentarios e previsoes estao ligadas. A auditoria registrou 26 ciclos recentes de cada agente apos o deploy, todos `skipped/no_eligible_market`; isso comprova execucao do scheduler sem erro de autenticacao, mas nao exercita criacao real de comentario/previsao nesta janela.
+- Acao produtiva: conta `@test` (ID 7) foi preservada para nao alterar referencias; sua senha inutilizavel foi substituida por hash Argon2id pela FastAPI, sessoes antigas revogadas e evento administrativo registrado. Nova credencial recuperavel em `gotrendlabs/prod/app-secrets`, chave `GOTRENDLABS_TEST_ACCOUNT_PASSWORD`, sem valor em Git ou logs.
+- Evidencia: hash novo verificado; login/sessao/logout/revogacao com headers mobile retornaram `200/200/204/401`; login/sessao/logout web passaram. Email de acesso: `test@gotrendlabs.com.br`. Nenhum codigo, contrato HTTP, migration ou configuracao dos agentes foi alterado.
+- Pendencia: `@karlascardua` continua sem senha utilizavel e precisa de reset se seu acesso staff for necessario. Aguardar mercado elegivel para observar acao IA real apos o corte; manter monitoramento do `401` de `@admin` registrado no workflow anterior.
+- Iniciado e concluido operacionalmente em: 2026-09-27.
+- Proxima acao: publicar esta conciliacao documental apos aprovacao da descricao da PR; resetar a conta staff apenas por solicitacao do titular/operador autorizado.
+
 ## WFLOW-20260927-AUTH-API-AUTHORITY-034
 
 - Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`.

@@ -1,5 +1,10 @@
 # Change Log de Specs
 
+## 2026-09-27 — Identidades bot e credencial de teste apos o corte
+
+- `FEAT-AIAGENT-001` v0.4 explicita que os agentes oficiais sao vinculados por `user_id`/`is_bot` e nao autenticam com senha para executar o daemon; senhas inutilizaveis nas contas bot sao esperadas.
+- Memoria de autenticacao registra a restauracao operacional de `@test` com Argon2id e a conta staff que ainda requer reset, sem alterar contrato HTTP, schema ou codigo do app.
+
 ## 2026-09-27 — Validacao produtiva do corte de senha
 
 - A fatia Argon2id/pepper e autoridade da FastAPI foi implantada pela PR `#126`, com CI/deploy e smokes web/API/mobile-header produtivos aprovados. Fronteira de roles e segregacao de segredo foram conferidas em runtime; 0 hashes PBKDF2 restam.
