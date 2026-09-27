@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-27 — FEAT-AUTH-001 / FEAT-AIAGENT-001 contas produtivas apos Argon2id
+
+- `@test` manteve sua identidade e recebeu nova senha Argon2id via FastAPI; hash, login mobile-header e login web foram validados. Senha armazenada fora do Git no Secrets Manager. `@karlascardua` permanece sem senha utilizavel e requer reset antes de novo acesso.
+- Os dois agentes oficiais mantem senhas inutilizaveis intencionalmente. O daemon usa `user_id`/`is_bot` e continuou executando ciclos para ambos; 26 ciclos recentes por agente foram pulados por `no_eligible_market`, sem falha de autenticacao. Sem mudanca de codigo, contratos, migrations ou app mobile.
+
 ## 2026-09-27 — FEAT-AUTH-001 melhoria de senha implantada
 
 - PR `#126` integrada a `main`; CI e deploy `36330226816` passaram. Fronteira PostgreSQL e segredos segregados ativos na EC2/RDS, com `auth_db_boundary check` e `check-api` aprovados nas roles reais. Site, API e login/sessao/logout com headers mobile validados em producao.

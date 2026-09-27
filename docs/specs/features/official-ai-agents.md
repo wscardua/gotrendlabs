@@ -1,10 +1,10 @@
 ---
 id: FEAT-AIAGENT-001
 titulo: "Agentes IA oficiais"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-17
+ultima_atualizacao: 2026-09-27
 origem:
   - solicitação de produto para comentários IA oficiais e liquidez bot controlada
 contratos_afetados:
@@ -36,6 +36,7 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 ## Regras
 
 - Todo agente oficial usa usuário real `is_bot=true`.
+- A identidade bot pode ter senha inutilizavel: o daemon seleciona o agente pelo vinculo `gotrendlabs_ai_agents.user_id`, `is_bot=true` e estados ativos, e executa comentarios/previsoes diretamente no backend. Rotinas internas nao fazem login com a senha do bot.
 - Comentários IA exibem selo `IA oficial`, podem ocorrer com 0 humanos e não alteram probabilidade, ranking, reputação, wallet ou badges.
 - O total de comentários IA visíveis por mercado é controlado em Admin Ops por `ai_max_comments_per_market`, com default `1`; comentários ocultos/moderados não contam para esse limite.
 - Agentes `analyst` podem ter override opcional `max_comments_per_market_override`; quando preenchido, o limite por mercado é contado para comentários visíveis do próprio usuário bot do agente, e quando vazio herda o limite global.
