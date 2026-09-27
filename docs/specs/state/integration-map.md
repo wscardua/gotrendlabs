@@ -12,7 +12,7 @@
 ## Dependências principais
 
 - `FEAT-AUTH-001` suporta as demais features autenticadas
-- `FEAT-AUTH-001` centraliza credenciais em `packages/security/passwords.py` e na FastAPI: ela executa cadastro/login/reset e e a unica runtime que recebe `GOTRENDLABS_PASSWORD_PEPPER`. Django web usa um hasher que recusa senha utilizavel; web e Flutter consomem os endpoints FastAPI existentes. `ops/scripts/auth_db_boundary.py` separa owner/migrator e privilegios de coluna no PostgreSQL, com verificacao no deploy; aplicado apenas no banco local ate aprovacao de rollout.
+- `FEAT-AUTH-001` centraliza credenciais em `packages/security/passwords.py` e na FastAPI: ela executa cadastro/login/reset e e a unica runtime que recebe `GOTRENDLABS_PASSWORD_PEPPER`. Django web usa um hasher que recusa senha utilizavel; web e Flutter consomem os endpoints FastAPI existentes. `ops/scripts/auth_db_boundary.py` separa owner/migrator e privilegios de coluna no PostgreSQL, com verificacao no deploy; fronteira ativa e validada no RDS produtivo pela PR `#126`.
 - `FEAT-AUTH-001` centraliza na FastAPI a maioridade de contas humanas; Django e Flutter enviam `birth_date`, e novos cadastros sociais concluem o perfil privado antes da criação da conta.
 - `FEAT-MARKET-001` depende de `FEAT-AUTH-001` para visão autenticada e personalização
 - `FEAT-MARKET-002` depende de `FEAT-MARKET-001`
