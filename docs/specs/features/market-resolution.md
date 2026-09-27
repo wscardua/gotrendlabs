@@ -71,6 +71,7 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - cancelamento aplica refund total dos stakes bloqueados e não gera payout nem alteração de reputação
 - cancelamento administrativo deve falhar como inconsistência operacional se, após o refund, ainda houver previsão `open` no mercado
 - reconciliação de mercado cancelado é operação excepcional para dados já inconsistentes; ela cancela previsões órfãs `open`, cria refunds ausentes de forma idempotente e registra `market.cancel_reconcile`
+- reconciliacao e cancelamento so liberam stake quando a projecao da wallet tem saldo bloqueado suficiente; divergencia interrompe a transacao inteira sem credito ou novo lancamento, para investigacao pelo operador
 - desfazer resolução retorna o mercado para `locked`, estorna payout líquido, rebloqueia stakes e recalcula reputação
 - auditoria de resolução não altera estado, wallet, reputação ou badges; ela apenas agrega dados já persistidos
 - auditoria de resolução só é válida para mercado `resolved`; demais estados retornam erro de domínio `422`
@@ -122,6 +123,7 @@ Mercado é fechado na data prevista, operador revisa e define a opção vencedor
 - integração de resolução com wallet e reputação
 - fluxo de lock automático + resolução administrativa
 - regressão para mercado `canceled` com previsão `open` órfã, validando refund, saldo, reputação inalterada e idempotência
+- regressao para previsao orfa com saldo bloqueado insuficiente, validando rollback de status, ledger e saldo disponivel
 - integração staff para auditoria de mercado resolvido, incluindo `403` para usuário comum, `422` para mercado não resolvido e conferência de totais de ledger/badges
 - renderização Admin Ops de botão “Auditoria” apenas para mercado resolvido e paginação de participantes
 

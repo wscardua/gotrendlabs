@@ -3,6 +3,7 @@
 ## Responsabilidades
 
 - Renderizar páginas públicas e autenticadas.
+- O Django web nao recebe o pepper e seu hasher de runtime recusa criar/verificar senhas utilizaveis; a UI e o Admin Ops enviam cadastro, login e reset a FastAPI.
 - Servir feed, detalhe de mercado, perfil, ranking, wallet e fluxos de autenticação.
 - Fazer chamadas ao `backend-api` para leitura e mutações de domínio.
 - Aplicar i18n, formatação local e textos não hardcoded.

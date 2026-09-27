@@ -73,6 +73,7 @@ Usuário consulta wallet para entender saldo disponível, stakes aplicados, reto
 - o agregado público `GT₵ distribuídas` deve contar lançamentos de ledger com `direction="credit"` apenas de usuários comuns, excluindo `staff` e `superuser`, incluindo grant inicial, recompensas, recargas aprovadas, ajustes manuais de crédito e payouts líquidos desses usuários comuns
 - o agregado público de distribuição não expõe recortes por usuário nem substitui saldo, extrato ou projeção de wallet
 - cancelamento de mercado com previsão aberta gera refund total por `prediction_refund`
+- cancelamento/reconciliacao falha atomicamente se o saldo bloqueado for inferior ao stake a liberar; nao registra credito ou refund enquanto a divergencia nao for investigada
 - resolução vencedora libera stake e credita apenas o ganho líquido por `prediction_payout`
 - resolução perdedora baixa o stake bloqueado por `prediction_loss` sem devolver saldo disponível
 - revisão de posição libera stakes ativos antigos, debita `prediction_revision_penalty` quando configurado e bloqueia o stake restante da nova posição

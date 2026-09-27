@@ -1,5 +1,7 @@
 # Known Gaps
 
+- FEAT-AUTH-001: a fatia Argon2id/pepper e autoridade da FastAPI esta validada localmente, mas a fronteira PostgreSQL ainda nao foi aplicada na producao. Antes de integrar a branch a `main`, provisionar `.env.auth.prod` e `.env.fastapi-db.prod` so para FastAPI e `.env.migrate.prod` so para o servico operacional, confirmar permissoes da credencial migradora no RDS, snapshot/copia recuperavel do pepper e inventario/reset ou recriacao das contas PBKDF2. O usuario dispensou ensaio externo isolado nesta fase por falta de recursos e ausencia de uso produtivo informado; latencia, memoria e creditos de CPU devem ser medidos no primeiro corte com criterios de interrupcao/rollback. O benchmark Mac local nao comprova capacidade produtiva. A feature ampla permanece parcial por evolucoes de sessao e rate limit ainda pendentes.
+
 ## Editorial — evoluções futuras
 
 - `FEAT-EDITORIAL-001` entrega manual/ficha, consulta read-only no Admin Ops e critérios versionados. Avaliação assistida por IA, parecer estruturado e bloqueio de publicação por aprovação editorial são evolução futura separada; a API atual não os exige.

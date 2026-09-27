@@ -1,5 +1,20 @@
 # Change Log de Specs
 
+## 2026-09-27 — Fechamento documental do corte de senha
+
+- A melhoria Argon2id/pepper e autoridade exclusiva da FastAPI esta validada localmente; `FEAT-AUTH-001` permanece `draft/parcial` porque abrange outras evolucoes de autenticacao. O usuario dispensou ensaio externo isolado nesta fase, nao o preflight do host, o inventario de hashes e o smoke/monitoramento do primeiro deploy.
+- Contratos HTTP/OpenAPI e schema funcional permanecem inalterados. A memoria operacional registra que PR, merge, deploy e validacao produtiva ainda dependem de aprovacao e execucao.
+
+## 2026-09-27 — Correcoes da revisao de autenticacao e refund
+
+- Arquitetura de banco, ADR-0008 e contrato de wallet explicitam owner sem login, migrator separado, grants por coluna, preflight e falha transacional quando refund nao tem saldo bloqueado suficiente.
+- Contratos HTTP/OpenAPI e Flutter permanecem inalterados; pendencias de segredo/capacidade/corte produtivo seguem registradas.
+
+## 2026-09-27 — FEAT-AUTH-001 senha Argon2id com pepper
+
+- Versao `0.5` define hash Argon2id com sal individual e pepper exclusivo da FastAPI, fora do banco; Django web nao recebe o segredo nem cria/verifica senhas em runtime. Sem compatibilidade PBKDF2 no corte pre-lancamento; contratos HTTP e schema de produto preservados.
+- Arquitetura, testes, integracao operacional e ADR-0008 registram configuracao produtiva, custo de memoria, perda/rotacao do segredo e validacao antes do deploy.
+
 ## 2026-09-26 — Validação produtiva do editorial
 
 - `FEAT-EDITORIAL-001` promovida a `implementada_validada` após PR `#124`, CI/deploy `36275879637` e smoke produtivo de acesso e renderização dos três documentos para staff. Workflow de fechamento concluído; limites de IA e visibilidade dos arquivos no repositório público preservados.

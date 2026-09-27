@@ -141,6 +141,7 @@ from apps.api.backend_api.schemas import (
     WalletRechargeRequestResponse,
 )
 from apps.api.backend_api.security import check_password, hash_token, issue_token, make_password
+from packages.security.passwords import require_password_pepper
 from apps.api.backend_api.social_oauth import SocialOAuthError, build_social_authorization, fetch_social_profile
 from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
@@ -172,6 +173,9 @@ BADGE_RULE_TYPES = {
 }
 BADGE_TYPES = {"global", "category", "performance", "engagement"}
 logger = logging.getLogger(__name__)
+
+if os.environ.get("GOTRENDLABS_ENV", "").strip().lower() in {"prod", "production"} or os.environ.get("DJANGO_DEBUG", "").strip().lower() in {"0", "false", "no", "off"}:
+    require_password_pepper()
 
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
 

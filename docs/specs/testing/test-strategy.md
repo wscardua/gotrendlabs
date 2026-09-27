@@ -11,6 +11,9 @@ Garantir que cada feature tenha critérios de aceite verificáveis e cobertura s
 - Features críticas precisam de testes em múltiplos níveis.
 - Compatibilidade mobile deve ser testada por build/versionCode: `/health` sem headers, `/health` com build compatível, `/health` com build antigo, middleware `426` em endpoint não isento, cliente web sem bloqueio, gate Flutter para update obrigatório/opcional e promoção global de `426 code=app_update_required` pelo `ApiClient`.
 - Maioridade deve cobrir cadastro por senha e social, incluindo exatamente 18 anos, aniversário no dia seguinte, data ausente/futura/inválida, persistência privada e tentativa de remover ou alterar o perfil para menoridade; Flutter deve provar envio de `birth_date` sem decidir a regra de domínio.
+- Senhas locais exigem testes de Argon2id com salt distinto, fluxo web/mobile via FastAPI, rejeicao de escrita de senha pelo Django em runtime, login e reset, hash PBKDF2 rejeitado nesta mudanca pre-lancamento, pepper errado/ausente e validacao de configuracao produtiva.
+- Fronteira de banco de auth exige teste com roles reais: Django sem UPDATE(password), com UPDATE de campos nao sensiveis e INSERT somente de senha inutilizavel; FastAPI com UPDATE(password); owner/funcao fora das roles runtime; migration role separada; preflight fail-closed.
+- Refund de mercado cancelado exige teste de saldo bloqueado insuficiente que prove rollback integral, sem ledger de refund nem credito, alem de caso normal e reexecucao idempotente.
 
 ## Níveis mínimos
 

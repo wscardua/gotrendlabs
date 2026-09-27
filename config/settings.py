@@ -1,4 +1,6 @@
+import base64
 import os
+import sys
 from pathlib import Path
 
 from config.env import load_env_file
@@ -23,6 +25,9 @@ def env_int(name, default):
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-gotrendlabs-django-fixtures")
 DEBUG = env_flag("DJANGO_DEBUG", True)
 PRODUCTION_MODE = os.environ.get("GOTRENDLABS_ENV", "").strip().lower() in {"prod", "production"} or not DEBUG
+if "test" in sys.argv and not PRODUCTION_MODE:
+    # The test process needs a key, but no fixed secret is shipped with the app.
+    os.environ.setdefault("GOTRENDLABS_PASSWORD_PEPPER", base64.b64encode(os.urandom(32)).decode("ascii"))
 if PRODUCTION_MODE and (
     not os.environ.get("DJANGO_SECRET_KEY")
     or SECRET_KEY == "dev-only-gotrendlabs-django-fixtures"
@@ -141,6 +146,11 @@ X_FRAME_OPTIONS = os.environ.get("DJANGO_X_FRAME_OPTIONS", "DENY")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
+PASSWORD_HASHERS = [
+    "apps.web.django.accounts.hashers.Argon2PepperHasher"
+    if "test" in sys.argv and not PRODUCTION_MODE
+    else "apps.web.django.accounts.hashers.APIOnlyPasswordHasher"
+]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "home"
 LOGOUT_REDIRECT_URL = "home"

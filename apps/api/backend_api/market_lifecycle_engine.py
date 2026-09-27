@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
+import logging
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import HTTPException, status
@@ -13,6 +14,7 @@ from apps.api.backend_api.integrity_service import PROTOCOL_VERSION, append_ledg
 INITIAL_REPUTATION = 100
 PROBABILITY_QUANT = Decimal("0.0001")
 REPUTATION_K_FACTOR = Decimal("10")
+logger = logging.getLogger(__name__)
 
 
 class MarketLifecycleEngine:
@@ -564,6 +566,20 @@ class MarketLifecycleEngine:
             if self.cursor.fetchone():
                 refunds_existing += 1
                 continue
+            self.cursor.execute(
+                """SELECT locked_gtl FROM gotrendlabs_wallet_balances
+                   WHERE user_id = %s FOR UPDATE""",
+                (prediction["user_id"],),
+            )
+            balance = self.cursor.fetchone()
+            if balance is None or int(balance["locked_gtl"] or 0) < int(prediction["stake_amount"]):
+                logger.error(
+                    "wallet.refund_insufficient_locked",
+                    extra={"prediction_id": prediction["id"], "user_id": prediction["user_id"]},
+                )
+                raise RuntimeError(
+                    f"Cannot refund prediction {prediction['id']}: insufficient locked wallet balance"
+                )
             self.record_wallet_entry(
                 self.cursor,
                 prediction["user_id"],

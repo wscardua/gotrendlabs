@@ -2,8 +2,9 @@ from datetime import datetime, timezone
 
 from django.core.management.base import BaseCommand
 
+from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.db import get_connection
-from apps.api.backend_api.main import _market_lifecycle_engine, _record_admin_event
+from apps.api.backend_api.daemon_services import _daemon_lifecycle_engine
 
 
 class Command(BaseCommand):
@@ -43,12 +44,12 @@ class Command(BaseCommand):
                 reconciled = []
                 now = datetime.now(timezone.utc)
                 for market in markets:
-                    stats = _market_lifecycle_engine(cursor, None).reconcile_canceled_market_refunds(
+                    stats = _daemon_lifecycle_engine(cursor).reconcile_canceled_market_refunds(
                         market["id"],
                         market["slug"],
                         now,
                     )
-                    _record_admin_event(
+                    record_admin_event(
                         cursor,
                         None,
                         "market.cancel_reconcile",
