@@ -1,5 +1,7 @@
 # Known Gaps
 
+- FEAT-AUTH-001: a fronteira PostgreSQL e o preflight foram implementados e validados localmente, mas ainda nao aplicados na producao. Antes de qualquer deploy desta branch, provisionar `.env.auth.prod` so para FastAPI e `.env.migrate.prod` so para o servico operacional, confirmar permissoes da credencial migradora no RDS e executar inventario/reset ou recriacao das contas PBKDF2. Medir latencia/memoria/creditos de CPU em host de ensaio equivalente a `t4g.micro`; o benchmark Mac local nao comprova capacidade produtiva.
+
 ## Editorial — evoluções futuras
 
 - `FEAT-EDITORIAL-001` entrega manual/ficha, consulta read-only no Admin Ops e critérios versionados. Avaliação assistida por IA, parecer estruturado e bloqueio de publicação por aprovação editorial são evolução futura separada; a API atual não os exige.

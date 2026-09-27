@@ -61,6 +61,7 @@
 - Toda referência deve apontar para o objeto causal quando houver.
 - `prediction_stake_lock` deve reduzir `available_gtl`, aumentar `locked_gtl` e apontar para `reference_type="prediction"`.
 - `prediction_refund` deve usar `direction="release"` e devolver stake bloqueado para saldo disponível.
+- Refund de previsao aberta exige saldo bloqueado suficiente antes do lancamento; se a projecao estiver divergente, a transacao de cancelamento/reconciliacao falha sem creditar saldo nem gravar refund. O operador investiga e reconcilia ledger/projecao separadamente.
 - Refund de cancelamento deve ser idempotente por previsão enquanto não houver novo `lock`/`prediction_resolution_relock` posterior; isso evita duplicidade em reconciliações e preserva o caso de resolução desfeita seguida de cancelamento final.
 - `prediction_payout` deve usar `direction="credit"` e representar ganho líquido acima do stake liberado.
 - `prediction_payout_reversal` deve usar `direction="debit"` para estornar ganho líquido quando uma resolução for desfeita.

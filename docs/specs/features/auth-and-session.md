@@ -1,10 +1,10 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-19
+ultima_atualizacao: 2026-09-27
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -28,6 +28,7 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 ## Escopo incluído
 
 - cadastro
+- senhas de contas locais protegidas por Argon2id com sal individual e pepper de 32 bytes fora do banco/Git; apenas FastAPI recebe o pepper e cria/verifica senhas em runtime
 - restrição de cadastro e uso de conta humana a pessoas com 18 anos completos
 - aceite obrigatório da política de uso no cadastro
 - página pública de política de uso e leitura em modal no fluxo de cadastro
@@ -132,6 +133,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - provedores externos vinculados
 - preferência de idioma
 - sessões e rastros de autenticação
+- hash de senha `argon2id_pepper_v1` no campo `gotrendlabs_users.password`; hashes PBKDF2 anteriores nao sao aceitos nesta mudanca pre-lancamento
 - tokens de recuperação de senha com hash, expiração e uso único
 - tokens de confirmação de email com hash, expiração e uso único
 - timestamp `email_confirmed_at` no usuário
@@ -151,6 +153,10 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 ## Observabilidade e operação
 
+- `GOTRENDLABS_PASSWORD_PEPPER` deve conter 32 bytes aleatorios codificados em Base64, distintos de `DJANGO_SECRET_KEY` e de outros segredos; apenas FastAPI recebe o valor, e falta/formato invalido interrompe sua inicializacao produtiva e operacoes de senha
+- bootstrap de dados nao altera senhas existentes e cria admin novo com senha inutilizavel; operador define a senha pelo CLI da FastAPI, com revogacao de sessoes e evento de auditoria
+- role Django nao pode alterar `gotrendlabs_users.password` nem ser proprietaria da tabela/funcao de guard; `gotrendlabs_auth_owner` sem login e privilegios por coluna sao aplicados por operacao de migracao, com preflight de deploy
+- trocar/perder o pepper v1 impede verificar as senhas correspondentes; rotacao posterior exige plano de versoes ou reset de senhas, sem registrar o segredo em logs, banco ou respostas
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte
 - Admin Ops deve permitir listagem, busca, detalhe amplo, badges adquiridas, desativação/reativação, revogação de sessões, gestão controlada de papéis e marcação `is_bot` via contratos staff
@@ -159,6 +165,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 ## Testes esperados
 
+- hash Argon2id com parametros versionados e sal individual; fluxo web/mobile via API; senha incorreta, hash antigo/malformado, pepper incorreto/ausente e startup produtivo da FastAPI sem segredo
 - unitários para vínculo e validação de sessão
 - integração para login social real, vínculo seguro de conta existente, criação de conta nova e persistência de preferência de idioma
 - fluxo de cadastro, login e logout
@@ -192,6 +199,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 ## Critérios de aceite
 
+- cadastro, login e recuperacao de senha por credencial usam Argon2id com pepper apenas na FastAPI, sem expor senha ou pepper nos contratos
 - usuário consegue criar e acessar conta
 - somente pessoa com 18 anos completos consegue criar conta humana; nascimento permanece privado
 - usuário consegue solicitar recuperação e definir nova senha com link válido

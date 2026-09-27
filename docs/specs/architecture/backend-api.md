@@ -4,6 +4,7 @@
 
 - Ser a fonte principal da verdade do domínio.
 - Autenticar usuários e emitir/validar sessão.
+- Proteger senhas locais com Argon2id e pepper em `packages/security/passwords.py`; apenas a FastAPI cria/verifica credenciais em runtime e detem o pepper. Web e mobile consomem seus contratos de cadastro, login e reset.
 - Validar data de nascimento e maioridade de contas humanas como regra autoritativa de cadastro e perfil.
 - Emitir e validar tokens de recuperação de senha de uso único.
 - Expor contratos JSON consumidos pelo frontend web, pelo admin e pelo futuro cliente mobile.

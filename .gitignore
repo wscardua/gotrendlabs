@@ -6,6 +6,10 @@ db.sqlite3
 .coverage
 .env
 .env.prod
+.env.api.local
+.env.auth.prod
+.env.migrate.local
+.env.migrate.prod
 notes.md
 .DS_Store
 docker/postgres/data/

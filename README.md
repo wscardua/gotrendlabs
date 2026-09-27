@@ -58,14 +58,19 @@ Execute as migrations:
 
 ```bash
 python manage.py migrate
+python -m ops.scripts.setup_local_auth_boundary
 ```
+
+Depois da separacao de roles, execute migrations seguintes com `python -m ops.scripts.migrate_with_role` e reaplique `python -m ops.scripts.auth_db_boundary apply`. O script de setup local cria a credencial de migracao em `.env.migrate.local` (ignorada pelo Git), separa o proprietario da tabela de usuarios e verifica que Django nao pode atualizar `password`.
 
 Em dois terminais, rode a API e o Django:
 
 ```bash
-python -m uvicorn apps.api.backend_api.main:app --reload --port 8001
+python -m uvicorn apps.api.backend_api.main:app --reload --port 8001 --env-file .env.api.local
 python manage.py runserver 127.0.0.1:8000
 ```
+
+Antes de iniciar, copie `.env.api.example` para `.env.api.local` e preencha `GOTRENDLABS_PASSWORD_PEPPER` com Base64 de 32 bytes aleatorios (`python -c 'import base64,secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())'`). O arquivo e ignorado pelo Git e deve ficar acessivel apenas ao usuario local (`chmod 600 .env.api.local`). A API recebe esse arquivo; Django nao recebe o pepper. Para definir a senha de um administrador existente, rode `.venv/bin/python -m apps.api.backend_api.bootstrap_admin_password --username admin` e digite a senha no prompt.
 
 Acesse:
 

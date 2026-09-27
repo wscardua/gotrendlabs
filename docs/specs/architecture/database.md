@@ -5,6 +5,7 @@
 - Persistir usuários, perfis, mercados, opções, previsões, ledger da wallet, comentários, notificações in-app, sugestões, decisões de moderação e histórico operacional.
 - Persistir definicoes assinadas, compromissos de previsao, folhas/provas Merkle, Seals, eventos globais do ledger e chaves publicas historicas em `integrity_signing_keys`.
 - Garantir integridade relacional e rastreabilidade temporal.
+- `gotrendlabs_users` deve pertencer a `gotrendlabs_auth_owner` sem login; migrations usam credencial operacional separada, Django runtime recebe UPDATE somente das colunas nao sensiveis e FastAPI possui UPDATE de `password`. Um trigger pertencente ao owner impede que insercoes Django definam senha utilizavel.
 - Suportar consultas transacionais e relatórios administrativos.
 
 ## Diretrizes

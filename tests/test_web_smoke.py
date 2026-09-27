@@ -1711,6 +1711,9 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         payload = response.json()
         self.assertEqual(payload["user"]["handle"], "@carolvision")
         self.assertIn("token", payload["session"])
+        stored_password = get_user_model().objects.get(email="carol-api@example.com").password
+        self.assertTrue(stored_password.startswith("argon2id_pepper_v1$$argon2id$"))
+        self.assertTrue(get_user_model().objects.get(email="carol-api@example.com").check_password("testpass123"))
 
         session_response = client.get(
             "/auth/session",
@@ -5473,6 +5476,14 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(prediction_response.status_code, 201)
         before_reputation = UserReputation.objects.get(user__username="@canceluser")
 
+        WalletBalance.objects.filter(user__username="@canceluser").update(locked_gtl=0)
+        with self.assertRaisesRegex(RuntimeError, "insufficient locked wallet balance"):
+            client.post("/admin/markets/cancelamento-refund-teste/cancel", headers=staff_headers, json={"note": "Saldo inconsistente."})
+        self.assertEqual(Market.objects.get(slug="cancelamento-refund-teste").status, "open")
+        self.assertEqual(Prediction.objects.get(id=prediction_response.json()["prediction_id"]).status, "open")
+        self.assertFalse(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", reference_id=str(prediction_response.json()["prediction_id"])).exists())
+        WalletBalance.objects.filter(user__username="@canceluser").update(locked_gtl=125)
+
         canceled = client.post("/admin/markets/cancelamento-refund-teste/cancel", headers=staff_headers, json={"note": "Critério impossível de validar."})
         self.assertEqual(canceled.status_code, 200)
         self.assertEqual(canceled.json()["status"], "canceled")
@@ -5578,6 +5589,15 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         prediction.refresh_from_db()
         self.assertEqual(prediction.status, "open")
         self.assertFalse(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", reference_id=str(prediction.id)).exists())
+
+        WalletBalance.objects.filter(user__username="@reconcileuser").update(locked_gtl=0)
+        with self.assertRaisesRegex(RuntimeError, "insufficient locked wallet balance"):
+            call_command("reconcile_canceled_market_refunds", "--slug", "reconcile-cancelado-orfao", stdout=StringIO())
+        prediction.refresh_from_db()
+        self.assertEqual(prediction.status, "open")
+        self.assertFalse(WalletLedgerEntry.objects.filter(entry_type="prediction_refund", reference_id=str(prediction.id)).exists())
+        self.assertEqual(WalletBalance.objects.get(user__username="@reconcileuser").available_gtl, 1820)
+        WalletBalance.objects.filter(user__username="@reconcileuser").update(locked_gtl=180)
 
         output = StringIO()
         call_command("reconcile_canceled_market_refunds", "--slug", "reconcile-cancelado-orfao", stdout=output)

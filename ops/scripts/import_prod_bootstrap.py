@@ -126,34 +126,33 @@ def assert_safe_target(data):
 def import_admin(data):
     User = get_user_model()
     user_payload = data["admin"]["user"]
-    password = os.environ.get("GOTRENDLABS_BOOTSTRAP_ADMIN_PASSWORD", "")
     existing_email = User.objects.filter(email=user_payload["email"]).exclude(username=user_payload["username"]).first()
     if existing_email:
         raise SystemExit(f"Email {user_payload['email']} is already used by another user.")
 
-    user, _ = User.objects.update_or_create(
+    admin_fields = {
+        "email": user_payload["email"],
+        "first_name": user_payload.get("first_name", ""),
+        "last_name": user_payload.get("last_name", ""),
+        "preferred_language": user_payload.get("preferred_language", "pt-br"),
+        "is_staff": True,
+        "is_superuser": True,
+        "is_active": user_payload.get("is_active", True),
+        "terms_accepted_at": datetime_value(user_payload.get("terms_accepted_at")),
+        "terms_version": user_payload.get("terms_version", ""),
+        "account_status": user_payload.get("account_status", "active"),
+        "deletion_requested_at": datetime_value(user_payload.get("deletion_requested_at")),
+        "deactivated_at": datetime_value(user_payload.get("deactivated_at")),
+        "is_bot": user_payload.get("is_bot", False),
+    }
+    user, created = User.objects.get_or_create(
         username=user_payload["username"],
-        defaults={
-            "email": user_payload["email"],
-            "first_name": user_payload.get("first_name", ""),
-            "last_name": user_payload.get("last_name", ""),
-            "preferred_language": user_payload.get("preferred_language", "pt-br"),
-            "is_staff": True,
-            "is_superuser": True,
-            "is_active": user_payload.get("is_active", True),
-            "terms_accepted_at": datetime_value(user_payload.get("terms_accepted_at")),
-            "terms_version": user_payload.get("terms_version", ""),
-            "account_status": user_payload.get("account_status", "active"),
-            "deletion_requested_at": datetime_value(user_payload.get("deletion_requested_at")),
-            "deactivated_at": datetime_value(user_payload.get("deactivated_at")),
-            "is_bot": user_payload.get("is_bot", False),
-        },
+        defaults={**admin_fields, "password": "!"},
     )
-    if password:
-        user.set_password(password)
-    else:
-        user.set_unusable_password()
-    user.save()
+    if not created:
+        for field, value in admin_fields.items():
+            setattr(user, field, value)
+        user.save(update_fields=list(admin_fields))
 
     profile = data["admin"].get("profile")
     if profile:

@@ -2,6 +2,46 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260927-AUTH-API-AUTHORITY-034
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`.
+- Status: `concluido_local`.
+- Feature alvo: `FEAT-AUTH-001`.
+- Objetivo: tornar a FastAPI a unica operadora de credenciais em runtime, remover o pepper do Django web/daemon e validar localmente a fronteira consumida por web e Flutter.
+- Etapa atual: correcoes do review implementadas e validadas localmente; corte e capacidade produtivos aguardam preparacao do host e autorizacao de deploy.
+- Artefatos afetados: settings/hashers Django, FastAPI/bootstrap operacional, Compose/env, protecao PostgreSQL, testes, specs, ADR e memoria operacional.
+- Fronteiras: os fluxos web e mobile continuam chamando FastAPI; importador cria admin com senha inutilizavel, CLI FastAPI define senha, audita e revoga sessoes, Django web recusa hash de senha e nao recebe pepper. `gotrendlabs_users` e o guard pertencem localmente a `gotrendlabs_auth_owner` sem login; a role Django nao pode atualizar a coluna password.
+- Escopo: nenhuma publicacao/deploy; validar em ambiente local antes de qualquer aprovacao para producao.
+- Iniciado em: 2026-09-27
+- Atualizado em: 2026-09-27
+- Evidencia: 228 testes web/API, 6 testes focados de senha/bootstrap, 11 testes Flutter auth, `manage.py check`, migrations --check, OpenAPI --check, `git diff --check` e sintaxe do deploy aprovados. SQL local bloqueou UPDATE(password) com a role Django e permitiu com a role FastAPI em transacoes desfeitas. Segredo local Base64 de 32 bytes em `.env.api.local` ignorado e `0600`.
+- Correcao do review: `MarketLifecycleEngine` verifica saldo bloqueado com lock antes de refund; API e comando operacional fazem rollback em insuficiencia, com log tecnico. `gotrendlabs_users`, trigger, funcao e sequence pertencem a `gotrendlabs_auth_owner` sem login; grant por coluna tira UPDATE(password) de Django e preserva edicao de perfil, FastAPI conserva a escrita de credencial. Scripts locais e servico `migrate` separam credencial operacional; deploy repete grants apos migrations e falha no preflight inseguro.
+- Evidencia adicional local: script de setup idempotente; Django recebeu SQLSTATE 42501 ao tentar UPDATE(password), FastAPI conseguiu em transacao desfeita, Django atualizou campo nao sensivel e INSERT com senha utilizavel foi bloqueado pelo trigger; preflight recusou GRANT inseguro temporario e o rollback da transacao restaurou a fronteira. Inventario sem PII anterior ao smoke mobile: 3 contas locais, 2 hashes v1, 1 PBKDF2, 1 admin. Benchmark Mac de 8 operacoes por nivel chegou a p95 de ~109 ms com 5 workers e RSS ~54 MiB, sem extrapolacao para EC2; Compose config, migrations --plan e OpenAPI validados. Suite completa: 267 testes passaram com `BACKEND_API_URL=http://127.0.0.1:9`; os tres testes de pagina que falharam sem isolamento consultavam o mercado ja concluido na API local em vez da fixture aberta. Dois cenarios novos de rollback de refund passaram tambem em execucao focada. API e site locais responderam `200` apos reinicio.
+- Smoke adicional local: 13 testes focados de senha, cadastro/sessao/logout, reset, administracao, cancelamento, reconciliacao e paginas web passaram; API real retornou `200/200/200/204/401` para health/login/sessao/logout/token revogado; site real aceitou login do administrador e logout. `flutter test` passou com 107 testes e `flutter analyze` sem issues; APK debug compilou, abriu no emulador Android, carregou mercado pela API local, autenticou conta temporaria, exibiu perfil e voltou ao estado visitante apos logout. As duas contas temporarias do smoke foram desativadas pela API administrativa. O email local `admin@localhost` e recusado pela validacao de email do formulario Flutter, entao o login mobile foi validado com email de teste valido; isso nao altera o contrato da API nem prova compatibilidade de credenciais produtivas.
+- Pendencias para producao: provisionar `.env.auth.prod` e `.env.migrate.prod` no host, validar privilegios da role de migracao no RDS, medir Argon2id em capacidade equivalente a EC2 e ensaiar rollout/rollback. Nenhum deploy/merge realizado.
+- Encerrado localmente em: 2026-09-27
+- Reaberto apos review em: 2026-09-27
+- Proxima acao: revisao da branch e preparacao/ensaio em ambiente equivalente a producao antes de qualquer merge ou deploy aprovado pelo usuario.
+
+## WFLOW-20260927-AUTH-PASSWORD-HASH-033
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`.
+- Status: `concluido_local`.
+- Feature alvo: `FEAT-AUTH-001`.
+- Objetivo: substituir o hash PBKDF2 de senhas por Argon2id com pepper compartilhado entre FastAPI e Django.
+- Etapa atual: implementacao e validacao local concluidas; preparacao operacional produtiva pendente antes de merge/deploy.
+- Artefatos afetados: spec de auth, arquitetura, ADR, codigo FastAPI/Django, requisitos, configuracao de ambiente, testes e memoria operacional.
+- Decisao de escopo: sem migracao de hashes PBKDF2 nem preservacao de contas de desenvolvimento, conforme orientacao do usuario; sem mudanca de schema ou contrato HTTP.
+- Fronteiras: FastAPI continua autoridade de autenticacao; Django usa o mesmo hasher apenas ao criar/verificar usuarios locais; o pepper fica fora do banco e do Git.
+- Implementacao: `argon2-cffi` e primitiva compartilhada com HMAC-SHA256/pepper de 32 bytes, Argon2id `m=19456 KiB,t=2,p=1`, salt de 16 bytes e limite de duas operacoes caras por processo; adaptador Django, validacao produtiva fail-closed, env examples e ADR-0008. Pepper local gerado em `.env` ignorado pelo Git.
+- Evidencia local: 265 testes passaram na suite completa; quatro testes especificos de senha passaram apos ajuste final do guard de ambiente; tres testes de integracao auth passaram, incluindo cadastro/login, reset e login social; `manage.py check`, `makemigrations --check --dry-run`, OpenAPI `--check` e `git diff --check` passaram. Benchmark local sequencial: hash 81,5 ms e verificacao 40,0 ms de media em cinco operacoes cada, sem inferencia de capacidade da EC2.
+- Checklist: feature v0.5, arquitetura, estrategia de teste, integration map, ADR, changelogs, status e known gaps atualizados; schema e OpenAPI sem alteracao; sem arquivos mobile modificados.
+- Pendencias operacionais: provisionar `GOTRENDLABS_PASSWORD_PEPPER` no ambiente produtivo antes de merge/deploy automatico, medir memoria/latencia concorrente na EC2 e recriar/resetar contas preexistentes se houver. Nenhuma publicacao feita nesta branch.
+- Iniciado em: 2026-09-27
+- Atualizado em: 2026-09-27
+- Encerrado localmente em: 2026-09-27
+- Proxima acao: revisar a branch e configurar o segredo produtivo antes de qualquer integracao/deploy.
+
 ## WFLOW-20260926-EDITORIAL-CLOSEOUT-032
 
 - Tipo: `implementation-cycle` + `test-review-cycle` + fechamento de feature.
