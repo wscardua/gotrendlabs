@@ -1,5 +1,10 @@
 # Change Log de Specs
 
+## 2026-09-27 — Validacao produtiva do corte de senha
+
+- A fatia Argon2id/pepper e autoridade da FastAPI foi implantada pela PR `#126`, com CI/deploy e smokes web/API/mobile-header produtivos aprovados. Fronteira de roles e segregacao de segredo foram conferidas em runtime; 0 hashes PBKDF2 restam.
+- Estado da feature ampla continua `draft/parcial`, porque refresh/revogacao avancada, rate limit distribuido e politica administravel seguem fora desta entrega. Ensaio isolado foi dispensado; capacidade sob carga real continua em observacao.
+
 ## 2026-09-27 — Fechamento documental do corte de senha
 
 - A melhoria Argon2id/pepper e autoridade exclusiva da FastAPI esta validada localmente; `FEAT-AUTH-001` permanece `draft/parcial` porque abrange outras evolucoes de autenticacao. O usuario dispensou ensaio externo isolado nesta fase, nao o preflight do host, o inventario de hashes e o smoke/monitoramento do primeiro deploy.

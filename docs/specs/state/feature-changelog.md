@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-27 — FEAT-AUTH-001 melhoria de senha implantada
+
+- PR `#126` integrada a `main`; CI e deploy `36330226816` passaram. Fronteira PostgreSQL e segredos segregados ativos na EC2/RDS, com `auth_db_boundary check` e `check-api` aprovados nas roles reais. Site, API e login/sessao/logout com headers mobile validados em producao.
+- Corte pre-lancamento encerrou 3 hashes PBKDF2: superusuario `@admin` recebeu novo hash Argon2id pela FastAPI; duas contas tiveram senha antiga inutilizada e sessoes revogadas. Inventario final: 1 Argon2id, 0 PBKDF2 e 4 senhas inutilizaveis. Credencial bootstrap e pepper estao fora do Git no Secrets Manager; snapshot RDS anterior ao corte disponivel. `FEAT-AUTH-001` ampla permanece `draft/parcial`.
+
 ## 2026-09-27 — FEAT-AUTH-001 fechamento local da melhoria de senha
 
 - A fatia Argon2id/pepper e autoridade da FastAPI esta pronta para publicacao, com suite Django/API de 267 testes, 107 testes Flutter, `flutter analyze`, OpenAPI e smoke local web/API/Android aprovados. O ensaio isolado foi dispensado pelo usuario; preflight de segredos, grants, inventario de PBKDF2, CI/deploy e smoke produtivo continuam obrigatorios para fechar esta entrega.
