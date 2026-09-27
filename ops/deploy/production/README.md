@@ -61,6 +61,7 @@ psql "host=gotrendlabs-prod-db.cinqq6ymy9in.us-east-1.rds.amazonaws.com port=543
 - `ops/deploy/production/deploy.sh`: fluxo idempotente para primeira instalacao (`git clone`) e deploys seguintes (`git pull`), com build, migrations, static files e restart.
 - `.env.prod.example`: modelo de variaveis de producao sem segredos reais.
 - `.env.auth.prod.example`: modelo separado do pepper, entregue apenas ao container FastAPI.
+- `.env.fastapi-db.prod.example`: credencial PostgreSQL com escrita de senha, entregue apenas ao container FastAPI.
 - `.env.migrate.prod.example`: credenciais de banco usadas somente pelo servico operacional de migrations.
 
 ## Primeira instalacao na EC2
@@ -82,17 +83,18 @@ git clone URL_DO_REPO /opt/gotrendlabs
 cd /opt/gotrendlabs
 cp .env.prod.example .env.prod
 cp .env.auth.prod.example .env.auth.prod
+cp .env.fastapi-db.prod.example .env.fastapi-db.prod
 cp .env.migrate.prod.example .env.migrate.prod
 nano .env.prod
 ```
 
-Configure `.env.prod` com dominio, `DJANGO_SECRET_KEY`, endpoints do RDS, usuarios e senhas. Mantenha `GOTRENDLABS_RATE_LIMITS_ENABLED=1` em producao; a aplicacao tambem liga o rate limit por padrao fora dos testes, mas a chave explicita evita ambiguidade operacional. Nao commite `.env.prod`.
+Configure `.env.prod` com dominio, `DJANGO_SECRET_KEY` e apenas a credencial PostgreSQL da role Django. Configure `.env.fastapi-db.prod` com `FASTAPI_POSTGRES_*` e restrinja-o com `chmod 600`; somente o container FastAPI o recebe. O daemon usa a role Django, sem permissao de atualizar senhas. Nao deixe `POSTGRES_USER/PASSWORD` nem `FASTAPI_POSTGRES_*` no arquivo compartilhado. Mantenha `GOTRENDLABS_RATE_LIMITS_ENABLED=1` em producao; a aplicacao tambem liga o rate limit por padrao fora dos testes, mas a chave explicita evita ambiguidade operacional. Nao commite arquivos de ambiente.
 
 Antes de publicar a mudanca de hash de senha, configure `GOTRENDLABS_PASSWORD_PEPPER` somente em `.env.auth.prod` com Base64 de 32 bytes aleatorios (`python -c 'import base64,secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())'`). Use um segredo exclusivo, entregue pelo mecanismo de segredos operacional; nao reutilize `DJANGO_SECRET_KEY`. Restrinja o arquivo a conta operacional (`chmod 600 .env.auth.prod`). O deploy valida o valor no container FastAPI antes de iniciar os servicos. O esquema novo nao verifica hashes PBKDF2 antigos; contas de teste anteriores precisam de reset/recriacao. Guarde copia recuperavel do segredo fora da EC2, pois sua perda impede autenticar as senhas v1.
 
 Depois de importar os dados de bootstrap, defina a senha de um administrador existente pelo contexto FastAPI: `docker compose -f ops/deploy/production/docker-compose.yml run --rm -it fastapi python -m apps.api.backend_api.bootstrap_admin_password --username admin`. A senha e digitada sem aparecer no historico do shell. O importador nao altera senhas existentes.
 
-Configure `.env.migrate.prod` com uma credencial operacional que tenha `CREATEROLE`, `CREATE` no schema e possa alterar as tabelas Django existentes. Essa credencial nao entra nos containers de runtime. O deploy executa migrations pelo servico `migrate`, aplica `ops/sql/auth_password_boundary.sql` antes/depois delas e falha antes do restart caso a role Django ainda possa alterar `gotrendlabs_users.password`. O novo proprietario `gotrendlabs_auth_owner` nao tem login; o trigger protege insercoes com senha utilizavel e as permissoes de coluna protegem updates. Valide a credencial migradora em ambiente de ensaio antes do rollout produtivo.
+Configure `.env.migrate.prod` com uma credencial operacional que tenha `CREATEROLE`, `CREATE` no schema e possa alterar as tabelas Django existentes. Essa credencial nao entra nos containers de runtime. O deploy executa migrations pelo servico `migrate`, aplica `ops/sql/auth_password_boundary.sql` antes/depois delas e falha antes do restart caso Django exponha outra credencial de banco, a role Django possa alterar `gotrendlabs_users.password` ou a FastAPI nao use a role autorizada. O novo proprietario `gotrendlabs_auth_owner` nao tem login; o trigger protege insercoes com senha utilizavel e as permissoes de coluna protegem updates. Valide a credencial migradora em ambiente de ensaio antes do rollout produtivo.
 
 Para auditar o corte sem revelar dados pessoais, execute `docker compose -f ops/deploy/production/docker-compose.yml run --rm fastapi python -m ops.scripts.auth_db_boundary inventory`. Contas PBKDF2 exigem reset/recriacao antes de depender do login novo. Para medir o custo do hash em um host de ensaio equivalente, use `docker compose -f ops/deploy/production/docker-compose.yml run --rm fastapi python -m ops.scripts.benchmark_password_hash --workers 1,2,5,10 --operations 8`; compare com memoria livre, swap, creditos de CPU e latencia HTTP do stack, sem usar este benchmark isolado como garantia de capacidade.
 

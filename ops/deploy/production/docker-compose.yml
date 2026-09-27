@@ -46,6 +46,7 @@ services:
     command: uvicorn apps.api.backend_api.main:app --host 0.0.0.0 --port 8001
     env_file:
       - ../../../.env.prod
+      - ../../../.env.fastapi-db.prod
       - ../../../.env.auth.prod
     volumes:
       - mediafiles:/app/media:ro

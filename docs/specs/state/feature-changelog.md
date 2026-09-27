@@ -2,7 +2,7 @@
 
 ## 2026-09-27 — FEAT-AUTH-001 e FEAT-RES-001 correcoes do review local
 
-- `gotrendlabs_users` e o guard de senha passaram a pertencer a role sem login; migrations usam credencial separada, grants por coluna preservam edicao nao sensivel pelo Django e preflight bloqueia deploy inseguro. Aplicado e verificado apenas no PostgreSQL local.
+- `gotrendlabs_users` e o guard de senha passaram a pertencer a role sem login; migrations usam credencial separada, grants por coluna preservam edicao nao sensivel pelo Django e preflight bloqueia deploy inseguro. Revisao posterior separou tambem `FASTAPI_POSTGRES_*` do ambiente compartilhado: so FastAPI recebe a credencial com escrita de senha; Django e daemon usam a role Django. Aplicado e verificado apenas no PostgreSQL local.
 - Reconciliação de refund agora recusa saldo bloqueado insuficiente antes de gravar ledger/credito. Teste cobre rollback, caso normal e reexecucao idempotente.
 - Inventario de hashes sem PII e benchmark isolado foram adicionados para preparar corte de contas e capacidade; host produtivo nao foi alterado.
 

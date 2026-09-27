@@ -7,6 +7,8 @@ db.sqlite3
 .env
 .env.prod
 .env.api.local
+.env.db-admin.local
+.env.fastapi-db.prod
 .env.auth.prod
 .env.migrate.local
 .env.migrate.prod

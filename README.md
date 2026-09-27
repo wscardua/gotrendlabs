@@ -51,7 +51,7 @@ pip install -r requirements.txt
 Suba o Postgres:
 
 ```bash
-docker compose up -d postgres
+docker compose --env-file .env.db-admin.local up -d postgres
 ```
 
 Execute as migrations:
@@ -70,7 +70,7 @@ python -m uvicorn apps.api.backend_api.main:app --reload --port 8001 --env-file 
 python manage.py runserver 127.0.0.1:8000
 ```
 
-Antes de iniciar, copie `.env.api.example` para `.env.api.local` e preencha `GOTRENDLABS_PASSWORD_PEPPER` com Base64 de 32 bytes aleatorios (`python -c 'import base64,secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())'`). O arquivo e ignorado pelo Git e deve ficar acessivel apenas ao usuario local (`chmod 600 .env.api.local`). A API recebe esse arquivo; Django nao recebe o pepper. Para definir a senha de um administrador existente, rode `.venv/bin/python -m apps.api.backend_api.bootstrap_admin_password --username admin` e digite a senha no prompt.
+Antes de iniciar, copie `.env.db-admin.example` para `.env.db-admin.local` e defina a senha do PostgreSQL local; use esse arquivo apenas no comando Docker acima. Copie `.env.api.example` para `.env.api.local`, preencha `FASTAPI_POSTGRES_PASSWORD` e gere `GOTRENDLABS_PASSWORD_PEPPER` com Base64 de 32 bytes aleatorios (`python -c 'import base64,secrets; print(base64.b64encode(secrets.token_bytes(32)).decode())'`). Os dois arquivos sao ignorados pelo Git e devem ter permissao `0600`. A API recebe a credencial FastAPI e o pepper; Django e daemon recebem somente a credencial Django. Para definir a senha de um administrador existente, rode `.venv/bin/python -m apps.api.backend_api.bootstrap_admin_password --username admin` e digite a senha no prompt.
 
 Acesse:
 
@@ -85,8 +85,6 @@ Variaveis relevantes:
 
 ```bash
 POSTGRES_DB=gotrendlabs
-POSTGRES_USER=gotrendlabs
-POSTGRES_PASSWORD=gotrendlabs_dev_password
 POSTGRES_HOST=127.0.0.1
 POSTGRES_PORT=5432
 DJANGO_POSTGRES_DB=gotrendlabs
@@ -94,11 +92,6 @@ DJANGO_POSTGRES_USER=gotrendlabs_django
 DJANGO_POSTGRES_PASSWORD=gotrendlabs_django_password
 DJANGO_POSTGRES_HOST=127.0.0.1
 DJANGO_POSTGRES_PORT=5432
-FASTAPI_POSTGRES_DB=gotrendlabs
-FASTAPI_POSTGRES_USER=gotrendlabs_fastapi
-FASTAPI_POSTGRES_PASSWORD=gotrendlabs_fastapi_password
-FASTAPI_POSTGRES_HOST=127.0.0.1
-FASTAPI_POSTGRES_PORT=5432
 BACKEND_API_URL=http://127.0.0.1:8001
 GOTRENDLABS_RUNTIME_CONFIG_PATH=.runtime/platform_config.json
 GOTRENDLABS_SMTP_PASSWORD=
@@ -113,7 +106,7 @@ RECAPTCHA_SITE_KEY=
 RECAPTCHA_SECRET_KEY=
 ```
 
-`POSTGRES_*` continua disponivel como fallback local e bootstrap do container. Para runtime, prefira `DJANGO_POSTGRES_*` e `FASTAPI_POSTGRES_*` com usuarios de menor privilegio por aplicacao. O arquivo `.env.example` e apenas modelo versionado; a aplicacao le o `.env` local ou variaveis ja exportadas no ambiente.
+O `.env` compartilhado contem apenas a credencial Django. A credencial FastAPI fica em `.env.api.local`; a de bootstrap do container fica em `.env.db-admin.local` e nunca e carregada pela aplicacao. O arquivo `.env.example` e apenas modelo versionado; a aplicacao le o `.env` local ou variaveis ja exportadas no ambiente.
 
 O modo manutencao do Admin Ops e salvo em `GOTRENDLABS_RUNTIME_CONFIG_PATH` para continuar funcionando sem conexao com o banco. Configuracoes nao sensiveis de email ficam no banco; senha/API key SMTP devem ficar somente em `GOTRENDLABS_SMTP_PASSWORD` ou `GOTRENDLABS_SMTP_API_KEY`, e a API key Resend deve ficar somente em `GOTRENDLABS_RESEND_API_KEY`. Push mobile nasce desligado com provider `none`/dry-run; credencial FCM futura deve ficar apenas em `GOTRENDLABS_FCM_CREDENTIALS_JSON` ou secret manager, nunca no Git/Admin Ops.
 
