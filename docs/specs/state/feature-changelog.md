@@ -4,6 +4,7 @@
 
 - PR `#126` integrada a `main`; CI e deploy `36330226816` passaram. Fronteira PostgreSQL e segredos segregados ativos na EC2/RDS, com `auth_db_boundary check` e `check-api` aprovados nas roles reais. Site, API e login/sessao/logout com headers mobile validados em producao.
 - Corte pre-lancamento encerrou 3 hashes PBKDF2: superusuario `@admin` recebeu novo hash Argon2id pela FastAPI; duas contas tiveram senha antiga inutilizada e sessoes revogadas. Inventario final: 1 Argon2id, 0 PBKDF2 e 4 senhas inutilizaveis. Credencial bootstrap e pepper estao fora do Git no Secrets Manager; snapshot RDS anterior ao corte disponivel. `FEAT-AUTH-001` ampla permanece `draft/parcial`.
+- O redeploy documental `#127` passou em CI/deploy. Um `401` do `@admin` apos esse deploy exigiu redefinir novamente a senha; depois disso, login web/mobile e verificacao do hash permaneceram corretos apos reinicio, recriacao e reaplicacao dos grants/migrations. Causa inicial nao reproduzida, registrada em `known-gaps.md` para acompanhamento.
 
 ## 2026-09-27 — FEAT-AUTH-001 fechamento local da melhoria de senha
 
