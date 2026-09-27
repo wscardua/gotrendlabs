@@ -157,6 +157,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - bootstrap de dados nao altera senhas existentes e cria admin novo com senha inutilizavel; operador define a senha pelo CLI da FastAPI, com revogacao de sessoes e evento de auditoria
 - role Django nao pode alterar `gotrendlabs_users.password` nem ser proprietaria da tabela/funcao de guard; `gotrendlabs_auth_owner` sem login e privilegios por coluna sao aplicados por operacao de migracao, com preflight de deploy
 - a credencial `FASTAPI_POSTGRES_*` fica em arquivo injetado somente na FastAPI; Django e daemon recebem apenas a role Django, sem permissao de escrita na coluna `password`. O preflight rejeita credenciais privilegiadas no ambiente compartilhado
+- o corte desta melhoria exige inventario de hashes legados, segredo recuperavel fora da EC2, preflight de role/migrator no RDS, CI/deploy e smoke de API, web e mobile; o ensaio em host separado foi dispensado pelo usuario nesta fase e a capacidade deve ser observada no primeiro deploy. Isso nao altera o estado `draft/parcial` da feature ampla de autenticacao
 - trocar/perder o pepper v1 impede verificar as senhas correspondentes; rotacao posterior exige plano de versoes ou reset de senhas, sem registrar o segredo em logs, banco ou respostas
 - registrar falhas de login e origem de autenticação
 - disponibilizar trilha mínima para suporte

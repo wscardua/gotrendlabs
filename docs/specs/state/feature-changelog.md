@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-09-27 — FEAT-AUTH-001 fechamento local da melhoria de senha
+
+- A fatia Argon2id/pepper e autoridade da FastAPI esta pronta para publicacao, com suite Django/API de 267 testes, 107 testes Flutter, `flutter analyze`, OpenAPI e smoke local web/API/Android aprovados. O ensaio isolado foi dispensado pelo usuario; preflight de segredos, grants, inventario de PBKDF2, CI/deploy e smoke produtivo continuam obrigatorios para fechar esta entrega.
+- A feature ampla de autenticacao segue `draft/parcial`; nenhuma alteracao de contrato HTTP, OpenAPI ou app mobile foi necessaria.
+
 ## 2026-09-27 — FEAT-AUTH-001 e FEAT-RES-001 correcoes do review local
 
 - `gotrendlabs_users` e o guard de senha passaram a pertencer a role sem login; migrations usam credencial separada, grants por coluna preservam edicao nao sensivel pelo Django e preflight bloqueia deploy inseguro. Revisao posterior separou tambem `FASTAPI_POSTGRES_*` do ambiente compartilhado: so FastAPI recebe a credencial com escrita de senha; Django e daemon usam a role Django. Aplicado e verificado apenas no PostgreSQL local.
@@ -10,7 +15,7 @@
 
 - Senhas locais passam a usar Argon2id com sal individual e pepper exclusivo de 32 bytes fora do banco/Git; FastAPI detem o segredo e cria/verifica senhas em runtime. Django recusa criacao/verificacao local de senhas utilizaveis e os clientes web/mobile preservam os contratos da API. Hashes PBKDF2 anteriores sao rejeitados conforme corte pre-lancamento aprovado pelo usuario.
 - Sem mudanca de schema de produto/OpenAPI. Cadastro, login, login social e reset preservam seus contratos. Segredo ausente/invalido bloqueia a FastAPI; `.env.api.local` e `.env.auth.prod` segregam o segredo, e o banco local bloqueia a escrita de senha pela role Django via trigger. Ownership de banco e configuracao do host antecedem qualquer deploy.
-- Testes de interoperabilidade, sal, segredo ausente/incorreto, hash antigo/malformado, inicializacao e fluxos de auth adicionados/revisados; 265 testes locais passaram, alem dos checks de Django, migrations e OpenAPI. Custo inicial `m=19456 KiB,t=2,p=1` com duas operacoes concorrentes por processo por limite do host atual; medicao produtiva pendente.
+- Testes de interoperabilidade, sal, segredo ausente/incorreto, hash antigo/malformado, inicializacao e fluxos de auth adicionados/revisados; a suite final de 267 testes locais passou, alem dos checks de Django, migrations e OpenAPI. Custo inicial `m=19456 KiB,t=2,p=1` com duas operacoes concorrentes por processo por limite do host atual; medicao produtiva pendente.
 
 ## 2026-09-26 — FEAT-EDITORIAL-001 implantada e validada
 

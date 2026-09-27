@@ -1,5 +1,10 @@
 # Change Log de Specs
 
+## 2026-09-27 — Fechamento documental do corte de senha
+
+- A melhoria Argon2id/pepper e autoridade exclusiva da FastAPI esta validada localmente; `FEAT-AUTH-001` permanece `draft/parcial` porque abrange outras evolucoes de autenticacao. O usuario dispensou ensaio externo isolado nesta fase, nao o preflight do host, o inventario de hashes e o smoke/monitoramento do primeiro deploy.
+- Contratos HTTP/OpenAPI e schema funcional permanecem inalterados. A memoria operacional registra que PR, merge, deploy e validacao produtiva ainda dependem de aprovacao e execucao.
+
 ## 2026-09-27 — Correcoes da revisao de autenticacao e refund
 
 - Arquitetura de banco, ADR-0008 e contrato de wallet explicitam owner sem login, migrator separado, grants por coluna, preflight e falha transacional quando refund nao tem saldo bloqueado suficiente.
