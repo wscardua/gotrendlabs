@@ -1,5 +1,11 @@
 # Change Log de Specs
 
+## 2026-09-28 — MFA administrativo TOTP
+
+- `FEAT-AUTH-001` passa a incluir TOTP obrigatório para staff/superuser, sessões com evidência MFA, desafios curtos, recovery codes hashados e revogação de sessões administrativas no rollout.
+- ADR-0009 registra autoridade FastAPI, proteção Fernet do segredo e remoção da rota Django Admin como prevenção de bypass.
+- A versão `0.7` explicita persistência, critérios de aceite, testes de regressão, segregação operacional da chave Fernet e a incompatibilidade intencional do cliente mobile até haver superfície administrativa própria.
+
 ## 2026-09-27 — Identidades bot e credencial de teste apos o corte
 
 - `FEAT-AIAGENT-001` v0.4 explicita que os agentes oficiais sao vinculados por `user_id`/`is_bot` e nao autenticam com senha para executar o daemon; senhas inutilizaveis nas contas bot sao esperadas.

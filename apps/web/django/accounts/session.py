@@ -67,7 +67,7 @@ def admin_api_required(view_func):
         if not is_authenticated(request):
             return redirect(login_url_with_next(request, request.get_full_path()))
         user = auth_user(request)
-        if not user.get("is_staff"):
+        if not (user.get("is_staff") or user.get("is_superuser")):
             try:
                 session = get_session(auth_token(request))
             except AuthAPIError:
@@ -75,7 +75,7 @@ def admin_api_required(view_func):
             if session:
                 request.session[USER_KEY] = session["user"]
                 user = session["user"]
-        if not user.get("is_staff"):
+        if not (user.get("is_staff") or user.get("is_superuser")):
             return HttpResponseForbidden("Acesso administrativo restrito.")
         return view_func(request, *args, **kwargs)
 

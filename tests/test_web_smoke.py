@@ -74,6 +74,14 @@ def _anti_abuse_answer(challenge):
     return str(sum(numbers[:2]))
 
 
+def _mark_mfa_for_test_user(*emails):
+    """Make an already-promoted legacy fixture an explicit MFA session."""
+    AuthSession.objects.filter(user__email__in=emails).update(
+        mfa_verified_at=timezone.now(),
+        mfa_method="totp",
+    )
+
+
 def _seed_test_markets():
     fixture_path = Path(settings.BASE_DIR) / "data" / "fixtures" / "domain.json"
     with fixture_path.open(encoding="utf-8") as fixture:
@@ -212,11 +220,14 @@ class FixtureDomainClientTests(TestCase):
 class SecurityHardeningTests(AppendOnlyTransactionTestCase):
     def _api_token_for(self, user):
         token = issue_token()
+        mfa_method = "totp" if user.is_staff or user.is_superuser else ""
         AuthSession.objects.create(
             user=user,
             token_hash=hash_token(token),
             last_seen_at=timezone.now(),
             expires_at=timezone.now() + timedelta(days=1),
+            mfa_verified_at=timezone.now() if mfa_method else None,
+            mfa_method=mfa_method,
         )
         return token
 
@@ -560,13 +571,11 @@ class MobileMaintenanceGateTests(AppendOnlyTransactionTestCase):
         user = self._user("root@example.com", is_superuser=True)
 
         login = self.client_api.post("/auth/login", json={"email": user.email, "password": "testpass123"})
-        token = login.json()["session"]["token"]
-        session = self.client_api.get("/auth/session", headers={"Authorization": f"Bearer {token}"})
 
         self.assertEqual(login.status_code, 200)
-        self.assertNotIn("is_superuser", login.json()["user"])
-        self.assertEqual(session.status_code, 200)
-        self.assertNotIn("is_superuser", session.json()["user"])
+        self.assertTrue(login.json()["mfa_required"])
+        self.assertNotIn("session", login.json())
+        self.assertNotIn("is_superuser", login.json())
 
     def test_mobile_maintenance_blocks_public_staff_and_superuser(self):
         staff = self._user("staff@example.com", is_staff=True)
@@ -1683,6 +1692,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", (staff_email,))
+        _mark_mfa_for_test_user(staff_email)
         admin_markets = client.get("/admin/markets", headers={"Authorization": f"Bearer {user.json()['session']['token']}"})
         self.assertEqual(admin_markets.status_code, 200)
         admin_market = next(item for item in admin_markets.json()["markets"] if item["slug"] == "openai-gpt6-2026")
@@ -1753,6 +1763,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("user-admin-staff@example.com",))
+        _mark_mfa_for_test_user("user-admin-staff@example.com")
 
         forbidden = client.get("/admin/users", headers=target_headers)
         self.assertEqual(forbidden.status_code, 403)
@@ -1883,6 +1894,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true, is_superuser = true WHERE email = %s", ("root-admin@example.com",))
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("role-staff@example.com",))
+        _mark_mfa_for_test_user("root-admin@example.com", "role-staff@example.com")
 
         forbidden = client.post(
             f"/admin/users/{target_id}/roles",
@@ -1968,6 +1980,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true, is_superuser = true WHERE id = %s", (superuser_id,))
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE id = %s", (admin_target_id,))
                 cursor.execute("UPDATE gotrendlabs_users SET account_status = 'deactivated', is_active = false WHERE id = %s", (disabled_id,))
+        _mark_mfa_for_test_user("reset-staff@example.com", "reset-super@example.com")
 
         reset = client.post(
             f"/admin/users/{target_id}/password-reset",
@@ -2092,6 +2105,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("logs-staff@example.com",))
+        _mark_mfa_for_test_user("logs-staff@example.com")
 
         forbidden = client.get("/admin/system-logs", headers=user_headers)
         self.assertEqual(forbidden.status_code, 403)
@@ -2160,6 +2174,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("dashboard-staff@example.com",))
+                cursor.execute("UPDATE gotrendlabs_auth_sessions SET mfa_verified_at = NOW(), mfa_method = 'totp' WHERE user_id = (SELECT id FROM gotrendlabs_users WHERE email = %s)", ("dashboard-staff@example.com",))
                 cursor.execute("SELECT id FROM gotrendlabs_users WHERE email = %s", ("dashboard-staff@example.com",))
                 staff_id = cursor.fetchone()["id"]
                 cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug = %s", ("openai-gpt6-2026",))
@@ -3765,6 +3780,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("badge-staff@example.com",))
+        _mark_mfa_for_test_user("badge-staff@example.com")
 
         public_catalog = client.get("/badges")
         self.assertEqual(public_catalog.status_code, 200)
@@ -4089,6 +4105,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("theme-staff@example.com",))
+        _mark_mfa_for_test_user("theme-staff@example.com")
         staff_headers = {"Authorization": f"Bearer {staff.json()['session']['token']}"}
 
         market_response = client.post(
@@ -4210,6 +4227,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("ranking-staff@example.com",))
                 cursor.execute("UPDATE gotrendlabs_users SET is_superuser = true WHERE email = %s", ("ranking-super@example.com",))
+                cursor.execute("UPDATE gotrendlabs_auth_sessions SET mfa_verified_at = NOW(), mfa_method = 'totp' WHERE user_id IN (SELECT id FROM gotrendlabs_users WHERE email IN (%s, %s))", ("ranking-staff@example.com", "ranking-super@example.com"))
                 cursor.execute(
                     """
                     UPDATE gotrendlabs_user_reputations r
@@ -4797,6 +4815,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("position-staff@example.com",))
+        _mark_mfa_for_test_user("position-staff@example.com")
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
         Market.objects.filter(slug="openai-gpt6-2026").update(auto_close_enabled=False)
@@ -5051,6 +5070,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("resolution-staff@example.com",))
+        _mark_mfa_for_test_user("resolution-staff@example.com")
 
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         winner_headers = {"Authorization": f"Bearer {winner_register.json()['session']['token']}"}
@@ -5285,6 +5305,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("audit-staff@example.com",))
+        _mark_mfa_for_test_user("audit-staff@example.com")
 
         market_response = client.post(
             "/admin/markets",
@@ -5444,6 +5465,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("cancel-staff@example.com",))
+        _mark_mfa_for_test_user("cancel-staff@example.com")
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         user_headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
         market_response = client.post(
@@ -5535,6 +5557,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("reconcile-staff@example.com",))
+        _mark_mfa_for_test_user("reconcile-staff@example.com")
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         user_headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
         market_response = client.post(
@@ -5661,6 +5684,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("preserve-staff@example.com",))
+        _mark_mfa_for_test_user("preserve-staff@example.com")
 
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         first_headers = {"Authorization": f"Bearer {first_register.json()['session']['token']}"}
@@ -5835,6 +5859,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("comment-staff@example.com",))
+        _mark_mfa_for_test_user("comment-staff@example.com")
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         admin_comments = client.get("/admin/comments", headers=staff_headers)
         self.assertEqual(admin_comments.status_code, 200)
@@ -5893,6 +5918,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("staff-admin@example.com",))
+        _mark_mfa_for_test_user("staff-admin@example.com")
         headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         staff_session = client.get("/auth/session", headers=headers)
         self.assertEqual(staff_session.status_code, 200)
@@ -6466,6 +6492,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff = true WHERE email = %s", ("queue-staff@example.com",))
+        _mark_mfa_for_test_user("queue-staff@example.com")
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
 
         queue = client.get("/admin/queues", headers=staff_headers)

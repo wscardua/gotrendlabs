@@ -76,6 +76,14 @@ def login_user(data):
     return _request("POST", "/auth/login", data)
 
 
+def mfa_enroll(challenge_token):
+    return _request("POST", "/auth/mfa/enroll", {"challenge_token": challenge_token})
+
+
+def mfa_verify(challenge_token, *, code="", recovery_code=""):
+    return _request("POST", "/auth/mfa/verify", {"challenge_token": challenge_token, "code": code, "recovery_code": recovery_code})
+
+
 def social_auth_start(provider, data):
     return _request("POST", f"/auth/social/{provider}/start", data)
 
@@ -110,6 +118,10 @@ def logout_user(token):
 
 def get_session(token):
     return _request("GET", "/auth/session", token=token)
+
+
+def admin_recover_user_mfa(token, user_id, note):
+    return _request("POST", f"/admin/users/{user_id}/mfa/recover", {"note": note}, token=token)
 
 
 def get_me(token):

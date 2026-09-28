@@ -8,6 +8,17 @@ class LoginForm(forms.Form):
     remember_me = forms.BooleanField(label="Lembrar meu acesso neste dispositivo", required=False)
 
 
+class MfaCodeForm(forms.Form):
+    code = forms.CharField(label="Código do autenticador", max_length=6, required=False)
+    recovery_code = forms.CharField(label="Código de recuperação", max_length=64, required=False)
+
+    def clean(self):
+        cleaned = super().clean()
+        if bool(cleaned.get("code", "").strip()) == bool(cleaned.get("recovery_code", "").strip()):
+            raise forms.ValidationError("Informe exatamente um código.")
+        return cleaned
+
+
 class PasswordResetRequestForm(forms.Form):
     email = forms.EmailField(label="Email")
 

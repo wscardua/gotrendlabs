@@ -51,6 +51,7 @@ from apps.web.django.accounts.api_client import (
     admin_get_user,
     admin_get_users,
     admin_request_user_password_reset,
+    admin_recover_user_mfa,
     get_backend_health,
     get_market_integrity,
     admin_lock_market,
@@ -2197,6 +2198,13 @@ def user_detail(request, user_id):
                     messages.success(request, "Link de reset de senha gerado.")
                 else:
                     error = "Informe a nota operacional."
+            elif action == "mfa_recover":
+                note_form = AdminUserNoteForm(request.POST)
+                if note_form.is_valid():
+                    admin_recover_user_mfa(token, user_id, note_form.cleaned_data["note"])
+                    messages.success(request, "MFA redefinido; o operador deverá configurar novo autenticador no próximo login.")
+                    return redirect("admin-ops-user-detail", user_id=user_id)
+                error = "Informe a nota operacional."
         except AuthAPIError as exc:
             error = str(exc)
     try:

@@ -43,6 +43,8 @@ urlpatterns = [
     path("markets/<slug:slug>/favorite/", market_views.favorite_toggle, name="market-favorite-toggle"),
     path("markets/<slug:slug>/like/", market_views.like_toggle, name="market-like-toggle"),
     path("login/", account_views.login_view, name="login"),
+    path("mfa/enroll/", account_views.mfa_enroll_view, name="mfa-enroll"),
+    path("mfa/verify/", account_views.mfa_verify_view, name="mfa-verify"),
     path("register/", account_views.register_view, name="register"),
     path("password-reset/", account_views.password_reset_request_view, name="password-reset"),
     path("password-reset/confirm/<str:token>/", account_views.password_reset_confirm_view, name="password-reset-confirm"),
@@ -94,7 +96,6 @@ urlpatterns = [
     path("admin-ops/queues/<str:kind>/<int:item_id>/<str:action>/", admin_ops_views.queue_action, name="admin-ops-queue-item-action"),
     path("admin-ops/queues/<str:action>/", admin_ops_views.queue_action, name="admin-ops-queue-action"),
     path("admin-ops/taxonomy/<str:action>/", admin_ops_views.category_action, name="admin-ops-category-action"),
-    path("admin/", admin.site.urls),
 ]
 
 if settings.DEBUG:

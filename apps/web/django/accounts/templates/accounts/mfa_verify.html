@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}GoTrendLabs | Confirmar identidade{% endblock %}
+{% block content %}
+<main class="shell auth-page mfa-verify-page">
+  <div class="auth-layout single mfa-verify-layout">
+    <section class="auth-card mfa-verify-card" aria-labelledby="mfa-verify-title">
+      <div class="auth-card-head">
+        <span class="eyebrow">Segurança administrativa</span>
+        <h1 id="mfa-verify-title">Confirme sua identidade</h1>
+        <p>Digite o código atual gerado pelo seu Google Authenticator para continuar.</p>
+      </div>
+
+      <form class="form-grid" method="post">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="field full"><div class="tag risk">{{ form.non_field_errors|join:", " }}</div></div>{% endif %}
+        <div class="field full">
+          <label for="{{ form.code.id_for_label }}">Código do autenticador</label>
+          <input id="{{ form.code.id_for_label }}" name="{{ form.code.name }}" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus>
+          {% if form.code.errors %}<small>{{ form.code.errors|join:", " }}</small>{% endif %}
+        </div>
+
+        <details class="mfa-recovery-option">
+          <summary>Não tem acesso ao autenticador?</summary>
+          <p>Use um código de recuperação de uso único. Não informe os dois códigos ao mesmo tempo.</p>
+          <label for="{{ form.recovery_code.id_for_label }}">Código de recuperação</label>
+          <input id="{{ form.recovery_code.id_for_label }}" name="{{ form.recovery_code.name }}" type="text" autocomplete="one-time-code" maxlength="64">
+          {% if form.recovery_code.errors %}<small>{{ form.recovery_code.errors|join:", " }}</small>{% endif %}
+        </details>
+
+        <button class="btn primary full" type="submit">Confirmar e entrar</button>
+      </form>
+    </section>
+  </div>
+</main>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}GoTrendLabs | Códigos de recuperação{% endblock %}
+{% block content %}
+<main class="shell auth-page mfa-recovery-page">
+  <div class="auth-layout single mfa-recovery-layout">
+    <section class="auth-card mfa-recovery-card" aria-labelledby="recovery-codes-title">
+      <div class="auth-card-head">
+        <span class="eyebrow">Configuração concluída</span>
+        <h1 id="recovery-codes-title">Guarde os códigos de recuperação</h1>
+        <p>Use um deles somente se não conseguir acessar o Google Authenticator.</p>
+      </div>
+
+      <div class="mfa-recovery-warning" role="note">
+        <span aria-hidden="true">!</span>
+        <p><strong>Exibidos uma única vez.</strong> Salve-os em um local seguro antes de continuar.</p>
+      </div>
+
+      <div class="mfa-recovery-code-grid" aria-label="Códigos de recuperação">
+        {% for code in recovery_codes %}<code>{{ code }}</code>{% endfor %}
+      </div>
+
+      <section class="mfa-recovery-guide" aria-labelledby="recovery-guide-title">
+        <h2 id="recovery-guide-title">Quando e como usar</h2>
+        <div class="mfa-recovery-guide-grid">
+          <div>
+            <strong>Para que servem</strong>
+            <p>Use um código apenas se perder o acesso ao Google Authenticator. Cada código substitui uma única confirmação de login.</p>
+          </div>
+          <div>
+            <strong>Como guardar</strong>
+            <p>Salve em um gerenciador de senhas ou imprima e mantenha em local físico protegido.</p>
+          </div>
+          <div>
+            <strong>Não faça</strong>
+            <p>Não envie por mensagem, e-mail ou print. Não guarde junto do celular que usa o autenticador.</p>
+          </div>
+        </div>
+      </section>
+
+      <div class="mfa-recovery-actions">
+        <p>Não compartilhe estes códigos. Cada um deixa de funcionar após o uso.</p>
+        <a class="btn primary full" href="{{ next_url }}">Guardei os códigos, continuar</a>
+      </div>
+    </section>
+  </div>
+</main>
+{% endblock %}

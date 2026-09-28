@@ -19,7 +19,7 @@ from typing import Optional
 import unicodedata
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import FastAPI, Header, HTTPException, Query, Request, status
+from fastapi import FastAPI, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
 
 from apps.api.backend_api.admin_events import record_admin_event
@@ -66,6 +66,8 @@ from apps.api.backend_api.schemas import (
     AdminUserListResponse,
     AdminUserPasswordResetPayload,
     AdminUserPasswordResetResponse,
+    AdminMfaRecoveryPayload,
+    AdminMfaRecoveryResponse,
     AdminUserRolePayload,
     AdminUserWalletAdjustmentPayload,
     FeedbackRewardPayload,
@@ -80,6 +82,7 @@ from apps.api.backend_api.schemas import (
     AdminEventPayload,
     AdminSubcategoryPayload,
     AdminTaxonomyResponse,
+    AuthLoginResponse,
     AuthResponse,
     BadgeListResponse,
     BadgeResponse,
@@ -98,6 +101,10 @@ from apps.api.backend_api.schemas import (
     IntegrityLedgerStatusResponse,
     MarketResponse,
     MarketSuggestionPayload,
+    MfaChallengeResponse,
+    MfaEnrollmentResponse,
+    MfaVerifyPayload,
+    MfaVerifyResponse,
     NotificationListResponse,
     PasswordResetConfirmPayload,
     PasswordResetConfirmResponse,
@@ -141,6 +148,7 @@ from apps.api.backend_api.schemas import (
     WalletRechargeRequestResponse,
 )
 from apps.api.backend_api.security import check_password, hash_token, issue_token, make_password
+from apps.api.backend_api.mfa import decrypt_secret, encrypt_secret, new_secret, otpauth_uri, recovery_codes, require_totp_encryption_key, valid_timestep
 from packages.security.passwords import require_password_pepper
 from apps.api.backend_api.social_oauth import SocialOAuthError, build_social_authorization, fetch_social_profile
 from apps.api.backend_api.social_oauth import SocialProfile
@@ -148,6 +156,7 @@ from config.recaptcha import RecaptchaError, verify_recaptcha_response
 from apps.web.django.system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
 
 SESSION_TTL = timedelta(days=14)
+MFA_CHALLENGE_TTL = timedelta(minutes=5)
 PASSWORD_RESET_TTL = timedelta(hours=1)
 PASSWORD_RESET_MESSAGE = "Se o email estiver cadastrado, enviaremos instruções para recuperar a senha."
 INITIAL_GRANT_GTL = 2000
@@ -176,6 +185,7 @@ logger = logging.getLogger(__name__)
 
 if os.environ.get("GOTRENDLABS_ENV", "").strip().lower() in {"prod", "production"} or os.environ.get("DJANGO_DEBUG", "").strip().lower() in {"0", "false", "no", "off"}:
     require_password_pepper()
+    require_totp_encryption_key()
 
 app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
 
@@ -1416,7 +1426,7 @@ def _current_user(cursor, authorization):
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
                u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.is_bot,
-               u.email_confirmed_at
+               u.email_confirmed_at, s.mfa_verified_at, s.mfa_method
         FROM gotrendlabs_auth_sessions s
         JOIN gotrendlabs_users u ON u.id = s.user_id
         WHERE s.token_hash = %s
@@ -1450,8 +1460,10 @@ def _require_email_confirmed(user):
 
 def _current_staff_user(cursor, authorization):
     user = _current_user(cursor, authorization)
-    if not user["is_staff"]:
+    if not _is_admin_account(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso administrativo restrito.")
+    if not user.get("mfa_verified_at"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail={"code": "mfa_required", "message": "Confirmação MFA é obrigatória para operações administrativas."})
     return user
 
 
@@ -4279,25 +4291,62 @@ def _validate_adult_birth_date(birth_date, *, today=None):
     return birth_date
 
 
-def _create_session(cursor, user_id, request):
+def _create_session(cursor, user_id, request, *, mfa_method=None):
     token = issue_token()
     expires_at = datetime.now(timezone.utc) + SESSION_TTL
     ip_address, user_agent = _client_meta(request)
     cursor.execute(
         """
         INSERT INTO gotrendlabs_auth_sessions
-            (user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at, ip_address, user_agent)
-        VALUES (%s, %s, %s, %s, %s, NULL, %s, %s)
+            (user_id, token_hash, created_at, last_seen_at, expires_at, revoked_at, ip_address, user_agent, mfa_verified_at, mfa_method)
+        VALUES (%s, %s, %s, %s, %s, NULL, %s, %s, %s, %s)
         """,
-        (user_id, hash_token(token), datetime.now(timezone.utc), datetime.now(timezone.utc), expires_at, ip_address, user_agent),
+        (user_id, hash_token(token), datetime.now(timezone.utc), datetime.now(timezone.utc), expires_at, ip_address, user_agent, datetime.now(timezone.utc) if mfa_method else None, mfa_method or ""),
     )
     return {"token": token, "expires_at": expires_at.isoformat()}
+
+
+def _is_admin_account(user):
+    return bool(user.get("is_staff") or user.get("is_superuser"))
+
+
+def _mfa_challenge(cursor, user, request, *, enrollment):
+    token = issue_token()
+    now = datetime.now(timezone.utc)
+    ip_address, user_agent = _client_meta(request)
+    cursor.execute("""INSERT INTO gotrendlabs_mfa_challenges
+        (user_id, token_hash, purpose, created_at, expires_at, used_at, ip_address, user_agent)
+        VALUES (%s, %s, %s, %s, %s, NULL, %s, %s)""",
+        (user["id"], hash_token(token), "enrollment" if enrollment else "verify", now, now + MFA_CHALLENGE_TTL, ip_address, user_agent))
+    return {"mfa_required": True, "challenge_token": token, "expires_at": (now + MFA_CHALLENGE_TTL).isoformat(), "enrollment_required": enrollment}
+
+
+def _mfa_login_or_challenge(cursor, user, request):
+    if not _is_admin_account(user):
+        return {"user": _user_response(user), "session": _create_session(cursor, user["id"], request)}
+    # An interrupted enrollment cannot be recovered safely because its secret is shown only once.
+    cursor.execute("UPDATE gotrendlabs_totp_factors SET revoked_at = %s WHERE user_id = %s AND confirmed_at IS NULL AND revoked_at IS NULL", (datetime.now(timezone.utc), user["id"]))
+    cursor.execute("SELECT id FROM gotrendlabs_totp_factors WHERE user_id = %s AND confirmed_at IS NOT NULL AND revoked_at IS NULL", (user["id"],))
+    result = _mfa_challenge(cursor, user, request, enrollment=not bool(cursor.fetchone()))
+    _record_event(cursor, "mfa_challenge_issued", user_id=user["id"], email=user["email"])
+    return result
+
+
+def _enforce_mfa_rate_limit(cursor, request, challenge_token):
+    """Database-backed limit, shared by every FastAPI worker."""
+    now = datetime.now(timezone.utc)
+    identity = _rate_limit_identity(request, challenge_token)
+    cursor.execute("DELETE FROM gotrendlabs_mfa_attempts WHERE created_at < %s", (now - timedelta(minutes=10),))
+    cursor.execute("SELECT COUNT(*) AS total FROM gotrendlabs_mfa_attempts WHERE identity_hash = %s AND created_at > %s", (identity, now - timedelta(minutes=5)))
+    if int(cursor.fetchone()["total"]) >= 5:
+        raise HTTPException(status_code=429, detail="Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.")
+    cursor.execute("INSERT INTO gotrendlabs_mfa_attempts (identity_hash, created_at) VALUES (%s, %s)", (identity, now))
 
 
 def _auth_user_select():
     return """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language, u.date_joined, u.last_login,
-               u.account_status, u.is_staff, u.is_active, u.email_confirmed_at
+               u.account_status, u.is_staff, u.is_superuser, u.is_active, u.email_confirmed_at
         FROM gotrendlabs_users u
     """
 
@@ -4471,10 +4520,9 @@ def _social_auth_response(cursor, profile, payload, request):
         _touch_social_identity(cursor, user["id"], profile.provider, profile.subject, profile.email, now)
         cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
         user["last_login"] = now
-        session = _create_session(cursor, user["id"], request)
         ip_address, user_agent = _client_meta(request)
         _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=ip_address, user_agent=user_agent)
-        return {"user": _user_response(user), "session": session}, should_process_email, is_new_user
+        return _mfa_login_or_challenge(cursor, user, request), should_process_email, is_new_user
     if not profile.email:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -4519,10 +4567,9 @@ def _social_auth_response(cursor, profile, payload, request):
         _record_event(cursor, "register", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=_client_meta(request)[0], user_agent=_client_meta(request)[1])
     cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
     user["last_login"] = now
-    session = _create_session(cursor, user["id"], request)
     ip_address, user_agent = _client_meta(request)
     _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], provider=profile.provider, ip_address=ip_address, user_agent=user_agent)
-    return {"user": _user_response(user), "session": session}, should_process_email, is_new_user
+    return _mfa_login_or_challenge(cursor, user, request), should_process_email, is_new_user
 
 
 def _profile_from_complete_email_payload(payload):
@@ -6190,9 +6237,33 @@ def admin_update_user_roles(user_id: int, payload: AdminUserRolePayload, authori
                 """,
                 (is_staff, is_superuser, user_id),
             )
+            # A promotion/demotion invalidates any pre-MFA administrative token.
+            cursor.execute("UPDATE gotrendlabs_auth_sessions SET revoked_at = %s WHERE user_id = %s AND revoked_at IS NULL", (datetime.now(timezone.utc), user_id))
             role_label = "superuser" if is_superuser else "staff" if is_staff else "user"
             _record_admin_event(cursor, staff["id"], "user.roles_update", "user", str(user_id), f"{note} | role={role_label}")
             return _admin_user_detail(cursor, user_id)
+
+
+@app.post("/admin/users/{user_id}/mfa/recover", response_model=AdminMfaRecoveryResponse)
+def admin_recover_user_mfa(user_id: int, payload: AdminMfaRecoveryPayload, authorization: str = Header(default="")):
+    """Reset another operator's factor; the target must complete enrollment on next login."""
+    note = payload.note.strip()
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            actor = _current_staff_user(cursor, authorization)
+            _require_superuser(actor)
+            target = _admin_user_row(cursor, user_id)
+            _require_admin_target(actor, target, allow_superuser=True)
+            if not (target["is_staff"] or target["is_superuser"]):
+                raise HTTPException(status_code=422, detail="Recuperação MFA só existe para contas administrativas.")
+            now = datetime.now(timezone.utc)
+            cursor.execute("UPDATE gotrendlabs_totp_factors SET revoked_at = %s WHERE user_id = %s AND revoked_at IS NULL", (now, user_id))
+            cursor.execute("UPDATE gotrendlabs_mfa_recovery_codes SET used_at = %s WHERE user_id = %s AND used_at IS NULL", (now, user_id))
+            cursor.execute("UPDATE gotrendlabs_mfa_challenges SET used_at = %s WHERE user_id = %s AND used_at IS NULL", (now, user_id))
+            cursor.execute("UPDATE gotrendlabs_auth_sessions SET revoked_at = %s WHERE user_id = %s AND revoked_at IS NULL", (now, user_id))
+            _record_admin_event(cursor, actor["id"], "user.mfa_recovery", "user", str(user_id), note)
+            _record_event(cursor, "mfa_admin_recovery", user_id=user_id, email=target["email"])
+            return {"message": "MFA redefinido; a conta deve configurar novo autenticador no próximo login."}
 
 
 @app.post("/admin/users/{user_id}/bot", response_model=AdminUserDetailResponse)
@@ -7771,7 +7842,7 @@ def register(payload: RegisterPayload, request: Request):
     return response
 
 
-@app.post("/auth/login", response_model=AuthResponse)
+@app.post("/auth/login", response_model=AuthLoginResponse)
 def login(payload: LoginPayload, request: Request):
     ip_address, user_agent = _client_meta(request)
     _enforce_rate_limit("login", _rate_limit_identity(request, payload.email), limit=10, window_seconds=300)
@@ -7780,7 +7851,7 @@ def login(payload: LoginPayload, request: Request):
             cursor.execute(
                 """
                 SELECT id, username, email, first_name, preferred_language, password, is_active,
-                       date_joined, last_login, account_status, is_staff, email_confirmed_at
+                       date_joined, last_login, account_status, is_staff, is_superuser, email_confirmed_at
                 FROM gotrendlabs_users
                 WHERE lower(email) = lower(%s)
                 """,
@@ -7794,9 +7865,83 @@ def login(payload: LoginPayload, request: Request):
             now = datetime.now(timezone.utc)
             cursor.execute("UPDATE gotrendlabs_users SET last_login = %s WHERE id = %s", (now, user["id"]))
             user["last_login"] = now
-            session = _create_session(cursor, user["id"], request)
             _record_event(cursor, "login_success", user_id=user["id"], email=user["email"], ip_address=ip_address, user_agent=user_agent)
-            return {"user": _user_response(user), "session": session}
+            return _mfa_login_or_challenge(cursor, user, request)
+
+
+def _locked_mfa_challenge(cursor, challenge_token, purpose=None):
+    query = """SELECT c.id AS challenge_id, c.user_id, u.id, u.username, u.email, u.first_name, u.preferred_language,
+               u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.email_confirmed_at
+        FROM gotrendlabs_mfa_challenges c JOIN gotrendlabs_users u ON u.id = c.user_id
+        WHERE c.token_hash = %s AND c.used_at IS NULL AND c.expires_at > %s"""
+    params = [hash_token(challenge_token), datetime.now(timezone.utc)]
+    if purpose:
+        query = query.replace(" AND c.used_at", " AND c.purpose = %s AND c.used_at")
+        params.insert(1, purpose)
+    cursor.execute(query + " FOR UPDATE", params)
+    row = cursor.fetchone()
+    if not row:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail={"code": "mfa_challenge_invalid", "message": "Desafio MFA inválido, expirado ou já utilizado."})
+    return row
+
+
+@app.post("/auth/mfa/enroll", response_model=MfaEnrollmentResponse)
+def mfa_enroll(payload: MfaVerifyPayload, response: Response):
+    """Creates a staged factor; the secret only appears in this one TLS response."""
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _locked_mfa_challenge(cursor, payload.challenge_token, "enrollment")
+            if not _is_admin_account(user):
+                raise HTTPException(status_code=403, detail="MFA enrollment is restricted to administrative accounts.")
+            cursor.execute("SELECT id FROM gotrendlabs_totp_factors WHERE user_id = %s AND confirmed_at IS NULL AND revoked_at IS NULL", (user["id"],))
+            if cursor.fetchone():
+                raise HTTPException(status_code=409, detail="A chave de enrollment já foi exibida; reinicie o login para gerar novo desafio.")
+            secret = new_secret()
+            cursor.execute("""INSERT INTO gotrendlabs_totp_factors
+                (user_id, secret_encrypted, created_at, confirmed_at, revoked_at, last_accepted_timestep)
+                VALUES (%s, %s, %s, NULL, NULL, NULL)""", (user["id"], encrypt_secret(secret), datetime.now(timezone.utc)))
+            response.headers["Cache-Control"] = "private, no-store"
+            return {"challenge_token": payload.challenge_token, "expires_at": (datetime.now(timezone.utc) + MFA_CHALLENGE_TTL).isoformat(), "manual_key": secret, "otpauth_uri": otpauth_uri(secret, user["username"])}
+
+
+@app.post("/auth/mfa/verify", response_model=MfaVerifyResponse)
+def mfa_verify(payload: MfaVerifyPayload, request: Request, response: Response):
+    if bool(payload.code.strip()) == bool(payload.recovery_code.strip()):
+        raise HTTPException(status_code=422, detail="Informe exatamente um código TOTP ou de recuperação.")
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _enforce_mfa_rate_limit(cursor, request, payload.challenge_token)
+            user = _locked_mfa_challenge(cursor, payload.challenge_token)
+            cursor.execute("SELECT * FROM gotrendlabs_totp_factors WHERE user_id = %s AND revoked_at IS NULL ORDER BY id DESC LIMIT 1 FOR UPDATE", (user["id"],))
+            factor = cursor.fetchone()
+            if not factor:
+                raise HTTPException(status_code=401, detail="Fator TOTP não configurado.")
+            method = "totp"
+            if payload.code:
+                timestep = valid_timestep(decrypt_secret(factor["secret_encrypted"]), payload.code.strip())
+                if timestep is None or (factor["last_accepted_timestep"] is not None and timestep <= factor["last_accepted_timestep"]):
+                    _record_event(cursor, "mfa_failure", user_id=user["id"], email=user["email"])
+                    raise HTTPException(status_code=401, detail="Código de autenticação inválido ou já utilizado.")
+                cursor.execute("UPDATE gotrendlabs_totp_factors SET confirmed_at = COALESCE(confirmed_at, %s), last_accepted_timestep = %s WHERE id = %s", (datetime.now(timezone.utc), timestep, factor["id"]))
+            else:
+                code_hash = hash_token(payload.recovery_code.strip().upper())
+                cursor.execute("UPDATE gotrendlabs_mfa_recovery_codes SET used_at = %s WHERE user_id = %s AND code_hash = %s AND used_at IS NULL RETURNING id", (datetime.now(timezone.utc), user["id"], code_hash))
+                if not cursor.fetchone():
+                    _record_event(cursor, "mfa_failure", user_id=user["id"], email=user["email"])
+                    raise HTTPException(status_code=401, detail="Código de recuperação inválido ou já utilizado.")
+                method = "recovery_code"
+            cursor.execute("UPDATE gotrendlabs_mfa_challenges SET used_at = %s WHERE token_hash = %s AND used_at IS NULL", (datetime.now(timezone.utc), hash_token(payload.challenge_token)))
+            generated = []
+            if not factor["confirmed_at"]:
+                generated = recovery_codes()
+                cursor.executemany("INSERT INTO gotrendlabs_mfa_recovery_codes (user_id, code_hash, created_at, used_at) VALUES (%s, %s, %s, NULL)", [(user["id"], hash_token(value), datetime.now(timezone.utc)) for value in generated])
+                _record_event(cursor, "mfa_enrollment_confirmed", user_id=user["id"], email=user["email"])
+                # Recovery codes are intentionally disclosed once, so no shared
+                # intermediary or browser cache may retain this response.
+                response.headers["Cache-Control"] = "private, no-store"
+            else:
+                _record_event(cursor, "mfa_success", user_id=user["id"], email=user["email"])
+            return {"user": _user_response(user), "session": _create_session(cursor, user["id"], request, mfa_method=method), "recovery_codes": generated}
 
 
 @app.post("/auth/password-reset/request", response_model=PasswordResetRequestResponse)
@@ -7989,7 +8134,7 @@ def social_login_start(provider: str, payload: SocialAuthStartPayload, request: 
     }
 
 
-@app.post("/auth/social/{provider}/callback", response_model=AuthResponse)
+@app.post("/auth/social/{provider}/callback", response_model=AuthLoginResponse)
 def social_login_callback(provider: str, payload: SocialAuthCallbackPayload, request: Request):
     _enforce_rate_limit("social-auth-callback", _rate_limit_identity(request, provider), limit=30, window_seconds=3600)
     try:
@@ -8004,7 +8149,7 @@ def social_login_callback(provider: str, payload: SocialAuthCallbackPayload, req
     return response
 
 
-@app.post("/auth/social/{provider}/complete-email", response_model=AuthResponse)
+@app.post("/auth/social/{provider}/complete-email", response_model=AuthLoginResponse)
 def social_login_complete_email(provider: str, payload: SocialAuthCompleteEmailPayload, request: Request):
     _enforce_rate_limit("social-auth-email", _rate_limit_identity(request, provider), limit=20, window_seconds=3600)
     profile, referral_code = _profile_from_complete_email_payload(payload)

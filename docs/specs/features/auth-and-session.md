@@ -1,15 +1,16 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.5
+versao: 0.7
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-27
+ultima_atualizacao: 2026-09-28
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
   - i18n-content.md
   - domain-events.md
+  - ../../packages/contracts/openapi/gotrendlabs-api.json
 dependencias: []
 impacta:
   - frontend-web
@@ -47,17 +48,20 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - gestão administrativa de usuários cadastrados para suporte operacional
 - marcação administrativa de contas controladas por robôs internos
 - geração administrativa auditada de link de recuperação de senha
+- MFA TOTP obrigatório, compatível com Google Authenticator, para `is_staff=true` ou `is_superuser=true`
 
 ## Escopo excluído
 
-- MFA
 - SSO corporativo
 - gestão avançada de dispositivos
 - ajuste manual de reputação
+- cliente mobile para MFA administrativo, pois o app não possui superfície administrativa nesta etapa
 
 ## Fluxo do usuário
 
 Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda idioma preferencial e passa a acessar feed, perfil, wallet e ações autenticadas.
+
+Contas `is_staff` ou `is_superuser` validam TOTP depois da primeira credencial e antes de receber qualquer sessão. Sem fator confirmado, recebem apenas desafio curto para enrollment; Admin Ops e endpoints `/admin/...` exigem evidência MFA na sessão emitida pela FastAPI.
 
 ## Comportamento esperado
 
@@ -140,6 +144,7 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - aceite de política de uso
 - estado da conta e timestamps de exclusão lógica
 - marcador administrativo `is_bot`
+- fator TOTP cifrado, desafio de MFA curto e de uso único, códigos de recuperação hashados/de uso único e evidência de MFA em sessão administrativa
 
 ## Contratos afetados
 
@@ -154,6 +159,9 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 ## Observabilidade e operação
 
 - `GOTRENDLABS_PASSWORD_PEPPER` deve conter 32 bytes aleatorios codificados em Base64, distintos de `DJANGO_SECRET_KEY` e de outros segredos; apenas FastAPI recebe o valor, e falta/formato invalido interrompe sua inicializacao produtiva e operacoes de senha
+- `GOTRENDLABS_TOTP_ENCRYPTION_KEY` é uma chave Fernet exclusiva da FastAPI, armazenada recuperavelmente no Secret Manager e sincronizada somente para `.env.auth.prod`; ausência ou formato inválido interrompe o runtime/deploy antes de expor fatores TOTP
+- desafios MFA expiram em cinco minutos, são de uso único e sofrem rate limit persistido; segredo, QR, código TOTP e recovery codes não entram em logs, contratos persistentes ou caches compartilhados
+- sessões administrativas carregam `mfa_verified_at` e método; rollout revoga sessões administrativas anteriores. Reset de senha não remove MFA, e recuperação de fator exige superuser já MFA-validado, nota operacional e auditoria
 - bootstrap de dados nao altera senhas existentes e cria admin novo com senha inutilizavel; operador define a senha pelo CLI da FastAPI, com revogacao de sessoes e evento de auditoria
 - role Django nao pode alterar `gotrendlabs_users.password` nem ser proprietaria da tabela/funcao de guard; `gotrendlabs_auth_owner` sem login e privilegios por coluna sao aplicados por operacao de migracao, com preflight de deploy
 - a credencial `FASTAPI_POSTGRES_*` fica em arquivo injetado somente na FastAPI; Django e daemon recebem apenas a role Django, sem permissao de escrita na coluna `password`. O preflight rejeita credenciais privilegiadas no ambiente compartilhado
@@ -198,6 +206,10 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - fluxo staff/superuser de geração administrativa de link de reset com auditoria, bloqueio de autoação, bloqueio de alvo administrativo para staff comum e rejeição de conta desativada
 - bloqueio de ações administrativas perigosas sobre a própria conta do operador
 - permissão explícita de ajuste manual de wallet sobre a própria conta de operador com auditoria
+- unitário TOTP para geração/validação e proteção contra repetição de timestep
+- integração para staff/superuser sem sessão antes do MFA, enrollment/confirmacão, recuperação de fator por superuser e bloqueio das rotas administrativas sem evidência MFA
+- regressão de código TOTP inválido, expirado ou reutilizado; recovery code válido, inválido e reutilizado; login por senha e por identidade social administrativa
+- renderização web PT-BR/EN de enrollment, QR/chave manual, confirmação e instruções de guarda dos recovery codes; nenhuma resposta que revele segredo ou recovery codes pode ser armazenada em cache
 
 ## Critérios de aceite
 
@@ -227,6 +239,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 - marcador `bot` aparece e filtra apenas em Admin Ops
 - staff consegue gerar link de reset para usuário comum ativo; superuser consegue gerar link para conta administrativa ativa; a confirmação do reset segue o fluxo público existente e revoga sessões somente ao definir a nova senha
 - alteração de email exige nova confirmação antes de liberar ações sensíveis comuns
+- usuário comum mantém o login existente sem MFA; staff/superuser não recebe sessão administrativa antes de confirmar TOTP e Admin Ops, `/admin/...` e Django Admin não têm rota alternativa de bypass
+- recovery codes são mostrados somente na confirmação inicial, com `Cache-Control: private, no-store`; uma recuperação administrativa revoga fator, desafios, códigos e sessões do alvo antes de novo enrollment
 
 ## Impacto de mudança
 

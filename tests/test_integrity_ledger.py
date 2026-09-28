@@ -237,6 +237,13 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         with get_connection() as connection:
             with connection.cursor() as cursor:
                 cursor.execute("UPDATE gotrendlabs_users SET is_staff=true WHERE email=%s", ("integrity-staff@example.com",))
+                # Legacy integrity scenarios need an intentionally MFA-verified
+                # operator session after their fixture promotes the account.
+                cursor.execute(
+                    """UPDATE gotrendlabs_auth_sessions SET mfa_verified_at = NOW(), mfa_method = 'totp'
+                       WHERE user_id = (SELECT id FROM gotrendlabs_users WHERE email = %s)""",
+                    ("integrity-staff@example.com",),
+                )
 
     def tearDown(self):
         integrity_service._signer = self.previous_signer
