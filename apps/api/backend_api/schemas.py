@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -129,6 +129,33 @@ class SessionResponse(BaseModel):
 class AuthResponse(BaseModel):
     user: UserResponse
     session: SessionResponse
+
+
+class MfaChallengeResponse(BaseModel):
+    mfa_required: bool = True
+    challenge_token: str
+    expires_at: str
+    enrollment_required: bool = False
+
+
+class MfaVerifyPayload(BaseModel):
+    challenge_token: str = Field(min_length=20, max_length=255)
+    code: str = Field(default="", max_length=32)
+    recovery_code: str = Field(default="", max_length=64)
+
+
+class MfaEnrollmentResponse(BaseModel):
+    challenge_token: str
+    expires_at: str
+    manual_key: str
+    otpauth_uri: str
+
+
+class MfaVerifyResponse(AuthResponse):
+    recovery_codes: List[str] = Field(default_factory=list)
+
+
+AuthLoginResponse = Union[AuthResponse, MfaChallengeResponse]
 
 
 class SessionContextResponse(BaseModel):
@@ -298,6 +325,14 @@ class AdminUserPasswordResetPayload(BaseModel):
 class AdminUserPasswordResetResponse(BaseModel):
     message: str
     reset_url: str
+
+
+class AdminMfaRecoveryPayload(BaseModel):
+    note: str = Field(min_length=1, max_length=2000)
+
+
+class AdminMfaRecoveryResponse(BaseModel):
+    message: str
 
 
 class SystemLogResponse(BaseModel):

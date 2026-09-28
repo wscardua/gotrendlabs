@@ -60,6 +60,14 @@ if grep -Eq '^[[:space:]]*GOTRENDLABS_PASSWORD_PEPPER[[:space:]]*=' "$FASTAPI_DB
   echo "The pepper must exist only in $AUTH_ENV_FILE." >&2
   exit 1
 fi
+if grep -Eq '^[[:space:]]*GOTRENDLABS_TOTP_ENCRYPTION_KEY[[:space:]]*=' "$ENV_FILE" "$FASTAPI_DB_ENV_FILE" "$MIGRATION_ENV_FILE"; then
+  echo "The TOTP encryption key must exist only in $AUTH_ENV_FILE." >&2
+  exit 1
+fi
+if ! grep -Eq '^[[:space:]]*GOTRENDLABS_TOTP_ENCRYPTION_KEY[[:space:]]*=[[:space:]]*[^[:space:]#]+' "$AUTH_ENV_FILE"; then
+  echo "GOTRENDLABS_TOTP_ENCRYPTION_KEY is required in $AUTH_ENV_FILE." >&2
+  exit 1
+fi
 if grep -Eq '^[[:space:]]*FASTAPI_POSTGRES_[A-Z_]*[[:space:]]*=' "$MIGRATION_ENV_FILE"; then
   echo "FastAPI runtime credentials must exist only in $FASTAPI_DB_ENV_FILE." >&2
   exit 1
@@ -92,6 +100,7 @@ fi
 
 docker compose -f "$COMPOSE_FILE" --profile ops build
 docker compose -f "$COMPOSE_FILE" run --rm fastapi python -c 'from packages.security.passwords import require_password_pepper; require_password_pepper()'
+docker compose -f "$COMPOSE_FILE" run --rm fastapi python -c 'from apps.api.backend_api.mfa import require_totp_encryption_key; require_totp_encryption_key()'
 docker compose -f "$COMPOSE_FILE" run --rm migrate python -m ops.scripts.auth_db_boundary apply
 docker compose -f "$COMPOSE_FILE" run --rm migrate python -m ops.scripts.migrate_with_role --noinput
 docker compose -f "$COMPOSE_FILE" run --rm migrate python -m ops.scripts.auth_db_boundary apply

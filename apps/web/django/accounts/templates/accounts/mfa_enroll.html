@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}GoTrendLabs | Configurar autenticador{% endblock %}
+{% block content %}
+<main class="shell auth-page mfa-enroll-page">
+  <div class="auth-layout mfa-enroll-layout">
+    <section class="mfa-setup-panel" aria-labelledby="mfa-setup-title">
+      <div class="mfa-panel-head">
+        <span class="eyebrow">Segurança administrativa</span>
+        <h1 id="mfa-setup-title">Conecte seu autenticador</h1>
+        <p>Use o Google Authenticator para proteger o acesso às operações administrativas.</p>
+      </div>
+
+      <div class="mfa-qr-stage">
+        <div class="mfa-qr-copy">
+          <span class="mfa-step-number" aria-hidden="true">1</span>
+          <div>
+            <strong>Escaneie o QR Code</strong>
+            <p>Abra o Google Authenticator, toque em <b>+</b> e escolha <b>Ler código QR</b>.</p>
+          </div>
+        </div>
+        <img class="mfa-qr-code" src="{{ qr_code_data_url }}" width="240" height="240" alt="Código QR para configurar o GoTrendLabs no Google Authenticator">
+      </div>
+
+      <details class="mfa-manual-setup">
+        <summary>Não consegue escanear? Configurar com chave manual</summary>
+        <dl>
+          <div><dt>Conta</dt><dd>GoTrendLabs</dd></div>
+          <div><dt>Tipo</dt><dd>Baseado em tempo</dd></div>
+          <div><dt>Chave</dt><dd><code>{{ enrollment.manual_key }}</code></dd></div>
+        </dl>
+      </details>
+      <p class="mfa-secret-note">A chave só aparece nesta tela. Não a compartilhe.</p>
+    </section>
+
+    <section class="auth-card mfa-confirm-card" aria-labelledby="mfa-confirm-title">
+      <div class="auth-card-head">
+        <span class="eyebrow">Etapa 2 de 2</span>
+        <h2 id="mfa-confirm-title">Confirme o código</h2>
+        <p>Digite o código de seis dígitos exibido no aplicativo para concluir a configuração.</p>
+      </div>
+      <form class="form-grid" method="post" action="{% url 'mfa-verify' %}">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="field full"><div class="tag risk">{{ form.non_field_errors|join:", " }}</div></div>{% endif %}
+        <div class="field full">
+          <label for="{{ form.code.id_for_label }}">Código do autenticador</label>
+          <input id="{{ form.code.id_for_label }}" name="{{ form.code.name }}" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" autofocus>
+          {% if form.code.errors %}<small>{{ form.code.errors|join:", " }}</small>{% endif %}
+        </div>
+        <button class="btn primary full" type="submit">Confirmar e continuar</button>
+      </form>
+      <p class="mfa-confirm-note">Após a confirmação, você receberá códigos de recuperação de uso único.</p>
+    </section>
+  </div>
+</main>
+{% endblock %}

@@ -1,3 +1,7 @@
+import base64
+from io import BytesIO
+
+import qrcode
 from django import forms
 from django.conf import settings
 from django.contrib import messages
@@ -6,8 +10,8 @@ from django.urls import reverse
 from django.utils.dateparse import parse_datetime
 import secrets
 
-from apps.web.django.accounts.api_client import AuthAPIError, confirm_email, confirm_password_reset, get_markets, get_session, login_user, logout_user, register_user, request_password_reset, resend_email_confirmation, social_auth_callback, social_auth_complete_email, social_auth_start
-from apps.web.django.accounts.forms import LoginForm, PasswordResetConfirmForm, PasswordResetRequestForm, RegisterForm, SocialEmailForm
+from apps.web.django.accounts.api_client import AuthAPIError, confirm_email, confirm_password_reset, get_markets, get_session, login_user, logout_user, mfa_enroll, mfa_verify, register_user, request_password_reset, resend_email_confirmation, social_auth_callback, social_auth_complete_email, social_auth_start
+from apps.web.django.accounts.forms import LoginForm, MfaCodeForm, PasswordResetConfirmForm, PasswordResetRequestForm, RegisterForm, SocialEmailForm
 from apps.web.django.accounts.session import USER_KEY, auth_token, clear_auth_session, is_authenticated, safe_redirect_url, store_auth_session
 from apps.web.django.core.middleware import ReferralCaptureMiddleware
 from apps.web.django.core.domain_client import local_markets
@@ -18,10 +22,23 @@ REMEMBER_ME_SESSION_AGE = 60 * 60 * 24 * 30
 SOCIAL_AUTH_SESSION_KEY = "social_auth_state"
 SOCIAL_EMAIL_SESSION_KEY = "social_email_state"
 SOCIAL_PROVIDERS = {"google", "facebook", "x"}
+MFA_CHALLENGE_SESSION_KEY = "mfa_challenge"
 
 
 def _display_outcome(label):
     return "NÃO" if label == "NAO" else label
+
+
+def _totp_qr_code_data_url(otpauth_uri):
+    """Encode the one-time enrollment URI for browser display only.
+
+    The result is intentionally neither persisted nor put in the Django
+    session, which keeps the TOTP secret confined to the enrollment response.
+    """
+    image = qrcode.make(otpauth_uri)
+    buffer = BytesIO()
+    image.save(buffer, format="PNG")
+    return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
 
 
 def _market_created_at_score(market):
@@ -71,6 +88,17 @@ def _popular_signup_market():
     }
 
 
+def _start_mfa_if_required(request, response, next_url):
+    if not response.get("mfa_required"):
+        return False
+    request.session[MFA_CHALLENGE_SESSION_KEY] = {
+        "token": response["challenge_token"],
+        "enrollment": response.get("enrollment_required", False),
+        "next": next_url,
+    }
+    return True
+
+
 def login_view(request):
     if is_authenticated(request):
         return redirect("home")
@@ -85,6 +113,8 @@ def login_view(request):
         except AuthAPIError as exc:
             form.add_error(None, str(exc))
         else:
+            if _start_mfa_if_required(request, response, safe_redirect_url(request, request.GET.get("next"), reverse("home"))):
+                return redirect("mfa-enroll" if response.get("enrollment_required") else "mfa-verify")
             store_auth_session(request, response)
             if form.cleaned_data.get("remember_me"):
                 request.session.set_expiry(REMEMBER_ME_SESSION_AGE)
@@ -92,6 +122,57 @@ def login_view(request):
                 request.session.set_expiry(None)
             return redirect(safe_redirect_url(request, request.GET.get("next"), reverse("home")))
     return render(request, "accounts/login.html", {"form": form})
+
+
+def mfa_enroll_view(request):
+    state = request.session.get(MFA_CHALLENGE_SESSION_KEY) or {}
+    if not state.get("token") or not state.get("enrollment"):
+        return redirect("login")
+    try:
+        enrollment = mfa_enroll(state["token"])
+    except AuthAPIError as exc:
+        messages.error(request, str(exc)); request.session.pop(MFA_CHALLENGE_SESSION_KEY, None); return redirect("login")
+    # Deliberately not stored in the Django session: it is rendered once from the API response.
+    request.session[MFA_CHALLENGE_SESSION_KEY]["enrollment"] = False
+    request.session.modified = True
+    enrollment_response = render(
+        request,
+        "accounts/mfa_enroll.html",
+        {
+            "enrollment": enrollment,
+            "qr_code_data_url": _totp_qr_code_data_url(enrollment["otpauth_uri"]),
+            "form": MfaCodeForm(),
+        },
+    )
+    enrollment_response["Cache-Control"] = "private, no-store"
+    return enrollment_response
+
+
+def mfa_verify_view(request):
+    state = request.session.get(MFA_CHALLENGE_SESSION_KEY) or {}
+    if not state.get("token"):
+        return redirect("login")
+    form = MfaCodeForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            response = mfa_verify(state["token"], code=form.cleaned_data["code"], recovery_code=form.cleaned_data["recovery_code"])
+        except AuthAPIError as exc:
+            form.add_error(None, str(exc))
+        else:
+            store_auth_session(request, response)
+            request.session.pop(MFA_CHALLENGE_SESSION_KEY, None)
+            recovery_codes = response.get("recovery_codes", [])
+            if recovery_codes:
+                recovery_response = render(
+                    request,
+                    "accounts/mfa_recovery_codes.html",
+                    {"recovery_codes": recovery_codes, "next_url": state.get("next", reverse("home"))},
+                )
+                # Recovery codes are sensitive and may only be shown in this initial response.
+                recovery_response["Cache-Control"] = "private, no-store"
+                return recovery_response
+            return redirect(state.get("next", reverse("home")))
+    return render(request, "accounts/mfa_verify.html", {"form": form})
 
 
 def register_view(request):
@@ -258,6 +339,8 @@ def social_auth_callback_view(request, provider):
         return redirect(fallback)
     request.session.pop(SOCIAL_AUTH_SESSION_KEY, None)
     request.session.pop(ReferralCaptureMiddleware.SESSION_KEY, None)
+    if _start_mfa_if_required(request, response, safe_redirect_url(request, session_state.get("next"), reverse("home"))):
+        return redirect("mfa-enroll" if response.get("enrollment_required") else "mfa-verify")
     store_auth_session(request, response)
     return redirect(safe_redirect_url(request, session_state.get("next"), reverse("home")))
 
@@ -284,6 +367,8 @@ def social_auth_email_view(request):
         else:
             request.session.pop(SOCIAL_EMAIL_SESSION_KEY, None)
             request.session.pop(ReferralCaptureMiddleware.SESSION_KEY, None)
+            if _start_mfa_if_required(request, response, safe_redirect_url(request, pending.get("next"), reverse("home"))):
+                return redirect("mfa-enroll" if response.get("enrollment_required") else "mfa-verify")
             store_auth_session(request, response)
             messages.success(request, "Enviamos um email para confirmar sua conta.")
             return redirect(safe_redirect_url(request, pending.get("next"), reverse("home")))

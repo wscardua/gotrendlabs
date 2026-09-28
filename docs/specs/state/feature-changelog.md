@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-28 — FEAT-AUTH-001 MFA administrativo pronto para deploy
+
+- TOTP RFC 6238 compatível com Google Authenticator foi implementado para staff/superuser: FastAPI controla desafio de cinco minutos, fator Fernet, rate limit, recovery codes hashados/uso único e sessão administrativa com evidência MFA; Django apenas apresenta os fluxos PT-BR/EN e Django Admin não é exposto.
+- Migrations `accounts 0023/0024`, snapshot OpenAPI, ADR-0009, documentação operacional e regressões unitárias/web/integração foram concluídos. A chave Fernet de produção foi provisionada no Secret Manager e sincronizada exclusivamente para o ambiente FastAPI, sem valor em Git ou logs.
+- A fatia MFA está pronta para CI/deploy e smoke produtivo; `FEAT-AUTH-001` ampla permanece `draft/parcial` pelas evoluções de autenticação ainda registradas, e o app mobile não recebe MFA administrativo enquanto não tiver superfície de operações.
+
 ## 2026-09-27 — FEAT-AUTH-001 / FEAT-AIAGENT-001 contas produtivas apos Argon2id
 
 - `@test` manteve sua identidade e recebeu nova senha Argon2id via FastAPI; hash, login mobile-header e login web foram validados. Senha armazenada fora do Git no Secrets Manager. `@karlascardua` permanece sem senha utilizavel e requer reset antes de novo acesso.

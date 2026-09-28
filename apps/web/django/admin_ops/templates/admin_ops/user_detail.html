@@ -227,6 +227,16 @@
                 <input type="text" value="{{ password_reset_url }}" readonly>
               </div>
             {% endif %}
+            {% if detail.user.is_staff or detail.user.is_superuser %}
+              <form class="support-form" method="post">
+                {% csrf_token %}
+                <label for="{{ note_form.note.id_for_label }}-mfa">Motivo da recuperação MFA</label>
+                <textarea id="{{ note_form.note.id_for_label }}-mfa" name="note" rows="4" required></textarea>
+                <p class="muted">Somente superusers com MFA confirmado podem redefinir outro operador. Isso revoga todas as sessões e códigos de recuperação.</p>
+                <input type="hidden" name="action" value="mfa_recover">
+                <button class="btn small danger" type="submit">Redefinir MFA</button>
+              </form>
+            {% endif %}
             <form class="support-form" method="post">
               {% csrf_token %}
               <label>

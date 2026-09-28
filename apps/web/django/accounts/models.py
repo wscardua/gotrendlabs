@@ -37,6 +37,8 @@ class AuthSession(models.Model):
     revoked_at = models.DateTimeField(null=True, blank=True)
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.CharField(max_length=255, blank=True)
+    mfa_verified_at = models.DateTimeField(null=True, blank=True)
+    mfa_method = models.CharField(max_length=32, blank=True)
 
     class Meta:
         db_table = "gotrendlabs_auth_sessions"
@@ -44,6 +46,45 @@ class AuthSession(models.Model):
             models.Index(fields=["token_hash"]),
             models.Index(fields=["user", "revoked_at", "expires_at"]),
         ]
+
+
+class TotpFactor(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="totp_factors")
+    secret_encrypted = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    revoked_at = models.DateTimeField(null=True, blank=True)
+    last_accepted_timestep = models.BigIntegerField(null=True, blank=True)
+
+    class Meta:
+        db_table = "gotrendlabs_totp_factors"
+
+
+class MfaChallenge(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    token_hash = models.CharField(max_length=64, unique=True)
+    purpose = models.CharField(max_length=16)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    used_at = models.DateTimeField(null=True, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    user_agent = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        db_table = "gotrendlabs_mfa_challenges"
+        indexes = [models.Index(fields=["user", "used_at", "expires_at"], name="mfa_challenge_user_exp_idx")]
+
+
+class MfaRecoveryCode(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    code_hash = models.CharField(max_length=64)
+    created_at = models.DateTimeField(auto_now_add=True)
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "gotrendlabs_mfa_recovery_codes"
+        constraints = [models.UniqueConstraint(fields=["user", "code_hash"], name="uniq_mfa_recovery_code")]
+        indexes = [models.Index(fields=["user", "used_at"], name="mfa_recovery_user_used_idx")]
 
 
 class ExternalIdentity(models.Model):

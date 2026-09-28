@@ -2,6 +2,22 @@
 
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
+## WFLOW-20260928-ADMIN-TOTP-MFA-036
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`.
+- Status: `implementacao_local_em_validacao`.
+- Feature alvo: `FEAT-AUTH-001`.
+- Objetivo: exigir TOTP para sessões e operações administrativas, mantendo FastAPI como autoridade de autenticação e removendo o Django Admin como rota paralela.
+- Artefatos afetados: FastAPI auth/session, PostgreSQL/migration accounts 0023, Django accounts/Admin Ops guard, OpenAPI, ADR-0009, specs e testes.
+- Decisões: desafio opaco expira em cinco minutos e é usado uma vez; segredo TOTP é Fernet com chave dedicada exclusiva da FastAPI; recovery codes são hashados; limite MFA é persistido no PostgreSQL; rollout revoga sessões staff/superuser existentes.
+- Evidências locais: migration completa aplicada em PostgreSQL isolado `gotrendlabs_mfa_isolated`; `makemigrations --check` sem alterações nessa base; role FastAPI comprovada com INSERT/SELECT rollback em tabelas MFA. Smoke HTTP isolado confirmou login staff sem sessão, enrollment, confirmação TOTP, sessão MFA para `/admin/users`, recuperação por superuser e reenrollment do alvo. Compilação Python, testes de primitivas TOTP, OpenAPI check e `git diff --check` aprovados. `makemigrations --check` permanece bloqueado somente no `db.sqlite3` histórico (`admin.0001_initial` antes de `accounts.0001_initial`), que não foi alterado.
+- Recuperação: endpoint e ação Admin Ops `POST /admin/users/{user_id}/mfa/recover` exigem superuser com MFA, nota, revogam fator/códigos/desafios/sessões do alvo e exigem novo enrollment; a ação não permite auto-recuperação.
+- Correção pós-review: a resposta única que revela recovery codes agora recebe `Cache-Control: private, no-store`, coberta por regressão de integração. O preflight de deploy exige e valida a chave Fernet apenas no container FastAPI; o helper SSM preserva o arquivo de autenticação, força `0600` e não revela valores.
+- Preparação operacional: `GOTRENDLABS_TOTP_ENCRYPTION_KEY` foi criada em `gotrendlabs/prod/app-secrets` e sincronizada para `/opt/gotrendlabs/.env.auth.prod` via SSM em 2026-09-28, com confirmação sem material secreto. Isso apenas prepara o runtime; não publica esta branch nem ativa MFA em produção.
+- Evidência adicional local: 10 testes MFA focados passaram, incluindo o cabeçalho da resposta de recovery codes; checks Django, sintaxe dos scripts de deploy e snapshot OpenAPI foram verificados.
+- Pendências: concluir revisão/PR e executar o deploy desta branch; no primeiro deploy, acompanhar o preflight FastAPI e confirmar o rollout de MFA sem expor segredos.
+- Iniciado em: 2026-09-28.
+
 ## WFLOW-20260927-AUTH-AI-TEST-ACCOUNTS-035
 
 - Tipo: `operational-validation` + `change-feature` documental.

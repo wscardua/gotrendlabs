@@ -1658,6 +1658,34 @@
         "title": "AdminMarketResolvePayload",
         "type": "object"
       },
+      "AdminMfaRecoveryPayload": {
+        "properties": {
+          "note": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "note"
+        ],
+        "title": "AdminMfaRecoveryPayload",
+        "type": "object"
+      },
+      "AdminMfaRecoveryResponse": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "AdminMfaRecoveryResponse",
+        "type": "object"
+      },
       "AdminSubcategoryPayload": {
         "properties": {
           "name": {
@@ -3510,6 +3538,112 @@
           "suggested_source"
         ],
         "title": "MarketSuggestionPayload",
+        "type": "object"
+      },
+      "MfaChallengeResponse": {
+        "properties": {
+          "challenge_token": {
+            "title": "Challenge Token",
+            "type": "string"
+          },
+          "enrollment_required": {
+            "default": false,
+            "title": "Enrollment Required",
+            "type": "boolean"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "mfa_required": {
+            "default": true,
+            "title": "Mfa Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "challenge_token",
+          "expires_at"
+        ],
+        "title": "MfaChallengeResponse",
+        "type": "object"
+      },
+      "MfaEnrollmentResponse": {
+        "properties": {
+          "challenge_token": {
+            "title": "Challenge Token",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "manual_key": {
+            "title": "Manual Key",
+            "type": "string"
+          },
+          "otpauth_uri": {
+            "title": "Otpauth Uri",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_token",
+          "expires_at",
+          "manual_key",
+          "otpauth_uri"
+        ],
+        "title": "MfaEnrollmentResponse",
+        "type": "object"
+      },
+      "MfaVerifyPayload": {
+        "properties": {
+          "challenge_token": {
+            "maxLength": 255,
+            "minLength": 20,
+            "title": "Challenge Token",
+            "type": "string"
+          },
+          "code": {
+            "default": "",
+            "maxLength": 32,
+            "title": "Code",
+            "type": "string"
+          },
+          "recovery_code": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Recovery Code",
+            "type": "string"
+          }
+        },
+        "required": [
+          "challenge_token"
+        ],
+        "title": "MfaVerifyPayload",
+        "type": "object"
+      },
+      "MfaVerifyResponse": {
+        "properties": {
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recovery Codes",
+            "type": "array"
+          },
+          "session": {
+            "$ref": "#/components/schemas/SessionResponse"
+          },
+          "user": {
+            "$ref": "#/components/schemas/UserResponse"
+          }
+        },
+        "required": [
+          "user",
+          "session"
+        ],
+        "title": "MfaVerifyResponse",
         "type": "object"
       },
       "NotificationListResponse": {
@@ -9316,6 +9450,66 @@
         "summary": "Admin Deactivate User"
       }
     },
+    "/admin/users/{user_id}/mfa/recover": {
+      "post": {
+        "description": "Reset another operator's factor; the target must complete enrollment on next login.",
+        "operationId": "admin_recover_user_mfa_admin_users__user_id__mfa_recover_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AdminMfaRecoveryPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminMfaRecoveryResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Recover User Mfa"
+      }
+    },
     "/admin/users/{user_id}/password-reset": {
       "post": {
         "operationId": "admin_request_user_password_reset_admin_users__user_id__password_reset_post",
@@ -9758,7 +9952,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallengeResponse"
+                    }
+                  ],
+                  "title": "Response Login Auth Login Post"
                 }
               }
             },
@@ -9809,6 +10011,83 @@
           }
         },
         "summary": "Logout"
+      }
+    },
+    "/auth/mfa/enroll": {
+      "post": {
+        "description": "Creates a staged factor; the secret only appears in this one TLS response.",
+        "operationId": "mfa_enroll_auth_mfa_enroll_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaVerifyPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaEnrollmentResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mfa Enroll"
+      }
+    },
+    "/auth/mfa/verify": {
+      "post": {
+        "operationId": "mfa_verify_auth_mfa_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MfaVerifyPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MfaVerifyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Mfa Verify"
       }
     },
     "/auth/password-reset/confirm": {
@@ -9994,7 +10273,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallengeResponse"
+                    }
+                  ],
+                  "title": "Response Social Login Callback Auth Social  Provider  Callback Post"
                 }
               }
             },
@@ -10043,7 +10330,15 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuthResponse"
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/AuthResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/MfaChallengeResponse"
+                    }
+                  ],
+                  "title": "Response Social Login Complete Email Auth Social  Provider  Complete Email Post"
                 }
               }
             },
