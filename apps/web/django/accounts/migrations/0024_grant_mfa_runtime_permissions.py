@@ -26,7 +26,10 @@ def grant_fastapi_mfa_permissions(apps, schema_editor):
     with connection.cursor() as cursor:
         cursor.execute("SELECT 1 FROM pg_roles WHERE rolname = %s", [FASTAPI_ROLE])
         if not cursor.fetchone():
-            raise RuntimeError("The gotrendlabs_fastapi runtime role is required for MFA grants")
+            # CI and isolated development databases use the single ephemeral
+            # PostgreSQL role. Production deploy preflight separately requires
+            # and validates the dedicated runtime role before starting FastAPI.
+            return
         for table in MFA_TABLES:
             cursor.execute(
                 f"GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE {quote(table)} TO {quote(FASTAPI_ROLE)}"
