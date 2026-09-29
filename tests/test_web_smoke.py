@@ -9590,6 +9590,14 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertContains(response, "Leituras com reputação pública")
             response = self.client.get(reverse("login"))
             self.assertEqual(response.status_code, 200)
+            response = self.client.get(reverse("mfa-enroll"))
+            self.assertRedirects(response, reverse("login"))
+            session = self.client.session
+            session["mfa_challenge"] = {"token": "pending-operator-challenge", "enrollment": False, "next": reverse("admin-ops-dashboard")}
+            session.save()
+            response = self.client.get(reverse("mfa-verify"))
+            self.assertEqual(response.status_code, 200)
+            self.assertContains(response, "Código do autenticador")
             response = self.client.get(reverse("admin-ops-config"))
             self.assertEqual(response.status_code, 302)
             self.assertIn(reverse("login"), response["Location"])
