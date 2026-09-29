@@ -63,6 +63,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 
 Contas `is_staff` ou `is_superuser` validam TOTP depois da primeira credencial e antes de receber qualquer sessão. Sem fator confirmado, recebem apenas desafio curto para enrollment; Admin Ops e endpoints `/admin/...` exigem evidência MFA na sessão emitida pela FastAPI.
 
+Durante o modo de manutenção web, as rotas de login e MFA (`/mfa/enroll/` e `/mfa/verify/`) permanecem acessíveis para que operadores concluam a autenticação antes de entrar no Admin Ops. O acesso público às demais páginas continua bloqueado.
+
 ## Comportamento esperado
 
 - sessões inválidas redirecionam para autenticação

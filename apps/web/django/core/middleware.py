@@ -26,6 +26,7 @@ class MaintenanceModeMiddleware:
         "/admin-ops/",
         "/login/",
         "/logout/",
+        "/mfa/",
     )
 
     def __init__(self, get_response):
