@@ -5,6 +5,7 @@
 - Browser web → `POST /analytics/events/` no Django com CSRF → `POST /analytics/events` na FastAPI com token de sessao, IP assinado opcional e catalogo validado → PostgreSQL analytics.
 - Flutter → `POST /analytics/events` na FastAPI com os headers mobile existentes; tela/aba sao registradas por navegacao real, sem contar rebuild/polling.
 - FastAPI → GeoLite City em arquivo local opcional; ausencia do arquivo produz geografia desconhecida.
+- Produção: o arquivo GeoLite City está no volume `runtime`, o proxy usa segredo compartilhado Django/FastAPI e a rede Caddy confiável está configurada; a atualização da base é manual. A PR `#133` ativou o contrato e as migrations `admin_ops.0020/0021`.
 - Importador GeoLite backend → arquivo no volume runtime + tabela de execuções; ingestão FastAPI → status da última remessa + eventos persistidos; resumo staff lê ambos e verifica o arquivo ativo, sem cálculo operacional no Django.
 - Admin Ops Django → `GET /admin/analytics/summary` com staff + MFA → metricas/insights da FastAPI; Django somente renderiza.
 - Retenção: FastAPI combina `gotrendlabs_users.date_joined` e eventos autenticados para contas, e `analytics_visitors`/sessões/eventos anônimos para visitantes; Django exibe numeradores, denominadores e coortes semanais sem recalcular percentuais.

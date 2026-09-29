@@ -3,7 +3,7 @@ id: FEAT-ANALYTICS-001
 titulo: "Analytics proprio web e mobile"
 versao: 0.4
 status_spec: aprovada
-status_impl: implementada_localmente
+status_impl: implementada_validada
 ultima_atualizacao: 2026-09-29
 origem:
   - conversa de produto de 2026-09-29

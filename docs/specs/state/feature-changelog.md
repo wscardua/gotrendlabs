@@ -1,5 +1,11 @@
 # Feature Changelog
 
+## 2026-09-29 — FEAT-ANALYTICS-001 validação produtiva v0.4
+
+- PR `#133` integrada por squash (`61bc109`); CI e deploy produtivo do workflow `36583348331` concluídos com sucesso.
+- GeoLite City instalada no volume persistente e carga registrada como `success`, após corrigir a posse do diretório runtime. Segredo compartilhado e rede confiável do proxy configurados; saúde da API/banco, rotas OpenAPI e proteção do Analytics administrativo verificados.
+- Site em manutenção e sem eventos humanos recentes durante o smoke; distribuição de novo binário Flutter e observação da primeira coleta real continuam como acompanhamento operacional, fora do fechamento do backend/web v0.4.
+
 ## 2026-09-29 — FEAT-ANALYTICS-001 retenção e mapa real
 
 - FastAPI calcula coortes D1/D7/D30 separadas para visitantes anônimos e contas cadastradas, com elegibilidade por dia completo, base numérica e semanas de entrada.

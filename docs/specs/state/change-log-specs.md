@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-09-29 — FEAT-ANALYTICS-001 conclusão v0.4
+
+- Status de implementação promovido para `implementada_validada` após PR `#133`, CI/deploy e GeoLite/proxy produtivos. Memória registra a ausência de tráfego real durante a manutenção e a necessidade de novo binário Flutter para usuários mobile existentes.
+
 ## 2026-09-29 — FEAT-ANALYTICS-001 v0.4
 
 - Define retenção de produto D1/D7/D30 por coorte, diferença entre visitante e conta, coortes maduras e cobertura inicial parcial.
