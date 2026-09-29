@@ -2136,6 +2136,128 @@
         "title": "AdminUserWalletAdjustmentPayload",
         "type": "object"
       },
+      "AnalyticsBatch": {
+        "properties": {
+          "entry_screen": {
+            "default": "",
+            "maxLength": 120,
+            "pattern": "^[a-zA-Z0-9_:/{}.-]*$",
+            "title": "Entry Screen",
+            "type": "string"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AnalyticsEvent"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Events",
+            "type": "array"
+          },
+          "referrer_host": {
+            "default": "",
+            "maxLength": 255,
+            "title": "Referrer Host",
+            "type": "string"
+          },
+          "session_id": {
+            "format": "uuid",
+            "title": "Session Id",
+            "type": "string"
+          },
+          "utm_campaign": {
+            "default": "",
+            "maxLength": 120,
+            "pattern": "^[a-zA-Z0-9_.-]*$",
+            "title": "Utm Campaign",
+            "type": "string"
+          },
+          "utm_medium": {
+            "default": "",
+            "maxLength": 120,
+            "pattern": "^[a-zA-Z0-9_.-]*$",
+            "title": "Utm Medium",
+            "type": "string"
+          },
+          "utm_source": {
+            "default": "",
+            "maxLength": 120,
+            "pattern": "^[a-zA-Z0-9_.-]*$",
+            "title": "Utm Source",
+            "type": "string"
+          },
+          "visitor_id": {
+            "format": "uuid",
+            "title": "Visitor Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "visitor_id",
+          "session_id",
+          "events"
+        ],
+        "title": "AnalyticsBatch",
+        "type": "object"
+      },
+      "AnalyticsEvent": {
+        "properties": {
+          "event_id": {
+            "format": "uuid",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "occurred_at": {
+            "format": "date-time",
+            "title": "Occurred At",
+            "type": "string"
+          },
+          "properties": {
+            "additionalProperties": true,
+            "title": "Properties",
+            "type": "object"
+          },
+          "screen_key": {
+            "default": "",
+            "maxLength": 120,
+            "pattern": "^[a-zA-Z0-9_:/{}.-]*$",
+            "title": "Screen Key",
+            "type": "string"
+          },
+          "target_key": {
+            "default": "",
+            "maxLength": 120,
+            "pattern": "^[a-zA-Z0-9_:/{}.-]*$",
+            "title": "Target Key",
+            "type": "string"
+          },
+          "view_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "View Id"
+          }
+        },
+        "required": [
+          "event_id",
+          "name",
+          "occurred_at"
+        ],
+        "title": "AnalyticsEvent",
+        "type": "object"
+      },
       "AntiAbuseChallengeResponse": {
         "properties": {
           "expires_at": {
@@ -6490,6 +6612,94 @@
         "summary": "Admin Update Ai Agent"
       }
     },
+    "/admin/analytics/summary": {
+      "get": {
+        "operationId": "admin_analytics_summary_admin_analytics_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "platform",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "title": "Platform",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "audience",
+            "required": false,
+            "schema": {
+              "default": "all",
+              "title": "Audience",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "region",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Region",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "city",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "City",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Analytics Summary"
+      }
+    },
     "/admin/badges": {
       "get": {
         "operationId": "admin_get_badges_admin_badges_get",
@@ -9803,6 +10013,54 @@
           }
         },
         "summary": "Admin Adjust User Wallet"
+      }
+    },
+    "/analytics/events": {
+      "post": {
+        "operationId": "collect_analytics_analytics_events_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalyticsBatch"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Collect Analytics"
       }
     },
     "/anti-abuse/challenge": {

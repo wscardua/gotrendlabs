@@ -31,6 +31,7 @@ from apps.web.django.accounts.api_client import (
     admin_create_subcategory,
     admin_convert_suggestion,
     admin_get_dashboard_summary,
+    admin_get_analytics_summary,
     admin_get_ai_agent,
     admin_get_ai_agent_action,
     admin_get_ai_agent_actions,
@@ -1246,6 +1247,22 @@ def dashboard(request):
         "admin_ops/dashboard.html",
         {"dashboard_summary": dashboard_summary, "admin_error": error, "backend_health": backend_health},
     )
+
+
+@admin_api_required
+def analytics(request):
+    token = auth_token(request)
+    query = {key: request.GET.get(key, "") for key in ("days", "platform", "audience", "region", "city") if request.GET.get(key)}
+    try:
+        report = admin_get_analytics_summary(token, query)
+        error = ""
+    except AuthAPIError as exc:
+        report = None
+        error = str(exc)
+    return render(request, "admin_ops/analytics.html", {"report": report, "admin_error": error,
+                  "filters": {"days": query.get("days", "7"), "platform": query.get("platform", "all"),
+                              "audience": query.get("audience", "all"), "region": query.get("region", ""),
+                              "city": query.get("city", "")}})
 
 
 @admin_api_required

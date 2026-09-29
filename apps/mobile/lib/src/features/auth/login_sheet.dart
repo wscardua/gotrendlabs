@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../../core/birth_date_input.dart';
+import '../../core/analytics_tracker.dart';
 import '../anti_abuse/anti_abuse_challenge_field.dart';
 import '../anti_abuse/anti_abuse_repository.dart';
 import 'auth_controller.dart';
@@ -304,6 +307,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
         setState(() => _localError = 'Responda ao desafio anti-abuso.');
         return;
       }
+      unawaited(ref.read(analyticsTrackerProvider).track('signup_started'));
       await ref
           .read(authControllerProvider.notifier)
           .register(
@@ -318,6 +322,7 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
           );
       return;
     }
+    unawaited(ref.read(analyticsTrackerProvider).track('login_started'));
     await ref
         .read(authControllerProvider.notifier)
         .login(

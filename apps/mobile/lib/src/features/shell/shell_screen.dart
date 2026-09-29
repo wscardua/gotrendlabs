@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../core/analytics_tracker.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../alerts/alerts_screen.dart';
@@ -42,6 +43,9 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
   void initState() {
     super.initState();
     _index = widget.initialIndex.clamp(0, 4);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(ref.read(analyticsTrackerProvider).screen(_analyticsTab(_index)));
+    });
     WidgetsBinding.instance.addObserver(this);
     _notificationsRefreshTimer = Timer.periodic(
       _notificationsRefreshInterval,
@@ -248,6 +252,7 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (value) {
+          if (value != _index) unawaited(ref.read(analyticsTrackerProvider).screen(_analyticsTab(value)));
           setState(() => _index = value);
           if (value == 1) {
             invalidateRankingData(ref);
@@ -310,11 +315,14 @@ class _ShellScreenState extends ConsumerState<ShellScreen>
   }
 
   void _openMarketDesk(MarketDeskFilter filter) {
+    if (_index != 2) unawaited(ref.read(analyticsTrackerProvider).screen('markets'));
     setState(() {
       _marketDeskFilter = filter;
       _index = 2;
     });
   }
+
+  String _analyticsTab(int index) => const ['today', 'ranking', 'markets', 'alerts', 'search'][index];
 
   Future<void> _markNotificationsRead() async {
     final auth = ref.read(authControllerProvider);

@@ -1,15 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/api_client.dart';
+import '../../core/analytics_tracker.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import 'market_models.dart';
 import 'sparkline_painter.dart';
 
-class MarketHeroCard extends StatelessWidget {
+class MarketHeroCard extends ConsumerWidget {
   const MarketHeroCard({
     super.key,
     required this.market,
@@ -24,7 +26,7 @@ class MarketHeroCard extends StatelessWidget {
   final bool showStatus;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final card = Ink(
       height: 334,
       decoration: BoxDecoration(
@@ -166,7 +168,10 @@ class MarketHeroCard extends StatelessWidget {
       child: openOnTap
           ? InkWell(
               borderRadius: BorderRadius.circular(GtlRadii.large),
-              onTap: () => context.push('/markets/${market.slug}'),
+              onTap: () {
+                ref.read(analyticsTrackerProvider).track('market_card_clicked', targetKey: 'hero_card', properties: {'market_slug': market.slug, 'placement': 'mobile_hero'});
+                context.push('/markets/${market.slug}');
+              },
               child: card,
             )
           : card,
@@ -174,7 +179,7 @@ class MarketHeroCard extends StatelessWidget {
   }
 }
 
-class MarketCompactCard extends StatelessWidget {
+class MarketCompactCard extends ConsumerWidget {
   const MarketCompactCard({
     super.key,
     required this.market,
@@ -187,13 +192,16 @@ class MarketCompactCard extends StatelessWidget {
   final bool showStatus;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GtlSurface(
         padding: EdgeInsets.zero,
         color: GtlColors.surfaceGlass,
-        onTap: () => context.push('/markets/${market.slug}'),
+        onTap: () {
+          ref.read(analyticsTrackerProvider).track('market_card_clicked', targetKey: 'compact_card', properties: {'market_slug': market.slug, 'placement': 'mobile_list'});
+          context.push('/markets/${market.slug}');
+        },
         child: Row(
           children: [
             SizedBox(

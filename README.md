@@ -180,6 +180,8 @@ Skills locais uteis:
 
 ## Regras atuais importantes
 
+- Analytics proprio inicial: `/admin-ops/analytics/` usa eventos web/mobile recebidos pela FastAPI. Configure `GOTRENDLABS_GEOLITE_CITY_PATH` com uma base GeoLite City local para estado/cidade aproximados; sem ela a coleta continua, mas geografia fica desconhecida. Django e FastAPI compartilham `GOTRENDLABS_ANALYTICS_PROXY_SECRET` para o proxy da web. Apenas proxies configurados em `GOTRENDLABS_ANALYTICS_TRUSTED_PROXY_CIDRS` autorizam uso de `X-Forwarded-For`. Consulte `docs/specs/features/first-party-analytics.md` para cobertura e limites atuais.
+
 - Handles publicos sao canonicos no formato `@nome`, nascem automaticamente do nome publico e preservam unicidade com sufixo.
 - Os cards de destaque do feed priorizam ate dois mercados publicados nao cancelados com mais visualizacoes; empate usa o mercado mais novo.
 - Marcacoes editoriais de destaque continuam existindo para curadoria, mas nao superam a ordenacao por visualizacoes no card principal da home.

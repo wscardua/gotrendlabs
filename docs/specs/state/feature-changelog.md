@@ -1,5 +1,28 @@
 # Feature Changelog
 
+## 2026-09-29 — FEAT-ANALYTICS-001 retenção e mapa real
+
+- FastAPI calcula coortes D1/D7/D30 separadas para visitantes anônimos e contas cadastradas, com elegibilidade por dia completo, base numérica e semanas de entrada.
+- Admin Ops reorganizado em retenção, jornada, geografia, tráfego e operação. O mapa esquemático foi substituído por SVG local com as 27 malhas simplificadas do IBGE e contorno visível sem JavaScript.
+- Revisão para publicação: a chave de tela web é normalizada para o catálogo fechado e o limite da coleta usa IP de origem validado, não `visitor_id` controlado pelo cliente.
+
+## 2026-09-29 — FEAT-ANALYTICS-001 estado das cargas
+
+- Última remessa de eventos e volume recebido em 24 horas aparecem no Admin Ops, calculados e registrados pela FastAPI.
+- Atualizador GeoLite local valida checksum/base, substitui arquivo atomicamente e grava resultado; painel exibe última execução e arquivo ativo separadamente.
+
+## 2026-09-29 — FEAT-ANALYTICS-001 geografia e desistência
+
+- FastAPI passa a agregar UFs/cidades do Brasil, cobertura geografica diaria, atividade diaria da UF e funil observacional de ticket por sessao/mercado apos 30 minutos sem atividade.
+- Admin Ops apresenta mapa esquematico das UFs, rankings filtraveis, evolucao e pontos de parada; o app Flutter emite selecao de opcao no ticket inicial.
+- Cliques e abandono nao sao tratados como confirmacao de dominio nem motivo comprovado da saida.
+
+## 2026-09-29 — FEAT-ANALYTICS-001 primeira fatia
+
+- Branch `feature/first-party-analytics` criada de `origin/main` cf0f33b apos snapshot integral anterior ao trabalho.
+- Novo contrato de eventos e tabelas de visitante, sessao, visualizacao e evento; coleta web/mobile, geografia opcional local, resumo FastAPI staff/MFA e pagina Analytics no Admin Ops.
+- Totais de dominio sao lidos de usuarios/previsoes reais sem atribuir indevidamente origem/regiao. Cobertura restante documentada em `known-gaps.md`.
+
 ## 2026-09-28 — FEAT-AUTH-001 MFA administrativo implantado
 
 - TOTP RFC 6238 compatível com Google Authenticator foi implementado para staff/superuser: FastAPI controla desafio de cinco minutos, fator Fernet, rate limit, recovery codes hashados/uso único e sessão administrativa com evidência MFA; Django apenas apresenta os fluxos PT-BR/EN e Django Admin não é exposto.

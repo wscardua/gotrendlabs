@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
 import hashlib
+import os
 
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.agent_services import run_ai_agent_cycle
+from apps.api.backend_api.analytics import prune as prune_analytics
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from apps.api.backend_api.integrity_service import (
@@ -329,6 +331,16 @@ def prune_expired_ai_agent_actions(now=None):
             return cursor.rowcount
 
 
+def prune_expired_analytics(now=None):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            try:
+                retention_days = int(os.environ.get("GOTRENDLABS_ANALYTICS_RETENTION_DAYS", "90"))
+            except ValueError:
+                retention_days = 90
+            return prune_analytics(cursor, now=now, retention_days=retention_days)
+
+
 def prune_expired_operational_records(now=None):
     now = now or datetime.now(timezone.utc)
     with get_connection() as connection:
@@ -409,6 +421,7 @@ def run_daemon_cycle(now=None):
         fallback={"system_logs": 0, "ai_agent_actions": 0, "total": 0},
     )
     pruned_logs = pruned_details["total"]
+    _run_isolated_task("analytics_retention", lambda: prune_expired_analytics(now=now), fallback={"events": 0, "sessions": 0})
     email_summary = _run_isolated_task("email", lambda: _process_due_email(now), fallback={"sent": 0, "failed": 1})
     push_summary = _run_isolated_task("push", lambda: _process_due_push(now), fallback={"sent": 0, "failed": 1})
     try:

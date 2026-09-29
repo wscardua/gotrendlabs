@@ -22,11 +22,13 @@ def _http_urlopen(request, *, timeout):
     return urllib.request.urlopen(request, timeout=timeout)  # nosec B310
 
 
-def _request(method, path, payload=None, token=None, timeout=5):
+def _request(method, path, payload=None, token=None, timeout=5, extra_headers=None):
     body = json.dumps(payload).encode() if payload is not None else None
     headers = {"Content-Type": "application/json"}
     if token:
         headers["Authorization"] = f"Bearer {token}"
+    if extra_headers:
+        headers.update(extra_headers)
     request = urllib.request.Request(
         f"{settings.BACKEND_API_URL}{path}",
         data=body,
@@ -410,6 +412,15 @@ def admin_get_system_log(token, log_id):
 
 def admin_get_dashboard_summary(token):
     return _request("GET", "/admin/dashboard-summary", token=token)
+
+
+def admin_get_analytics_summary(token, query):
+    return _request("GET", f"/admin/analytics/summary?{urlencode(query)}", token=token)
+
+
+def send_analytics_events(payload, token=None, extra_headers=None):
+    return _request("POST", "/analytics/events", payload, token=token,
+                    extra_headers=extra_headers, timeout=3)
 
 
 def admin_get_ai_agents(token):

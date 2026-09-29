@@ -1,5 +1,26 @@
 # Change Log de Specs
 
+## 2026-09-29 — FEAT-ANALYTICS-001 v0.4
+
+- Define retenção de produto D1/D7/D30 por coorte, diferença entre visitante e conta, coortes maduras e cobertura inicial parcial.
+- Substitui o mapa de blocos por SVG das malhas simplificadas oficiais do IBGE, mantendo a FastAPI como fonte das contagens.
+- Fecha o escopo implementável da v0.4 localmente; publicação, configuração GeoLite/proxy e smoke produtivo permanecem etapas operacionais antes de `implementada_validada`. Melhorias futuras são listadas separadamente em `known-gaps.md`.
+
+## 2026-09-29 — FEAT-ANALYTICS-001 v0.3
+
+- Contrato staff passa a expor última remessa de eventos, volume humano de 24 horas, última execução de atualização GeoLite e estado/metadados do arquivo ativo.
+- Importador backend registra sucesso ou falha da atualização GeoLite; o painel não confunde a presença do arquivo com execução comprovada.
+
+## 2026-09-29 — FEAT-ANALYTICS-001 v0.2
+
+- Resumo staff passa a oferecer rankings de UFs/cidades brasileiras, cobertura e atividade geográfica diária, além de funil observacional de desistência por sessão/mercado após 30 minutos de inatividade.
+- Flutter registra escolha de opção no ticket inicial. Confirmação persistida segue separada do clique observado.
+
+## 2026-09-29 — FEAT-ANALYTICS-001
+
+- Criada spec de analytics proprio e ADR-0010 para fronteiras FastAPI/Django/Flutter, identidade por evento, geografia aproximada e limites de atribuicao.
+- O dashboard distingue coleta observada de totais persistidos no dominio; fluxo de sessoes vai ate o clique de confirmacao, com indicador separado de primeira previsao persistida por conta/mercado em sete dias.
+
 ## 2026-09-28 — MFA administrativo TOTP
 
 - `FEAT-AUTH-001` passa a incluir TOTP obrigatório para staff/superuser, sessões com evidência MFA, desafios curtos, recovery codes hashados e revogação de sessões administrativas no rollout.
