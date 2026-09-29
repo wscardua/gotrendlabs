@@ -2,6 +2,16 @@
 
 Este deploy usa uma EC2 publica com Docker Compose para `proxy`, `django`, `fastapi` e `daemon`, conectando ao PostgreSQL gerenciado no RDS. O Postgres nao roda em container na producao.
 
+## Analytics proprio
+
+Antes de habilitar geografia no Analytics, obtenha GeoLite2 City na conta MaxMind e coloque o arquivo `.mmdb` atualizado em um caminho persistente do volume `runtime`, por exemplo `/app/.runtime/geolite/GeoLite2-City.mmdb`. Configure `GOTRENDLABS_GEOLITE_CITY_PATH` com esse caminho. O arquivo nao deve ir para Git nem para os assets publicos; substitua-o regularmente conforme os termos da base. Sem arquivo, os eventos continuam a ser registrados, com localizacao desconhecida.
+
+Para registrar cada atualização no Analytics, execute no ambiente da FastAPI `python -m apps.api.backend_api.geolite_loader --source /caminho/GeoLite2-City.tar.gz --sha256 /caminho/GeoLite2-City.tar.gz.sha256` com as variáveis de banco e `GOTRENDLABS_GEOLITE_CITY_PATH` disponíveis. O importador confere o checksum quando fornecido, valida a base City, substitui o arquivo ativo de forma atômica e persiste sucesso/falha para o painel. Também aceita um `.mmdb` local. Ainda não existe agendamento automático desta atualização.
+
+Defina `GOTRENDLABS_ANALYTICS_PROXY_SECRET` com valor aleatorio compartilhado pelos processos Django e FastAPI. Defina `GOTRENDLABS_ANALYTICS_TRUSTED_PROXY_CIDRS` apenas com a rede/IP efetiva do proxy Caddy apos verificar a topologia Docker. A API aceita IP encaminhado somente de proxy confiavel; com a lista vazia, a geografia web/mobile pode aparecer desconhecida. `GOTRENDLABS_ANALYTICS_RETENTION_DAYS` controla a retencao detalhada (30 a 365 dias, default 90).
+
+A migration `admin_ops.0020_first_party_analytics` deve preceder o novo runtime. O dashboard fica em `/admin-ops/analytics/` e exige sessao staff com MFA. A implantacao da branch depende do fluxo normal de PR, preflight e deploy do projeto.
+
 ## Infra AWS provisionada
 
 A infraestrutura base de produção foi criada em `us-east-1` via MCP AWS em `2026-05-21`; a aplicação está implantada e recebe atualizações da `main` pelo GitHub Actions/SSM.

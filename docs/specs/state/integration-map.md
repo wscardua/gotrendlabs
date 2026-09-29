@@ -1,5 +1,18 @@
 # Integration Map
 
+## Analytics proprio (`FEAT-ANALYTICS-001`)
+
+- Browser web → `POST /analytics/events/` no Django com CSRF → `POST /analytics/events` na FastAPI com token de sessao, IP assinado opcional e catalogo validado → PostgreSQL analytics.
+- Flutter → `POST /analytics/events` na FastAPI com os headers mobile existentes; tela/aba sao registradas por navegacao real, sem contar rebuild/polling.
+- FastAPI → GeoLite City em arquivo local opcional; ausencia do arquivo produz geografia desconhecida.
+- Importador GeoLite backend → arquivo no volume runtime + tabela de execuções; ingestão FastAPI → status da última remessa + eventos persistidos; resumo staff lê ambos e verifica o arquivo ativo, sem cálculo operacional no Django.
+- Admin Ops Django → `GET /admin/analytics/summary` com staff + MFA → metricas/insights da FastAPI; Django somente renderiza.
+- Retenção: FastAPI combina `gotrendlabs_users.date_joined` e eventos autenticados para contas, e `analytics_visitors`/sessões/eventos anônimos para visitantes; Django exibe numeradores, denominadores e coortes semanais sem recalcular percentuais.
+- Mapa: SVG estático local gerado da API de Malhas do IBGE em tempo de desenvolvimento; no runtime o navegador não chama o IBGE, e cores/filtros usam apenas `regions` da FastAPI.
+- A FastAPI agrega UF/cidade, cobertura temporal e etapas de desistência por sessão/mercado; a tela administrativa consome os campos sem recalcular funis. O mobile registra seleção de opção no ticket inicial pelo mesmo contrato de eventos.
+- Daemon → funcao backend de retencao analytics; ledger e auditoria permanecem separados.
+
+
 ## Governança editorial — FEAT-EDITORIAL-001
 
 - Implementação: `docs/editorial/*.md` e `criteria-v1.2.json` → `apps/web/django/admin_ops/editorial_content.py` → `GET /admin-ops/editorial/` e atalhos do editor. A leitura é staff/read-only; critérios JSON são insumo versionado futuro, sem avaliação/parecer/gate em FastAPI. Implantação produtiva validada em 2026-09-26.

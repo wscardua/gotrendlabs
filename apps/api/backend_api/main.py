@@ -23,6 +23,7 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request, Response, st
 from fastapi.responses import JSONResponse
 
 from apps.api.backend_api.admin_events import record_admin_event
+from apps.api.backend_api.analytics import AnalyticsBatch, _source_ip as analytics_source_ip, ingest as ingest_analytics, summary as analytics_summary
 from apps.api.backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
 from apps.api.backend_api.badge_engine import BadgeAwardEngine
 from apps.api.backend_api.db import get_connection
@@ -5436,6 +5437,27 @@ def admin_get_system_log(log_id: int, authorization: str = Header(default="")):
             if not row:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Log não encontrado.")
             return _system_log_response(row)
+
+
+@app.post("/analytics/events")
+def collect_analytics(batch: AnalyticsBatch, request: Request, authorization: str = Header(default="")):
+    # visitor_id is client-chosen; it must not let one source evade the collection limit.
+    source_key = hashlib.sha256(analytics_source_ip(request).encode()).hexdigest()
+    _enforce_rate_limit("analytics", source_key, limit=120, window_seconds=60)
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            user = _optional_current_user(cursor, authorization)
+            return ingest_analytics(cursor, batch, request=request, user=user)
+
+
+@app.get("/admin/analytics/summary")
+def admin_analytics_summary(days: int = 7, platform: str = "all", audience: str = "all",
+                            region: str = "", city: str = "", authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            return analytics_summary(cursor, days=days, platform=platform, audience=audience,
+                                     region=region, city=city)
 
 
 @app.get("/admin/dashboard-summary", response_model=AdminDashboardSummaryResponse)

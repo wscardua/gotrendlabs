@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}GoTrendLabs{% endblock %}</title>
   <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml" media="(prefers-color-scheme: light)">
   <link rel="icon" href="{% static 'brand/gtl-constellation-mark-dark.svg' %}?v=20260605-favicon" type="image/svg+xml" media="(prefers-color-scheme: dark)">
@@ -14,6 +15,7 @@
   {% block extra_head %}{% endblock %}
   <script src="https://unpkg.com/htmx.org@1.9.12" defer></script>
   <script src="{% static 'js/gotrendlabs.js' %}?v=20260906-integrity-audit-ui" defer></script>
+  <script src="{% static 'js/analytics.js' %}?v=20260929" defer></script>
 </head>
 <body>
   <header class="topbar">

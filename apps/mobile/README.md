@@ -2,6 +2,8 @@
 
 Cliente Flutter mobile do GoTrendLabs. O MVP validado hoje e Android; a estrutura iOS existe para preparacao de simulador, mas depende de Xcode completo ativo no Mac.
 
+Analytics proprio: o app envia abertura de abas/detalhe, cliques em cards, busca concluida e abertura/escolha de opcao/clique de confirmacao do ticket para `POST /analytics/events` da FastAPI. O identificador aleatorio da instalacao fica em secure storage e a sessao analitica roda em memoria, renovada apos inatividade; logout apaga o identificador. A coleta e de melhor esforco e nao bloqueia o produto. A cobertura de outros controles, fila offline e preferencia de coleta na UI estao registradas em `docs/specs/state/known-gaps.md`.
+
 O app roda como cliente da FastAPI e usa `http://10.0.2.2:8001` como API local padrao no emulador Android. Imagens de mercado e badges em `/media/...` usam a web local em `http://10.0.2.2:8000`, portanto o Django local precisa aceitar `10.0.2.2` em `GOTRENDLABS_ALLOWED_HOSTS` e escutar em host acessivel pelo emulador.
 
 Para trocar as bases locais:

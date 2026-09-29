@@ -7,11 +7,13 @@ from django.urls import path
 from apps.web.django.accounts import views as account_views
 from apps.web.django.admin_ops import views as admin_ops_views
 from apps.web.django.core import views as core_views
+from apps.web.django.core import analytics_views
 from apps.web.django.markets import views as market_views
 from apps.web.django.profiles import views as profile_views
 from apps.web.django.wallet import views as wallet_views
 
 urlpatterns = [
+    path("analytics/events/", analytics_views.collect, name="analytics-events"),
     path("", core_views.home, name="home"),
     path("maintenance/", core_views.maintenance, name="maintenance"),
     path("concepts/", core_views.concepts, name="concepts"),
@@ -59,6 +61,7 @@ urlpatterns = [
     path("profile/", profile_views.profile, name="profile"),
     path("rankings/", profile_views.rankings, name="rankings"),
     path("admin-ops/", admin_ops_views.dashboard, name="admin-ops-dashboard"),
+    path("admin-ops/analytics/", admin_ops_views.analytics, name="admin-ops-analytics"),
     path("admin-ops/config/", admin_ops_views.config, name="admin-ops-config"),
     path("admin-ops/email-policy/", admin_ops_views.email_templates, name="admin-ops-email-templates"),
     path("admin-ops/email-policy/templates/<int:template_id>/", admin_ops_views.email_templates, name="admin-ops-email-template-edit"),

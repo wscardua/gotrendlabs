@@ -1,0 +1,107 @@
+{% extends "admin_base.html" %}
+{% load static %}
+{% block title %}GoTrendLabs Admin | Analytics{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/analytics.css' %}?v=20260929d">{% endblock %}
+{% block content %}
+<main class="shell analytics-page">
+  <header class="analytics-head">
+    <div>
+      <span class="eyebrow">Observação da plataforma</span>
+      <h1>Analytics</h1>
+      <p>Navegação, retorno e jornadas de previsão na web e no app.</p>
+    </div>
+    {% if report %}<small>Relatório gerado em {{ report.generated_at|slice:':16' }} UTC</small>{% endif %}
+  </header>
+
+  <form class="analytics-filters" method="get" aria-label="Filtros do relatório de navegação">
+    <label>Período<select name="days"><option value="1" {% if filters.days == '1' %}selected{% endif %}>Últimas 24 h</option><option value="7" {% if filters.days == '7' %}selected{% endif %}>7 dias</option><option value="30" {% if filters.days == '30' %}selected{% endif %}>30 dias</option><option value="90" {% if filters.days == '90' %}selected{% endif %}>90 dias</option></select></label>
+    <label>Plataforma<select name="platform"><option value="all" {% if filters.platform == 'all' %}selected{% endif %}>Todas</option><option value="web" {% if filters.platform == 'web' %}selected{% endif %}>Web</option><option value="mobile" {% if filters.platform == 'mobile' %}selected{% endif %}>Mobile</option></select></label>
+    <label>Público<select name="audience"><option value="all" {% if filters.audience == 'all' %}selected{% endif %}>Todos</option><option value="anonymous" {% if filters.audience == 'anonymous' %}selected{% endif %}>Visitantes</option><option value="authenticated" {% if filters.audience == 'authenticated' %}selected{% endif %}>Cadastrados</option></select></label>
+    <label>Estado<input name="region" maxlength="20" value="{{ filters.region }}" placeholder="Ex.: SP"></label>
+    <label>Cidade<input name="city" maxlength="120" value="{{ filters.city }}" placeholder="Todas"></label>
+    <button class="btn primary" type="submit">Aplicar</button>
+    {% if filters.region or filters.city %}<a class="analytics-clear" href="?days={{ filters.days|urlencode }}&amp;platform={{ filters.platform|urlencode }}&amp;audience={{ filters.audience|urlencode }}">Limpar local</a>{% endif %}
+  </form>
+
+  {% if admin_error %}<div class="admin-alert risk">Analytics indisponível: {{ admin_error }}</div>{% endif %}
+  {% if report %}
+    <section class="analytics-overview" aria-label="Resumo de navegação">
+      <div><span>Visitantes</span><strong>{{ report.totals.visitors }}</strong><small>Navegadores e instalações</small></div>
+      <div><span>Sessões</span><strong>{{ report.totals.sessions }}</strong><small>{{ report.totals.recent_sessions }} ativas nos últimos 5 min</small></div>
+      <div><span>Visualizações</span><strong>{{ report.totals.views }}</strong><small>Páginas e telas</small></div>
+      <div><span>Contas ativas</span><strong>{{ report.totals.users }}</strong><small>Autenticadas no período</small></div>
+    </section>
+    {% if not report.totals.sessions %}<p class="analytics-empty">Ainda não há eventos neste recorte. Use outro período ou aguarde novas visitas.</p>{% endif %}
+
+    <section class="analytics-section" id="retencao">
+      <div class="analytics-section-title"><div><span class="eyebrow">Quem volta</span><h2>Retenção de usuários</h2></div><p>Coortes dos últimos 90 dias · horário de São Paulo · sem filtros de navegação{% if report.retention.since %} · cobertura desde {{ report.retention.since }}{% endif %}</p></div>
+      <div class="analytics-retention-grid">
+        <article class="analytics-panel analytics-retention-panel">
+          <div class="analytics-panel-head"><div><span class="analytics-audience-mark is-registered"></span><h3>Contas cadastradas</h3></div><small>Coorte: data do cadastro</small></div>
+          <div class="analytics-retention-rates">
+            <div><span>D1</span><strong>{% if report.retention.registered.totals.d1.eligible %}{{ report.retention.registered.totals.d1.rate }}%{% else %}—{% endif %}</strong><small>{{ report.retention.registered.totals.d1.returned }} / {{ report.retention.registered.totals.d1.eligible }} contas</small></div>
+            <div><span>D7</span><strong>{% if report.retention.registered.totals.d7.eligible %}{{ report.retention.registered.totals.d7.rate }}%{% else %}—{% endif %}</strong><small>{{ report.retention.registered.totals.d7.returned }} / {{ report.retention.registered.totals.d7.eligible }} contas</small></div>
+            <div><span>D30</span><strong>{% if report.retention.registered.totals.d30.eligible %}{{ report.retention.registered.totals.d30.rate }}%{% else %}—{% endif %}</strong><small>{{ report.retention.registered.totals.d30.returned }} / {{ report.retention.registered.totals.d30.eligible }} contas</small></div>
+          </div>
+          <details class="analytics-cohort-details"><summary>Ver coortes semanais</summary><div class="analytics-table-wrap"><table><thead><tr><th>Semana</th><th>D1</th><th>D7</th><th>D30</th></tr></thead><tbody>{% for row in report.retention.registered.cohorts %}<tr><td>{{ row.week }}</td><td>{% if row.d1.eligible %}{{ row.d1.rate }}% <small>({{ row.d1.returned }}/{{ row.d1.eligible }})</small>{% else %}—{% endif %}</td><td>{% if row.d7.eligible %}{{ row.d7.rate }}% <small>({{ row.d7.returned }}/{{ row.d7.eligible }})</small>{% else %}—{% endif %}</td><td>{% if row.d30.eligible %}{{ row.d30.rate }}% <small>({{ row.d30.returned }}/{{ row.d30.eligible }})</small>{% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="4">Sem coortes desde o início da coleta.</td></tr>{% endfor %}</tbody></table></div></details>
+        </article>
+        <article class="analytics-panel analytics-retention-panel">
+          <div class="analytics-panel-head"><div><span class="analytics-audience-mark is-visitor"></span><h3>Visitantes</h3></div><small>Coorte: primeira visita anônima</small></div>
+          <div class="analytics-retention-rates">
+            <div><span>D1</span><strong>{% if report.retention.visitors.totals.d1.eligible %}{{ report.retention.visitors.totals.d1.rate }}%{% else %}—{% endif %}</strong><small>{{ report.retention.visitors.totals.d1.returned }} / {{ report.retention.visitors.totals.d1.eligible }} visitantes</small></div>
+            <div><span>D7</span><strong>{% if report.retention.visitors.totals.d7.eligible %}{{ report.retention.visitors.totals.d7.rate }}%{% else %}—{% endif %}</strong><small>{{ report.retention.visitors.totals.d7.returned }} / {{ report.retention.visitors.totals.d7.eligible }} visitantes</small></div>
+            <div><span>D30</span><strong>{% if report.retention.visitors.totals.d30.eligible %}{{ report.retention.visitors.totals.d30.rate }}%{% else %}—{% endif %}</strong><small>{{ report.retention.visitors.totals.d30.returned }} / {{ report.retention.visitors.totals.d30.eligible }} visitantes</small></div>
+          </div>
+          <details class="analytics-cohort-details"><summary>Ver coortes semanais</summary><div class="analytics-table-wrap"><table><thead><tr><th>Semana</th><th>D1</th><th>D7</th><th>D30</th></tr></thead><tbody>{% for row in report.retention.visitors.cohorts %}<tr><td>{{ row.week }}</td><td>{% if row.d1.eligible %}{{ row.d1.rate }}% <small>({{ row.d1.returned }}/{{ row.d1.eligible }})</small>{% else %}—{% endif %}</td><td>{% if row.d7.eligible %}{{ row.d7.rate }}% <small>({{ row.d7.returned }}/{{ row.d7.eligible }})</small>{% else %}—{% endif %}</td><td>{% if row.d30.eligible %}{{ row.d30.rate }}% <small>({{ row.d30.returned }}/{{ row.d30.eligible }})</small>{% else %}—{% endif %}</td></tr>{% empty %}<tr><td colspan="4">Sem coortes desde o início da coleta.</td></tr>{% endfor %}</tbody></table></div></details>
+        </article>
+      </div>
+      <p class="analytics-method">D1, D7 e D30 significam atividade na data exata após a entrada. Só entram no denominador coortes cujo dia já terminou. Para visitantes, retorno exige outra sessão anônima no mesmo navegador ou instalação; para contas, atividade autenticada em qualquer dispositivo. Visualizações de página ou tela definem atividade. Coortes anteriores à coleta e o primeiro dia parcial ficam fora.</p>
+    </section>
+
+    <section class="analytics-section" id="jornada">
+      <div class="analytics-section-title"><div><span class="eyebrow">O caminho até prever</span><h2>Jornada e desistência</h2></div><p>Etapas observadas na navegação; conclusão real vem do banco de previsões.</p></div>
+      <div class="analytics-content-grid analytics-journey-grid">
+        <article class="analytics-panel"><h3>Funil de sessões</h3><ol class="analytics-funnel"><li><span>Visitou</span><strong>{{ report.funnel.visited }}</strong></li><li><span>Abriu mercado</span><strong>{{ report.funnel.market_opened }}</strong></li><li><span>Abriu ticket</span><strong>{{ report.funnel.ticket_started }}</strong></li><li><span>Clicou em confirmar</span><strong>{{ report.funnel.submit_clicked }}</strong></li></ol><p class="analytics-confirmed"><strong>{{ report.authenticated_funnel.confirmed_users }} de {{ report.authenticated_funnel.started_users }}</strong> contas que abriram o ticket fizeram primeira previsão persistida no mesmo mercado em até 7 dias.</p></article>
+        <article class="analytics-panel"><div class="analytics-panel-head"><h3>Onde o ticket para</h3><small>{{ report.abandonment.eligible }} jornadas encerradas</small></div><div class="analytics-dropoffs"><div><strong>{{ report.abandonment.abandoned_before_choice }}</strong><span>antes de escolher</span></div><div><strong>{{ report.abandonment.abandoned_after_choice }}</strong><span>após escolher</span></div></div><p class="analytics-method">Uma jornada é um mercado em uma sessão. A saída só é contada após 30 minutos sem atividade. O motivo não é conhecido; clique em confirmar não garante previsão persistida.</p></article>
+      </div>
+    </section>
+
+    <section class="analytics-section" id="geografia">
+      <div class="analytics-section-title"><div><span class="eyebrow">De onde vêm</span><h2>Geografia aproximada</h2></div><p>{{ report.totals.located_sessions }} de {{ report.totals.sessions }} sessões com país identificado neste recorte.</p></div>
+      <div class="analytics-content-grid analytics-geo-grid">
+        <article class="analytics-panel analytics-map-panel"><div class="analytics-panel-head"><h3>Brasil por estado</h3><small>Selecione uma UF para filtrar</small></div><div class="analytics-map-layout"><div id="analytics-state-map" class="analytics-state-map">{% include 'admin_ops/partials/brazil_states_map.svg' %}</div><div class="analytics-map-side"><p class="analytics-map-focus" aria-live="polite"><strong data-map-name>Brasil</strong><span data-map-count>Passe o cursor ou selecione uma UF</span></p><div class="analytics-map-legend"><span>Sem amostra</span><span class="analytics-map-legend-scale" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>Mais sessões</span></div><small>Contornos: <a href="https://servicodados.ibge.gov.br/api/docs/malhas?versao=3" rel="noopener noreferrer">IBGE, API de Malhas</a>. Localização estimada por IP.</small></div></div></article>
+        <article class="analytics-panel analytics-region-panel"><h3>Estados com mais sessões</h3><div class="analytics-table-wrap"><table><thead><tr><th>UF</th><th>Sessões</th><th>Contas</th></tr></thead><tbody>{% for row in report.regions %}<tr><td><a href="?days={{ filters.days|urlencode }}&amp;platform={{ filters.platform|urlencode }}&amp;audience={{ filters.audience|urlencode }}&amp;region={{ row.region_code|urlencode }}">{{ row.region_code }}</a></td><td><span class="analytics-meter"><span style="width:{{ row.percent }}%"></span></span>{{ row.sessions }}</td><td>{{ row.users }}</td></tr>{% empty %}<tr><td colspan="3">Nenhum estado identificado.</td></tr>{% endfor %}</tbody></table></div></article>
+      </div>
+      {{ report.regions|json_script:'analytics-region-data' }}
+      <script src="{% static 'js/analytics-map.js' %}?v=20260929b" defer></script>
+      <div class="analytics-content-grid">
+        <article class="analytics-panel"><h3>Cidades do Brasil</h3><p>Até 20 cidades com mais sessões no recorte.</p><div class="analytics-table-wrap"><table><thead><tr><th>Cidade</th><th>Sessões</th><th>Contas</th></tr></thead><tbody>{% for row in report.cities %}<tr><td><a href="?days={{ filters.days|urlencode }}&amp;platform={{ filters.platform|urlencode }}&amp;audience={{ filters.audience|urlencode }}&amp;region={{ row.region_code|default:''|urlencode }}&amp;city={{ row.city_name|urlencode }}">{{ row.city_name }}{% if row.region_code %} · {{ row.region_code }}{% endif %}</a></td><td>{{ row.sessions }}</td><td>{{ row.users }}</td></tr>{% empty %}<tr><td colspan="3">Nenhuma cidade identificada.</td></tr>{% endfor %}</tbody></table></div></article>
+        <article class="analytics-panel"><h3>Evolução da localização</h3><p>Sessões distintas em cada dia; uma sessão pode aparecer em mais de um dia.</p><div class="analytics-table-wrap"><table><thead><tr><th>Dia</th><th>Com país</th><th>Com estado</th><th>Cobertura</th></tr></thead><tbody>{% for row in report.geo_daily %}<tr><td>{{ row.day }}</td><td>{{ row.located_sessions }}</td><td>{{ row.regional_sessions }}</td><td>{{ row.percent }}%</td></tr>{% empty %}<tr><td colspan="4">Sem dados.</td></tr>{% endfor %}</tbody></table></div>{% if report.trend_region %}<details class="analytics-cohort-details"><summary>Atividade diária em {{ report.trend_region }}</summary><div class="analytics-table-wrap"><table><thead><tr><th>Dia</th><th>Sessões</th></tr></thead><tbody>{% for row in report.region_daily %}<tr><td>{{ row.day }}</td><td>{{ row.sessions }}</td></tr>{% endfor %}</tbody></table></div></details>{% endif %}</article>
+      </div>
+    </section>
+
+    <section class="analytics-section" id="atividade">
+      <div class="analytics-section-title"><div><span class="eyebrow">Uso observado</span><h2>Tráfego e interesse</h2></div><p>O que foi visto, de onde chegaram as visitas e quais mercados despertaram interesse.</p></div>
+      <div class="analytics-content-grid">
+        <article class="analytics-panel"><h3>Evolução diária</h3><div class="analytics-table-wrap"><table><thead><tr><th>Dia</th><th>Sessões</th><th>Visualizações</th></tr></thead><tbody>{% for row in report.daily %}<tr><td>{{ row.day }}</td><td>{{ row.sessions }}</td><td><span class="analytics-meter"><span style="width:{{ row.percent }}%"></span></span>{{ row.views }}</td></tr>{% empty %}<tr><td colspan="3">Sem dados.</td></tr>{% endfor %}</tbody></table></div></article>
+        <article class="analytics-panel"><h3>Páginas e telas</h3><div class="analytics-table-wrap"><table><thead><tr><th>Tela</th><th>Views</th><th>Sessões</th></tr></thead><tbody>{% for row in report.screens %}<tr><td>{{ row.key|default:'Não identificada' }}</td><td>{{ row.views }}</td><td>{{ row.sessions }}</td></tr>{% empty %}<tr><td colspan="3">Sem dados.</td></tr>{% endfor %}</tbody></table></div></article>
+      </div>
+      <div class="analytics-content-grid">
+        <article class="analytics-panel"><h3>Origem das visitas</h3><div class="analytics-table-wrap"><table><thead><tr><th>Origem</th><th>Sessões</th></tr></thead><tbody>{% for row in report.sources %}<tr><td>{{ row.source }}</td><td>{{ row.sessions }}</td></tr>{% empty %}<tr><td colspan="2">Sem dados.</td></tr>{% endfor %}</tbody></table></div></article>
+        <article class="analytics-panel"><h3>Mercados observados</h3><div class="analytics-table-wrap"><table><thead><tr><th>Mercado</th><th>Impressões</th><th>Cliques</th><th>Tickets</th></tr></thead><tbody>{% for row in report.markets %}<tr><td>{{ row.slug }}</td><td>{{ row.impressions }}</td><td>{{ row.clicks }}</td><td>{{ row.tickets }}</td></tr>{% empty %}<tr><td colspan="4">Sem dados.</td></tr>{% endfor %}</tbody></table></div></article>
+      </div>
+      {% if report.insights %}<div class="analytics-insights"><h3>Leituras automáticas</h3>{% for insight in report.insights %}<article><strong>{{ insight.title }}</strong><p>{{ insight.detail }}</p><small>Base: {{ insight.sample }} observações</small></article>{% endfor %}</div>{% endif %}
+    </section>
+
+    <section class="analytics-section analytics-operations" id="operacao">
+      <div class="analytics-section-title"><div><span class="eyebrow">Saúde da medição</span><h2>Coleta e atualização</h2></div><p>Estado global da operação, independente dos filtros de navegação.</p></div>
+      <div class="analytics-content-grid">
+        <article class="analytics-panel"><div class="analytics-panel-head"><h3>Última remessa de eventos</h3>{% if report.last_ingestion %}<small>{{ report.last_ingestion.completed_at|slice:':16' }} UTC</small>{% endif %}</div>{% if report.last_ingestion %}<div class="analytics-load-numbers"><div><strong>{{ report.last_ingestion.accepted }}</strong><span>aceitos</span></div><div><strong>{{ report.last_ingestion.received }}</strong><span>recebidos</span></div><div><strong>{{ report.last_ingestion.duplicates }}</strong><span>repetidos</span></div></div><p>Plataforma: {{ report.last_ingestion.platform }} · {% if report.last_ingestion.new_session %}nova sessão{% else %}sessão existente{% endif %}.</p>{% else %}<p>Nenhuma remessa registrada desde a ativação deste indicador.</p>{% endif %}<p class="analytics-method">Últimas 24 h: {{ report.collection_24h.events }} eventos humanos, {{ report.collection_24h.sessions }} sessões e {{ report.collection_24h.visitors }} visitantes. {% if report.collection_24h.last_event_at %}Último evento: {{ report.collection_24h.last_event_at|slice:':16' }} UTC.{% endif %}</p></article>
+        <article class="analytics-panel"><div class="analytics-panel-head"><h3>Última atualização GeoLite</h3>{% if report.last_geolite_run %}<small>{{ report.last_geolite_run.completed_at|slice:':16' }} UTC</small>{% endif %}</div>{% if report.last_geolite_run %}<p class="analytics-load-result {% if report.last_geolite_run.status == 'success' %}is-success{% else %}is-failed{% endif %}">{% if report.last_geolite_run.status == 'success' %}Carga concluída{% else %}Carga falhou · {{ report.last_geolite_run.error_code }}{% endif %}</p>{% else %}<p>Nenhuma atualização registrada.</p>{% endif %}{% if report.geolite_file.state == 'ready' %}<div class="analytics-load-numbers"><div><strong>{{ report.geolite_file.file_size_bytes|filesizeformat }}</strong><span>arquivo ativo</span></div><div><strong>{{ report.geolite_file.node_count }}</strong><span>nós de busca</span></div></div><p>Base {{ report.geolite_file.database_type }} gerada em {{ report.geolite_file.database_build_at|slice:':10' }}. Instalada em {{ report.geolite_file.file_modified_at|slice:':16' }} UTC.</p>{% elif report.geolite_file.state == 'not_configured' %}<p>Caminho da base GeoLite não configurado.</p>{% elif report.geolite_file.state == 'missing' %}<p>Arquivo GeoLite configurado, mas ausente.</p>{% else %}<p>Arquivo GeoLite inválido ou ilegível.</p>{% endif %}</article>
+      </div>
+      <div class="analytics-domain-stats"><span>Contas criadas <strong>{{ report.domain_totals.signups }}</strong></span><span>Previsões persistidas <strong>{{ report.domain_totals.predictions }}</strong></span><span>Participantes <strong>{{ report.domain_totals.participants }}</strong></span><small>Totais globais do domínio; não seguem filtros de plataforma ou região.</small></div>
+      <p class="analytics-method">{{ report.coverage }} Dados GeoLite criados pela MaxMind, disponíveis em <a href="https://www.maxmind.com" rel="noopener noreferrer">maxmind.com</a>. Nós de busca representam a estrutura da base, não a quantidade de cidades.</p>
+    </section>
+  {% endif %}
+</main>
+{% endblock %}

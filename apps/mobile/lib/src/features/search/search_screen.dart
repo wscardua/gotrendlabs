@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../core/analytics_tracker.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../markets/market_cards.dart';
@@ -35,6 +36,11 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           const SizedBox(height: 14),
           TextField(
             onChanged: (value) => setState(() => _query = value),
+            onSubmitted: (value) {
+              final items = markets.asData?.value ?? [];
+              ref.read(analyticsTrackerProvider).track('search_performed',
+                  properties: {'result_count': searchMarkets(items, value).length});
+            },
             decoration: const InputDecoration(
               prefixIcon: Icon(Icons.search),
               labelText: 'Buscar mercados',

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
+import '../../core/analytics_tracker.dart';
 import '../../core/formatters.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
@@ -43,6 +44,11 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
   void initState() {
     super.initState();
     _syncPositionDefaults();
+    if (!widget.market.viewerPosition.hasPosition) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) unawaited(ref.read(analyticsTrackerProvider).track('prediction_started', properties: {'market_slug': widget.market.slug}));
+      });
+    }
   }
 
   @override
@@ -443,6 +449,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
     if (confirmed != true || _optionId == null) {
       return;
     }
+    unawaited(ref.read(analyticsTrackerProvider).track('prediction_submit_clicked', properties: {'market_slug': widget.market.slug}));
     setState(() => _busy = true);
     try {
       final result = await ref
@@ -729,6 +736,12 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
   }
 
   void _selectInitialOption(int optionId, bool authenticated) {
+    if (_optionId != optionId) {
+      unawaited(ref.read(analyticsTrackerProvider).track(
+        'prediction_option_selected',
+        properties: {'market_slug': widget.market.slug},
+      ));
+    }
     setState(() {
       _optionId = optionId;
       _preview = null;

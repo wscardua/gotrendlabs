@@ -4,10 +4,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>GoTrendLabs | Criar conta</title>
   <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260606-referral-card-air">
   {% if recaptcha_enabled and recaptcha_site_key %}<script src="https://www.google.com/recaptcha/api.js" async defer></script>{% endif %}
   <script src="{% static 'js/gotrendlabs.js' %}?v=20260606-referral-card-air" defer></script>
+  <script src="{% static 'js/analytics.js' %}?v=20260929" defer></script>
 </head>
 <body>
   <header class="topbar">

@@ -1,5 +1,26 @@
 # Workflow Runs
 
+## WFLOW-20260929-ANALYTICS-001
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`.
+- Status: implementação v0.4 concluída localmente; publicação/validação produtiva pendente.
+- Feature alvo: `FEAT-ANALYTICS-001`.
+- Objetivo: analytics proprio de navegacao web/mobile, geografia aproximada, funil e insights no Admin Ops com FastAPI autoritativa.
+- Base: `origin/main` cf0f33b, branch `feature/first-party-analytics`.
+- Restauracao integral anterior: `/Users/williamsca/Documents/gotrendlabs-restore-20260929-before-analytics` (copia da solucao, bundle Git e status original).
+- Etapa atual: implementacao local validada na branch; nao implantada.
+- Artefatos afetados: spec de analytics, FastAPI/OpenAPI, migracao PostgreSQL, Django web/Admin Ops, Flutter, testes e memoria operacional.
+- Validacao: migration `admin_ops.0020` aplicada localmente; 286 testes Django passaram com `BACKEND_API_URL` isolada, 106 testes Flutter passaram, `flutter analyze`, `manage.py check`, `makemigrations --check`, snapshot OpenAPI e sintaxe JavaScript aprovados. Os tres testes de pagina que falharam antes do isolamento consultavam um mercado concluido na API local externa ao banco de teste; repetidos com o isolamento, passaram.
+- GeoLite local: arquivo oficial `GeoLite2-City_20260925.tar.gz` baixado da conta MaxMind apos aceite do titular; SHA256 do arquivo compactado conferido com o checksum oficial, `.mmdb` extraido para `.runtime/geolite/GeoLite2-City.mmdb`, biblioteca `geoip2` validou o tipo e uma consulta. Caminho configurado apenas no `.env.api.local` ignorado pelo Git; serviços locais foram reiniciados após a configuração.
+- Ampliação v0.2: FastAPI agrega UF/cidade e evolução diária e mede desistência de jornada sessão/mercado após 30 minutos de inatividade; Admin Ops apresenta mapa esquematico e séries, e o Flutter emite escolha de opção. Testes direcionados Django (10), suíte Flutter (106), `flutter analyze`, snapshot OpenAPI, renderização do template, sintaxe do mapa JS e `git diff --check` passaram. A suíte Django completa executou 288 testes: 3 páginas falharam ao consultar a API local externa ao banco de teste; os 3 passaram com `BACKEND_API_URL` isolada. FastAPI local reiniciada e `/health` validado.
+- Ampliação v0.3: tabela de status da última remessa e histórico de atualizações GeoLite criados pela migration `admin_ops.0021` e aplicada localmente. O importador validou checksum oficial e reinstalou atomicamente a base GeoLite City de 2026-09-25 (65.345.887 bytes, 6.104.689 nós), registrando sucesso. O relatório agora mostra última remessa, volume humano de 24 h, última atualização GeoLite e estado do arquivo. Onze testes direcionados de analytics, `manage.py check`, `makemigrations --check`, snapshot OpenAPI, renderização do dashboard com dados locais e `git diff --check` passaram. FastAPI local reiniciada após a mudança.
+- Ampliação v0.4: retenção observada D1/D7/D30 por coortes semanais para cadastrados e visitantes, apurada pela FastAPI em dias completos de São Paulo, com sessão nova obrigatória para retorno anônimo. O dashboard ganhou hierarquia visual revisada e um mapa SVG real das 27 UFs, gerado de GeoJSON simplificado da API de Malhas do IBGE. Testes direcionados de integração cobriram coortes maduras e retorno anônimo em sessão diferente; `manage.py check`, `makemigrations --check`, snapshot OpenAPI, sintaxe JS e `git diff --check` passaram. Página real, retenção vazia e desenho/acessibilidade do mapa foram conferidos no navegador; FastAPI local reiniciada e `/health` respondeu `ok`. Não há nova migration nesta etapa.
+- Fechamento solicitado: escopo da v0.4 concluído localmente. Revisão pré-publicação normalizou chaves de tela web e retirou `visitor_id` controlado pelo cliente da identidade do rate limit; regressão de integração adicionada. A publicação por PR, o CI, a implantação da GeoLite/configuração do proxy na produção e o smoke produtivo ainda precisam ser comprovados antes de marcar a implementação `implementada_validada`. As evoluções fora do escopo permanecem em `known-gaps.md`.
+- Validação pré-PR: suíte Django completa isolada da API local passou com 291 testes, após uma primeira execução concorrente que gerou duas falhas de cadastro não reproduzidas isoladamente; Flutter passou 106 testes, `flutter analyze` e build APK debug. Snapshot OpenAPI, `manage.py check`, `makemigrations --check`, sintaxe JavaScript e diff sem whitespace também passaram. A EC2 produtiva está online e os serviços estão ativos; `.env.prod` ainda não contém as três chaves GeoLite/proxy, que serão configuradas antes do merge.
+- Pendencias operacionais: GeoLite ainda nao foi instalada no volume de producao e segredo/rede de proxy continuam sem configuracao. Publicacao e deploy nao realizados.
+- Retomada: instalar/atualizar GeoLite em producao, validar estado/cidade com IP publico e ampliar cobertura de eventos/funis conforme `known-gaps.md`.
+- Reversao logica: desativar coleta nos clientes e ocultar pagina administrativa; preservar backup anterior e retirar tabelas somente mediante migracao posterior explicita.
+
 Use este arquivo como memória operacional de processos em andamento, concluídos, bloqueados, cancelados ou substituídos.
 
 ## WFLOW-20260928-ADMIN-TOTP-MFA-036

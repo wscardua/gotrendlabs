@@ -9,6 +9,7 @@ import '../../core/api_client.dart';
 import '../../core/environment.dart';
 import '../../core/formatters.dart';
 import '../../core/providers.dart';
+import '../../core/analytics_tracker.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import '../auth/auth_controller.dart';
@@ -85,6 +86,8 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
         return;
       }
       unawaited(_trackMarketView(slug));
+      unawaited(ref.read(analyticsTrackerProvider).screen('market_detail'));
+      unawaited(ref.read(analyticsTrackerProvider).track('market_detail_viewed', properties: {'market_slug': slug}));
     });
   }
 

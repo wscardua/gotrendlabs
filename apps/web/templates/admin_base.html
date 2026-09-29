@@ -11,6 +11,7 @@
   <meta name="theme-color" content="#F4F2E9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
   <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260926-editorial-reference">
+  {% block extra_head %}{% endblock %}
   <script src="{% static 'js/gotrendlabs.js' %}?v=20260611-email-preview-footer" defer></script>
 </head>
 <body>
@@ -26,6 +27,7 @@
       </a>
       <div class="nav-links admin-nav-links">
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-analytics' %}active{% endif %}" href="{% url 'admin-ops-analytics' %}">Analytics</a>
         <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>
         <a class="nav-link {% if 'email-' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-email-templates' %}">Politica de Emails</a>
         <a class="nav-link {% if 'push-' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-push-templates' %}">Push mobile</a>

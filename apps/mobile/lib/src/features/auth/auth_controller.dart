@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/api_client.dart';
 import '../../core/providers.dart';
+import '../../core/analytics_tracker.dart';
 import '../push/push_controller.dart';
 import 'auth_models.dart';
 import 'auth_repository.dart';
@@ -182,6 +183,7 @@ class AuthController extends Notifier<AuthState> {
       // Logout local continua mesmo se a sessão já tiver expirado no backend.
     }
     await api.clearToken();
+    await ref.read(analyticsTrackerProvider).resetAfterLogout();
     await ref.read(biometricPreferenceStoreProvider).writeEnabled(false);
     ref.invalidate(biometricPreferenceProvider);
     ref.invalidate(rememberedSessionProvider);
@@ -199,6 +201,7 @@ class AuthController extends Notifier<AuthState> {
 
   Future<void> forgetProtectedSession() async {
     await ref.read(apiClientProvider).clearToken();
+    await ref.read(analyticsTrackerProvider).resetAfterLogout();
     await ref.read(biometricPreferenceStoreProvider).writeEnabled(false);
     ref.invalidate(biometricPreferenceProvider);
     ref.invalidate(rememberedSessionProvider);
