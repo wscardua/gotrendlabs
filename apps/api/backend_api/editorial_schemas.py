@@ -207,6 +207,10 @@ class HumanEditorialAssessment(ReviewDecision):
 
 
 class OAuthRegistration(Strict):
+    # RFC 7591 section 2: unrecognized client metadata must be ignored.
+    # This exception applies only to registration, never domain/admin payloads.
+    model_config = ConfigDict(extra="ignore", str_strip_whitespace=True)
+
     scope: str | None = Field(default=None, max_length=200)
     client_name: str = Field(default="MCP client", min_length=1, max_length=120)
     redirect_uris: list[str] = Field(min_length=1, max_length=10)

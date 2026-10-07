@@ -78,3 +78,10 @@ O indicador de publicação/estado deve ser visível também em mercados legados
 - Parecer novo deve informar gate universal; revisão inválida no POST web conserva campos, retorna erro legível e não chama update. Fichas/decisões históricas não são reescritas para corrigir metadados.
 
 Evidências: [fechamento e pendências](mcp-closeout-20261007.md).
+
+## Regressão OAuth Codex
+
+- Registro com payload real Codex (`application_type: native`): 201, redirect persistido, metadados desconhecidos omitidos; nenhum token ou permissão emitido.
+- Extras desconhecidos não contornam validação de redirect, grant, auth method e response type. Schemas editoriais/admin seguem estritos.
+- Discovery do adaptador anuncia issuer textual idêntico ao AS/iss, usando a mesma canonicalização inicial sem barra final da FastAPI; scopes completos e challenge canonical preservados, /mcp sem token continua 401.
+- Fluxo SDK completo PKCE/code/refresh/tools executado com metadados nativos; CLI real local avança para autorização humana. Produção e login humano do operador precisam de evidência após rollout aprovado.

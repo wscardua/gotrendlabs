@@ -205,11 +205,49 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             headers=headers or self.agentheaders,
         )
 
+    def test_codex_registration_ignores_unknown_metadata_without_granting_permissions(
+        self,
+    ):
+        payload = {
+            "client_name": "Codex",
+            "redirect_uris": ["http://127.0.0.1:51702/callback/local-client"],
+            "grant_types": ["authorization_code", "refresh_token"],
+            "token_endpoint_auth_method": "none",
+            "response_types": ["code"],
+            "application_type": "native",
+            "unknown_extension": {"scopes": ["admin:*"], "integration_id": "forged"},
+        }
+        r = self.client.post("/oauth/register", json=payload)
+        self.assertEqual(r.status_code, 201, r.text)
+        self.assertNotIn("application_type", r.json())
+        self.assertNotIn("unknown_extension", r.json())
+        self.assertNotIn("access_token", r.json())
+        cid = r.json()["client_id"]
+        with get_connection() as c, c.cursor() as cur:
+            cur.execute(
+                "SELECT redirect_uris FROM gotrendlabs_agent_oauth_clients WHERE id=%s",
+                (cid,),
+            )
+            self.assertEqual(cur.fetchone()["redirect_uris"], payload["redirect_uris"])
+        for invalid in (
+            {"redirect_uris": ["http://evil.example/callback"]},
+            {"redirect_uris": ["https://client.example/callback#fragment"]},
+            {"grant_types": ["client_credentials"]},
+            {"token_endpoint_auth_method": "client_secret_post"},
+            {"response_types": ["token"]},
+        ):
+            with self.subTest(invalid=invalid):
+                denied = self.client.post(
+                    "/oauth/register", json={**payload, **invalid}
+                )
+                self.assertEqual(denied.status_code, 422)
+
     def oauth(self):
         r = self.client.post(
             "/oauth/register",
             json={
                 "client_name": "Real client",
+                "application_type": "native",
                 "redirect_uris": ["https://client.example/callback"],
             },
         )

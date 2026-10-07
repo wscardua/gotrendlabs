@@ -79,3 +79,9 @@ Referências operacionais: [Docker Compose merge](https://docs.docker.com/compos
 ## Evidência de implantação — 2026-10-07
 
 PR #136/Actions 37692274600 aprovados; snapshot RDS anterior ao merge, migrations/grants/isolamento e HTTPS/discovery conferidos, API/MCP habilitados explicitamente. [Relatório](../testing/mcp-production-rollout-20261007.md). Domínio preservado, nenhum mercado real de teste; Dot/piloto autenticado ainda não homologados.
+
+## Correção de interoperabilidade Codex — 2026-10-07
+
+Codex CLI 0.160.1/Desktop falhou antes do consentimento: DCR envia `application_type: native`, recusado por schema de extras proibidos (422). Exceção restrita ao schema DCR: ignorar metadados desconhecidos conforme [RFC 7591 seção 2](https://datatracker.ietf.org/doc/html/rfc7591#section-2), sem persistir/refletir ou conceder autoridade. Preservar validações de campos conhecidos e estrita rejeição de extras nos payloads editoriais/admin.
+
+O SDK normaliza issuer origin-only acrescentando `/`; substituir somente sua rota pública de resource metadata por resposta com strings canônicas da configuração (issuer sem barra final, mesma regra da FastAPI), mantendo challenge, verificação de audience e auth middleware do SDK. Issuer deve corresponder exatamente ao AS e resposta de autorização, conforme [documentação oficial](https://developers.openai.com/plugins/build/auth). Não adicionar CIMD nesta correção; DCR anunciado continua o mecanismo suportado. Sem migrations ou alteração de grants.
