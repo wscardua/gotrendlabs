@@ -1,7 +1,7 @@
 # ADR-0011 — MCP editorial com autoridade FastAPI
 
 - Data: 2026-10-07.
-- Status: aceita; implementação local validada, rollout preparado.
+- Status: aceita; implementação/rollout produtivo ativos pela PR #136; homologação Dot pendente.
 - Feature: [FEAT-MCP-001](../features/mcp-editorial-agents.md).
 
 ## Contexto
@@ -75,3 +75,7 @@ FastAPI valida prazo futuro/fuso/modo automático ou manual antes de gate editor
 Deploy padrão mescla Compose de produção e override MCP, inicia adapter isolado e inclui rotas MCP/OAuth no proxy, bloqueando rotas internas também sob /api. Configuração exclusiva API/adapter é criada no host em arquivos 0600, desligada inicialmente, com workload aleatório persistente e sem herdar env compartilhado. Build/preflights antecedem parada dos writers durante migrations/grants; falha não reinicia versão antiga sem gate universal. Ativação explícita após migrations e smokes; próximos deploys preservam estado/segredo. CI valida PR antes do merge; deploy só ocorre em main. Não incluir identidade externa, tokens ou mercado produtivo de teste no bootstrap.
 
 Referências operacionais: [Docker Compose merge](https://docs.docker.com/compose/how-tos/multiple-compose-files/merge/) e [GitHub Actions events](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows). Paths do override resolvem em relação ao primeiro Compose; pull_request valida commit de merge e nunca aciona deploy produtivo.
+
+## Evidência de implantação — 2026-10-07
+
+PR #136/Actions 37692274600 aprovados; snapshot RDS anterior ao merge, migrations/grants/isolamento e HTTPS/discovery conferidos, API/MCP habilitados explicitamente. [Relatório](../testing/mcp-production-rollout-20261007.md). Domínio preservado, nenhum mercado real de teste; Dot/piloto autenticado ainda não homologados.

@@ -1,8 +1,8 @@
 # Piloto MCP editorial e operação
 
-FEAT-MCP-001 no worktree `gotrendlabs-mcp`, branch `feature/mcp-editorial`, baseado em `origin/main` `9df08bc`. Checkout original, documentos e mobile preservados. Entrega local validada e rollout preparado; PR/merge/produção aguardam autorização neste fechamento. Dot exige homologação real.
+FEAT-MCP-001 no worktree `gotrendlabs-mcp`, branch `feature/mcp-editorial`, baseado em `origin/main` `9df08bc`. Checkout original, documentos e mobile preservados. PR #136 integrada e deploy Actions aprovado; MCP habilitado em produção. [Evidências](../specs/testing/mcp-production-rollout-20261007.md). Dot e piloto autenticado exigem homologação real.
 
-## Preparar rollout autorizado posterior
+## Preparar instalação/reinstalação autorizada
 
 1. Usar Python 3.11/3.12: `requirements.txt` na API/web; `apps/mcp/requirements.txt` no adapter. Venv 3.9 original preservado; este worktree tem `.venv` próprio.
 2. Aplicar migrations com role migradora via `ops/scripts/migrate_with_role.py`: `editorial_integrations.0001`, auditoria `markets.0032`, grants/índices `editorial_integrations.0002` e backfill universal `editorial_integrations.0003`. FastAPI escreve; Django não recebe acesso às tabelas privadas novas. Conferir grants efetivos; runtime não usa role migradora.
@@ -109,3 +109,9 @@ Depois de CI/deploy aprovado, no host via SSM: `python3 ops/deploy/mcp/configure
 Rollback de acesso: repetir configure_environment com `--enabled 0` e recriar ambos. Preservar schema e histórico; publicações continuam sob o gate universal. Backup seguro dos dois arquivos MCP é necessário para manter delegação entre reinstalações; em perda/comprometimento, rotação exige operação explícita e reinício conjunto, sem exibir segredo. OAuth Dot e rotina externa só são declarados validados após teste real da conta.
 
 Janela de migrations: após build e preflights, o deploy para Django/FastAPI/daemon/MCP antes de aplicar migrations/grants e reinicia após conclusão. O proxy permanece disponível, mas páginas/API podem retornar 502/503 nessa janela. Se migrations falharem, não reiniciar automaticamente código anterior sem gate universal: preservar backup, identificar/fixar erro e repetir deploy aprovado. Para rollback de acesso com aplicação saudável, usar somente `--enabled 0`; não reverter schema/dados. Snapshot RDS disponível antes do merge e inventário antes/depois são requisitos desta operação.
+
+## Iniciar piloto em produção
+
+Infraestrutura habilitada em https://gotrendlabs.com.br/mcp, com discovery canônica /.well-known/oauth-protected-resource/mcp. Entrar em https://gotrendlabs.com.br/admin-ops/integrations/ com staff/superuser e MFA; criar integração pausada, selecionar responsável humano, scopes mínimos e cotas pequenas, ativar. Conectar OAuth no executor, conferir consentimento e começar por leitura. Credenciais de serviço são emitidas na FastAPI e exibidas uma vez no Admin Ops para executores compatíveis, sem token staff compartilhado. Credenciais DEV não migram para produção.
+
+Usar prompt de radar e checklist de homologação acima; escritas de piloto devem ser propostas reais deliberadas pelo operador, não testes automáticos do rollout. Publicação segue humana e exige ficha/parecer atual e fechamento completo. Dot só fica homologado após evidências reais de OAuth/leitura/escrita/renovação/revogação/logs; infraestrutura disponível não comprova essa conexão.

@@ -33,7 +33,7 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 
 ## 1. Objetivo e estado
 
-Oferecer acesso controlado por MCP às APIs do GoTrendLabs para agentes externos pesquisarem oportunidades e prepararem drafts editoriais. A FastAPI continua como autoridade, sem acesso direto do agente/MCP ao PostgreSQL. Implementação e testes locais disponíveis; pacote de rollout/ativação/rollback integrado ao deploy e CI de PR. [Fechamento local](../testing/mcp-closeout-20261007.md) preparado para aprovação da PR; homologação Dot/HTTPS externa e deploy permanecem pendentes.
+Oferecer acesso controlado por MCP às APIs do GoTrendLabs para agentes externos pesquisarem oportunidades e prepararem drafts editoriais. A FastAPI continua como autoridade, sem acesso direto do agente/MCP ao PostgreSQL. Implementação integrada pela PR #136, deploy Actions aprovado e MCP habilitado em produção. [Rollout/HTTPS/grants/isolamento](../testing/mcp-production-rollout-20261007.md) conferidos; [fechamento local](../testing/mcp-closeout-20261007.md) e CI com 369 testes aprovados. Homologação Dot real e piloto autenticado continuam pendentes.
 
 Dot da OpenAI é o primeiro executor-alvo; outros executores devem poder reutilizar os contratos. Suporte a OAuth interativo E credenciais de serviço integra o escopo completo, mesmo que entregue em etapas. O produto é educativo, sem dinheiro real; preservar regras do editorial aprovado e integridade dos mercados publicados.
 
@@ -183,7 +183,7 @@ As fontes sustentam os fluxos gerais; não comprovam disponibilidade de custom M
 
 ## Evidência de implementação local — 2026-10-07
 
-Fatias A/B/C implementadas na branch `feature/mcp-editorial`, a partir de `origin/main` `9df08bc`, em worktree separado. Python 3.11, MCP SDK 1.30.0 e Authlib 1.6.12; justificativa e fontes oficiais no ADR. Ambos os modos de auth, UI/Admin Ops, domínio, migrations/grants, correlação e cliente MCP real local entregues. Ver [matriz de resultados](../testing/mcp-editorial-results.md) e [operação/piloto](../../guides/mcp-editorial-pilot.md). Dot, recorrência externa, HTTPS público e deploy ainda não comprovados; não marcar `implementada_validada`.
+Fatias A/B/C implementadas na branch `feature/mcp-editorial`, a partir de `origin/main` `9df08bc`, em worktree separado. Python 3.11, MCP SDK 1.30.0 e Authlib 1.6.12; justificativa e fontes oficiais no ADR. Ambos os modos de auth, UI/Admin Ops, domínio, migrations/grants, correlação e cliente MCP real local entregues. Ver [matriz de resultados](../testing/mcp-editorial-results.md) e [operação/piloto](../../guides/mcp-editorial-pilot.md). Deploy/HTTPS público/grants/isolamento comprovados no rollout da PR #136. Dot e recorrência externa ainda não comprovados; não marcar `implementada_validada` antes da homologação real.
 
 ### Retomada humana da preparação (v1.2)
 

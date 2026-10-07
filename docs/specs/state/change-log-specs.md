@@ -1,5 +1,11 @@
 # Change Log de Specs
 
+## 2026-10-07 — MCP editorial implantado e habilitado em produção
+
+- PR #136/merge b36ea44; CI PR e main passaram com 369 testes cada, OpenAPI e deploy Actions 37692274600 aprovados. Snapshot RDS disponível antes do merge; branch local preservada.
+- MCP habilitado explicitamente; migrations/grants/append-only/isolamento/0600 e HTTPS/discovery/auth/internal conferidos, inventários de domínio idênticos e zero mercados produtivos de teste.
+- [Evidências produtivas](../testing/mcp-production-rollout-20261007.md). Entrega técnica/rollout concluídos; FEAT-MCP-001 permanece parcial por homologação Dot/piloto autenticado.
+
 ## 2026-10-07 — fechamento local MCP e rollout preparado
 
 - Fonte de verdade alinhada: revisão universal, arquitetura/ADR, frontmatter auth/logs, operação e pendências externas. Revisão inválida no POST recebe erro controlado sem mutação; parecer novo informa gate universal.

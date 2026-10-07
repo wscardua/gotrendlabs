@@ -1,6 +1,6 @@
 # Aceite e regressão — FEAT-MCP-001
 
-Estado: testes locais implementados/executados em 2026-10-07; consultar [resultados e pendências por critério](mcp-editorial-results.md). Usar PostgreSQL isolado real para concorrência/grants, testes unitários para funções e fluxo real para auth/UI/MCP. [Spec](../features/mcp-editorial-agents.md).
+Estado: testes locais/CI aprovados e infraestrutura produtiva habilitada ([evidências](mcp-production-rollout-20261007.md)); Dot/piloto autenticado pendentes; consultar [resultados e pendências por critério](mcp-editorial-results.md). Usar PostgreSQL isolado real para concorrência/grants, testes unitários para funções e fluxo real para auth/UI/MCP. [Spec](../features/mcp-editorial-agents.md).
 
 | ID | Cenário | Evidência exigida |
 | --- | --- | --- |

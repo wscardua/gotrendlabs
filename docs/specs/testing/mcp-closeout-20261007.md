@@ -2,6 +2,8 @@
 
 Data: 2026-10-07. Workflow `WFLOW-20261007-MCP-CLOSEOUT-001`, vinculado ao workflow documental `WFLOW-20261007-MCP-EDITORIAL-SPEC`. Branch `feature/mcp-editorial`, base remota revalidada `9df08bc220c343e6ffefbed0ed3c2d80e072fd3e`. Checkout original, analytics e itens mobile preservados.
 
+Estado posterior: usuário autorizou continuidade, PR #136 integrada e MCP implantado/habilitado. [Evidências produtivas](mcp-production-rollout-20261007.md). As etapas pendentes neste relatório preservam o fechamento local anterior à autorização.
+
 ## Alterações finais
 
 - FastAPI/Admin Ops/MCP, migrations/grants, OpenAPI, UI e ensaios da feature compõem uma entrega única. OAuth interativo e serviço continuam disponíveis; pesquisa/agenda ficam no executor externo.

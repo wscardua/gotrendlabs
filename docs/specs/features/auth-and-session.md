@@ -4,7 +4,7 @@ titulo: "Autenticação e sessão"
 versao: 0.7
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-28
+ultima_atualizacao: 2026-10-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -22,7 +22,7 @@ aprovacao: pendente
 
 ## Evolução especificada: autenticação de integrações
 
-[FEAT-MCP-001](mcp-editorial-agents.md) implementa localmente OAuth para clientes MCP e credenciais de serviço sem reutilizar senhas humanas/TOTP. Gestão staff/superuser com MFA e capacidades equivalentes; sessões humanas atuais permanecem preservadas. Rollout produtivo e homologação Dot aguardam evidências.
+[FEAT-MCP-001](mcp-editorial-agents.md) implantada pela PR #136, implementa OAuth para clientes MCP e credenciais de serviço sem reutilizar senhas humanas/TOTP. Gestão staff/superuser com MFA e capacidades equivalentes; sessões humanas atuais permanecem preservadas. Rollout produtivo/HTTPS conferidos; homologação Dot/piloto autenticado pendentes. [Evidências](../testing/mcp-production-rollout-20261007.md).
 
 # Autenticação e sessão
 
