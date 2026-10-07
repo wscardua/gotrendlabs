@@ -1,5 +1,7 @@
 # Integration Map
 
+- 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; correção local validada com 50 testes/153,516 s/OK, produção ainda sem correção. Sem migrations/permissões novas; homologação humana permanece pendente.
+
 - 2026-10-07: PR #136 + Actions 37692274600 concluídos; MCP ativo em HTTPS, grants/isolamento conferidos, snapshot anterior ao merge e domínio preservado. [Rollout](../testing/mcp-production-rollout-20261007.md). Dot/piloto autenticado externos permanecem pendentes.
 
 - 2026-10-07: pacote de rollout/ativação/rollback MCP integrado ao fluxo de produção, PR CI e isolamento conferidos localmente. [Fechamento](../testing/mcp-closeout-20261007.md).

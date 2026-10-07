@@ -206,3 +206,7 @@ As fontes sugeridas aparecem junto da evidência de cada critério, editáveis p
 Na mesma ação de parecer, o operador pode confirmar explicitamente que resolveu as lacunas e documentou a resolução nas evidências. A UI envia gaps vazio apenas com essa confirmação ou edição explícita do campo; sugestões e marcações de critérios não resolvem lacunas automaticamente. O texto original continua nas revisões históricas. Fontes, critérios, MFA, versão/hash, rollback e gate continuam validados na FastAPI.
 
 O editor exibe bloqueio de publicação apenas em draft/scheduled sem parecer aprovado. Mercados publicados informam publicação já realizada e permitem consultar o histórico; cancelados informam cancelamento. O gate FastAPI permanece inalterado.
+
+### Correção de interoperabilidade OAuth Codex
+
+WFLOW-20261007-MCP-CODEX-OAUTH-001: registro dinâmico deve ignorar metadados desconhecidos (RFC 7591), preservando validação dos campos reconhecidos e sem autoridade derivada dos extras. Discovery deve conservar issuer textual exato entre resource metadata, AS e resposta iss. Correção local da falha 422 Codex aguarda PR/rollout; não representa homologação Dot ou autorização humana produtiva.

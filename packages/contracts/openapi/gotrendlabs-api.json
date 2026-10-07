@@ -4679,7 +4679,6 @@
         "type": "object"
       },
       "OAuthRegistration": {
-        "additionalProperties": false,
         "properties": {
           "client_name": {
             "default": "MCP client",

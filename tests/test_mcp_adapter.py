@@ -12,6 +12,29 @@ from apps.mcp import server
 
 
 class AdapterBoundaryTests(SimpleTestCase):
+    def test_discovery_preserves_exact_issuer_and_authentication_challenge(self):
+        from fastapi.testclient import TestClient
+
+        # Public discovery and unauthenticated denial do not run MCP sessions.
+        # The real-client test already owns the singleton SDK lifespan.
+        client = TestClient(server.app, base_url=server.RESOURCE.rsplit("/mcp", 1)[0])
+        for issuer in ("https://issuer.example", "https://issuer.example/"):
+            with self.subTest(issuer=issuer), patch.object(server, "ISSUER", issuer):
+                metadata = client.get(server.metadata_path)
+                self.assertEqual(metadata.status_code, 200)
+                self.assertEqual(metadata.json()["authorization_servers"], [issuer])
+                self.assertEqual(metadata.json()["resource"], server.RESOURCE)
+                self.assertEqual(
+                    set(metadata.json()["scopes_supported"]),
+                    set(server.TOOL_SCOPES.values()),
+                )
+                denied = client.post(
+                    "/mcp", json={"jsonrpc": "2.0", "id": 1, "method": "initialize"}
+                )
+                self.assertEqual(denied.status_code, 401)
+                self.assertIn(server.metadata_path, denied.headers["www-authenticate"])
+        client.close()
+
     def test_api_unavailable_spool_is_durable_bounded_sanitized_and_replayed(self):
         auth = AccessToken(
             token="internal-token-must-not-spool",

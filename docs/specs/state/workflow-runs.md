@@ -1,5 +1,14 @@
 # Workflow Runs
 
+## WFLOW-20261007-MCP-CODEX-OAUTH-001
+
+- Status: `em_andamento`; FEAT-MCP-001; vinculado ao workflow documental e fechamento MCP.
+- Falha real: Codex 0.160.1 envia `application_type: native`; POST /oauth/register retorna 422 por extra proibido. Reprodução com CLI real e captura em servidor local, sem tokens.
+- Escopo: ignorar metadados DCR não reconhecidos conforme RFC 7591, conservar validação dos campos reconhecidos; preservar issuer textual exato nos metadados públicos do adaptador (SDK acrescentava barra). Nenhuma mudança de permissões, MFA, PKCE, banco ou audience.
+- Artefatos: schemas API, metadata MCP, testes de registro/segurança/OAuth e discovery, OpenAPI, contrato, ADR, runbook e estado.
+- Validação local: 50 testes/153,516 s/OK em PostgreSQL isolado; CLI real atingiu URL de autorização em mock local, SDK real validou OAuth/serviço/tools/renovação. OpenAPI/Ruff/diff aprovados. [Evidências](../testing/mcp-codex-oauth-20261007.md).
+- Usuário aprovou descrição e continuidade; próxima ação: submissão/CI/merge/rollout e repetição do Authenticate humano. Produção ainda apresenta a falha.
+
 ## WFLOW-20261007-MCP-CLOSEOUT-001
 
 - Status: `concluido` para entrega técnica/GitHub/rollout; homologação externa explicitamente pendente. FEAT-MCP-001 permanece parcial até MCP-X02/piloto autenticado.

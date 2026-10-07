@@ -115,3 +115,9 @@ Janela de migrations: após build e preflights, o deploy para Django/FastAPI/dae
 Infraestrutura habilitada em https://gotrendlabs.com.br/mcp, com discovery canônica /.well-known/oauth-protected-resource/mcp. Entrar em https://gotrendlabs.com.br/admin-ops/integrations/ com staff/superuser e MFA; criar integração pausada, selecionar responsável humano, scopes mínimos e cotas pequenas, ativar. Conectar OAuth no executor, conferir consentimento e começar por leitura. Credenciais de serviço são emitidas na FastAPI e exibidas uma vez no Admin Ops para executores compatíveis, sem token staff compartilhado. Credenciais DEV não migram para produção.
 
 Usar prompt de radar e checklist de homologação acima; escritas de piloto devem ser propostas reais deliberadas pelo operador, não testes automáticos do rollout. Publicação segue humana e exige ficha/parecer atual e fechamento completo. Dot só fica homologado após evidências reais de OAuth/leitura/escrita/renovação/revogação/logs; infraestrutura disponível não comprova essa conexão.
+
+## Codex Desktop/CLI — OAuth
+
+URL: `https://gotrendlabs.com.br/mcp`. Para OAuth, remover header Authorization estático e deixar Bearer token env var vazio; salvar e clicar Authenticate. No CLI: `codex mcp login gotrendlabs` (nome deve corresponder ao cadastrado). Efetuar login/MFA e consentir integração ativa. O toggle habilitado do cliente e a integração ativa no Admin Ops não substituem autenticação.
+
+HTTP 422 em Dynamic registration antes de abrir navegador foi reproduzido no Codex 0.160.1 (`application_type: native`); correção local em WFLOW-20261007-MCP-CODEX-OAUTH-001 aguarda PR/rollout. Não preencher Authorization com segredo de serviço para contornar OAuth. Se usar serviço, trocar ID/segredo por access_token; token expira em dez minutos e o executor deve obter outro.

@@ -14,6 +14,8 @@ from mcp.server.auth.settings import AuthSettings
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp.types import ToolAnnotations
 from starlette.responses import JSONResponse
+from starlette.routing import Route
+from mcp.server.auth.routes import build_resource_metadata_url
 from apps.api.backend_api.editorial_schemas import (
     PolicyResponse,
     TaxonomyResponse,
@@ -31,7 +33,7 @@ from apps.api.backend_api.editorial_schemas import (
 
 API = os.environ.get("GTL_MCP_API_URL", "http://127.0.0.1:8001").rstrip("/")
 RESOURCE = os.environ.get("GTL_MCP_RESOURCE", "http://localhost:8002/mcp")
-ISSUER = os.environ.get("GTL_MCP_ISSUER", "http://localhost:8000")
+ISSUER = os.environ.get("GTL_MCP_ISSUER", "http://localhost:8000").rstrip("/")
 WORKLOAD = os.environ.get("GTL_MCP_WORKLOAD_SECRET", "")
 SPOOL = Path(os.environ.get("GTL_MCP_SPOOL", ".runtime/mcp-spool"))
 TIMEOUT = httpx.Timeout(15, connect=3)
@@ -372,7 +374,30 @@ async def health(request):
     )
 
 
+async def protected_resource_metadata(request):
+    # OAuth issuer identifiers require exact comparison (RFC 9207).
+    # SDK AnyHttpUrl normalization adds a slash to origin-only issuers.
+    return JSONResponse(
+        {
+            "resource": RESOURCE,
+            "authorization_servers": [ISSUER],
+            "scopes_supported": list(dict.fromkeys(TOOL_SCOPES.values())),
+            "bearer_methods_supported": ["header"],
+        }
+    )
+
+
 app = mcp.streamable_http_app()
+metadata_path = urlsplit(
+    str(build_resource_metadata_url(mcp.settings.auth.resource_server_url))
+).path
+# Replace only the SDK discovery endpoint; authenticated /mcp is untouched.
+app.routes[:] = [
+    Route(metadata_path, protected_resource_metadata, methods=["GET", "OPTIONS"])
+    if getattr(route, "path", None) == metadata_path
+    else route
+    for route in app.routes
+]
 
 
 class LimitsMiddleware:

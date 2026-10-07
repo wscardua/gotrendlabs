@@ -104,3 +104,9 @@ A UI admite adicionar fonte e citar sua URL na evidência; apenas confirmação 
 ### Notas administrativas e precisão de prazo
 
 `MarketResponse.admin_notes` é preenchido apenas no contexto administrativo; público recebe vazio e a projeção MCP não inclui o campo. O editor humano preserva segundos/microssegundos de `close_at` fornecidos pelo MCP, sem alterar o instante ao abrir e reenviar o formulário.
+
+## Compatibilidade de registro OAuth — correção Codex
+
+POST `/oauth/register` ignora metadados não reconhecidos (RFC 7591 seção 2), incluindo `application_type: native` enviado pelo Codex. Extras não são persistidos, refletidos na resposta nem usados para permissões. Campos reconhecidos continuam validados: redirect HTTPS/loopback sem fragmento, grants code/refresh, response code e autenticação pública none. Schemas de domínio/admin continuam proibindo extras.
+
+O metadata público do adaptador preserva exatamente o issuer configurado e usado pela FastAPI/RFC 9207, sem adicionar barra por normalização de URL; anuncia os cinco scopes. Registro não autentica nem concede integração: consentimento humano/MFA, PKCE, resource e autorização por scope continuam obrigatórios.

@@ -1,5 +1,7 @@
 # Feature Changelog
 
+- 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; correção local validada com 50 testes/153,516 s/OK, produção ainda sem correção. Sem migrations/permissões novas; homologação humana permanece pendente.
+
 ## 2026-10-07 — MCP editorial implantado e habilitado em produção
 
 - PR #136/merge b36ea44; CI PR e main passaram com 369 testes cada, OpenAPI e deploy Actions 37692274600 aprovados. Snapshot RDS disponível antes do merge; branch local preservada.
