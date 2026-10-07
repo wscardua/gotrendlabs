@@ -4,7 +4,7 @@ titulo: "Logs técnicos de troubleshooting"
 versao: 0.2
 status_spec: aprovada
 status_impl: implementada_validada
-ultima_atualizacao: 2026-09-19
+ultima_atualizacao: 2026-10-07
 origem:
   - solicitação operacional de troubleshooting
 contratos_afetados:
@@ -21,7 +21,7 @@ aprovacao: usuario em 2026-09-19
 
 ## Evolução especificada: ações MCP
 
-[FEAT-MCP-001](mcp-editorial-agents.md) reutiliza o log central e eventos administrativos com identidade de integração/correlação. Gravação técnica continua tolerante a falhas; mutações exigem auditoria transacional. Implementação local validada; rollout produtivo aguardando aprovação.
+[FEAT-MCP-001](mcp-editorial-agents.md) reutiliza o log central e eventos administrativos com identidade de integração/correlação. Gravação técnica continua tolerante a falhas; mutações exigem auditoria transacional. Implantado pela PR #136; migrations/grants/HTTPS produtivos conferidos. Dot/piloto autenticado pendentes. [Evidências](../testing/mcp-production-rollout-20261007.md).
 
 # Logs técnicos de troubleshooting
 

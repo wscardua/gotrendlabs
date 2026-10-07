@@ -2,9 +2,9 @@
 
 GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao publica e resolucao auditavel de mercados. O produto combina uma interface web server-rendered em Django com uma API de dominio em FastAPI e persistencia em PostgreSQL.
 
-## MCP editorial — entrega local e rollout preparado
+## MCP editorial — implantação ativa e piloto
 
-OAuth interativo e credenciais de serviço implementados, com FastAPI autoritativa, MCP sem banco e gestão/revisão no Admin Ops. Novas publicações humanas/MCP exigem parecer atual e configuração de fechamento completa. Deploy integrado, primeira instalação desligada e ativação explícita. Consulte o [runbook do piloto](docs/guides/mcp-editorial-pilot.md), [fechamento/evidências](docs/specs/testing/mcp-closeout-20261007.md), [aceite](docs/specs/testing/mcp-editorial-results.md) e [prompt de radar Dot](docs/guides/dot-editorial-radar.md). PR/rollout produtivo aguardam aprovação; Dot/HTTPS externo permanecem pendentes.
+OAuth interativo e credenciais de serviço implementados, com FastAPI autoritativa, MCP sem banco e gestão/revisão no Admin Ops. Novas publicações humanas/MCP exigem parecer atual e configuração de fechamento completa. PR #136/Actions aprovados; MCP habilitado em produção com configuração isolada. Primeiras reinstalações permanecem desligadas até ativação explícita. Consulte o [runbook do piloto](docs/guides/mcp-editorial-pilot.md), [fechamento/evidências](docs/specs/testing/mcp-closeout-20261007.md), [aceite](docs/specs/testing/mcp-editorial-results.md) e [prompt de radar Dot](docs/guides/dot-editorial-radar.md). [HTTPS/isolamento/grants produtivos conferidos](docs/specs/testing/mcp-production-rollout-20261007.md); Dot/piloto autenticado permanecem pendentes.
 
 ## Stack
 

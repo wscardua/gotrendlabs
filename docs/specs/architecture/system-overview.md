@@ -1,7 +1,7 @@
 
 ## Evolução especificada: MCP editorial
 
-[FEAT-MCP-001](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md) definem adaptador MCP sem banco, FastAPI autoritativa e executor externo. Estado: implementação local validada, rollout produtivo preparado e homologação Dot pendente.
+[FEAT-MCP-001](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md) definem adaptador MCP sem banco, FastAPI autoritativa e executor externo. Estado: MCP implantado/habilitado pela PR #136; HTTPS/grants/isolamento produtivos conferidos, Dot/piloto autenticado pendentes.
 # Visão Geral do Sistema
 
 ## Objetivo

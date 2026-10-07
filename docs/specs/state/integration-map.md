@@ -1,5 +1,7 @@
 # Integration Map
 
+- 2026-10-07: PR #136 + Actions 37692274600 concluídos; MCP ativo em HTTPS, grants/isolamento conferidos, snapshot anterior ao merge e domínio preservado. [Rollout](../testing/mcp-production-rollout-20261007.md). Dot/piloto autenticado externos permanecem pendentes.
+
 - 2026-10-07: pacote de rollout/ativação/rollback MCP integrado ao fluxo de produção, PR CI e isolamento conferidos localmente. [Fechamento](../testing/mcp-closeout-20261007.md).
 
 - 2026-10-07, follow-up review MCP: módulos e migrations/grants do percurso adicionados ao índice Git e conferidos em snapshot limpo com instalação independente e 74 testes PostgreSQL aprovados. [Evidências](../testing/mcp-branch-review-followup-20261007.md).
@@ -17,7 +19,7 @@
 - Catálogo/editorial aprovados são dependências; analytics opcional indisponível não vira zero. Bots oficiais e daemon operacional não são executor do radar.
 - Humano no Admin Ops → assessment FastAPI/MFA → ficha/snapshot/evento/parecer numa transação → gate de publicação. Uma ação na UI, sem reenvio humano prévio; /record e /decision anteriores compatíveis.
 - Publicação humana de todos os mercados → MarketLifecycleEngine → lock/revisão/hash/parecer humano vigente → assinatura/abertura. Recusa 409 antes da assinatura; edição invalida aprovação; gate universal de novas publicações, com validação de fechamento antes da assinatura.
-- Runtime: `apps/mcp/server.py` → delegação interna FastAPI → dez rotas editoriais restritas. Admin Ops → gestão/consentimento/parecer FastAPI; grants PostgreSQL exclusivos da API. Deploy preparado com override MCP + import Caddy e CI de PR; primeira instalação desligada. Ativação explícita pós-merge preserva workload privado 0600. Rollout produtivo ainda não executado.
+- Runtime: `apps/mcp/server.py` → delegação interna FastAPI → dez rotas editoriais restritas. Admin Ops → gestão/consentimento/parecer FastAPI; grants PostgreSQL exclusivos da API. Deploy preparado com override MCP + import Caddy e CI de PR; primeira instalação desligada. Ativação explícita pós-merge preserva workload privado 0600. Rollout produtivo executado pela PR #136; API/MCP habilitados explicitamente e dados preservados.
 - Evidências: [resultados](../testing/mcp-editorial-results.md), [piloto](../../guides/mcp-editorial-pilot.md). Mobile permanece consumidor dos contratos existentes; campos novos são opcionais/aditivos.
 - Fontes: [feature](../features/mcp-editorial-agents.md), [contrato](../contracts/agent-integrations.md), [ADR](../decisions/ADR-0011-mcp-editorial-integrations.md).
 

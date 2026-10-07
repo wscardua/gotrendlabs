@@ -1,6 +1,6 @@
 # FEAT-MCP-001 — evidências locais e homologação pendente
 
-Estado vigente v1.4: revisão/fechamento universais conforme pedido posterior do usuário; [evidências](universal-editorial-20261007.md) e [fechamento/rollout preparado](mcp-closeout-20261007.md). A matriz abaixo preserva o ensaio inicial; suas menções a ausência de gate universal são históricas. Dot e HTTPS produtivo permanecem pendentes.
+Estado vigente v1.4: revisão/fechamento universais conforme pedido posterior do usuário; [evidências](universal-editorial-20261007.md) e [fechamento/rollout preparado](mcp-closeout-20261007.md). A matriz abaixo preserva o ensaio inicial; suas menções a ausência de gate universal são históricas. [Rollout produtivo](mcp-production-rollout-20261007.md): PR #136/Actions, 369 testes CI, MCP habilitado, HTTPS/discovery/grants/isolamento aprovados. Dot e piloto autenticado produtivo permanecem pendentes.
 
 Atualização v1.3: [parecer humano em uma ação](mcp-single-review-20261007.md), 47 testes aprovados e UI DEV conferida. Conferência da ficha e decisão são atômicas; não há dois aceites humanos. Fluxo operacional v1.2 abaixo é histórico.
 
@@ -8,7 +8,7 @@ Atualização v1.2: [preparação/reenvio humano](mcp-human-review-20261007.md),
 
 Atualização v1.1: [validação de slug/gate/UI](mcp-review-gate-20261007.md), 46 casos distintos aprovados. Mercados de integração exigem aprovação humana atual na FastAPI; editor separa publish/save e Integrações segue Agentes IA. As evidências abaixo preservam o ensaio inicial v1.0; afirmações antigas de ausência de gate universal não dispensam o gate específico v1.1.
 
-Data: 2026-10-07. Branch `feature/mcp-editorial`, worktree `gotrendlabs-mcp`, base remota `9df08bc`. Checkout original, alterações analytics e arquivos mobile preservados. Sem produção, merge ou deploy. Estado da feature: `parcial`, aguardando homologação externa.
+Data do ensaio inicial: 2026-10-07. Branch `feature/mcp-editorial`, worktree `gotrendlabs-mcp`, base remota `9df08bc`. Checkout original, alterações analytics e arquivos mobile preservados. Sem produção, merge ou deploy. Estado da feature: `parcial`, aguardando homologação externa.
 
 ## Ambiente e execução
 
@@ -60,14 +60,14 @@ A primeira regressão detectou defaults SQL ausentes nos campos aditivos de audi
 | MCP-L05 | Local aprovado | Filtros por integração/tool/resultado e purge de SystemLog preservando ficha/revisões. |
 | MCP-R01 | Local aprovado | `pagination_metrics_null_filters_and_no_backend_fetch`; cobertura parcial e indisponibilidade null, sem garantia de deduplicação semântica. |
 | MCP-S01 | Local aprovado | `injected_text_stored_as_data_not_in_logs_and_no_url_fetch`, UI escape, schema rejeita javascript/credenciais em URL, sem download backend. |
-| MCP-O01 | Local parcial | Container/grants/Compose/Caddy local aprovados. HTTPS/discovery no domínio externo ainda pendentes; nenhum deploy executado. |
+| MCP-O01 | Infra produtiva conferida | [PR #136/Actions e rollout](mcp-production-rollout-20261007.md), HTTPS/discovery, isolamento/0600/grants; domínio preservado. Rollback validado localmente, não executado desnecessariamente em produção. Piloto autenticado pendente. |
 | MCP-O02 | Regressão local | Suíte geral cobre login/MFA/Admin Ops/mercados/publicação/integridade/bots/daemon e contratos móveis existentes; conferir resultado final acima. Flutter não alterado: campos novos são opcionais e administrativos. |
 | MCP-X01 | Local aprovado | Streamable HTTP ClientSession real com OAuth e serviço; discovery/DCR/PKCE/renovação, scopes atuais, schemas/leitura/escrita/erro. |
 | MCP-X02 | Pendente externo | Sem conta/sessão Dot disponível nesta execução. Não validado OAuth/escrita/recorrência/renovação/revogação ou logs no Dot real. |
 
 ## Próxima etapa
 
-Seguir [runbook do piloto](../../guides/mcp-editorial-pilot.md), usar [prompt de radar](../../guides/dot-editorial-radar.md), configurar domínio HTTPS em ambiente de homologação autorizado, integração pequena com MFA e scopes mínimos. Registrar cliente/conta/horário/IDs sanitizados para MCP-O01/MCP-X02. Manter `GTL_MCP_ENABLED=0` até o piloto autorizado. Rollback desliga API/adapter/handles e preserva dados; não desfaz migrations destrutivamente.
+Infraestrutura habilitada em produção pela PR #136; HTTPS/grants/isolamento conferidos no [rollout](mcp-production-rollout-20261007.md). Operador com MFA segue [runbook do piloto](../../guides/mcp-editorial-pilot.md), cria/ativa integração pequena e conecta OAuth/serviço próprio. Usar [prompt de radar](../../guides/dot-editorial-radar.md) e registrar cliente/conta/data/resultados sanitizados para MCP-X02. Dot/piloto autenticado ainda pendentes. Rollback desliga acesso API/adapter, preserva schema/histórico e gate universal.
 
 ## Refinamento visual posterior
 

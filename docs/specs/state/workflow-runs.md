@@ -2,12 +2,11 @@
 
 ## WFLOW-20261007-MCP-CLOSEOUT-001
 
-- Status: `em_andamento`; FEAT-MCP-001; fechamento solicitado com publicação GitHub e ativação produtiva após aprovação da PR.
-- Etapas: alinhar fonte de verdade; corrigir pendência local de revisão inválida; integrar serviço/proxy/configuração MCP ao deploy e CI de PR; executar regressão completa; preparar commit e texto de PR para aprovação; após autorização, publicar/merge, acompanhar Actions e ativar/smoke HTTPS sem mercados reais.
-- Fronteiras: adaptador isolado, sem DB/ORM/segredos humanos; workload exclusivo em arquivos locais 0600, nunca no Git. Início desligado e habilitação operacional explícita; backfill editorial pendente sem alterar mercados/provas.
-- Dot só pode ser marcado validado após homologação real; fonte de verdade mantém essa pendência. Branch local preservada.
-- Etapa local preparada: revisão inválida controlada/metadados universais corrigidos; Docker/Compose/Caddy e configuração privada validados; 367 testes/879,395 s/OK, 19 focais/6,268 s/OK e sete de rollout/2,146 s/OK (sobreposições explícitas no relatório). Pré-checagem produtiva somente leitura, sem deploy/mutação. [Evidências](../testing/mcp-closeout-20261007.md).
-- Próxima ação: aprovação pelo usuário do título/descrição da PR antes de enviar/submeter. Depois CI, snapshot RDS disponível, merge preservando branch local, Actions, ativação/HTTPS e registro pós-deploy. Dot permanece homologação externa pendente. Status em andamento até finalizar essas etapas autorizadas.
+- Status: `concluido` para entrega técnica/GitHub/rollout; homologação externa explicitamente pendente. FEAT-MCP-001 permanece parcial até MCP-X02/piloto autenticado.
+- Usuário aprovou descrição e continuidade. PR #136 integrada em main b36ea44; CI PR/main com 369 testes/OK e deploy Actions 37692274600 com sucesso. Snapshot RDS gotrendlabs-pre-mcp-20261007 disponível antes do merge.
+- Ativação explícita API/MCP concluída; migrations/grants de onze tabelas, append-only/isolamento, arquivos 0600, saúde e HTTPS/discovery/401/internal404 conferidos. Inventários de domínio antes/depois idênticos, nenhum mercado produtivo de teste.
+- Specs/ADR/contratos/OpenAPI/runbook/memória/evidências alinhados. Branch local/checkout original/analytics/mobile preservados. [Relatório local](../testing/mcp-closeout-20261007.md), [rollout produtivo](../testing/mcp-production-rollout-20261007.md).
+- Próxima ação externa: operador com MFA cria/ativa integração pequena e executa piloto OAuth/serviço; homologar Dot real, recorrência/renovação/revogação/logs. Não há conexão Dot validada nem enforcement editorial inferido: gate universal é aplicado pela FastAPI.
 - Vinculado ao WFLOW-20261007-MCP-EDITORIAL-SPEC e WFLOW-20261007-BRANCH-REVIEW-FOLLOWUP-001.
 
 ## WFLOW-20261007-BRANCH-REVIEW-FOLLOWUP-001
