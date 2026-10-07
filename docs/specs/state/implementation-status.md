@@ -1,6 +1,6 @@
 # Status de Implementação
 
-- 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; correção local validada com 50 testes/153,516 s/OK, produção ainda sem correção. Sem migrations/permissões novas; homologação humana permanece pendente.
+- 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.
 
 Atualização transversal em 2026-09-07: o ledger global usa checkpoints append-only assinados, auditoria incremental por ciclo e auditoria integral periódica; consultas públicas validam checkpoint/head sem full scan, enquanto toda selagem exige auditoria integral fresca. A prova pública agrega compromissos sem expor eventos individuais. O corte pré-produção remove mercados publicados sem definição assinada, previsões humanas/IA passam pela mesma persistência assinada e o Flutter avança sem compatibilidade com builds anteriores ainda não publicados.
 

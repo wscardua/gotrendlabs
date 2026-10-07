@@ -23,6 +23,15 @@ Adaptador canonicaliza issuer como FastAPI (sem barra final) e substitui somente
 
 ## Operação e pendência
 
-Produção continua na versão anterior até aprovação da PR/merge e rollout Actions. Depois: comparar issuer exatamente em discovery, registrar payload Codex e repetir Authenticate no Desktop com operador/MFA/integração ativa. Login humano real e homologação Dot continuam pendentes; não substituir OAuth por segredo de serviço em header Bearer. Nenhum mercado produtivo criado, nenhuma credencial emitida ou integração alterada.
+Correção implantada pela PR #138/merge 80de71a, Actions 37699380266 aprovado. Registro Codex e issuer exato conferidos em produção; próxima ação: repetir Authenticate no Desktop com operador/MFA/integração ativa. Login humano real e homologação Dot continuam pendentes; não substituir OAuth por segredo de serviço em header Bearer. Nenhum mercado produtivo criado, nenhuma credencial emitida ou integração alterada.
 
 Rollback: reverter commit via fluxo GitHub, reaplicar deploy padrão; não há mudança de schema/dados. Reversão restaura também a incompatibilidade DCR, devendo ser registrada.
+
+## Rollout produtivo concluído
+
+- Commit 15d6789bb88b0783d047cf09a55ef7a4d9847f43; [PR #138](https://github.com/wscardua/gotrendlabs/pull/138), merge 80de71aa05cd6a059d9943009e8fdfcf68738b56. Branch local preservada.
+- [CI PR 37698761603](https://github.com/wscardua/gotrendlabs/actions/runs/37698761603): 371 testes/260,018 s/OK, skipped=1. [CI/main/deploy 37699380266](https://github.com/wscardua/gotrendlabs/actions/runs/37699380266): 371 testes/369,333 s/OK, skipped=1, todos os jobs aprovados. O skip é o teste de roles dedicadas ausentes no PostgreSQL CI; passou no PostgreSQL local e a conferência equivalente produtiva foi executada.
+- SSM do deploy Actions 95ec74a2-4258-40b0-8d97-a0df4da917e8: Success. SSM pós-deploy 415b4b38-e035-4d3a-be0d-e94549420b4a: Success, checkout 80de71a, API/MCP habilitados; saúde MCP status ok. Django não lê credenciais, FastAPI insere credenciais, revisões negam UPDATE. Adaptador sem credenciais DB/MFA/pepper. Nenhum segredo exportado.
+- HTTPS com validação TLS: health/discovery 200, issuer/resource/scopes exatos, PKCE S256 e ambos os modos anunciados. POST /mcp sem token 401 com challenge correto; dois caminhos internos 404; autorização encaminha para consentimento (302), consentimento sem sessão encaminha login (302).
+- **Codex CLI 0.160.1 real contra produção, configuração normal/auto: registro dinâmico aceito, URL /oauth/authorize atingida.** Processo encerrado antes do consentimento humano; não emitiu access/refresh/grant, não criou mercado, não alterou integração ou credencial. O registro técnico do cliente OAuth é persistido normalmente.
+- Ainda pendentes: consentimento humano/MFA no Codex Desktop e chamadas autenticadas do piloto produtivo; homologação Dot real. Não declarar esses passos validados com base em descoberta ou em autorização apenas iniciada.
