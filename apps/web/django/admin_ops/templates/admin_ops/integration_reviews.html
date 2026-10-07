@@ -1,0 +1,86 @@
+{% extends 'admin_base.html' %}
+{% load i18n %}
+{% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout admin-config-page integration-page editorial-review-page">
+  <section>
+    <div class="section-head">
+      <div><span class="eyebrow">{% trans 'Operação editorial' %}</span><h1 class="large-title">{{ title }}</h1><p>{% trans 'Confira a ficha, as evidências e as fontes antes de registrar sua decisão.' %}</p></div>
+      <div class="section-actions">
+        {% if detail %}<a class="btn ghost" href="{% url 'admin-ops-agent-reviews' %}">{% trans 'Todos os mercados' %}</a><a class="btn primary" href="{% url 'admin-ops-market-edit' slug=detail.market.slug %}">{% trans 'Abrir editor humano' %}</a>{% else %}<a class="btn ghost" href="{% url 'admin-ops-integrations' %}">{% trans 'Integrações' %}</a>{% endif %}
+      </div>
+    </div>
+    {% if admin_error %}<div class="notice red" role="alert">{{ admin_error }}</div>{% endif %}
+    <div class="notice editorial-review-notice">{% if detail and detail.market.status != 'draft' and detail.market.status != 'scheduled' %}<strong>{% trans 'Histórico editorial do mercado' %}</strong><p>{% trans 'O parecer registra a conferência editorial. Ele não altera o estado atual do mercado nem sua definição publicada.' %}</p>{% else %}<strong>{% trans 'Publicação exige aprovação desta revisão' %}</strong><p>{% trans 'Todo mercado só poderá ser publicado com parecer humano aprovado para a versão atual e configuração de fechamento completa. Alterações exigem nova revisão.' %}</p>{% endif %}</div>
+    {% if detail %}
+      <div class="editorial-review-summary"><h2>{{ detail.market.title|default:detail.market.slug }}</h2><div class="integration-overview">{% include 'admin_ops/partials/editorial_state.html' with state=detail.draft.state %}<span>{% trans 'Revisão' %} {{ detail.draft.revision }}</span><span>{{ detail.market.slug }}</span></div></div>
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Ficha editorial' %}</span><h2>{% trans 'Contexto e pendências' %}</h2><p>{% trans 'A ficha reúne a preparação editorial e a conferência humana. Confira as evidências e o histórico antes de decidir.' %}</p></div></div>
+        <div class="config-controls editorial-record">
+          <div><h3>{% trans 'Pendências' %}</h3>{% if detail.pending %}<ul>{% for pending in detail.pending_labels %}<li>{{ pending }}</li>{% endfor %}</ul>{% else %}<p>{% trans 'Nenhuma pendência estrutural registrada.' %}</p>{% endif %}</div>
+          <div><h3>{% trans 'Justificativa da ficha' %}</h3><p>{{ detail.draft.record.justification|linebreaksbr }}</p></div>
+          <div><h3>{% trans 'Cobertura da pesquisa' %}</h3><p>{{ detail.draft.record.search_coverage|linebreaksbr }}</p></div>
+          <div><h3>{% trans 'Lacunas identificadas' %}</h3><p>{{ detail.draft.record.gaps|default:'—'|linebreaksbr }}</p></div>
+          <div><h3>{% trans 'Parecer atual' %}</h3><p>{{ detail.draft.decision.note|default:'—'|linebreaksbr }}</p></div>
+        </div>
+      </section>
+      {% if detail.market.status == 'draft' or detail.market.status == 'scheduled' or detail.market.status == 'open' or detail.market.status == 'locked' %}
+      <section class="config-section">
+        <div class="config-panel-head"><div><h2>{% trans 'Revisar ficha e registrar parecer' %}</h2><p>{% trans 'Confira as evidências e decida aqui. Não é necessário enviar o rascunho para outra etapa antes do parecer.' %}</p></div></div>
+        <form method="post" class="config-controls">
+          {% csrf_token %}<input type="hidden" name="expected_revision" value="{{ detail.draft.revision }}"><input type="hidden" name="snapshot_hash" value="{{ detail.draft.snapshot_hash }}">
+          <p>{% trans 'Marque apenas critérios e fontes que você verificou independentemente. Ao registrar o parecer, a ficha e a decisão serão salvas juntas. A publicação é uma ação separada.' %}</p>
+          <details class="editorial-record-criterion"><summary>{% trans 'Ajustar contexto da ficha (opcional)' %}</summary>
+          <div class="field"><label for="record-justification">{% trans 'Justificativa' %}</label><textarea id="record-justification" name="justification" maxlength="3000" required>{{ detail.draft.record.justification }}</textarea></div>
+          <div class="field"><label for="record-coverage">{% trans 'Cobertura da pesquisa' %}</label><textarea id="record-coverage" name="search_coverage" maxlength="2000" required>{{ detail.draft.record.search_coverage }}</textarea></div>
+          <div class="field"><label for="record-internal">{% trans 'Sinais internos' %}</label><textarea id="record-internal" name="internal_signals" maxlength="3000">{{ detail.draft.record.internal_signals }}</textarea></div>
+          <div class="field"><label for="record-external">{% trans 'Sinais externos' %}</label><textarea id="record-external" name="external_signals" maxlength="3000">{{ detail.draft.record.external_signals }}</textarea></div>
+          <div class="field"><label for="record-fallback">{% trans 'Fonte alternativa e plano de contingência' %}</label><textarea id="record-fallback" name="fallback" maxlength="2000">{{ detail.draft.record.fallback }}</textarea></div>
+          </details>
+          <div class="field"><label for="record-gaps">{% trans 'Lacunas ainda não resolvidas' %}</label><textarea id="record-gaps" name="gaps" maxlength="2000">{{ review_gaps }}</textarea><small>{% trans 'Se essas pendências já foram resolvidas e documentadas nos critérios, marque a confirmação abaixo. Não é necessário apagar este texto manualmente.' %}</small></div>
+          {% if review_gaps %}
+          <label class="config-check-option"><input type="checkbox" name="gaps_resolved" value="yes" {% if gaps_resolved %}checked{% endif %}><span><strong>{% trans 'Resolvi as lacunas descritas acima e documentei a resolução nas evidências dos critérios' %}</strong><small>{% trans 'Ao registrar o parecer, as lacunas deixam de estar pendentes. O texto anterior permanece no histórico da ficha.' %}</small></span></label>
+          {% endif %}
+          {% for source in detail.draft.record.sources %}
+          <fieldset><legend>{% trans 'Fonte' %} {{ forloop.counter }}</legend>
+            <label class="config-check-option"><input type="checkbox" name="verified_source_indexes" value="{{ forloop.counter0 }}" {% if forloop.counter0|stringformat:'s' in checked_sources %}checked{% endif %}><span><strong>{% trans 'Abri e conferi esta fonte independentemente' %}</strong><small class="editorial-source-url">{{ source.url }}</small></span></label>
+            {% if source.link_url %}<a class="btn small ghost" href="{{ source.link_url }}" target="_blank" rel="noopener">{% trans 'Abrir fonte' %}</a>{% endif %}
+            <details class="editorial-record-criterion"><summary>{% trans 'Consultar ou ajustar evidência da fonte' %}</summary>
+              <div class="field"><label for="source-url-{{ forloop.counter0 }}">{% trans 'Endereço da fonte' %}</label><input id="source-url-{{ forloop.counter0 }}" type="url" name="source_url_{{ forloop.counter0 }}" maxlength="1000" value="{{ source.url }}" required></div>
+              <div class="field"><label for="source-excerpt-{{ forloop.counter0 }}">{% trans 'Evidência da consulta' %}</label><textarea id="source-excerpt-{{ forloop.counter0 }}" name="source_excerpt_{{ forloop.counter0 }}" maxlength="1000">{{ source.excerpt }}</textarea></div>
+            </details>
+          </fieldset>
+          {% endfor %}
+          <details class="editorial-record-criterion" {% if new_source_url %}open{% endif %}><summary>{% trans 'Adicionar fonte à ficha' %}</summary>
+            <div class="field"><label for="new-source-url">{% trans 'URL da nova fonte' %}</label><input id="new-source-url" type="url" name="new_source_url" maxlength="1000" placeholder="https://" value="{{ new_source_url }}"></div>
+            <div class="field"><label for="new-source-excerpt">{% trans 'Evidência da consulta' %}</label><textarea id="new-source-excerpt" name="new_source_excerpt" maxlength="1000">{{ new_source_excerpt }}</textarea></div>
+            <label class="config-check-option"><input type="checkbox" name="new_source_verified" value="yes" {% if new_source_verified %}checked{% endif %}><span>{% trans 'Abri e conferi a nova fonte independentemente' %}</span></label>
+            <small>{% trans 'Inclua essa URL nas evidências dos critérios correspondentes. Ela será cadastrada junto do parecer.' %}</small>
+          </details>
+          {% for e in detail.draft.record.evidence %}
+          <details class="editorial-record-criterion"><summary><strong>{{ e.criterion_id }}</strong> {% for criterion in detail.criteria %}{% if criterion.id == e.criterion_id %}{{ criterion.question }}{% endif %}{% endfor %} · {% if e.status == 'satisfied' %}{% trans 'Atendido' %}{% else %}{% trans 'Pendente de conferência' %}{% endif %}</summary>
+            {% for criterion in detail.criteria %}{% if criterion.id == e.criterion_id %}<p>{{ criterion.question }}</p><small>{{ criterion.evidence }}</small>{% endif %}{% endfor %}
+            <label class="config-check-option"><input type="checkbox" name="verified_criteria" value="{{ e.criterion_id }}" {% if e.criterion_id in checked_criteria %}checked{% endif %}><span>{% trans 'Verifiquei este critério e suas evidências estão atendidas' %}</span></label>
+            <div class="field"><label for="record-evidence-{{ e.criterion_id }}">{% trans 'Evidência do critério' %}</label><textarea id="record-evidence-{{ e.criterion_id }}" name="evidence_{{ e.criterion_id }}" rows="8" maxlength="2000">{{ e.evidence }}</textarea>{% if e.suggested_urls %}<small>{% trans "Fontes sugeridas para incluir na evidência:" %}{% for url in e.suggested_urls %}<br>{{ url }}{% endfor %}</small>{% endif %}<small>{% trans 'As URLs sugeridas fazem parte da evidência e podem ser ajustadas. Para critérios que exigem fonte, mantenha a URL de uma fonte cadastrada acima e marque sua conferência independente.' %}</small></div>
+
+          </details>
+          {% endfor %}
+          <div class="field"><label for="editorial-review-note">{% trans 'Nota do parecer' %}</label><textarea id="editorial-review-note" name="note" rows="5" maxlength="3000" required>{{ review_note }}</textarea></div>
+          <div class="field"><label for="editorial-review-decision">{% trans 'Decisão' %}</label><select id="editorial-review-decision" name="decision"><option value="returned" {% if review_decision == 'returned' %}selected{% endif %}>{% trans 'Devolver para ajustes' %}</option><option value="approved" {% if review_decision == 'approved' %}selected{% endif %}>{% trans 'Aprovar' %}</option><option value="rejected" {% if review_decision == 'rejected' %}selected{% endif %}>{% trans 'Rejeitar' %}</option></select></div>
+          <button class="btn primary" name="action" value="assessment">{% trans 'Registrar parecer humano' %}</button>
+        </form>
+      </section>
+      {% else %}<div class="notice editorial-review-notice"><p>{% trans 'Este mercado está em estado terminal. A ficha e o parecer permanecem disponíveis para consulta.' %}</p></div>{% endif %}
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Rastreabilidade' %}</span><h2>{% trans 'Histórico preservado' %}</h2><p>{% trans 'Consulte os registros de cada revisão da ficha editorial.' %}</p></div></div>
+        <div class="config-controls editorial-history">{% for rev in detail.revisions %}<details><summary>{% trans 'Revisão' %} {{ rev.revision }} · {{ rev.created_at }}</summary><p class="integration-help">{% trans 'Hash da ficha' %}: <code>{{ rev.snapshot_hash }}</code></p><pre>{{ rev.snapshot }}</pre></details>{% empty %}<p class="integration-help">{% trans 'Nenhuma revisão preservada ainda.' %}</p>{% endfor %}</div>
+      </section>
+    {% else %}
+      <section class="integration-register" aria-labelledby="editorial-register-title">
+        <div class="section-head compact"><div><h2 id="editorial-register-title">{% trans 'Drafts editoriais' %}</h2><p>{% trans 'Abra um rascunho para conferir a ficha e registrar o parecer humano.' %}</p></div></div>
+        {% for item in items %}<a class="integration-register-row" href="{% url 'admin-ops-agent-review-detail' market_id=item.market_id %}"><div><strong>{{ item.title }}</strong><small>{% trans 'Revisão' %} {{ item.revision }} · {{ item.slug }}</small></div>{% include 'admin_ops/partials/editorial_state.html' with state=item.state %}<span class="integration-row-action">{% trans 'Conferir ficha' %} →</span></a>{% empty %}<div class="integration-empty"><strong>{% trans 'Nenhum mercado editorial.' %}</strong><p>{% trans 'Todos os mercados, humanos ou de integrações, aparecem aqui para acompanhamento e revisão humana.' %}</p><a class="btn ghost" href="{% url 'admin-ops-integrations' %}">{% trans 'Gerenciar integrações' %}</a></div>{% endfor %}
+      </section>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

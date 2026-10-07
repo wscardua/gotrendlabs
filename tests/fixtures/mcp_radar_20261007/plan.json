@@ -1,0 +1,165 @@
+{
+  "policy_hash": "9d9b13bf75268cb236120e9aa3f3b46f512fd7b20f965514654d947cd2f40fa1",
+  "candidates": [
+    {
+      "key": "radar-20261007-tesla-op-income",
+      "classification": [
+        "Negócios",
+        "Automotivo",
+        "Geral"
+      ],
+      "queries": [
+        "Tesla",
+        "lucro"
+      ],
+      "draft": {
+        "title": "O lucro operacional GAAP da Tesla no 3T26 superará US$ 398 milhões?",
+        "summary": "A Tesla prevê divulgar o resultado do 3T26 em 21 de outubro. A pergunta compara seu lucro operacional consolidado com US$398 milhões, valor do 2T26. GT₵ são créditos educativos; não se trata de previsão do preço da ação.",
+        "kind": "binary",
+        "options": [],
+        "source": "https://ir.tesla.com/",
+        "resolution_criteria": "Usar Income from operations GAAP consolidado, em milhões de dólares dos EUA, dos três meses encerrados em 30/09/2026, não acumulado de nove meses. Sim se valor estritamente maior que 398; Não se menor ou igual. Não usar lucro líquido, EBITDA ou medidas ajustadas. Fonte primária: documento Q3 2026 no índice de RI https://ir.tesla.com/. Fallback: 10-Q da Tesla para o mesmo trimestre no SEC EDGAR, acessado pelo link do índice. Comparar valor publicado em USD milhões, sem arredondamento adicional. Considerar correções oficiais disponibilizadas até 30/11/2026 23:59 America/Sao_Paulo; em conflito prevalece 10-Q/10-Q-A oficial vigente nesse instante. Apurar em 01/12/2026 após 09:00 BRT. Se nenhuma fonte fornecer a linha até o limite, não inferir Não: encaminhar cancelamento ao operador humano conforme fluxo vigente. Se houver divulgação antecipada, responsável humano deve solicitar encerramento imediato; disponibilidade desse responsável precisa ser confirmada antes de publicar.",
+        "close_at": "2026-10-20T23:59:00-03:00",
+        "close_timezone": "America/Sao_Paulo",
+        "editorial_record": {
+          "policy_version": "1.2",
+          "policy_hash": "9d9b13bf75268cb236120e9aa3f3b46f512fd7b20f965514654d947cd2f40fa1",
+          "justification": "A divulgação trimestral permite discutir a diferença entre volume de veículos e lucro operacional. Hipótese: acompanhamento de um evento com data gera retorno; não há evidência quantitativa de demanda neste recorte.",
+          "internal_signals": "Três mercados públicos DEV; um sobre líder global EV 4T26, distinto de lucro Tesla 3T26. Base isolada sem previsões: humanos/bots zero não representam demanda real; analytics indisponível.",
+          "external_signals": "RI anuncia divulgação 21/out; relatório anterior SEC traz 398 milhões. Sem alegação de trending social ou previsão de probabilidade.",
+          "search_coverage": "Catálogo público DEV copiado como fixture, paginação completa de três itens; exclui drafts privados/cancelados e não cobre produção. Repetir deduplicação no ambiente piloto antes de publicar.",
+          "similar_market_ids": [
+            3
+          ],
+          "sources": [
+            {
+              "url": "https://ir.tesla.com/press-release/tesla-third-quarter-2026-production-deliveries-and-deployments",
+              "purpose": "discovery",
+              "reported_verified": true,
+              "consulted_at": "2026-10-07T16:51:07+00:00",
+              "excerpt": "Comunicado de 2/out: entregas do 3T já conhecidas; resultados financeiros previstos para 21/out após fechamento da bolsa."
+            },
+            {
+              "url": "https://ir.tesla.com/",
+              "purpose": "resolution",
+              "reported_verified": true,
+              "consulted_at": "2026-10-07T16:51:07+00:00",
+              "excerpt": "Índice oficial mostra 3T26 com divulgação em 21/out, ainda sem deck ou filing; 2T26 tem links públicos. Canal validado, resultado futuro ainda não disponível."
+            },
+            {
+              "url": "https://www.sec.gov/Archives/edgar/data/1318605/000162828026049270/tsla-20260630.htm",
+              "purpose": "fallback",
+              "reported_verified": true,
+              "consulted_at": "2026-10-07T16:51:07+00:00",
+              "excerpt": "10-Q de 30/jun/2026: Income from operations de US$398 milhões nos três meses do 2T26. Documento de referência histórica; não prova resultado futuro."
+            }
+          ],
+          "evidence": [
+            {
+              "criterion_id": "E01",
+              "status": "satisfied",
+              "evidence": "Resultado do 3T ainda não consta do índice oficial consultado. Divulgação programada oferece acompanhamento educativo; demanda de público não comprovada.",
+              "source_indexes": [
+                0,
+                1
+              ]
+            },
+            {
+              "criterion_id": "E02",
+              "status": "satisfied",
+              "evidence": "Pergunta sobre informação corporativa pública, sem indicação de compra/venda, promessa de retorno ou ataque pessoal.",
+              "source_indexes": []
+            },
+            {
+              "criterion_id": "E03",
+              "status": "pending",
+              "evidence": "Busca paginada em todos os três mercados do recorte público DEV e consultas Tesla/lucro. Mercado de liderança EV 4T26 é distinto; drafts privados e produção não foram copiados.",
+              "source_indexes": []
+            },
+            {
+              "criterion_id": "E04",
+              "status": "satisfied",
+              "evidence": "Título e regras comparam a mesma linha GAAP consolidada em USD milhões ao limite fixo 398.",
+              "source_indexes": [
+                2
+              ]
+            },
+            {
+              "criterion_id": "E05",
+              "status": "satisfied",
+              "evidence": "Sim somente se Income from operations >398; igualdade e qualquer valor menor são Não. Ausência de documento não significa Não.",
+              "source_indexes": [
+                2
+              ]
+            },
+            {
+              "criterion_id": "E06",
+              "status": "satisfied",
+              "evidence": "Fontes abertas em 7/out às 16:51 UTC. Índice de RI identifica trimestre e SEC comprova formato/linha; resultado 3T é validável futuramente, não verificado ainda.",
+              "source_indexes": [
+                0,
+                1,
+                2
+              ]
+            },
+            {
+              "criterion_id": "E07",
+              "status": "pending",
+              "evidence": "Fechamento 20/out 23:59 BRT antes de 21/out. Precisa humano disponível para notícia antecipada e encerramento operacional; agente não fecha mercado.",
+              "source_indexes": [
+                0
+              ]
+            },
+            {
+              "criterion_id": "E08",
+              "status": "satisfied",
+              "evidence": "Aguardar documentos até 30/nov 23:59 BRT; usar 10-Q oficial do mesmo trimestre se RI indisponível. Sem dado verificável: encaminhar cancelamento a operador, sem escolher Não.",
+              "source_indexes": [
+                1,
+                2
+              ]
+            },
+            {
+              "criterion_id": "E09",
+              "status": "pending",
+              "evidence": "Taxonomia existente Negócios/Automotivo/Geral. Imagem, avisos, tradução e prévia aguardam conferência humana.",
+              "source_indexes": []
+            },
+            {
+              "criterion_id": "E10",
+              "status": "pending",
+              "evidence": "Nenhum responsável real por monitorar/apurar foi designado neste ensaio. Identidade técnica não equivale à disponibilidade humana.",
+              "source_indexes": []
+            },
+            {
+              "criterion_id": "E11",
+              "status": "pending",
+              "evidence": "Snapshot técnico será gerado ao submeter; revisão humana final da versão/página permanece pendente.",
+              "source_indexes": []
+            }
+          ],
+          "fallback": "Consultar 10-Q/10-Q-A oficial do 3T26 pelo índice de RI/SEC até 30/nov. A URL específica futura ainda não existe na consulta. Não reutilizar o documento 2T para resolver 3T. Ausência persistente exige decisão do operador.",
+          "gaps": "E03 cobertura de drafts/produção; E07 monitoramento antecipado; E09 prévia/imagem/avisos; E10 responsável real; E11 parecer humano final. Este draft não está pronto para publicação.",
+          "expected_announcement_at": "2026-10-21T17:00:00-03:00"
+        }
+      },
+      "updated_summary": "A Tesla prevê divulgar o resultado do 3T26 em 21 de outubro. A pergunta compara seu lucro operacional consolidado com US$398 milhões, valor do 2T26. GT₵ são créditos educativos; não se trata de previsão do preço da ação. A comparação usa os três meses do trimestre e exclui lucro líquido e EBITDA."
+    }
+  ],
+  "rejected": [
+    {
+      "topic": "Entregas Tesla 3T26 acima de 450 mil",
+      "reason": "Resultado já conhecido em 2/out; não é incerteza futura.",
+      "source": "https://ir.tesla.com/press-release/tesla-third-quarter-2026-production-deliveries-and-deployments"
+    },
+    {
+      "topic": "Líder global de vendas EV 4T26",
+      "reason": "Mesmo acontecimento do mercado público existente lider-vendas-ev-4t26."
+    },
+    {
+      "topic": "Próxima versão Qwen",
+      "reason": "Changelog consultado sugere atividade recente, mas pauta não amadurecida com prazo/fonte de resultado; não criar por cota de diversidade.",
+      "source": "https://docs.qwencloud.com/changelog/models"
+    }
+  ]
+}

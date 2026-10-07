@@ -36,6 +36,9 @@ class MarketLifecycleEngine:
         self.validate_publishable = validate_publishable
 
     def publish_market(self, row, slug, note=""):
+        self.cursor.execute("SELECT status FROM gotrendlabs_markets WHERE id=%s FOR UPDATE", (row["id"],))
+        current = self.cursor.fetchone()
+        row = {**row, "status": current["status"]}
         if row["status"] == "open":
             return
         if row["status"] not in {"draft", "scheduled"}:
@@ -43,7 +46,9 @@ class MarketLifecycleEngine:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Apenas rascunhos ou mercados agendados podem ser publicados.",
             )
+        from apps.api.backend_api.editorial_service import require_publication_approval
         self.validate_publishable(self.cursor, row["id"])
+        require_publication_approval(self.cursor, row["id"])
         now = datetime.now(timezone.utc)
         definition = register_market_definition(self.cursor, row["id"], occurred_at=now)
         self.cursor.execute(

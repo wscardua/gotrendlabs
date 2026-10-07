@@ -1238,6 +1238,17 @@
             "title": "Event",
             "type": "string"
           },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
           "image_url": {
             "default": "",
             "title": "Image Url",
@@ -2548,6 +2559,362 @@
         "title": "CommentResponse",
         "type": "object"
       },
+      "Consent": {
+        "additionalProperties": false,
+        "properties": {
+          "integration_id": {
+            "format": "uuid",
+            "title": "Integration Id",
+            "type": "string"
+          },
+          "parameters": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Parameters",
+            "type": "object"
+          }
+        },
+        "required": [
+          "parameters",
+          "integration_id"
+        ],
+        "title": "Consent",
+        "type": "object"
+      },
+      "CreateDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "close_at": {
+            "format": "date-time",
+            "title": "Close At",
+            "type": "string"
+          },
+          "close_timezone": {
+            "maxLength": 64,
+            "title": "Close Timezone",
+            "type": "string"
+          },
+          "editorial_record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "event_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Event Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 100,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "binary",
+              "multiple"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "maxItems": 20,
+            "title": "Options",
+            "type": "array"
+          },
+          "resolution_criteria": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "subcategory_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Subcategory Id",
+            "type": "integer"
+          },
+          "summary": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "kind",
+          "category_id",
+          "subcategory_id",
+          "event_id",
+          "source",
+          "resolution_criteria",
+          "close_at",
+          "close_timezone",
+          "editorial_record",
+          "idempotency_key"
+        ],
+        "title": "CreateDraft",
+        "type": "object"
+      },
+      "Criterion": {
+        "properties": {
+          "evidence": {
+            "title": "Evidence",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "manual_section": {
+            "title": "Manual Section",
+            "type": "string"
+          },
+          "publication_blocking": {
+            "title": "Publication Blocking",
+            "type": "boolean"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "source_access_required": {
+            "title": "Source Access Required",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "question",
+          "evidence",
+          "publication_blocking",
+          "source_access_required",
+          "manual_section"
+        ],
+        "title": "Criterion",
+        "type": "object"
+      },
+      "Delegation": {
+        "additionalProperties": false,
+        "properties": {
+          "access_token": {
+            "maxLength": 200,
+            "minLength": 20,
+            "title": "Access Token",
+            "type": "string"
+          }
+        },
+        "required": [
+          "access_token"
+        ],
+        "title": "Delegation",
+        "type": "object"
+      },
+      "Draft": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "close_at": {
+            "format": "date-time",
+            "title": "Close At",
+            "type": "string"
+          },
+          "close_timezone": {
+            "maxLength": 64,
+            "title": "Close Timezone",
+            "type": "string"
+          },
+          "editorial_record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "event_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Event Id",
+            "type": "integer"
+          },
+          "kind": {
+            "enum": [
+              "binary",
+              "multiple"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "maxItems": 20,
+            "title": "Options",
+            "type": "array"
+          },
+          "resolution_criteria": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "subcategory_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Subcategory Id",
+            "type": "integer"
+          },
+          "summary": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "kind",
+          "category_id",
+          "subcategory_id",
+          "event_id",
+          "source",
+          "resolution_criteria",
+          "close_at",
+          "close_timezone",
+          "editorial_record"
+        ],
+        "title": "Draft",
+        "type": "object"
+      },
+      "EditorialRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "maxItems": 11,
+            "title": "Evidence",
+            "type": "array"
+          },
+          "expected_announcement_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Announcement At"
+          },
+          "external_signals": {
+            "default": "",
+            "maxLength": 3000,
+            "title": "External Signals",
+            "type": "string"
+          },
+          "fallback": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Fallback",
+            "type": "string"
+          },
+          "gaps": {
+            "default": "",
+            "maxLength": 2000,
+            "title": "Gaps",
+            "type": "string"
+          },
+          "internal_signals": {
+            "default": "",
+            "maxLength": 3000,
+            "title": "Internal Signals",
+            "type": "string"
+          },
+          "justification": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Justification",
+            "type": "string"
+          },
+          "policy_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Policy Hash",
+            "type": "string"
+          },
+          "policy_version": {
+            "maxLength": 20,
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "search_coverage": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Search Coverage",
+            "type": "string"
+          },
+          "similar_market_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 100,
+            "title": "Similar Market Ids",
+            "type": "array"
+          },
+          "sources": {
+            "items": {
+              "$ref": "#/components/schemas/Source"
+            },
+            "maxItems": 20,
+            "title": "Sources",
+            "type": "array"
+          }
+        },
+        "required": [
+          "policy_version",
+          "policy_hash",
+          "justification",
+          "search_coverage"
+        ],
+        "title": "EditorialRecord",
+        "type": "object"
+      },
       "EmailConfirmationConfirmPayload": {
         "properties": {
           "token": {
@@ -2574,6 +2941,57 @@
           "message"
         ],
         "title": "EmailConfirmationResponse",
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "properties": {
+          "criterion_id": {
+            "enum": [
+              "E01",
+              "E02",
+              "E03",
+              "E04",
+              "E05",
+              "E06",
+              "E07",
+              "E08",
+              "E09",
+              "E10",
+              "E11"
+            ],
+            "title": "Criterion Id",
+            "type": "string"
+          },
+          "evidence": {
+            "maxLength": 2000,
+            "title": "Evidence",
+            "type": "string"
+          },
+          "source_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 20,
+            "title": "Source Indexes",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "satisfied",
+              "pending",
+              "not_verified"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "criterion_id",
+          "status",
+          "evidence"
+        ],
+        "title": "Evidence",
         "type": "object"
       },
       "FeedbackRewardPayload": {
@@ -2712,6 +3130,177 @@
           "mobile"
         ],
         "title": "HealthResponse",
+        "type": "object"
+      },
+      "HumanEditorialAssessment": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "approved",
+              "returned",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "editorial_record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "snapshot_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Snapshot Hash",
+            "type": "string"
+          },
+          "verified_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 11,
+            "title": "Verified Criteria",
+            "type": "array"
+          },
+          "verified_source_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 20,
+            "title": "Verified Source Indexes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "snapshot_hash",
+          "decision",
+          "note",
+          "editorial_record"
+        ],
+        "title": "HumanEditorialAssessment",
+        "type": "object"
+      },
+      "HumanEditorialRecord": {
+        "additionalProperties": false,
+        "properties": {
+          "editorial_record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "submit_for_review": {
+            "default": false,
+            "title": "Submit For Review",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "editorial_record",
+          "note"
+        ],
+        "title": "HumanEditorialRecord",
+        "type": "object"
+      },
+      "IntegrationConfig": {
+        "additionalProperties": false,
+        "properties": {
+          "calls_per_minute": {
+            "default": 60,
+            "maximum": 10000.0,
+            "minimum": 0.0,
+            "title": "Calls Per Minute",
+            "type": "integer"
+          },
+          "concurrent_calls": {
+            "default": 2,
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Concurrent Calls",
+            "type": "integer"
+          },
+          "description": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Description",
+            "type": "string"
+          },
+          "drafts_per_day": {
+            "default": 5,
+            "maximum": 1000.0,
+            "minimum": 0.0,
+            "title": "Drafts Per Day",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "responsible_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Responsible Id",
+            "type": "integer"
+          },
+          "scopes": {
+            "items": {
+              "enum": [
+                "editorial:read",
+                "catalog:read",
+                "metrics:read",
+                "drafts:write",
+                "drafts:submit"
+              ],
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Scopes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "responsible_id",
+          "expires_at"
+        ],
+        "title": "IntegrationConfig",
         "type": "object"
       },
       "IntegrityLedgerStatusResponse": {
@@ -3240,8 +3829,119 @@
         "title": "MarketOptionResponse",
         "type": "object"
       },
+      "MarketProjection": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "close_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close At"
+          },
+          "close_timezone": {
+            "title": "Close Timezone",
+            "type": "string"
+          },
+          "editorial": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PrivateEditorial"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "title": "Options",
+            "type": "array"
+          },
+          "resolution_criteria": {
+            "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "subcategory_id": {
+            "title": "Subcategory Id",
+            "type": "integer"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "summary",
+          "kind",
+          "status",
+          "category_id",
+          "subcategory_id",
+          "event_id",
+          "close_at",
+          "close_timezone",
+          "source",
+          "resolution_criteria",
+          "options"
+        ],
+        "title": "MarketProjection",
+        "type": "object"
+      },
       "MarketResponse": {
         "properties": {
+          "admin_notes": {
+            "default": "",
+            "title": "Admin Notes",
+            "type": "string"
+          },
           "auto_close_enabled": {
             "default": true,
             "title": "Auto Close Enabled",
@@ -3290,6 +3990,13 @@
             "title": "Closes In",
             "type": "string"
           },
+          "closure_configuration_errors": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Closure Configuration Errors",
+            "type": "array"
+          },
           "comment_count": {
             "default": 0,
             "title": "Comment Count",
@@ -3306,6 +4013,54 @@
             "default": "",
             "title": "Created At",
             "type": "string"
+          },
+          "editorial_market_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editorial Market Id"
+          },
+          "editorial_origin": {
+            "anyOf": [
+              {
+                "enum": [
+                  "mcp",
+                  "human"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editorial Origin"
+          },
+          "editorial_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editorial Revision"
+          },
+          "editorial_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Editorial Status"
           },
           "event": {
             "title": "Event",
@@ -3768,6 +4523,64 @@
         "title": "MfaVerifyResponse",
         "type": "object"
       },
+      "MutationResponse": {
+        "properties": {
+          "admin_url": {
+            "title": "Admin Url",
+            "type": "string"
+          },
+          "editorial_status": {
+            "title": "Editorial Status",
+            "type": "string"
+          },
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "market_status": {
+            "title": "Market Status",
+            "type": "string"
+          },
+          "policy_version": {
+            "title": "Policy Version",
+            "type": "string"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "snapshot_hash": {
+            "title": "Snapshot Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_id",
+          "slug",
+          "market_status",
+          "editorial_status",
+          "revision",
+          "snapshot_hash",
+          "policy_version",
+          "admin_url",
+          "request_id",
+          "replayed"
+        ],
+        "title": "MutationResponse",
+        "type": "object"
+      },
       "NotificationListResponse": {
         "properties": {
           "notifications": {
@@ -3865,6 +4678,98 @@
         "title": "NotificationResponse",
         "type": "object"
       },
+      "OAuthRegistration": {
+        "additionalProperties": false,
+        "properties": {
+          "client_name": {
+            "default": "MCP client",
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Client Name",
+            "type": "string"
+          },
+          "grant_types": {
+            "default": [
+              "authorization_code",
+              "refresh_token"
+            ],
+            "items": {
+              "enum": [
+                "authorization_code",
+                "refresh_token"
+              ],
+              "type": "string"
+            },
+            "title": "Grant Types",
+            "type": "array"
+          },
+          "redirect_uris": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Redirect Uris",
+            "type": "array"
+          },
+          "response_types": {
+            "default": [
+              "code"
+            ],
+            "items": {
+              "const": "code",
+              "type": "string"
+            },
+            "title": "Response Types",
+            "type": "array"
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scope"
+          },
+          "token_endpoint_auth_method": {
+            "const": "none",
+            "default": "none",
+            "title": "Token Endpoint Auth Method",
+            "type": "string"
+          }
+        },
+        "required": [
+          "redirect_uris"
+        ],
+        "title": "OAuthRegistration",
+        "type": "object"
+      },
+      "Option": {
+        "additionalProperties": false,
+        "properties": {
+          "hint": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Hint",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label"
+        ],
+        "title": "Option",
+        "type": "object"
+      },
       "PasswordResetConfirmPayload": {
         "properties": {
           "password": {
@@ -3930,6 +4835,69 @@
           "message"
         ],
         "title": "PasswordResetRequestResponse",
+        "type": "object"
+      },
+      "PolicyResponse": {
+        "properties": {
+          "approved_on": {
+            "title": "Approved On",
+            "type": "string"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "checklist": {
+            "title": "Checklist",
+            "type": "string"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/Criterion"
+            },
+            "title": "Criteria",
+            "type": "array"
+          },
+          "hash": {
+            "title": "Hash",
+            "type": "string"
+          },
+          "manual": {
+            "title": "Manual",
+            "type": "string"
+          },
+          "record_template": {
+            "title": "Record Template",
+            "type": "string"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "const": "approved",
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "version",
+          "status",
+          "hash",
+          "approved_on",
+          "source",
+          "criteria",
+          "manual",
+          "checklist",
+          "record_template",
+          "as_of"
+        ],
+        "title": "PolicyResponse",
         "type": "object"
       },
       "PositionActionPayload": {
@@ -4273,6 +5241,39 @@
           "estimated_return"
         ],
         "title": "PredictionPreviewResponse",
+        "type": "object"
+      },
+      "PrivateEditorial": {
+        "properties": {
+          "decision": {
+            "additionalProperties": true,
+            "title": "Decision",
+            "type": "object"
+          },
+          "record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "snapshot_hash": {
+            "title": "Snapshot Hash",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision",
+          "state",
+          "record",
+          "snapshot_hash",
+          "decision"
+        ],
+        "title": "PrivateEditorial",
         "type": "object"
       },
       "ProductFeedbackPayload": {
@@ -5275,6 +6276,299 @@
         "title": "ReputationResponse",
         "type": "object"
       },
+      "ResponsibleOption": {
+        "additionalProperties": false,
+        "properties": {
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "username": {
+            "title": "Username",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "display_name",
+          "username"
+        ],
+        "title": "ResponsibleOption",
+        "type": "object"
+      },
+      "ResponsibleOptions": {
+        "additionalProperties": false,
+        "properties": {
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ResponsibleOption"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "has_more",
+          "next_cursor"
+        ],
+        "title": "ResponsibleOptions",
+        "type": "object"
+      },
+      "ReviewDecision": {
+        "additionalProperties": false,
+        "properties": {
+          "decision": {
+            "enum": [
+              "approved",
+              "returned",
+              "rejected"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "snapshot_hash": {
+            "pattern": "^[a-f0-9]{64}$",
+            "title": "Snapshot Hash",
+            "type": "string"
+          },
+          "verified_criteria": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 11,
+            "title": "Verified Criteria",
+            "type": "array"
+          },
+          "verified_source_indexes": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 20,
+            "title": "Verified Source Indexes",
+            "type": "array"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "snapshot_hash",
+          "decision",
+          "note"
+        ],
+        "title": "ReviewDecision",
+        "type": "object"
+      },
+      "ReviewResponse": {
+        "properties": {
+          "decision": {
+            "additionalProperties": true,
+            "title": "Decision",
+            "type": "object"
+          },
+          "integration_id": {
+            "format": "uuid",
+            "title": "Integration Id",
+            "type": "string"
+          },
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "revision": {
+            "title": "Revision",
+            "type": "integer"
+          },
+          "snapshot_hash": {
+            "title": "Snapshot Hash",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "revision",
+          "state",
+          "record",
+          "snapshot_hash",
+          "decision",
+          "market_id",
+          "integration_id"
+        ],
+        "title": "ReviewResponse",
+        "type": "object"
+      },
+      "RevisionAction": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision"
+        ],
+        "title": "RevisionAction",
+        "type": "object"
+      },
+      "SearchItem": {
+        "properties": {
+          "category_id": {
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "close_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close At"
+          },
+          "close_timezone": {
+            "title": "Close Timezone",
+            "type": "string"
+          },
+          "event_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Event Id"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "subcategory_id": {
+            "title": "Subcategory Id",
+            "type": "integer"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "title",
+          "summary",
+          "kind",
+          "status",
+          "category_id",
+          "subcategory_id",
+          "event_id",
+          "close_at",
+          "close_timezone"
+        ],
+        "title": "SearchItem",
+        "type": "object"
+      },
+      "SearchResponse": {
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "string"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/SearchItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "has_more",
+          "coverage",
+          "as_of"
+        ],
+        "title": "SearchResponse",
+        "type": "object"
+      },
       "SessionContextResponse": {
         "properties": {
           "authenticated": {
@@ -5308,6 +6602,77 @@
           "expires_at"
         ],
         "title": "SessionResponse",
+        "type": "object"
+      },
+      "SignalsResponse": {
+        "properties": {
+          "analytics": {
+            "additionalProperties": true,
+            "title": "Analytics",
+            "type": "object"
+          },
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "availability": {
+            "title": "Availability",
+            "type": "string"
+          },
+          "bots": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bots"
+          },
+          "humans": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Humans"
+          },
+          "period_end": {
+            "format": "date-time",
+            "title": "Period End",
+            "type": "string"
+          },
+          "period_start": {
+            "format": "date-time",
+            "title": "Period Start",
+            "type": "string"
+          },
+          "timezone": {
+            "title": "Timezone",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "period_start",
+          "period_end",
+          "as_of",
+          "timezone",
+          "unit",
+          "availability",
+          "humans",
+          "bots",
+          "analytics"
+        ],
+        "title": "SignalsResponse",
         "type": "object"
       },
       "SocialAuthCallbackPayload": {
@@ -5442,6 +6807,71 @@
           "state"
         ],
         "title": "SocialAuthStartResponse",
+        "type": "object"
+      },
+      "Source": {
+        "additionalProperties": false,
+        "properties": {
+          "consulted_at": {
+            "format": "date-time",
+            "title": "Consulted At",
+            "type": "string"
+          },
+          "excerpt": {
+            "default": "",
+            "maxLength": 1000,
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "discovery",
+              "resolution",
+              "fallback"
+            ],
+            "title": "Purpose",
+            "type": "string"
+          },
+          "reported_verified": {
+            "default": false,
+            "title": "Reported Verified",
+            "type": "boolean"
+          },
+          "url": {
+            "maxLength": 1000,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "purpose",
+          "consulted_at"
+        ],
+        "title": "Source",
+        "type": "object"
+      },
+      "SubmitDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 100,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "idempotency_key"
+        ],
+        "title": "SubmitDraft",
         "type": "object"
       },
       "SuggestionRewardPayload": {
@@ -5625,6 +7055,260 @@
           "message"
         ],
         "title": "SystemLogResponse",
+        "type": "object"
+      },
+      "TaxonomyItem": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "category_id": {
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "event": {
+            "title": "Event",
+            "type": "string"
+          },
+          "event_id": {
+            "title": "Event Id",
+            "type": "integer"
+          },
+          "subcategory": {
+            "title": "Subcategory",
+            "type": "string"
+          },
+          "subcategory_id": {
+            "title": "Subcategory Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "category_id",
+          "category",
+          "subcategory_id",
+          "subcategory",
+          "event_id",
+          "event"
+        ],
+        "title": "TaxonomyItem",
+        "type": "object"
+      },
+      "TaxonomyResponse": {
+        "properties": {
+          "as_of": {
+            "format": "date-time",
+            "title": "As Of",
+            "type": "string"
+          },
+          "coverage": {
+            "title": "Coverage",
+            "type": "string"
+          },
+          "has_more": {
+            "title": "Has More",
+            "type": "boolean"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TaxonomyItem"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "required": [
+          "items",
+          "next_cursor",
+          "has_more",
+          "coverage",
+          "as_of"
+        ],
+        "title": "TaxonomyResponse",
+        "type": "object"
+      },
+      "ToolEvent": {
+        "additionalProperties": false,
+        "properties": {
+          "event_id": {
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+            "title": "Event Id",
+            "type": "string"
+          },
+          "execution_id": {
+            "pattern": "^[A-Za-z0-9_.:-]{1,100}$",
+            "title": "Execution Id",
+            "type": "string"
+          },
+          "result": {
+            "enum": [
+              "started",
+              "completed",
+              "failed",
+              "denied"
+            ],
+            "title": "Result",
+            "type": "string"
+          },
+          "tool": {
+            "enum": [
+              "get_editorial_policy",
+              "get_taxonomy",
+              "search_markets",
+              "get_market",
+              "get_editorial_signals",
+              "validate_market_draft",
+              "create_market_draft",
+              "update_market_draft",
+              "submit_draft_for_review",
+              "get_draft_review"
+            ],
+            "title": "Tool",
+            "type": "string"
+          }
+        },
+        "required": [
+          "event_id",
+          "tool",
+          "execution_id",
+          "result"
+        ],
+        "title": "ToolEvent",
+        "type": "object"
+      },
+      "Transfer": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "responsible_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Responsible Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "expected_revision",
+          "responsible_id"
+        ],
+        "title": "Transfer",
+        "type": "object"
+      },
+      "UpdateDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "category_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Category Id",
+            "type": "integer"
+          },
+          "close_at": {
+            "format": "date-time",
+            "title": "Close At",
+            "type": "string"
+          },
+          "close_timezone": {
+            "maxLength": 64,
+            "title": "Close Timezone",
+            "type": "string"
+          },
+          "editorial_record": {
+            "$ref": "#/components/schemas/EditorialRecord"
+          },
+          "event_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Event Id",
+            "type": "integer"
+          },
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "maxLength": 100,
+            "minLength": 8,
+            "pattern": "^[A-Za-z0-9_.:-]+$",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "binary",
+              "multiple"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/Option"
+            },
+            "maxItems": 20,
+            "title": "Options",
+            "type": "array"
+          },
+          "resolution_criteria": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "source": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Source",
+            "type": "string"
+          },
+          "subcategory_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Subcategory Id",
+            "type": "integer"
+          },
+          "summary": {
+            "maxLength": 5000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "kind",
+          "category_id",
+          "subcategory_id",
+          "event_id",
+          "source",
+          "resolution_criteria",
+          "close_at",
+          "close_timezone",
+          "editorial_record",
+          "idempotency_key",
+          "expected_revision"
+        ],
+        "title": "UpdateDraft",
         "type": "object"
       },
       "UserPerformanceHistoryItemResponse": {
@@ -5960,6 +7644,37 @@
         "title": "ValidationError",
         "type": "object"
       },
+      "ValidationResponse": {
+        "properties": {
+          "evidence_origin": {
+            "const": "agent_reported",
+            "title": "Evidence Origin",
+            "type": "string"
+          },
+          "pending": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending",
+            "type": "array"
+          },
+          "similar": {
+            "$ref": "#/components/schemas/SearchResponse"
+          },
+          "structurally_valid": {
+            "title": "Structurally Valid",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "structurally_valid",
+          "pending",
+          "evidence_origin",
+          "similar"
+        ],
+        "title": "ValidationResponse",
+        "type": "object"
+      },
       "ViewerPositionSummary": {
         "properties": {
           "active_entries": {
@@ -6271,6 +7986,984 @@
           }
         },
         "summary": "Root"
+      }
+    },
+    "/.well-known/oauth-authorization-server": {
+      "get": {
+        "operationId": "discovery__well_known_oauth_authorization_server_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Discovery",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/.well-known/oauth-protected-resource": {
+      "get": {
+        "operationId": "protected_resource__well_known_oauth_protected_resource_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Protected Resource",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/.well-known/oauth-protected-resource/mcp": {
+      "get": {
+        "operationId": "protected_resource__well_known_oauth_protected_resource_mcp_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Protected Resource",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-editorial-reviews": {
+      "get": {
+        "operationId": "reviews_admin_agent_editorial_reviews_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reviews",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-editorial-reviews/{market_id}": {
+      "get": {
+        "operationId": "review_detail_admin_agent_editorial_reviews__market_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Review Detail",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-editorial-reviews/{market_id}/assessment": {
+      "post": {
+        "operationId": "assessment_admin_agent_editorial_reviews__market_id__assessment_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanEditorialAssessment"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Assessment",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-editorial-reviews/{market_id}/decision": {
+      "post": {
+        "operationId": "decision_admin_agent_editorial_reviews__market_id__decision_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewDecision"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Decision",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-editorial-reviews/{market_id}/record": {
+      "patch": {
+        "operationId": "prepare_record_admin_agent_editorial_reviews__market_id__record_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HumanEditorialRecord"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Prepare Record",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integration-responsibles": {
+      "get": {
+        "operationId": "integration_responsibles_admin_agent_integration_responsibles_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ResponsibleOptions"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Integration Responsibles",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations": {
+      "get": {
+        "operationId": "list_integrations_admin_agent_integrations_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Integrations",
+        "tags": [
+          "editorial-integrations"
+        ]
+      },
+      "post": {
+        "operationId": "create_integration_admin_agent_integrations_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Integration",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}": {
+      "get": {
+        "operationId": "integration_detail_admin_agent_integrations__identifier__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Integration Detail",
+        "tags": [
+          "editorial-integrations"
+        ]
+      },
+      "patch": {
+        "operationId": "edit_integration_admin_agent_integrations__identifier__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IntegrationConfig"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Edit Integration",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}/activity": {
+      "get": {
+        "operationId": "activity_admin_agent_integrations__identifier__activity_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Activity",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}/connections": {
+      "get": {
+        "operationId": "connections_admin_agent_integrations__identifier__connections_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Connections",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}/credentials": {
+      "post": {
+        "operationId": "issue_credential_admin_agent_integrations__identifier__credentials_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Issue Credential",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}/transfer-responsibility": {
+      "post": {
+        "operationId": "transfer_admin_agent_integrations__identifier__transfer_responsibility_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Transfer"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transfer",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}/{action}": {
+      "post": {
+        "operationId": "transition_admin_agent_integrations__identifier___action__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "action",
+            "required": true,
+            "schema": {
+              "enum": [
+                "activate",
+                "pause",
+                "revoke"
+              ],
+              "title": "Action",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionAction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Transition",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/admin/agent-integrations/{identifier}/{kind}/{origin_id}/revoke": {
+      "post": {
+        "operationId": "revoke_origin_admin_agent_integrations__identifier___kind___origin_id__revoke_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "identifier",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Identifier",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "kind",
+            "required": true,
+            "schema": {
+              "enum": [
+                "credentials",
+                "connections"
+              ],
+              "title": "Kind",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "origin_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Origin Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Origin",
+        "tags": [
+          "editorial-integrations"
+        ]
       }
     },
     "/admin/ai-agent-actions": {
@@ -9223,6 +11916,50 @@
           },
           {
             "in": "query",
+            "name": "integration_id",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 36,
+              "title": "Integration Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "execution_id",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 100,
+              "title": "Execution Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tool",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 80,
+              "title": "Tool",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "result",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 16,
+              "title": "Result",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
             "name": "from",
             "required": false,
             "schema": {
@@ -10965,6 +13702,742 @@
         "summary": "Health"
       }
     },
+    "/integrations/editorial/drafts": {
+      "post": {
+        "operationId": "create_draft_integrations_editorial_drafts_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Draft",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/drafts/validate": {
+      "post": {
+        "operationId": "validate_draft_integrations_editorial_drafts_validate_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Draft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Validate Draft",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/drafts/{market_id}": {
+      "patch": {
+        "operationId": "update_draft_integrations_editorial_drafts__market_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Draft",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/drafts/{market_id}/review": {
+      "get": {
+        "operationId": "draft_review_integrations_editorial_drafts__market_id__review_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Draft Review",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/drafts/{market_id}/submit": {
+      "post": {
+        "operationId": "submit_draft_integrations_editorial_drafts__market_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MutationResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Submit Draft",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/markets": {
+      "get": {
+        "operationId": "markets_integrations_editorial_markets_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 240,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "default": "",
+              "maxLength": 20,
+              "title": "Status",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "event_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Event Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "from_at",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "From At"
+            }
+          },
+          {
+            "in": "query",
+            "name": "to_at",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date-time",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "To At"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Markets",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/markets/{market_id}": {
+      "get": {
+        "operationId": "market_integrations_editorial_markets__market_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "market_id",
+            "required": true,
+            "schema": {
+              "title": "Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketProjection"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Market",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/policy": {
+      "get": {
+        "operationId": "get_policy_integrations_editorial_policy_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PolicyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Policy",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/signals": {
+      "get": {
+        "operationId": "signals_integrations_editorial_signals_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 90,
+              "minimum": 1,
+              "title": "Days",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SignalsResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Signals",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/taxonomy": {
+      "get": {
+        "operationId": "get_taxonomy_integrations_editorial_taxonomy_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Cursor",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaxonomyResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Taxonomy",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
     "/integrity/public-key": {
       "get": {
         "operationId": "integrity_public_key_integrity_public_key_get",
@@ -11027,6 +14500,118 @@
           }
         },
         "summary": "Get Integrity Ledger Status"
+      }
+    },
+    "/internal/agent-integrations/delegate": {
+      "post": {
+        "operationId": "delegate_internal_agent_integrations_delegate_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Delegation"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delegate",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/internal/agent-integrations/events": {
+      "post": {
+        "operationId": "ingest_event_internal_agent_integrations_events_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ToolEvent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingest Event",
+        "tags": [
+          "editorial-integrations"
+        ]
       }
     },
     "/markets": {
@@ -11995,6 +15580,208 @@
           }
         },
         "summary": "Track Market View"
+      }
+    },
+    "/oauth/authorize": {
+      "get": {
+        "operationId": "authorize_oauth_authorize_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Authorize",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/oauth/consent": {
+      "post": {
+        "operationId": "consent_oauth_consent_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Consent"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consent",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/oauth/consent-info": {
+      "post": {
+        "operationId": "consent_info_oauth_consent_info_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "additionalProperties": {
+                  "type": "string"
+                },
+                "title": "Payload",
+                "type": "object"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Consent Info",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/oauth/register": {
+      "post": {
+        "operationId": "register_oauth_register_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthRegistration"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/oauth/revoke": {
+      "post": {
+        "operationId": "revoke_token_oauth_revoke_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Revoke Token",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/oauth/token": {
+      "post": {
+        "operationId": "token_oauth_token_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Token",
+        "tags": [
+          "editorial-integrations"
+        ]
       }
     },
     "/rankings": {

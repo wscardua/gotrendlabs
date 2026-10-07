@@ -1,0 +1,28 @@
+# Optional pilot proxy. Use only after migrations, API and adapter smoke checks.
+# If using the production proxy, place these handles before /api/* and Django.
+@private_editorial path /internal/agent-integrations* /api/internal/agent-integrations*
+handle @private_editorial {
+    respond 404
+}
+@mcp_routes path /mcp /mcp/* /.well-known/oauth-protected-resource /.well-known/oauth-protected-resource/*
+handle @mcp_routes {
+    request_body {
+        max_size 128KB
+    }
+    header Cache-Control "private, no-store"
+    reverse_proxy mcp:8002 {
+        flush_interval -1
+        transport http {
+            dial_timeout 3s
+            response_header_timeout 20s
+        }
+    }
+}
+@oauth_routes path /oauth/* /.well-known/oauth-authorization-server
+handle @oauth_routes {
+    request_body {
+        max_size 16KB
+    }
+    header Cache-Control "private, no-store"
+    reverse_proxy fastapi:8001
+}

@@ -1,5 +1,26 @@
 # Integration Map
 
+- 2026-10-07: pacote de rollout/ativação/rollback MCP integrado ao fluxo de produção, PR CI e isolamento conferidos localmente. [Fechamento](../testing/mcp-closeout-20261007.md).
+
+- 2026-10-07, follow-up review MCP: módulos e migrations/grants do percurso adicionados ao índice Git e conferidos em snapshot limpo com instalação independente e 74 testes PostgreSQL aprovados. [Evidências](../testing/mcp-branch-review-followup-20261007.md).
+
+## Ensaio DEV atual — 2026-10-07
+
+- Admin Ops humano → #6 resolvido; MCP SDK/OAuth → #7 submetido, aprovado na UI e fechado automaticamente. Serviço client_credentials/revogação validado. Logs existentes e auditoria criptográfica verificados; precisão e fuso dos formulários corrigidos. [Evidência](../testing/dev-catalog-rehearsal-20261007.md).
+
+## MCP editorial — FEAT-MCP-001 (implementado localmente, homologação externa pendente)
+
+- Dot/outro executor → MCP HTTPS → FastAPI → PostgreSQL. MCP sem banco/ORM/segredos KMS/MFA; pesquisa e agenda permanecem externas.
+- Admin Ops → FastAPI com staff ou superuser + MFA, capacidades iguais → integrações, credenciais/grants, cotas e revisão editorial.
+- OAuth interativo e serviço → identidade técnica/delegação verificável → contratos editoriais restritos, ficha/revisões privadas e autoria de draft.
+- MCP → ingestão técnica autenticada FastAPI → `gotrendlabs_system_logs`; mutações → `gotrendlabs_admin_events` na mesma transação. Filtros/aba atividade reutilizam registros existentes.
+- Catálogo/editorial aprovados são dependências; analytics opcional indisponível não vira zero. Bots oficiais e daemon operacional não são executor do radar.
+- Humano no Admin Ops → assessment FastAPI/MFA → ficha/snapshot/evento/parecer numa transação → gate de publicação. Uma ação na UI, sem reenvio humano prévio; /record e /decision anteriores compatíveis.
+- Publicação humana de todos os mercados → MarketLifecycleEngine → lock/revisão/hash/parecer humano vigente → assinatura/abertura. Recusa 409 antes da assinatura; edição invalida aprovação; gate universal de novas publicações, com validação de fechamento antes da assinatura.
+- Runtime: `apps/mcp/server.py` → delegação interna FastAPI → dez rotas editoriais restritas. Admin Ops → gestão/consentimento/parecer FastAPI; grants PostgreSQL exclusivos da API. Deploy preparado com override MCP + import Caddy e CI de PR; primeira instalação desligada. Ativação explícita pós-merge preserva workload privado 0600. Rollout produtivo ainda não executado.
+- Evidências: [resultados](../testing/mcp-editorial-results.md), [piloto](../../guides/mcp-editorial-pilot.md). Mobile permanece consumidor dos contratos existentes; campos novos são opcionais/aditivos.
+- Fontes: [feature](../features/mcp-editorial-agents.md), [contrato](../contracts/agent-integrations.md), [ADR](../decisions/ADR-0011-mcp-editorial-integrations.md).
+
 ## Analytics proprio (`FEAT-ANALYTICS-001`)
 
 - Browser web → `POST /analytics/events/` no Django com CSRF → `POST /analytics/events` na FastAPI com token de sessao, IP assinado opcional e catalogo validado → PostgreSQL analytics.
@@ -16,7 +37,7 @@
 
 ## Governança editorial — FEAT-EDITORIAL-001
 
-- Implementação: `docs/editorial/*.md` e `criteria-v1.2.json` → `apps/web/django/admin_ops/editorial_content.py` → `GET /admin-ops/editorial/` e atalhos do editor. A leitura é staff/read-only; critérios JSON são insumo versionado futuro, sem avaliação/parecer/gate em FastAPI. Implantação produtiva validada em 2026-09-26.
+- Implementação: `docs/editorial/*.md` e `criteria-v1.2.json` → `apps/web/django/admin_ops/editorial_content.py` → `GET /admin-ops/editorial/` e atalhos do editor. A leitura é staff/read-only; critérios JSON alimentam ficha/parecer universal na FastAPI. Entrega documental produtiva validada em 2026-09-26; evolução universal local em 2026-10-07, sem deploy.
 
 - Spec funcional → `features/editorial-governance.md` → `docs/editorial/manual-editorial.md`, `docs/editorial/ficha-de-mercado.md` e `docs/editorial/checklist-de-publicacao.md`.
 - Dependências documentais: feed/taxonomia (`FEAT-MARKET-001`), sugestões (`FEAT-SUGGEST-001`), resolução (`FEAT-RES-001`) e integridade (`FEAT-INTEGRITY-001`).
@@ -132,3 +153,9 @@
 - `docs/specs/workflows/`: templates canônicos de processo
 - `docs/specs/state/workflow-runs.md`: memória operacional de execuções
 - `docs/specs/state/workflow-checklists.md`: checklists de conclusão e qualidade
+
+- Admin Ops Integrações → `GET /admin/agent-integration-responsibles`: projeção mínima de responsáveis humanos elegíveis pela FastAPI, com sessão MFA e paginação; alimenta seleções de criação/transferência. Não adiciona ferramenta MCP nem acesso ORM no Django.
+
+## 2026-10-07 — revisão editorial universal
+
+WFLOW-20261007-UNIVERSAL-EDITORIAL-001: criação humana/conversão → ficha pendente (origem humana, integration nullable); MCP → ficha com autoria técnica; Admin Ops → assessment humano atestado; MarketLifecycleEngine → configuração de fechamento + aprovação atual → definição assinada. Legados recebem ficha sem mudança de estado/provas. OpenAPI expõe editorial_origin e closure_configuration_errors somente com informação administrativa. FEAT-MCP-001 permanece parcial por homologação externa e deploy. Evidências: [relatório](../testing/universal-editorial-20261007.md).

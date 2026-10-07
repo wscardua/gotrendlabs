@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     "apps.web.django.wallet.apps.WalletConfig",
     "apps.web.django.profiles.apps.ProfilesConfig",
     "apps.web.django.admin_ops.apps.AdminOpsConfig",
+    "apps.web.django.editorial_integrations.apps.EditorialIntegrationsConfig",
     "apps.web.django.agents.apps.AgentsConfig",
     "apps.web.django.system_logs.apps.SystemLogsConfig",
     "apps.web.django.communications.apps.CommunicationsConfig",
@@ -92,6 +93,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.web.django.core.context_processors.session_context",
+                "apps.web.django.admin_ops.navigation.admin_navigation",
             ],
         },
     },
@@ -207,6 +209,8 @@ LOGGING = {
         "level": "INFO",
     },
     "loggers": {
+        # OAuth libraries must never emit protocol tokens to technical logging.
+        "authlib": {"handlers": ["console"], "level": "WARNING", "propagate": False},
         "django.server": {
             "handlers": ["console"],
             "level": "INFO",

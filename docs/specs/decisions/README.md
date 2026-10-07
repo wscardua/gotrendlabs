@@ -1,3 +1,5 @@
+
+- `ADR-0011-mcp-editorial-integrations.md`: MCP editorial sem banco, OAuth/serviço, gestão administrativa equivalente e reutilização de auditoria; implementação local validada; rollout preparado, homologação externa pendente.
 # Decisions
 
 Use este diretório para registrar decisões técnicas estáveis e mudanças que alterem fronteiras, contratos ou fórmulas relevantes.

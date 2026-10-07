@@ -904,6 +904,17 @@ def _save_badge_image(upload):
 
 
 def _market_initial(market):
+    close_value = market.get("close_at") or ""
+    close_zone = market.get("close_timezone") or "America/Sao_Paulo"
+    if close_value:
+        try:
+            instant = datetime.fromisoformat(close_value.replace("Z", "+00:00"))
+            if instant.tzinfo:
+                instant = instant.astimezone(ZoneInfo(close_zone))
+            precision = "microseconds" if instant.microsecond else "seconds" if instant.second else "minutes"
+            close_value = instant.replace(tzinfo=None).isoformat(timespec=precision)
+        except (ValueError, ZoneInfoNotFoundError):
+            pass
     options = market.get("options", [])
     initial = {
         "title": market.get("title", ""),
@@ -924,7 +935,7 @@ def _market_initial(market):
         "image_url": market.get("image_url", ""),
         "resolution_criteria": market.get("resolution_criteria", ""),
         "admin_notes": market.get("admin_notes", ""),
-        "close_at": (market.get("close_at") or "")[:16],
+        "close_at": close_value,
         "close_timezone": market.get("close_timezone") or "America/Sao_Paulo",
         "auto_close_enabled": market.get("auto_close_enabled", True),
         "is_featured": market.get("is_featured", False),
@@ -2062,6 +2073,7 @@ def system_logs(request):
         "user_identifier": request.GET.get("user_identifier") or request.GET.get("user_id") or "",
         "request_id": request.GET.get("request_id") or "",
         "exception_type": request.GET.get("exception_type") or "",
+        **{key: request.GET[key] for key in ("integration_id", "execution_id", "tool", "result") if request.GET.get(key)},
         "from": request.GET.get("from") or "",
         "to": request.GET.get("to") or "",
         "page": "1",
@@ -2657,13 +2669,25 @@ def market_form(request, mode="new", slug=None):
             market = _market_resolution_meta(admin_get_market(token, slug))
         except AuthAPIError as exc:
             error = str(exc)
+    publication_attempt = request.method == "POST" and request.POST.get("action") == "publish-reviewed"
+    if publication_attempt and market:
+        try:
+            if not market.get("editorial_revision"):
+                raise AuthAPIError("Esta ação é exclusiva da versão editorial aprovada.")
+            admin_publish_market(token, slug, request.POST.get("admin_notes") or "Publicação da versão aprovada")
+            messages.success(request, "Versão editorial aprovada publicada.")
+            return redirect("admin-ops-market-edit", slug=market["slug"])
+        except AuthAPIError as exc:
+            error = str(exc)
+            # Render the unchanged version; do not save or upload on this action.
+            # Keep the POST request intact, but exclude it from the edit path.
     try:
         taxonomy_data = admin_get_taxonomy(token)
     except AuthAPIError as exc:
         error = error or str(exc)
     post_data = None
     upload_error = ""
-    if request.method == "POST":
+    if request.method == "POST" and not publication_attempt:
         if request.POST.get("action") == "lock" and mode != "new":
             try:
                 market = admin_lock_market(token, slug, request.POST.get("admin_notes") or "Fechado manualmente pelo admin.")
@@ -2688,7 +2712,7 @@ def market_form(request, mode="new", slug=None):
     if is_readonly:
         for field in form.fields.values():
             field.disabled = True
-    if request.method == "POST" and request.POST.get("action") != "lock" and not upload_error and form.is_valid():
+    if request.method == "POST" and not publication_attempt and request.POST.get("action") != "lock" and not upload_error and form.is_valid():
         if is_readonly:
             error = "Mercados resolvidos ou selados não podem ser alterados."
             return render(
@@ -2717,9 +2741,18 @@ def market_form(request, mode="new", slug=None):
                 market = admin_create_market(token, form.to_payload())
                 slug = market["slug"]
             else:
-                market = admin_update_market(token, slug, form.to_payload())
+                revision = request.POST.get("editorial_revision")
+                try:
+                    expected_revision = int(revision) if revision else None
+                    if expected_revision is not None and expected_revision < 1:
+                        raise ValueError
+                except ValueError:
+                    raise AuthAPIError("Revisão editorial inválida. Recarregue a ficha antes de salvar.")
+                market = admin_update_market(token, slug, {**form.to_payload(), "expected_revision": expected_revision})
                 slug = market["slug"]
-            if action == "publish":
+            if action == "publish" and mode == "new":
+                message = "Rascunho salvo. Confira a ficha e registre o parecer humano antes de publicar."
+            elif action == "publish":
                 market = admin_publish_market(token, slug, form.cleaned_data.get("admin_notes") or "")
                 message = "Mercado publicado."
             elif action == "cancel":
@@ -2731,13 +2764,13 @@ def market_form(request, mode="new", slug=None):
             return redirect("admin-ops-market-edit", slug=market["slug"])
         except AuthAPIError as exc:
             error = str(exc)
-    elif request.method == "POST" and request.POST.get("action") != "lock":
+    elif request.method == "POST" and not publication_attempt and request.POST.get("action") != "lock":
         error = "Revise os campos do mercado."
     title = "Criar mercado" if mode == "new" else "Editar/visualizar mercado"
     preview = market or (form.to_payload() if form.is_valid() else initial)
     option_rows = form.calculated_option_rows() if form.is_bound else form.initial.get("options", [])
     can_manual_close = bool(market and market.get("status") in {"open", "scheduled"} and market.get("auto_close_enabled") is False)
-    can_publish = bool(mode == "new" or not market or market.get("status") in {"draft", "scheduled"})
+    can_publish = False  # Publication is the separate action on the approved saved revision.
     taxonomy_options = _market_taxonomy_options(taxonomy_data)
     market_participants = _market_participants_context(token, market.get("slug") if market else slug)
     return render(

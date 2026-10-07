@@ -536,14 +536,21 @@ async def mobile_maintenance_middleware(request: Request, call_next):
 @app.middleware("http")
 async def system_log_middleware(request: Request, call_next):
     started_at = time.perf_counter()
-    request_id = request.headers.get("x-request-id") or new_request_id()
+    editorial_private = request.url.path.startswith(("/oauth/", "/internal/agent-integrations", "/integrations/editorial", "/admin/agent-"))
+    request_id = new_request_id() if editorial_private else request.headers.get("x-request-id") or new_request_id()
+    from apps.api.backend_api.editorial_context import request_context
+    import uuid
+    execution_id = request.headers.get("x-mcp-execution-id", "")
+    try: execution_id = str(uuid.UUID(execution_id))
+    except ValueError: execution_id = ""
+    request_context.set({"request_id": request_id, "execution_id": execution_id})
     ip_address, user_agent = _client_meta(request)
     user_id = _request_user_id(request.headers.get("authorization", ""))
     try:
         response = await call_next(request)
     except Exception as exc:
         duration_ms = int((time.perf_counter() - started_at) * 1000)
-        exception_type, stack_trace = exception_payload(exc)
+        exception_type, stack_trace = (type(exc).__name__, "") if editorial_private else exception_payload(exc)
         log_system_event(
             level="ERROR",
             source="fastapi",
@@ -560,11 +567,14 @@ async def system_log_middleware(request: Request, call_next):
             user_agent=user_agent,
             exception_type=exception_type,
             stack_trace=stack_trace,
-            context={"headers": request_headers(request.headers), "query": dict(request.query_params)},
+            context={} if editorial_private else {"headers": request_headers(request.headers), "query": dict(request.query_params)},
         )
         raise
     duration_ms = int((time.perf_counter() - started_at) * 1000)
     response.headers["X-Request-ID"] = request_id
+    if editorial_private:
+        response.headers["Cache-Control"] = "private, no-store"
+        response.headers["Pragma"] = "no-cache"
     status_code = response.status_code
     level = "ERROR" if status_code >= 500 else "WARNING" if status_code >= 400 else "INFO"
     log_system_event(
@@ -581,7 +591,7 @@ async def system_log_middleware(request: Request, call_next):
         user_id=user_id,
         ip_address=ip_address,
         user_agent=user_agent,
-        context={"headers": request_headers(request.headers), "query": dict(request.query_params)},
+        context={} if editorial_private else {"headers": request_headers(request.headers), "query": dict(request.query_params)},
     )
     return response
 
@@ -1702,7 +1712,7 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
         SELECT m.id, m.slug, m.title, m.summary, m.kind, m.status, m.status_label,
                m.primary_outcome,
                m.volume_gtl, m.participants, m.source, m.closes_in, m.close_label,
-               m.thumb, m.thumb_color, m.image_url, m.resolution_criteria,
+               m.thumb, m.thumb_color, m.image_url, m.resolution_criteria, m.admin_notes,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
                m.published_at, m.seal_due_at, m.sealed_at, m.integrity_version,
@@ -2019,7 +2029,17 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         integrity_status = "canceled_preserved"
     else:
         integrity_status = "registered"
+    editorial_meta = None
+    if not filter_public_image:
+        cursor.execute("SELECT revision,state,integration_id FROM gotrendlabs_agent_editorial_drafts WHERE market_id=%s", (row["id"],))
+        editorial_meta = cursor.fetchone()
     return {
+        "admin_notes": (row.get("admin_notes") or "") if not filter_public_image else "",
+        "editorial_origin": ("mcp" if editorial_meta["integration_id"] else "human") if editorial_meta else None,
+        "closure_configuration_errors": _closure_configuration_errors(row) if not filter_public_image else [],
+        "editorial_market_id": row["id"] if editorial_meta else None,
+        "editorial_revision": editorial_meta["revision"] if editorial_meta else None,
+        "editorial_status": editorial_meta["state"] if editorial_meta else None,
         "slug": row["slug"],
         "title": row["title"],
         "category": row["category"],
@@ -3929,17 +3949,38 @@ def _save_market_options(cursor, market_id, options, *, preserve_existing_probab
     cursor.execute("DELETE FROM gotrendlabs_market_options WHERE id = ANY(%s)", (removed_ids,))
 
 
+def _closure_configuration_errors(market, *, publishing=False):
+    errors = []
+    close_at = market.get("close_at")
+    if not close_at:
+        errors.append("Defina a data/hora de fechamento para o modo automático ou manual.")
+    elif not close_at.tzinfo:
+        errors.append("A data/hora de fechamento deve incluir fuso horário.")
+    elif publishing and close_at <= datetime.now(timezone.utc):
+        errors.append("O prazo de fechamento deve estar no futuro ao publicar.")
+    try:
+        ZoneInfo(market.get("close_timezone") or "")
+    except (ZoneInfoNotFoundError, ValueError):
+        errors.append("Selecione um fuso de fechamento válido.")
+    if market.get("auto_close_enabled") not in (True, False):
+        errors.append("Escolha fechamento automático ou manual.")
+    return errors
+
+
 def _validate_publishable(cursor, market_id):
     cursor.execute(
         """
         SELECT title, summary, source, resolution_criteria, close_at, close_timezone, thumb_color,
-               kind, category_id, subcategory_id, event_id
+               kind, category_id, subcategory_id, event_id, auto_close_enabled
         FROM gotrendlabs_markets
         WHERE id = %s
         """,
         (market_id,),
     )
     market = cursor.fetchone()
+    closure_errors = _closure_configuration_errors(market, publishing=True)
+    if closure_errors:
+        raise HTTPException(422, detail={"code": "closure_configuration_invalid", "message": "Publicação bloqueada: " + " ".join(closure_errors), "errors": closure_errors})
     missing = []
     for field in ("title", "summary", "source", "resolution_criteria", "close_at", "close_timezone", "thumb_color", "event_id"):
         if not market[field]:
@@ -5296,6 +5337,10 @@ def admin_list_system_logs(
     user_identifier: str = Query(default=""),
     request_id: str = Query(default=""),
     exception_type: str = Query(default=""),
+    integration_id: str = Query(default="", max_length=36),
+    execution_id: str = Query(default="", max_length=100),
+    tool: str = Query(default="", max_length=80),
+    result: str = Query(default="", max_length=16),
     from_date: Optional[datetime] = Query(default=None, alias="from"),
     to_date: Optional[datetime] = Query(default=None, alias="to"),
     page: int = Query(default=1, ge=1),
@@ -5345,6 +5390,10 @@ def admin_list_system_logs(
             like = f"%{user_identifier_search}%"
             where.append("(u.username ILIKE %s OR u.email ILIKE %s OR u.first_name ILIKE %s)")
             params.extend([like, like, like])
+    for field, value in (("integration_id", integration_id), ("execution_id", execution_id), ("tool", tool), ("result", result)):
+        if value:
+            where.append("l.context->>'" + field + "' = %s")
+            params.append(value)
     if request_id:
         where.append("l.request_id = %s")
         params.append(request_id)
@@ -6488,66 +6537,73 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
             subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
             event = _upsert_event(cursor, subcategory["id"], payload.event)
             _ensure_taxonomy_available(category, subcategory, event)
-            slug = _slug_seed(payload.slug or payload.title)
-            cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug = %s", (slug,))
-            if cursor.fetchone():
-                raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de mercado já está em uso.")
-            options = _normalize_market_options(payload)
-            _validate_admin_market_payload(payload)
-            _ensure_featured_allowed("draft", payload.is_featured)
-            primary = payload.primary_outcome or (options[0]["label"] if options else "")
-            _sync_featured_market(cursor, None, payload.is_featured)
-            cursor.execute(
-                """
-                INSERT INTO gotrendlabs_markets
-                    (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
-                     primary_outcome, volume_gtl, participants,
-                     source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
-                     close_at, close_timezone, auto_close_enabled, is_featured,
-                     resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
-                     view_count, share_count, integrity_version, display_order, created_at, updated_at)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                        0, 0, '', (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
-                RETURNING id
-                """,
-                (
-                    category["id"],
-                    subcategory["id"],
-                    event["id"],
-                    slug,
-                    payload.title.strip(),
-                    payload.summary.strip(),
-                    payload.kind,
-                    payload.status_label or "Rascunho",
-                    primary,
-                    payload.volume_gtl,
-                    payload.participants,
-                    payload.source.strip(),
-                    _payload_closes_in(payload),
-                    payload.close_label,
-                    payload.thumb,
-                    payload.thumb_color,
-                    payload.image_url,
-                    payload.resolution_criteria.strip(),
-                    payload.close_at,
-                    payload.close_timezone,
-                    payload.auto_close_enabled,
-                    payload.is_featured,
-                    payload.resolution_type,
-                    "",
-                    payload.resolution_note,
-                    payload.admin_notes,
-                    staff["id"],
-                    staff["id"],
-                    datetime.now(timezone.utc),
-                    datetime.now(timezone.utc),
-                ),
-            )
-            market_id = cursor.fetchone()["id"]
-            _save_market_options(cursor, market_id, options)
-            _record_admin_event(cursor, staff["id"], "market.create", "market", slug, payload.admin_notes)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
+            return _insert_market_draft(cursor, payload, category, subcategory, event, staff["id"])
 
+
+def _insert_market_draft(cursor, payload, category, subcategory, event, actor_id, *, record_event=True):
+    slug = _slug_seed(payload.slug or payload.title)
+    cursor.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", ("market-slug:" + slug,))
+    cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug = %s", (slug,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Slug de mercado já está em uso.")
+    options = _normalize_market_options(payload)
+    _validate_admin_market_payload(payload)
+    _ensure_featured_allowed("draft", payload.is_featured)
+    primary = payload.primary_outcome or (options[0]["label"] if options else "")
+    _sync_featured_market(cursor, None, payload.is_featured)
+    cursor.execute(
+        """
+        INSERT INTO gotrendlabs_markets
+            (category_id, subcategory_id, event_id, slug, title, summary, kind, status, status_label,
+             primary_outcome, volume_gtl, participants,
+             source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
+             close_at, close_timezone, auto_close_enabled, is_featured,
+             resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
+             view_count, share_count, integrity_version, display_order, created_at, updated_at)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                0, 0, '', (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
+        RETURNING id
+        """,
+        (
+            category["id"],
+            subcategory["id"],
+            event["id"],
+            slug,
+            payload.title.strip(),
+            payload.summary.strip(),
+            payload.kind,
+            payload.status_label or "Rascunho",
+            primary,
+            payload.volume_gtl,
+            payload.participants,
+            payload.source.strip(),
+            _payload_closes_in(payload),
+            payload.close_label,
+            payload.thumb,
+            payload.thumb_color,
+            payload.image_url,
+            payload.resolution_criteria.strip(),
+            payload.close_at,
+            payload.close_timezone,
+            payload.auto_close_enabled,
+            payload.is_featured,
+            payload.resolution_type,
+            "",
+            payload.resolution_note,
+            payload.admin_notes,
+            actor_id,
+            actor_id,
+            datetime.now(timezone.utc),
+            datetime.now(timezone.utc),
+        ),
+    )
+    market_id = cursor.fetchone()["id"]
+    _save_market_options(cursor, market_id, options)
+    if record_event:
+        from apps.api.backend_api.editorial_service import initialize_human_editorial
+        initialize_human_editorial(cursor, market_id)
+        _record_admin_event(cursor, actor_id, "market.create", "market", slug, payload.admin_notes)
+    return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 @app.get("/admin/markets/{slug}", response_model=MarketResponse)
 def admin_get_market(slug: str, authorization: str = Header(default="")):
@@ -6562,7 +6618,10 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
+            cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug=%s FOR UPDATE", (slug,))
             row = _admin_market_by_slug(cursor, slug)
+            from apps.api.backend_api.editorial_service import human_edit_guard, human_edit_done
+            editorial_draft = human_edit_guard(cursor, row["id"], payload.expected_revision)
             if row["status"] in {"resolved", "sealed"}:
                 raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Mercados resolvidos ou selados não podem ser alterados.")
             cursor.execute("SELECT 1 FROM market_integrity_definitions WHERE market_id = %s", (row["id"],))
@@ -6586,7 +6645,16 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 existing_options = [{"label": option["label"], "hint": option["hint"] or ""} for option in cursor.fetchall()]
                 requested_options = [{"label": option.label.strip(), "hint": option.hint.strip()} for option in payload.options]
                 if protected_current != protected_requested or existing_options != requested_options:
-                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="A definição registrada não pode ser alterada após a publicação.")
+                    closure_changed = any(
+                        protected_current[field] != protected_requested[field]
+                        for field in ("close_at", "close_timezone", "auto_close_enabled")
+                    )
+                    detail = (
+                        "Alterações não salvas: a data, o fuso e o modo de fechamento fazem parte da definição assinada "
+                        "e não podem ser alterados após a publicação pelo salvamento comum."
+                        if closure_changed else "A definição registrada não pode ser alterada após a publicação."
+                    )
+                    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail)
             category = _upsert_category(cursor, payload.category)
             subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
             event = _upsert_event(cursor, subcategory["id"], payload.event)
@@ -6681,6 +6749,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 ),
             )
             _save_market_options(cursor, row["id"], options, preserve_existing_probability=preserve_operational_fields)
+            human_edit_done(cursor, row["id"], editorial_draft)
             _record_admin_event(cursor, staff["id"], "market.update", "market", new_slug, payload.admin_notes)
             return _market_response(cursor, _admin_market_by_slug(cursor, new_slug), filter_public_image=False)
 
@@ -7153,6 +7222,8 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
             )
             market_id = cursor.fetchone()["id"]
             _save_market_options(cursor, market_id, options)
+            from apps.api.backend_api.editorial_service import initialize_human_editorial
+            initialize_human_editorial(cursor, market_id)
             cursor.execute(
                 """
                 UPDATE gotrendlabs_market_suggestions
@@ -8713,3 +8784,33 @@ def get_rankings(
                 "selected_subcategory": selected_subcategory,
                 "selected_event": selected_event,
             }
+
+
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(RequestValidationError)
+async def editorial_validation_error(request, exc):
+    if request.url.path.startswith("/integrations/editorial"):
+        from apps.api.backend_api import editorial_auth as auth
+        from apps.api.backend_api.editorial_routes import technical
+        from starlette.concurrency import run_in_threadpool
+        path = request.url.path
+        scope = "drafts:submit" if path.endswith("/submit") else "editorial:read" if path.endswith(("/policy", "/review")) else "metrics:read" if path.endswith("/signals") else "drafts:write" if "/drafts" in path else "catalog:read"
+        try:
+            auth.workload(request.headers.get("x-mcp-workload", ""))
+            token, lease = await run_in_threadpool(auth.reserve_call, auth.bearer(request.headers.get("authorization", "")), scope)
+            await run_in_threadpool(auth.release_call, lease)
+        except HTTPException as error:
+            return JSONResponse({"detail": error.detail}, status_code=error.status_code, headers=error.headers)
+        technical(token, "validation", "failed", new_request_id())
+    if request.url.path.startswith(("/oauth/", "/integrations/editorial", "/internal/agent-integrations", "/admin/agent-")):
+        return JSONResponse({"detail": {"code": "validation_failed", "message": "Invalid editorial request"}}, status_code=422)
+    return await request_validation_exception_handler(request, exc)
+
+from apps.api.backend_api.editorial_routes import router as editorial_router
+app.include_router(editorial_router)
+
+from apps.api.backend_api.editorial_limits import EditorialBodyLimit
+app.add_middleware(EditorialBodyLimit)

@@ -37,6 +37,7 @@
 - A transição `locked -> resolved` exige operador ou processo autorizado, evidência, justificativa, opção vencedora, data/hora efetiva e timezone de resolução.
 - `resolved_at` deve guardar o momento efetivo da resolução; `resolution_timezone` deve preservar o timezone selecionado para apresentação/auditoria.
 - Timezone de resolução no Admin Ops deve ser selecionado a partir de lista controlada, não informado em texto livre.
+- Para todos os mercados (FEAT-EDITORIAL-001 v1.3 / FEAT-MCP-001 v1.4), `draft/scheduled -> open` exige parecer humano aprovado da revisão/hash/conteúdo/política atuais. Verificar após lock do mercado e antes da assinatura; recusar com `409 detail.code=editorial_approval_required`. Edição invalida aprovação. Ausência de ficha ou parecer atual bloqueia igualmente mercados humanos e MCP.
 - No backend, publicação, fechamento manual, fechamento automático, cancelamento, resolução e desfazer resolução devem permanecer centralizados em `MarketLifecycleEngine`, operando sobre cursor/transação recebidos de fora.
 - Cancelamento administrativo muda o mercado para `canceled`, preserva o registro e deve gravar evento administrativo.
 - `canceled` devolve 100% dos stakes bloqueados por previsões abertas, marca previsões como `canceled` e não altera reputação.
@@ -74,3 +75,15 @@
 - `event_id`
 - `event_notice`
 - estado de bloqueio da taxonomia no contrato administrativo
+
+## Revisão aprovada pelo usuário em 2026-10-07 — gate universal
+
+Todo mercado possui ficha editorial estruturada e revisão humana, independentemente de origem. Nova publicação exige aprovação vigente da versão/hash/política/conteúdo e configuração válida de fechamento. Ambos os modos exigem data/hora futura e fuso válido; automático registra auto_close_enabled=true para execução pelo daemon, manual registra false e deixa a ação staff disponível. A validação não comprova a disponibilidade momentânea do daemon. Legados publicados recebem ficha pendente sem mudar lifecycle, previsões ou provas; nenhum parecer fictício. Substitui explicitamente a exceção anterior para mercados humanos.
+
+### Fechamento incompleto em definição publicada
+
+O gate impede novas publicações incompletas; não autoriza alterar prazos/fuso/modo de uma definição já assinada. PATCH rejeitado conserva o registro original. A UI distingue informações submetidas de dados persistidos e explica essa proteção; não deve solicitar repetidamente o preenchimento como se a correção comum estivesse disponível. Correção de definição publicada exige fluxo auditável próprio, ainda fora deste contrato; cancelamento com refund permanece ação humana separada.
+
+## Entrada de data/hora no Admin Ops
+
+O formulário interpreta `datetime-local` como hora de parede no fuso explicitamente escolhido, tanto para fechamento quanto resolução; envia instante com offset à FastAPI. Não aplicar primeiro o fuso padrão Django. Recusar horas ambíguas/inexistentes em transições DST, orientando escolha inequívoca/UTC. Abertura e reenvio do editor preservam segundos/microssegundos de prazos originados por API/MCP. Criação humana salva draft para parecer; publicação é ação sobre versão salva e aprovada.

@@ -33,7 +33,11 @@
 		file_server
 	}
 
-	handle_path /api/* {
+	import /etc/caddy/mcp-routes.caddy
+
+	@api_routes path /api/*
+	handle @api_routes {
+		uri strip_prefix /api
 		reverse_proxy fastapi:8001
 	}
 

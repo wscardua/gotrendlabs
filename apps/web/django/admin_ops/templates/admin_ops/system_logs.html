@@ -71,6 +71,10 @@
         <span>Request ID</span>
         <input type="text" name="request_id" value="{{ filters.request_id }}">
       </label>
+      <label><span>Integração</span><input name="integration_id" value="{{ filters.integration_id }}" maxlength="36"></label>
+      <label><span>Execução MCP</span><input name="execution_id" value="{{ filters.execution_id }}" maxlength="100"></label>
+      <label><span>Ferramenta MCP</span><input name="tool" value="{{ filters.tool }}" maxlength="80"></label>
+      <label><span>Resultado MCP</span><input name="result" value="{{ filters.result }}" maxlength="16"></label>
       <label>
         <span>Usuário</span>
         <input type="search" name="user_identifier" value="{{ filters.user_identifier }}" list="system-log-users" placeholder="Digite @handle, nome ou email">

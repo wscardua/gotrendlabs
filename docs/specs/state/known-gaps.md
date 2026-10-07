@@ -1,5 +1,21 @@
 # Known Gaps
 
+## Follow-up do review MCP — 2026-10-07
+
+- Recomendações 1/2: dependências/migrations adicionadas ao índice e teste de asset sem versão literal; snapshot limpo com instalação/migrations e 74 testes aprovados. Item 3 (POST web com revisão inválida) foi posteriormente corrigido no fechamento MCP, com resposta controlada e sem mutação. [Evidências 1/2](../testing/mcp-branch-review-followup-20261007.md) e [correção 3](../testing/mcp-closeout-20261007.md).
+
+## Limites do ensaio DEV — 2026-10-07
+
+- Catálogo anterior removido por pedido do operador, após backup; referências históricas aos IDs 1/2/3/5 não representam o DEV atual. Novos cenários sintéticos #6/#7 validam o software, não pesquisa/qualidade editorial de um executor LLM externo. Fechamento automático e auditoria reais passaram, mas este ensaio não comprova cadência persistente 24 h nem selagem após sua janela normal. [Relatório](../testing/dev-catalog-rehearsal-20261007.md).
+
+## MCP editorial — FEAT-MCP-001
+
+- OAuth/serviço, gestão, drafts/ficha/revisão, cotas persistentes, auditoria e cliente SDK real implementados/testados localmente; pacote de deploy integrado e configurador validado, mas rollout não executado. [Fechamento](../testing/mcp-closeout-20261007.md) aguarda aprovação da PR. HTTPS/discovery no domínio público e homologação da conta Dot continuam pendentes. [Resultados](../testing/mcp-editorial-results.md), [runbook](../../guides/mcp-editorial-pilot.md).
+- Runtime de tokens/codes/idempotência/quotas conserva registros nesta versão; monitorar crescimento e definir limpeza sem enfraquecer replay/reuse. Spool técnico é limitado e pode perder eventos por saturação/TTL ou revogação.
+- Dot é executor-alvo, não conexão validada. Homologação deve comprovar OAuth, tools de escrita, recorrência/renovação e revogação na conta real; documentação geral não substitui teste.
+- Futuro: divisão staff/superuser e/ou por proprietário; nesta versão todos os gestores administrativos com MFA têm as mesmas capacidades.
+- Publicação de mercados de integração exige parecer humano aprovado para a versão atual no MarketLifecycleEngine, inclusive estado scheduled. Gate universal de novas publicações foi solicitado e implementado localmente nesta revisão. Controle remoto do Dot, custo LLM exato e apagamento de memória externa não são prometidos.
+
 - `FEAT-ANALYTICS-001`: a coleta inicial cobre navegacao web, cards, filtros e fluxos-chave; o mobile cobre abas, detalhe, cliques em cards, busca e ticket no código, mas novos binários ainda precisam ser distribuídos para alcançar aparelhos instalados. O site produtivo estava em manutenção no smoke, sem eventos humanos na janela de 24 h; observar coleta real após reabertura. Outros controles existentes ainda precisam de instrumentacao explicita. O funil de sessoes mede ate o clique em confirmar; um indicador separado associa ticket autenticado a primeira previsao persistida por conta/mercado em sete dias, mas nao identifica a tentativa exata. Cadastros e previsoes totais continuam globais, sem atribuicao regional ou de origem. GeoLite City está instalada no desenvolvimento e na produção, com caminho e proxy configurados; o importador registra execucoes e o painel mostra a ultima carga, mas a atualizacao da base ainda e manual, sem agendamento automatico. Sem arquivo ou proxy confiavel, geografia permanece desconhecida. Mapa SVG das UFs, rankings e evolucao diaria estao disponiveis; o funil de desistencia agrupa sessao/mercado e exige 30 minutos de inatividade, mas nao identifica o motivo nem separa tentativas repetidas no mesmo mercado. Retencao D1/D7/D30 por visitante e conta esta disponivel, mas o identificador anonimo pode mudar no logout e nao representa pessoa. Não há outbox de Analytics; fila offline mobile, preferencias de coleta na UI, funis personalizados e coortes avancadas seguem pendentes. Nao interpretar o dashboard como cobertura completa da plataforma.
 
 - FEAT-AUTH-001 MFA administrativo: recuperação/redefinição de fator é restrita a superuser já MFA-validado com nota auditável. A chave `GOTRENDLABS_TOTP_ENCRYPTION_KEY` é entregue exclusivamente à FastAPI pelo arquivo operacional `.env.auth.prod`, sincronizado a partir de `gotrendlabs/prod/app-secrets`; perdê-la torna fatores existentes irrecuperáveis e exige recuperação administrativa controlada. O app mobile não possui superfície administrativa e, nesta etapa, não implementa o desafio TOTP para operadores: o contrato de login administrativo deve permanecer incompatível com o app até uma melhoria futura criar esse fluxo explicitamente.
@@ -8,8 +24,8 @@
 
 ## Editorial — evoluções futuras
 
-- `FEAT-EDITORIAL-001` entrega manual/ficha, consulta read-only no Admin Ops e critérios versionados. Avaliação assistida por IA, parecer estruturado e bloqueio de publicação por aprovação editorial são evolução futura separada; a API atual não os exige.
-- Automatização futura precisa de aprovação vinculada à versão, invalidação após edição, autorização, auditoria e cobertura de publicação direta/agendada na FastAPI; não implementar regra crítica apenas no Django.
+- `FEAT-EDITORIAL-001` entrega manual/ficha, consulta read-only no Admin Ops e critérios versionados. Parecer estruturado de drafts de integração pertence à FEAT-MCP-001 e está implementado localmente. Avaliação LLM própria continua evolução separada; revisão universal foi solicitada em 2026-10-07 e implementada localmente, com approval e configuração de fechamento na API.
+- Mercados de integração já possuem aprovação vinculada à versão, invalidação após edição e bloqueio na publicação draft/scheduled pela FastAPI. A extensão a todos os mercados está implementada localmente; automação de publicação permanece fora do escopo.
 - Não há telemetria nova; indicadores ausentes devem ser registrados como indisponíveis. O piloto foi removido na revisão v1.1. Esses itens estão fora do escopo desta entrega, não são bloqueios da implantação.
 
 
@@ -44,3 +60,14 @@
 - Infra MVP possui base AWS real em `us-east-1` com EC2 única, RDS gerenciado privado, SSM, CloudWatch mínimo, `.env.prod` operacional fora do Git, role OIDC e variables obrigatórias do GitHub Actions configuradas; deploy automático da `main` está ativo. Ainda faltam IaC/Terraform, registry de imagem, observabilidade externa e separação física/identidade por workload para FastAPI/daemon quando o tráfego justificar.
 - Backup retention do RDS esta em `1` dia por restricao do plano AWS `FREE`; revisar para `7` dias quando a conta permitir.
 - Agentes IA oficiais possuem primeira política de liquidez bot conservadora e determinística; estratégias econômicas avançadas, materialização temporal de estado por mercado e avaliação financeira mais rica ficam para etapa futura.
+
+- Revisão MCP: preparação humana da ficha e reenvio no Admin Ops implementados localmente (v1.2); não é mais necessário executor externo para retomar parecer após save humano. Homologação Dot/HTTPS e deploy continuam pendentes.
+
+- Revisão MCP v1.3 unifica conferência/ficha e parecer em uma ação humana; sequência de dois formulários v1.2 substituída na UI. Mantém gate, snapshots e contratos anteriores; sem homologação externa/deploy.
+
+## Revisão universal — pendências operacionais
+
+- DEV legados #1–#3 receberam fichas pendentes, sem aprovação inventada. #3 lider-vendas-ev-4t26 está aberto e sem close_at/close_timezone; requer análise e correção operacional pelo humano, respeitando definição assinada. Não foi fechado/cancelado/alterado automaticamente. Novas publicações com essa configuração são bloqueadas.
+- Deploy desta revisão não executado. Dot/HTTPS/renovação externa seguem pendentes conforme FEAT-MCP-001. Gate valida configuração persistida; não garante disponibilidade do daemon nem veracidade das evidências humanas.
+
+- 2026-10-07, fechamento legado publicado: EV tem definição assinada com prazo/fuso ausentes. PATCH comum rejeita alteração para preservar integridade; campo preenchido não significa persistido. Mensagens foram corrigidas. Não existe fluxo de retificação assinada de prazo nesta versão. Correção exige evolução explícita auditável; cancelamento/refund continua operação humana separada.

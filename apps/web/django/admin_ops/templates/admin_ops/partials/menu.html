@@ -1,4 +1,5 @@
 <aside class="panel admin-menu">
+  <a class="{% if active == 'integrations' %}active{% endif %}" href="{% url 'admin-ops-integrations' %}">Integrações e agentes</a>
   <a class="{% if active == 'dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
   <a class="{% if active == 'analytics' %}active{% endif %}" href="{% url 'admin-ops-analytics' %}">Analytics</a>
   <a class="{% if active == 'config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>

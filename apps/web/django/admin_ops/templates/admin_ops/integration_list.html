@@ -1,0 +1,33 @@
+{% extends 'admin_base.html' %}
+{% load i18n %}
+{% block title %}GoTrendLabs Admin | {% trans 'Integrações' %}{% endblock %}
+{% block content %}
+<main class="shell admin-layout">
+  <section>
+    <div class="section-head">
+      <div><span class="eyebrow">{% trans 'Automação editorial' %}</span><h1 class="large-title">{% trans 'Integrações' %}</h1><p>{% trans 'Gestão de executores externos, permissões e auditoria editorial.' %}</p></div>
+      <div class="section-actions"><a class="btn ghost" href="{% url 'admin-ops-agent-reviews' %}">{% trans 'Revisão editorial' %}</a><a class="btn primary" href="{% url 'admin-ops-integration-new' %}">{% trans 'Nova integração' %}</a></div>
+    </div>
+    {% if admin_error %}<div class="admin-alert risk" role="alert">{{ admin_error }}</div>{% endif %}
+    <div class="admin-dashboard-kpis">
+      <div class="admin-card dashboard-kpi"><span>{% trans 'Integrações' %}</span><strong>{{ items|length }}</strong><small>{% trans 'Cadastros nesta página' %}</small></div>
+      <div class="admin-card dashboard-kpi"><span>{% trans 'Ativas' %}</span><strong>{{ integration_counts.active }}</strong><small>{% trans 'Acesso disponível' %}</small></div>
+      <div class="admin-card dashboard-kpi"><span>{% trans 'Pausadas' %}</span><strong>{{ integration_counts.paused }}</strong><small>{% trans 'Acesso interrompido' %}</small></div>
+      <div class="admin-card dashboard-kpi"><span>{% trans 'Expiradas ou revogadas' %}</span><strong>{{ integration_counts.expired|add:integration_counts.revoked }}</strong><small>{% trans 'Histórico preservado' %}</small></div>
+    </div>
+    <section class="panel admin-dashboard-panel">
+      <div class="section-head compact"><div><h3>{% trans 'Integrações cadastradas' %}</h3><p>{% trans 'OAuth ou credenciais de serviço. Staff e superuser com MFA gerenciam os mesmos acessos.' %}</p></div></div>
+      <div class="integration-table-scroll"><table class="table dashboard-table">
+        <thead><tr><th>{% trans 'Integração' %}</th><th>{% trans 'Responsável' %}</th><th>{% trans 'Status' %}</th><th>{% trans 'Permissões' %}</th><th>{% trans 'Validade' %}</th><th>{% trans 'Último uso' %}</th><th>{% trans 'Ação' %}</th></tr></thead>
+        <tbody>{% for item in items %}<tr><td><strong>{{ item.name }}</strong><small>{{ item.description|truncatechars:80 }}</small></td><td>{{ item.responsible_name }}</td><td>{% include 'admin_ops/partials/integration_state.html' with state=item.effective_state|default:item.state %}</td><td>{{ item.scopes|length }} {% trans 'permissões' %}</td><td>{{ item.expires_at|slice:':10' }}</td><td>{{ item.last_used_at|slice:':16'|default:'—' }}</td><td><a class="btn small" href="{% url 'admin-ops-integration-detail' identifier=item.id %}">{% trans 'Gerenciar' %}</a></td></tr>{% empty %}<tr><td colspan="7">{% trans 'Nenhuma integração cadastrada. Use Nova integração para conectar um executor.' %}</td></tr>{% endfor %}</tbody>
+      </table></div>
+    </section>
+    <section class="panel admin-dashboard-panel">
+      <div class="section-head compact"><div><h3>{% trans 'Auditoria recente' %}</h3><p>{% trans 'Chamadas editoriais registradas nos logs centralizados, sem tokens ou prompts.' %}</p></div><a class="btn small ghost" href="{% url 'admin-ops-system-logs' %}?logger=editorial">{% trans 'Ver todos os logs' %}</a></div>
+      <div class="integration-table-scroll"><table class="table dashboard-table"><thead><tr><th>{% trans 'Quando' %}</th><th>{% trans 'Integração' %}</th><th>{% trans 'Ferramenta' %}</th><th>{% trans 'Resultado' %}</th><th>{% trans 'Etapa' %}</th><th>{% trans 'Ação' %}</th></tr></thead><tbody>
+      {% for log in activity %}<tr><td>{{ log.created_at|slice:':16' }}</td><td>{{ log.integration_name|default:log.context.integration_id }}</td><td><strong>{{ log.context.tool }}</strong></td><td>{{ log.context.result }}</td><td>{{ log.context.stage }}</td><td><a class="btn small ghost" href="{% url 'admin-ops-system-log-detail' log_id=log.id %}">{% trans 'Detalhe' %}</a></td></tr>{% empty %}<tr><td colspan="6">{% trans 'Nenhuma chamada editorial registrada.' %}</td></tr>{% endfor %}
+      </tbody></table></div>
+    </section>
+  </section>
+</main>
+{% endblock %}

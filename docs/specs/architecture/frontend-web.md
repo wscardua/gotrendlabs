@@ -101,3 +101,18 @@
 - Cards `resolved`/`sealed` usam CTA `Resultado`; compartilhar e uma acao secundaria somente por icone, com `aria-label` e tooltip explicitos.
 - Estados de integridade usam verde apenas para verificacao aprovada, azul para registro em curso, amarelo para prazo/retry operacional, cinza para aguardando/nao aplicavel/legado e vermelho apenas para diferenca criptografica. Mercado cancelado informa registros preservados e marca resultado/finalizacao como `Nao se aplica`.
 - Recibos autenticados de previsao usam o mesmo modal compartilhado, com rota completa como fallback. O detalhe lista cada acao da posicao por `prediction_id`, tipo e sequencia, permitindo abrir separadamente a assinatura da entrada inicial, de cada reforco e de cada revisao.
+
+## Navegação compartilhada do Admin Ops
+
+- O shell administrativo usa menu lateral agrupado por Visão geral, Mercados e editorial, Pessoas e automação, Comunicações e Plataforma, seguindo os tokens existentes de tema, tipografia e campos.
+- Busca local filtra destinos e normaliza acentos; a rota Django identifica uma única página ativa, inclusive em detalhes e ações aninhadas. O context processor apenas resolve links, sem consultar banco ou autorizar operações.
+- Em viewport de até 980 px, JavaScript apresenta drawer pelo botão Menu, com Escape, retorno e contenção de foco, backdrop e conteúdo inerte. Sem JavaScript, os destinos permanecem visíveis no fluxo da página.
+- A navegação pública e os controles staff/MFA/API continuam sob seus contratos próprios.
+
+- A fila e o detalhe do parecer editorial reutilizam a composição Admin Ops de cabeçalho/ações, registros e seções de configuração. Ficha, critérios/fontes, decisão e histórico permanecem separados; campos mantêm labels, CSRF e revisão/hash esperados. O aviso explica o gate universal para rascunhos/agendados e o histórico nos mercados já publicados.
+
+- Editor administrativo informa publicação realizada e estado lifecycle atual em todos os mercados publicados, com ou sem ficha de integração. Cancelados mostram cancelamento; o link de parecer aparece para todos os mercados com ficha, humanos ou MCP; bloqueio pré-publicação exige parecer e fechamento completos.
+
+## Ensaio DEV dos formulários editoriais (2026-10-07)
+
+Campos de fechamento/resolução usam hora local + fuso selecionado e preservam precisão do instante entre API e formulário. A UI recusa ambiguidade DST; FastAPI conserva validações e gate. Novo mercado salva draft antes do parecer e da ação de publicar versão aprovada. Notas administrativas retornam apenas na projeção administrativa. Ver [ensaio DEV](../testing/dev-catalog-rehearsal-20261007.md).
