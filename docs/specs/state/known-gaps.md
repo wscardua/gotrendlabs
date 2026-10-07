@@ -10,7 +10,7 @@
 
 ## MCP editorial — FEAT-MCP-001
 
-- Codex Desktop/CLI: login falha em produção no registro dinâmico (422, application_type native); divergência textual de issuer também identificada. Correção local em WFLOW-20261007-MCP-CODEX-OAUTH-001 validada com 50 testes aguarda PR/rollout e repetição do login humano. Não declarar cliente autenticado antes disso.
+- Codex Desktop/CLI: falha DCR 422 e divergência de issuer corrigidas e implantadas pela PR #138; CLI real registrou cliente/atingiu URL de autorização em produção. Consentimento humano/MFA e piloto autenticado do Desktop permanecem pendentes; não declarar grant/token emitido. [Evidências](../testing/mcp-codex-oauth-20261007.md).
 
 - OAuth/serviço, gestão, drafts/ficha/revisão, cotas persistentes, auditoria e cliente SDK real implementados/testados localmente; rollout PR #136/Actions aprovado e MCP habilitado. [HTTPS/discovery/grants/isolamento produtivos conferidos](../testing/mcp-production-rollout-20261007.md). Homologação da conta Dot e piloto autenticado produtivo continuam pendentes. [Resultados](../testing/mcp-editorial-results.md), [runbook](../../guides/mcp-editorial-pilot.md).
 - Runtime de tokens/codes/idempotência/quotas conserva registros nesta versão; monitorar crescimento e definir limpeza sem enfraquecer replay/reuse. Spool técnico é limitado e pode perder eventos por saturação/TTL ou revogação.
