@@ -1,4 +1,4 @@
-{% load static %}
+{% load static i18n %}
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -10,13 +10,15 @@
   <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml">
   <meta name="theme-color" content="#F4F2E9" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#101413" media="(prefers-color-scheme: dark)">
-  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20260926-editorial-reference">
+  <link rel="stylesheet" href="{% static 'css/gotrendlabs.css' %}?v=20261007-editorial-ux-002b">
   {% block extra_head %}{% endblock %}
-  <script src="{% static 'js/gotrendlabs.js' %}?v=20260611-email-preview-footer" defer></script>
+  <script src="{% static 'js/gotrendlabs.js' %}?v=20261007-editorial-ux-002b" defer></script>
 </head>
-<body>
+<body class="admin-shell">
+  <a class="admin-skip-link" href="#admin-content">{% trans 'Ir para o conteúdo' %}</a>
   <header class="topbar admin-topbar">
-    <nav class="shell nav admin-nav">
+    <nav class="shell nav admin-nav" aria-label="{% trans 'Cabeçalho administrativo' %}">
+      <button class="btn ghost admin-menu-toggle" type="button" data-admin-menu-toggle aria-controls="admin-navigation" aria-expanded="false"><span aria-hidden="true">☰</span> {% trans 'Menu' %}</button>
       <a class="brand" href="{% url 'admin-ops-dashboard' %}" aria-label="GoTrendLabs Admin">
         <span class="brand-logo" aria-hidden="true">
           <img class="brand-logo-image brand-logo-light" src="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260604-split-lockup" alt="">
@@ -25,26 +27,10 @@
         <span class="brand-wordmark">GoTrendLabs</span>
         <span class="brand-admin-label">Admin</span>
       </a>
-      <div class="nav-links admin-nav-links">
-        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-dashboard' %}active{% endif %}" href="{% url 'admin-ops-dashboard' %}">Dashboard</a>
-        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-analytics' %}active{% endif %}" href="{% url 'admin-ops-analytics' %}">Analytics</a>
-        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-config' %}active{% endif %}" href="{% url 'admin-ops-config' %}">Config</a>
-        <a class="nav-link {% if 'email-' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-email-templates' %}">Politica de Emails</a>
-        <a class="nav-link {% if 'push-' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-push-templates' %}">Push mobile</a>
-        <a class="nav-link {% if 'mobile-release' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-mobile-releases' %}">App Android</a>
-        <a class="nav-link {% if 'ai-agent' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-ai-agents' %}">Agentes IA</a>
-        <a class="nav-link {% if 'user' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-users' %}">Usuários</a>
-        <a class="nav-link {% if 'taxonomy' in request.resolver_match.url_name or 'category' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-taxonomy' %}">Categorias</a>
-        <a class="nav-link {% if 'badge' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-badges' %}">Badge</a>
-        <a class="nav-link {% if 'market' in request.resolver_match.url_name and 'resolution' not in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-markets' %}">Mercado</a>
-        <a class="nav-link {% if request.resolver_match.url_name == 'admin-ops-editorial' %}active{% endif %}" href="{% url 'admin-ops-editorial' %}">Editorial</a>
-        <a class="nav-link {% if 'resolution' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-resolution' %}">Resolução</a>
-        <a class="nav-link {% if 'moderation' in request.resolver_match.url_name or 'queue' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-moderation' %}">Filas</a>
-        <a class="nav-link {% if 'system-log' in request.resolver_match.url_name %}active{% endif %}" href="{% url 'admin-ops-system-logs' %}">Logs</a>
-      </div>
-      <div class="nav-actions admin-nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="{% url 'home' %}">Ver site público</a></div>
+      <div class="nav-actions admin-nav-actions"><button class="theme-toggle" type="button" data-theme-toggle aria-label="Alternar dark mode">◐</button><a class="btn ghost" href="{% url 'home' %}" aria-label="{% trans 'Ver site público' %}"><span class="admin-public-site-label">{% trans 'Site público' %}</span><span aria-hidden="true">↗</span></a></div>
     </nav>
   </header>
-  {% block content %}{% endblock %}
+  {% include 'admin_ops/partials/navigation.html' %}
+  <div class="admin-content" id="admin-content" tabindex="-1">{% block content %}{% endblock %}</div>
 </body>
 </html>

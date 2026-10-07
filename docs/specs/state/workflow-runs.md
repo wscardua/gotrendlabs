@@ -1,5 +1,251 @@
 # Workflow Runs
 
+## WFLOW-20261007-MCP-CLOSEOUT-001
+
+- Status: `em_andamento`; FEAT-MCP-001; fechamento solicitado com publicação GitHub e ativação produtiva após aprovação da PR.
+- Etapas: alinhar fonte de verdade; corrigir pendência local de revisão inválida; integrar serviço/proxy/configuração MCP ao deploy e CI de PR; executar regressão completa; preparar commit e texto de PR para aprovação; após autorização, publicar/merge, acompanhar Actions e ativar/smoke HTTPS sem mercados reais.
+- Fronteiras: adaptador isolado, sem DB/ORM/segredos humanos; workload exclusivo em arquivos locais 0600, nunca no Git. Início desligado e habilitação operacional explícita; backfill editorial pendente sem alterar mercados/provas.
+- Dot só pode ser marcado validado após homologação real; fonte de verdade mantém essa pendência. Branch local preservada.
+- Etapa local preparada: revisão inválida controlada/metadados universais corrigidos; Docker/Compose/Caddy e configuração privada validados; 367 testes/879,395 s/OK, 19 focais/6,268 s/OK e sete de rollout/2,146 s/OK (sobreposições explícitas no relatório). Pré-checagem produtiva somente leitura, sem deploy/mutação. [Evidências](../testing/mcp-closeout-20261007.md).
+- Próxima ação: aprovação pelo usuário do título/descrição da PR antes de enviar/submeter. Depois CI, snapshot RDS disponível, merge preservando branch local, Actions, ativação/HTTPS e registro pós-deploy. Dot permanece homologação externa pendente. Status em andamento até finalizar essas etapas autorizadas.
+- Vinculado ao WFLOW-20261007-MCP-EDITORIAL-SPEC e WFLOW-20261007-BRANCH-REVIEW-FOLLOWUP-001.
+
+## WFLOW-20261007-BRANCH-REVIEW-FOLLOWUP-001
+
+- Status: `concluido` localmente; FEAT-MCP-001; recomendações 1/2 do review aprovadas pelo usuário.
+- Escopo: adicionar os arquivos da feature ao índice Git; corrigir teste de carregamento do asset sem versão literal; validar snapshot completo em diretório limpo, instalação de dependências, migrations/grants e percursos de API/Admin Ops em PostgreSQL isolado.
+- Item 3 (revisão inválida no POST) não incluído nesta autorização específica. Sem commit, merge, deploy ou alterações no DEV.
+- Evidências: dependências/migrations no índice; snapshot sem env/runtime, venv nova e instalação requirements aprovados. Django/OpenAPI/pip/autodetecção de migrations/diff aprovados. **74 testes/172,744 s/OK**, PostgreSQL isolado destruído. Teste Admin Ops completo passou. [Relatório](../testing/mcp-branch-review-followup-20261007.md). Sem pendência nos itens 1/2.
+- Vinculado: WFLOW-20261007-MCP-EDITORIAL-SPEC e WFLOW-20261007-DEV-CATALOG-REHEARSAL-001.
+
+## WFLOW-20261007-DEV-CATALOG-REHEARSAL-001
+
+- Status: `concluido` localmente; pedido explícito de remover mercados DEV e recriar por UI humana e MCP real. Vinculado ao WFLOW-20261007-MCP-EDITORIAL-SPEC e à revisão universal.
+- Backup integral local antes da limpeza, inventário de dependências, preservação de contas/taxonomia/configurações/integrações/logs. Remover efeitos de mercados de ensaio e recalcular projeções afetadas.
+- Validar preenchimento/persistência/fuso, ficha/parecer, gate, idempotência/concorrência, publicação, fechamento, logs e integridade. Corrigir desvios reproduzidos e registrar evidência. Sem produção/deploy.
+- Evidências: backup integral local; IDs antigos 1/2/3/5 removidos; #6 humano resolvido e #7 MCP fechado. 64 testes amplos + 17 focais sobrepostos aprovados. Dez tools reais, OAuth/serviço, UI, logs e auditoria verified/zero issues. [Relatório](../testing/dev-catalog-rehearsal-20261007.md). Sem pendência local deste ensaio; Dot/HTTPS/deploy seguem externos.
+
+## WFLOW-20261007-LEGACY-CLOSURE-FEEDBACK-001
+
+- Status: `concluido` localmente para diagnóstico/feedback; correção da configuração publicada continua indisponível pelo contrato de integridade.
+- Problema confirmado no Chrome DEV: POST do EV conserva campos preenchidos, mas FastAPI rejeita alteração da definição assinada; alerta repete orientação de preenchimento baseada no registro anterior.
+- Escopo: distinguir registro salvo/formulário e explicar proteção do fechamento publicado. Preservar definição/provas/previsões; não implementar alteração silenciosa ou cancelamento automático.
+- Testes: rejeição de prazo/fuso em publicado sem mutação, mensagem e valores preservados, ausência de instrução enganosa no alerta legado.
+- Vinculado: WFLOW-20261007-UNIVERSAL-EDITORIAL-001. Iniciado e encerrado em 2026-10-07.
+- Evidências: 12 testes/4,794 s/OK; banco isolado destruído. Django/OpenAPI/Ruff/diff aprovados. Chrome DEV confirma aviso; dados DEV e formulário do operador preservados. [Relatório](../testing/legacy-closure-feedback-20261007.md).
+
+## WFLOW-20261007-UNIVERSAL-EDITORIAL-001
+
+- Status: `concluido` localmente; FEAT-EDITORIAL-001 + FEAT-MCP-001. Revisão explícita pelo usuário do escopo anterior sem gate global.
+- Escopo: ficha/parecer para todos os mercados; gate universal na FastAPI; validação de fechamento automático/manual antes de assinatura. Migração aditiva nullable integração e backfill de fichas pendentes, sem aprovação inventada.
+- Legado publicado: manter estados, previsões, ledger e provas; permitir conferência humana de abertos/fechados e consulta de terminais. Não fechar, cancelar ou resolver automaticamente.
+- Testes: humano/MCP/criação por sugestão, publicação sem revisão/retornada/rejeitada/antiga, fechamento inválido/validado em ambos os modos, concorrência/privacidade/roles/migração e UI DEV.
+- Iniciado e encerrado em: 2026-10-07.
+- Evidências: 68 testes/195,984 s/OK, PostgreSQL isolado destruído; OpenAPI/migrations/Django/Ruff/diff aprovados. Migration DEV preservou 4 mercados/9 opções/3 previsões/4 definições/2 selos e parecer Tesla revisão11; novas fichas humanas pendentes. Chrome confirma aviso fechamento e revisão #3. [Relatório](../testing/universal-editorial-20261007.md). Sem deploy; homologação externa MCP pendente.
+- Vinculado ao WFLOW-20261007-MCP-EDITORIAL-SPEC.
+
+## WFLOW-20261007-MARKET-PUBLISHED-NOTICE-002
+
+- Status: `concluido` localmente; continuação da mensagem pós-publicação.
+- Escopo: estado publicado/cancelado também em mercados sem MCP; nenhuma criação de ficha ou gate global. DEV EV somente leitura.
+- Iniciado e encerrado em: 2026-10-07.
+- Evidências: oito testes UI/0,021 s aprovados; Ruff/Django/diff. Chrome DEV confirma lider-vendas-ev-4t26 publicado/Aberto sem ficha editorial; screenshot .runtime/market-published-notice002/ev.jpg. Sem backend/OpenAPI/migration ou escrita em DEV.
+
+## WFLOW-20261007-MCP-PUBLISHED-NOTICE-001
+
+- Status: `concluido` localmente; FEAT-MCP-001.
+- Problema: fallback do editor exibe bloqueio de publicação também para mercado já publicado.
+- Escopo: apresentação dependente do lifecycle, sem alterar gate, parecer ou dados DEV. Testar rascunhos/agendados e estados pós-publicação/cancelamento.
+- Iniciado e encerrado em: 2026-10-07.
+- Evidências: sete testes UI passaram (0,021 s), Ruff/Django/diff aprovados. Chrome DEV confirma revisão 11 aprovada e publicação realizada pelo operador; novo aviso visível. Screenshot .runtime/mcp-published-notice/editor.jpg. Sem backend/OpenAPI/migrations ou escrita em DEV; feature permanece parcial por homologação externa.
+
+## WFLOW-20261007-MCP-GAPS-RESOLUTION-001
+
+- Status: `concluido` localmente; FEAT-MCP-001.
+- Pedido: operador marcou critérios mas texto de lacunas continua impedindo aprovação do draft Tesla.
+- Solução: confirmação explícita de resolução no mesmo formulário, sem apagar texto manualmente; preservação de histórico e validações backend/CSRF/versão/fonte. Sem parecer ou publicação automática em DEV.
+- Iniciado e encerrado em: 2026-10-07.
+- Evidências: sete testes passaram (8,925 s), caso ampliado de preservação do histórico passou (3,492 s); PostgreSQL isolado destruído. Ruff/Django/diff aprovados; Chrome DEV confirma novo checkbox, draft #5 revisão 9 intacto. [Relatório](../testing/mcp-review-ux-20261007.md). Contrato/OpenAPI compatíveis, sem migrations/deploy; homologação externa pendente.
+
+## WFLOW-20261007-MCP-REVIEW-UX-002
+
+- Status: `concluido` localmente; FEAT-MCP-001. Continuação da revisão única e lista de mercados.
+- Escopo: alinhamento com design Admin Ops; sugestões de fontes na evidência editável, sem seleções repetidas; bloqueios explícitos e preservação da decisão em erro.
+- Segurança: atestação humana de fontes permanece independente; FastAPI mantém validação, versionamento e rollback. Sem aprovação/publicação ou escrita em DEV.
+- Iniciado e encerrado em: 2026-10-07.
+- Evidências: [relatório UX](../testing/mcp-review-ux-20261007.md); oito testes passaram (12,393 s) e seis casos relevantes repetidos após ajustes finais (3,413 s). PostgreSQL isolado destruído; Ruff/Django/diff aprovados. UI desktop Chrome DEV, draft #5 revisão 9 preservado; sem homologação externa, publicação ou deploy.
+
+## WFLOW-20261007-MCP-MARKET-LIST-001
+
+- Status: `concluido` localmente; FEAT-MCP-001, vinculado ao workflow documental WFLOW-20261007-MCP-EDITORIAL-SPEC.
+- Escopo: lista administrativa mostra origem MCP, estado editorial e acesso direto ao parecer, reutilizando projeção FastAPI existente. Sem alteração de contratos, migrations ou dados DEV.
+- Validação: estados editoriais, ausência de marcação em mercados sem ficha de integração, links por ID e UI DEV somente leitura.
+- Iniciado e encerrado em: 2026-10-07.
+- Evidências: quatro testes UI passaram (0,031 s), Ruff/Django/diff aprovados; Chrome DEV confirma origem MCP, estado Em revisão e link /admin-ops/agent-reviews/5/. Screenshot local .runtime/mcp-market-list/list.jpg. Contrato/OpenAPI sem mudanças, pois projeção administrativa existente já retorna os campos. Feature permanece parcial por homologação externa; sem publicação/deploy.
+
+## WFLOW-20261007-MCP-SINGLE-REVIEW-001
+
+- Status: `concluido` localmente; FEAT-MCP-001, continuação da retomada humana v1.2.
+- Pedido: remover etapas burocráticas entre conferência da ficha e parecer. Uma única ação humana para aprovar/devolver/rejeitar, sem submissão humana prévia.
+- Solução: assessment administrativo FastAPI salva ficha/snapshot e parecer atomicamente, com MFA, versão/hash/locks/validação existentes. UI unifica evidências, verificação independente e decisão; publicação separada.
+- Preservação: contratos /record e /decision compatíveis; nenhuma aprovação/publicação de draft DEV pelo agente. Sem migrations nem permissões novas ao MCP.
+- Testes: decisão direta de preparação, rollback integral de aprovação inválida, conflitos de versão/hash, permissões, UI/CSRF/checks humanos não inferidos de relatos do agente; regressão MCP.
+- Iniciado em: 2026-10-07.
+- Evidências: [parecer em uma ação](../testing/mcp-single-review-20261007.md), 47 testes em 139,495 s, exit 0; Ruff/Django/OpenAPI/diff aprovados. Chrome DEV confirma formulário/botão únicos, sem escrita no draft #5 (revisão 9 observada).
+- Encerrado em: 2026-10-07; contratos/ADR/feature/runbook/estado sincronizados. Feature parcial por homologação externa; sem publicação/deploy.
+
+## WFLOW-20261007-MCP-HUMAN-PREPARE-001
+
+- Status: `concluido` localmente; FEAT-MCP-001, continuação de WFLOW-20261007-MCP-REVIEW-GATE-001.
+- Problema: edição humana volta a preparação, mas UI não permite completar ficha/re-submeter sem executor; usuário fica impedido de registrar parecer.
+- Escopo: staff/superuser MFA salva ficha estruturada e solicita revisão via FastAPI; snapshot/versionamento/evento humano; aprovação permanece ação separada com validações existentes. Nenhuma aprovação/publicação automática em DEV.
+- Artefatos: feature/contrato/serviço/API/UI/OpenAPI/testes/runbook/estado. Sem migration nova ou permissão adicional ao MCP.
+- Testes: fluxo preparação → ficha → revisão → parecer → gate; MFA/permissões/revisão antiga/malformada/estado publicado; UI/CSRF/erro com contexto.
+- Iniciado em: 2026-10-07.
+- Evidências: [retomada humana](../testing/mcp-human-review-20261007.md), 45 testes/130,785 s + repetição de 2 novos/6,320 s, exit 0. MFA/CSRF/estado/versão/pendências e UI DEV conferidos; Ruff/Django/OpenAPI/diff aprovados.
+- Encerrado em: 2026-10-07; sem alteração do draft DEV #5 (revisão 6 observada), aprovação, publicação ou deploy. Feature parcial por homologação externa.
+
+## WFLOW-20261007-MCP-REVIEW-GATE-001
+
+- Status: `concluido` localmente; tipo `change-feature` + `implementation-cycle`; FEAT-MCP-001.
+- Solicitação: slug legível, publicação dependente de parecer favorável para drafts de agentes, estrutura Integrações como Agentes IA. Revisão explícita do escopo anterior sem gate.
+- Arquitetura: FastAPI aplica bloqueio no MarketLifecycleEngine após lock do mercado; ficha/decisão/hash/versionamento reutilizados. Sem regra crítica em Django/MCP, sem gate para mercados humanos legados.
+- Testes: slug/replay/colisão, parecer ausente/devolvido/rejeitado/antigo, edição invalida aprovação, publicação aprovada/integridade e concorrência, compatibilidade humana; listagem/formulário e UI real DEV.
+- Dados DEV: preservar draft #5 e mercados anteriores; somente correção de slug pelo editor humano, sem publicar.
+- Iniciado em: 2026-10-07.
+
+- Evidências: 44 testes em 147,858 s + 1 agendado em 4,403 s + 1 preservação de edição humana em 4,003 s, todos exit 0 (46 casos distintos); Ruff/Django/JS/OpenAPI/diff aprovados. UI desktop real; draft DEV #5 revisão 4/preparation, fechamento e mercados 1–3 preservados, guard recusa publicação.
+- Artefatos: [resultados da revisão](../testing/mcp-review-gate-20261007.md); feature/contratos/ADR/runbook/OpenAPI/estado/changelogs sincronizados. Sem migrations novas.
+- Encerrado em: 2026-10-07. Dot/HTTPS externo, QA responsivo desta revisão e deploy continuam pendentes; feature parcial.
+
+## WFLOW-20261007-MCP-RADAR-DEV-001
+
+- Status: `concluido` localmente; tipo `test-review-cycle`; FEAT-MCP-001.
+- Autorização: usuário solicita repetir radar no banco DEV persistente, substituindo o isolamento anterior para este ensaio.
+- Escopo: OAuth local/integração existente, dez tools reais, pesquisa/deduplicação, um draft persistente e testes negativos apenas nesse draft, conferência no painel.
+- Preservação: sem publicar/resolver/cancelar, sem reset/migrations/flush, sem alterações em mercados anteriores ou credenciais do usuário.
+- Artefatos: [relatório DEV](../testing/mcp-radar-dev-20261007.md), correção de consentimento escalar e título da revisão, teste sem banco.
+- Evidências: draft #5 persistente/revisão 3; dez tools/21 chamadas/3 recusas corretas/63 logs correlacionados; mercados anteriores intactos; UI conferida; OAuth temporário revogado; Ruff/OpenAPI/diff e teste de consentimento aprovados.
+- Encerrado em: 2026-10-07.
+- Retomada: responsável humano revisa E07/E09/E10/E11 e ficha antes de qualquer publicação; Dot/LM Studio externo ainda pendente.
+- Iniciado em: 2026-10-07.
+
+
+## WFLOW-20261007-MCP-RADAR-PILOT-001
+
+- Tipo: `test-review-cycle`; FEAT-MCP-001, vinculado ao WFLOW-20261007-MCP-EDITORIAL-SPEC.
+- Status: `concluido` localmente.
+- Objetivo: radar com pesquisa externa real, catálogo público DEV somente leitura, cliente MCP real e escritas exclusivamente em PostgreSQL descartável.
+- Artefatos: harness opt-in, fixtures públicas, [relatório](../testing/mcp-radar-pilot-20261007.md) e correção de serialização nullable.
+- Evidências: 17 chamadas/dez tools; um draft in_review, replay sem duplicação, edição em revisão recusada, 51 logs correlacionados. Quatro testes passaram em 29,121 s; inclui OAuth/serviço e privacidade. Base isolada destruída.
+- Encerrado em: 2026-10-07.
+- Retomada: repetir pesquisa/deduplicação completa e preencher pendências humanas antes de piloto persistente.
+- Limites: sem publicação, parecer humano simulado ou homologação Dot/LM Studio.
+- Iniciado em: 2026-10-07.
+
+## WFLOW-20261007-MCP-TOOL-DISCOVERY-001
+
+- Tipo: `change-feature` + `test-review-cycle`; FEAT-MCP-001.
+- Status: `concluido` localmente.
+- Objetivo: esclarecer a escolha de política editorial versus catálogo/taxonomia pelos executores externos.
+- Artefatos: instructions e descrições MCP, teste de resposta da política e runbook.
+- Evidências: cliente real TCP repetiu as dez ferramentas com OAuth/serviço, replay e recusas esperadas; passou em 15,650 s. Política contém manual/checklist/ficha não vazios e 11 critérios. Base isolada destruída e servidores temporários encerrados. Ruff/diff aprovados.
+- Limite: metadata esclarece propósito; escolha efetiva depende do modelo/executor. Homologação LM Studio não concluída, após erros de parser/MLX observados.
+- Próxima ação: Refresh tools/reconexão e conversa nova no LM Studio; confirmar execução de get_editorial_policy com modelo de tool use compatível.
+- Iniciado em: 2026-10-07; sem mudança de autenticação, nomes, schemas ou rotas.
+
+## WFLOW-20261007-MCP-ALL-TOOLS-001
+
+- Tipo: `test-review-cycle`; vinculado ao workflow MCP de implementação.
+- Status: `concluido` localmente.
+- Objetivo: executar cliente MCP Streamable HTTP real com todas as dez ferramentas, OAuth e credencial de serviço, em PostgreSQL isolado.
+- Artefatos: teste end-to-end ampliado e evidências por ferramenta.
+- Evidências: teste passou em 15,236 s com API/adapter em portas TCP efêmeras e cliente SDK real. Dez tools descobertas e chamadas com sucesso em ambos os modos (22 chamadas positivas incluindo replay, quatro negações esperadas). Dois drafts de fixture, sem duplicação, editados e submetidos; revisão in_review confirmada; edição em revisão e ID inexistente recusados. Base isolada destruída e servidores encerrados.
+- Checklist: evidências MCP e changelog sincronizados; Ruff/diff aprovados. Sem mudança de contratos/OpenAPI/domínio. Validação não homologa LM Studio, Dot nem a credencial compartilhada.
+- Próxima ação: conectar executor real com OAuth ou nova credencial de serviço e registrar homologação de cliente.
+- Limites: credenciais geradas no teste; segredo compartilhado pelo usuário não reutilizado nem copiado. Sem mercados no DEV/produção, sem publicação.
+- Iniciado em: 2026-10-07.
+
+## WFLOW-20261007-EXPIRY-PICKER-001
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`; FEAT-MCP-001.
+- Status: `concluido` localmente.
+- Objetivo: validade selecionável por calendário/horário nativos, com fuso explícito America/Sao_Paulo e conversão no servidor.
+- Artefatos: formulário/template Django, testes e documentação; contrato REST com offset permanece.
+- Evidências: quatro testes passaram em PostgreSQL isolado, incluindo conversão UTC/local com troca de dia, fuso ativo alternativo, data inválida e regressão de UI/CSRF/parecer/transferência. Base de teste destruída. Chrome DEV apresentou datetime-local e affordance nativa de calendário, valor selecionável válido; sem salvar integração e formulário original preservado.
+- Checklist: Django check/Ruff/diff aprovados; feature e changelog atualizados. Sem mudança REST/OpenAPI/migration; backend mantém validação de validade futura. Fuso de apresentação/interpretação São Paulo explícito, precisão de minutos.
+- Próxima ação: usar o calendário/horário na criação ou edição local.
+- Iniciado em: 2026-10-07; sem publicação ou alteração de banco.
+
+## WFLOW-20261007-RESPONSIBLE-SELECT-001
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`; FEAT-MCP-001.
+- Status: `concluido` localmente.
+- Objetivo: seleção de responsável por nome no Admin Ops, carregada via API administrativa MFA, sem exigir conhecimento de IDs.
+- Artefatos: endpoint/projeção mínima, formulários Django, template, OpenAPI, testes e estados.
+- Evidências: três testes passaram em PostgreSQL isolado: MFA/401/403, exclusão de bots/inativos/não administrativos, projeção mínima e paginação de 103 responsáveis; renderização da seleção/valor atual e transferência válida/forjada, CSRF e ciclo de revogação/papéis. Base destruída. Chrome DEV confirmou seleção por nome, sem salvar integração; formulário previamente preenchido pelo usuário preservado em sua aba.
+- Checklist: feature/contrato/OpenAPI/changelog/integration map sincronizados; Django check, Ruff, OpenAPI --check e diff aprovados. Nenhuma migration ou alteração de grants necessária; lista usa SELECT já permitido à role API. Estado MCP permanece parcial pela homologação externa.
+- Próxima ação: usar seleção na criação/transferência no piloto local.
+- Iniciado em: 2026-10-07; sem publicação/deploy.
+
+## WFLOW-20261007-EDITORIAL-UI-001
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`; continuidade visual de FEAT-MCP-001.
+- Status: `concluido` localmente.
+- Objetivo: alinhar fila e parecer humano ao design system Admin Ops, preservando contratos e controles de revisão.
+- Artefatos: template de revisão, partial de estados editoriais, CSS e cache de assets; testes e documentação.
+- Evidências: dois testes direcionados passaram em PostgreSQL isolado, incluindo draft realmente submetido à revisão, 11 critérios, fonte, labels, revisão/hash ocultos, escape de evidência maliciosa, CSRF e smoke administrativo. Base de teste destruída. Django check, Ruff, JS e diff aprovados.
+- Conferência visual: fila vazia no Chrome DEV desktop e viewport 390 px, sem overflow horizontal; viewport restaurado. Detalhe em revisão conferido por renderização no teste isolado, sem criar mercado no DEV.
+- Checklist: contrato/backend/MFA/concorrência inalterados; arquitetura frontend e changelog atualizados. FEAT-MCP-001 permanece parcial pela homologação externa já registrada.
+- Próxima ação: acompanhar revisão com conteúdo editorial real durante piloto autorizado.
+- Iniciado em: 2026-10-07.
+- Limites: sem merge, deploy ou dados de mercados reais para QA.
+
+## WFLOW-20261007-ADMIN-NAV-001
+
+- Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`; continuidade do refinamento Admin Ops solicitado após `WFLOW-20261007-MCP-EDITORIAL-IMPL`.
+- Status: `concluido` localmente.
+- Objetivo: melhorar a navegação compartilhada do Admin Ops, mantendo o design system e os controles existentes.
+- Artefatos: context processor de navegação, template base/partial, CSS/JS, testes e documentação frontend.
+- Implementação: menu lateral agrupado, busca local com normalização de acentos, página ativa nas rotas aninhadas, drawer móvel com foco/Escape e remoção do menu duplicado de revisão editorial.
+- Evidências: quatro testes direcionados passaram (rotas aninhadas/public route, CSRF/segredo único/escape e smoke administrativo) em PostgreSQL isolado; base de teste destruída. Chrome DEV desktop/móvel confirmou busca acentuada/sem resultados, indicação ativa, abertura/Escape/foco e ausência de overflow horizontal. Django check, Ruff, sintaxe JS e whitespace aprovados. Expectativa antiga de cache JS do smoke atualizada para a nova versão.
+- Documentação: arquitetura frontend, changelog e workflow sincronizados; estado MCP permanece parcial pela homologação externa independente.
+- Limites: sem mudança de contratos, permissões, migrations ou navegação pública/mobile Flutter; sem merge/deploy.
+- Iniciado em: 2026-10-07.
+
+## WFLOW-20261007-MCP-EDITORIAL-IMPL
+
+- Tipo: `implementation-cycle` + `test-review-cycle`; vinculado a `WFLOW-20261007-MCP-EDITORIAL-SPEC`.
+- Status: `bloqueado` somente para homologação externa; implementação/testes locais concluídos. FEAT-MCP-001 permanece `parcial`.
+- Objetivo: executar fatias A/B/C, preservando contratos existentes e trabalho analytics/mobile.
+- Base: `origin/main` 9df08bc, atualizado com fetch; worktree `gotrendlabs-mcp`, branch `feature/mcp-editorial`. Apenas docs MCP transportados do checkout original; venv original preservado, Python 3.11 separado.
+- Arquitetura: FastAPI dona de identidade/OAuth/delegação/persistência/domínio; MCP SDK 1.30.0 Streamable HTTP sem banco; Authlib 1.6.12; Admin Ops via HTTP/MFA/CSRF. `FOR NO KEY UPDATE` na integração, locks no mercado/revisão, publicação serializada com engine/assinatura existentes.
+- Artefatos: `apps/api/backend_api/editorial_*.py`, handlers/serviços compartilhados, `apps/mcp`, `editorial_integrations`/migrations, Admin Ops/templates/JS/CSS, OpenAPI, requirements, testes, exemplos env, Compose/Docker/Caddy opcionais, runbook/prompt/ADR/estados.
+- Etapa atual: A auth/gestão/leitura/logs, B drafts/ficha/parecer/cotas/idempotência/concorrência e C pacote/operação/cliente real local concluídas. Dot/HTTPS externo pendentes.
+- Evidências: 321 testes gerais passaram; suíte final MCP com 33 testes passou e destruiu base isolada. PostgreSQL/grants reais, cliente SDK OAuth/serviço, PKCE/refresh/reuse, locks/revogação/publicação, falhas audit/log, quota/fonte/política. UI Chromium desktop/móvel e devolução humana real com fixture isolada. Django check/migration drift/OpenAPI/Ruff/JS/diff aprovados; imagem MCP sem DB/segredos, Compose e Caddy validados localmente. [Matriz](../testing/mcp-editorial-results.md).
+- Checklist: arquitetura/segurança/specs/contratos/testes/ADR/changelogs/status/integration map/known gaps sincronizados. Nenhum gate editorial universal nem promessa de compatibilidade Dot sem evidência.
+- Bloqueio externo: conta/sessão Dot e endpoint público HTTPS de homologação não disponíveis nesta execução. A falta não impediu nenhuma etapa local autorizada. Não marcar `implementada_validada`.
+- Iniciado/atualizado em: 2026-10-07.
+- Próxima ação: seguir [runbook](../../guides/mcp-editorial-pilot.md), autorizar/configurar piloto HTTPS e executar MCP-O01/MCP-X02 com Dot real; registrar recorrência/renovação/revogação e correlação sanitizada.
+- Reversão lógica: kill switch API/adapter, retirar handles opcionais e pausar/revogar integração; preservar snapshots/drafts/auditoria e migrations aditivas.
+- Publicação: não houve commit/PR/merge/deploy/produção nesta execução; exemplos produtivos desligados por padrão.
+- DEV posterior solicitado: PostgreSQL local reiniciado, migrations MCP aplicadas por role migradora e serviços web/API/MCP/proxy iniciados no worktree. Origin `http://127.0.0.1:8000`, MCP habilitado somente neste DEV, discovery/authorize/health/UI guards aprovados. Configuração/segredos/PIDs locais ignorados em `.runtime/dev/`; conta e MFA existentes preservados. Homologação Dot/HTTPS externo permanece pendente.
+- Ajuste visual solicitado: tela de integrações alinhada à composição de Config/Admin Ops, sem menu duplicado nem painel/formulário isolado. Seções de identificação/permissões/limites, estados pt-BR, credenciais/atividade e revogação segregadas. Conferência no Chrome real do DEV em desktop, viewport estreito e dark mode (tema/viewport restaurados); teste UI CSRF/segredo/escape passou, Ruff/JS/diff aprovados. Nenhum contrato de domínio alterado.
+
+## WFLOW-20261007-MCP-EDITORIAL-SPEC
+
+- Tipo: `new-feature` + consolidação documental para implementação em contexto limpo.
+- Status: `concluido` (somente especificação; implementação não iniciada).
+- Feature: `FEAT-MCP-001` v1.0.
+- Origem: decisões do usuário entre 2026-10-02 e 2026-10-07 e pedido de fechar spec/prompt para GPT-6.1 Sol.
+- Artefatos: `features/mcp-editorial-agents.md`, `contracts/agent-integrations.md`, `decisions/ADR-0011-mcp-editorial-integrations.md`, `testing/mcp-editorial-acceptance.md`, `docs/guides/implementar-mcp-editorial-prompt.md`, estados/changelogs e referências de arquitetura/editorial/logs/auth.
+- Decisões: staff/superuser com MFA gerenciam todas as integrações igualmente; OAuth e serviço; adaptador sem banco; FastAPI autoritativa; drafts restritos, ficha versionada, revisão humana; logs existentes; cotas PostgreSQL, idempotência e concorrência; Dot externo com homologação obrigatória.
+- Revisão arquitetural: baseada em leitura de handlers de auth/mercados/logs, modelos, daemon, Compose/Caddy e contratos. Identificadas permissões amplas, efeitos de taxonomia/destaque, ausência de identidade técnica estruturada, quota em memória e log técnico não transacional. A spec trata essas lacunas sem alterar o runtime.
+- Aceite documental: catálogo de ferramentas/rotas alvo, modelagem lógica, defaults, limites de escopo, matriz de testes e prompt autossuficiente. Links relativos e whitespace verificados. Nenhum teste de código executado porque entrega é docs-only.
+- Estado de origem: branch `feature/first-party-analytics`; alterações não rastreadas mobile preexistentes preservadas. Nenhum commit, PR, merge ou deploy realizado por esta entrega.
+- Pendências: implementação completa, escolha de biblioteca OAuth/MCP, teste real com cliente e Dot, homologação/produção. Não confundir estas pendências com bloqueio da entrega documental.
+- Próxima ação: usar o prompt em `docs/guides/implementar-mcp-editorial-prompt.md`, abrir workflow de implementação vinculado e executar fatias A/B/C. Publicação não autorizada pelo prompt.
+
 ## WFLOW-20260929-ANALYTICS-001
 
 - Tipo: `change-feature` + `implementation-cycle` + `test-review-cycle`.

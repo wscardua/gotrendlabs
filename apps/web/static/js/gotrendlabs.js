@@ -1007,6 +1007,7 @@ function syncMarketTaxonomy(form) {
     subcategorySelect.value = "";
   }
   if (!eventSelect) return;
+  const previousEvent = eventSelect.value;
   let selectedEventStillVisible = false;
   $$("option", eventSelect).forEach((option) => {
     const isPlaceholder = !option.value;
@@ -1016,7 +1017,8 @@ function syncMarketTaxonomy(form) {
     if (matches && option.selected && !isPlaceholder) selectedEventStillVisible = true;
   });
   if (!selectedEventStillVisible) {
-    eventSelect.value = "";
+    const matchingEvent = Array.from(eventSelect.options).find((option) => !option.disabled && option.value === previousEvent && option.value);
+    eventSelect.selectedIndex = matchingEvent ? matchingEvent.index : 0;
   }
 }
 
@@ -1341,3 +1343,89 @@ $$("[data-push-template-editor]").forEach((form) => {
     }
   });
 });
+
+// Feedback for API-backed MCP operations without storing form content.
+document.querySelectorAll('.integration-panel form[method="post"], .integration-page form[method="post"]').forEach((form) => {
+  form.addEventListener('submit', () => { form.setAttribute('aria-busy', 'true'); });
+});
+
+// Keep credential issuance on a GET document: reloading cannot resubmit issuance.
+document.querySelectorAll('form[data-once-credential]').forEach((form) => {
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const body = new FormData(form);
+    body.set('action', 'credentials');
+    const button = form.querySelector('button');
+    button.disabled = true;
+    const output = document.querySelector('[data-credential-result]');
+    try {
+      const response = await fetch(form.getAttribute('action') || window.location.href, {
+        method: 'POST', body, credentials: 'same-origin', cache: 'no-store',
+        headers: {'X-Requested-With': 'XMLHttpRequest'}
+      });
+      if (!response.ok) throw new Error('api_unavailable');
+      // This fragment is rendered and escaped by Django, never by the executor.
+      output.innerHTML = await response.text();
+    } catch (_) {
+      output.textContent = document.documentElement.lang.startsWith('en')
+        ? 'Unable to issue credential. Check API availability.'
+        : 'Não foi possível emitir a credencial. Confira a disponibilidade da API.';
+    } finally { button.disabled = false; form.setAttribute('aria-busy', 'false'); }
+  });
+});
+
+// The admin menu filters destinations only; every page retains server authorization.
+(() => {
+  const sidebar = document.querySelector('[data-admin-sidebar]');
+  if (!sidebar) return;
+  const toggle = document.querySelector('[data-admin-menu-toggle]');
+  const backdrop = document.querySelector('.admin-navigation-backdrop');
+  const content = document.querySelector('#admin-content');
+  const search = sidebar.querySelector('[data-admin-navigation-search]');
+  const mobile = window.matchMedia('(max-width: 980px)');
+  let open = false;
+  document.body.classList.add('admin-navigation-ready');
+  sidebar.querySelector('[data-admin-search-container]').hidden = false;
+  const focusable = () => Array.from(sidebar.querySelectorAll('a,button,input')).filter(el => !el.closest('[hidden]') && el.getClientRects().length);
+  function setOpen(value, returnFocus = true) {
+    open = mobile.matches && value;
+    sidebar.classList.toggle('is-open', open);
+    toggle.setAttribute('aria-expanded', String(open));
+    sidebar.toggleAttribute('inert', mobile.matches && !open);
+    if (mobile.matches && !open) sidebar.setAttribute('aria-hidden', 'true');
+    else sidebar.removeAttribute('aria-hidden');
+    backdrop.hidden = !open;
+    content.toggleAttribute('inert', open);
+    document.body.classList.toggle('admin-navigation-open', open);
+    if (open) search.focus();
+    else if (returnFocus && mobile.matches) toggle.focus();
+  }
+  toggle.addEventListener('click', () => setOpen(!open));
+  document.querySelectorAll('[data-admin-menu-close]').forEach(el => el.addEventListener('click', () => setOpen(false)));
+  mobile.addEventListener('change', () => setOpen(false, false));
+  document.addEventListener('keydown', event => {
+    if (!open) return;
+    if (event.key === 'Escape') { event.preventDefault(); setOpen(false); }
+    if (event.key === 'Tab') {
+      const items = focusable();
+      const first = items[0], last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    }
+  });
+  const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  search.addEventListener('input', () => {
+    const query = normalize(search.value);
+    let visible = 0;
+    sidebar.querySelectorAll('[data-admin-navigation-group]').forEach(group => {
+      let count = 0;
+      group.querySelectorAll('a').forEach(link => {
+        link.hidden = !normalize(link.textContent).includes(query);
+        if (!link.hidden) { count++; visible++; }
+      });
+      group.hidden = count === 0;
+    });
+    sidebar.querySelector('[data-admin-navigation-empty]').hidden = visible !== 0;
+  });
+  setOpen(false, false);
+})();

@@ -10,7 +10,9 @@ class SystemLogMiddleware:
 
     def __call__(self, request):
         started_at = time.perf_counter()
-        request_id = request.headers.get("x-request-id") or new_request_id()
+        integration_private = request.path.startswith(("/admin-ops/integration", "/admin-ops/agent-review"))
+        safe_path = request.path if integration_private else request.get_full_path()
+        request_id = new_request_id() if integration_private else request.headers.get("x-request-id") or new_request_id()
         request.system_log_request_id = request_id
         session_user = auth_user(request) or {}
         user_id = session_user.get("id")
@@ -22,16 +24,16 @@ class SystemLogMiddleware:
             response = self.get_response(request)
         except Exception as exc:
             duration_ms = int((time.perf_counter() - started_at) * 1000)
-            exception_type, stack_trace = exception_payload(exc)
+            exception_type, stack_trace = (type(exc).__name__, "") if integration_private else exception_payload(exc)
             log_system_event(
                 level="ERROR",
                 source="django",
                 logger_name="django.request",
                 event_type="request_exception",
-                message=f"{request.method} {request.get_full_path()} raised {exception_type}",
+                message=f"{request.method} {safe_path} raised {exception_type}",
                 request_id=request_id,
                 method=request.method,
-                path=request.get_full_path(),
+                path=safe_path,
                 status_code=500,
                 duration_ms=duration_ms,
                 user_id=user_id,
@@ -39,7 +41,7 @@ class SystemLogMiddleware:
                 user_agent=user_agent,
                 exception_type=exception_type,
                 stack_trace=stack_trace,
-                context={"headers": request_headers(request.headers)},
+                context={} if integration_private else {"headers": request_headers(request.headers)},
             )
             raise
         duration_ms = int((time.perf_counter() - started_at) * 1000)
@@ -51,15 +53,15 @@ class SystemLogMiddleware:
             source="django",
             logger_name="django.request",
             event_type="request",
-            message=f"{request.method} {request.get_full_path()} -> {status_code}",
+            message=f"{request.method} {safe_path} -> {status_code}",
             request_id=request_id,
             method=request.method,
-            path=request.get_full_path(),
+            path=safe_path,
             status_code=status_code,
             duration_ms=duration_ms,
             user_id=user_id,
             ip_address=ip_address,
             user_agent=user_agent,
-            context={"headers": request_headers(request.headers)},
+            context={} if integration_private else {"headers": request_headers(request.headers)},
         )
         return response

@@ -1,6 +1,6 @@
 # Deploy de producao
 
-Este deploy usa uma EC2 publica com Docker Compose para `proxy`, `django`, `fastapi` e `daemon`, conectando ao PostgreSQL gerenciado no RDS. O Postgres nao roda em container na producao.
+Este deploy usa uma EC2 publica com Docker Compose para `proxy`, `django`, `fastapi`, `daemon` e o adaptador `mcp` isolado, conectando ao PostgreSQL gerenciado no RDS. O Postgres nao roda em container na producao.
 
 ## Analytics proprio
 
@@ -65,9 +65,12 @@ psql "host=gotrendlabs-prod-db.cinqq6ymy9in.us-east-1.rds.amazonaws.com port=543
 
 ## Arquivos
 
+Antes dos comandos Compose desta versão, preparar os arquivos privados MCP: `python3 ops/deploy/mcp/configure_environment.py --app-dir /opt/gotrendlabs`. O deploy faz isso automaticamente; repetir preserva estado/segredo.
+
 - `Dockerfile`: receita da imagem da aplicacao, mantida na raiz do repo.
 - `ops/deploy/production/docker-compose.yml`: servicos de producao para a EC2.
-- `ops/deploy/production/Caddyfile`: HTTPS automatico e proxy reverso para Django.
+- `ops/deploy/production/Caddyfile`: HTTPS e proxy web/API; importa fragmento MCP montado pelo override.
+- `ops/deploy/mcp/docker-compose.override.yml`: adaptador, rede privada, env exclusivo e fragmento de proxy; incluir em comandos Compose operacionais.
 - `ops/deploy/production/deploy.sh`: fluxo idempotente para primeira instalacao (`git clone`) e deploys seguintes (`git pull`), com build, migrations, static files e restart.
 - `.env.prod.example`: modelo de variaveis de producao sem segredos reais.
 - `.env.auth.prod.example`: modelo separado de segredos de autenticação, entregue apenas ao container FastAPI.
@@ -104,13 +107,13 @@ Antes de publicar mudanças de autenticação, configure somente em `.env.auth.p
 
 No host produtivo, sincronize a chave TOTP a partir de `gotrendlabs/prod/app-secrets` pela sessão SSM com `bash ops/deploy/production/sync_fastapi_totp_key.sh`. O script atualiza apenas essa entrada, preserva os demais segredos do arquivo, força modo `0600` e não imprime valores. Execute-o antes do deploy que introduz MFA.
 
-Depois de importar os dados de bootstrap, defina a senha de um administrador existente pelo contexto FastAPI: `docker compose -f ops/deploy/production/docker-compose.yml run --rm -it fastapi python -m apps.api.backend_api.bootstrap_admin_password --username @admin`. A senha e digitada sem aparecer no historico do shell. O importador nao altera senhas existentes.
+Depois de importar os dados de bootstrap, defina a senha de um administrador existente pelo contexto FastAPI: `docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp run --rm -it fastapi python -m apps.api.backend_api.bootstrap_admin_password --username @admin`. A senha e digitada sem aparecer no historico do shell. O importador nao altera senhas existentes.
 
 No corte de 2026-09-27, o superusuario produtivo e `@admin`. Sua credencial bootstrap gerada esta na chave `GOTRENDLABS_ADMIN_BOOTSTRAP_PASSWORD` de `gotrendlabs/prod/app-secrets` no Secrets Manager; consulte-a por canal seguro e nao a copie para Git, logs ou comandos de shell. O pepper fica em `GOTRENDLABS_PASSWORD_PEPPER` e a chave Fernet do MFA em `GOTRENDLABS_TOTP_ENCRYPTION_KEY` no mesmo segredo; ambas só são injetadas no arquivo da FastAPI. Duas contas anteriores ficaram com senha inutilizavel e exigem reset caso sejam reutilizadas.
 
 Configure `.env.migrate.prod` com uma credencial operacional que tenha `CREATEROLE`, `CREATE` no schema e possa alterar as tabelas Django existentes. Essa credencial nao entra nos containers de runtime. O deploy executa migrations pelo servico `migrate`, aplica `ops/sql/auth_password_boundary.sql` antes/depois delas e falha antes do restart caso Django exponha outra credencial de banco, a role Django possa alterar `gotrendlabs_users.password` ou a FastAPI nao use a role autorizada. O novo proprietario `gotrendlabs_auth_owner` nao tem login; o trigger protege insercoes com senha utilizavel e as permissoes de coluna protegem updates. O ensaio em infraestrutura separada foi dispensado nesta fase; valide as permissoes da credencial migradora por preflight no RDS antes de integrar a branch.
 
-Para auditar o corte sem revelar dados pessoais, execute `docker compose -f ops/deploy/production/docker-compose.yml run --rm fastapi python -m ops.scripts.auth_db_boundary inventory`. Contas PBKDF2 exigem reset/recriacao antes de depender do login novo. Para medir o custo do hash em um host de ensaio equivalente, use `docker compose -f ops/deploy/production/docker-compose.yml run --rm fastapi python -m ops.scripts.benchmark_password_hash --workers 1,2,5,10 --operations 8`; compare com memoria livre, swap, creditos de CPU e latencia HTTP do stack, sem usar este benchmark isolado como garantia de capacidade.
+Para auditar o corte sem revelar dados pessoais, execute `docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp run --rm fastapi python -m ops.scripts.auth_db_boundary inventory`. Contas PBKDF2 exigem reset/recriacao antes de depender do login novo. Para medir o custo do hash em um host de ensaio equivalente, use `docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp run --rm fastapi python -m ops.scripts.benchmark_password_hash --workers 1,2,5,10 --operations 8`; compare com memoria livre, swap, creditos de CPU e latencia HTTP do stack, sem usar este benchmark isolado como garantia de capacidade.
 
 ## Corte inicial sem ensaio isolado
 
@@ -212,7 +215,7 @@ Fluxo seguro:
 4. Selecionar `Resend` no Admin Ops, preencher remetente/reply-to e validar com:
 
 ```bash
-docker compose -f ops/deploy/production/docker-compose.yml run --rm django \
+docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp run --rm django \
   python manage.py send_resend_test_email --to wsca@icloud.com
 ```
 
@@ -233,15 +236,15 @@ Ao ativar FCM real no futuro, atualize `/opt/gotrendlabs/.env.prod`, recrie `dja
 
 O Caddy publica a FastAPI sob o mesmo dominio oficial:
 
-- `https://gotrendlabs.com.br/api/*` roteia para `fastapi:8001` usando `handle_path`, removendo o prefixo `/api`.
+- `https://gotrendlabs.com.br/api/*` roteia para `fastapi:8001` usando matcher `@api_routes` e `uri strip_prefix /api`, após o bloqueio das rotas internas MCP.
 - Probes comuns contra WordPress, PHP, `.env`, `.git` e `vendor` sao respondidos com `404` diretamente no Caddy antes de chegar ao Django. A regra nao bloqueia `/admin/*` genericamente; apenas padroes suspeitos como `/admin/.env` e `/admin/phpinfo.php` entram no bloqueio.
 - Smokes esperados apos deploy: `/api/health`, `/api/markets`, login/auth e endpoints mobile existentes.
 - Quando o `Caddyfile` mudar, recrie ou recarregue o servico `proxy` e confirme que o container em execucao contem o bloco novo. O arquivo no disco pode estar atualizado enquanto o Caddy ainda roda com configuracao antiga:
 
 ```bash
-docker compose -f ops/deploy/production/docker-compose.yml up -d --force-recreate --no-deps proxy
-docker compose -f ops/deploy/production/docker-compose.yml exec -T proxy caddy validate --config /etc/caddy/Caddyfile
-docker compose -f ops/deploy/production/docker-compose.yml exec -T proxy sh -c 'grep -n "handle_path /api" -A2 /etc/caddy/Caddyfile'
+docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp up -d --force-recreate --no-deps proxy
+docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp exec -T proxy caddy validate --config /etc/caddy/Caddyfile
+docker compose -f ops/deploy/production/docker-compose.yml -f ops/deploy/mcp/docker-compose.override.yml --profile mcp exec -T proxy sh -c 'grep -n "@api_routes" -A4 /etc/caddy/Caddyfile'
 ```
 
 O beta Android fora da Google Play e distribuido por Django/Admin Ops:
@@ -296,3 +299,11 @@ O AAB, APKs, keystores, `apps/mobile/android/key.properties` e `apps/mobile/andr
 O rollout do ledger segue obrigatoriamente `docs/specs/operations/market-integrity-deploy.md`. A chave privada Ed25519 permanece no KMS sob `alias/gotrendlabs-integrity-signing`; a role da EC2 recebe somente assinatura/leitura da chave pública no ARN específico. O segredo de pseudonimização e o identificador KMS ficam no Secrets Manager e são sincronizados para `.env.prod` sem aparecer em logs.
 
 Como o produto ainda não foi lançado, o primeiro rollout cria snapshot do RDS e remove todos os mercados pré-existentes sem definição assinada. Não há migração retroativa, modo legado ou alegação de que registros anteriores possuíam prova original.
+
+## MCP editorial
+
+O deploy padrão agora mescla `ops/deploy/mcp/docker-compose.override.yml`, inicia MCP isolado no profile mcp e inclui handles MCP/OAuth no Caddy. O helper `configure_environment.py` prepara apenas arquivos MCP 0600 no host, sem ler arquivos compartilhados. Primeira instalação desligada; habilitação e rollback explícitos descritos no [runbook](../../../docs/guides/mcp-editorial-pilot.md). Não colocar credenciais de banco/MFA/KMS no adapter. CI de pull_request executa testes; produção continua somente por main com ENABLE_PROD_DEPLOY=1.
+
+Antes do merge desta entrega, snapshot recuperável RDS e inventário de mercados/opções/previsões/provas. Após migrations, comparar preservação; nenhuma publicação, cancelamento ou aprovação editorial retroativa. Nova publicação humana também exige parecer e fechamento válidos.
+
+O rollout MCP estabelece janela de escrita: build/preflights primeiro; Django/API/daemon/MCP parados durante migrations/grants; startup com `--wait` só após sucesso. Em falha, manter writers parados, corrigir/repetir deploy; não reiniciar versão sem gate universal contra o schema novo. Proxy pode devolver 502/503 durante a janela.

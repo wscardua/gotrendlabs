@@ -1,4 +1,5 @@
 {% extends "admin_base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
@@ -15,9 +16,22 @@
       {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
       {% if admin_message %}<div class="tag safe">{{ admin_message }}</div>{% endif %}
       {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+      {% if market.closure_configuration_errors %}<div class="notice red" role="alert">
+        {% if market.integrity.definition_registered %}
+          <strong>{% trans 'Fechamento incompleto na definição publicada' %}</strong>
+          <p>{% trans 'Este mercado foi publicado com configurações de fechamento incompletas. A data, o fuso e o modo de fechamento fazem parte da definição assinada e não podem ser alterados pelo salvamento comum.' %}</p>
+          {% if form.is_bound %}<p>{% trans 'Os valores preenchidos no formulário não foram gravados. Este aviso corresponde ao registro salvo.' %}</p>{% endif %}
+          <p>{% trans 'Uma correção da definição publicada exige um fluxo auditável específico. O cancelamento com devolução dos créditos é uma ação operacional separada.' %}</p>
+        {% else %}
+          <strong>{% trans 'Configuração de fechamento incompleta no registro salvo' %}</strong>
+          {% if form.is_bound %}<p>{% trans 'As alterações ainda não foram salvas. Confira o erro de salvamento e os campos destacados; os valores informados foram preservados no formulário.' %}</p>{% endif %}
+          <ul>{% for error in market.closure_configuration_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+      </div>{% endif %}
       {% if is_readonly %}<div class="notice red market-readonly-notice">{% if market.status == 'sealed' %}Mercado selado é somente leitura; correções exigem novo evento append-only.{% else %}Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar. Essa ação só está disponível antes do prazo de selagem.{% endif %}</div>{% endif %}
       <form id="market-editor" class="form-grid" method="post" enctype="multipart/form-data" data-market-form>
         {% csrf_token %}
+        {% if market.editorial_revision %}<input type="hidden" name="editorial_revision" value="{{ market.editorial_revision }}"><p>{% trans 'Revisão editorial' %} {{ market.editorial_revision }} · {% include 'admin_ops/partials/editorial_state.html' with state=market.editorial_status %}{% if market.status == 'draft' or market.status == 'scheduled' %}<br>{% trans 'Publicação exige parecer humano aprovado para a versão atual. Salvar alterações exige nova revisão.' %}{% endif %}</p>{% endif %}
         <fieldset class="form-grid full" {% if is_readonly %}disabled{% endif %}>
         <div class="editor-section full">
           <h3>1. Pergunta e classificação</h3>
@@ -142,7 +156,7 @@
             {% if can_publish %}<button class="btn primary" name="action" value="publish" type="submit">Publicar mercado</button>{% endif %}
             {% if can_manual_close %}<button class="btn" name="action" value="lock" type="submit" formnovalidate>Fechar manualmente</button>{% endif %}
             {% if mode == "new" %}<button class="btn disabled" type="button" disabled data-manual-close-disabled>Fechar manualmente após publicar</button>{% endif %}
-            {% if mode != "new" and not can_manual_close and market.auto_close_enabled == False %}<button class="btn disabled" type="button" disabled data-manual-close-disabled>Fechar manualmente disponível quando estiver aberto</button>{% endif %}
+            {% if market.status == "draft" and market.auto_close_enabled == False %}<button class="btn disabled" type="button" disabled data-manual-close-disabled>Fechar manualmente disponível quando estiver aberto</button>{% endif %}
             {% if mode != "new" %}
               <button class="btn danger" name="action" value="cancel" type="submit" data-confirm="Cancelar mercado?" data-confirm-desc="Cancelamento devolve 100% dos stakes bloqueados e não altera reputação.">Cancelar mercado</button>
             {% endif %}
@@ -197,7 +211,8 @@
           <p data-preview-summary>{{ preview.summary|default:"Resumo do mercado aparece aqui conforme você preenche." }}</p>
         </div>
       </div>
-      <div class="ticket-note">Publicar exige pergunta, resumo, fonte, critério e opções válidas.</div>
+      {% include 'admin_ops/partials/editorial_publication.html' %}
+      {% if not market or market.status == 'draft' or market.status == 'scheduled' %}<div class="ticket-note">Publicar exige pergunta, resumo, fonte, critério e opções válidas.</div>{% endif %}
       {% if market %}
         <div class="ticket-note">
           <strong>Popularidade operacional</strong><br>

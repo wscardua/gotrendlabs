@@ -1,0 +1,15 @@
+{% load i18n %}
+{% if market.editorial_revision %}
+  <p><a class="btn small ghost" href="{% url 'admin-ops-agent-review-detail' market_id=market.editorial_market_id %}">{% trans 'Conferir ficha editorial' %}</a></p>
+{% endif %}
+{% if market.status == 'draft' or market.status == 'scheduled' %}
+  {% if market.editorial_revision %}
+    {% if market.editorial_status == 'approved' %}
+      <form method="post">{% csrf_token %}<p>{% trans 'Publicar usa a versão aprovada. Alterações nos campos devem ser salvas e revisadas antes.' %}</p><button class="btn primary" name="action" value="publish-reviewed">{% trans 'Publicar versão aprovada' %}</button></form>
+    {% else %}<p class="notice">{% trans 'Publicação bloqueada até a aprovação humana da versão atual.' %}</p>{% endif %}
+  {% endif %}
+{% elif market.status == 'canceled' %}
+  <p class="notice">{% trans 'Mercado cancelado.' %}{% if market.editorial_revision %} {% trans 'A ficha e o parecer permanecem disponíveis para consulta.' %}{% endif %}</p>
+{% elif market.status == 'open' or market.status == 'locked' or market.status == 'resolved' or market.status == 'sealed' %}
+  <p class="notice">{% trans 'Mercado já publicado.' %}{% if market.status_label %}<br>{% trans 'Estado atual:' %} {{ market.status_label }}.{% endif %}{% if market.editorial_revision %}<br>{% trans 'Consulte a ficha e o parecer no histórico editorial.' %}{% endif %}</p>
+{% endif %}

@@ -27,3 +27,8 @@ apps/mobile/android/app/google-services.json
 apps/mobile/android/*.jks
 apps/mobile/android/*.keystore
 media/app_releases/
+.env.mcp.prod
+.env.mcp-api.prod
+.env.mcp.local
+
+.mcp-config.lock

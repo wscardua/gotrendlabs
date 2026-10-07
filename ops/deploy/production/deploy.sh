@@ -5,6 +5,8 @@ APP_DIR="${APP_DIR:-/opt/gotrendlabs}"
 BRANCH="${BRANCH:-main}"
 REPO_URL="${REPO_URL:-}"
 COMPOSE_FILE="ops/deploy/production/docker-compose.yml"
+MCP_COMPOSE_FILE="ops/deploy/mcp/docker-compose.override.yml"
+COMPOSE=(docker compose -f "$COMPOSE_FILE" -f "$MCP_COMPOSE_FILE" --profile mcp)
 ENV_FILE=".env.prod"
 AUTH_ENV_FILE=".env.auth.prod"
 FASTAPI_DB_ENV_FILE=".env.fastapi-db.prod"
@@ -18,7 +20,7 @@ if [[ ! -d "$APP_DIR/.git" ]]; then
 
   mkdir -p "$APP_DIR"
 
-  if [[ -n "$(find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name "$ENV_FILE" ! -name "$AUTH_ENV_FILE" ! -name "$FASTAPI_DB_ENV_FILE" ! -name "$MIGRATION_ENV_FILE" ! -name ".git" -print -quit)" ]]; then
+  if [[ -n "$(find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name "$ENV_FILE" ! -name "$AUTH_ENV_FILE" ! -name "$FASTAPI_DB_ENV_FILE" ! -name "$MIGRATION_ENV_FILE" ! -name ".env.mcp.prod" ! -name ".env.mcp-api.prod" ! -name ".mcp-config.lock" ! -name ".git" -print -quit)" ]]; then
     echo "$APP_DIR contains unexpected files and cannot be bootstrapped safely." >&2
     exit 1
   fi
@@ -98,14 +100,23 @@ if [[ ! -f "$COMPOSE_FILE" ]]; then
   exit 1
 fi
 
-docker compose -f "$COMPOSE_FILE" --profile ops build
-docker compose -f "$COMPOSE_FILE" run --rm fastapi python -c 'from packages.security.passwords import require_password_pepper; require_password_pepper()'
-docker compose -f "$COMPOSE_FILE" run --rm fastapi python -c 'from apps.api.backend_api.mfa import require_totp_encryption_key; require_totp_encryption_key()'
-docker compose -f "$COMPOSE_FILE" run --rm migrate python -m ops.scripts.auth_db_boundary apply
-docker compose -f "$COMPOSE_FILE" run --rm migrate python -m ops.scripts.migrate_with_role --noinput
-docker compose -f "$COMPOSE_FILE" run --rm migrate python -m ops.scripts.auth_db_boundary apply
-docker compose -f "$COMPOSE_FILE" run --rm django python -m ops.scripts.auth_db_boundary check
-docker compose -f "$COMPOSE_FILE" run --rm fastapi python -m ops.scripts.auth_db_boundary check-api
-docker compose -f "$COMPOSE_FILE" run --rm django python manage.py collectstatic --noinput
-docker compose -f "$COMPOSE_FILE" up -d --remove-orphans
-docker compose -f "$COMPOSE_FILE" ps
+python3 ops/deploy/mcp/configure_environment.py --app-dir "$APP_DIR"
+
+"${COMPOSE[@]}" --profile ops build
+"${COMPOSE[@]}" run --rm fastapi python -c 'from packages.security.passwords import require_password_pepper; require_password_pepper()'
+"${COMPOSE[@]}" run --rm fastapi python -c 'from apps.api.backend_api.mfa import require_totp_encryption_key; require_totp_encryption_key()'
+# Prevent the old runtime from writing while the editorial backfill is applied.
+# On migration failure, leave writers stopped for explicit recovery; do not
+# restart an application version that cannot enforce the universal gate.
+"${COMPOSE[@]}" stop django fastapi daemon mcp
+"${COMPOSE[@]}" run --rm migrate python -m ops.scripts.auth_db_boundary apply
+"${COMPOSE[@]}" run --rm migrate python -m ops.scripts.migrate_with_role --noinput
+"${COMPOSE[@]}" run --rm migrate python -m ops.scripts.auth_db_boundary apply
+"${COMPOSE[@]}" run --rm django python -m ops.scripts.auth_db_boundary check
+"${COMPOSE[@]}" run --rm fastapi python -m ops.scripts.auth_db_boundary check-api
+"${COMPOSE[@]}" run --rm django python manage.py collectstatic --noinput
+"${COMPOSE[@]}" up -d --wait --wait-timeout 180 --remove-orphans
+"${COMPOSE[@]}" exec -T proxy caddy validate --config /etc/caddy/Caddyfile
+"${COMPOSE[@]}" exec -T proxy caddy reload --config /etc/caddy/Caddyfile
+"${COMPOSE[@]}" exec -T mcp python -c 'import urllib.request; urllib.request.urlopen("http://127.0.0.1:8002/health", timeout=5)'
+"${COMPOSE[@]}" ps

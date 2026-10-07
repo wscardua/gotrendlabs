@@ -1,13 +1,15 @@
 ---
 id: FEAT-EDITORIAL-001
 titulo: "Governança editorial de mercados"
-versao: 1.2
+versao: 1.3
 status_spec: aprovada
-status_impl: implementada_validada
-ultima_atualizacao: 2026-09-26
+status_impl: parcial
+ultima_atualizacao: 2026-10-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
-contratos_afetados: []
+contratos_afetados:
+  - market-lifecycle.md
+  - agent-integrations.md
 contratos_revisados:
   - market-lifecycle.md
   - integrity-ledger.md
@@ -19,12 +21,22 @@ dependencias:
 impacta:
   - admin-ops
   - editorial
-aprovacao: versao_1_2_aprovada_pelo_usuario_em_2026-09-26
+aprovacao: criterios_1_2_aprovados_em_2026-09-26_e_revisao_universal_solicitada_em_2026-10-07
 ---
 
 # Governança editorial de mercados
 
-## Objetivo e escopo
+## Escopo vigente — revisão universal 1.3
+
+Todos os mercados possuem ficha editorial estruturada, inclusive criação humana e conversão de sugestões. A revisão usa os critérios editoriais aprovados v1.2, sem cotas obrigatórias de diversidade. Staff/superuser com MFA registra preparo e parecer em uma ação; agentes continuam restritos a drafts próprios. Origem humana tem integração nula, sem identidade técnica fictícia.
+
+Publicação de draft/agendado exige aprovação humana da revisão/hash/política/conteúdo atuais na FastAPI, além de prazo futuro com fuso válido e modo de fechamento explícito. Ausência de ficha ou aprovação bloqueia. Edição invalida aprovação. São as mesmas regras para humano e MCP.
+
+A migration 0003 cria fichas pendentes nos legados sem alterar mercados, opções, previsões, ledger, estados ou provas. Mercados já abertos/fechados podem receber parecer; terminais permitem consulta. Não há fechamento, cancelamento ou republicação retroativos. Campos públicos e definição assinada continuam protegidos.
+
+As seções abaixo registram a entrega histórica v1.2; suas exclusões de parecer persistido/gate foram substituídas pela revisão 1.3. Validação corrente: [relatório local](../testing/universal-editorial-20261007.md). Homologação externa MCP permanece separada.
+
+## Entrega histórica 1.2 — objetivo e escopo
 
 Estabelecer um processo operacional reutilizável de seleção, redação, revisão, publicação e acompanhamento de mercados de previsão, com consulta para staff no Admin Ops e critérios versionados que possam ser reutilizados em uma evolução futura de IA.
 
@@ -99,7 +111,7 @@ Antes de acrescentar informações confidenciais ao editorial ou exigir privacid
 
 Evidência de aceite: leitura cruzada de manual/ficha/checklist/contratos, paridade E01–E11 entre checklist e JSON, links locais, frontmatter e rastreabilidade; testes Django de acesso visitante/staff/usuário comum, GET exclusivo, escape de HTML, navegação no editor e renderização dos três documentos; `manage.py check`, OpenAPI `--check` e `git diff --check`. A PR `#124` passou no CI e no deploy produtivo da GitHub Action `36275879637`; o smoke público retornou `302` para login, e a renderização dos três documentos com sessão staff retornou `200` no container produtivo. Evidências detalhadas no workflow.
 
-## Evolução separada
+## Evolução originalmente separada na entrega 1.2
 
 Se a equipe decidir automatizar a revisão: especificar versionamento e persistência de pareceres, autorização staff, invalidação de aprovação por edição, bloqueio autoritativo de publicação inclusive por API/agendamento, auditoria e política de legado. Essa evolução não está implementada nem é requisito para concluir a entrega editorial atual.
 
@@ -116,3 +128,7 @@ Se a equipe decidir automatizar a revisão: especificar versionamento e persist�
 - Editor e lista de mercados oferecem links para o editorial; o editor mantém o formulário em sua aba.
 - Qualquer edição de pergunta/evidência do checklist sem atualização do JSON falha no teste de paridade.
 - Página recusa POST e não cria ou altera mercados; checagem de Django e testes focados passam no `.venv`.
+
+## Revisão aprovada pelo usuário em 2026-10-07 — gate universal
+
+Todo mercado possui ficha editorial estruturada e revisão humana, independentemente de origem. Nova publicação exige aprovação vigente da versão/hash/política/conteúdo e configuração válida de fechamento. Ambos os modos exigem data/hora futura e fuso válido; automático exige daemon habilitado, manual deixa a ação staff disponível. Legados publicados recebem ficha pendente sem mudar lifecycle, previsões ou provas; nenhum parecer fictício. Substitui explicitamente a exceção anterior para mercados humanos.

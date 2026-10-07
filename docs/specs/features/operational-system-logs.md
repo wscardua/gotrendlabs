@@ -19,6 +19,10 @@ impacta:
 aprovacao: usuario em 2026-09-19
 ---
 
+## Evolução especificada: ações MCP
+
+[FEAT-MCP-001](mcp-editorial-agents.md) reutiliza o log central e eventos administrativos com identidade de integração/correlação. Gravação técnica continua tolerante a falhas; mutações exigem auditoria transacional. Implementação local validada; rollout produtivo aguardando aprovação.
+
 # Logs técnicos de troubleshooting
 
 ## Objetivo

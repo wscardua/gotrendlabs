@@ -199,6 +199,23 @@ def _seed_test_email_templates():
             )
 
 
+def _approve_editorial_market_for_test(client, headers, slug):
+    """Explicit isolated-fixture human attestation before testing downstream lifecycle."""
+    from apps.api.backend_api.editorial_service import policy
+    market = client.get("/admin/markets/" + slug, headers=headers).json()
+    mid = market["editorial_market_id"]
+    detail = client.get(f"/admin/agent-editorial-reviews/{mid}", headers=headers).json()
+    p = policy()
+    record = {"policy_version": p["version"], "policy_hash": p["hash"],
+              "justification": "Isolated test fixture", "search_coverage": "Isolated complete fixture",
+              "sources": [{"url": "https://example.org/test-fixture", "purpose": "resolution", "reported_verified": True, "consulted_at": timezone.now().isoformat(), "excerpt": "Verified isolated fixture"}],
+              "evidence": [{"criterion_id": c["id"], "status": "satisfied", "evidence": "Independently checked fixture", "source_indexes": [0] if c["source_access_required"] else []} for c in p["criteria"]]}
+    response = client.post(f"/admin/agent-editorial-reviews/{mid}/assessment", headers=headers,
+                           json={"expected_revision": detail["draft"]["revision"], "snapshot_hash": detail["draft"]["snapshot_hash"], "editorial_record": record, "decision": "approved", "note": "Independent fixture review", "verified_criteria": [c["id"] for c in p["criteria"]], "verified_source_indexes": [0]})
+    if response.status_code != 200:
+        raise AssertionError(response.text)
+
+
 class FixtureDomainClientTests(TestCase):
     def test_market_fixture_contract_has_expected_fields(self):
         market = get_domain_client().market("openai-gpt6-2026")
@@ -4127,6 +4144,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(market_response.status_code, 201)
+        _approve_editorial_market_for_test(client, staff_headers, "ranking-theme-teste")
         self.assertEqual(client.post("/admin/markets/ranking-theme-teste/publish", headers=staff_headers, json={"note": "publicar"}).status_code, 200)
         ia_market = Market.objects.get(slug="ranking-theme-teste")
         ia_option = MarketOption.objects.get(market=ia_market, label="SIM")
@@ -5094,6 +5112,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(market_response.status_code, 201)
+        _approve_editorial_market_for_test(client, staff_headers, "resolucao-mvp-teste")
         publish_response = client.post("/admin/markets/resolucao-mvp-teste/publish", headers=staff_headers, json={"note": "publicar"})
         self.assertEqual(publish_response.status_code, 200)
         winning_option = MarketOption.objects.get(market__slug="resolucao-mvp-teste", label="SIM")
@@ -5331,6 +5350,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(market_response.status_code, 201)
+        _approve_editorial_market_for_test(client, users["staff"]["headers"], "auditoria-distribuicao-mvp")
         self.assertEqual(client.post("/admin/markets/auditoria-distribuicao-mvp/publish", headers=users["staff"]["headers"], json={"note": "publicar"}).status_code, 200)
         option_probabilities = {"Azul": Decimal("25.0000"), "Verde": Decimal("60.0000"), "Cinza": Decimal("15.0000")}
         options = {option.label: option for option in MarketOption.objects.filter(market__slug="auditoria-distribuicao-mvp")}
@@ -5487,6 +5507,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(market_response.status_code, 201)
+        _approve_editorial_market_for_test(client, staff_headers, "cancelamento-refund-teste")
         publish_response = client.post("/admin/markets/cancelamento-refund-teste/publish", headers=staff_headers, json={"note": "publicar"})
         self.assertEqual(publish_response.status_code, 200)
         option = MarketOption.objects.get(market__slug="cancelamento-refund-teste", label="SIM")
@@ -5579,6 +5600,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(market_response.status_code, 201)
+        _approve_editorial_market_for_test(client, staff_headers, "reconcile-cancelado-orfao")
         publish_response = client.post("/admin/markets/reconcile-cancelado-orfao/publish", headers=staff_headers, json={"note": "publicar"})
         self.assertEqual(publish_response.status_code, 200)
         option = MarketOption.objects.get(market__slug="reconcile-cancelado-orfao", label="SIM")
@@ -5708,17 +5730,43 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(created.status_code, 201)
+        _approve_editorial_market_for_test(client, staff_headers, "preserva-dados-internos")
         self.assertEqual(client.post("/admin/markets/preserva-dados-internos/publish", headers=staff_headers, json={"note": "publicar"}).status_code, 200)
         sim = MarketOption.objects.get(market__slug="preserva-dados-internos", label="SIM")
         nao = MarketOption.objects.get(market__slug="preserva-dados-internos", label="NAO")
         self.assertEqual(client.post("/markets/preserva-dados-internos/predict", headers=first_headers, json={"option_id": sim.id, "stake_amount": 75}).status_code, 201)
         self.assertEqual(client.post("/markets/preserva-dados-internos/predict", headers=second_headers, json={"option_id": nao.id, "stake_amount": 25}).status_code, 201)
 
+        # Private operator notes survive administrative reads and never leak publicly.
+        created_notes = "Ensaio privado de persistência"
+        draft_notes = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
+        saved_notes = client.patch("/admin/markets/preserva-dados-internos", headers=staff_headers,
+                                  json={**draft_notes, "expected_revision": draft_notes["editorial_revision"], "admin_notes": created_notes})
+        self.assertEqual(saved_notes.status_code, 200)
+        self.assertEqual(saved_notes.json()["admin_notes"], created_notes)
+        self.assertEqual(client.get("/markets/preserva-dados-internos").json()["admin_notes"], "")
         before = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
+        for field, value in (
+            ("close_at", "2027-01-10T23:59:00-03:00"),
+            ("close_timezone", "UTC"),
+            ("auto_close_enabled", True),
+        ):
+            with self.subTest(protected_closure_field=field):
+                denied = client.patch(
+                    "/admin/markets/preserva-dados-internos",
+                    headers=staff_headers,
+                    json={**before, "expected_revision": before["editorial_revision"], field: value},
+                )
+                self.assertEqual(denied.status_code, 422)
+                self.assertIn("Alterações não salvas", denied.json()["detail"])
+                unchanged = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
+                for key in ("close_at", "close_timezone", "auto_close_enabled", "editorial_revision"):
+                    self.assertEqual(unchanged[key], before[key])
         before_option_state = [(option["label"], option["probability_exact"], option["sparkline_path"]) for option in before["options"]]
         before_series = [(series["label"], series["path"]) for series in before["sparkline_series"]]
         dangerous_payload = {
             **before,
+            "expected_revision": before["editorial_revision"],
             "title": "Mercado preserva dados internos? Editado",
             "summary": "Texto editado sem limpar dados coletados.",
             "auto_close_enabled": False,
@@ -5760,6 +5808,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual([(series["label"], series["path"]) for series in resolved_payload["sparkline_series"]], before_series)
         resolved_dangerous_payload = {
             **resolved_payload,
+            "expected_revision": resolved_payload["editorial_revision"],
             "title": "Mercado preserva dados internos? Pós-resolução",
             "status_label": "Rascunho",
             "primary_outcome": "NAO",
@@ -6133,7 +6182,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         make_featured = client.patch(
             "/admin/markets/energia-solar-maioria-2030",
             headers=headers,
-            json={**valid_market.json(), "is_featured": True, "auto_close_enabled": False},
+            json={**valid_market.json(), "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"], "is_featured": True, "auto_close_enabled": False},
         )
         self.assertEqual(make_featured.status_code, 200)
         self.assertTrue(make_featured.json()["is_featured"])
@@ -6158,6 +6207,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertTrue(Market.objects.get(slug="terceiro-destaque-substitui-antigo").is_featured)
         self.assertFalse(Market.objects.get(slug="mercado-em-destaque-inicial").is_featured)
 
+        _approve_editorial_market_for_test(client, headers, "energia-solar-maioria-2030")
         publish = client.post("/admin/markets/energia-solar-maioria-2030/publish", headers=headers, json={"note": "publicar"})
         self.assertEqual(publish.status_code, 200)
         self.assertEqual(publish.json()["status"], "open")
@@ -6192,6 +6242,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         probability_after_prediction = predicted_option.probability_exact
         edited_market_payload = {
             **valid_market.json(),
+            "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"],
             "title": "Energia solar será maioria em 2030? Revisado",
             "summary": "Mercado administrativo real para energia solar revisado.",
             "auto_close_enabled": False,
@@ -6315,6 +6366,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             },
         )
         self.assertEqual(manual_market.status_code, 201)
+        _approve_editorial_market_for_test(client, headers, "fechamento-manual-sera-usado")
         manual_publish = client.post("/admin/markets/fechamento-manual-sera-usado/publish", headers=headers, json={"note": "publicar"})
         self.assertEqual(manual_publish.status_code, 200)
         manual_lock = client.post("/admin/markets/fechamento-manual-sera-usado/lock", headers=headers, json={"note": "fechar manualmente"})
@@ -6342,7 +6394,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         canceled_feature_attempt = client.patch(
             "/admin/markets/energia-solar-maioria-2030",
             headers=headers,
-            json={**valid_market.json(), "is_featured": True},
+            json={**valid_market.json(), "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"], "is_featured": True},
         )
         self.assertEqual(canceled_feature_attempt.status_code, 422)
         self.assertTrue(AdminEvent.objects.filter(action="market.cancel", entity_identifier="energia-solar-maioria-2030").exists())
@@ -8807,9 +8859,12 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         caddyfile = Path(settings.BASE_DIR) / "ops" / "deploy" / "production" / "Caddyfile"
         content = caddyfile.read_text(encoding="utf-8")
 
-        self.assertIn("handle_path /api/*", content)
+        self.assertIn("@api_routes path /api/*", content)
+        self.assertIn("handle @api_routes", content)
+        self.assertIn("uri strip_prefix /api", content)
         self.assertIn("reverse_proxy fastapi:8001", content)
-        self.assertLess(content.index("handle_path /api/*"), content.index("reverse_proxy django:8000"))
+        self.assertLess(content.index("import /etc/caddy/mcp-routes.caddy"), content.index("handle @api_routes"))
+        self.assertLess(content.index("handle @api_routes"), content.index("reverse_proxy django:8000"))
 
     def test_admin_config_persists_maintenance_json_and_smtp_database_config(self):
         staff = get_user_model().objects.create_user(
@@ -10795,7 +10850,10 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertNotContains(response, "Publicar mercado")
             self.assertNotContains(response, "Rótulo curto de prazo")
             self.assertContains(response, "data-market-preview")
-            self.assertContains(response, "gotrendlabs.js?v=20260611-email-preview-footer")
+            self.assertRegex(
+                response.content.decode(),
+                r'<script\b[^>]*\bsrc="[^"]*/js/gotrendlabs\.js(?:\?[^"]*)?"[^>]*\bdefer(?:\s|>)',
+            )
 
         posted_market = {
             **api_market,

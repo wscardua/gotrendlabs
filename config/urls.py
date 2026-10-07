@@ -12,7 +12,15 @@ from apps.web.django.markets import views as market_views
 from apps.web.django.profiles import views as profile_views
 from apps.web.django.wallet import views as wallet_views
 
+from apps.web.django.admin_ops import integration_views
+
 urlpatterns = [
+    path("admin-ops/integrations/new/", integration_views.integrations, {"create": True}, name="admin-ops-integration-new"),
+    path("admin-ops/integrations/", integration_views.integrations, name="admin-ops-integrations"),
+    path("admin-ops/integrations/<uuid:identifier>/", integration_views.integrations, name="admin-ops-integration-detail"),
+    path("admin-ops/integration-consent/", integration_views.consent, name="admin-ops-integration-consent"),
+    path("admin-ops/agent-reviews/", integration_views.reviews, name="admin-ops-agent-reviews"),
+    path("admin-ops/agent-reviews/<int:market_id>/", integration_views.reviews, name="admin-ops-agent-review-detail"),
     path("analytics/events/", analytics_views.collect, name="analytics-events"),
     path("", core_views.home, name="home"),
     path("maintenance/", core_views.maintenance, name="maintenance"),

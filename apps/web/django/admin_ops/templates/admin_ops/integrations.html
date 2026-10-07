@@ -1,0 +1,99 @@
+{% extends 'admin_base.html' %}
+{% load i18n %}
+{% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
+{% block content %}
+<main class="shell admin-layout admin-config-page integration-page">
+  <section>
+    <div class="section-head">
+      <div>
+        <span class="eyebrow">{% trans 'Operação editorial' %}</span>
+        <h1 class="large-title">{% if integration %}{{ integration.name }}{% else %}{{ title }}{% endif %}</h1>
+        <p>{% trans 'Conecte executores externos e acompanhe seus drafts com revisão humana.' %}</p>
+      </div>
+      <div class="section-actions">
+        <a class="btn ghost" href="{% url 'admin-ops-integrations' %}">{% trans 'Todas as integrações' %}</a>
+        <a class="btn ghost" href="{% url 'admin-ops-agent-reviews' %}">{% trans 'Fila de revisão humana' %}</a>
+
+      </div>
+    </div>
+    {% if admin_error %}<div class="notice red" role="alert">{{ admin_error }}</div>{% endif %}
+    <div data-credential-result aria-live="polite">{% if secret_once %}{% include 'admin_ops/partials/integration_secret_once.html' %}{% endif %}</div>
+
+    {% if integration %}
+      <div class="integration-overview">
+        {% include 'admin_ops/partials/integration_state.html' with state=integration.effective_state %}
+        <span>{% trans 'Responsável' %}: {{ responsible_name }}</span>
+        <span>{% trans 'Revisão' %}: {{ integration.revision }}</span>
+        <span>{% trans 'Último uso' %}: {{ integration.last_used_at|slice:':16'|cut:'T'|default:'Sem uso registrado' }}</span>
+      </div>
+      <p class="integration-identifier"><span>{% trans 'ID público da integração' %}</span> <code>{{ integration.id }}</code></p>
+    {% endif %}
+
+    <form method="post" class="admin-config-surface integration-settings" id="integration-settings" aria-busy="false">
+      {% csrf_token %}{{ form.expected_revision }}
+      {% if form.non_field_errors %}<div class="notice red" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Identificação' %}</span><h2>{% if integration %}{% trans 'Configuração da integração' %}{% else %}{% trans 'Nova integração' %}{% endif %}</h2><p>{% trans 'Defina o executor, o responsável humano e o período de acesso.' %}</p></div></div>
+        <div class="config-controls integration-fields">
+          <div class="field full"><label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>{{ form.name }}{% if form.name.errors %}<small class="field-error">{{ form.name.errors|join:', ' }}</small>{% endif %}</div>
+          <div class="field full"><label for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>{{ form.description }}{% if form.description.errors %}<small class="field-error">{{ form.description.errors|join:', ' }}</small>{% endif %}</div>
+          <div class="field"><label for="{{ form.responsible_id.id_for_label }}">{{ form.responsible_id.label }}</label>{{ form.responsible_id }}<small>{% trans 'Selecione uma conta humana ativa de staff ou superuser.' %}</small>{% if form.responsible_id.errors %}<small class="field-error">{{ form.responsible_id.errors|join:', ' }}</small>{% endif %}</div>
+          <div class="field"><label for="{{ form.expires_at.id_for_label }}">{{ form.expires_at.label }}</label>{{ form.expires_at }}<small id="integration-expiry-help">{% trans 'Escolha a data e o horário. Fuso: São Paulo (America/Sao_Paulo).' %}</small>{% if form.expires_at.errors %}<small class="field-error">{{ form.expires_at.errors|join:', ' }}</small>{% endif %}</div>
+        </div>
+      </section>
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Acesso' %}</span><h2>{% trans 'Permissões do executor' %}</h2><p>{% trans 'Selecione apenas o necessário. Escrita permite drafts próprios; publicação e resolução continuam com os operadores.' %}</p></div></div>
+        <div class="config-controls">
+          <fieldset class="integration-permissions"><legend class="sr-only">{{ form.scopes.label }}</legend>
+            {% for choice in form.scopes %}<label class="config-check-option">{{ choice.tag }}<span><strong>{{ choice.choice_label }}</strong><small><code>{{ choice.data.value }}</code></small></span></label>{% endfor %}
+          </fieldset>
+          {% if form.scopes.errors %}<small class="field-error">{{ form.scopes.errors|join:', ' }}</small>{% endif %}
+        </div>
+      </section>
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Consumo' %}</span><h2>{% trans 'Limites de uso' %}</h2><p>{% trans 'Controle a criação de drafts e o volume de chamadas do executor.' %}</p></div></div>
+        <div class="config-controls">
+          <div class="integration-limits">
+            <div class="field"><label for="{{ form.drafts_per_day.id_for_label }}">{{ form.drafts_per_day.label }}</label>{{ form.drafts_per_day }}{% if form.drafts_per_day.errors %}<small class="field-error">{{ form.drafts_per_day.errors|join:', ' }}</small>{% endif %}</div>
+            <div class="field"><label for="{{ form.calls_per_minute.id_for_label }}">{{ form.calls_per_minute.label }}</label>{{ form.calls_per_minute }}{% if form.calls_per_minute.errors %}<small class="field-error">{{ form.calls_per_minute.errors|join:', ' }}</small>{% endif %}</div>
+            <div class="field"><label for="{{ form.concurrent_calls.id_for_label }}">{{ form.concurrent_calls.label }}</label>{{ form.concurrent_calls }}{% if form.concurrent_calls.errors %}<small class="field-error">{{ form.concurrent_calls.errors|join:', ' }}</small>{% endif %}</div>
+          </div>
+          <p class="integration-help">{% trans 'A cota diária segue o horário de São Paulo. Chamadas inválidas ou negadas também consomem o limite de tentativas.' %}</p>
+          <div class="actions"><button class="btn primary" name="action" value="save">{% trans 'Salvar configuração' %}</button></div>
+        </div>
+      </section>
+    </form>
+
+    {% if integration %}
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Disponibilidade' %}</span><h2>{% trans 'Acesso ao GoTrendLabs' %}</h2><p>{% trans 'Pausar o acesso não interrompe a pesquisa nem a agenda do executor externo.' %}</p></div></div>
+        <div class="config-controls">
+          {% if integration.state != 'revoked' %}<form method="post" class="actions">{% csrf_token %}<input type="hidden" name="expected_revision" value="{{ integration.revision }}"><button class="btn primary" name="action" value="activate">{% trans 'Ativar' %}</button><button class="btn ghost" name="action" value="pause">{% trans 'Pausar acesso' %}</button></form>{% else %}<p class="muted">{% trans 'Esta integração foi revogada e não pode ser reativada.' %}</p>{% endif %}
+        </div>
+      </section>
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Conexão' %}</span><h2>{% trans 'Credenciais e OAuth' %}</h2><p>{% trans 'OAuth é o caminho preferido para clientes compatíveis. Credenciais de serviço atendem outros executores.' %}</p></div></div>
+        <div class="config-controls">
+          <div class="integration-subhead"><h3>{% trans 'Credenciais de serviço' %}</h3>{% if integration.state != 'revoked' %}<form method="post" data-once-credential>{% csrf_token %}<button class="btn ghost small" name="action" value="credentials">{% trans 'Gerar credencial de serviço' %}</button></form>{% endif %}</div>
+          {% for credential in integration.credentials %}<div class="integration-origin-row"><div><code>{{ credential.id }}</code><small>{% trans 'Validade' %}: {{ credential.expires_at|slice:':10' }}{% if credential.revoked_at %} · {% trans 'Revogada' %}{% endif %}</small></div>{% if not credential.revoked_at and integration.state != 'revoked' %}<form method="post">{% csrf_token %}<input type="hidden" name="origin_id" value="{{ credential.id }}"><button class="btn ghost small" name="action" value="revoke-credential">{% trans 'Revogar' %}</button></form>{% endif %}</div>{% empty %}<p class="integration-help">{% trans 'Nenhuma credencial emitida. O segredo será exibido apenas uma vez.' %}</p>{% endfor %}
+          <h3>{% trans 'Conexões OAuth' %}</h3>
+          {% for connection in integration.connections %}<div class="integration-origin-row"><div><code>{{ connection.id }}</code><small>{% trans 'Validade' %}: {{ connection.expires_at|slice:':10' }} · {{ connection.scopes|join:', ' }}{% if connection.revoked_at %} · {% trans 'Revogada' %}{% endif %}</small></div>{% if not connection.revoked_at and integration.state != 'revoked' %}<form method="post">{% csrf_token %}<input type="hidden" name="origin_id" value="{{ connection.id }}"><button class="btn ghost small" name="action" value="revoke-connection">{% trans 'Revogar conexão' %}</button></form>{% endif %}</div>{% empty %}<p class="integration-help">{% trans 'Nenhum cliente autorizou uma conexão OAuth nesta integração.' %}</p>{% endfor %}
+        </div>
+      </section>
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Auditoria' %}</span><h2>{% trans 'Atividade recente' %}</h2><p>{% trans 'Leituras, tentativas e alterações registradas nos logs da plataforma.' %}</p></div></div>
+        <div class="config-controls"><a class="btn ghost small integration-fit" href="{% url 'admin-ops-system-logs' %}?integration_id={{ integration.id }}">{% trans 'Abrir logs com filtros' %}</a>{% for log in activity %}<div class="integration-origin-row"><div><strong>{{ log.context.tool }}</strong><small>{{ log.created_at|slice:':16' }} · {{ log.context.result }}</small><code>{{ log.request_id }}</code></div></div>{% empty %}<p class="integration-help">{% trans 'Sem atividade registrada até agora.' %}</p>{% endfor %}</div>
+      </section>
+      <section class="config-section">
+        <div class="config-panel-head"><div><span class="eyebrow">{% trans 'Gestão' %}</span><h2>{% trans 'Responsabilidade e revogação' %}</h2><p>{% trans 'Staff e superuser com MFA gerenciam todas as integrações igualmente.' %}</p></div></div>
+        <div class="config-controls">
+          {% if integration.state != 'revoked' %}
+            <form method="post" class="integration-transfer">{% csrf_token %}<input type="hidden" name="expected_revision" value="{{ integration.revision }}"><div class="field"><label for="{{ transfer_form.new_responsible_id.id_for_label }}">{{ transfer_form.new_responsible_id.label }}</label>{{ transfer_form.new_responsible_id }}{% if transfer_form.new_responsible_id.errors %}<small class="field-error">{{ transfer_form.new_responsible_id.errors|join:', ' }}</small>{% endif %}</div><button class="btn ghost" name="action" value="transfer">{% trans 'Transferir responsabilidade' %}</button></form>
+            <details class="integration-revoke"><summary>{% trans 'Revogar integração definitivamente' %}</summary><form method="post">{% csrf_token %}<input type="hidden" name="expected_revision" value="{{ integration.revision }}"><p>{% trans 'A revogação encerra os acessos e não pode ser desfeita. Drafts e histórico são preservados.' %}</p><label class="config-check-option"><input type="checkbox" name="confirm" value="revoke" required><span>{% trans 'Entendo que revogar é terminal' %}</span></label><button class="btn danger" name="action" value="revoke">{% trans 'Revogar integração' %}</button></form></details>
+          {% endif %}
+        </div>
+      </section>
+    {% endif %}
+  </section>
+</main>
+{% endblock %}

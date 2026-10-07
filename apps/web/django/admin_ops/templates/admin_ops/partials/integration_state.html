@@ -1,0 +1,1 @@
+{% load i18n %}<span class="tag {% if state == 'active' %}safe{% elif state == 'revoked' or state == 'expired' %}risk{% else %}warn{% endif %}">{% if state == 'active' %}{% trans 'Ativa' %}{% elif state == 'paused' %}{% trans 'Pausada' %}{% elif state == 'revoked' %}{% trans 'Revogada' %}{% elif state == 'expired' %}{% trans 'Expirada' %}{% else %}{{ state }}{% endif %}</span>

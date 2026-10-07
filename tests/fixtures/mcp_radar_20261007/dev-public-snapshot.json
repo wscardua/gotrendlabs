@@ -1,0 +1,152 @@
+{
+  "as_of": "2026-10-07T16:40:13.272420+00:00",
+  "source": "DEV local public API read-only",
+  "coverage": "public_only; excludes drafts/canceled; not production",
+  "markets": [
+    {
+      "slug": "openai-gpt6-2026",
+      "title": "OpenAI anuncia GPT-6 publicamente até 31 dez 2026?",
+      "summary": "62% SIM representa o consenso atual da comunidade, não garantia de resultado.",
+      "kind": "binary",
+      "status": "sealed",
+      "category": "IA",
+      "subcategory": "Modelos",
+      "event": "Geral",
+      "source": "blog oficial/OpenAI",
+      "resolution_criteria": "Será considerado SIM caso a OpenAI publique anúncio oficial de um modelo chamado GPT-6 até 31/12/2026. Rumores, vazamentos ou nomenclaturas não oficiais não resolvem o mercado.",
+      "close_at": null,
+      "view_count": 257,
+      "share_count": 0,
+      "participants": "0 participantes"
+    },
+    {
+      "slug": "tiktok-ban-eua-2026",
+      "title": "TikTok será banido das lojas de app dos EUA em 2026?",
+      "summary": "Mercado sensível com resolução baseada em evidência regulatória pública.",
+      "kind": "binary",
+      "status": "sealed",
+      "category": "Política",
+      "subcategory": "Regulação",
+      "event": "Geral",
+      "source": "documento regulatório",
+      "resolution_criteria": "Resolve conforme documentação regulatória pública sobre disponibilidade nas lojas de apps dos EUA.",
+      "close_at": null,
+      "view_count": 5,
+      "share_count": 0,
+      "participants": "0 participantes"
+    },
+    {
+      "slug": "lider-vendas-ev-4t26",
+      "title": "Qual empresa lidera vendas globais de carros elétricos no 4T26?",
+      "summary": "Mercado de múltipla escolha com consenso distribuído entre fabricantes.",
+      "kind": "multiple",
+      "status": "open",
+      "category": "Negócios",
+      "subcategory": "Automotivo",
+      "event": "Geral",
+      "source": "relatório trimestral",
+      "resolution_criteria": "Resolve pelo relatório consolidado de vendas globais do quarto trimestre de 2026.",
+      "close_at": null,
+      "view_count": 11,
+      "share_count": 0,
+      "participants": "1 participante"
+    }
+  ],
+  "taxonomy": {
+    "categories": [
+      {
+        "name": "IA",
+        "slug": "ia",
+        "notice": "",
+        "markets_count": 1,
+        "is_blocked": false,
+        "blocked_reason": "",
+        "blocked_at": null,
+        "subcategories": [
+          {
+            "name": "Modelos",
+            "slug": "modelos",
+            "notice": "",
+            "markets_count": 1,
+            "is_blocked": false,
+            "blocked_reason": "",
+            "blocked_at": null,
+            "events": [
+              {
+                "name": "Geral",
+                "slug": "geral",
+                "notice": "",
+                "markets_count": 1,
+                "is_blocked": false,
+                "blocked_reason": "",
+                "blocked_at": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Negócios",
+        "slug": "negocios",
+        "notice": "",
+        "markets_count": 1,
+        "is_blocked": false,
+        "blocked_reason": "",
+        "blocked_at": null,
+        "subcategories": [
+          {
+            "name": "Automotivo",
+            "slug": "automotivo",
+            "notice": "",
+            "markets_count": 1,
+            "is_blocked": false,
+            "blocked_reason": "",
+            "blocked_at": null,
+            "events": [
+              {
+                "name": "Geral",
+                "slug": "geral",
+                "notice": "",
+                "markets_count": 1,
+                "is_blocked": false,
+                "blocked_reason": "",
+                "blocked_at": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Política",
+        "slug": "politica",
+        "notice": "",
+        "markets_count": 1,
+        "is_blocked": false,
+        "blocked_reason": "",
+        "blocked_at": null,
+        "subcategories": [
+          {
+            "name": "Regulação",
+            "slug": "regulacao",
+            "notice": "",
+            "markets_count": 1,
+            "is_blocked": false,
+            "blocked_reason": "",
+            "blocked_at": null,
+            "events": [
+              {
+                "name": "Geral",
+                "slug": "geral",
+                "notice": "",
+                "markets_count": 1,
+                "is_blocked": false,
+                "blocked_reason": "",
+                "blocked_at": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

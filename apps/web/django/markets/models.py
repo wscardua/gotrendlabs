@@ -491,6 +491,10 @@ class UserNotification(models.Model):
 
 
 class AdminEvent(models.Model):
+    integration = models.ForeignKey("editorial_integrations.Integration", on_delete=models.PROTECT, null=True)
+    responsible = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name="agent_admin_events")
+    request_id = models.CharField(max_length=64, default="", blank=True)
+    execution_id = models.CharField(max_length=100, default="", blank=True)
     actor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name="admin_events")
     action = models.CharField(max_length=80)
     entity_type = models.CharField(max_length=80)

@@ -4,10 +4,13 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 concurrency:
-  group: production-deploy
+  group: ${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || 'production-deploy' }}
   cancel-in-progress: false
 
 jobs:
@@ -28,6 +31,7 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           BEFORE_SHA: ${{ github.event.before }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
           CURRENT_SHA: ${{ github.sha }}
         run: |
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
@@ -37,7 +41,9 @@ jobs:
             exit 0
           fi
 
-          if [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            DIFF_RANGE="${BASE_SHA}..${CURRENT_SHA}"
+          elif [[ "$BEFORE_SHA" =~ ^0+$ ]]; then
             DIFF_RANGE="${CURRENT_SHA}^..${CURRENT_SHA}"
           else
             DIFF_RANGE="${BEFORE_SHA}..${CURRENT_SHA}"

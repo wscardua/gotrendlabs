@@ -1,4 +1,6 @@
 from decimal import Decimal, ROUND_DOWN
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 from django import forms
 
@@ -391,6 +393,33 @@ def _even_probability_exact(total):
     return (Decimal("100") / Decimal(total)).quantize(PROBABILITY_QUANT)
 
 
+class MarketLocalDateTimeField(forms.DateTimeField):
+    """Keep datetime-local as wall time until its explicit timezone is validated."""
+    def to_python(self, value):
+        if value in self.empty_values:
+            return None
+        try:
+            parsed = datetime.fromisoformat(str(value))
+            if parsed.tzinfo is not None:
+                raise ValueError("datetime-local requires a wall time")
+            return parsed
+        except (ValueError, TypeError):
+            raise forms.ValidationError(self.error_messages["invalid"], code="invalid")
+
+
+def _clean_market_wall_time(form, cleaned_data, date_field, zone_field):
+    wall = cleaned_data.get(date_field)
+    zone_name = cleaned_data.get(zone_field)
+    if wall and zone_name:
+        zone = ZoneInfo(zone_name)
+        instant = wall.replace(tzinfo=zone)
+        if (instant.utcoffset() != instant.replace(fold=1).utcoffset()
+                or instant.astimezone(timezone.utc).astimezone(zone).replace(tzinfo=None) != wall):
+            form.add_error(date_field, "Horário ambíguo ou inexistente nesse fuso. Escolha outro horário ou use UTC.")
+        else:
+            cleaned_data[date_field] = instant
+
+
 class AdminMarketForm(forms.Form):
     title = forms.CharField(label="Pergunta PT-BR", max_length=240)
     slug = forms.SlugField(label="Slug", max_length=160, required=False)
@@ -401,10 +430,10 @@ class AdminMarketForm(forms.Form):
     event = forms.CharField(label="Evento", max_length=80)
     source = forms.CharField(label="Fonte esperada", max_length=180)
     close_label = forms.CharField(label="Mensagem pública de fechamento", max_length=120, required=False)
-    close_at = forms.DateTimeField(
+    close_at = MarketLocalDateTimeField(
         label="Data/hora de fechamento",
         input_formats=["%Y-%m-%dT%H:%M"],
-        widget=forms.DateTimeInput(attrs={"type": "datetime-local"}, format="%Y-%m-%dT%H:%M"),
+        widget=forms.DateTimeInput(attrs={"type": "datetime-local", "step": "any"}, format="%Y-%m-%dT%H:%M:%S"),
     )
     close_timezone = forms.ChoiceField(
         label="Fuso de fechamento",
@@ -457,6 +486,7 @@ class AdminMarketForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        _clean_market_wall_time(self, cleaned_data, "close_at", "close_timezone")
         category_name = cleaned_data.get("category")
         subcategory_name = cleaned_data.get("subcategory")
         event_name = cleaned_data.get("event")
@@ -836,7 +866,7 @@ class AdminBadgeForm(forms.Form):
 
 class MarketResolutionForm(forms.Form):
     winning_option_id = forms.ChoiceField(label="Resultado")
-    resolved_at = forms.DateTimeField(
+    resolved_at = MarketLocalDateTimeField(
         label="Data/hora da resolução",
         input_formats=["%Y-%m-%dT%H:%M"],
         widget=forms.DateTimeInput(attrs={"type": "datetime-local"}),
@@ -870,4 +900,5 @@ class MarketResolutionForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        _clean_market_wall_time(self, cleaned_data, "resolved_at", "resolution_timezone")
         return cleaned_data

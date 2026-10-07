@@ -1,0 +1,18 @@
+{% load i18n %}
+<aside class="admin-sidebar" id="admin-navigation" data-admin-sidebar>
+  <div class="admin-sidebar-head"><strong>{% trans 'Áreas da administração' %}</strong><button class="admin-menu-close" type="button" data-admin-menu-close aria-label="{% trans 'Fechar menu administrativo' %}">×</button></div>
+  <div class="admin-sidebar-search" data-admin-search-container hidden>
+    <label class="sr-only" for="admin-navigation-search">{% trans 'Buscar área administrativa' %}</label>
+    <input type="search" id="admin-navigation-search" data-admin-navigation-search placeholder="{% trans 'Buscar área…' %}" autocomplete="off">
+  </div>
+  <nav class="admin-sidebar-links" aria-label="{% trans 'Áreas do Admin Ops' %}">
+    {% for group in admin_navigation %}
+      <section class="admin-navigation-group" data-admin-navigation-group>
+        <h2>{{ group.title }}</h2>
+        {% for link in group.links %}<a class="admin-navigation-link{% if link.active %} active{% endif %}" href="{{ link.url }}" {% if link.active %}aria-current="page"{% endif %}>{{ link.label }}</a>{% endfor %}
+      </section>
+    {% endfor %}
+    <p class="admin-navigation-empty" data-admin-navigation-empty hidden role="status">{% trans 'Nenhuma área encontrada.' %}</p>
+  </nav>
+</aside>
+<button class="admin-navigation-backdrop" type="button" data-admin-menu-close hidden tabindex="-1" aria-label="{% trans 'Fechar menu administrativo' %}"></button>

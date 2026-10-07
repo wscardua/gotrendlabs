@@ -20,6 +20,10 @@ impacta:
 aprovacao: pendente
 ---
 
+## Evolução especificada: autenticação de integrações
+
+[FEAT-MCP-001](mcp-editorial-agents.md) implementa localmente OAuth para clientes MCP e credenciais de serviço sem reutilizar senhas humanas/TOTP. Gestão staff/superuser com MFA e capacidades equivalentes; sessões humanas atuais permanecem preservadas. Rollout produtivo e homologação Dot aguardam evidências.
+
 # Autenticação e sessão
 
 ## Objetivo

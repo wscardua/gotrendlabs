@@ -1,3 +1,7 @@
+
+## Evolução especificada: MCP editorial
+
+[FEAT-MCP-001](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md) definem adaptador MCP sem banco, FastAPI autoritativa e executor externo. Estado: implementação local validada, rollout produtivo preparado e homologação Dot pendente.
 # Visão Geral do Sistema
 
 ## Objetivo
@@ -39,3 +43,7 @@ Definir fronteiras estáveis entre as camadas do GoTrendLabs para que a implemen
 3. Os contratos transversais são atualizados.
 4. A arquitetura valida a alocação correta das responsabilidades.
 5. Só então a implementação é iniciada.
+
+### Revisão universal de publicação — 2026-10-07
+
+FastAPI inicializa ficha humana na criação administrativa/conversão e valida aprovação e fechamento no MarketLifecycleEngine. Origem humana usa integração nullable. Migration 0003 acrescenta fichas pendentes aos legados sem alterar domínio/provas. Django apresenta revisão e erros retornados; MCP mantém permissões restritas e não acessa ORM. Este escopo substitui referências anteriores ao gate apenas de integração.

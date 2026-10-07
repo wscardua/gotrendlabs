@@ -1,10 +1,141 @@
 # Feature Changelog
 
+## 2026-10-07 — fechamento local MCP e rollout preparado
+
+- Fonte de verdade alinhada: revisão universal, arquitetura/ADR, frontmatter auth/logs, operação e pendências externas. Revisão inválida no POST recebe erro controlado sem mutação; parecer novo informa gate universal.
+- Deploy integra serviço/proxy MCP, arquivos privados 0600 e ativação/rollback explícitos, desligado na primeira instalação. CI de PR adicionada, deploy restrito à main. Pré-checagem produtiva somente leitura; snapshot/merge/deploy aguardam autorização da descrição da PR.
+- 367 testes/879,395 s/OK; 19 focais/6,268 s e sete de rollout/2,146 s aprovados, com sobreposições documentadas. Docker/Compose/Caddy/Django/OpenAPI/Ruff/JS/dependências/diff aprovados. Evidências e checklist: [fechamento](../testing/mcp-closeout-20261007.md). FEAT-MCP-001 permanece parcial por rollout/HTTPS/Dot; branch local deve ser preservada.
+
+## 2026-10-07 — recomendações 1/2 do review MCP
+
+- Dependências, templates, migrations/grants, deploy/runbook e testes da feature adicionados ao índice Git. Snapshot limpo sem env/runtime validado com venv nova e instalação independente de requirements.
+- Teste de asset verifica script/defer sem versão literal. 74 testes/172,744 s/OK em PostgreSQL isolado; Django/OpenAPI/pip/migrations/diff aprovados. [Relatório](../testing/mcp-branch-review-followup-20261007.md). Sem commit/merge/deploy ou mutação DEV; item 3 não selecionado, homologação externa ainda pendente.
+
+## 2026-10-07 — ensaio integral do catálogo DEV humano e MCP
+
+- Catálogo DEV reiniciado mediante pedido explícito e backup integral local; contas, configuração, taxonomia, integração e logs preservados. Mercados antigos 1/2/3/5 substituídos por cenários sintéticos #6 humano (resolvido) e #7 MCP (fechado/aguardando resolução).
+- Corrigidos fuso escolhido no fechamento/resolução, precisão do prazo MCP, retorno privado de notas administrativas, criação sem publicação prematura e ação inadequada no mercado fechado. OpenAPI atualizado.
+- 64 testes amplos e 17 focais (sobrepostos) passaram; UI Chrome, dez tools MCP/OAuth/serviço, gates, logs e integridade reais DEV conferidos. Fechamento automático em relógio real; cadeia e dois mercados verificados, zero issues. [Relatório](../testing/dev-catalog-rehearsal-20261007.md). Dot/deploy permanecem pendentes.
+
+## 2026-10-07 — feedback de fechamento legado publicado
+
+- Diagnóstico DEV: salvamento rejeitado por definição assinada; valores preenchidos não persistidos. Mensagem backend específica e aviso web distinguem registro salvo/formulário, sem liberar alteração de prazo/fuso/modo publicado.
+- 12 testes passaram (4,794 s); PostgreSQL isolado destruído, checks e Chrome aprovados. Sem mutação DEV/migration/deploy. Retificação assinada permanece evolução separada. [Relatório](../testing/legacy-closure-feedback-20261007.md).
+
+
+## 2026-10-07 — revisão editorial universal e fechamento completo
+
+- Ficha/parecer para origem humana, sugestão convertida e MCP; gate FastAPI exige aprovação atual e configuração de fechamento em ambos os modos. Edição invalida; ficha em publicado não altera lifecycle.
+- Migration 0003 integration nullable/backfill pendente aplicada DEV; mercados/opções/previsões/provas e aprovação Tesla preservados. UI universal com fontes atestadas, links e alertas; OpenAPI/ADR/specs/runbook atualizados.
+- 68 testes passaram (195,984 s), PostgreSQL isolado destruído; checks estáticos/contratos e Chrome DEV aprovados. [Relatório](../testing/universal-editorial-20261007.md). Sem deploy, homologação externa pendente.
+
+## 2026-10-07 — estado publicado no editor de todos os mercados
+
+- Estado publicado/cancelado aparece também em mercados sem MCP; estado atual usa label FastAPI. Link/parecer/bloqueio continuam específicos à ficha de integração.
+- Oito testes UI passaram (0,021 s), Chrome DEV confirma EV publicado/Aberto sem ficha MCP. Sem alteração de dados/regras/contratos/OpenAPI.
+
+## 2026-10-07 — mensagem editorial após publicação
+
+- Editor diferencia lifecycle: bloqueio apenas em draft/scheduled sem aprovação, mensagem de publicação já realizada nos estados publicados e cancelamento em canceled. Parecer traduzido e aviso pré-publicação restrito aos estados adequados.
+- Sete testes passaram (0,021 s); Chrome DEV confirma Tesla publicado/aprovado revisão 11. Sem alterações no backend, contratos/OpenAPI, dados ou publicação pelo agente.
+
+## 2026-10-07 — confirmação humana de lacunas resolvidas
+
+- Parecer permite confirmar resolução documentada das lacunas sem apagar texto manualmente. A ação humana atualiza a ficha via assessment existente; snapshots anteriores preservados.
+- Sem resolução inferida de critérios, aprovação automática ou redução das validações de fontes/versão/MFA. Texto/confirmação preservados em erro; sete testes passaram (8,925 s). DEV #5 permanece em revisão, sem publicação/deploy.
+
+## 2026-10-07 — revisão MCP e design de mercados
+
+- Mercados adota cabeçalho compacto e painel/tabela Admin Ops, agrupa destaque e tipo, preserva origem/estado/link MCP.
+- Fontes sugeridas integram a evidência editável; removidos seletores repetidos por critério. Vínculo estruturado deriva de URLs explícitas ao catálogo; conferência humana independente mantida.
+- Bloqueio de lacunas explica motivo e preserva decisão/marcações; oito testes locais em PostgreSQL isolado passaram (12,393 s), UI Chrome DEV conferida sem escrita no draft. Contrato/OpenAPI compatíveis, sem migrations/deploy.
+
+## 2026-10-07 — origem MCP e revisão na lista de mercados
+
+- Admin Ops mostra identificação de agente IA via MCP, estado editorial distinto do status do mercado e link direto ao parecer humano. Reutiliza metadados administrativos existentes; sem contrato/migration/regra nova.
+- Quatro testes UI passaram; conferência Chrome DEV somente leitura. Indicador mantém legibilidade e versão de CSS atualizada; nenhuma alteração nos dados DEV.
+
+
+## 2026-10-07 — parecer humano MCP em uma ação
+
+- Formulário único para conferir/ajustar ficha e registrar aprovar/devolver/rejeitar. Sem etapa humana obrigatória de reenvio e sem status/atestação duplicados; contexto opcional recolhível.
+- FastAPI assessment compõe snapshot e decisão atomicamente; falha reverte inclusive eventos e revisões. MFA/versão/hash/locks, gate de publicação e contratos anteriores preservados; sem migrations, publicação DEV ou deploy.
+
+## 2026-10-07 — retomada da revisão humana MCP
+
+- Admin Ops permite atualizar ficha e enviar para revisão sem depender do executor. FastAPI valida registro/revisão/estado/MFA, cria snapshot e evento humano e invalida parecer antigo.
+- Aprovação permanece separada e recusa pendências; erros mantêm o contexto e CSRF/PRG protegem submissão. OpenAPI/runbook/contratos e testes sincronizados; sem migration ou publicação DEV.
+
+## 2026-10-07 — MCP revisão 1.1: slug, aprovação obrigatória e estrutura de gestão
+
+- Slug gerado do título com colisões/replay protegidos. Gate específico no lifecycle exige aprovação humana vigente para mercados de integração; versão/hash/política/conteúdo revalidados antes de assinar/abrir.
+- Editor separa publicar de salvar; preserva fuso e seleção de evento homônimo. Integrações segue Agentes IA: indicadores, tabela, criação separada, auditoria recente centralizada. OpenAPI aditivo sincronizado.
+- Draft DEV #5 corrigido sem publicação; revisão 4/preparation, prazo e mercados 1–3 preservados. [Evidências](../testing/mcp-review-gate-20261007.md). Feature permanece parcial por homologação externa/deploy.
+
+## 2026-10-07 — radar MCP persistente no DEV
+
+- Execução autorizada no PostgreSQL DEV: draft #5 em revisão, dez tools/21 chamadas, replay/conflitos e preservação dos mercados prévios verificados. OAuth local real e UI conferidos.
+- Corrigidos parâmetros escalares do consentimento Django e título na ficha de revisão. Teste sem banco, Ruff/OpenAPI aprovados. [Evidências](../testing/mcp-radar-dev-20261007.md). Sem publicação ou homologação externa.
+
+## 2026-10-07 — FEAT-MCP-001 radar real em ambiente isolado
+
+- Pesquisa externa + cliente MCP real: dez tools, 17 chamadas, um draft/ficha submetido sem parecer humano fictício; replay/cota e recusa de edição confirmados.
+- Corrigida serialização de campos nullable em detalhe de mercado, preservando privacidade de ficha. Quatro testes passaram (29,121 s), incluindo OAuth/serviço. [Relatório](../testing/mcp-radar-pilot-20261007.md).
+
+## 2026-10-07 — FEAT-MCP-001 descoberta editorial explícita
+
+- Instructions e descrições diferenciam política/manual editorial (`get_editorial_policy`), catálogo (`search_markets`), taxonomia e detalhe de mercado. Sem alteração de nomes, schemas, rotas ou acesso.
+- Cliente real com dez ferramentas em ambos os modos passou novamente (15,650 s), incluindo conteúdo completo do manual/checklist/ficha e 11 critérios. Runbook orienta Refresh tools/conversa nova e registra limitações do parser/modelo do LM Studio.
+
+## 2026-10-07 — FEAT-MCP-001 exercício de todas as ferramentas
+
+- Teste de cliente MCP real ampliado para as dez ferramentas com OAuth e serviço: catálogo exato, leituras, validação, criação/replay, edição, submissão e consulta do parecer. Edição em revisão e ID inexistente negados como esperado.
+- Execução TCP/PostgreSQL isolada passou em 15,236 s, sem mercados no DEV/produção ou uso do segredo compartilhado. Base destruída e servidores temporários encerrados; 22 chamadas positivas e quatro negações esperadas. Homologação LM Studio/Dot continua independente.
+
+## 2026-10-07 — FEAT-MCP-001 seletor de validade
+
+- Campo de validade usa calendário/horário nativos (`datetime-local`), com fuso São Paulo explícito e precisão de minutos. Data UTC existente é convertida para apresentação local; escolha é enviada à API com offset pelo Django, independentemente do fuso ativo/browser.
+- Quatro testes passaram (conversão com troca de dia, fuso alternativo, data inválida e regressão UI/CSRF), checks aprovados e componente conferido no Chrome DEV. Sem salvar integração, alterar contratos ou recarregar formulário preenchido do usuário.
+
+## 2026-10-07 — FEAT-MCP-001 responsável por seleção de nome
+
+- Criação e transferência exibem nomes/@usuários elegíveis no lugar de campo numérico; nomes também aparecem no resumo/listagem. API administrativa MFA oferece projeção mínima paginada de humanos ativos staff/superuser, sem emails ou dados pessoais adicionais. Django valida a opção e FastAPI revalida elegibilidade na mutação.
+- OpenAPI/contrato atualizados. Três testes isolados passaram (MFA, elegibilidade, paginação, seleção, transferência e regressões), checks estáticos aprovados e Chrome DEV conferido. Formulário aberto do usuário preservado; nenhuma integração criada no DEV.
+
+## 2026-10-07 — FEAT-MCP-001 parecer humano alinhado ao Admin Ops
+
+- Fila e detalhe de parecer reutilizam cabeçalho, ações, estados e seções de configuração. Ficha/contexto, critérios, fontes, decisão e histórico têm hierarquia própria; labels explícitos e conteúdo longo responsivo.
+- Mantidos CSRF, revisão/hash esperados, verificação independente, escape de conteúdo e aviso sobre publicação humana. Dois testes direcionados passaram em PostgreSQL isolado, incluindo renderização de draft em revisão com evidência maliciosa; Chrome DEV conferido em desktop/390 px. Sem criação de mercado no DEV ou alteração de regras de domínio.
+
+## 2026-10-07 — navegação compartilhada Admin Ops
+
+- Menu lateral por áreas, busca com suporte a acentos e indicação da seção ativa em telas aninhadas. Drawer móvel com navegação por teclado, Escape e retorno de foco; fallback visível sem JavaScript.
+- Mantidos os tokens do design system e removida navegação duplicada da revisão editorial. Cache de CSS/JS atualizado.
+- Quatro testes direcionados passaram, incluindo proteção/renderização Admin Ops e CSRF/segredo único/escape MCP, com PostgreSQL isolado. Chrome DEV conferido em desktop e viewport estreito, busca vazia/acentos/sem resultados e abertura/fechamento do menu. Sem alteração de domínio, contratos ou publicação.
+
+## 2026-10-07 — FEAT-MCP-001 alinhamento visual Admin Ops
+
+- Integrações reutiliza cabeçalho, campos e seções da página de Config; retirada navegação duplicada. Formulário organizado em identificação, permissões legíveis e limites agrupados. Estados traduzidos e revogação definitiva separada das ações usuais.
+- CSS/JS do Admin recebem versão nova para invalidar cache. Layout conferido no Chrome DEV em desktop/tela estreita/tema escuro; preferência original restaurada. Teste existente de CSRF/exibição única/escape passou. Sem alteração de contratos ou regras de domínio.
+
+
+## 2026-10-07 — FEAT-MCP-001 implementação local
+
+- OAuth/Authlib e serviço, identidade técnica/delegação, MCP SDK Streamable HTTP com dez ferramentas restritas, gestão/consentimento/revisão Admin Ops. Staff/superuser com MFA equivalentes.
+- Migrations aditivas/grants, serviços compartilhados, drafts/ficha/snapshots, idempotência, cotas persistentes São Paulo, locks humanos/publicação/revogação e correlação nos logs/eventos existentes.
+- OpenAPI atualizado, testes PostgreSQL/cliente MCP real, UI desktop/mobile, imagem sem DB e configuração/runbook/rollback/prompt preparados. [Evidências](../testing/mcp-editorial-results.md). Sem merge/deploy; Dot e HTTPS externo pendentes.
+
+
 ## 2026-09-29 — FEAT-ANALYTICS-001 validação produtiva v0.4
 
 - PR `#133` integrada por squash (`61bc109`); CI e deploy produtivo do workflow `36583348331` concluídos com sucesso.
 - GeoLite City instalada no volume persistente e carga registrada como `success`, após corrigir a posse do diretório runtime. Segredo compartilhado e rede confiável do proxy configurados; saúde da API/banco, rotas OpenAPI e proteção do Analytics administrativo verificados.
 - Site em manutenção e sem eventos humanos recentes durante o smoke; distribuição de novo binário Flutter e observação da primeira coleta real continuam como acompanhamento operacional, fora do fechamento do backend/web v0.4.
+
+## 2026-10-07 — FEAT-MCP-001 especificada
+
+- Feature aprovada para implementação: MCP editorial, gestão de integrações, dois modos de autenticação, drafts/ficha/revisão e auditoria existente.
+- Contratos e critérios de aceite definidos; nenhum endpoint, migration ou tela implementado nesta entrega. Prompt de retomada em `docs/guides/implementar-mcp-editorial-prompt.md`.
 
 ## 2026-09-29 — FEAT-ANALYTICS-001 retenção e mapa real
 

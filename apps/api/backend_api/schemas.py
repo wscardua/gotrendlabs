@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any, List, Optional, Union
+from typing import Any, List, Literal, Optional, Union
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
@@ -712,6 +712,12 @@ class MarketIntegritySummary(BaseModel):
 
 
 class MarketResponse(BaseModel):
+    admin_notes: str = ""
+    editorial_origin: Optional[Literal["mcp", "human"]] = None
+    closure_configuration_errors: List[str] = Field(default_factory=list)
+    editorial_market_id: Optional[int] = None
+    editorial_revision: Optional[int] = None
+    editorial_status: Optional[str] = None
     slug: str
     title: str
     category: str
@@ -924,6 +930,7 @@ class AdminMarketOptionPayload(BaseModel):
 
 
 class AdminMarketPayload(BaseModel):
+    expected_revision: Optional[int] = None
     title: str = Field(min_length=1, max_length=240)
     slug: Optional[str] = Field(default=None, max_length=160)
     summary: str = ""

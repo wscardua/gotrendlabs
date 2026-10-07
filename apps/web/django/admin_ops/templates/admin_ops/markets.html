@@ -1,11 +1,12 @@
 {% extends "admin_base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs Admin | Mercados{% endblock %}
 {% block content %}
-<main class="shell admin-layout">
-  <section class="panel">
+<main class="shell admin-layout admin-markets-page">
+  <section>
     <div class="section-head">
       <div>
-        <h1 class="large-title">Mercados ativos e rascunhos</h1>
+        <span class="eyebrow">{% trans "Operação editorial" %}</span><h1 class="large-title">{% trans "Mercados" %}</h1>
         <p class="muted">Gerencie contratos publicados, rascunhos e cancelamentos usados no feed público.</p>
       </div>
       <div class="section-actions">
@@ -14,6 +15,7 @@
         <a class="btn primary" href="{% url 'admin-ops-market-new' %}">Criar mercado</a>
       </div>
     </div>
+    <section class="panel admin-dashboard-panel">
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     <form class="admin-filter-form market-search-form" method="get" role="search">
       {% if active_status %}<input type="hidden" name="status" value="{{ active_status }}">{% endif %}
@@ -38,15 +40,25 @@
       <a class="filter {% if active_order == 'views_desc' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=views_desc{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Mais visualizados</a>
       <a class="filter {% if active_order == 'shares_desc' %}active{% endif %}" href="{% url 'admin-ops-markets' %}?{% if active_status %}status={{ active_status }}&{% endif %}order=shares_desc{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Mais compartilhados</a>
     </div>
-    <table class="table">
-      <tr><th>Mercado</th><th>Status</th><th>Destaque</th><th>Tipo</th><th>Categoria</th><th>Participantes</th><th>Popularidade</th><th>Ações</th></tr>
+    <div class="integration-table-scroll"><table class="table dashboard-table admin-markets-table">
+      <thead><tr><th>Mercado</th><th>Status</th><th>Categoria e tipo</th><th>Participantes</th><th>Popularidade</th><th>Ações</th></tr></thead><tbody>
       {% for market in market_data.markets %}
         <tr>
-          <td>{{ market.title }}</td>
-          <td>{{ market.status_label }}</td>
-          <td>{% if market.is_featured %}<span class="tag hot">Destaque</span>{% else %}<span class="tag">Não</span>{% endif %}</td>
-          <td>{% if market.kind == "binary" %}Sim/Não{% else %}Múltipla escolha{% endif %}</td>
-          <td>{{ market.category }} / {{ market.subcategory }} / {{ market.event }}</td>
+          <td>
+            <strong>{{ market.title }}</strong>
+            {% if market.is_featured %}<div class="market-origin"><span class="tag hot">Destaque</span></div>{% endif %}
+            {% if market.editorial_origin == "mcp" %}
+              <div class="market-origin"><span class="tag">{% trans 'Gerado por agente IA via MCP' %}</span></div>
+            {% endif %}
+          </td>
+          <td class="market-editorial-status">
+            {{ market.status_label }}
+            {% if market.editorial_market_id %}
+              <div><small class="muted">{% trans 'Revisão editorial' %}</small></div>
+              {% include "admin_ops/partials/editorial_state.html" with state=market.editorial_status %}
+            {% endif %}
+          </td>
+          <td>{{ market.category }} / {{ market.subcategory }} / {{ market.event }}<small>{% if market.kind == "binary" %}Sim/Não{% else %}Múltipla escolha{% endif %}</small></td>
           <td>
             <strong>{{ market.participants|default:"0 participantes" }}</strong>
             {% if market.bot_participants %}<br><small class="muted">{{ market.bot_participants }} bot oficial</small>{% endif %}
@@ -60,15 +72,19 @@
           <td>
             <div class="table-actions">
               <a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a>
+              {% if market.editorial_market_id %}
+                <a class="btn small ghost" href="{% url 'admin-ops-agent-review-detail' market_id=market.editorial_market_id %}">{% trans 'Revisão editorial' %}</a>
+              {% endif %}
               <a class="btn small ghost" href="{% url 'admin-ops-resolution-market-action' market.slug 'integrity' %}">Auditar integridade</a>
             </div>
           </td>
         </tr>
       {% empty %}
-        <tr><td colspan="8">Nenhum mercado cadastrado.</td></tr>
+        <tr><td colspan="6">Nenhum mercado cadastrado.</td></tr>
       {% endfor %}
-    </table>
+    </tbody></table></div>
     {% include "admin_ops/partials/load_more.html" with pagination=market_pagination label="Mais mercados" %}
+    </section>
   </section>
 </main>
 {% endblock %}
