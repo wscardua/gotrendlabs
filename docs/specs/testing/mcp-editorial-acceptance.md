@@ -81,6 +81,8 @@ Evidências: [fechamento e pendências](mcp-closeout-20261007.md).
 
 ## Regressão OAuth Codex
 
+Follow-up DCR ChatGPT: registro com callback HTTPS e scope omitido retorna 201, sem `scope: null` nem segredo de cliente; scope explícito mantém seu valor. Consent-info aceita parâmetro OAuth adicional `ui_locales` preservando MFA, PKCE, redirect exato, resource e pedido explícito de scope. Cadastro real no ChatGPT deve ser repetido após implantação autorizada; testes locais não comprovam sua aceitação.
+
 - Registro com payload real Codex (`application_type: native`): 201, redirect persistido, metadados desconhecidos omitidos; nenhum token ou permissão emitido.
 - Extras desconhecidos não contornam validação de redirect, grant, auth method e response type. Schemas editoriais/admin seguem estritos.
 - Discovery do adaptador anuncia issuer textual idêntico ao AS/iss, usando a mesma canonicalização inicial sem barra final da FastAPI; scopes completos e challenge canonical preservados, /mcp sem token continua 401.

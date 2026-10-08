@@ -242,6 +242,46 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                 )
                 self.assertEqual(denied.status_code, 422)
 
+    def test_chatgpt_registration_omits_absent_scope_and_accepts_https_consent(self):
+        callback = "https://chatgpt.com/connector_platform_oauth_redirect"
+        for metadata in ({}, {"scope": "editorial:read"}):
+            with self.subTest(metadata=metadata):
+                r = self.client.post(
+                    "/oauth/register",
+                    json={
+                        "client_name": "ChatGPT",
+                        "redirect_uris": [callback],
+                        **metadata,
+                    },
+                )
+                self.assertEqual(r.status_code, 201, r.text)
+                registered = r.json()
+                self.assertNotIn(None, registered.values())
+                self.assertNotIn("client_secret", registered)
+                self.assertEqual(registered["token_endpoint_auth_method"], "none")
+                if metadata:
+                    self.assertEqual(registered["scope"], "editorial:read")
+                else:
+                    self.assertNotIn("scope", registered)
+                params = {
+                    "response_type": "code",
+                    "client_id": registered["client_id"],
+                    "redirect_uri": callback,
+                    "scope": "editorial:read",
+                    "resource": a.resource(),
+                    "state": "test-chatgpt-state",
+                    "code_challenge": "a" * 43,
+                    "code_challenge_method": "S256",
+                    "ui_locales": "pt-BR",
+                }
+                consent = self.client.post(
+                    "/oauth/consent-info", json=params, headers=self.human
+                )
+                self.assertEqual(consent.status_code, 200, consent.text)
+                self.assertEqual(consent.json()["redirect_uri"], callback)
+                # Registration alone does not create a delegation or access token.
+                self.assertNotIn("access_token", registered)
+
     def oauth(self):
         r = self.client.post(
             "/oauth/register",

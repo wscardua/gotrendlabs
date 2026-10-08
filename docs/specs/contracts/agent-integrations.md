@@ -4,6 +4,8 @@ Versão 1.4 — 2026-10-07. Implementado localmente; Dot/deploy pendentes. Autor
 
 ## Princípios
 
+Resposta de registro OAuth/DCR omite metadados opcionais ausentes: `scope`, quando presente, é string, nunca `null` (RFC 7591). Registro técnico não concede acesso; consentimento staff/MFA, PKCE S256, redirect exato, resource e scopes continuam obrigatórios.
+
 REST interno de domínio e ferramentas MCP possuem schemas versionados e mapeamento explícito. FastAPI autentica e autoriza toda chamada. Erros são tipados, sem traceback/segredos. Identidades, audience e scopes nunca vêm de argumentos confiados ao modelo.
 
 ## Catálogo MCP v1

@@ -10,6 +10,8 @@
 
 ## MCP editorial — FEAT-MCP-001
 
+- ChatGPT: rejeição genérica de app settings com OAuth/DCR e endpoints corretos investigada; registro DCR 201 não comprova aceitação pelo ChatGPT. Correção local omite metadado opcional `scope` nulo. Implantação e repetição do cadastro/consentimento aguardam autorização; causa exclusiva ainda não demonstrada. WFLOW-20261007-MCP-CHATGPT-DCR-001.
+
 - Codex Desktop/CLI: falha DCR 422 e divergência de issuer corrigidas e implantadas pela PR #138; CLI real registrou cliente/atingiu URL de autorização em produção. Consentimento humano/MFA e piloto autenticado do Desktop permanecem pendentes; não declarar grant/token emitido. [Evidências](../testing/mcp-codex-oauth-20261007.md).
 
 - OAuth/serviço, gestão, drafts/ficha/revisão, cotas persistentes, auditoria e cliente SDK real implementados/testados localmente; rollout PR #136/Actions aprovado e MCP habilitado. [HTTPS/discovery/grants/isolamento produtivos conferidos](../testing/mcp-production-rollout-20261007.md). Homologação da conta Dot e piloto autenticado produtivo continuam pendentes. [Resultados](../testing/mcp-editorial-results.md), [runbook](../../guides/mcp-editorial-pilot.md).

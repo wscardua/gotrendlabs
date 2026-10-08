@@ -1,5 +1,7 @@
 # Integration Map
 
+- 2026-10-07: ajuste local exclusivamente na serialização da resposta DCR (`scope` ausente omitido); sem mudanças em MCP, permissões, audience, MFA, banco ou consumidores web/mobile. Cadastro ChatGPT e rollout pendentes; WFLOW-20261007-MCP-CHATGPT-DCR-001.
+
 - 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.
 
 - 2026-10-07: PR #136 + Actions 37692274600 concluídos; MCP ativo em HTTPS, grants/isolamento conferidos, snapshot anterior ao merge e domínio preservado. [Rollout](../testing/mcp-production-rollout-20261007.md). Dot/piloto autenticado externos permanecem pendentes.

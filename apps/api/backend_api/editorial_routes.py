@@ -432,7 +432,8 @@ def register(payload: OAuthRegistration, request: Request):
                     a.now(),
                 ),
             )
-    return {"client_id": str(identifier), **payload.model_dump()}
+    # Optional RFC 7591 string metadata must be omitted when absent, not null.
+    return {"client_id": str(identifier), **payload.model_dump(exclude_none=True)}
 
 
 class Consent(Strict):
