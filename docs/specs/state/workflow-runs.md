@@ -1,5 +1,15 @@
 # Workflow Runs
 
+## WFLOW-20261007-MCP-CHATGPT-DCR-001
+
+- Tipo: `change-feature`; Status: `em_andamento`; FEAT-MCP-001; vinculado a WFLOW-20261007-MCP-CODEX-OAUTH-001.
+- Objetivo: corrigir metadado opcional nulo na resposta DCR e investigar rejeição de cadastro ChatGPT, sem ampliar permissões ou enfraquecer OAuth.
+- Evidência: formulário real configura OAuth/DCR e endpoints corretos; discovery público 200; logs produtivos mostram registros DCR 201. Resposta do código inclui `scope: null` quando omitido pelo cliente, incompatível com o tipo string da RFC 7591. Não há evidência suficiente para atribuir exclusivamente a esse campo a rejeição genérica do ChatGPT.
+- Escopo: omitir campos opcionais ausentes na resposta de registro; teste de contrato e consent-info com callback HTTPS ChatGPT/ui_locales; contrato, runbook e estado. Sem migrations, novos grants, mercados ou edição de configuração produtiva.
+- Validação local: 51 testes/156,480 s/OK em PostgreSQL isolado; OpenAPI/Ruff/diff aprovados. [Evidências](../testing/mcp-chatgpt-dcr-20261007.md).
+- Etapa: validação local concluída; descrição da PR e commit/PR/merge/deploy aprovados pelo usuário em 2026-10-07. Próxima ação: executar CI e rollout, conferir resposta DCR em produção. Cadastro/consentimento ChatGPT permanece pendente.
+
+
 ## WFLOW-20261007-MCP-CODEX-OAUTH-001
 
 - Status: `concluido` para correção técnica/rollout; consentimento humano/piloto externo pendente; FEAT-MCP-001; vinculado ao workflow documental e fechamento MCP.
