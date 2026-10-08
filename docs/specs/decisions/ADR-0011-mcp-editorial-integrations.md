@@ -82,7 +82,7 @@ PR #136/Actions 37692274600 aprovados; snapshot RDS anterior ao merge, migration
 
 ## Correção de interoperabilidade Codex — 2026-10-07
 
-Follow-up de resposta DCR/ChatGPT: metadados opcionais não informados devem ser omitidos da resposta; `scope` é string segundo RFC 7591, não JSON null. Usar serialização `exclude_none`, sem conceder scopes default, adicionar credenciais ou alterar PKCE/consentimento. Ajuste local não comprova aceitação de cadastro nem homologação externa.
+Follow-up de resposta DCR/ChatGPT: metadados opcionais não informados devem ser omitidos da resposta; `scope` é string segundo RFC 7591, não JSON null. Usar serialização `exclude_none`, sem conceder scopes default, adicionar credenciais ou alterar PKCE/consentimento. PR #140 implantada e smoke HTTPS aprovado; isso não comprova aceitação de cadastro nem homologação externa. [Evidências](../testing/mcp-chatgpt-dcr-20261007.md).
 
 Codex CLI 0.160.1/Desktop falhou antes do consentimento: DCR envia `application_type: native`, recusado por schema de extras proibidos (422). Exceção restrita ao schema DCR: ignorar metadados desconhecidos conforme [RFC 7591 seção 2](https://datatracker.ietf.org/doc/html/rfc7591#section-2), sem persistir/refletir ou conceder autoridade. Preservar validações de campos conhecidos e estrita rejeição de extras nos payloads editoriais/admin.
 

@@ -4,7 +4,7 @@
 
 Usar URL `https://gotrendlabs.com.br/mcp`, autenticação OAuth e registro Dynamic Client Registration (DCR). Deixar o ChatGPT obter seu client_id; ID/segredo de credencial de serviço não são credenciais de cliente OAuth. Não desativar autenticação para cadastrar. Sem OIDC anunciado, manter seus campos vazios/desabilitados. Ícone opcional deve respeitar as restrições apresentadas pelo formulário.
 
-Em 2026-10-07, cadastro com OAuth/DCR/endpoints descobertos corretos recebeu rejeição genérica de app settings. Discovery público respondeu 200 e registros DCR na janela responderam 201. Correção local omite `scope: null` na resposta DCR, conforme RFC 7591; ainda não implantada nem comprovada como causa exclusiva do erro ChatGPT. Após rollout autorizado, repetir cadastro, login/MFA/consentimento e leitura editorial; conservar evidência de erro caso persista.
+Em 2026-10-07, cadastro com OAuth/DCR/endpoints descobertos corretos recebeu rejeição genérica de app settings. Correção da PR #140 omite `scope: null` na resposta DCR, conforme RFC 7591; implantada pelo Actions 37710313470, com 372 testes CI/main aprovados e smoke DCR HTTPS 201 sem null. [Evidências](../specs/testing/mcp-chatgpt-dcr-20261007.md). Ainda não comprovada como causa exclusiva do erro ChatGPT: repetir cadastro, login/MFA/consentimento e leitura editorial; conservar evidência de erro caso persista.
 
 FEAT-MCP-001 no worktree `gotrendlabs-mcp`, branch `feature/mcp-editorial`, baseado em `origin/main` `9df08bc`. Checkout original, documentos e mobile preservados. PR #136 integrada e deploy Actions aprovado; MCP habilitado em produção. [Evidências](../specs/testing/mcp-production-rollout-20261007.md). Dot e piloto autenticado exigem homologação real.
 
