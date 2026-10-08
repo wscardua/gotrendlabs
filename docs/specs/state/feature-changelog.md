@@ -1,6 +1,6 @@
 # Feature Changelog
 
-- 2026-10-07: resposta DCR omite metadados opcionais ausentes; teste com callback HTTPS ChatGPT e `ui_locales`. Correção local, sem implantação nem homologação ChatGPT; WFLOW-20261007-MCP-CHATGPT-DCR-001.
+- 2026-10-07: resposta DCR omite metadados opcionais ausentes; teste com callback HTTPS ChatGPT e `ui_locales`. PR #140 implantada/Actions 37710313470 Success; 51 testes locais e CI PR/main 372 testes/OK (um skip por roles CI ausentes), smoke HTTPS DCR aprovado. Homologação ChatGPT pendente; WFLOW-20261007-MCP-CHATGPT-DCR-001.
 
 - 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.
 
