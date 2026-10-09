@@ -123,7 +123,7 @@ Review local de imagens: os findings de submit pendente e identidade perdida na 
 
 ## Estado corrente de fechamento — imagens administrativas
 
-WFLOW-20261009-BADGE-CLOSE-001 e o recibo produtivo são a fonte atual: PR #144 integrada, CI/build/deploy e habilitação técnica concluídos. Pendentes somente homologação humana/MFA, autorização específica de inferência produtiva e avaliação real do par. Thumbnails permanecem habilitadas. Manutenção pública existente foi preservada. Versionamento do registro pós-rollout aguarda aprovação da PR documental; mídia DEV/segredos não publicados.
+WFLOW-20261009-BADGE-CLOSE-001 e o recibo produtivo são a fonte atual: PR #144 integrada, CI/build/deploy e habilitação técnica concluídos. Pendentes somente homologação humana/MFA, autorização específica de inferência produtiva e avaliação real do par. Thumbnails permanecem habilitadas. Manutenção pública existente foi preservada. Descrição da PR documental de pós-rollout aprovada; versionamento remoto em andamento; mídia DEV/segredos não publicados.
 
 
 ## 2026-10-09 — Estado produtivo atual de imagens administrativas
