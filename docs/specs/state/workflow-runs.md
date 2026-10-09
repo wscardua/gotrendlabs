@@ -3,9 +3,10 @@
 ## WFLOW-20261009-BADGE-ROLLOUT-DOCS-001
 
 - Tipo: publicação documental do recibo pós-rollout de FEAT-BADGE-IMAGE-001; ligado ao fechamento abaixo. Documentos atualizados com resultados observados após o merge, sem mudança de código/configuração produtiva.
-- Status: documentação local concluída e descrição aprovada pelo usuário com “prossiga”; publicação em andamento. Branch feature/admin-ai-badges preservada, base edac7c7; recibo preparado no commit d59d211.
+- Status: concluído para revisão documental e publicação da [PR #145](https://github.com/wscardua/gotrendlabs/pull/145), com descrição aprovada pelo usuário. Integração e checks finais têm evidência no estado da própria PR. Branch feature/admin-ai-badges preservada, base edac7c7; recibo preparado no commit d59d211.
 - Escopo: evidências PR/Actions/SSM, habilitação auditada, specs/status/gaps/changelogs/mapa/aceite/runbook. Sem nova inferência, deploy ou mudança de domínio.
-- Próxima ação: enviar os commits documentais, abrir PR via MCP, confirmar CI leve e integrar em main; conferir que o detector docs-only ignore o deploy.
+- Validação: diff e referências conferidos, apenas 12 arquivos docs Markdown; CI leve e ausência de deploy devem ser confirmados antes do merge. Publicação documental não altera serviços produtivos.
+- Próxima ação externa: homologação humana/MFA e avaliação real do par mediante autorização de consumo; o recibo aponta PR #144/Actions/SSM e separa esses gates da entrega técnica concluída.
 
 ## WFLOW-20261009-BADGE-CLOSE-001
 
