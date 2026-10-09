@@ -44,3 +44,6 @@
 ## 2026-10-09 — Imagens IA de badges
 
 O executor de thumbnails também processa imagens de badges quando a habilitação própria estiver ativa. Kind permite claim por domínio habilitado, com leases/unknown/fencing existentes. Prune de badge_images verifica URLs clara e escura sob lock; sem novo daemon e sem chamadas aos agentes textuais.
+
+
+Auditoria do worker de imagens usa diretamente `backend_api.admin_events`, sem importar a aplicação HTTP `main`. O executor não precisa dos segredos de password pepper/TOTP; validação desses segredos permanece obrigatória na API. Claim e evento continuam na mesma transação antes de qualquer chamada ao provedor. Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001.

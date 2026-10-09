@@ -76,11 +76,11 @@ class JobResponse(BaseModel):
 
 
 def event(cursor, actor, action, job):
-    from apps.api.backend_api.main import _record_admin_event
+    from apps.api.backend_api.admin_events import record_admin_event
 
     kind = job.get("kind", "market")
     entity = str(job["market_id"]) if kind == "market" else str(job.get("badge_id") or job["editor_id"])
-    _record_admin_event(cursor, actor, action, kind, entity, str(job["id"]))
+    record_admin_event(cursor, actor, action, kind, entity, str(job["id"]))
 
 
 def market(cursor, slug, lock=False):
