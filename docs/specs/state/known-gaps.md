@@ -123,4 +123,9 @@ Review local de imagens: os findings de submit pendente e identidade perdida na 
 
 ## Estado corrente de fechamento — imagens administrativas
 
-WFLOW-20261009-BADGE-CLOSE-001 é a fonte atual. Implementação e findings de review completos localmente, suíte final completa aprovada (442 testes/776.623s). Publicação de badges depende da aprovação da descrição da PR; build remoto/deploy/migration/grants/mounts/habilitação ainda não executados para esta branch. Thumbnails já estão habilitadas pela PR #143. Nenhuma chamada paga do par claro/escuro em produção foi feita ou inferida. Qualidade/coerência real e smoke humano/MFA são pendências externas separadas. Arquivos de mídia DEV/segredos não serão publicados.
+WFLOW-20261009-BADGE-CLOSE-001 e o recibo produtivo são a fonte atual: PR #144 integrada, CI/build/deploy e habilitação técnica concluídos. Pendentes somente homologação humana/MFA, autorização específica de inferência produtiva e avaliação real do par. Thumbnails permanecem habilitadas. Manutenção pública existente foi preservada. Recibo e memória operacional publicados na [PR #145](https://github.com/wscardua/gotrendlabs/pull/145), com integração condicionada ao CI leve; mídia DEV/segredos não publicados.
+
+
+## 2026-10-09 — Estado produtivo atual de imagens administrativas
+
+PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes em ambos com um skip por roles CI ausentes (cenário aprovado localmente). Migration0025/grants/constraints/mounts/executor conferidos; habilitação auditada de badges concluída, política de thumbnails preservada. Stable Image Core/Oregon, badges1:1, timeout180s, limites10 imagens/operador e50 globais por24h,5 solicitações/item, retenção24h. Fila vazia, sem inferência paga ou alteração de mercados/concessões reais. Branch local preservada. Manutenção pública ativa preservada; Admin Ops exige login. Homologação humana/MFA e coerência visual real permanecem pendentes. [Evidência produtiva](../testing/ai-badge-images-production-20261009.md). Registros anteriores são histórico das etapas.

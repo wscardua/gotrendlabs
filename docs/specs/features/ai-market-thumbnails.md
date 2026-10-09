@@ -40,3 +40,8 @@ Ajuste de UX de espera (2026-10-09): botão Gerando… e aviso inline destacado 
 
 
 Correção do componente compartilhado: se a escolha manual mudar durante o carregamento da prévia com salvamento pendente, cancelar a decisão e orientar um novo clique em Salvar. A geração seguinte não pode herdar solicitação antiga de salvar/publicar.
+
+
+## 2026-10-09 — Estado produtivo atual de imagens administrativas
+
+PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes em ambos com um skip por roles CI ausentes (cenário aprovado localmente). Migration0025/grants/constraints/mounts/executor conferidos; habilitação auditada de badges concluída, política de thumbnails preservada. Stable Image Core/Oregon, badges1:1, timeout180s, limites10 imagens/operador e50 globais por24h,5 solicitações/item, retenção24h. Fila vazia, sem inferência paga ou alteração de mercados/concessões reais. Branch local preservada. Manutenção pública ativa preservada; Admin Ops exige login. Homologação humana/MFA e coerência visual real permanecem pendentes. [Evidência produtiva](../testing/ai-badge-images-production-20261009.md). Registros anteriores são histórico das etapas.
