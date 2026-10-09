@@ -26,6 +26,12 @@ def recover(cursor):
 
 
 def eligible(cursor, job):
+    if job.get("kind", "market") == "badge":
+        cursor.execute("""SELECT 1 FROM gotrendlabs_users u JOIN gotrendlabs_auth_sessions a ON a.user_id=u.id
+            WHERE u.id=%s AND u.is_active AND u.account_status='active' AND (u.is_staff OR u.is_superuser)
+            AND a.id=%s AND a.revoked_at IS NULL AND a.expires_at > %s AND a.mfa_verified_at IS NOT NULL
+            AND (%s::bigint IS NULL OR EXISTS(SELECT 1 FROM gotrendlabs_badge_definitions WHERE id=%s))""", (job["operator_id"], job["session_id"], s.now(), job["badge_id"], job["badge_id"]))
+        return bool(cursor.fetchone())
     cursor.execute(
         """SELECT 1 FROM gotrendlabs_users u JOIN gotrendlabs_auth_sessions a ON a.user_id=u.id
         JOIN gotrendlabs_markets m ON m.id=%s
@@ -40,10 +46,14 @@ def run_once(provider=generate):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             recover(cursor)
-            if not s.enabled(cursor):
+            from apps.api.backend_api import badge_image_service
+            kinds = []
+            if s.enabled(cursor): kinds.append("market")
+            if badge_image_service.enabled(cursor): kinds.append("badge")
+            if not kinds:
                 return False
             cursor.execute(
-                "SELECT * FROM gotrendlabs_thumbnail_jobs WHERE state='queued' ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1"
+                "SELECT * FROM gotrendlabs_thumbnail_jobs WHERE state='queued' AND kind=ANY(%s) ORDER BY created_at FOR UPDATE SKIP LOCKED LIMIT 1", (kinds,)
             )
             job = cursor.fetchone()
             if not job:
@@ -58,31 +68,72 @@ def run_once(provider=generate):
             token = uuid4()
             lease = max(
                 s.number("LEASE_SECONDS", 300),
-                int(job["provider_config"].get("timeout_seconds", 180)) + 60,
+                int(job["provider_config"].get("timeout_seconds", 180)) * (2 if job["kind"] == "badge" else 1) + 60,
             )
             cursor.execute(
                 "UPDATE gotrendlabs_thumbnail_jobs SET state='running',started_at=%s,lease_until=%s,claim_token=%s WHERE id=%s",
                 (s.now(), s.now() + timedelta(seconds=lease), token, job["id"]),
             )
             cursor.execute(
-                "SELECT count(*) AS n FROM gotrendlabs_thumbnail_jobs WHERE market_id=%s AND created_at < %s",
-                (job["market_id"], job["created_at"]),
+                "SELECT count(*) AS n FROM gotrendlabs_thumbnail_jobs WHERE kind=%s AND (market_id=%s OR badge_id=%s OR (kind='badge' AND operator_id=%s AND editor_id=%s)) AND created_at < %s",
+                (job["kind"], job["market_id"], job["badge_id"], job["operator_id"], job["editor_id"], job["created_at"]),
             )
             job["variation"] = cursor.fetchone()["n"]
             s.event(cursor, job["operator_id"], "thumbnail.running", job)
     # Provider I/O occurs after claim COMMIT. Never retry running jobs.
     data, provider_id, usage, failure = None, None, None, None
+    images, records, theme = {}, {}, "light"
+    is_badge = job.get("kind") == "badge"
     try:
-        data, provider_id, usage = provider(job)
-        data = s.validate_image(data)
+        if is_badge:
+            from apps.api.backend_api.badge_image_service import VERSION
+            if job["instructions_version"] != VERSION:
+                raise ProviderFailure("unsupported_instructions")
+        for theme in (("light", "dark") if is_badge else ("light",)):
+            if is_badge:
+                # Checkpoint before each paid call. No locks/transaction during provider I/O.
+                # A crash leaves a running/uncertain job; recovery never invokes again.
+                records[theme] = {"state": "started"}
+                with get_connection() as connection, connection.cursor() as cursor:
+                    cursor.execute("SELECT * FROM gotrendlabs_thumbnail_jobs WHERE id=%s FOR UPDATE", (job["id"],))
+                    current = cursor.fetchone()
+                    if current["state"] != "running" or current["claim_token"] != token or current["lease_until"] <= s.now():
+                        return True
+                    if not eligible(cursor, job):
+                        raise ProviderFailure("ineligible")
+                    cursor.execute("UPDATE gotrendlabs_thumbnail_jobs SET usage=%s WHERE id=%s", (Jsonb({"variants": records}), job["id"]))
+            data, provider_id, reported_usage = provider({**job, "theme": theme} if is_badge else job)
+            if is_badge:
+                records[theme] = {"state": "returned", "provider_id": provider_id, "reported_usage": reported_usage}
+            else:
+                usage = reported_usage
+            data = s.validate_image(data)
+            if is_badge:
+                from PIL import Image
+                from io import BytesIO
+                image = Image.open(BytesIO(data))
+                if image.width != image.height:
+                    raise ValueError("badge_image_must_be_square")
+                records[theme]["state"] = "validated"
+            images[theme] = data
     except ProviderFailure as exc:
         failure = exc
-        provider_id, usage = exc.provider_id, exc.usage
+        provider_id = exc.provider_id or provider_id
+        if is_badge:
+            records[theme] = {"state": "uncertain" if exc.uncertain else "failed", "provider_id": exc.provider_id, "reported_usage": exc.usage, "error_code": exc.code}
+        else:
+            usage = exc.usage
     except ValueError:
         failure = ProviderFailure("invalid_image")
+        if is_badge:
+            records.setdefault(theme, {})["state"] = "invalid"
     except Exception:
         # Unknown failures are conservative; log no request/private payload or exception body.
         failure = ProviderFailure("executor_error", uncertain=True)
+        if is_badge:
+            records.setdefault(theme, {})["state"] = "uncertain"
+    if is_badge:
+        usage = {"variants": records}
     with get_connection() as connection:
         with connection.cursor() as cursor:
             cursor.execute(
@@ -102,14 +153,18 @@ def run_once(provider=generate):
             if not failure and not eligible(cursor, job):
                 failure = ProviderFailure("ineligible")
             if not failure:
-                path = s.private_root() / (str(job["id"]) + ".png")
+                written = []
                 try:
-                    path.parent.mkdir(parents=True, exist_ok=True)
-                    with path.open("xb") as out:
-                        out.write(data)
-                    os.chmod(path, 0o600)
+                    for variant, image_data in images.items():
+                        path = s.private_root() / (str(job["id"]) + (".dark" if variant == "dark" else "") + ".png")
+                        path.parent.mkdir(parents=True, exist_ok=True)
+                        with path.open("xb") as out:
+                            written.append(path)
+                            out.write(image_data)
+                        os.chmod(path, 0o600)
                 except OSError:
-                    s.discard_partial(path)
+                    for path in written:
+                        s.discard_partial(path)
                     failure = ProviderFailure("storage_failed")
             state = (
                 "uncertain"
@@ -150,7 +205,8 @@ def prune():
                 (s.now(),),
             )
             for job in cursor.fetchall():
-                (s.private_root() / (str(job["id"]) + ".png")).unlink(missing_ok=True)
+                for suffix in ("", ".dark"):
+                    (s.private_root() / (str(job["id"]) + suffix + ".png")).unlink(missing_ok=True)
                 if job["state"] == "succeeded":
                     cursor.execute(
                         "UPDATE gotrendlabs_thumbnail_jobs SET state='expired' WHERE id=%s",
@@ -161,13 +217,14 @@ def prune():
             grace = time.time() - 3600
             if s.private_root().exists():
                 for path in s.private_root().glob("*.png"):
-                    job = jobs.get(path.stem)
+                    job = jobs.get(path.stem.removesuffix(".dark"))
                     if path.stat().st_mtime < grace and (
                         not job
                         or job["state"] not in ("queued", "running", "succeeded")
                     ):
                         path.unlink(missing_ok=True)
             # Only our UUID filenames. Manual upload naming and published files are preserved.
+            prune_public_badges(cursor, grace)
             if s.public_root().exists():
                 from uuid import UUID
 
@@ -186,6 +243,19 @@ def prune():
                     if not cursor.fetchone():
                         path.unlink(missing_ok=True)
 
+
+
+def prune_public_badges(cursor, grace):
+    from uuid import UUID
+    root = s.public_root("badge")
+    if not root.exists(): return
+    for path in root.glob("*.png"):
+        try: UUID(path.stem)
+        except ValueError: continue
+        if path.stat().st_mtime >= grace: continue
+        url = "/media/badge_images/" + path.name
+        cursor.execute("SELECT 1 FROM gotrendlabs_badge_definitions WHERE image_url=%s OR image_dark_url=%s LIMIT 1", (url,url))
+        if not cursor.fetchone(): path.unlink(missing_ok=True)
 
 def main():
     from pathlib import Path

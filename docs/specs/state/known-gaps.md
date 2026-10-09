@@ -99,3 +99,28 @@ Os três findings foram corrigidos e cobertos: Dockerfile passa no parser/check;
 ## Imagens IA de badges — análise, sem implementação autorizada
 
 Editor suporta criação/edição, prévia e uploads de image_url/image_dark_url. Prompt visual existente define emblemas coesos, quadrados, legíveis em light/dark, sem texto/estética financeira. Recomenda-se feature separada reutilizando provedor/executor, armazenamento privado, cotas/idempotência/auditoria e interação de seleção/desfazer; contexto e instruções específicos. Jobs de thumbnails têm FK de mercado e elegibilidade draft, portanto não são diretamente reutilizáveis. Novas badges exigem candidata do operador/sessão/editor, confirmada atomicamente na criação; badges existentes exigem vínculo/conflito próprios. Proposta inicial: uma imagem 1:1 compatível com ambos os temas; política explícita para não combinar silenciosamente arte clara nova com variante escura antiga. PNG não garante transparência; Core não documenta parâmetro de alpha. Não alterar concessões/regras ou ativar badge ao gerar. Fonte da análise: WFLOW-20261009-THUMBNAIL-CLOSE-001; nenhum código/consumo novo.
+
+## 2026-10-09 — Imagens IA de badges
+
+FEAT-BADGE-IMAGE-001 foi autorizada e implementada localmente após a análise histórica acima; fonte atual ai-badge-images.md e WFLOW-20261009-BADGE-IMAGES-001. Suíte completa local aprovada (431 testes); pendentes: aprovação da PR própria, CI/build/mounts produtivos, inferência e qualidade visual real. Nenhum acesso produtivo ou concessão de badge alterado por esta feature.
+
+## 2026-10-09 — Fechamento técnico e rollout de thumbnails
+
+PR #143 integrada, merge 15b980585982cfa6706a38d57016614a41ba956d. CI final 408 testes aprovados/1 skip por roles CI, build completo aprovado. Actions 37963430113 e 37964971891 Success (PR e main/produção), SSM deploy Success. Migrations 0022–0024 aplicadas; defaults SQL preservam inicialização existente. Executor dedicado/grants/mounts/UIDs verificados: worker privado RW, API privado RO/subpath público RW, sem candidatas no proxy/Django. Arquivo efêmero próprio removido.
+
+Habilitação produtiva de thumbnails autorizada e concluída: banco e GTL_THUMB_ENABLED=1 na API/worker, Core/Oregon/3:2/180s, limites 10/5/50 por 24h e retenção 24h. Configuração preservada, alteração auditada como operação de sistema; backups de envs 0600 no host. Fila vazia antes/depois, nenhuma chamada paga iniciada, nenhum mercado editado pelo assistente. Site/API HTTP 200 e configurações anônimas 401. Branch local preservada.
+
+Fechamento técnico concluído; homologação de fluxo autenticado/MFA, consumo produtivo e qualidade visual real permanece pendente. Não afirmar inferência real validada em produção. Fonte externa atual: [PR #143](https://github.com/wscardua/gotrendlabs/pull/143) e [Actions](https://github.com/wscardua/gotrendlabs/actions/runs/37964971891). Registros anteriores descrevem etapas históricas, substituídos por esta atualização para estado operacional atual. Evidência documental pós-rollout preparada localmente para versionamento na próxima PR aprovada.
+
+
+## 2026-10-09 — Correção: par de imagens de badges
+
+Correção clara/escura concluída: 78 testes aprovados (73 geração/regressões/deploy em 96.927s + 5 reinício/concessões/catálogo/formulário em 10.185s), PostgreSQL isolado e provedor simulado. Browsers badge e thumbnail aprovados; prévias distintas, troca de tema, ausência da variante escura preserva o par anterior, undo/uploads/late response/submit. Django check, migration drift, OpenAPI, Node e diff aprovados. Executor DEV reiniciado sem job em execução (PID 95376), chave/flag mantidas ativas, API health 200. Nenhuma inferência paga iniciada pela correção; dois jobs DEV anteriores de versão universal permanecem preservados. Suíte completa de 431 testes é evidência da versão anterior, não foi repetida nesta alteração. Homologação real da coerência entre variantes e PR/deploy próprios seguem pendentes.
+
+
+Review local de imagens: os findings de submit pendente e identidade perdida na recarga foram corrigidos e possuem regressões automatizadas (WFLOW-20261009-BADGE-REVIEW-FIXES-001). Nenhuma implantação ou homologação paga inferida; produção de badges e qualidade/coerência real do par continuam pendentes.
+
+
+## Estado corrente de fechamento — imagens administrativas
+
+WFLOW-20261009-BADGE-CLOSE-001 é a fonte atual. Implementação e findings de review completos localmente, suíte final completa aprovada (442 testes/776.623s). Publicação de badges depende da aprovação da descrição da PR; build remoto/deploy/migration/grants/mounts/habilitação ainda não executados para esta branch. Thumbnails já estão habilitadas pela PR #143. Nenhuma chamada paga do par claro/escuro em produção foi feita ou inferida. Qualidade/coerência real e smoke humano/MFA são pendências externas separadas. Arquivos de mídia DEV/segredos não serão publicados.

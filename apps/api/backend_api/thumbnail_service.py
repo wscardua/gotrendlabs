@@ -38,7 +38,9 @@ def private_root():
     return Path(os.environ.get("GTL_THUMB_PRIVATE_ROOT", ".runtime/thumbnail_private"))
 
 
-def public_root():
+def public_root(kind="market"):
+    if kind == "badge":
+        return Path(os.environ.get("GTL_BADGE_PUBLIC_ROOT", "media/badge_images"))
     return Path(os.environ.get("GTL_THUMB_PUBLIC_ROOT", "media/market_thumbnails"))
 
 
@@ -76,9 +78,9 @@ class JobResponse(BaseModel):
 def event(cursor, actor, action, job):
     from apps.api.backend_api.main import _record_admin_event
 
-    _record_admin_event(
-        cursor, actor, action, "market", str(job["market_id"]), str(job["id"])
-    )
+    kind = job.get("kind", "market")
+    entity = str(job["market_id"]) if kind == "market" else str(job.get("badge_id") or job["editor_id"])
+    _record_admin_event(cursor, actor, action, kind, entity, str(job["id"]))
 
 
 def market(cursor, slug, lock=False):
@@ -152,8 +154,8 @@ def request_job(cursor, slug, payload, staff):
     if cursor.fetchone():
         raise HTTPException(409, "Já existe uma geração neste mercado. Aguarde.")
     cursor.execute(
-        """SELECT count(*) AS global_count,
-        count(*) FILTER (WHERE operator_id=%s) AS operator_count,
+        """SELECT COALESCE(sum(CASE WHEN instructions_version='badge-image-bedrock-pair-v2' THEN 2 ELSE 1 END),0) AS global_count,
+        COALESCE(sum(CASE WHEN instructions_version='badge-image-bedrock-pair-v2' THEN 2 ELSE 1 END) FILTER (WHERE operator_id=%s),0) AS operator_count,
         count(*) FILTER (WHERE market_id=%s) AS market_count
         FROM gotrendlabs_thumbnail_jobs WHERE created_at >= %s""",
         (

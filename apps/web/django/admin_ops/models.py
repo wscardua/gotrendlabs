@@ -49,6 +49,7 @@ class SiteConfig(models.Model):
     min_supported_android_build = models.PositiveIntegerField(default=0)
     recommended_android_build = models.PositiveIntegerField(default=0)
     mobile_update_required_message = models.CharField(max_length=240, default=MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT)
+    badge_image_enabled = models.BooleanField(default=False)
     thumbnail_enabled = models.BooleanField(default=False)
     thumbnail_model = models.CharField(max_length=100, default="stability.stable-image-core-v1:1")
     thumbnail_region = models.CharField(max_length=40, default="us-west-2")
@@ -208,7 +209,10 @@ class MobileAppRelease(models.Model):
 class ThumbnailJob(models.Model):
     """Schema ownership only; runtime mutations belong to the FastAPI domain/worker."""
     id = models.UUIDField(primary_key=True)
-    market = models.ForeignKey('markets.Market', on_delete=models.CASCADE)
+    market = models.ForeignKey('markets.Market', on_delete=models.CASCADE, null=True)
+    kind = models.CharField(max_length=16, default='market')
+    badge = models.ForeignKey('accounts.BadgeDefinition', on_delete=models.CASCADE, null=True)
+    editor_id = models.UUIDField(null=True)
     operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
     session_id = models.BigIntegerField()
     snapshot = models.JSONField()
@@ -235,6 +239,9 @@ class ThumbnailJob(models.Model):
     class Meta:
         db_table = 'gotrendlabs_thumbnail_jobs'
         constraints = [models.CheckConstraint(check=models.Q(state__in=['queued','running','succeeded','failed','uncertain','expired']), name='gtl_thumb_state'),
-                       models.UniqueConstraint(fields=['market'], condition=models.Q(state__in=['queued','running']), name='gtl_thumb_one_active')]
+                       models.UniqueConstraint(fields=['market'], condition=models.Q(state__in=['queued','running']), name='gtl_thumb_one_active'),
+                       models.CheckConstraint(check=(models.Q(kind='market', market__isnull=False, badge__isnull=True, editor_id__isnull=True) | models.Q(kind='badge', market__isnull=True, editor_id__isnull=False)), name='gtl_image_target'),
+                       models.UniqueConstraint(fields=['badge'], condition=models.Q(kind='badge', state__in=['queued','running'], badge__isnull=False), name='gtl_badge_one_active'),
+                       models.UniqueConstraint(fields=['operator','editor_id'], condition=models.Q(kind='badge', state__in=['queued','running'], badge__isnull=True), name='gtl_badge_editor_active')]
         indexes = [models.Index(fields=['created_at','operator','market'],name='gtl_thumb_quota'),
                    models.Index(fields=['created_at'],condition=models.Q(state='queued'),name='gtl_thumb_queue')]

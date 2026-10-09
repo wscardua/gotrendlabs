@@ -109,3 +109,11 @@ PR deve passar no CI completo, incluindo build da imagem. Após merge, acompanha
 Estado na preparação: duas gerações Core reais concluídas no DEV; CI remoto e rollout ainda não executados. Preservar a branch local após merge. Artefatos de mídia DEV, envs, credenciais, screenshots e logs locais não entram na PR.
 
 Migration 0024_thumbnail_runtime_defaults mantém inicialização SQL existente de SiteConfig compatível, com defaults do banco conservadores e geração off. Incluí-la no rollout junto às migrations 0022/0023.
+
+## 2026-10-09 — Fechamento técnico e rollout de thumbnails
+
+PR #143 integrada, merge 15b980585982cfa6706a38d57016614a41ba956d. CI final 408 testes aprovados/1 skip por roles CI, build completo aprovado. Actions 37963430113 e 37964971891 Success (PR e main/produção), SSM deploy Success. Migrations 0022–0024 aplicadas; defaults SQL preservam inicialização existente. Executor dedicado/grants/mounts/UIDs verificados: worker privado RW, API privado RO/subpath público RW, sem candidatas no proxy/Django. Arquivo efêmero próprio removido.
+
+Habilitação produtiva de thumbnails autorizada e concluída: banco e GTL_THUMB_ENABLED=1 na API/worker, Core/Oregon/3:2/180s, limites 10/5/50 por 24h e retenção 24h. Configuração preservada, alteração auditada como operação de sistema; backups de envs 0600 no host. Fila vazia antes/depois, nenhuma chamada paga iniciada, nenhum mercado editado pelo assistente. Site/API HTTP 200 e configurações anônimas 401. Branch local preservada.
+
+Fechamento técnico concluído; homologação de fluxo autenticado/MFA, consumo produtivo e qualidade visual real permanece pendente. Não afirmar inferência real validada em produção. Fonte externa atual: [PR #143](https://github.com/wscardua/gotrendlabs/pull/143) e [Actions](https://github.com/wscardua/gotrendlabs/actions/runs/37964971891). Registros anteriores descrevem etapas históricas, substituídos por esta atualização para estado operacional atual. Evidência documental pós-rollout preparada localmente para versionamento na próxima PR aprovada.

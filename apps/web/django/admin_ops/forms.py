@@ -279,7 +279,7 @@ class ThumbnailConfigForm(forms.Form):
     thumbnail_aspect_ratio = forms.ChoiceField(label="Proporção", choices=(("3:2", "3:2 — paisagem"), ("16:9", "16:9 — ampla"), ("1:1", "1:1 — quadrada")))
     thumbnail_timeout_seconds = forms.IntegerField(label="Timeout (segundos)", min_value=10, max_value=600)
     thumbnail_operator_limit = forms.IntegerField(label="Limite por operador", min_value=1, max_value=10000)
-    thumbnail_market_limit = forms.IntegerField(label="Limite por mercado", min_value=1, max_value=1000)
+    thumbnail_market_limit = forms.IntegerField(label="Limite por mercado ou badge/editor", min_value=1, max_value=1000)
     thumbnail_global_limit = forms.IntegerField(label="Limite global", min_value=1, max_value=100000)
     thumbnail_period_hours = forms.IntegerField(label="Período dos limites (horas)", min_value=1, max_value=720)
     thumbnail_retention_hours = forms.IntegerField(label="Retenção das candidatas (horas)", min_value=1, max_value=720)
@@ -742,16 +742,30 @@ BADGE_RULE_CHOICES = (
 )
 
 
+class BadgeImageConfigForm(forms.Form):
+    badge_image_enabled = forms.BooleanField(label="Permitir geração de imagens de badges", required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["badge_image_enabled"].widget.attrs["form"] = "badge-image-settings-form"
+
+
 class AdminBadgeForm(forms.Form):
     code = forms.SlugField(label="Código", max_length=80, required=False)
     name = forms.CharField(label="Nome", max_length=120)
-    description = forms.CharField(label="Descrição", max_length=255, widget=forms.Textarea)
+    description = forms.CharField(label="Descrição", max_length=255, widget=forms.Textarea(attrs={"rows":4}))
     rule_description = forms.CharField(label="Descrição da regra", max_length=255, required=False)
     badge_type = forms.ChoiceField(label="Tipo", choices=BADGE_TYPE_CHOICES)
     image_url = forms.CharField(widget=forms.HiddenInput, required=False)
     image_dark_url = forms.CharField(widget=forms.HiddenInput, required=False)
     badge_image = forms.FileField(label="Imagem para tema claro", required=False)
     badge_dark_image = forms.FileField(label="Imagem para tema escuro", required=False)
+    badge_image_candidate_id = forms.UUIDField(widget=forms.HiddenInput, required=False)
+    badge_image_editor_id = forms.UUIDField(widget=forms.HiddenInput, required=False)
+    badge_image_expected_image_url = forms.CharField(widget=forms.HiddenInput, required=False)
+    badge_image_expected_dark_url = forms.CharField(widget=forms.HiddenInput, required=False)
+    badge_image_expected_updated_at = forms.DateTimeField(widget=forms.HiddenInput, required=False)
+    badge_image_origin = forms.ChoiceField(choices=[("current", "Atual"), ("upload", "Upload"), ("generated", "Gerada")], initial="current", widget=forms.HiddenInput, required=False)
     is_active = forms.BooleanField(label="Exibir badge e conquistas históricas", required=False, initial=True)
     rule_active = forms.BooleanField(label="Conceder para novas conquistas", required=False, initial=True)
     rule_type = forms.ChoiceField(label="Regra automática", choices=BADGE_RULE_CHOICES)
@@ -880,6 +894,11 @@ class AdminBadgeForm(forms.Form):
             "badge_type": self.cleaned_data["badge_type"],
             "image_url": self.cleaned_data.get("image_url") or "",
             "image_dark_url": self.cleaned_data.get("image_dark_url") or "",
+            "badge_image_candidate_id": str(self.cleaned_data["badge_image_candidate_id"]) if self.cleaned_data.get("badge_image_origin") == "generated" and self.cleaned_data.get("badge_image_candidate_id") else None,
+            "badge_image_editor_id": str(self.cleaned_data["badge_image_editor_id"]) if self.cleaned_data.get("badge_image_editor_id") else None,
+            "badge_image_expected_image_url": self.cleaned_data.get("badge_image_expected_image_url"),
+            "badge_image_expected_dark_url": self.cleaned_data.get("badge_image_expected_dark_url"),
+            "badge_image_expected_updated_at": self.cleaned_data["badge_image_expected_updated_at"].isoformat() if self.cleaned_data.get("badge_image_expected_updated_at") else None,
             "is_active": self.cleaned_data.get("is_active", False),
             "rule_active": self.cleaned_data.get("rule_active", False),
             "rule_type": self.cleaned_data["rule_type"],

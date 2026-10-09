@@ -491,22 +491,27 @@
       <section class="config-section" aria-labelledby="thumbnail-config-title">
         <div class="config-panel-head">
           <div>
-            <span class="eyebrow">Thumbnails por IA</span>
+            <span class="eyebrow">Imagens por IA</span>
             <h2 id="thumbnail-config-title">Geração de imagens · Amazon Bedrock</h2>
-            <p>Escolha o modelo para as próximas gerações. Solicitações já criadas preservam sua configuração.</p>
+            <p>Modelo, região, timeout, limites e retenção compartilhados por mercados e badges. A proporção escolhida vale para mercados; badges usam 1:1. Solicitações existentes preservam sua configuração.</p>
           </div>
-          <span class="config-status {% if site_config.thumbnail_enabled %}is-on{% endif %}">{% if site_config.thumbnail_enabled %}Ativo{% else %}Inativo{% endif %}</span>
+          <span class="config-status {% if site_config.thumbnail_enabled or site_config.badge_image_enabled %}is-on{% endif %}">{% if site_config.thumbnail_enabled or site_config.badge_image_enabled %}Ativo{% else %}Inativo{% endif %}</span>
         </div>
         <div class="config-controls">
           {% if thumbnail_form.non_field_errors %}<div class="notice red" role="alert">{{ thumbnail_form.non_field_errors|join:", " }}</div>{% endif %}
           <div class="config-secret-card"><span>Credenciais e habilitação</span><strong>Configuradas no servidor</strong><small>A chave Bedrock não é exibida nem salva aqui. A habilitação exige também a liberação do executor no ambiente. Alterar ou salvar parâmetros não gera imagens.</small></div>
           <label class="config-check-option" for="{{ thumbnail_form.thumbnail_enabled.id_for_label }}">{{ thumbnail_form.thumbnail_enabled }}<span><strong>Permitir geração de thumbnails</strong><small>Controle separado dos agentes de comentários.</small></span></label>
+          <div class="config-rules-card">
+            {% if badge_image_form.non_field_errors %}<div class="notice red" role="alert">{{ badge_image_form.non_field_errors|join:", " }}</div>{% endif %}
+            <label class="config-check-option" for="{{ badge_image_form.badge_image_enabled.id_for_label }}">{{ badge_image_form.badge_image_enabled }}<span><strong>Permitir geração de imagens de badges</strong><small>Habilitação independente; gera um par de imagens, claro e escuro.</small></span></label>
+            <button class="btn ghost small" type="submit" form="badge-image-settings-form">Salvar geração de badges</button>
+          </div>
           <div class="config-form-grid">
             {% for field in thumbnail_form %}{% if field.name != 'thumbnail_enabled' %}
             <label class="field" for="{{ field.id_for_label }}"><span>{{ field.label }}</span>{{ field }}{% if field.errors %}<small class="field-error" role="alert">{{ field.errors|join:", " }}</small>{% endif %}</label>
             {% endif %}{% endfor %}
           </div>
-          <p class="muted">Limites contam solicitações, incluindo falhas e resultados incertos. Retenção vale para novas candidatas. Imagens vinculadas a mercados são preservadas.</p>
+          <p class="muted">Limites global e por operador contam imagens: uma por thumbnail e duas por par de badges, incluindo falhas e resultados incertos. Limite por item conta solicitações. Retenção vale para novas candidatas. Imagens vinculadas são preservadas.</p>
           <button class="btn primary" type="submit" form="thumbnail-settings-form">Salvar thumbnails</button>
         </div>
       </section>
@@ -584,5 +589,8 @@
 </main>
 <form id="thumbnail-settings-form" method="post" action="{% url 'admin-ops-config' %}">
   {% csrf_token %}<input type="hidden" name="action" value="thumbnail_settings">
+</form>
+<form id="badge-image-settings-form" method="post" action="{% url 'admin-ops-config' %}">
+  {% csrf_token %}<input type="hidden" name="action" value="badge_image_settings">
 </form>
 {% endblock %}

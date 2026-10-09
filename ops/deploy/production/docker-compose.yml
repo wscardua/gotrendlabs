@@ -51,6 +51,7 @@ services:
     environment:
       GTL_THUMB_PRIVATE_ROOT: /app/thumbnail_private
       GTL_THUMB_PUBLIC_ROOT: /app/media/market_thumbnails
+      GTL_BADGE_PUBLIC_ROOT: /app/media/badge_images
     volumes:
       - mediafiles:/app/media:ro
       - type: volume
@@ -58,6 +59,11 @@ services:
         target: /app/media/market_thumbnails
         volume:
           subpath: market_thumbnails
+      - type: volume
+        source: mediafiles
+        target: /app/media/badge_images
+        volume:
+          subpath: badge_images
       - thumbnail_private:/app/thumbnail_private:ro
       - runtime:/app/.runtime
 
@@ -75,6 +81,7 @@ services:
     environment:
       GTL_THUMB_PRIVATE_ROOT: /app/thumbnail_private
       GTL_THUMB_PUBLIC_ROOT: /app/media/market_thumbnails
+      GTL_BADGE_PUBLIC_ROOT: /app/media/badge_images
     volumes:
       - thumbnail_private:/app/thumbnail_private
       - type: volume
@@ -82,6 +89,11 @@ services:
         target: /app/media/market_thumbnails
         volume:
           subpath: market_thumbnails
+      - type: volume
+        source: mediafiles
+        target: /app/media/badge_images
+        volume:
+          subpath: badge_images
     depends_on:
       - fastapi
 

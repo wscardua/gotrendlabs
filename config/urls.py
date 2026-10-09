@@ -1,4 +1,4 @@
-from apps.web.django.admin_ops import thumbnail_views
+from apps.web.django.admin_ops import thumbnail_views, badge_image_views
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
@@ -96,6 +96,9 @@ urlpatterns = [
     path("admin-ops/logs/", admin_ops_views.system_logs, name="admin-ops-system-logs"),
     path("admin-ops/logs/<int:log_id>/", admin_ops_views.system_log_detail, name="admin-ops-system-log-detail"),
     path("admin-ops/badges/", admin_ops_views.badges, name="admin-ops-badges"),
+    path("admin-ops/badge-images/<uuid:editor_id>/", badge_image_views.jobs, name="admin-ops-badge-images"),
+    path("admin-ops/badge-images/<uuid:editor_id>/<uuid:request_id>/", badge_image_views.jobs, name="admin-ops-badge-image-status"),
+    path("admin-ops/badge-images/<uuid:editor_id>/<uuid:request_id>/preview/", badge_image_views.preview, name="admin-ops-badge-image-preview"),
     path("admin-ops/badges/new/", admin_ops_views.badge_form, {"mode": "new"}, name="admin-ops-badge-new"),
     path("admin-ops/badges/<slug:code>/edit/", admin_ops_views.badge_form, {"mode": "edit"}, name="admin-ops-badge-edit"),
     path("admin-ops/moderation/", admin_ops_views.moderation, name="admin-ops-moderation"),

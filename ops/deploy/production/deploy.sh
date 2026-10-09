@@ -115,7 +115,7 @@ fi
 "${COMPOSE[@]}" --profile ops build
 # Existing media volumes predate this subdirectory. Create only that directory,
 # preserving every existing file, before FastAPI's volume.subpath is mounted.
-"${COMPOSE[@]}" run --rm --no-deps --user root migrate python -c 'import os,pwd; from pathlib import Path; p=Path("/app/media/market_thumbnails"); p.mkdir(parents=True,exist_ok=True); u=pwd.getpwnam("gotrendlabs"); os.chown(p,u.pw_uid,u.pw_gid)'
+"${COMPOSE[@]}" run --rm --no-deps --user root migrate python -c 'import os,pwd; from pathlib import Path; u=pwd.getpwnam("gotrendlabs"); dirs=[Path("/app/media")/name for name in ("market_thumbnails","badge_images")]; [(p.mkdir(parents=True,exist_ok=True),os.chown(p,u.pw_uid,u.pw_gid)) for p in dirs]'
 "${COMPOSE[@]}" run --rm fastapi python -c 'from packages.security.passwords import require_password_pepper; require_password_pepper()'
 "${COMPOSE[@]}" run --rm fastapi python -c 'from apps.api.backend_api.mfa import require_totp_encryption_key; require_totp_encryption_key()'
 # Prevent the old runtime from writing while the editorial backfill is applied.

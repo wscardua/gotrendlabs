@@ -462,6 +462,64 @@
       },
       "AdminBadgePayload": {
         "properties": {
+          "badge_image_candidate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Image Candidate Id"
+          },
+          "badge_image_editor_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Image Editor Id"
+          },
+          "badge_image_expected_dark_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Image Expected Dark Url"
+          },
+          "badge_image_expected_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Image Expected Image Url"
+          },
+          "badge_image_expected_updated_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Badge Image Expected Updated At"
+          },
           "badge_type": {
             "default": "global",
             "title": "Badge Type",
@@ -2331,6 +2389,20 @@
         "title": "AuthResponse",
         "type": "object"
       },
+      "BadgeImageSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "badge_image_enabled": {
+            "title": "Badge Image Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "badge_image_enabled"
+        ],
+        "title": "BadgeImageSettings",
+        "type": "object"
+      },
       "BadgeListResponse": {
         "properties": {
           "badges": {
@@ -3035,55 +3107,6 @@
           "amount_gtl"
         ],
         "title": "FeedbackRewardPayload",
-        "type": "object"
-      },
-      "GeneratePayload": {
-        "additionalProperties": false,
-        "properties": {
-          "category": {
-            "maxLength": 80,
-            "minLength": 1,
-            "title": "Category",
-            "type": "string"
-          },
-          "event": {
-            "default": "",
-            "maxLength": 80,
-            "title": "Event",
-            "type": "string"
-          },
-          "request_id": {
-            "format": "uuid",
-            "title": "Request Id",
-            "type": "string"
-          },
-          "subcategory": {
-            "maxLength": 80,
-            "minLength": 1,
-            "title": "Subcategory",
-            "type": "string"
-          },
-          "summary": {
-            "maxLength": 4000,
-            "minLength": 1,
-            "title": "Summary",
-            "type": "string"
-          },
-          "title": {
-            "maxLength": 240,
-            "minLength": 1,
-            "title": "Title",
-            "type": "string"
-          }
-        },
-        "required": [
-          "request_id",
-          "title",
-          "summary",
-          "category",
-          "subcategory"
-        ],
-        "title": "GeneratePayload",
         "type": "object"
       },
       "HTTPValidationError": {
@@ -8259,6 +8282,125 @@
         ],
         "title": "WalletResponse",
         "type": "object"
+      },
+      "apps__api__backend_api__badge_image_service__GeneratePayload": {
+        "additionalProperties": false,
+        "properties": {
+          "badge_code": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Badge Code",
+            "type": "string"
+          },
+          "badge_type": {
+            "enum": [
+              "global",
+              "category",
+              "performance",
+              "engagement"
+            ],
+            "title": "Badge Type",
+            "type": "string"
+          },
+          "category": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Description",
+            "type": "string"
+          },
+          "event": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Event",
+            "type": "string"
+          },
+          "name": {
+            "maxLength": 120,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "rule_description": {
+            "default": "",
+            "maxLength": 255,
+            "title": "Rule Description",
+            "type": "string"
+          },
+          "subcategory": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Subcategory",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "name",
+          "description",
+          "badge_type"
+        ],
+        "title": "GeneratePayload",
+        "type": "object"
+      },
+      "apps__api__backend_api__thumbnail_service__GeneratePayload": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Category",
+            "type": "string"
+          },
+          "event": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Event",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "subcategory": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Subcategory",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "title",
+          "summary",
+          "category",
+          "subcategory"
+        ],
+        "title": "GeneratePayload",
+        "type": "object"
       }
     }
   },
@@ -9687,6 +9829,343 @@
           }
         },
         "summary": "Admin Analytics Summary"
+      }
+    },
+    "/admin/badge-image-settings": {
+      "get": {
+        "operationId": "settings_admin_badge_image_settings_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadgeImageSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Settings"
+      },
+      "put": {
+        "operationId": "update_settings_admin_badge_image_settings_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BadgeImageSettings"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BadgeImageSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Settings"
+      }
+    },
+    "/admin/badge-images/{editor_id}": {
+      "get": {
+        "operationId": "latest_admin_badge_images__editor_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "editor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Editor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/JobResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Admin Badge Images  Editor Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest"
+      },
+      "post": {
+        "operationId": "create_admin_badge_images__editor_id__post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "editor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Editor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/apps__api__backend_api__badge_image_service__GeneratePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create"
+      }
+    },
+    "/admin/badge-images/{editor_id}/{request_id}": {
+      "get": {
+        "operationId": "status_admin_badge_images__editor_id___request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "editor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Editor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Status"
+      }
+    },
+    "/admin/badge-images/{editor_id}/{request_id}/preview": {
+      "get": {
+        "operationId": "preview_admin_badge_images__editor_id___request_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "editor_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Editor Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "theme",
+            "required": false,
+            "schema": {
+              "default": "light",
+              "enum": [
+                "light",
+                "dark"
+              ],
+              "title": "Theme",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview"
       }
     },
     "/admin/badges": {
@@ -11696,7 +12175,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/GeneratePayload"
+                "$ref": "#/components/schemas/apps__api__backend_api__thumbnail_service__GeneratePayload"
               }
             }
           },
