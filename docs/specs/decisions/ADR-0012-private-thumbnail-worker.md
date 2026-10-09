@@ -17,3 +17,6 @@ Substitui a escolha OpenAI acima: chamada única Bedrock Runtime InvokeModel, Co
 ## Ciclo do deploy (fechamento, 2026-10-09)
 
 Arquivo de segredo do executor instalado inclui profile thumbnails no deploy, independentemente do kill switch: manter o worker atualizado mesmo pausado. Parar também o executor durante migrations; falha deixa escritores parados para recuperação explícita. Preparar somente o diretório market_thumbnails antes do mount subpath, usando UID/GID da imagem e preservando arquivos existentes. CI exige build completo antes do merge; smokes produtivos não substituem autorização de consumo nem homologação visual.
+
+
+Direção vigente para mercados v5: [ADR-0014](ADR-0014-semantic-thumbnail-brief.md) acrescenta interpretação textual sem presets antes da imagem, com configuração própria/checkpoints. A chamada única de imagem continua válida para jobs v2 históricos e cada variante de badges.

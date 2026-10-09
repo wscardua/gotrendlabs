@@ -12,3 +12,8 @@ Publicação existente mantém gate editorial. Resultado tardio somente afeta fi
 ## Configuração administrativa (v1.1)
 
 GET/PUT `/admin/thumbnail-settings`: staff/MFA vigente; payload completo dos parâmetros `thumbnail_enabled`, `thumbnail_model`, `thumbnail_region`, `thumbnail_aspect_ratio`, `thumbnail_timeout_seconds`, `thumbnail_operator_limit`, `thumbnail_market_limit`, `thumbnail_global_limit`, `thumbnail_period_hours`, `thumbnail_retention_hours`. Sem credenciais/endpoints editáveis. Modelo validado por allowlist de adapters nativos oficialmente documentados; região Oregon; proporções 3:2/16:9/1:1. Campos extras e valores inválidos: 422 sem mutação. PUT audita ator/mudanças e persiste atomicamente. UI Django usa sessão/CSRF para adaptação; novos jobs congelam parâmetros do provedor. Histórico/auditoria e jobs antigos preservados.
+
+
+### Execução interna semântica (v5)
+
+Sem alteração do payload/shape público: um job de mercado reserva até uma chamada textual limitada e uma imagem. Persistir orchestrator e parâmetros próprios GTL_THUMB_PLANNER_* no provider_config; usage privado contém checkpoints e IDs/uso por etapa, brief final e sujeitos. Campos privados e raciocínio do modelo não são enviados/persistidos. Nenhuma ferramenta habilitada, store=false, sem retry/fallback. Checkpoints revalidam autorização/claim/lease; falha textual impede imagem. Polling não revela brief ou dispara chamadas. Configuração de modelo de imagem segue endpoint/painel existente; parâmetros textuais independentes são configuração ambiental da API. V3/v4 não são reinterpretadas ou repetidas; candidatas concluídas preservadas.

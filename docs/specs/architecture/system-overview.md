@@ -55,3 +55,6 @@ FastAPI inicializa ficha humana na criação administrativa/conversão e valida 
 ## 2026-10-09 — Imagens IA de badges
 
 FEAT-BADGE-IMAGE-001 reutiliza o pipeline administrativo Bedrock/fila/executor/volume privado de thumbnails; migração 0025 adiciona kind e vínculos de badge/editor. API/worker recebem subpath badge_images RW adicional; contratos image_url/image_dark_url continuam estáveis.
+
+
+Thumbnails semânticas v5 (validação local): backend congela parâmetros próprios do planejador; executor interpreta o mercado em modelo textual Bedrock e renderiza o brief em modelo de imagem configurado. Checkpoints e lease cobrem ambas as etapas, sem retry/fallback; UI/contratos públicos e badges preservados. [ADR-0014](../decisions/ADR-0014-semantic-thumbnail-brief.md). Produção ainda não alterada e homologação visual pendente.
