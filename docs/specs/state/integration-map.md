@@ -191,3 +191,8 @@ Fechamento WFLOW-20261009-BADGE-CLOSE-001: commit local → aprovação da descr
 ## 2026-10-09 — Estado produtivo atual de imagens administrativas
 
 PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes em ambos com um skip por roles CI ausentes (cenário aprovado localmente). Migration0025/grants/constraints/mounts/executor conferidos; habilitação auditada de badges concluída, política de thumbnails preservada. Stable Image Core/Oregon, badges1:1, timeout180s, limites10 imagens/operador e50 globais por24h,5 solicitações/item, retenção24h. Fila vazia, sem inferência paga ou alteração de mercados/concessões reais. Branch local preservada. Manutenção pública ativa preservada; Admin Ops exige login. Homologação humana/MFA e coerência visual real permanecem pendentes. [Evidência produtiva](../testing/ai-badge-images-production-20261009.md). Registros anteriores são histórico das etapas.
+
+
+## 2026-10-09 — Incidente: auditoria do worker de imagens
+
+Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001: primeira solicitação produtiva informada permanece queued, sem started_at/provider_id/arquivo. Worker falha na auditoria porque thumbnail_service.event importava main, ativando exigência de pepper/TOTP exclusivos da API. Diagnóstico por SSM/read-only e probes com rollback, sem inferência ou mutação em mercados. Correção local usa diretamente admin_events, sem distribuir segredos HTTP ao executor. Teste em subprocesso com ambiente production, segredos HTTP vazios e provedor simulado cobre claim, sucesso e eventos persistidos. Rollout corretivo e conclusão da solicitação real ainda pendentes; não afirmar latência do provedor, acesso efetivo ou qualidade real por esse incidente.

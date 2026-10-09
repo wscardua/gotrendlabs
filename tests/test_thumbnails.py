@@ -2,6 +2,8 @@ import base64
 import json
 import os
 import secrets
+import subprocess
+import sys
 import tempfile
 import threading
 import time
@@ -51,6 +53,7 @@ class ThumbnailIntegrationTests(AppendOnlyTransactionTestCase):
                 "GTL_THUMB_ENABLED": "1",
                 "GTL_THUMB_PRIVATE_ROOT": self.temp.name + "/private",
                 "GTL_THUMB_PUBLIC_ROOT": self.temp.name + "/public",
+                "GTL_BADGE_PUBLIC_ROOT": self.temp.name + "/badges",
                 "GTL_THUMB_MARKET_LIMIT": "5",
                 "GTL_THUMB_OPERATOR_LIMIT": "10",
                 "GTL_THUMB_GLOBAL_LIMIT": "50",
@@ -126,6 +129,44 @@ class ThumbnailIntegrationTests(AppendOnlyTransactionTestCase):
         job, _ = self.request()
         w.run_once(lambda j: (png(), "resp_fake", {"image_tokens": 5}))
         return self.job(job["request_id"])
+
+    def test_production_worker_audits_without_http_authentication_secrets(self):
+        job, _ = self.request()
+        from apps.api.backend_api.db import database_config
+
+        env = os.environ.copy()
+        for key, value in database_config().items():
+            name = "DB" if key == "dbname" else key.upper()
+            env["FASTAPI_POSTGRES_" + name] = str(value)
+        env.update({
+            "GOTRENDLABS_ENV": "production",
+            "DJANGO_DEBUG": "0",
+            "GOTRENDLABS_PASSWORD_PEPPER": "",
+            "GOTRENDLABS_TOTP_ENCRYPTION_KEY": "",
+            "AWS_BEARER_TOKEN_BEDROCK": "",
+            "OPENAI_API_KEY": "",
+        })
+        code = (
+            "import sys\n"
+            "from apps.api.backend_api.thumbnail_worker import run_once\n"
+            f"image = {png()!r}\n"
+            "assert run_once(lambda job: (image, 'simulated-production', None))\n"
+            "assert 'apps.api.backend_api.main' not in sys.modules\n"
+        )
+        result = subprocess.run(
+            [sys.executable, "-c", code], env=env,
+            capture_output=True, text=True, timeout=30,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.job(job["request_id"])["state"], "succeeded")
+        with get_connection() as conn, conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT action FROM gotrendlabs_admin_events WHERE note=%s ORDER BY id",
+                (job["request_id"],),
+            )
+            actions = [row["action"] for row in cursor.fetchall()]
+        self.assertIn("thumbnail.running", actions)
+        self.assertIn("thumbnail.succeeded", actions)
 
     def confirm(self, id, expected="/media/previous.png", market=None):
         market = market or self.market

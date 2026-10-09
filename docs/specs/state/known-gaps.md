@@ -1,5 +1,9 @@
 # Known Gaps
 
+## Incidente produtivo atual — executor de imagens / 2026-10-09
+
+Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001: primeira solicitação produtiva informada permanece queued, sem started_at/provider_id/arquivo. Worker falha na auditoria porque thumbnail_service.event importava main, ativando exigência de pepper/TOTP exclusivos da API. Diagnóstico por SSM/read-only e probes com rollback, sem inferência ou mutação em mercados. Correção local usa diretamente admin_events, sem distribuir segredos HTTP ao executor. Teste em subprocesso com ambiente production, segredos HTTP vazios e provedor simulado cobre claim, sucesso e eventos persistidos. Rollout corretivo e conclusão da solicitação real ainda pendentes; não afirmar latência do provedor, acesso efetivo ou qualidade real por esse incidente. A publicação deve ser aprovada antes da PR, conforme instrução do usuário. Não reenfileirar nem criar outra solicitação para recuperar o job existente.
+
 ## Follow-up do review MCP — 2026-10-07
 
 - Recomendações 1/2: dependências/migrations adicionadas ao índice e teste de asset sem versão literal; snapshot limpo com instalação/migrations e 74 testes aprovados. Item 3 (POST web com revisão inválida) foi posteriormente corrigido no fechamento MCP, com resposta controlada e sem mutação. [Evidências 1/2](../testing/mcp-branch-review-followup-20261007.md) e [correção 3](../testing/mcp-closeout-20261007.md).

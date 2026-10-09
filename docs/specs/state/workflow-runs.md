@@ -1,5 +1,15 @@
 # Workflow Runs
 
+## WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001
+
+- Tipo: correção de incidente de FEAT-THUMB-001/FEAT-BADGE-IMAGE-001. Operador informou geração produtiva demorando; diagnóstico somente leitura e probes com rollback, sem inferência ou mudanças nos mercados. Branch própria fix/admin-image-worker-audit, base main f18647a; branches anteriores e mídia preservadas.
+- Evidência: job cdbe1f42-d75b-44ec-8f0c-11ece3d6952e continua queued, sem started_at/provider_id/arquivo; executor em loop de erro. SSM34b3e49a/2d46395d confirmam switches/grants/claim/elegibilidade. SSM6bd632ac reproduz RuntimeError de password pepper no registro de auditoria antes do commit.
+- Causa: thumbnail_service.event importa main e aciona validação de segredos HTTP em produção; worker corretamente não recebe pepper/TOTP.
+- Correção/aceite: importar o primitive backend admin_events diretamente, preservando payload/auditoria/transação. Worker produtivo sem segredos HTTP processa jobs com provedor simulado; regressões mercados/badges e agentes. Sem fornecer segredos HTTP ao executor, migrations, alterações de modelo/limites ou replay pago.
+- Evidências: Validação local: 68 testes aprovados em 105.804s, PostgreSQL isolado/provedor simulado; regressão isolada do worker production sem pepper/TOTP também aprovada (1 teste/2.480s). Django check, OpenAPI atual e diff aprovados. Nenhuma chamada paga ou mudança produtiva; publicação/CI/deploy corretivos aguardam aprovação da descrição. Logs worker-audit-* em .runtime/badge-validation.
+- Isolamento de testes: Rechecagem após isolar GTL_BADGE_PUBLIC_ROOT nos testes de thumbnails: 2 testes (limpeza e worker production) aprovados em 4.743s. Dois arquivos locais removidos pelo teste de limpeza antes da correção foram restaurados byte a byte das candidatas privadas originais; mídias preservadas e nenhum efeito em produção. Esse ajuste é somente do ambiente de testes.
+- Estado: implementação/testes locais concluídos; usuário respondeu “pode derrubar se quiser” ao pedido de publicação/rollout e autorizou o reinício necessário. Publicação corretiva em andamento. Recuperar o job existente somente pela fila normal após código corrigido; não criar outra solicitação.
+
 ## WFLOW-20261009-BADGE-ROLLOUT-DOCS-001
 
 - Tipo: publicação documental do recibo pós-rollout de FEAT-BADGE-IMAGE-001; ligado ao fechamento abaixo. Documentos atualizados com resultados observados após o merge, sem mudança de código/configuração produtiva.
