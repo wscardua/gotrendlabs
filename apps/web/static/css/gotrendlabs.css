@@ -13357,3 +13357,60 @@ body[data-theme="dark"] .mfa-recovery-guide-grid strong {
 .admin-markets-table td:nth-child(4) { min-width: 110px; }
 .admin-markets-table td:nth-child(5) { min-width: 145px; }
 .admin-markets-table .popularity-chip { white-space: nowrap; }
+
+.thumbnail-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }
+[data-thumbnail-status] { margin:8px 0; font-size:13px; }
+[data-thumbnail-status][role="alert"] { color:var(--red, #b7493d); }
+[data-thumbnail-controls] [hidden] { display:none !important; }
+[data-thumbnail-submit] { margin-top:12px; padding:12px; border:1px solid var(--border, #ded7c8); border-radius:10px; }
+[data-thumbnail-controls] button:focus-visible { outline:2px solid var(--green, #136f4a); outline-offset:3px; }
+[data-thumbnail-controls][data-busy="true"] [data-thumbnail-generate] { cursor:wait; }
+
+/* Market editor: one heading, clear form sections and a compact review column. */
+.admin-content > .market-editor-page { max-width: 1400px; gap: 24px; padding-top: 28px; }
+.market-editor-header .large-title { font-size: 32px; line-height: 1.15; letter-spacing: -.035em; margin: 10px 0 16px; }
+.market-editor-header .editorial-form-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.market-editor-page .editor-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
+.market-editor-main { padding: 24px; }
+.market-editor-page .market-editorial-status { margin: 0 0 8px; padding-bottom: 16px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--muted); line-height: 1.6; }
+.market-editor-main .editor-section { border: 0; border-radius: 0; padding: 0 0 24px; margin: 0; background: transparent; border-bottom: 1px solid var(--line); }
+body[data-theme="dark"] .market-editor-main .editor-section { background: transparent; }
+.market-editor-main fieldset.form-grid { gap: 24px; }
+.market-editor-main .editor-section h3 { margin: 0 0 16px; font-size: 17px; }
+.market-editor-main .form-grid { gap: 16px; align-items: start; }
+.market-editor-main .field { min-width: 0; align-content: start; }
+.market-editor-main .field textarea { resize: vertical; line-height: 1.5; }
+.market-editor-table-scroll { overflow-x: auto; max-width: 100%; }
+.market-editor-table-scroll:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+.market-editor-main .actions { margin-top: 8px; gap: 10px; }
+.market-editor-sidebar { position: sticky; top: 96px; display: grid; gap: 16px; padding: 20px; }
+.market-editor-sidebar h3 { margin: 0; font-size: 16px; }
+.market-editor-sidebar .preview-card { margin: 0; }
+.market-editor-sidebar .market-editor-publication { border-top: 1px solid var(--line); padding-top: 20px; }
+.market-editor-publication p { font-size: 13px; line-height: 1.55; color: var(--muted); }
+.market-editor-publication .btn { width: 100%; }
+.market-editor-sidebar .ticket-note { margin: 0; }
+.market-editor-help { border-top: 1px solid var(--line); padding-top: 16px; font-size: 13px; }
+.market-editor-help summary { cursor: pointer; font-weight: 700; }
+.market-editor-help summary:focus-visible { outline: 2px solid var(--green); outline-offset: 4px; }
+.market-editor-help dl { display: grid; gap: 12px; margin: 16px 0; }
+.market-editor-help dt { font-weight: 700; }
+.market-editor-help dd { margin: 4px 0 0; color: var(--muted); line-height: 1.5; }
+.market-editor-main .thumbnail-field { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 12px; }
+.thumbnail-field > label, .thumbnail-field > small { grid-column: 1 / -1; }
+.thumbnail-field > input[type="file"] { grid-column: 1; grid-row: 2; width: 100%; min-width: 0; min-height: 42px; }
+.thumbnail-field [data-thumbnail-controls] { display: contents; }
+.thumbnail-field .thumbnail-actions { grid-column: 2; grid-row: 2; margin: 0; align-self: start; }
+.thumbnail-field .thumbnail-actions .btn { min-height: 42px; }
+.thumbnail-field [data-thumbnail-status], .thumbnail-field [data-thumbnail-stale], .thumbnail-field [data-thumbnail-submit] { grid-column: 1 / -1; margin: 0; }
+.thumbnail-field [data-thumbnail-status]:empty { display: none; }
+@media (max-width: 1180px) {
+  .market-editor-page .editor-layout { grid-template-columns: minmax(0, 1fr); }
+  .market-editor-sidebar { position: static; }
+}
+@media (max-width: 600px) {
+  .market-editor-main { padding: 16px; }
+  .market-editor-header .large-title { font-size: 26px; }
+  .market-editor-main .thumbnail-field { grid-template-columns: minmax(0, 1fr); }
+  .thumbnail-field .thumbnail-actions { grid-column: 1; grid-row: auto; }
+}

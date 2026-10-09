@@ -75,3 +75,27 @@
 - Deploy desta revisão não executado. Dot/HTTPS/renovação externa seguem pendentes conforme FEAT-MCP-001. Gate valida configuração persistida; não garante disponibilidade do daemon nem veracidade das evidências humanas.
 
 - 2026-10-07, fechamento legado publicado: EV tem definição assinada com prazo/fuso ausentes. PATCH comum rejeita alteração para preservar integridade; campo preenchido não significa persistido. Mensagens foram corrigidas. Não existe fluxo de retificação assinada de prazo nesta versão. Correção exige evolução explícita auditável; cancelamento/refund continua operação humana separada.
+
+## FEAT-THUMB-001 — homologação e habilitação pendentes
+
+Estado atual de fechamento (2026-10-09): implementação/testes locais concluídos; consumo no DEV autorizado e duas solicitações Core succeeded confirmadas por consulta ao banco e logs HTTP 200 do executor. Acesso Core local comprovado; avaliação visual sistemática por tema/recorte/neutralidade/alternativa perceptível ainda pendente, assim como modelos alternativos e acesso produtivo. DEV está habilitado. Usuário solicitou rollout e habilitação em produção, condicionados à aprovação da descrição da PR; faltam CI remoto, merge/deploy, migrations/grants/UID/mounts/subpath no host, credencial e smokes produtivos. Nenhuma nova inferência foi iniciada no fechamento. Não iniciar geração paga produtiva sem autorização explícita de consumo nesse ambiente.
+
+A main exige revisão humana da versão salva e a imagem faz parte do snapshot editorial. Nova seleção não pode ser publicada como se já fosse aprovada: salvar/revisar usa o fluxo existente. Não foi criada exceção ao gate para satisfazer uma publicação direta com imagem ainda não revisada. Auditoria de jobs permanece durável; retenção de 24h é de arquivos/candidatas, não registros. Teto é contagem de chamadas reservadas, não orçamento monetário faturado.
+
+## Thumbnails: solicitação de alinhamento Bedrock (2026-10-09)
+
+O modelo produtivo `openai.gpt-oss-20b` é textual e não gera imagens. A substituição por Bedrock Core/SD3.5/Ultra foi autorizada e implementada localmente; acesso específico/qualidade ainda exigem homologação paga autorizada. Nova Canvas v1 retornou end-of-life na consulta AWS. Stable Image Core v1:1 consta ACTIVE em us-west-2, sem inferência real ou confirmação do token da aplicação. DEV textual foi alinhado ao provedor/modelo produtivo sem consumo pago. Fontes: [modelo](https://developers.openai.com/api/docs/models/gpt-oss-20b), [limitações Bedrock](https://developers.openai.com/api/docs/guides/amazon-bedrock).
+
+- Atualização FEAT-THUMB-001 v1.1: decisão de modelo concluída (Core default/SD3.5/Ultra selecionáveis); não resta bloqueio de escolha. Habilitação/credencial/acesso efetivo de inferência e qualidade real ainda pendentes. Produção não alterada.
+
+- Atualização posterior de 2026-10-09: acordo de acesso do Core em us-west-2 habilitado na conta AWS com autorização explícita; GetFoundationModelAvailability confirmou agreement/entitlement/region AVAILABLE e authorization AUTHORIZED. Essa é a única alteração externa desta etapa. Não comprova invocação com o token da aplicação; homologação paga/qualidade, modelos alternativos e rollout continuam pendentes. Aplicação permanece desativada e sem deploy.
+
+- Atualização subsequente: consumo pago no DEV autorizado e switches local/API/worker/painel liberados; health/API/web e habilitação efetiva conferidos. Não falta mais autorização para testes reais no DEV; evidência subsequente: duas solicitações Core concluídas no DEV; qualidade visual sistemática permanece pendente. Produção continua sem rollout/habilitação do fluxo.
+
+## Correções de review de thumbnails — 2026-10-09
+
+Os três findings foram corrigidos e cobertos: Dockerfile passa no parser/check; upload com resposta desconhecida não é removido nem reenviado automaticamente, com reconciliação por API; campo inválido não interrompe polling na decisão inline. 33 testes e browser aprovados. Validação Docker completa local permanece pendente: apt no build e escrita em volume isolado falharam por ENOSPC no Docker Desktop. Recursos existentes de outras iniciativas preservados; dois volumes próprios do ensaio removidos. Repetir build e mounts/UIDs em ambiente com espaço. Upload manual de resultado não confirmável permanece conservado até verificar vínculos e uso antes de limpeza; nunca tratar resposta perdida como rollback.
+
+## Imagens IA de badges — análise, sem implementação autorizada
+
+Editor suporta criação/edição, prévia e uploads de image_url/image_dark_url. Prompt visual existente define emblemas coesos, quadrados, legíveis em light/dark, sem texto/estética financeira. Recomenda-se feature separada reutilizando provedor/executor, armazenamento privado, cotas/idempotência/auditoria e interação de seleção/desfazer; contexto e instruções específicos. Jobs de thumbnails têm FK de mercado e elegibilidade draft, portanto não são diretamente reutilizáveis. Novas badges exigem candidata do operador/sessão/editor, confirmada atomicamente na criação; badges existentes exigem vínculo/conflito próprios. Proposta inicial: uma imagem 1:1 compatível com ambos os temas; política explícita para não combinar silenciosamente arte clara nova com variante escura antiga. PNG não garante transparência; Core não documenta parâmetro de alpha. Não alterar concessões/regras ou ativar badge ao gerar. Fonte da análise: WFLOW-20261009-THUMBNAIL-CLOSE-001; nenhum código/consumo novo.

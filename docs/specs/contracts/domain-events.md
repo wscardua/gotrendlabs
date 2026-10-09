@@ -60,3 +60,9 @@ Esses eventos são registrados em `gotrendlabs_admin_events` nas primeiras fatia
 - `email.delivery_queued` representa persistência da outbox transacional e usa `idempotency_key` única; eventos críticos de identidade/acesso podem tentar envio imediato filtrado após commit, enquanto eventos de produto continuam dependentes do daemon.
 - `push.delivery_queued` representa persistência da outbox mobile por `UserNotification` e dispositivo, sem garantir envio FCM imediato.
 - Push mobile só pode ser derivado de `notification.created`; política por evento decide se a notificação persistida vira push imediato, digest futuro ou nenhum envio.
+
+## Auditoria administrativa de thumbnail
+
+`thumbnail.request`, `thumbnail.running`, `thumbnail.succeeded`, `thumbnail.failed`, `thumbnail.uncertain` e `thumbnail.apply` são AdminEvent persistidos, sem envio/email/push. Operador, referência do mercado, UUID da solicitação e momento; contexto/hash/modelos/uso ficam no registro privado de job. Não emitidos como envelope/event bus de domínio.
+
+- FEAT-THUMB-001 v1.1: `thumbnail.settings_update` audita ator e antes/depois dos parâmetros não secretos de SiteConfig; não dispara inferência, comunicação ou alteração de mercado. Provedor/modelo/parâmetros/instruções ficam congelados em cada request de thumbnail.

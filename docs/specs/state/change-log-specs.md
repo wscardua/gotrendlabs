@@ -451,3 +451,21 @@
 - ampliada a skill `gotrendlabs-prediction-markets` para suportar categoria `cripto`, fontes cripto/on-chain e aviso obrigatório de que mercados cripto não caracterizam recomendação de investimento
 - documentado seed DEV de 3 mercados cripto em `docs/specs/state/editorial-seed-markets-20260521.md`, mantendo status `draft`, taxonomia idempotente e thumbs locais autorais
 - documentado lote aprovado `Mercado > Cripto` com aviso no nível da subcategoria, eventos por moeda e comando idempotente `seed_crypto_markets_20260522`
+
+## 2026-10-09 — thumbnails IA no Admin Ops
+
+Feature FEAT-THUMB-001 e contrato admin-thumbnails formalizados antes de codificar, com critérios do prompt autorizado. ADR-0012 registra fila PostgreSQL/worker dedicado, uncertain sem retries pagos, volume privado/promoção, gpt-5.4-mini + gpt-image-1.5 e gate editorial vigente. OpenAPI, migration/grants, env sem segredos, runbook, matriz de testes e estados sincronizados. Homologação real/produção pendentes.
+
+- 2026-10-09 — FEAT-THUMB-001 v1.1: OpenAI substituído por Bedrock Runtime/Core com adapters SD3.5/Ultra selecionáveis em Configurações do Sistema; modelo/região/proporção/timeout/cotas/retenção, API staff/MFA e auditoria, migration 0023/grants, snapshot por job e bloqueio explícito de legados. Sem consumo pago/deploy; 37 testes e 9 verificações complementares aprovados, browser/checks aprovados; migration/grants e runtime local verificados.
+
+## 2026-10-09 — Composição do editor de mercados
+
+Editor Admin Ops com cabeçalho unificado, formulário/prévia alinhados, grupos separados de resolução/card/notas, textos mais compactos, upload/geração lado a lado e ajuda recolhível. Rolagem da tabela contida e cache CSS renovado. Feature/aceite/workflow atualizados; contratos e revisão humana preservados. Browser responsivo e sete testes Web aprovados, sem consumo ou deploy nesta etapa.
+
+## 2026-10-09 — Correções dos findings de thumbnails
+
+Dockerfile corrigido e check incluído no CI. Compensação de upload diferencia rejeição/resultado desconhecido e reconcilia pela API; publicação não é repetida. Decisão inline preserva polling quando validação nativa impede envio; versão JS administrativa atualizada. Novos testes de resposta perdida/erro local/reconciliação e browser nativo aprovados. Build/mounts locais pendentes por falta de espaço Docker, sem consumir IA ou modificar produção.
+
+## 2026-10-09 — Preparação do fechamento FEAT-THUMB-001
+
+Fonte da verdade reconciliada com autorizações e duas solicitações Core concluídas no DEV, sem nova inferência no fechamento. Deploy prepara subdiretório de mídia e acompanha executor quando seu segredo estiver instalado, inclusive pausado; CI inclui build completo. PR/CI/merge/implantação dependem de aprovação da descrição; branch local preservada. Qualidade visual sistemática e acesso produtivo não declarados validados. WFLOW-20261009-THUMBNAIL-CLOSE-001.

@@ -1,3 +1,4 @@
+from apps.web.django.admin_ops import thumbnail_views
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
@@ -100,6 +101,9 @@ urlpatterns = [
     path("admin-ops/moderation/", admin_ops_views.moderation, name="admin-ops-moderation"),
     path("admin-ops/resolution/", admin_ops_views.resolution, name="admin-ops-resolution"),
     path("admin-ops/taxonomy/", admin_ops_views.taxonomy, name="admin-ops-taxonomy"),
+    path("admin-ops/markets/<slug:slug>/thumbnails/", thumbnail_views.jobs, name="admin-ops-thumbnails"),
+    path("admin-ops/markets/<slug:slug>/thumbnails/<uuid:request_id>/", thumbnail_views.jobs, name="admin-ops-thumbnail-status"),
+    path("admin-ops/markets/<slug:slug>/thumbnails/<uuid:request_id>/preview/", thumbnail_views.preview, name="admin-ops-thumbnail-preview"),
     path("admin-ops/markets/new/", admin_ops_views.market_form, {"mode": "new"}, name="admin-ops-market-new"),
     path("admin-ops/markets/<slug:slug>/edit/", admin_ops_views.market_form, {"mode": "edit"}, name="admin-ops-market-edit"),
     path("admin-ops/resolution/<slug:slug>/<str:action>/", admin_ops_views.resolution_action, name="admin-ops-resolution-market-action"),

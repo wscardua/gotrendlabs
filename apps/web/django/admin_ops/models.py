@@ -49,6 +49,16 @@ class SiteConfig(models.Model):
     min_supported_android_build = models.PositiveIntegerField(default=0)
     recommended_android_build = models.PositiveIntegerField(default=0)
     mobile_update_required_message = models.CharField(max_length=240, default=MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT)
+    thumbnail_enabled = models.BooleanField(default=False)
+    thumbnail_model = models.CharField(max_length=100, default="stability.stable-image-core-v1:1")
+    thumbnail_region = models.CharField(max_length=40, default="us-west-2")
+    thumbnail_aspect_ratio = models.CharField(max_length=10, default="3:2")
+    thumbnail_timeout_seconds = models.PositiveIntegerField(default=180)
+    thumbnail_operator_limit = models.PositiveIntegerField(default=10)
+    thumbnail_market_limit = models.PositiveIntegerField(default=5)
+    thumbnail_global_limit = models.PositiveIntegerField(default=50)
+    thumbnail_period_hours = models.PositiveIntegerField(default=24)
+    thumbnail_retention_hours = models.PositiveIntegerField(default=24)
     ai_agents_enabled = models.BooleanField(default=False)
     ai_commenting_enabled = models.BooleanField(default=False)
     ai_predictions_enabled = models.BooleanField(default=False)
@@ -193,3 +203,38 @@ class MobileAppRelease(models.Model):
                 digest.update(chunk)
                 size += len(chunk)
         return digest.hexdigest(), size
+
+
+class ThumbnailJob(models.Model):
+    """Schema ownership only; runtime mutations belong to the FastAPI domain/worker."""
+    id = models.UUIDField(primary_key=True)
+    market = models.ForeignKey('markets.Market', on_delete=models.CASCADE)
+    operator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='+')
+    session_id = models.BigIntegerField()
+    snapshot = models.JSONField()
+    snapshot_hash = models.CharField(max_length=64)
+    instructions_version = models.CharField(max_length=40)
+    orchestrator = models.CharField(max_length=100)
+    image_model = models.CharField(max_length=100)
+    provider = models.CharField(max_length=40, default="bedrock")
+    provider_config = models.JSONField(default=dict)
+    state = models.CharField(max_length=16)
+    created_at = models.DateTimeField()
+    started_at = models.DateTimeField(null=True)
+    finished_at = models.DateTimeField(null=True)
+    lease_until = models.DateTimeField(null=True)
+    claim_token = models.UUIDField(null=True)
+    expires_at = models.DateTimeField()
+    provider_id = models.CharField(max_length=160, null=True)
+    usage = models.JSONField(null=True)
+    error_code = models.CharField(max_length=60, default='')
+    applied_at = models.DateTimeField(null=True)
+    public_name = models.CharField(max_length=100, null=True)
+    applied_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, null=True, related_name='+')
+
+    class Meta:
+        db_table = 'gotrendlabs_thumbnail_jobs'
+        constraints = [models.CheckConstraint(check=models.Q(state__in=['queued','running','succeeded','failed','uncertain','expired']), name='gtl_thumb_state'),
+                       models.UniqueConstraint(fields=['market'], condition=models.Q(state__in=['queued','running']), name='gtl_thumb_one_active')]
+        indexes = [models.Index(fields=['created_at','operator','market'],name='gtl_thumb_quota'),
+                   models.Index(fields=['created_at'],condition=models.Q(state='queued'),name='gtl_thumb_queue')]

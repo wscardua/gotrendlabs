@@ -1339,6 +1339,29 @@
             "title": "Thumb Color",
             "type": "string"
           },
+          "thumbnail_candidate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Candidate Id"
+          },
+          "thumbnail_expected_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Thumbnail Expected Image Url"
+          },
           "title": {
             "maxLength": 240,
             "minLength": 1,
@@ -3014,6 +3037,55 @@
         "title": "FeedbackRewardPayload",
         "type": "object"
       },
+      "GeneratePayload": {
+        "additionalProperties": false,
+        "properties": {
+          "category": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Category",
+            "type": "string"
+          },
+          "event": {
+            "default": "",
+            "maxLength": 80,
+            "title": "Event",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "subcategory": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Subcategory",
+            "type": "string"
+          },
+          "summary": {
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "title",
+          "summary",
+          "category",
+          "subcategory"
+        ],
+        "title": "GeneratePayload",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -3405,6 +3477,59 @@
           "public_key_pem"
         ],
         "title": "IntegrityPublicKeyResponse",
+        "type": "object"
+      },
+      "JobResponse": {
+        "properties": {
+          "candidate_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Candidate Id"
+          },
+          "expires_at": {
+            "format": "date-time",
+            "title": "Expires At",
+            "type": "string"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "request_id": {
+            "format": "uuid",
+            "title": "Request Id",
+            "type": "string"
+          },
+          "snapshot": {
+            "additionalProperties": true,
+            "title": "Snapshot",
+            "type": "object"
+          },
+          "snapshot_hash": {
+            "title": "Snapshot Hash",
+            "type": "string"
+          },
+          "state": {
+            "title": "State",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_id",
+          "state",
+          "snapshot_hash",
+          "snapshot",
+          "expires_at",
+          "message"
+        ],
+        "title": "JobResponse",
         "type": "object"
       },
       "LedgerEntryResponse": {
@@ -7136,6 +7261,178 @@
           "as_of"
         ],
         "title": "TaxonomyResponse",
+        "type": "object"
+      },
+      "ThumbnailSettings": {
+        "additionalProperties": false,
+        "properties": {
+          "thumbnail_aspect_ratio": {
+            "default": "3:2",
+            "enum": [
+              "3:2",
+              "16:9",
+              "1:1"
+            ],
+            "title": "Thumbnail Aspect Ratio",
+            "type": "string"
+          },
+          "thumbnail_enabled": {
+            "default": false,
+            "title": "Thumbnail Enabled",
+            "type": "boolean"
+          },
+          "thumbnail_global_limit": {
+            "default": 50,
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Global Limit",
+            "type": "integer"
+          },
+          "thumbnail_market_limit": {
+            "default": 5,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Market Limit",
+            "type": "integer"
+          },
+          "thumbnail_model": {
+            "default": "stability.stable-image-core-v1:1",
+            "enum": [
+              "stability.stable-image-core-v1:1",
+              "stability.sd3-5-large-v1:0",
+              "stability.stable-image-ultra-v1:1"
+            ],
+            "title": "Thumbnail Model",
+            "type": "string"
+          },
+          "thumbnail_operator_limit": {
+            "default": 10,
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Operator Limit",
+            "type": "integer"
+          },
+          "thumbnail_period_hours": {
+            "default": 24,
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Period Hours",
+            "type": "integer"
+          },
+          "thumbnail_region": {
+            "const": "us-west-2",
+            "default": "us-west-2",
+            "title": "Thumbnail Region",
+            "type": "string"
+          },
+          "thumbnail_retention_hours": {
+            "default": 24,
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Retention Hours",
+            "type": "integer"
+          },
+          "thumbnail_timeout_seconds": {
+            "default": 180,
+            "maximum": 600.0,
+            "minimum": 10.0,
+            "title": "Thumbnail Timeout Seconds",
+            "type": "integer"
+          }
+        },
+        "title": "ThumbnailSettings",
+        "type": "object"
+      },
+      "ThumbnailSettingsUpdate": {
+        "additionalProperties": false,
+        "properties": {
+          "thumbnail_aspect_ratio": {
+            "default": "3:2",
+            "enum": [
+              "3:2",
+              "16:9",
+              "1:1"
+            ],
+            "title": "Thumbnail Aspect Ratio",
+            "type": "string"
+          },
+          "thumbnail_enabled": {
+            "default": false,
+            "title": "Thumbnail Enabled",
+            "type": "boolean"
+          },
+          "thumbnail_global_limit": {
+            "default": 50,
+            "maximum": 100000.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Global Limit",
+            "type": "integer"
+          },
+          "thumbnail_market_limit": {
+            "default": 5,
+            "maximum": 1000.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Market Limit",
+            "type": "integer"
+          },
+          "thumbnail_model": {
+            "default": "stability.stable-image-core-v1:1",
+            "enum": [
+              "stability.stable-image-core-v1:1",
+              "stability.sd3-5-large-v1:0",
+              "stability.stable-image-ultra-v1:1"
+            ],
+            "title": "Thumbnail Model",
+            "type": "string"
+          },
+          "thumbnail_operator_limit": {
+            "default": 10,
+            "maximum": 10000.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Operator Limit",
+            "type": "integer"
+          },
+          "thumbnail_period_hours": {
+            "default": 24,
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Period Hours",
+            "type": "integer"
+          },
+          "thumbnail_region": {
+            "const": "us-west-2",
+            "default": "us-west-2",
+            "title": "Thumbnail Region",
+            "type": "string"
+          },
+          "thumbnail_retention_hours": {
+            "default": 24,
+            "maximum": 720.0,
+            "minimum": 1.0,
+            "title": "Thumbnail Retention Hours",
+            "type": "integer"
+          },
+          "thumbnail_timeout_seconds": {
+            "default": 180,
+            "maximum": 600.0,
+            "minimum": 10.0,
+            "title": "Thumbnail Timeout Seconds",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "thumbnail_enabled",
+          "thumbnail_model",
+          "thumbnail_region",
+          "thumbnail_aspect_ratio",
+          "thumbnail_timeout_seconds",
+          "thumbnail_operator_limit",
+          "thumbnail_market_limit",
+          "thumbnail_global_limit",
+          "thumbnail_period_hours",
+          "thumbnail_retention_hours"
+        ],
+        "title": "ThumbnailSettingsUpdate",
         "type": "object"
       },
       "ToolEvent": {
@@ -11316,6 +11613,237 @@
         "summary": "Admin Resolve Market"
       }
     },
+    "/admin/markets/{slug}/thumbnails": {
+      "get": {
+        "operationId": "latest_admin_markets__slug__thumbnails_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/JobResponse"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Latest Admin Markets  Slug  Thumbnails Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Latest"
+      },
+      "post": {
+        "operationId": "create_admin_markets__slug__thumbnails_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GeneratePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create"
+      }
+    },
+    "/admin/markets/{slug}/thumbnails/{request_id}": {
+      "get": {
+        "operationId": "status_admin_markets__slug__thumbnails__request_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Status"
+      }
+    },
+    "/admin/markets/{slug}/thumbnails/{request_id}/preview": {
+      "get": {
+        "operationId": "preview_admin_markets__slug__thumbnails__request_id__preview_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "request_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Request Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "image/png": {}
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Preview"
+      }
+    },
     "/admin/queues": {
       "get": {
         "operationId": "admin_list_queues_admin_queues_get",
@@ -12137,6 +12665,94 @@
           }
         },
         "summary": "Admin Get Taxonomy"
+      }
+    },
+    "/admin/thumbnail-settings": {
+      "get": {
+        "operationId": "settings_admin_thumbnail_settings_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThumbnailSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Settings"
+      },
+      "put": {
+        "operationId": "update_settings_admin_thumbnail_settings_put",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ThumbnailSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ThumbnailSettings"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Settings"
       }
     },
     "/admin/users": {

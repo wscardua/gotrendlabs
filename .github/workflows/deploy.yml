@@ -109,6 +109,14 @@ jobs:
           echo "Docs-only change detected; skipping full test suite."
           git diff --check "$DIFF_RANGE"
 
+      - name: Validate Dockerfile
+        if: needs.detect-changes.outputs.docs_only != 'true'
+        run: docker build --check .
+
+      - name: Build production image
+        if: needs.detect-changes.outputs.docs_only != 'true'
+        run: docker build --tag gotrendlabs:ci .
+
       - name: Set up Python
         if: needs.detect-changes.outputs.docs_only != 'true'
         uses: actions/setup-python@v6

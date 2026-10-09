@@ -48,9 +48,42 @@ services:
       - ../../../.env.prod
       - ../../../.env.fastapi-db.prod
       - ../../../.env.auth.prod
+    environment:
+      GTL_THUMB_PRIVATE_ROOT: /app/thumbnail_private
+      GTL_THUMB_PUBLIC_ROOT: /app/media/market_thumbnails
     volumes:
       - mediafiles:/app/media:ro
+      - type: volume
+        source: mediafiles
+        target: /app/media/market_thumbnails
+        volume:
+          subpath: market_thumbnails
+      - thumbnail_private:/app/thumbnail_private:ro
       - runtime:/app/.runtime
+
+  thumbnail-worker:
+    build:
+      context: ../../..
+      dockerfile: Dockerfile
+    profiles: ["thumbnails"]
+    restart: unless-stopped
+    command: python -m apps.api.backend_api.thumbnail_worker
+    env_file:
+      - ../../../.env.prod
+      - ../../../.env.fastapi-db.prod
+      - ../../../.env.thumbnails.prod
+    environment:
+      GTL_THUMB_PRIVATE_ROOT: /app/thumbnail_private
+      GTL_THUMB_PUBLIC_ROOT: /app/media/market_thumbnails
+    volumes:
+      - thumbnail_private:/app/thumbnail_private
+      - type: volume
+        source: mediafiles
+        target: /app/media/market_thumbnails
+        volume:
+          subpath: market_thumbnails
+    depends_on:
+      - fastapi
 
   migrate:
     build:
@@ -83,3 +116,4 @@ volumes:
   staticfiles:
   mediafiles:
   runtime:
+  thumbnail_private:

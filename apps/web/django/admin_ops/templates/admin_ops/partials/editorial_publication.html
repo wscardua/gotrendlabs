@@ -5,7 +5,7 @@
 {% if market.status == 'draft' or market.status == 'scheduled' %}
   {% if market.editorial_revision %}
     {% if market.editorial_status == 'approved' %}
-      <form method="post">{% csrf_token %}<p>{% trans 'Publicar usa a versão aprovada. Alterações nos campos devem ser salvas e revisadas antes.' %}</p><button class="btn primary" name="action" value="publish-reviewed">{% trans 'Publicar versão aprovada' %}</button></form>
+      <form method="post" data-editorial-publish>{% csrf_token %}<p>{% trans 'Publicar usa a versão aprovada. Alterações nos campos devem ser salvas e revisadas antes.' %}</p><button class="btn primary" name="action" value="publish-reviewed">{% trans 'Publicar versão aprovada' %}</button></form>
     {% else %}<p class="notice">{% trans 'Publicação bloqueada até a aprovação humana da versão atual.' %}</p>{% endif %}
   {% endif %}
 {% elif market.status == 'canceled' %}

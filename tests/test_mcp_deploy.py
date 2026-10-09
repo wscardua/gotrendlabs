@@ -71,7 +71,7 @@ class MCPDeployEnvironmentTests(unittest.TestCase):
 
 
 class MCPDeployWindowTests(unittest.TestCase):
-    def run_deploy(self, fail_migration=False):
+    def run_deploy(self, fail_migration=False, thumbnails=False):
         import json
         import os
         import shutil
@@ -93,10 +93,12 @@ class MCPDeployWindowTests(unittest.TestCase):
                 '.env.migrate.prod': '',
             }.items():
                 (root / name).write_text(content)
+            if thumbnails:
+                (root / '.env.thumbnails.prod').write_text('AWS_BEARER_TOKEN_BEDROCK=fixture\n')
             binaries = root / 'bin'
             binaries.mkdir()
             state = root / 'mock-state.json'
-            state.write_text(json.dumps({'writers_running': True, 'migrated': False, 'restarted': False}))
+            state.write_text(json.dumps({'writers_running': True, 'migrated': False, 'restarted': False, 'commands': [], 'media_ready': False}))
             mock = '''import json, os, sys
 from pathlib import Path
 if Path(sys.argv[0]).name == 'git':
@@ -104,9 +106,14 @@ if Path(sys.argv[0]).name == 'git':
 path = Path(os.environ['DEPLOY_MOCK_STATE'])
 state = json.loads(path.read_text())
 args = sys.argv[1:]
+state['commands'].append(args)
+if 'migrate' in args and any('p.mkdir(' in arg for arg in args):
+    state['media_ready'] = True
+if 'fastapi' in args and 'run' in args and not state['media_ready']:
+    sys.exit(93)
 if 'stop' in args:
     state['writers_running'] = False
-if 'migrate' in args:
+if 'migrate' in args and any('ops.scripts.' in arg for arg in args):
     if state['writers_running']:
         sys.exit(91)
     if 'ops.scripts.migrate_with_role' in args:
@@ -145,3 +152,29 @@ path.write_text(json.dumps(state))
         self.assertFalse(state['migrated'])
         self.assertFalse(state['restarted'])
         self.assertFalse(state['writers_running'])
+
+    def test_installed_thumbnail_worker_is_built_stopped_and_redeployed(self):
+        code, state = self.run_deploy(thumbnails=True)
+        self.assertEqual(code, 0)
+        self.assertTrue(state['media_ready'])
+        for command in state['commands']:
+            self.assertIn('thumbnails', command)
+        stop = next(command for command in state['commands'] if 'stop' in command)
+        self.assertIn('thumbnail-worker', stop)
+        self.assertTrue(state['restarted'])
+
+    def test_thumbnail_migration_failure_never_restarts_executor(self):
+        code, state = self.run_deploy(fail_migration=True, thumbnails=True)
+        self.assertEqual(code, 19)
+        stop = next(command for command in state['commands'] if 'stop' in command)
+        self.assertIn('thumbnail-worker', stop)
+        self.assertFalse(state['restarted'])
+        self.assertFalse(state['writers_running'])
+
+    def test_unconfigured_install_does_not_require_thumbnail_secret_or_worker(self):
+        code, state = self.run_deploy()
+        self.assertEqual(code, 0)
+        for command in state['commands']:
+            self.assertNotIn('thumbnails', command)
+            self.assertNotIn('thumbnail-worker', command)
+        self.assertTrue(state['media_ready'])

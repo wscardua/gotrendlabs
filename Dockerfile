@@ -17,7 +17,8 @@ COPY . .
 
 RUN addgroup --system gotrendlabs \
     && adduser --system --ingroup gotrendlabs gotrendlabs \
-    && mkdir -p /app/staticfiles /app/media /app/.runtime \
+    && mkdir -p /app/staticfiles /app/media/market_thumbnails /app/.runtime /app/thumbnail_private \
+    && chmod 700 /app/thumbnail_private \
     && chown -R gotrendlabs:gotrendlabs /app
 
 USER gotrendlabs

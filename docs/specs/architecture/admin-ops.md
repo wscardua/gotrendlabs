@@ -156,3 +156,9 @@ A [FEAT-EDITORIAL-001](../features/editorial-governance.md) orienta a revisão h
 ## Consulta editorial no Admin Ops
 
 Admin Ops apresenta `/admin-ops/editorial/` ao staff, com manual, checklist e ficha renderizados dos arquivos versionados. O editor de mercado abre a consulta em nova aba por links contextuais. `criteria-v1.2.json` mantém os IDs E01–E11 legíveis por software e sincronizados por teste com o checklist. A interface não executa IA, não registra parecer estruturado e não muda as validações FastAPI de publicação. Avaliação futura deverá pertencer à autoridade de domínio da FastAPI.
+
+## Thumbnails IA em rascunhos
+
+[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implementada e validada localmente em 2026-10-09, produção pendente. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
+
+- FEAT-THUMB-001 v1.1: parâmetros não secretos de imagem são persistidos em SiteConfig por GET/PUT FastAPI /admin/thumbnail-settings e painel próprio Django. Credencial Bedrock só no executor; InvokeModel nativo usa configuração congelada no job. Agentes textuais permanecem independentes; atualização do painel não inicia geração.

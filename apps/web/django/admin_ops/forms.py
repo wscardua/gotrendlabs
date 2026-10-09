@@ -268,6 +268,28 @@ class RetentionConfigForm(forms.Form):
     )
 
 
+class ThumbnailConfigForm(forms.Form):
+    thumbnail_enabled = forms.BooleanField(label="Geração de thumbnails ativa", required=False)
+    thumbnail_model = forms.ChoiceField(label="Modelo de imagem", choices=(
+        ("stability.stable-image-core-v1:1", "Stable Image Core — econômico"),
+        ("stability.sd3-5-large-v1:0", "Stable Diffusion 3.5 Large"),
+        ("stability.stable-image-ultra-v1:1", "Stable Image Ultra"),
+    ))
+    thumbnail_region = forms.ChoiceField(label="Região AWS", choices=(("us-west-2", "Oregon (us-west-2)"),))
+    thumbnail_aspect_ratio = forms.ChoiceField(label="Proporção", choices=(("3:2", "3:2 — paisagem"), ("16:9", "16:9 — ampla"), ("1:1", "1:1 — quadrada")))
+    thumbnail_timeout_seconds = forms.IntegerField(label="Timeout (segundos)", min_value=10, max_value=600)
+    thumbnail_operator_limit = forms.IntegerField(label="Limite por operador", min_value=1, max_value=10000)
+    thumbnail_market_limit = forms.IntegerField(label="Limite por mercado", min_value=1, max_value=1000)
+    thumbnail_global_limit = forms.IntegerField(label="Limite global", min_value=1, max_value=100000)
+    thumbnail_period_hours = forms.IntegerField(label="Período dos limites (horas)", min_value=1, max_value=720)
+    thumbnail_retention_hours = forms.IntegerField(label="Retenção das candidatas (horas)", min_value=1, max_value=720)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs["form"] = "thumbnail-settings-form"
+
+
 class AiConfigForm(forms.Form):
     ai_agents_enabled = forms.BooleanField(label="Agentes IA ativos", required=False)
     ai_commenting_enabled = forms.BooleanField(label="Comentários IA ativos", required=False)
@@ -423,7 +445,7 @@ def _clean_market_wall_time(form, cleaned_data, date_field, zone_field):
 class AdminMarketForm(forms.Form):
     title = forms.CharField(label="Pergunta PT-BR", max_length=240)
     slug = forms.SlugField(label="Slug", max_length=160, required=False)
-    summary = forms.CharField(label="Resumo", widget=forms.Textarea)
+    summary = forms.CharField(label="Resumo", widget=forms.Textarea(attrs={"rows": 4}))
     kind = forms.ChoiceField(label="Tipo", choices=(("binary", "Sim/Não"), ("multiple", "Múltipla escolha")))
     category = forms.CharField(label="Categoria", max_length=80)
     subcategory = forms.CharField(label="Subcategoria", max_length=80)
@@ -450,8 +472,11 @@ class AdminMarketForm(forms.Form):
     thumb_color = forms.CharField(label="Cor do card", max_length=20, widget=forms.TextInput(attrs={"type": "color"}))
     image_url = forms.CharField(widget=forms.HiddenInput, required=False)
     thumbnail_file = forms.FileField(label="Thumbnail do card", required=False)
-    resolution_criteria = forms.CharField(label="Critério de resolução", widget=forms.Textarea)
-    admin_notes = forms.CharField(label="Notas internas", widget=forms.Textarea, required=False)
+    thumbnail_candidate_id = forms.UUIDField(widget=forms.HiddenInput, required=False)
+    thumbnail_expected_image_url = forms.CharField(widget=forms.HiddenInput, required=False)
+    thumbnail_origin = forms.ChoiceField(choices=[("current","Atual"),("upload","Upload"),("generated","Gerada")], initial="current", widget=forms.HiddenInput, required=False)
+    resolution_criteria = forms.CharField(label="Critério de resolução", widget=forms.Textarea(attrs={"rows": 4}))
+    admin_notes = forms.CharField(label="Notas internas", widget=forms.Textarea(attrs={"rows": 3}), required=False)
     option_1_label = forms.CharField(label="Opção 1", max_length=80, required=False)
     option_1_hint = forms.CharField(label="Hint 1", max_length=160, required=False)
     option_2_label = forms.CharField(label="Opção 2", max_length=80, required=False)
@@ -588,6 +613,8 @@ class AdminMarketForm(forms.Form):
             "close_label": self.cleaned_data.get("close_label") or "",
             "thumb": self.cleaned_data.get("thumb") or "",
             "thumb_color": self.cleaned_data.get("thumb_color") or "#d8ece2",
+            "thumbnail_candidate_id": str(self.cleaned_data["thumbnail_candidate_id"]) if self.cleaned_data.get("thumbnail_origin") == "generated" and self.cleaned_data.get("thumbnail_candidate_id") else None,
+            "thumbnail_expected_image_url": self.cleaned_data.get("thumbnail_expected_image_url"),
             "image_url": self.cleaned_data.get("image_url") or "",
             "resolution_criteria": self.cleaned_data.get("resolution_criteria") or "",
             "close_at": self.cleaned_data["close_at"].isoformat(),

@@ -1065,18 +1065,6 @@ $$("[data-market-form]").forEach((form) => {
     updateMarketPreview(form);
   });
   form.addEventListener("change", (event) => {
-    if (event.target.matches('input[type="file"][name="thumbnail_file"]')) {
-      const file = event.target.files?.[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
-          const thumbBox = $("[data-preview-thumb]");
-          if (!thumbBox) return;
-          thumbBox.innerHTML = `<img src="${reader.result}" alt="">`;
-        });
-        reader.readAsDataURL(file);
-      }
-    }
     updateMarketPreview(form);
     updateAutoCloseHelp(form);
   });
@@ -1429,3 +1417,134 @@ document.querySelectorAll('form[data-once-credential]').forEach((form) => {
   });
   setOpen(false, false);
 })();
+// One selected source; a late response cannot replace a later manual choice or submission.
+function initThumbnailEditor(form) {
+  const controls = form.querySelector('[data-thumbnail-controls]');
+  const fileInput = form.elements.thumbnail_file;
+  if (!fileInput) return;
+  const field = (name) => form.elements[name];
+  const thumb = document.querySelector('[data-preview-thumb]');
+  const initialUrl = field('image_url').value;
+  let selected = {origin: field('thumbnail_origin')?.value || 'current', url: initialUrl, file: null,
+    candidate: field('thumbnail_candidate_id')?.value || '', snapshot: null};
+  if (selected.origin === 'generated' && controls && selected.candidate) {
+    selected.url = `${controls.dataset.url}${selected.candidate}/preview/`;
+  }
+  let previous = null, revision = 0, active = false, submitted = false, waitSubmit = null;
+  let pendingSubmit = null, timer = null, alive = true, inFlightId = null, inFlightSnapshot = null;
+  let continueSubmit = false;
+  const button = controls?.querySelector('[data-thumbnail-generate]');
+  const undo = controls?.querySelector('[data-thumbnail-undo]');
+  const status = controls?.querySelector('[data-thumbnail-status]');
+  const stale = controls?.querySelector('[data-thumbnail-stale]');
+  const decision = controls?.querySelector('[data-thumbnail-submit]');
+  const context = () => Object.fromEntries(['title','summary','category','subcategory','event'].map(name => [name, field(name).value.trim()]));
+  const same = (a,b) => JSON.stringify(a) === JSON.stringify(b);
+  const say = (text,error=false) => { if(status) {status.textContent=text; status.setAttribute('role',error?'alert':'status');} };
+  function render() {
+    if (field('thumbnail_origin')) field('thumbnail_origin').value = selected.origin;
+    if (field('thumbnail_candidate_id')) field('thumbnail_candidate_id').value = selected.candidate || '';
+    // image_url never accepts the protected preview URL; backend derives the public URL by candidate ID.
+    field('image_url').value = selected.origin === 'current' ? selected.url : initialUrl;
+    if (thumb) {
+      thumb.replaceChildren();
+      if (selected.url) { const img=document.createElement('img'); img.src=selected.url; img.alt=''; thumb.append(img); }
+      else { const span=document.createElement('span'); span.dataset.previewThumbText=''; span.textContent=field('thumb')?.value || 'MK'; thumb.append(span); }
+    }
+    if(undo) undo.hidden=!previous;
+    if(stale) stale.hidden=!selected.snapshot || same(selected.snapshot,context());
+  }
+  function choose(next) { previous=selected; selected=next; revision++; render(); }
+  fileInput.addEventListener('change', () => {
+    const file=fileInput.files?.[0];
+    if (!file) return;
+    const url=URL.createObjectURL(file);
+    choose({origin:'upload',url,file,candidate:'',snapshot:null});
+    say('');
+  });
+  undo?.addEventListener('click', () => {
+    if(!previous) return;
+    selected=previous; previous=null; revision++;
+    const files=new DataTransfer(); if(selected.file) files.items.add(selected.file);
+    fileInput.files=files.files;
+    render(); say('');
+  });
+  form.addEventListener('input', () => { if(stale) stale.hidden=!selected.snapshot || same(selected.snapshot,context()); });
+  form.addEventListener('change', () => { if(stale) stale.hidden=!selected.snapshot || same(selected.snapshot,context()); });
+  if(!controls) { render(); return; }
+  async function fetchJob(url,options={}) {
+    const response=await fetch(url,{credentials:'same-origin',...options});
+    if(!response.ok) { let message=controls.dataset.failed; try { message=(await response.json()).message || message; } catch {} const error=new Error(message); error.status=response.status; throw error; }
+    return response.json();
+  }
+  function busy(value) { active=value; button.disabled=value; controls.dataset.busy=String(value); button.setAttribute('aria-busy',String(value)); if(value) say(controls.dataset.loading); }
+  async function accept(job,selectionRevision,allowSelection=true) {
+    if(!alive || submitted) return;
+    if(['queued','running'].includes(job.state)) {
+      busy(true); inFlightId=job.request_id; inFlightSnapshot=job.snapshot;
+      timer=setTimeout(() => poll(job.request_id,selectionRevision),1500); return;
+    }
+    busy(false); inFlightId=null; inFlightSnapshot=null;
+    if(job.state==='succeeded') {
+      button.textContent=controls.dataset.again;
+      if(allowSelection && revision===selectionRevision) {
+        // Load first, preserving the old image if the protected file/session is unavailable.
+        const image=new Image(); image.src=job.preview_url;
+        await image.decode();
+        if(!alive || submitted || revision!==selectionRevision) { say(controls.dataset.manual); return; }
+        choose({origin:'generated',url:job.preview_url,candidate:job.candidate_id,file:null,snapshot:job.snapshot});
+        // Keep previous File in undo memory, but exclude it from form submission now.
+        fileInput.value='';
+        say(controls.dataset.ready);
+      } else say(allowSelection ? controls.dataset.manual : '');
+      if(waitSubmit) { const submitter=waitSubmit; waitSubmit=null; submitter.form.requestSubmit(submitter.button); }
+    } else { say(job.message || controls.dataset.failed,true); waitSubmit=null; }
+    if(decision) decision.hidden=true;
+  }
+  async function poll(id,selectionRevision) {
+    try { await accept(await fetchJob(`${controls.dataset.url}${id}/`),selectionRevision); }
+    catch(error) { busy(false); say(error.message,true); waitSubmit=null; }
+  }
+  button.addEventListener('click', async () => {
+    if(active) return;
+    const snapshot=context();
+    if(['title','summary','category','subcategory'].some(key => !snapshot[key])) { say(controls.dataset.required,true); return; }
+    const selectionRevision=revision;
+    // Retrying an adapter timeout reuses identity and original snapshot, avoiding duplicate paid calls.
+    const id=inFlightId || crypto.randomUUID();
+    inFlightSnapshot=inFlightId ? inFlightSnapshot : snapshot; inFlightId=id;
+    busy(true);
+    try { const job=await fetchJob(controls.dataset.url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':field('csrfmiddlewaretoken').value},
+      body:JSON.stringify({...inFlightSnapshot,request_id:id})}); await accept(job,selectionRevision); }
+    catch(error) { busy(false); if(error.status && error.status<500) {inFlightId=null; inFlightSnapshot=null;} say(error.message,true); }
+  });
+  function onSubmit(event) {
+    if(event.submitter?.value==='publish-reviewed' && selected.origin!=='current') {
+      event.preventDefault(); say(controls.dataset.review,true); status.focus(); return;
+    }
+    if(active && !submitted && !continueSubmit) {
+      event.preventDefault(); pendingSubmit={form:event.target,button:event.submitter}; decision.hidden=false; decision.focus(); return;
+    }
+    submitted=true; clearTimeout(timer);
+    if(selected.origin!=='upload') fileInput.value='';
+  }
+  form.addEventListener('submit',onSubmit);
+  document.querySelectorAll('[data-editorial-publish]').forEach(publishForm => publishForm.addEventListener('submit',onSubmit));
+  controls.querySelector('[data-thumbnail-continue]').addEventListener('click', () => {
+    const submitter=pendingSubmit;
+    if(!submitter) return;
+    if(!submitter.form.noValidate && !submitter.button?.formNoValidate && !submitter.form.reportValidity()) return;
+    continueSubmit=true;
+    try { submitter.form.requestSubmit(submitter.button); }
+    finally { continueSubmit=false; }
+    if(submitted) { pendingSubmit=null; decision.hidden=true; }
+  });
+  controls.querySelector('[data-thumbnail-wait]').addEventListener('click', () => {
+    waitSubmit=pendingSubmit; pendingSubmit=null; decision.hidden=true; button.focus();
+  });
+  window.addEventListener('pagehide', () => {alive=false; clearTimeout(timer);});
+  render();
+  // Recover an active request after navigation. A completed historical job isn't auto-selected.
+  fetchJob(controls.dataset.url).then(job => {if(job && !active) accept(job,revision,['queued','running'].includes(job.state));}).catch(() => {});
+}
+$$('[data-market-form]').forEach(initThumbnailEditor);

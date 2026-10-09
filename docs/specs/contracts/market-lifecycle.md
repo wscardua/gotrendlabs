@@ -87,3 +87,7 @@ O gate impede novas publicações incompletas; não autoriza alterar prazos/fuso
 ## Entrada de data/hora no Admin Ops
 
 O formulário interpreta `datetime-local` como hora de parede no fuso explicitamente escolhido, tanto para fechamento quanto resolução; envia instante com offset à FastAPI. Não aplicar primeiro o fuso padrão Django. Recusar horas ambíguas/inexistentes em transições DST, orientando escolha inequívoca/UTC. Abertura e reenvio do editor preservam segundos/microssegundos de prazos originados por API/MCP. Criação humana salva draft para parecer; publicação é ação sobre versão salva e aprovada.
+
+## Thumbnail administrativa de draft
+
+FEAT-THUMB-001 acrescenta ao PATCH administrativo `thumbnail_candidate_id` e `thumbnail_expected_image_url`. Confirmação por ID sob o lock existente exige draft, autorização staff/MFA, arquivo/candidata validada não expirada e ausência de conflito. image_url é derivada no backend e permanece no contrato público. Geração/status não alteram mercado. Alteração mantém invalidação do parecer editorial; publicação da versão aprovada não incorpora uma seleção pendente silenciosamente. [Contrato detalhado](admin-thumbnails.md).

@@ -93,3 +93,5 @@
 - Previsões bot oficiais usam o mesmo fluxo de `Prediction`, ledger e probabilidade por pesos, mas são bloqueadas sem participantes humanos e auditadas em `gotrendlabs_ai_agent_actions`.
 - Contratos públicos de mercado devem separar métricas humanas, bot e total; `volume_gtl` e `participants` públicos representam humanos.
 - Ranking, badges, reputação pública e recompensas devem excluir usuários `is_bot=true`.
+
+- FEAT-THUMB-001 v1.1: parâmetros não secretos de imagem são persistidos em SiteConfig por GET/PUT FastAPI /admin/thumbnail-settings e painel próprio Django. Credencial Bedrock só no executor; InvokeModel nativo usa configuração congelada no job. Agentes textuais permanecem independentes; atualização do painel não inicia geração.
