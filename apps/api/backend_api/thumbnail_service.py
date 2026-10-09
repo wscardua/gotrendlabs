@@ -14,7 +14,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 from apps.api.backend_api import thumbnail_settings as config
 
-VERSION = "market-thumbnail-bedrock-v2"
+VERSION = "market-thumbnail-bedrock-v5"
 ACTIVE = ("queued", "running")
 PROMOTION_LOCK = 73019012
 
@@ -147,6 +147,11 @@ def request_job(cursor, slug, payload, staff):
     policy = config.load(cursor)
     if not enabled(cursor, policy):
         raise HTTPException(503, "Geração de thumbnails indisponível no momento.")
+    from apps.api.backend_api.thumbnail_planner import configuration
+    try:
+        planner_config = configuration()
+    except ValueError as exc:
+        raise HTTPException(503, "Geração de thumbnails indisponível no momento.") from exc
     cursor.execute(
         "SELECT id FROM gotrendlabs_thumbnail_jobs WHERE market_id=%s AND state IN ('queued','running')",
         (row["id"],),
@@ -186,7 +191,7 @@ def request_job(cursor, slug, payload, staff):
             Jsonb(context),
             digest,
             VERSION,
-            "",
+            planner_config["model"],
             policy.thumbnail_model,
             "bedrock",
             Jsonb(
@@ -195,6 +200,7 @@ def request_job(cursor, slug, payload, staff):
                     "aspect_ratio": policy.thumbnail_aspect_ratio,
                     "timeout_seconds": policy.thumbnail_timeout_seconds,
                     "seed": payload.request_id.int % 4294967294 + 1,
+                    "planner": planner_config,
                 }
             ),
             now() + timedelta(hours=policy.thumbnail_retention_hours),

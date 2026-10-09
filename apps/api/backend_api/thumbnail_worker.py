@@ -68,7 +68,8 @@ def run_once(provider=generate):
             token = uuid4()
             lease = max(
                 s.number("LEASE_SECONDS", 300),
-                int(job["provider_config"].get("timeout_seconds", 180)) * (2 if job["kind"] == "badge" else 1) + 60,
+                int(job["provider_config"].get("timeout_seconds", 180)) * (2 if job["kind"] == "badge" else 1)
+                + int(job["provider_config"].get("planner", {}).get("timeout_seconds", 0)) + 60,
             )
             cursor.execute(
                 "UPDATE gotrendlabs_thumbnail_jobs SET state='running',started_at=%s,lease_until=%s,claim_token=%s WHERE id=%s",
@@ -79,11 +80,26 @@ def run_once(provider=generate):
                 (job["kind"], job["market_id"], job["badge_id"], job["operator_id"], job["editor_id"], job["created_at"]),
             )
             job["variation"] = cursor.fetchone()["n"]
+            if job["kind"] == "market" and job["instructions_version"] == s.VERSION:
+                cursor.execute("SELECT usage->'planner'->'brief'->>'image_prompt' AS brief FROM gotrendlabs_thumbnail_jobs WHERE market_id=%s AND state='succeeded' AND snapshot_hash=%s AND usage->'planner'->'brief' IS NOT NULL ORDER BY created_at DESC LIMIT 1", (job["market_id"], job["snapshot_hash"]))
+                previous = cursor.fetchone()
+                job["previous_brief"] = previous["brief"] if previous else ""
             s.event(cursor, job["operator_id"], "thumbnail.running", job)
     # Provider I/O occurs after claim COMMIT. Never retry running jobs.
     data, provider_id, usage, failure = None, None, None, None
     images, records, theme = {}, {}, "light"
     is_badge = job.get("kind") == "badge"
+    if not is_badge and job["instructions_version"] == s.VERSION:
+        def checkpoint(records):
+            with get_connection() as conn, conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM gotrendlabs_thumbnail_jobs WHERE id=%s FOR UPDATE", (job["id"],))
+                current = cursor.fetchone()
+                if current["state"] != "running" or current["claim_token"] != token or current["lease_until"] <= s.now():
+                    raise ProviderFailure("lease_expired", uncertain=True)
+                if not eligible(cursor, job):
+                    raise ProviderFailure("ineligible")
+                cursor.execute("UPDATE gotrendlabs_thumbnail_jobs SET usage=%s WHERE id=%s", (Jsonb(records), job["id"]))
+        job["_checkpoint"] = checkpoint
     try:
         if is_badge:
             from apps.api.backend_api.badge_image_service import VERSION
@@ -143,6 +159,8 @@ def run_once(provider=generate):
             current = cursor.fetchone()
             if current["state"] != "running" or current["claim_token"] != token:
                 return True  # fenced late result cannot restore an abandoned job
+            if usage is None:
+                usage = current["usage"]  # Preserve stage evidence after an unexpected crash/error.
             if current["lease_until"] <= s.now():
                 failure = ProviderFailure(
                     "lease_expired",

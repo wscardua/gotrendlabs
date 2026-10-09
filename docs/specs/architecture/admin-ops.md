@@ -166,3 +166,6 @@ Admin Ops apresenta `/admin-ops/editorial/` ao staff, com manual, checklist e fi
 ## 2026-10-09 — Imagens IA de badges
 
 Badges criadas/editadas podem gerar candidata sem salvar/ativar. Django adapta sessão/CSRF, prévia privada e IDs; FastAPI confirma no POST/PATCH. Seleção gerada contém um par claro/escuro e aplica ambas as URLs no save, sem apagar arquivos anteriores. Habilitação independente no painel; parâmetros de provedor/consumo compartilhados. FEAT-BADGE-IMAGE-001.
+
+
+Thumbnails semânticas v5 (validação local): backend congela parâmetros próprios do planejador; executor interpreta o mercado em modelo textual Bedrock e renderiza o brief em modelo de imagem configurado. Checkpoints e lease cobrem ambas as etapas, sem retry/fallback; UI/contratos públicos e badges preservados. [ADR-0014](../decisions/ADR-0014-semantic-thumbnail-brief.md). Produção ainda não alterada e homologação visual pendente.

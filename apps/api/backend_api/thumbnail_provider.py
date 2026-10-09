@@ -1,4 +1,4 @@
-"""Single native Bedrock image invocation, no automatic retry or fallback."""
+"""Semantic brief then one native Bedrock image, no retry or fallback."""
 
 import base64
 import json
@@ -39,7 +39,10 @@ def generate(job):
     badge = job.get("kind", "market") == "badge"
     if badge:
         from apps.api.backend_api.badge_image_service import VERSION as BADGE_VERSION
-    if job.get("instructions_version") != (BADGE_VERSION if badge else VERSION):
+    supported_versions = (
+        {BADGE_VERSION} if badge else {VERSION, "market-thumbnail-bedrock-v2"}
+    )
+    if job.get("instructions_version") not in supported_versions:
         raise ProviderFailure("unsupported_instructions")
     cfg = job.get("provider_config", {})
     if (
@@ -60,7 +63,12 @@ def generate(job):
     if badge:
         from apps.api.backend_api.badge_image_service import visual_prompt
         prompt, negative_prompt = visual_prompt(job)
+    elif job["instructions_version"] == VERSION:
+        from apps.api.backend_api.thumbnail_planner import plan
+        prompt, planner_record = plan(job, key)
+        negative_prompt = "text, captions, numbers, percentages, logos, watermarks, winner celebration, documentary photography, confusing collage"
     else:
+        # Historical queued jobs retain their exact v2 description; never replay them.
         variant = VARIANTS[job.get("variation", 0) % len(VARIANTS)]
         context = {
             k: job["snapshot"].get(k, "")
@@ -77,6 +85,29 @@ def generate(job):
         negative_prompt = "text, captions, numbers, percentages, logos, watermarks, winner celebration, documentary photography, confusing collage"
     if len(prompt) > 10000:
         raise ProviderFailure("invalid_context")
+    semantic = not badge and job["instructions_version"] == VERSION
+    if semantic:
+        checkpoint = job.get("_checkpoint", lambda _: None)
+        checkpoint({"planner": planner_record, "image": {"state": "started"}})
+    try:
+        data, provider_id, usage = _invoke(job, key, prompt, negative_prompt)
+    except ProviderFailure as exc:
+        if semantic:
+            exc.usage = {"planner": planner_record, "image": {
+                "state": "uncertain" if exc.uncertain else "failed",
+                "provider_id": exc.provider_id, "reported_usage": exc.usage,
+                "error_code": exc.code,
+            }}
+        raise
+    if semantic:
+        usage = {"planner": planner_record, "image": {
+            "state": "validated", "provider_id": provider_id, "reported_usage": usage,
+        }}
+    return data, provider_id, usage
+
+
+def _invoke(job, key, prompt, negative_prompt):
+    cfg = job["provider_config"]
     body = {
         "prompt": prompt,
         "negative_prompt": negative_prompt,

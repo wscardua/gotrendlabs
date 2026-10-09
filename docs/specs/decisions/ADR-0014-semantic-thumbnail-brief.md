@@ -1,0 +1,17 @@
+# ADR-0014 — interpretação do mercado antes da geração de thumbnail
+
+Data: 2026-10-09. Status: aceita no escopo corretivo solicitado pelo usuário; fluxo real e avaliação visual informal validados em DEV; homologação produtiva pendente.
+
+Candidatas reais v2 perderam o tema mesmo em Ultra. Presets por esporte/jogo foram rejeitados pelo usuário; a simples reorganização de um template também não atende à interpretação esperada. Acrescentar uma chamada textual é agora justificado por essa evidência, substituindo a restrição inicial de chamada única de ADR-0012 para novos jobs v5 de mercados.
+
+Backend congela configuração própria do planejador no job; executor faz uma Responses em Bedrock Mantle us-east-1, openai.gpt-oss-20b inicialmente (modelo textual já empregado pelos agentes, sem alterar seus parâmetros/código). Credencial Bedrock permanece no executor. Modelo/região/timeout/tokens do planejador têm variáveis GTL_THUMB_PLANNER_* independentes, com validação e limites; configurações não secretas devem estar no ambiente da API que reserva os jobs. Modelo de imagem continua selecionável nas Configurações do Sistema. Sem endpoint arbitrário, ferramentas, conversação armazenada, retry ou fallback.
+
+Planejador lê dados permitidos do formulário em mensagem separada das instruções e retorna sujeitos e uma descrição concreta da imagem em inglês. Não usa exemplos de categorias ou catálogo de cenas. Não persistir raciocínio privado do modelo. Persistir somente brief final validado, sujeitos, modelo, versão, ID do provedor e uso retornado, em JSON privado do job. Não incluir esses dados na resposta pública/preview de status ou em logs.
+
+Checkpoints de planner/image pertencem ao mesmo job running e claim token. Cada checkpoint verifica elegibilidade, token e lease antes de liberar a chamada; nenhuma transação durante HTTP. Lease contempla timeout textual + timeout de imagem + margem. Uma reserva autoriza no máximo uma chamada textual limitada e uma imagem. Reservas contam também quando falham; limites existentes por operador/item/global limitam igualmente planejamento. Uma falha ou resposta inválida textual impede a chamada de imagem. Processo abandonado torna uncertain, sem reexecução de qualquer etapa ou cobrança duplicada automática. store=false impede recuperação por estado remoto; resultado incerto exige nova identidade solicitada pelo operador.
+
+V2 permanece histórica; v3/v4 locais não são reinterpretadas nem repetidas. Candidatas concluídas permanecem consultáveis/confirmáveis até expiração. Badges não mudam. Sem migration: orchestrator, provider_config e usage JSON existentes comportam a trilha e o brief privado. API/UI e armazenamento privados continuam iguais. O fluxo continua um clique do operador, seleção automática e confirmação no salvamento existente.
+
+Fontes oficiais: [Responses Bedrock/Mantle](https://docs.aws.amazon.com/bedrock/latest/userguide/inference-responses-api.html), [gpt-oss-20b](https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-openai-gpt-oss-20b.html). Documentação não comprova permissão do token específico do executor nem qualidade real; validação com mocks não encerra esses gates.
+
+Evidência DEV em 2026-10-09: três solicitações reais do operador concluídas com 20b + Core, processamento entre 9.663s e 17.804s. Operador aprovou informalmente os resultados e autorizou preparar PRD. Sem nova chamada paga pelo assistente; token/modelo produtivos e qualidade em PRD devem ser conferidos após rollout autorizado.

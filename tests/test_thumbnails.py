@@ -130,6 +130,69 @@ class ThumbnailIntegrationTests(AppendOnlyTransactionTestCase):
         w.run_once(lambda j: (png(), "resp_fake", {"image_tokens": 5}))
         return self.job(job["request_id"])
 
+    def test_planner_configuration_frozen_and_lease_covers_both_calls(self):
+        with patch.dict(os.environ, {"GTL_THUMB_PLANNER_MODEL": "openai.gpt-oss-120b",
+                                   "GTL_THUMB_PLANNER_TIMEOUT_SECONDS": "120",
+                                   "GTL_THUMB_PLANNER_MAX_OUTPUT_TOKENS": "4096"}):
+            job, _ = self.request()
+        record = self.job_record(job["request_id"])
+        self.assertEqual(record["orchestrator"], "openai.gpt-oss-120b")
+        self.assertEqual(record["provider_config"]["planner"]["max_output_tokens"], 4096)
+        def provider(claimed):
+            stored = self.job_record(claimed["id"])
+            self.assertGreaterEqual(stored["lease_until"] - stored["started_at"], timedelta(seconds=360))
+            self.assertEqual(claimed["provider_config"]["planner"]["timeout_seconds"], 120)
+            return png(), "simulated", None
+        w.run_once(provider)
+        self.assertEqual(self.job(job["request_id"])["state"], "succeeded")
+
+    def test_planner_checkpoint_survives_unknown_error_without_replay(self):
+        job, _ = self.request()
+        evidence = {"planner": {"state": "validated", "provider_id": "simulated",
+                               "reported_usage": {"total_tokens": 123}}}
+        def interrupted(claimed):
+            claimed["_checkpoint"](evidence)
+            raise RuntimeError("simulated crash")
+        w.run_once(interrupted)
+        record = self.job_record(job["request_id"])
+        self.assertEqual(record["state"], "uncertain")
+        self.assertEqual(record["usage"], evidence)
+        with patch.object(p.httpx, "post") as call:
+            self.assertFalse(w.run_once())
+            call.assert_not_called()
+        self.market.refresh_from_db()
+        self.assertEqual(self.market.image_url, "/media/previous.png")
+
+    def test_semantic_pipeline_persists_brief_and_regeneration_context(self):
+        job, _ = self.request()
+        brief = "Editorial illustration of the specific lunar game world, still under construction."
+        def response(url, **kwargs):
+            if "responses" in url:
+                return httpx.Response(200, json={"id": "simulated-plan", "status": "completed",
+                    "usage": {"total_tokens": 123}, "output": [{"type": "message", "content": [
+                    {"type": "output_text", "text": json.dumps({"image_prompt": brief, "subjects": ["lunar game"]})}]}]})
+            record = self.job_record(job["request_id"])
+            self.assertEqual(record["usage"]["planner"]["state"], "validated")
+            self.assertEqual(record["usage"]["image"]["state"], "started")
+            return httpx.Response(200, headers={"x-amzn-requestid": "simulated-image"},
+                json={"finish_reasons": [None], "images": [base64.b64encode(png()).decode()]})
+        with patch.dict(os.environ, {"AWS_BEARER_TOKEN_BEDROCK": "fake-key"}), patch.object(
+                p.httpx, "post", side_effect=response) as call:
+            w.run_once()
+            self.assertEqual(call.call_count, 2)
+        record = self.job_record(job["request_id"])
+        self.assertEqual(record["state"], "succeeded")
+        self.assertEqual(record["usage"]["planner"]["brief"]["image_prompt"], brief)
+        self.assertEqual(record["provider_id"], "simulated-image")
+        public_status = self.job(job["request_id"])
+        self.assertNotIn("usage", public_status)
+        another, _ = self.request()
+        def regenerated(claimed):
+            self.assertEqual(claimed["previous_brief"], brief)
+            return png(), "simulated-next", None
+        w.run_once(regenerated)
+        self.assertEqual(self.job(another["request_id"])["state"], "succeeded")
+
     def test_production_worker_audits_without_http_authentication_secrets(self):
         job, _ = self.request()
         from apps.api.backend_api.db import database_config
@@ -711,7 +774,7 @@ class ThumbnailProviderTests(SimpleTestCase):
         self.job = {
             "id": uuid4(),
             "provider": "bedrock",
-            "instructions_version": s.VERSION,
+            "instructions_version": "market-thumbnail-bedrock-v2",
             "orchestrator": "",
             "image_model": "stability.stable-image-core-v1:1",
             "provider_config": {
@@ -772,6 +835,105 @@ class ThumbnailProviderTests(SimpleTestCase):
                 p.generate({**self.job, "image_model": model})
             self.assertIn(model, call.call_args.args[0])
             self.assertNotIn("numberOfImages", call.call_args.kwargs["json"])
+
+    def semantic_job(self, **changes):
+        from apps.api.backend_api.thumbnail_planner import configuration
+        job = {**self.job, "instructions_version": s.VERSION,
+               "orchestrator": "openai.gpt-oss-20b",
+               "provider_config": {**self.job["provider_config"], "planner": configuration()}}
+        return {**job, **changes}
+
+    def brief_response(self, prompt="A vivid editorial illustration of a lunar landscape with a game world under construction."):
+        return httpx.Response(200, json={
+            "id": "mantle_fake", "status": "completed", "usage": {"total_tokens": 123},
+            "output": [{"type": "message", "content": [{"type": "output_text",
+                "text": json.dumps({"image_prompt": prompt, "subjects": ["lunar game"]})}]}],
+        })
+
+    def test_semantic_brief_precedes_image_without_category_presets(self):
+        from apps.api.backend_api.thumbnail_planner import INSTRUCTIONS
+        contexts = (
+            {"title": "Corinthians na Libertadores Feminina?", "summary": "Torneio no Equador.",
+             "category": "Esporte", "subcategory": "Futebol", "event": "Geral"},
+            {"title": "A FURIA vence no CS2?", "summary": "Disputa em Malta com Legacy.",
+             "category": "Games", "subcategory": "Eventos", "event": "Geral"},
+            {"title": "Novo iPhone em outubro?", "summary": "Novo smartphone da Apple.",
+             "category": "Tecnologia", "subcategory": "Apple", "event": "Lançamento"},
+        )
+        for context in contexts:
+            prompt = "A concrete editorial scene conceived specifically for " + context["title"]
+            with self.subTest(context=context), patch.object(p.httpx, "post",
+                    side_effect=[self.brief_response(prompt), self.success()]) as call:
+                job = self.semantic_job(snapshot={**context, "admin_notes": "SECRET"},
+                                        previous_brief="An earlier visual concept")
+                _, _, usage = p.generate(job)
+                self.assertEqual(call.call_count, 2)
+                first, second = call.call_args_list
+                self.assertIn("bedrock-mantle.us-east-1.api.aws/v1/responses", first.args[0])
+                body = first.kwargs["json"]
+                self.assertEqual(body["input"][0], {"role": "system", "content": INSTRUCTIONS})
+                data = json.loads(body["input"][1]["content"])
+                self.assertEqual(data["market"], context)
+                self.assertEqual(data["previous_visual_brief"], "An earlier visual concept")
+                self.assertFalse(body["store"])
+                self.assertEqual(body["max_output_tokens"], 2048)
+                self.assertNotIn("tools", body)
+                self.assertNotIn("SECRET", json.dumps(body))
+                self.assertNotIn("Counter-Strike", INSTRUCTIONS)
+                self.assertNotIn("football", INSTRUCTIONS)
+                self.assertEqual(second.kwargs["json"]["prompt"], prompt)
+                self.assertIn("bedrock-runtime", second.args[0])
+                self.assertEqual(usage["planner"]["provider_id"], "mantle_fake")
+                self.assertEqual(usage["planner"]["reported_usage"], {"total_tokens": 123})
+
+    def test_planner_failures_never_invoke_image_or_retry(self):
+        malformed = httpx.Response(200, json={"status": "completed", "output": []})
+        refusal = httpx.Response(200, json={"status": "completed", "output": [
+            {"type": "message", "content": [{"type": "refusal"}]}]})
+        for response, code, uncertain in (
+            (httpx.Response(403), "planner_access", False),
+            (httpx.Response(503), "planner_unavailable", True),
+            (malformed, "invalid_visual_brief", False),
+            (refusal, "planner_refusal", False),
+            (httpx.Response(200, json={"status": "incomplete"}), "incomplete_planner_response", True),
+        ):
+            with self.subTest(code=code), patch.object(p.httpx, "post", return_value=response) as call:
+                with self.assertRaises(p.ProviderFailure) as caught:
+                    p.generate(self.semantic_job())
+                call.assert_called_once()
+                self.assertEqual(caught.exception.code, code)
+                self.assertEqual(caught.exception.uncertain, uncertain)
+                self.assertIn("planner", caught.exception.usage)
+        with patch.object(p.httpx, "post", side_effect=httpx.ReadTimeout("timeout")) as call:
+            with self.assertRaises(p.ProviderFailure) as caught:
+                p.generate(self.semantic_job())
+            self.assertTrue(caught.exception.uncertain)
+            call.assert_called_once()
+
+    def test_planner_checkpoint_fencing_and_image_failure_preserve_usage(self):
+        def checkpoint(record):
+            if "image" in record:
+                raise p.ProviderFailure("ineligible")
+        with patch.object(p.httpx, "post", return_value=self.brief_response()) as call:
+            with self.assertRaises(p.ProviderFailure):
+                p.generate(self.semantic_job(_checkpoint=checkpoint))
+            call.assert_called_once()
+        with patch.object(p.httpx, "post", side_effect=[self.brief_response(), httpx.Response(503)]) as call:
+            with self.assertRaises(p.ProviderFailure) as caught:
+                p.generate(self.semantic_job())
+            self.assertEqual(call.call_count, 2)
+            self.assertTrue(caught.exception.uncertain)
+            self.assertEqual(caught.exception.usage["planner"]["state"], "validated")
+            self.assertEqual(caught.exception.usage["image"]["state"], "uncertain")
+
+    def test_historical_v2_job_retains_original_instructions(self):
+        with patch.object(p.httpx, "post", return_value=self.success()) as call:
+            p.generate({**self.job, "instructions_version": "market-thumbnail-bedrock-v2"})
+        call.assert_called_once()
+        prompt = call.call_args.kwargs["json"]["prompt"]
+        self.assertTrue(prompt.startswith(p.INSTRUCTIONS))
+        self.assertIn("Market data JSON", prompt)
+        self.assertNotIn("Visual scene:", prompt)
 
     def test_timeout_5xx_access_refusal_and_invalid_image(self):
         for response, code, uncertain in [
@@ -837,6 +999,8 @@ class ThumbnailProviderTests(SimpleTestCase):
                 }
             },
             {"instructions_version": "old"},
+            {"instructions_version": "market-thumbnail-bedrock-v3"},
+            {"instructions_version": "market-thumbnail-bedrock-v4"},
         ):
             with patch.object(p.httpx, "post") as call:
                 with self.assertRaises(p.ProviderFailure):
