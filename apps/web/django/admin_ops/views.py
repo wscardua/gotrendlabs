@@ -1,7 +1,9 @@
 from io import BytesIO
+import hashlib
 import json
 import logging
 import os
+from uuid import UUID, uuid4, uuid5, NAMESPACE_URL
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -89,6 +91,7 @@ from apps.web.django.admin_ops.forms import (
     AiAgentForm,
     AiConfigForm,
     ThumbnailConfigForm,
+    BadgeImageConfigForm,
     AdminSubcategoryForm,
     AdminUserNoteForm,
     AdminUserPasswordResetForm,
@@ -1285,7 +1288,17 @@ def config(request):
     platform_config = load_platform_config()
     site_config = SiteConfig.get_solo()
     thumbnail_post = request.POST if request.method == "POST" and request.POST.get("action") == "thumbnail_settings" else None
-    general_post = None if thumbnail_post is not None else request.POST
+    badge_image_post = request.POST if request.method == "POST" and request.POST.get("action") == "badge_image_settings" else None
+    general_post = None if thumbnail_post is not None or badge_image_post is not None else request.POST
+    badge_image_form = BadgeImageConfigForm(badge_image_post, initial={"badge_image_enabled":site_config.badge_image_enabled}, prefix="badge_image")
+    if badge_image_post is not None and badge_image_form.is_valid():
+        try:
+            thumbnail_api_request("PUT", "/admin/badge-image-settings", badge_image_form.cleaned_data, token=auth_token(request))
+        except AuthAPIError as exc:
+            badge_image_form.add_error(None, str(exc))
+        else:
+            messages.success(request, "Habilitação de imagens de badges atualizada.")
+            return redirect("admin-ops-config")
     thumbnail_form = ThumbnailConfigForm(thumbnail_post, initial={field: getattr(site_config, field) for field in ThumbnailConfigForm.base_fields}, prefix="thumbnail")
     if thumbnail_post is not None and thumbnail_form.is_valid():
         try:
@@ -1462,7 +1475,7 @@ def config(request):
             for field, value in ai_form.cleaned_data.items():
                 setattr(site_config, field, value)
         site_config.updated_by = _admin_model_user(request)
-        site_config.save(update_fields=[f.name for f in SiteConfig._meta.fields if not f.primary_key and not f.name.startswith("thumbnail_")])
+        site_config.save(update_fields=[f.name for f in SiteConfig._meta.fields if not f.primary_key and not f.name.startswith("thumbnail_") and f.name != "badge_image_enabled"])
         if previous_seal_window != site_config.market_seal_window_hours:
             AdminEvent.objects.create(actor=_admin_model_user(request), action="integrity.seal_window_update", entity_type="site_config", entity_identifier="market_seal_window_hours", note=f"{previous_seal_window}h -> {site_config.market_seal_window_hours}h")
         current_mobile_compatibility = _mobile_compatibility_values(site_config)
@@ -1504,6 +1517,7 @@ def config(request):
             "retention_form": retention_form,
             "ai_form": ai_form,
             "thumbnail_form": thumbnail_form,
+            "badge_image_form": badge_image_form,
             "platform_config": platform_config,
             "site_config": site_config,
             "active_android_release": active_android_release,
@@ -2307,6 +2321,24 @@ def badges(request):
     return render(request, "admin_ops/badges.html", {"badge_data": badge_data, "admin_error": error})
 
 
+def _badge_image_editor(request, code, token, submitted_id=None):
+    # Namespace by backend session, not only the Django/browser session.
+    scope = hashlib.sha256(token.encode()).hexdigest()[:16] + ":" + (code or "new")
+    editors = dict(request.session.get("badge_image_editors", {}))
+    try:
+        editor = UUID(submitted_id or editors.get(scope, ""))
+    except (ValueError, TypeError):
+        try:
+            editor = UUID(editors.get(scope, ""))
+        except (ValueError, TypeError):
+            editor = uuid5(NAMESPACE_URL, "gotrendlabs:badge-editor:" + scope) if code else uuid4()
+    editors.pop(scope, None)
+    editors[scope] = str(editor)
+    # Bound session growth while preserving recently opened editors.
+    request.session["badge_image_editors"] = dict(list(editors.items())[-32:])
+    return editor, scope
+
+
 @admin_api_required
 def badge_form(request, mode="new", code=None):
     token = auth_token(request)
@@ -2324,48 +2356,62 @@ def badge_form(request, mode="new", code=None):
             error = error or str(exc)
         if code and not badge and not error:
             error = "Badge não encontrada."
-    post_data = None
-    upload_error = ""
-    if request.method == "POST":
-        if request.POST.get("action") == "deactivate" and code:
-            try:
-                admin_deactivate_badge(token, code, request.POST.get("note") or "Concessão pausada pelo Admin Ops.")
-                messages.success(request, "Novas concessões pausadas. Conquistas existentes continuam visíveis.")
-                return redirect("admin-ops-badges")
-            except AuthAPIError as exc:
-                error = str(exc)
-        post_data = request.POST.copy()
+    badge_editor_id, editor_scope = _badge_image_editor(request, code, token, request.POST.get("badge_image_editor_id") if request.method == "POST" else None)
+    initial = _badge_initial(badge) if badge else {"badge_type":"global", "rule_type":"resolved_predictions_count", "threshold_value":1, "is_active":True, "rule_active":True, "requirements":[]}
+    initial.update({"badge_image_editor_id":str(badge_editor_id), "badge_image_origin":"current", "badge_image_expected_image_url":(badge or {}).get("image_url", ""), "badge_image_expected_dark_url":(badge or {}).get("image_dark_url", ""), "badge_image_expected_updated_at":(badge or {}).get("updated_at")})
+    post_data = request.POST.copy() if request.method == "POST" else None
+    if post_data is not None and not post_data.get("badge_image_editor_id"):
+        post_data["badge_image_editor_id"] = initial["badge_image_editor_id"]
+    try:
+        badge_editor_id = UUID((post_data or initial).get("badge_image_editor_id"))
+    except (ValueError, TypeError):
+        badge_editor_id = UUID(initial["badge_image_editor_id"])
+    if post_data is not None and post_data.get("badge_image_origin") == "generated":
+        if not post_data.get("badge_image_candidate_id"):
+            error = "Gere uma imagem ou escolha upload antes de salvar."
+    form = AdminBadgeForm(post_data, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
+    if request.method == "POST" and request.POST.get("action") == "deactivate" and code:
         try:
-            if request.FILES.get("badge_image"):
-                saved_name = _save_badge_image(request.FILES["badge_image"])
-                post_data["image_url"] = BADGE_STORAGE.url(saved_name)
-            if request.FILES.get("badge_dark_image"):
-                saved_name = _save_badge_image(request.FILES["badge_dark_image"])
-                post_data["image_dark_url"] = BADGE_STORAGE.url(saved_name)
-        except ValueError as exc:
-            upload_error = str(exc)
-    initial = _badge_initial(badge) if badge else {"badge_type": "global", "rule_type": "resolved_predictions_count", "threshold_value": 1, "is_active": True, "rule_active": True, "requirements": []}
-    form = AdminBadgeForm(post_data or None, request.FILES or None, initial=initial, taxonomy=taxonomy_data)
-    if upload_error:
-        form.add_error(None, upload_error)
-    if request.method == "POST" and request.POST.get("action") != "deactivate":
-        if not upload_error and form.is_valid():
+            admin_deactivate_badge(token, code, request.POST.get("note") or "Concessão pausada pelo Admin Ops.")
+            messages.success(request, "Novas concessões pausadas. Conquistas existentes continuam visíveis.")
+            return redirect("admin-ops-badges")
+        except AuthAPIError as exc:
+            error = str(exc)
+    elif request.method == "POST":
+        if not error and form.is_valid():
+            saved_uploads = []
+            submitted = False
             try:
+                payload = form.to_payload()
+                if form.cleaned_data.get("badge_image_origin") != "generated":
+                    for field, url in (("badge_image","image_url"), ("badge_dark_image","image_dark_url")):
+                        if request.FILES.get(field):
+                            filename = _save_badge_image(request.FILES[field])
+                            saved_uploads.append(filename)
+                            payload[url] = BADGE_STORAGE.url(filename)
+                submitted = True
+                badge = admin_create_badge(token, payload) if mode == "new" else admin_update_badge(token, code, payload)
+            except (AuthAPIError, ValueError, OSError) as exc:
+                confirmed_rejection = isinstance(exc, AuthAPIError) and exc.status_code is not None and 400 <= exc.status_code < 500 and exc.status_code not in (408,499)
+                if not submitted or confirmed_rejection:
+                    for filename in saved_uploads:
+                        try: BADGE_STORAGE.delete(filename)
+                        except OSError: logging.getLogger(__name__).warning("badge upload cleanup failed")
+                error = str(exc) if not submitted or confirmed_rejection else "Não foi possível confirmar o salvamento. Confira a badge antes de tentar novamente; os arquivos foram preservados."
+            else:
                 if mode == "new":
-                    badge = admin_create_badge(token, form.to_payload())
-                    messages.success(request, "Badge criada.")
-                    return redirect("admin-ops-badge-edit", code=badge["code"])
-                badge = admin_update_badge(token, code, form.to_payload())
-                messages.success(request, "Badge atualizada.")
+                    editors = dict(request.session.get("badge_image_editors", {}))
+                    editors.pop(editor_scope, None)
+                    request.session["badge_image_editors"] = editors
+                messages.success(request, "Badge criada." if mode == "new" else "Badge atualizada.")
                 return redirect("admin-ops-badge-edit", code=badge["code"])
-            except AuthAPIError as exc:
-                error = str(exc)
-        else:
+        elif not error:
             error = "Revise os campos da badge."
     return render(
         request,
         "admin_ops/badge_form.html",
         {
+            "badge_editor_id":badge_editor_id,
             "title": "Criar badge" if mode == "new" else "Editar badge",
             "mode": mode,
             "code": code,

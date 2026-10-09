@@ -176,3 +176,13 @@ WFLOW-20261007-UNIVERSAL-EDITORIAL-001: criação humana/conversão → ficha pe
 - Config thumbnail_* separada de ai_* no painel → Django sessão/CSRF → GET/PUT FastAPI /admin/thumbnail-settings → SiteConfig + auditoria; snapshot por job. GTL_THUMB_ENABLED é kill switch; segredo Bedrock do executor. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [runbook](../../guides/admin-ai-thumbnails-runbook.md).
 
 - Fechamento FEAT-THUMB-001: deploy padrão → bootstrap do subdiretório → profiles MCP e opcional thumbnails → parada dos escritores → migrations/grants → restart. `.env.thumbnails.prod` existente inclui worker no ciclo mesmo pausado; autorização de consumo segue switches operacionais/DB. CI verifica build completo. Duas invocações Core DEV concluídas; rollout produtivo pendente de aprovação/CI.
+
+## 2026-10-09 — Imagens IA de badges
+
+FEAT-BADGE-IMAGE-001: badge_form/contexto → Django session/CSRF → badge_image_routes/service → fila tipada compartilhada → executor/Bedrock 1:1 → candidata privada → confirmação por ID no POST/PATCH → badge_images/image_url. Painel habilita badges separadamente; modelo e cotas globais compartilhados, nenhuma mudança em agentes/concessões.
+
+
+Imagens de badges: worker → duas invocações nativas Bedrock (light/dark) → dois PNG privados → proxy administrativo com theme validado → seleção indivisível no editor → POST/PATCH confirma par → image_url/image_dark_url públicos. Reserva global/operador de duas imagens; lease para ambas as chamadas e checkpoint de uso por tema sem retry incerto.
+
+
+Fechamento WFLOW-20261009-BADGE-CLOSE-001: commit local → aprovação da descrição → push/PR própria → CI/build → merge main → Actions/SSM → migration0025/grants/mount badge_images/worker compartilhado → habilitação auditada de badges → smokes técnicos. Thumbnails produtivas PR #143 preservadas; sem novo recurso AWS/provedor e sem geração paga automática.

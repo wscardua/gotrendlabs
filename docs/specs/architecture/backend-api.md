@@ -95,3 +95,7 @@
 - Ranking, badges, reputação pública e recompensas devem excluir usuários `is_bot=true`.
 
 - FEAT-THUMB-001 v1.1: parâmetros não secretos de imagem são persistidos em SiteConfig por GET/PUT FastAPI /admin/thumbnail-settings e painel próprio Django. Credencial Bedrock só no executor; InvokeModel nativo usa configuração congelada no job. Agentes textuais permanecem independentes; atualização do painel não inicia geração.
+
+## 2026-10-09 — Imagens IA de badges
+
+badge_image_service/routes definem contexto, ownership/sessão/editor e versão/URLs da definição. Fila gotrendlabs_thumbnail_jobs tipada por kind com FK/editor/constraints, limites globais compartilhados. Worker/provedor reutilizados sem acoplar política de badge à elegibilidade draft de mercados. Candidata confirmada atomicamente em criação/edição; contratos públicos e concessões preservados.

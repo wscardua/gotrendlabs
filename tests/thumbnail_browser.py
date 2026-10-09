@@ -305,12 +305,19 @@ with sync_playwright() as pw:
     generate.focus()
     generate.press("Enter")
     expect(generate).to_be_disabled()
-    expect(status).to_have_text("Gerando thumbnail…")
+    expect(generate).to_have_text("Gerando…")
+    expect(page.locator("[data-thumbnail-progress]")).to_be_visible()
+    expect(page.locator("[data-thumbnail-progress]")).to_contain_text("Aguarde")
+    expect(page.locator("[data-thumbnail-progress]")).to_contain_text("alguns minutos")
+    expect(page.locator("[data-thumbnail-progress]")).to_have_attribute("role", "status")
+    expect(page.locator("[name=description]" if page.locator("[data-ai-badge-editor]").count() else "[name=summary]")).to_be_enabled()
+    expect(page.locator("[data-thumbnail-progress]")).to_contain_text("Gerando thumbnail…")
     page.locator("[name=source]").fill("Fonte ainda em edição")
     expect(thumb).to_have_attribute("src", before)
     page.screenshot(path=str(OUT / "loading.png"), full_page=True)
     current["mode"] = "succeeded"
     expect(origin).to_have_value("generated", timeout=5000)
+    expect(page.locator("[data-thumbnail-progress]")).to_be_hidden()
     expect(generate).to_have_text("Gerar outra")
     assert page.locator("[name=source]").input_value() == "Fonte ainda em edição"
     first = page.locator("[name=thumbnail_candidate_id]").input_value()
@@ -482,6 +489,26 @@ with sync_playwright() as pw:
             path=str(OUT / f"card-mobile-{category}.png")
         )
         page.set_viewport_size({"width": 1440, "height": 1100})
+    # Manual choice during decode cancels a queued save; the next generation never saves.
+    reset()
+    page.evaluate("document.querySelector('form[data-market-form]').addEventListener('submit',e=>{if(!e.defaultPrevented){e.preventDefault();window.reviewSaves=(window.reviewSaves||0)+1;}})")
+    page.evaluate("window.decodeWaiters=[];window.holdDecode=true;const originalDecode=Image.prototype.decode;Image.prototype.decode=function(){return originalDecode.call(this).then(()=>window.holdDecode?new Promise(resolve=>window.decodeWaiters.push(resolve)):undefined);};void 0;")
+    generate.click()
+    current["mode"] = "succeeded"
+    page.wait_for_function("window.decodeWaiters.length === 1")
+    page.locator("[name=thumbnail_file]").set_input_files({"name":"manual.png","mimeType":"image/png","buffer":fixture(current["category"])})
+    page.locator("button[value=save]").click()
+    page.locator("[data-thumbnail-wait]").click()
+    page.evaluate("window.holdDecode=false;window.decodeWaiters.forEach(resolve=>resolve())")
+    expect(generate).to_be_enabled()
+    expect(origin).to_have_value("upload")
+    expect(page.locator("[data-thumbnail-status]")).to_contain_text("Clique em Salvar")
+    assert page.evaluate("window.reviewSaves||0") == 0
+    generate.click()
+    expect(origin).to_have_value("generated", timeout=6000)
+    assert page.evaluate("window.reviewSaves||0") == 0
+    page.locator("button[value=save]").click()
+    assert page.evaluate("window.reviewSaves") == 1
     assert not errors, errors
     browser.close()
 server.shutdown()

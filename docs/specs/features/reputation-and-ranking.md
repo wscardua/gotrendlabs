@@ -171,3 +171,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 ## Impacto de mudança
 
 Mudanças nesta feature podem reclassificar histórico e exigem cuidado com comunicação ao usuário.
+
+## 2026-10-09 — Imagens IA de badges
+
+FEAT-BADGE-IMAGE-001: geração no editor administrativo com contexto atual, candidata privada e confirmação no salvamento existente; não modifica elegibilidade, métricas ou propriedade histórica de conquistas. Apresentação de definição continua compartilhada pelas conquistas; contrato público preservado.

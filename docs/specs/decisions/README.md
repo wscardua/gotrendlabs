@@ -2,6 +2,7 @@
 - `ADR-0011-mcp-editorial-integrations.md`: MCP editorial sem banco, OAuth/serviço, gestão administrativa equivalente e reutilização de auditoria; implantação/habilitação produtiva pela PR #136, com HTTPS/grants/isolamento conferidos; Dot/piloto autenticado pendentes.
 # Decisions
 
+
 Use este diretório para registrar decisões técnicas estáveis e mudanças que alterem fronteiras, contratos ou fórmulas relevantes.
 
 ## Formato
@@ -14,6 +15,8 @@ Use este diretório para registrar decisões técnicas estáveis e mudanças que
 - status
 
 ## Decisões registradas
+
+- `ADR-0013-shared-admin-image-queue.md`: fila/executor compartilhados para mercados e badges, vínculos explícitos, cotas globais e confirmação na criação/edição.
 
 - `ADR-0001-docs-as-source-of-truth.md`: docs como fonte de verdade operacional.
 - `ADR-0002-resolution-payout-reputation-refund.md`: resolução, payout, reputação e refund.

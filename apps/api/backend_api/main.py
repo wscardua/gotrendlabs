@@ -7446,6 +7446,11 @@ def admin_create_badge(payload: AdminBadgePayload, authorization: str = Header(d
                 ),
             )
             badge_id = cursor.fetchone()["id"]
+            if payload.badge_image_candidate_id:
+                from apps.api.backend_api.badge_image_service import badge as image_badge, confirm as confirm_badge_image
+                image_row = image_badge(cursor, code, lock=True)
+                image_url, image_dark_url = confirm_badge_image(cursor, image_row, payload, staff, creating=True)
+                cursor.execute("UPDATE gotrendlabs_badge_definitions SET image_url=%s,image_dark_url=%s WHERE id=%s", (image_url, image_dark_url, badge_id))
             cursor.execute(
                 """
                 INSERT INTO gotrendlabs_badge_rules
@@ -7483,13 +7488,17 @@ def admin_update_badge(code: str, payload: AdminBadgePayload, authorization: str
                 SELECT b.id, r.id AS rule_id, r.is_active AS rule_active
                 FROM gotrendlabs_badge_definitions b
                 JOIN gotrendlabs_badge_rules r ON r.badge_id = b.id
-                WHERE b.code = %s
+                WHERE b.code = %s FOR UPDATE OF b,r
                 """,
                 (code,),
             )
             badge = cursor.fetchone()
             if not badge:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Badge não encontrada.")
+            if payload.badge_image_candidate_id:
+                from apps.api.backend_api.badge_image_service import badge as image_badge, confirm as confirm_badge_image
+                image_row = image_badge(cursor, code, lock=True)
+                payload.image_url, payload.image_dark_url = confirm_badge_image(cursor, image_row, payload, staff)
             now = datetime.now(timezone.utc)
             cursor.execute(
                 """
@@ -8832,3 +8841,6 @@ app.add_middleware(EditorialBodyLimit)
 
 from apps.api.backend_api.thumbnail_routes import router as thumbnail_router
 app.include_router(thumbnail_router)
+
+from apps.api.backend_api.badge_image_routes import router as badge_image_router
+app.include_router(badge_image_router)

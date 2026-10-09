@@ -516,6 +516,11 @@ class AdminBadgePayload(BaseModel):
     badge_type: str = "global"
     image_url: str = Field(default="", max_length=255)
     image_dark_url: str = Field(default="", max_length=255)
+    badge_image_candidate_id: UUID | None = None
+    badge_image_editor_id: UUID | None = None
+    badge_image_expected_image_url: str | None = None
+    badge_image_expected_dark_url: str | None = None
+    badge_image_expected_updated_at: datetime | None = None
     is_active: bool = True
     rule_active: Optional[bool] = None
     rule_type: str

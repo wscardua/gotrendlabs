@@ -156,13 +156,17 @@
               {% if market.status == 'draft' %}
               <div data-thumbnail-controls data-url="{% url 'admin-ops-thumbnails' market.slug %}"
                    data-generate="{% trans 'Gerar thumbnail' %}" data-again="{% trans 'Gerar outra' %}"
-                   data-required="{% trans 'Preencha pergunta, resumo, categoria e subcategoria para gerar.' %}" data-loading="{% trans 'Gerando thumbnail…' %}" data-failed="{% trans 'Não foi possível gerar. Tente novamente.' %}"
+                   data-required="{% trans 'Preencha pergunta, resumo, categoria e subcategoria para gerar.' %}" data-loading="{% trans 'Gerando thumbnail…' %}" data-loading-short="{% trans 'Gerando…' %}" data-failed="{% trans 'Não foi possível gerar. Tente novamente.' %}"
                    data-ready="{% trans 'Thumbnail pronta para o próximo salvamento.' %}"
                    data-stale="{% trans 'A imagem usa o texto anterior. Você pode gerar outra.' %}"
-                   data-manual="{% trans 'Sua escolha manual foi preservada. Você pode gerar outra.' %}"
+                   data-wait-cancelled="{% trans 'Clique em Salvar para confirmar sua seleção.' %}" data-manual="{% trans 'Sua escolha manual foi preservada. Você pode gerar outra.' %}"
                    data-review="{% trans 'Salve o rascunho com a thumbnail e revise a versão antes de publicar.' %}">
                 <div class="thumbnail-actions"><button class="btn small ghost" type="button" data-thumbnail-generate>{% trans 'Gerar thumbnail' %}</button>
                 <button class="inline-action" type="button" data-thumbnail-undo hidden>{% trans 'Desfazer troca' %}</button></div>
+                <div class="image-generation-progress" data-thumbnail-progress hidden role="status" aria-live="polite" aria-atomic="true">
+                  <span class="image-generation-spinner" aria-hidden="true"></span>
+                  <div><strong>{% trans 'Gerando thumbnail… Aguarde.' %}</strong><small>{% trans 'Isso pode levar alguns minutos. Você pode continuar editando os demais campos.' %}</small></div>
+                </div>
                 <p data-thumbnail-status tabindex="-1" role="status" aria-live="polite"></p>
                 <small data-thumbnail-stale hidden>{% trans 'A imagem usa o texto anterior. Você pode gerar outra.' %}</small>
                 <div data-thumbnail-submit hidden tabindex="-1">

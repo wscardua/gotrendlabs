@@ -66,3 +66,7 @@ Esses eventos são registrados em `gotrendlabs_admin_events` nas primeiras fatia
 `thumbnail.request`, `thumbnail.running`, `thumbnail.succeeded`, `thumbnail.failed`, `thumbnail.uncertain` e `thumbnail.apply` são AdminEvent persistidos, sem envio/email/push. Operador, referência do mercado, UUID da solicitação e momento; contexto/hash/modelos/uso ficam no registro privado de job. Não emitidos como envelope/event bus de domínio.
 
 - FEAT-THUMB-001 v1.1: `thumbnail.settings_update` audita ator e antes/depois dos parâmetros não secretos de SiteConfig; não dispara inferência, comunicação ou alteração de mercado. Provedor/modelo/parâmetros/instruções ficam congelados em cada request de thumbnail.
+
+## 2026-10-09 — Imagens IA de badges
+
+Imagens de badges persistem auditoria administrativa badge_image.request/apply/settings_update. Estados do executor usam eventos compartilhados thumbnail.running/succeeded/failed/uncertain com entity_type badge e identidade da definição/editor. Não registrar base64, credenciais ou conquistas do usuário no prompt.

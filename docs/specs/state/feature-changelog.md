@@ -1651,3 +1651,33 @@ Um clique gera, outro regenera, seleção automática e desfazer preservam uploa
 ## 2026-10-09 — Preparação do fechamento FEAT-THUMB-001
 
 Fonte da verdade reconciliada com autorizações e duas solicitações Core concluídas no DEV, sem nova inferência no fechamento. Deploy prepara subdiretório de mídia e acompanha executor quando seu segredo estiver instalado, inclusive pausado; CI inclui build completo. PR/CI/merge/implantação dependem de aprovação da descrição; branch local preservada. Qualidade visual sistemática e acesso produtivo não declarados validados. WFLOW-20261009-THUMBNAIL-CLOSE-001.
+
+## 2026-10-09 — Imagens IA de badges
+
+FEAT-BADGE-IMAGE-001 local: gerar/regenerar/desfazer na criação e edição, contexto atual e par de imagens, uma para cada tema; confirmação atômica por ID e versão; fila/provedor/executor/cotas compartilhados, habilitação independente. Upload após validação e compensação conservadora, APIs públicas/concessões preservadas. 70 testes e browsers aprovados; PR/produção pendentes.
+
+## 2026-10-09 — Fechamento técnico e rollout de thumbnails
+
+PR #143 integrada, merge 15b980585982cfa6706a38d57016614a41ba956d. CI final 408 testes aprovados/1 skip por roles CI, build completo aprovado. Actions 37963430113 e 37964971891 Success (PR e main/produção), SSM deploy Success. Migrations 0022–0024 aplicadas; defaults SQL preservam inicialização existente. Executor dedicado/grants/mounts/UIDs verificados: worker privado RW, API privado RO/subpath público RW, sem candidatas no proxy/Django. Arquivo efêmero próprio removido.
+
+Habilitação produtiva de thumbnails autorizada e concluída: banco e GTL_THUMB_ENABLED=1 na API/worker, Core/Oregon/3:2/180s, limites 10/5/50 por 24h e retenção 24h. Configuração preservada, alteração auditada como operação de sistema; backups de envs 0600 no host. Fila vazia antes/depois, nenhuma chamada paga iniciada, nenhum mercado editado pelo assistente. Site/API HTTP 200 e configurações anônimas 401. Branch local preservada.
+
+Fechamento técnico concluído; homologação de fluxo autenticado/MFA, consumo produtivo e qualidade visual real permanece pendente. Não afirmar inferência real validada em produção. Fonte externa atual: [PR #143](https://github.com/wscardua/gotrendlabs/pull/143) e [Actions](https://github.com/wscardua/gotrendlabs/actions/runs/37964971891). Registros anteriores descrevem etapas históricas, substituídos por esta atualização para estado operacional atual. Evidência documental pós-rollout preparada localmente para versionamento na próxima PR aprovada.
+
+
+## 2026-10-09 — Correção: par de imagens de badges
+
+Correção clara/escura concluída: 78 testes aprovados (73 geração/regressões/deploy em 96.927s + 5 reinício/concessões/catálogo/formulário em 10.185s), PostgreSQL isolado e provedor simulado. Browsers badge e thumbnail aprovados; prévias distintas, troca de tema, ausência da variante escura preserva o par anterior, undo/uploads/late response/submit. Django check, migration drift, OpenAPI, Node e diff aprovados. Executor DEV reiniciado sem job em execução (PID 95376), chave/flag mantidas ativas, API health 200. Nenhuma inferência paga iniciada pela correção; dois jobs DEV anteriores de versão universal permanecem preservados. Suíte completa de 431 testes é evidência da versão anterior, não foi repetida nesta alteração. Homologação real da coerência entre variantes e PR/deploy próprios seguem pendentes.
+
+
+2026-10-09 — Feedback de espera em badges e thumbnails: botão Gerando… desabilitado, painel inline destacado com spinner e aviso Aguarde/alguns minutos/edição dos demais campos. Indicador permanece até prévias carregadas, não desaparece por upload manual e encerra em sucesso/erro; preserva imagem anterior e decisões continuar/aguardar. Anúncio role=status/aria-live e reduced-motion. Browser Chrome real com respostas simuladas aprovado para ambos (badge-loading-browser.log, thumbnail-loading-browser.log), screenshot de loading inspecionado; Django check/Node/diff aprovados, assets locais verificados via HTTP e cache versionado. Sem chamada paga ou implantação dessa alteração.
+
+
+## 2026-10-09 — Correções de review de imagens administrativas
+
+Correções implementadas e verificadas localmente: salvamento pendente cancelado ao mudar seleção durante decode, instrução para novo Salvar e nenhuma submissão herdada pela próxima geração; identidade estável por badge/sessão, cache limitado com fallback determinístico para badge salva, criação rotacionada apenas após sucesso. 77 testes/83.891s aprovados em PostgreSQL isolado; 3 cenários de identidade/recarga rechecados após fallback determinístico (2.267s). Browser de mercados aprovou reprodução com decode suspenso, manual/Aguardar/gerar outra/Salvar; browser de badges aprovou o mesmo cenário e recarga/polling sem POST extra. Regeneração no teste aguarda a nova candidate_id, evitando corrida entre casos. Django/migrations/OpenAPI/Node/diff aprovados; assets DEV conferidos por HTTP. Sem nova inferência paga, alteração produtiva, commit ou PR; fonte técnica atual nos contratos/features/runbook e estado operacional. Homologação real de pares e PR/deploy próprios permanecem pendentes.
+
+
+## 2026-10-09 — Fechamento técnico local / WFLOW-20261009-BADGE-CLOSE-001
+
+Validação final do fechamento: 442 testes aprovados em 776.623s, PostgreSQL isolado e provedor simulado, log local badge-close-full-tests.log. Browsers de badges e mercados aprovados, incluindo recarga sem geração extra e escolha manual durante decode sem submit herdado; Django, migration drift, OpenAPI, Node, shell, Compose, diff e Dockerfile check aprovados (sem avisos). Build completo remoto, PR/merge/deploy e habilitação produtiva de badges aguardam aprovação da descrição. Nenhuma inferência paga nesta validação. Homologação humana/MFA e coerência visual real permanecem pendentes; thumbnails produtivas PR #143 preservadas.

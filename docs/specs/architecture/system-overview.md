@@ -50,4 +50,8 @@ FastAPI inicializa ficha humana na criação administrativa/conversão e valida 
 
 ## Executor de thumbnails
 
-[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implementada e validada localmente em 2026-10-09, produção pendente. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
+[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implantada e habilitada em produção pela PR #143 em 2026-10-09; homologação humana/MFA e inferência/qualidade visual produtivas pendentes. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
+
+## 2026-10-09 — Imagens IA de badges
+
+FEAT-BADGE-IMAGE-001 reutiliza o pipeline administrativo Bedrock/fila/executor/volume privado de thumbnails; migração 0025 adiciona kind e vínculos de badge/editor. API/worker recebem subpath badge_images RW adicional; contratos image_url/image_dark_url continuam estáveis.

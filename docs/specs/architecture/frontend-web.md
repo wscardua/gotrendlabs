@@ -119,4 +119,14 @@ Campos de fechamento/resolução usam hora local + fuso selecionado e preservam 
 
 ## Seleção de thumbnail no editor
 
-[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implementada e validada localmente em 2026-10-09, produção pendente. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
+[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implantada e habilitada em produção pela PR #143 em 2026-10-09; homologação humana/MFA e inferência/qualidade visual produtivas pendentes. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
+
+## 2026-10-09 — Imagens IA de badges
+
+Componente de seleção assíncrona compartilhado entre mercado e badge, com adaptação de contexto/fontes. Badges mantêm upload por tema e candidata contendo duas variantes, clara e escura, selecionadas apenas quando ambas as prévias carregam; undo restaura ambos os arquivos, late manual vence, e salvamento em andamento usa decisão inline. Não há regra de concessão no JS.
+
+
+Geração administrativa de imagens: indicador inline compartilhado com spinner, rótulo Gerando… e aviso de espera em badges/mercados. Exibido desde o clique até carregar todas as prévias; não bloqueia campos do editor. Respeita prefers-reduced-motion e anúncio acessível de estado. Upload/edição durante processamento não oculta o aviso; nenhum overlay, modal ou reload.
+
+
+Correções de review: salvamento pendente cancelado explicitamente quando a seleção manual muda durante carregamento, com nova confirmação pelo operador. Django mantém identidade do editor de badges por sessão autenticada/badge para retomar polling na recarga; consulta não dispara geração. Campos e contratos públicos preservados.

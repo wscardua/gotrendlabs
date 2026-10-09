@@ -273,3 +273,7 @@ Recorte por categoria/subcategoria/evento:
 - Campos vazios significam regra global para todas as categorias.
 - O recorte por evento só deve ser aplicado quando a regra também possuir categoria e subcategoria preenchidas.
 - `ranking_position`, `streak_count`, `founding_member` e `rewarded_feedback_count` são globais nesta fatia MVP.
+
+## 2026-10-09 — Imagens IA de badges
+
+FEAT-BADGE-IMAGE-001 adiciona geração administrativa, sem alterar BadgeDefinition pública, regras ou concessões. Uma candidata com duas variantes validada no POST/PATCH produz image_url para o tema claro e image_dark_url para o escuro atomicamente; arquivos históricos conservados. Contrato próprio em admin-badge-images.md.

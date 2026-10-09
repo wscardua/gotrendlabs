@@ -13414,3 +13414,28 @@ body[data-theme="dark"] .market-editor-main .editor-section { background: transp
   .market-editor-main .thumbnail-field { grid-template-columns: minmax(0, 1fr); }
   .thumbnail-field .thumbnail-actions { grid-column: 1; grid-row: auto; }
 }
+
+/* Keep image generation controls and badge fields within the existing editor. */
+[data-ai-badge-editor] { min-width: 0; }
+[data-ai-badge-editor] .field { min-width: 0; }
+[data-ai-badge-editor] input,
+[data-ai-badge-editor] select,
+[data-ai-badge-editor] textarea { box-sizing: border-box; max-width: 100%; min-width: 0; }
+
+/* Inline generation feedback shared by market and badge editors. */
+.image-generation-progress {
+  grid-column: 1 / -1; display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-soft, rgba(19, 111, 74, .07));
+}
+.image-generation-progress strong { display: block; font-size: 14px; }
+.image-generation-progress small { display: block; margin-top: 4px; line-height: 1.45; }
+.image-generation-spinner {
+  width: 20px; height: 20px; flex: 0 0 20px; border: 2px solid currentColor;
+  border-right-color: transparent; border-radius: 50%; color: var(--green, #136f4a);
+  animation: image-generation-spin 1s linear infinite;
+}
+@keyframes image-generation-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .image-generation-spinner { animation: none; }
+}

@@ -1,4 +1,5 @@
 {% extends "admin_base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
@@ -13,8 +14,10 @@
       </div>
       {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
       {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
-      <form class="form-grid" method="post" enctype="multipart/form-data" data-taxonomy-form data-badge-form>
+      <form class="form-grid" method="post" enctype="multipart/form-data" data-taxonomy-form data-badge-form data-ai-badge-editor data-badge-code="{% if mode == 'edit' %}{{ badge.code }}{% endif %}">
         {% csrf_token %}
+        {{ form.badge_image_candidate_id }}{{ form.badge_image_editor_id }}{{ form.badge_image_origin }}
+        {{ form.badge_image_expected_image_url }}{{ form.badge_image_expected_dark_url }}{{ form.badge_image_expected_updated_at }}
         <div class="field">
           <label for="{{ form.name.id_for_label }}">Nome <span class="required-marker">Obrigatório</span></label>
           {{ form.name }}
@@ -63,7 +66,23 @@
           </div>
         </div>
         <div class="field-pair full">
-          <div class="field">
+          <div class="field full" data-thumbnail-controls data-url="{% url 'admin-ops-badge-images' badge_editor_id %}"
+             data-generate="Gerar imagem" data-again="Gerar outra" data-required="Preencha nome e descrição para gerar a imagem." data-loading="Gerando imagens…" data-loading-short="{% trans 'Gerando…' %}"
+             data-failed="Não foi possível gerar. Tente novamente." data-ready="Imagens clara e escura selecionadas para o próximo salvamento."
+             data-wait-cancelled="{% trans 'Clique em Salvar para confirmar sua seleção.' %}" data-manual="Sua escolha manual foi preservada. Você pode gerar outra.">
+          <div class="thumbnail-actions"><button class="btn small ghost" type="button" data-thumbnail-generate>Gerar imagem</button><button class="inline-action" type="button" data-thumbnail-undo hidden>Desfazer troca</button></div>
+          <small>Gera uma versão clara e outra escura. As duas são aplicadas ao salvar.</small>
+          <div class="image-generation-progress" data-thumbnail-progress hidden role="status" aria-live="polite" aria-atomic="true">
+            <span class="image-generation-spinner" aria-hidden="true"></span>
+            <div><strong>{% trans 'Gerando imagens clara e escura… Aguarde.' %}</strong><small>{% trans 'Isso pode levar alguns minutos. Você pode continuar editando os demais campos.' %}</small></div>
+          </div>
+          <p data-thumbnail-status tabindex="-1" role="status" aria-live="polite"></p>
+          <small data-thumbnail-stale hidden>A imagem usa o texto anterior. Você pode gerar outra.</small>
+          <div data-thumbnail-submit hidden tabindex="-1"><p>A imagem ainda está sendo gerada. Continuar com a imagem selecionada ou aguardar a nova?</p>
+            <button class="btn small ghost" type="button" data-thumbnail-continue>Continuar com a imagem selecionada</button><button class="btn small ghost" type="button" data-thumbnail-wait>Aguardar a nova</button>
+          </div>
+        </div>
+        <div class="field">
             <label for="{{ form.category.id_for_label }}">Categoria opcional</label>
             <select id="{{ form.category.id_for_label }}" name="{{ form.category.html_name }}" data-category-select>
               <option value="" {% if not form.category.value %}selected{% endif %}>Todas as categorias</option>

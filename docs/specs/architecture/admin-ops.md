@@ -159,6 +159,10 @@ Admin Ops apresenta `/admin-ops/editorial/` ao staff, com manual, checklist e fi
 
 ## Thumbnails IA em rascunhos
 
-[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implementada e validada localmente em 2026-10-09, produção pendente. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
+[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implantada e habilitada em produção pela PR #143 em 2026-10-09; homologação humana/MFA e inferência/qualidade visual produtivas pendentes. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).
 
 - FEAT-THUMB-001 v1.1: parâmetros não secretos de imagem são persistidos em SiteConfig por GET/PUT FastAPI /admin/thumbnail-settings e painel próprio Django. Credencial Bedrock só no executor; InvokeModel nativo usa configuração congelada no job. Agentes textuais permanecem independentes; atualização do painel não inicia geração.
+
+## 2026-10-09 — Imagens IA de badges
+
+Badges criadas/editadas podem gerar candidata sem salvar/ativar. Django adapta sessão/CSRF, prévia privada e IDs; FastAPI confirma no POST/PATCH. Seleção gerada contém um par claro/escuro e aplica ambas as URLs no save, sem apagar arquivos anteriores. Habilitação independente no painel; parâmetros de provedor/consumo compartilhados. FEAT-BADGE-IMAGE-001.

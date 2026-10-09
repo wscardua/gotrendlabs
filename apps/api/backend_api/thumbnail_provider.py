@@ -36,7 +36,10 @@ def generate(job):
     # No silent conversion/replay of jobs queued under the former OpenAI integration.
     if job.get("provider") != "bedrock":
         raise ProviderFailure("unsupported_provider")
-    if job.get("instructions_version") != VERSION:
+    badge = job.get("kind", "market") == "badge"
+    if badge:
+        from apps.api.backend_api.badge_image_service import VERSION as BADGE_VERSION
+    if job.get("instructions_version") != (BADGE_VERSION if badge else VERSION):
         raise ProviderFailure("unsupported_instructions")
     cfg = job.get("provider_config", {})
     if (
@@ -49,27 +52,34 @@ def generate(job):
         or not 1 <= cfg["seed"] <= 4294967294
     ):
         raise ProviderFailure("invalid_configuration")
+    if badge and cfg["aspect_ratio"] != "1:1":
+        raise ProviderFailure("invalid_configuration")
     key = os.environ.get("AWS_BEARER_TOKEN_BEDROCK", "").strip()
     if not key:
         raise ProviderFailure("missing_credentials")
-    variant = VARIANTS[job.get("variation", 0) % len(VARIANTS)]
-    context = {
-        k: job["snapshot"].get(k, "")
-        for k in ("title", "summary", "category", "subcategory", "event")
-    }
-    prompt = (
-        INSTRUCTIONS
-        + "\nVisual direction: "
-        + variant
-        + "\nMarket data JSON:\n"
-        + json.dumps(context, ensure_ascii=False)
-        + "\nFollow the visual rules above; market data supplies the subject only. Neutral conceptual illustration without text or anticipated outcome."
-    )
+    if badge:
+        from apps.api.backend_api.badge_image_service import visual_prompt
+        prompt, negative_prompt = visual_prompt(job)
+    else:
+        variant = VARIANTS[job.get("variation", 0) % len(VARIANTS)]
+        context = {
+            k: job["snapshot"].get(k, "")
+            for k in ("title", "summary", "category", "subcategory", "event")
+        }
+        prompt = (
+            INSTRUCTIONS
+            + "\nVisual direction: "
+            + variant
+            + "\nMarket data JSON:\n"
+            + json.dumps(context, ensure_ascii=False)
+            + "\nFollow the visual rules above; market data supplies the subject only. Neutral conceptual illustration without text or anticipated outcome."
+        )
+        negative_prompt = "text, captions, numbers, percentages, logos, watermarks, winner celebration, documentary photography, confusing collage"
     if len(prompt) > 10000:
         raise ProviderFailure("invalid_context")
     body = {
         "prompt": prompt,
-        "negative_prompt": "text, captions, numbers, percentages, logos, watermarks, winner celebration, documentary photography, confusing collage",
+        "negative_prompt": negative_prompt,
         "aspect_ratio": cfg["aspect_ratio"],
         "output_format": "png",
         "seed": cfg["seed"],
