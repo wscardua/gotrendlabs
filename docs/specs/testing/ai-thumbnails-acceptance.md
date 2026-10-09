@@ -53,3 +53,7 @@ Consulta somente leitura ao banco DEV confirmou duas solicitações Bedrock/Core
 Rollout agora inclui bootstrap conservador do subdiretório de mídia e o executor nos ciclos de build/parada/migration/restart quando `.env.thumbnails.prod` estiver instalado, inclusive se o recurso estiver pausado. Testes de deploy simulados verificam falha de migration sem restart, profile opcional e ordem de preparação do mount; não operam Docker/AWS reais. CI executará build completo antes do merge.
 
 Checks finais: 43 testes/40.812s aprovados em PostgreSQL isolado (33 thumbnails e 10 deploy), browser aprovado com todos os cenários existentes e validação nativa real. Django check, migration drift, OpenAPI snapshot, Node, Dockerfile check sem warnings, shell syntax e diff whitespace aprovados. Logs `thumbnail-close-tests.log` e `thumbnail-close-browser.log`. Build completo local anterior bloqueado por espaço; build remoto e mounts produtivos não executados nesta preparação. Não somar execuções repetidas como quantidade de testes distintos.
+
+## Correção de CI da PR #143
+
+Primeiro CI: build completo aprovado, 408 testes executados com 2 erros/1 skip. Inserções SQL históricas de SiteConfig omitiam colunas novas não nulas, pois defaults Django não ficam no PostgreSQL. Migration 0024_thumbnail_runtime_defaults fornece defaults SQL conservadores, mantendo inicialização existente e recurso off. Ambos os testes que falharam passaram localmente (2/5.798s, DB isolado). Repetir CI completo antes de merge.

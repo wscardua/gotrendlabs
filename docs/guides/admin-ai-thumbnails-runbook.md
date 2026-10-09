@@ -107,3 +107,5 @@ O deploy padrão prepara somente `/app/media/market_thumbnails` com o UID/GID ru
 PR deve passar no CI completo, incluindo build da imagem. Após merge, acompanhar o Actions e SSM até Success; conferir SHA servido, migrations 0022/0023, grants, mounts/UIDs, segredo worker-only, fila e switches API/worker/banco. Validar leitura/escrita dos mounts com arquivo efêmero próprio e remover apenas esse arquivo. Não alterar mercados existentes para smoke. Antes de habilitar, conferir trabalhos queued/running: a habilitação pode processar a fila automaticamente. Smoke sem custo não comprova invocação; consumo produtivo exige autorização explícita. Avaliação visual e inferência produtiva ficam pendentes se não realizadas.
 
 Estado na preparação: duas gerações Core reais concluídas no DEV; CI remoto e rollout ainda não executados. Preservar a branch local após merge. Artefatos de mídia DEV, envs, credenciais, screenshots e logs locais não entram na PR.
+
+Migration 0024_thumbnail_runtime_defaults mantém inicialização SQL existente de SiteConfig compatível, com defaults do banco conservadores e geração off. Incluí-la no rollout junto às migrations 0022/0023.
