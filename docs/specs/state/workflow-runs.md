@@ -1,13 +1,21 @@
 # Workflow Runs
 
+## WFLOW-20261009-BADGE-ROLLOUT-DOCS-001
+
+- Tipo: publicação documental do recibo pós-rollout de FEAT-BADGE-IMAGE-001; ligado ao fechamento abaixo. Documentos atualizados com resultados observados após o merge, sem mudança de código/configuração produtiva.
+- Status: preparado localmente; aguarda aprovação da descrição antes da PR documental, conforme exigência do usuário. Branch feature/admin-ai-badges preservada e alinhada ao merge edac7c7.
+- Escopo: evidências PR/Actions/SSM, habilitação auditada, specs/status/gaps/changelogs/mapa/aceite/runbook. Sem nova inferência, deploy ou mudança de domínio.
+- Próxima ação: apresentar descrição, obter aprovação, enviar commit documental, abrir PR via MCP e integrar somente após CI leve aprovado; deploy deve ser ignorado pelo detector docs-only.
+
 ## WFLOW-20261009-BADGE-CLOSE-001
 
 - Tipo: fechamento técnico/publicação de FEAT-BADGE-IMAGE-001 e ajustes do componente compartilhado de thumbnails; implementation-cycle. Usuário autorizou preparar documentação, commit/PR/merge/deploy, condicionando submissão da PR à apresentação e aprovação da descrição. Não remover branch local nem mudanças do checkout original.
 - Branch: feature/admin-ai-badges, worktree próprio, HEAD/base origin/main 15b980585982cfa6706a38d57016614a41ba956d; fetch confirmou ausência de divergência. Escopo: par claro/escuro, espera visível, seleção/desfazer/confirmar, recuperação de editor, ajustes de consumo/armazenamento e fechamento documental de thumbnails PR #143. Mídia DEV/envs/logs/screenshots fora da publicação.
 - Preparação: arquitetura/contrato/ADR-0013/migration0025/grants/runbook/OpenAPI e aceite reconciliados; dois findings do review corrigidos com testes de regressão. GitHub MCP autenticado como wscardua; nenhuma PR aberta dessa branch. Actions deploy main habilitado, último rollout 37964971891 Success para 15b9805.
-- Status: fechamento técnico local concluído; usuário aprovou a descrição e o fluxo remoto com “prossiga”. Commit de implementação 18d07c6; publicação/CI/rollout em andamento.
+- Status: concluído para implementação/integração/rollout/habilitação técnica. Usuário aprovou a descrição e o fluxo remoto com “prossiga”. Commit de implementação18d07c6; PR #144 integrada e produção conferida. Homologação real permanece pendente.
 - Validação final do fechamento: 442 testes aprovados em 776.623s, PostgreSQL isolado e provedor simulado, log local badge-close-full-tests.log. Browsers de badges e mercados aprovados, incluindo recarga sem geração extra e escolha manual durante decode sem submit herdado; Django, migration drift, OpenAPI, Node, shell, Compose, diff e Dockerfile check aprovados (sem avisos). Build completo remoto, PR/merge/deploy e habilitação produtiva de badges aguardam aprovação da descrição. Nenhuma inferência paga nesta validação. Homologação humana/MFA e coerência visual real permanecem pendentes; thumbnails produtivas PR #143 preservadas.
-- Próxima ação: descrição em português aprovada; enviar branch e abrir PR via MCP, CI completo com build, merge apenas após checks aprovados, acompanhar Actions/SSM, verificar migration/grants/subpaths/worker e habilitar badge_image_enabled auditado, preservando parâmetros existentes. Confirmar fila antes de habilitar; não iniciar inferência paga de produção. Registrar PR/SHAs/runs/recebimentos e somente então concluir etapa produtiva.
+- Resultado produtivo: PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes em ambos com um skip por roles CI ausentes (cenário aprovado localmente). Migration0025/grants/constraints/mounts/executor conferidos; habilitação auditada de badges concluída, política de thumbnails preservada. Stable Image Core/Oregon, badges1:1, timeout180s, limites10 imagens/operador e50 globais por24h,5 solicitações/item, retenção24h. Fila vazia, sem inferência paga ou alteração de mercados/concessões reais. Branch local preservada. Manutenção pública ativa preservada; Admin Ops exige login. Homologação humana/MFA e coerência visual real permanecem pendentes. [Evidência produtiva](../testing/ai-badge-images-production-20261009.md).
+- Próxima ação: operador homologa fluxo MFA e imagens reais mediante autorização de consumo; registro documental pós-rollout preparado em WFLOW-20261009-BADGE-ROLLOUT-DOCS-001.
 
 ## WFLOW-20261009-BADGE-REVIEW-FIXES-001
 
