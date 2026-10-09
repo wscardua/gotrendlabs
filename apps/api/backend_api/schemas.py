@@ -1,3 +1,4 @@
+from uuid import UUID
 from datetime import date, datetime
 from typing import Any, List, Literal, Optional, Union
 
@@ -930,6 +931,8 @@ class AdminMarketOptionPayload(BaseModel):
 
 
 class AdminMarketPayload(BaseModel):
+    thumbnail_candidate_id: Optional[UUID] = None
+    thumbnail_expected_image_url: Optional[str] = None
     expected_revision: Optional[int] = None
     title: str = Field(min_length=1, max_length=240)
     slug: Optional[str] = Field(default=None, max_length=160)

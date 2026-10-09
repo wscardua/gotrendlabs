@@ -1437,7 +1437,7 @@ def _current_user(cursor, authorization):
         """
         SELECT u.id, u.username, u.email, u.first_name, u.preferred_language,
                u.date_joined, u.last_login, u.account_status, u.is_staff, u.is_superuser, u.is_bot,
-               u.email_confirmed_at, s.mfa_verified_at, s.mfa_method
+               u.email_confirmed_at, s.id AS session_id, s.mfa_verified_at, s.mfa_method
         FROM gotrendlabs_auth_sessions s
         JOIN gotrendlabs_users u ON u.id = s.user_id
         WHERE s.token_hash = %s
@@ -6533,6 +6533,8 @@ def admin_create_market(payload: AdminMarketPayload, authorization: str = Header
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
+            if payload.thumbnail_candidate_id:
+                raise HTTPException(409, "Salve o rascunho antes de gerar uma thumbnail.")
             category = _upsert_category(cursor, payload.category)
             subcategory = _upsert_subcategory(cursor, category["id"], payload.subcategory)
             event = _upsert_event(cursor, subcategory["id"], payload.event)
@@ -6684,6 +6686,19 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                 participants = payload.participants
                 resolution_type = payload.resolution_type
                 resolution_note = payload.resolution_note
+            if payload.thumbnail_candidate_id:
+                from apps.api.backend_api.thumbnail_service import confirm
+                payload.image_url = confirm(cursor, row, payload, staff)
+            elif payload.image_url != (row["image_url"] or ""):
+                from uuid import UUID
+                from pathlib import PurePosixPath
+                try:
+                    UUID(PurePosixPath(payload.image_url).stem)
+                except ValueError:
+                    pass
+                else:
+                    if payload.image_url.startswith("/media/market_thumbnails/"):
+                        raise HTTPException(409, "Selecione a thumbnail pelo identificador da candidata.")
             _sync_featured_market(cursor, row["id"], payload.is_featured)
             cursor.execute(
                 """
@@ -8814,3 +8829,6 @@ app.include_router(editorial_router)
 
 from apps.api.backend_api.editorial_limits import EditorialBodyLimit
 app.add_middleware(EditorialBodyLimit)
+
+from apps.api.backend_api.thumbnail_routes import router as thumbnail_router
+app.include_router(thumbnail_router)

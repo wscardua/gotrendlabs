@@ -132,3 +132,7 @@ Se a equipe decidir automatizar a revisão: especificar versionamento e persist�
 ## Revisão aprovada pelo usuário em 2026-10-07 — gate universal
 
 Todo mercado possui ficha editorial estruturada e revisão humana, independentemente de origem. Nova publicação exige aprovação vigente da versão/hash/política/conteúdo e configuração válida de fechamento. Ambos os modos exigem data/hora futura e fuso válido; automático exige daemon habilitado, manual deixa a ação staff disponível. Legados publicados recebem ficha pendente sem mudar lifecycle, previsões ou provas; nenhum parecer fictício. Substitui explicitamente a exceção anterior para mercados humanos.
+
+## Integração FEAT-THUMB-001
+
+Thumbnails podem ser geradas a partir do texto/classificação atuais sem salvar ficha/mercado. Confirmar no salvamento altera image_url e invalida o parecer como outras edições. Publicar versão aprovada continua exigindo revisão humana do snapshot salvo; seleção nova pendente orienta salvar/revisar. Geração não aprova nem publica. [Feature](ai-market-thumbnails.md).

@@ -1641,3 +1641,13 @@ Use este arquivo para registrar mudanças relevantes por feature, com foco em im
 - adicionada skill `gotrendlabs-software-architect` para arquitetura, segurança e desenho técnico
 - adicionada skill `gotrendlabs-test-engineer` para testes concretos de backend, frontend, integração e regressão
 - workflows atualizados para exigir arquitetura/segurança em mudanças relevantes e testes executáveis quando houver código
+
+## 2026-10-09 — FEAT-THUMB-001 v1.0, local
+
+Um clique gera, outro regenera, seleção automática e desfazer preservam uploads/edições. Execução persistente dedicada, staff/MFA/draft, limites reservados PostgreSQL, privacidade de candidatas, confirmação por ID no PATCH, URL pública compatível e limpeza conservadora. Gate editorial da versão salva preservado. Upload só grava após validação e compensa falha; publicação após salvamento reporta resultado real. Testes isolados/browser e documentação entregues; sem consumo pago/deploy. WFLOW-20261009-AI-THUMBNAILS-001.
+
+- 2026-10-09 — FEAT-THUMB-001 v1.1: OpenAI substituído por Bedrock Runtime/Core com adapters SD3.5/Ultra selecionáveis em Configurações do Sistema; modelo/região/proporção/timeout/cotas/retenção, API staff/MFA e auditoria, migration 0023/grants, snapshot por job e bloqueio explícito de legados. Sem consumo pago/deploy; 37 testes e 9 verificações complementares aprovados, browser/checks aprovados; migration/grants e runtime local verificados.
+
+## 2026-10-09 — Preparação do fechamento FEAT-THUMB-001
+
+Fonte da verdade reconciliada com autorizações e duas solicitações Core concluídas no DEV, sem nova inferência no fechamento. Deploy prepara subdiretório de mídia e acompanha executor quando seu segredo estiver instalado, inclusive pausado; CI inclui build completo. PR/CI/merge/implantação dependem de aprovação da descrição; branch local preservada. Qualidade visual sistemática e acesso produtivo não declarados validados. WFLOW-20261009-THUMBNAIL-CLOSE-001.

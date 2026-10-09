@@ -11,6 +11,8 @@ ENV_FILE=".env.prod"
 AUTH_ENV_FILE=".env.auth.prod"
 FASTAPI_DB_ENV_FILE=".env.fastapi-db.prod"
 MIGRATION_ENV_FILE=".env.migrate.prod"
+THUMBNAIL_ENV_FILE=".env.thumbnails.prod"
+WRITERS=(django fastapi daemon mcp)
 
 if [[ ! -d "$APP_DIR/.git" ]]; then
   if [[ -z "$REPO_URL" ]]; then
@@ -20,7 +22,7 @@ if [[ ! -d "$APP_DIR/.git" ]]; then
 
   mkdir -p "$APP_DIR"
 
-  if [[ -n "$(find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name "$ENV_FILE" ! -name "$AUTH_ENV_FILE" ! -name "$FASTAPI_DB_ENV_FILE" ! -name "$MIGRATION_ENV_FILE" ! -name ".env.mcp.prod" ! -name ".env.mcp-api.prod" ! -name ".mcp-config.lock" ! -name ".git" -print -quit)" ]]; then
+  if [[ -n "$(find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name "$ENV_FILE" ! -name "$AUTH_ENV_FILE" ! -name "$FASTAPI_DB_ENV_FILE" ! -name "$MIGRATION_ENV_FILE" ! -name "$THUMBNAIL_ENV_FILE" ! -name ".env.mcp.prod" ! -name ".env.mcp-api.prod" ! -name ".mcp-config.lock" ! -name ".git" -print -quit)" ]]; then
     echo "$APP_DIR contains unexpected files and cannot be bootstrapped safely." >&2
     exit 1
   fi
@@ -102,13 +104,24 @@ fi
 
 python3 ops/deploy/mcp/configure_environment.py --app-dir "$APP_DIR"
 
+# Installing the worker secret opts into its lifecycle, independently of the
+# runtime/database kill switches. Redeploy paused workers too; never leave an
+# old executor running against a migrated schema or remove it as an orphan.
+if [[ -f "$THUMBNAIL_ENV_FILE" ]]; then
+  COMPOSE+=(--profile thumbnails)
+  WRITERS+=(thumbnail-worker)
+fi
+
 "${COMPOSE[@]}" --profile ops build
+# Existing media volumes predate this subdirectory. Create only that directory,
+# preserving every existing file, before FastAPI's volume.subpath is mounted.
+"${COMPOSE[@]}" run --rm --no-deps --user root migrate python -c 'import os,pwd; from pathlib import Path; p=Path("/app/media/market_thumbnails"); p.mkdir(parents=True,exist_ok=True); u=pwd.getpwnam("gotrendlabs"); os.chown(p,u.pw_uid,u.pw_gid)'
 "${COMPOSE[@]}" run --rm fastapi python -c 'from packages.security.passwords import require_password_pepper; require_password_pepper()'
 "${COMPOSE[@]}" run --rm fastapi python -c 'from apps.api.backend_api.mfa import require_totp_encryption_key; require_totp_encryption_key()'
 # Prevent the old runtime from writing while the editorial backfill is applied.
 # On migration failure, leave writers stopped for explicit recovery; do not
 # restart an application version that cannot enforce the universal gate.
-"${COMPOSE[@]}" stop django fastapi daemon mcp
+"${COMPOSE[@]}" stop "${WRITERS[@]}"
 "${COMPOSE[@]}" run --rm migrate python -m ops.scripts.auth_db_boundary apply
 "${COMPOSE[@]}" run --rm migrate python -m ops.scripts.migrate_with_role --noinput
 "${COMPOSE[@]}" run --rm migrate python -m ops.scripts.auth_db_boundary apply

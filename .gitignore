@@ -32,3 +32,6 @@ media/app_releases/
 .env.mcp.local
 
 .mcp-config.lock
+
+.env.thumbnails.prod
+.env.thumbnails.local

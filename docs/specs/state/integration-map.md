@@ -165,3 +165,14 @@
 ## 2026-10-07 — revisão editorial universal
 
 WFLOW-20261007-UNIVERSAL-EDITORIAL-001: criação humana/conversão → ficha pendente (origem humana, integration nullable); MCP → ficha com autoria técnica; Admin Ops → assessment humano atestado; MarketLifecycleEngine → configuração de fechamento + aprovação atual → definição assinada. Legados recebem ficha sem mudança de estado/provas. OpenAPI expõe editorial_origin e closure_configuration_errors somente com informação administrativa. FEAT-MCP-001 permanece parcial por homologação externa e deploy. Evidências: [relatório](../testing/universal-editorial-20261007.md).
+
+## FEAT-THUMB-001 — geração administrativa
+
+- Admin Ops template/form/JS → Django session/CSRF/proxy → FastAPI thumbnail_routes/service → gotrendlabs_thumbnail_jobs.
+- Worker dedicado thumbnail_worker → single Bedrock Runtime InvokeModel Core/SD3.5/Ultra (snapshot do job, us-west-2) → thumbnail_private (RW worker/RO API).
+- PATCH administrativo confirma candidata sob lock do mercado e promoção/prune → mediafiles subpath market_thumbnails RW → image_url público existente. Candidata privada nunca é servida pelo proxy /media.
+- Grants admin_ops.0022/0023: fila só FastAPI/runtime worker; Django é adaptador. Sessão staff/MFA vigente revalidada no claim/finalização; estado draft/revisão editorial autoritativos.
+- Sem mudanças em agentes de comentários, daemon, contratos públicos web/mobile, ledger de integridade, notificações ou MCP editorial.
+- Config thumbnail_* separada de ai_* no painel → Django sessão/CSRF → GET/PUT FastAPI /admin/thumbnail-settings → SiteConfig + auditoria; snapshot por job. GTL_THUMB_ENABLED é kill switch; segredo Bedrock do executor. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [runbook](../../guides/admin-ai-thumbnails-runbook.md).
+
+- Fechamento FEAT-THUMB-001: deploy padrão → bootstrap do subdiretório → profiles MCP e opcional thumbnails → parada dos escritores → migrations/grants → restart. `.env.thumbnails.prod` existente inclui worker no ciclo mesmo pausado; autorização de consumo segue switches operacionais/DB. CI verifica build completo. Duas invocações Core DEV concluídas; rollout produtivo pendente de aprovação/CI.

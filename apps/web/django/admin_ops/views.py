@@ -1,6 +1,6 @@
-from pathlib import Path
 from io import BytesIO
 import json
+import logging
 import os
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -18,6 +18,7 @@ from django.utils import timezone
 
 from apps.web.django.accounts.api_client import (
     AuthAPIError,
+    _request as thumbnail_api_request,
     admin_adjust_user_wallet,
     admin_create_ai_agent,
     admin_block_category,
@@ -87,6 +88,7 @@ from apps.web.django.admin_ops.forms import (
     AdminMarketForm,
     AiAgentForm,
     AiConfigForm,
+    ThumbnailConfigForm,
     AdminSubcategoryForm,
     AdminUserNoteForm,
     AdminUserPasswordResetForm,
@@ -933,6 +935,8 @@ def _market_initial(market):
         "thumb": market.get("thumb", ""),
         "thumb_color": market.get("thumb_color", ""),
         "image_url": market.get("image_url", ""),
+        "thumbnail_expected_image_url": market.get("image_url", ""),
+        "thumbnail_origin": "current",
         "resolution_criteria": market.get("resolution_criteria", ""),
         "admin_notes": market.get("admin_notes", ""),
         "close_at": close_value,
@@ -1280,11 +1284,22 @@ def analytics(request):
 def config(request):
     platform_config = load_platform_config()
     site_config = SiteConfig.get_solo()
+    thumbnail_post = request.POST if request.method == "POST" and request.POST.get("action") == "thumbnail_settings" else None
+    general_post = None if thumbnail_post is not None else request.POST
+    thumbnail_form = ThumbnailConfigForm(thumbnail_post, initial={field: getattr(site_config, field) for field in ThumbnailConfigForm.base_fields}, prefix="thumbnail")
+    if thumbnail_post is not None and thumbnail_form.is_valid():
+        try:
+            thumbnail_api_request("PUT", "/admin/thumbnail-settings", thumbnail_form.cleaned_data, token=auth_token(request))
+        except AuthAPIError as exc:
+            thumbnail_form.add_error(None, str(exc))
+        else:
+            messages.success(request, "Configurações de thumbnails atualizadas. Novas solicitações usarão o modelo escolhido.")
+            return redirect("admin-ops-config")
     active_android_release = MobileAppRelease.active_android()
     llm_provider = (site_config.ai_llm_provider or "openai").strip().lower()
     llm_secret_name = "AWS_BEARER_TOKEN_BEDROCK" if llm_provider == "bedrock" else "OPENAI_API_KEY"
     maintenance_form = MaintenanceConfigForm(
-        request.POST or None,
+        general_post or None,
         initial={
             "maintenance_enabled": platform_config.get("maintenance_enabled", False),
             "maintenance_message": platform_config.get("maintenance_message", ""),
@@ -1292,7 +1307,7 @@ def config(request):
         prefix="maintenance",
     )
     mobile_maintenance_form = MobileMaintenanceConfigForm(
-        request.POST or None,
+        general_post or None,
         initial={
             "mobile_maintenance_enabled": platform_config.get("mobile_maintenance_enabled", False),
             "mobile_maintenance_message": platform_config.get("mobile_maintenance_message", ""),
@@ -1325,7 +1340,7 @@ def config(request):
         changed_by_non_superuser=mobile_compatibility_changed and not _admin_session_is_superuser(request),
     )
     email_form = SiteEmailConfigForm(
-        request.POST or None,
+        general_post or None,
         initial={
             "email_enabled": site_config.email_enabled,
             "email_provider": site_config.email_provider,
@@ -1341,7 +1356,7 @@ def config(request):
         prefix="email",
     )
     economy_form = EconomyConfigForm(
-        request.POST or None,
+        general_post or None,
         initial={
             "wallet_recharge_min_balance_gtl": site_config.wallet_recharge_min_balance_gtl,
             "referral_bonus_gtl": site_config.referral_bonus_gtl,
@@ -1359,7 +1374,7 @@ def config(request):
         prefix="position",
     )
     daemon_form = DaemonConfigForm(
-        request.POST or None,
+        general_post or None,
         initial={
             "daemon_stale_after_minutes": site_config.daemon_stale_after_minutes,
             "daemon_missing_after_minutes": site_config.daemon_missing_after_minutes,
@@ -1373,7 +1388,7 @@ def config(request):
         prefix="integrity",
     )
     retention_form = RetentionConfigForm(
-        request.POST or None,
+        general_post or None,
         initial={
             "system_log_retention_days": site_config.system_log_retention_days,
             "ai_audit_retention_days": site_config.ai_audit_retention_days,
@@ -1447,7 +1462,7 @@ def config(request):
             for field, value in ai_form.cleaned_data.items():
                 setattr(site_config, field, value)
         site_config.updated_by = _admin_model_user(request)
-        site_config.save()
+        site_config.save(update_fields=[f.name for f in SiteConfig._meta.fields if not f.primary_key and not f.name.startswith("thumbnail_")])
         if previous_seal_window != site_config.market_seal_window_hours:
             AdminEvent.objects.create(actor=_admin_model_user(request), action="integrity.seal_window_update", entity_type="site_config", entity_identifier="market_seal_window_hours", note=f"{previous_seal_window}h -> {site_config.market_seal_window_hours}h")
         current_mobile_compatibility = _mobile_compatibility_values(site_config)
@@ -1488,6 +1503,7 @@ def config(request):
             "integrity_form": integrity_form,
             "retention_form": retention_form,
             "ai_form": ai_form,
+            "thumbnail_form": thumbnail_form,
             "platform_config": platform_config,
             "site_config": site_config,
             "active_android_release": active_android_release,
@@ -2672,6 +2688,8 @@ def market_form(request, mode="new", slug=None):
     publication_attempt = request.method == "POST" and request.POST.get("action") == "publish-reviewed"
     if publication_attempt and market:
         try:
+            if request.POST.get("thumbnail_origin") in {"generated", "upload"}:
+                raise AuthAPIError("Salve o rascunho com a thumbnail e revise a versão antes de publicar.")
             if not market.get("editorial_revision"):
                 raise AuthAPIError("Esta ação é exclusiva da versão editorial aprovada.")
             admin_publish_market(token, slug, request.POST.get("admin_notes") or "Publicação da versão aprovada")
@@ -2696,12 +2714,10 @@ def market_form(request, mode="new", slug=None):
             except AuthAPIError as exc:
                 error = str(exc)
         post_data = request.POST.copy()
-        try:
-            if request.FILES.get("thumbnail_file"):
-                saved_name = _save_thumbnail(request.FILES["thumbnail_file"])
-                post_data["image_url"] = THUMB_STORAGE.url(saved_name)
-        except ValueError as exc:
-            upload_error = str(exc)
+        if post_data.get("thumbnail_origin") == "generated":
+            post_data["image_url"] = (market or {}).get("image_url", "")
+        elif request.FILES.get("thumbnail_file"):
+            post_data["thumbnail_origin"] = "upload"
     initial = _market_initial(market) if market else _default_market_initial_for_taxonomy(taxonomy_data)
     if post_data is not None and mode != "new" and not post_data.get("event"):
         post_data["event"] = initial.get("event") or "Geral"
@@ -2736,8 +2752,15 @@ def market_form(request, mode="new", slug=None):
                 },
             )
         action = request.POST.get("action", "save")
+        saved_upload = None
+        saved_draft = False
+        save_submitted = False
         try:
+            if form.cleaned_data.get("thumbnail_origin") == "upload" and request.FILES.get("thumbnail_file"):
+                saved_upload = _save_thumbnail(request.FILES["thumbnail_file"])
+                form.cleaned_data["image_url"] = THUMB_STORAGE.url(saved_upload)
             if mode == "new":
+                save_submitted = True
                 market = admin_create_market(token, form.to_payload())
                 slug = market["slug"]
             else:
@@ -2748,8 +2771,10 @@ def market_form(request, mode="new", slug=None):
                         raise ValueError
                 except ValueError:
                     raise AuthAPIError("Revisão editorial inválida. Recarregue a ficha antes de salvar.")
+                save_submitted = True
                 market = admin_update_market(token, slug, {**form.to_payload(), "expected_revision": expected_revision})
                 slug = market["slug"]
+            saved_draft = True
             if action == "publish" and mode == "new":
                 message = "Rascunho salvo. Confira a ficha e registre o parecer humano antes de publicar."
             elif action == "publish":
@@ -2762,8 +2787,31 @@ def market_form(request, mode="new", slug=None):
                 message = "Mercado/contrato salvo com sucesso."
             messages.success(request, message)
             return redirect("admin-ops-market-edit", slug=market["slug"])
-        except AuthAPIError as exc:
-            error = str(exc)
+        except (AuthAPIError, ValueError) as exc:
+            rejected = isinstance(exc, AuthAPIError) and exc.status_code is not None and 400 <= exc.status_code < 500 and exc.status_code not in {408, 499}
+            unknown_upload_save = bool(saved_upload and save_submitted and not saved_draft and not rejected)
+            if saved_upload and not saved_draft and (not save_submitted or rejected):
+                try:
+                    THUMB_STORAGE.delete(saved_upload)
+                except OSError:
+                    logging.getLogger(__name__).warning("thumbnail upload cleanup failed after confirmed rejection")
+            if unknown_upload_save:
+                # A lost response is not a rollback. Reconcile by API; never delete
+                # a potentially linked file or repeat a mutation automatically.
+                lookup_slug = form.cleaned_data.get("slug") or slug
+                reconciled = None
+                if lookup_slug:
+                    try:
+                        reconciled = admin_get_market(token, lookup_slug)
+                    except AuthAPIError:
+                        pass
+                if reconciled and reconciled.get("image_url") == THUMB_STORAGE.url(saved_upload):
+                    market = reconciled
+                    error = "Rascunho salvo, mas a resposta não foi confirmada. Confira a versão antes de continuar; nenhuma ação seguinte foi executada."
+                else:
+                    error = "Não foi possível confirmar o salvamento. A imagem foi preservada; confira o mercado antes de tentar novamente."
+            else:
+                error = ("Rascunho salvo; a ação seguinte falhou: " if saved_draft else "") + str(exc)
     elif request.method == "POST" and not publication_attempt and request.POST.get("action") != "lock":
         error = "Revise os campos do mercado."
     title = "Criar mercado" if mode == "new" else "Editar/visualizar mercado"

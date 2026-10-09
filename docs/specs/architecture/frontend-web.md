@@ -116,3 +116,7 @@
 ## Ensaio DEV dos formulários editoriais (2026-10-07)
 
 Campos de fechamento/resolução usam hora local + fuso selecionado e preservam precisão do instante entre API e formulário. A UI recusa ambiguidade DST; FastAPI conserva validações e gate. Novo mercado salva draft antes do parecer e da ação de publicar versão aprovada. Notas administrativas retornam apenas na projeção administrativa. Ver [ensaio DEV](../testing/dev-catalog-rehearsal-20261007.md).
+
+## Seleção de thumbnail no editor
+
+[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implementada e validada localmente em 2026-10-09, produção pendente. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).

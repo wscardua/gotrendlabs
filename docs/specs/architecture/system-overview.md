@@ -47,3 +47,7 @@ Definir fronteiras estáveis entre as camadas do GoTrendLabs para que a implemen
 ### Revisão universal de publicação — 2026-10-07
 
 FastAPI inicializa ficha humana na criação administrativa/conversão e valida aprovação e fechamento no MarketLifecycleEngine. Origem humana usa integração nullable. Migration 0003 acrescenta fichas pendentes aos legados sem alterar domínio/provas. Django apresenta revisão e erros retornados; MCP mantém permissões restritas e não acessa ORM. Este escopo substitui referências anteriores ao gate apenas de integração.
+
+## Executor de thumbnails
+
+[FEAT-THUMB-001](../features/ai-market-thumbnails.md) implementada e validada localmente em 2026-10-09, produção pendente. Django apresenta controles junto do upload e adapta sessão/CSRF; FastAPI autoriza/cota/persiste/confirma; worker dedicado executa fila PostgreSQL sem transação durante provider I/O. Candidatas privadas e promoção por ID mantêm image_url público e gate editorial. Nenhuma chamada no daemon de fechamento/comunicações. [ADR-0012](../decisions/ADR-0012-private-thumbnail-worker.md), [contrato](../contracts/admin-thumbnails.md).

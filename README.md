@@ -196,3 +196,7 @@ Skills locais uteis:
 ## Operação editorial
 
 Para criar e revisar mercados, consulte o [manual editorial](docs/editorial/manual-editorial.md) e copie a [ficha de mercado](docs/editorial/ficha-de-mercado.md); use o [checklist de publicação](docs/editorial/checklist-de-publicacao.md) na revisão final. O processo cobre pauta, fonte, critérios, revisão antes da publicação, acompanhamento e resolução. Staff consulta os três documentos em `/admin-ops/editorial/` e encontra atalhos no editor de mercados. A [spec editorial](docs/specs/features/editorial-governance.md) define o escopo implementado; o checklist é operacional e não cria bloqueio automatizado de publicação no Admin Ops/API.
+
+## Thumbnails IA no Admin Ops
+
+Rascunhos existentes possuem **Gerar thumbnail**, **Gerar outra** e **Desfazer troca**, com seleção para o salvamento existente. Worker dedicado: `python -m apps.api.backend_api.thumbnail_worker`. Desligado por default; modelos/cotas/retenção em Configurações do Sistema, Bedrock Core default e credencial Bedrock do executor. [Runbook completo](docs/guides/admin-ai-thumbnails-runbook.md), [spec](docs/specs/features/ai-market-thumbnails.md), [aceite](docs/specs/testing/ai-thumbnails-acceptance.md). Duas gerações reais Core concluídas no DEV; avaliação visual e rollout produtivo permanecem pendentes. Estado atual e autorizações no workflow de fechamento.
