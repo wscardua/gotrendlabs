@@ -2479,6 +2479,23 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         self.assertTrue(saved.decision["confirmed"])
         self.assertEqual(Market.objects.get(id=mid).status, "draft")
 
+    def test_legacy_projection_includes_market_source_without_structured_sources(self):
+        record = {
+            "policy_version": domain.policy()["version"],
+            "policy_hash": domain.policy()["hash"],
+            "justification": "Evento futuro.",
+            "search_coverage": "Pesquisa ainda parcial.",
+            "sources": [],
+            "evidence": [],
+        }
+        document = domain.editorial_document(
+            record, {"source": "https://example.org/primary-source", "options": []}
+        )
+        self.assertIn(
+            "Fonte cadastrada no mercado (conferir): https://example.org/primary-source",
+            document,
+        )
+
     def test_document_review_requires_human_confirmation_and_preserves_legacy_projection(self):
         from copy import deepcopy
 

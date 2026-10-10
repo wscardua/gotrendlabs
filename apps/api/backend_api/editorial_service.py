@@ -227,6 +227,8 @@ def editorial_document(record, market=None):
     ])
     add_evidence(lines, ("E04", "E05", "E07", "E08"))
     lines.extend(["", "FONTES E EVIDÊNCIAS"])
+    if market.get("source"):
+        lines.append("Fonte cadastrada no mercado (conferir): " + market["source"])
     for source in record.get("sources", []):
         lines.append(f"{source['url']} | uso: {source.get('purpose', '')} | consulta: {source['consulted_at']} | verificação relatada: {source.get('reported_verified', False)} | relato do preparador: {source.get('excerpt', '')}")
     add_evidence(lines, ("E06", "E09"))
