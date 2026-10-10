@@ -39,6 +39,7 @@ revisão atual. A publicação continua protegida pelo gate universal vigente.
 Uma migração única converte fichas anteriores em documento, preserva seus
 snapshots históricos e exige nova avaliação humana. O runtime aceita somente
 o documento textual; payloads estruturados anteriores são rejeitados.
+Para aprovar, o documento declara na seção final `Pendências para aprovação: nenhuma` e o humano confirma a conferência. Quando houver horário conhecido de divulgação na linha `Anúncio esperado: ...`, a FastAPI rejeita fechamento igual ou posterior. Mercados já publicados mantêm a última decisão histórica durante a conversão; drafts e agendados precisam de nova revisão antes da publicação.
 As seções 1.2/1.3 abaixo registram o comportamento histórico.
 
 ## Escopo vigente — revisão universal 1.3

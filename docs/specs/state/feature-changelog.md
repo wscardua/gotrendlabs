@@ -1,5 +1,9 @@
 # Feature Changelog
 
+## 2026-10-10 — bloqueios objetivos do documento editorial
+
+FEAT-MCP-001/FEAT-EDITORIAL-001: aprovação documental exige declaração explícita de ausência de pendências; horário de anúncio conhecido é comparado ao fechamento pela FastAPI. Migration 0005 restaura o parecer histórico de mercados publicados/terminais convertidos, enquanto drafts e agendados aguardam novo parecer. Mantidos um textarea e um check no Admin Ops.
+
 ## 2026-10-10 — documento único no parecer editorial
 
 FEAT-MCP-001 v1.5: preparação e parecer usam exclusivamente documento textual versionado. Admin Ops apresenta um campo de texto, uma confirmação humana para aprovar e decisão; MCP/FastAPI rejeitam campos estruturados anteriores e as rotas separadas `/record` e `/decision` foram removidas. A migration 0004 converte registros existentes uma vez e exige nova revisão, preservando histórico. Gate universal de publicação permanece vinculado à aprovação humana da versão atual.

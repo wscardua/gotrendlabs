@@ -881,6 +881,11 @@ duplicidade; pergunta, regras e prazos; fontes com URLs, datas de consulta e
 extratos; contingências e responsável; pendências e conclusão. Informe com
 clareza o que foi verificado pelo executor e o que depende do humano. Não envie
 campos E01–E11 junto do documento, nem confirmação ou decisão humana.
+Quando souber o horário de divulgação, inclua uma linha `Anúncio esperado:`
+com data/hora ISO 8601 e offset; a FastAPI rejeita fechamento igual ou posterior.
+Na seção final, relate as pendências reais. A declaração
+`Pendências para aprovação: nenhuma` pertence ao documento concluído pelo
+revisor humano após resolver essas pendências; não a antecipe no draft do agente.
 
 Use apenas os campos, valores e limites efetivamente aceitos.
 Se o contrato evoluir, adapte o payload sem perder requisitos da política.

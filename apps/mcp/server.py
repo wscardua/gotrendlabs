@@ -307,7 +307,7 @@ async def get_editorial_signals(days: int = 7) -> SignalsResponse:
 
 @mcp.tool(annotations=READ)
 async def validate_market_draft(draft: Draft) -> ValidationResponse:
-    """Valida draft e editorial_record.document (até 60 mil caracteres). O documento reúne contexto, regras, fontes com URL/data, contingências e pendências; pesquisas são relatos do agente, não verificações humanas."""
+    """Valida draft e editorial_record.document (até 60 mil caracteres). Informe anúncio conhecido em linha ISO com offset; o fechamento deve ser anterior. Pendências humanas aparecem em pending e não impedem submissão ao revisor; o agente não deve declará-las resolvidas. Pesquisas são relatos do agente, não verificações humanas."""
     return await call(
         "validate_market_draft",
         "POST",

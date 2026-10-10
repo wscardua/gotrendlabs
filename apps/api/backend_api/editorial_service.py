@@ -2,6 +2,8 @@
 
 import hashlib
 import json
+import re
+from datetime import datetime
 from pathlib import Path
 from psycopg.types.json import Jsonb
 from apps.api.backend_api import editorial_auth as a
@@ -134,6 +136,7 @@ def validated(cursor, payload):
 
     if payload.close_at <= a.now():
         a.fail("validation_failed", 422)
+    validate_document_timing(payload.editorial_record.document, payload.close_at)
     cursor.execute(
         "SELECT id,name,is_blocked FROM gotrendlabs_market_categories WHERE id=%s FOR SHARE",
         (payload.category_id,),
@@ -165,9 +168,56 @@ def pending(record):
     result = []
     if record["policy_version"] != p["version"] or record["policy_hash"] != p["hash"]:
         result.append("policy_outdated")
-    if not (record.get("document") or "").strip():
+    document = record.get("document") or ""
+    if not document.strip():
         result.append("empty_document")
+    else:
+        result.extend(approval_document_pending(document))
     return result
+
+
+def document_announcement(document):
+    matches = re.findall(r"(?im)^[ \t]*Anúncio esperado[ \t]*:[ \t]*(.*?)[ \t]*$", document)
+    if not matches:
+        return None
+    if len(matches) != 1:
+        a.fail("invalid_editorial_announcement", 422)
+    value = matches[0]
+    if value.casefold() in {"não informado", "nao informado"}:
+        return None
+    try:
+        announced_at = datetime.fromisoformat(value)
+    except ValueError:
+        a.fail("invalid_editorial_announcement", 422)
+    if announced_at.tzinfo is None or announced_at.utcoffset() is None:
+        a.fail("invalid_editorial_announcement", 422)
+    return announced_at
+
+
+def validate_document_timing(document, close_at):
+    announced_at = document_announcement(document)
+    if announced_at is not None and close_at is not None and close_at >= announced_at:
+        a.fail("close_after_editorial_announcement", 422)
+
+
+def approval_document_pending(document):
+    section = re.search(r"(?im)^[ \t]*PENDÊNCIAS E CONCLUSÃO[ \t]*$", document)
+    if section is None:
+        return ["unresolved_editorial_gaps"]
+    final_section = document[section.end():]
+    declarations = re.findall(
+        r"(?im)^[ \t]*Pendências para aprovação[ \t]*:[ \t]*(.*?)[ \t]*$", final_section
+    )
+    lines = [line.strip() for line in final_section.splitlines() if line.strip()]
+    if (
+        len(declarations) != 1
+        or not lines
+        or not re.fullmatch(
+            r"Pendências para aprovação[ \t]*:[ \t]*nenhuma\.?", lines[0], re.I
+        )
+    ):
+        return ["unresolved_editorial_gaps"]
+    return []
 
 
 def lock_draft(cursor, market_id, integration_id=None):
@@ -320,6 +370,7 @@ def require_publication_approval(cursor, market_id):
         )
         revision = cursor.fetchone()
         current = get_market(cursor, market_id, None)
+        validate_document_timing(d["record"]["document"], current["close_at"])
         current.pop("editorial", None)
         current["editorial_record"] = d["record"]
         expected = dict(revision["snapshot"]) if revision else {}
@@ -434,7 +485,7 @@ def mutate(cursor, t, operation, payload, market_id=None, request_id=""):
             current["close_at"] = current["close_at"].astimezone(
                 __import__("zoneinfo").ZoneInfo(current["close_timezone"])
             )
-            Draft.model_validate(
+            draft = Draft.model_validate(
                 {
                     **{
                         k: current[k]
@@ -444,6 +495,7 @@ def mutate(cursor, t, operation, payload, market_id=None, request_id=""):
                     "editorial_record": d["record"],
                 }
             )
+            validate_document_timing(draft.editorial_record.document, draft.close_at)
             if "policy_outdated" in pending(d["record"]):
                 a.fail("validation_failed", 422)
             state = "in_review"
@@ -484,6 +536,8 @@ def assess_human_record(cursor, market_id, payload, staff):
         a.fail("draft_not_editable", 409)
     if d["snapshot_hash"] != payload.snapshot_hash:
         a.fail("version_conflict", 409)
+    cursor.execute("SELECT close_at FROM gotrendlabs_markets WHERE id=%s", (market_id,))
+    validate_document_timing(payload.editorial_record.document, cursor.fetchone()["close_at"])
     if "policy_outdated" in pending(d["record"]) and payload.editorial_record.document == d["record"].get("document", ""):
         from fastapi import HTTPException
 

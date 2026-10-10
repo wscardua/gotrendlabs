@@ -2,7 +2,7 @@
 
 Versão 1.2 — usar depois de preparar a [ficha](ficha-de-mercado.md), seguindo o [manual](manual-editorial.md). Esta é a conferência final de um mercado de previsão; não é um formulário automático do painel.
 
-Use os itens como roteiro de leitura do documento editorial único. Registre evidências, exceções e pendências no próprio texto; os códigos continuam referências de política, sem onze campos ou confirmações no parecer.
+Use os itens como roteiro de leitura do documento editorial único. Registre evidências, exceções e pendências no próprio texto; os códigos continuam referências de política, sem onze campos ou confirmações no parecer. Para aprovar, resolva cada pendência e declare `Pendências para aprovação: nenhuma` na seção final. Quando houver divulgação conhecida, informe `Anúncio esperado:` com data/hora e offset; o sistema exige fechamento anterior.
 
 | Código | Pergunta de revisão | O que registrar |
 | --- | --- | --- |

@@ -335,6 +335,9 @@ def _review_pending_label(code):
     labels = {
         "policy_outdated": _("A política editorial mudou. Consulte a política atual e atualize o documento antes de registrar o parecer."),
         "empty_document": _("O documento editorial está vazio."),
+        "unresolved_editorial_gaps": _("Para aprovar, resolva as pendências e use 'Pendências para aprovação: nenhuma' como primeira linha da seção final."),
+        "invalid_editorial_announcement": _("Informe o anúncio esperado uma só vez, com data, hora e offset válidos, ou escreva 'não informado'."),
+        "close_after_editorial_announcement": _("O fechamento do mercado deve ocorrer antes do anúncio esperado informado no documento."),
     }
     return labels.get(code, _("Pendência editorial: %(code)s") % {"code": code})
 
@@ -385,6 +388,9 @@ def reviews(request, market_id=None):
     except (AuthAPIError, ValueError, KeyError) as exc:
         error = str(exc) if isinstance(exc, AuthAPIError) else _("Dados inválidos.")
         if isinstance(exc, AuthAPIError) and isinstance(exc.detail, dict):
+            code = exc.detail.get("code")
+            if code in {"invalid_editorial_announcement", "close_after_editorial_announcement"}:
+                error = str(_review_pending_label(code))
             reasons = exc.detail.get("pending", [])
             if reasons:
                 if detail:

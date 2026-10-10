@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-10-10 — revisão dos bloqueios da FEAT-MCP-001 v1.5
+
+Contrato, ficha e aceite explicitam declaração de pendências resolvidas no documento e comparação determinística do anúncio esperado com o fechamento. Decisões históricas de mercados já publicados são preservadas pela migration 0005; drafts/agendados convertidos exigem nova avaliação.
+
 ## 2026-10-10 — FEAT-MCP-001 v1.5
 
 Contrato editorial passa a exigir documento consolidado como único formato, sem projeção ou aceitação de fichas E01–E11 em runtime. Uma migração converte os registros já persistidos, preserva histórico e reinicia revisão humana. E01–E11 permanecem orientação; confirmação global não inventa verificação independente. FEAT-MCP-001, contrato agent-integrations, ficha/checklist e estratégia de teste sincronizados.

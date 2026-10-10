@@ -208,7 +208,7 @@ def _approve_editorial_market_for_test(client, headers, slug):
     p = policy()
     record = {"policy_version": p["version"], "policy_hash": p["hash"],
               "document": "FONTES E EVIDÊNCIAS\nhttps://example.org/test-fixture consultada em "
-              + timezone.now().isoformat() + " por revisor humano.\nPENDÊNCIAS E CONCLUSÃO\nAprovado."}
+              + timezone.now().isoformat() + " por revisor humano.\nPENDÊNCIAS E CONCLUSÃO\nPendências para aprovação: nenhuma\nAprovado."}
     response = client.post(f"/admin/agent-editorial-reviews/{mid}/assessment", headers=headers,
                            json={"expected_revision": detail["draft"]["revision"], "snapshot_hash": detail["draft"]["snapshot_hash"], "editorial_record": record, "decision": "approved", "confirmed": True})
     if response.status_code != 200:
