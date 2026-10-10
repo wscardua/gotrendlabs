@@ -20,7 +20,7 @@ Diagnóstico histórico — Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001:
 
 ## MCP editorial — FEAT-MCP-001
 
-- Em 2026-10-10, os metadados da conexão MCP direta apresentam o documento único e o servidor produtivo aceitou `validate_market_draft` sem criar mercado; porém o app `MyGoTrendLabsMCP-v2` ainda entregou schema antigo (`justification`/`search_coverage` obrigatórios) e rejeitou `document` antes da chamada. Capturar `tools/list` bruto autenticado em produção, atualizar/revalidar o catálogo da conexão do cliente; a resposta de política com hashes separados para checklist/modelo permanece local até implantação. [Diagnóstico e teste](../testing/mcp-tools-schema-20261010.md).
+- Em 2026-10-10, servidor e app `MyGoTrendLabsMCP-v2` aceitaram `validate_market_draft` com documento único após **Refresh tools** no cliente; a validação retornou `unresolved_editorial_gaps`, sem criar mercado. Política v1.2 e hashes próprios de checklist/modelo estão implantados pela PR #150/Actions 38090503977. Resta confirmar os metadados visíveis em conversa nova, pois a declaração injetada na conversa anterior ainda era antiga, e obter captura HTTP bruta de `tools/list` autenticado em produção; `mcp.list_tools()` no contêiner produtivo já foi conferido. [Diagnóstico e teste](../testing/mcp-tools-schema-20261010.md).
 
 - ChatGPT: rejeição genérica de app settings com OAuth/DCR e endpoints corretos investigada; registro DCR 201 não comprova aceitação pelo ChatGPT. Correção da PR #140 implantada/Actions 37710313470 aprovado, smoke público sem metadado opcional `scope` nulo. Repetição do cadastro/consentimento pendente; causa exclusiva ainda não demonstrada. WFLOW-20261007-MCP-CHATGPT-DCR-001.
 
