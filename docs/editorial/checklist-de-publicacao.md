@@ -2,7 +2,7 @@
 
 Versão 1.2 — usar depois de preparar a [ficha](ficha-de-mercado.md), seguindo o [manual](manual-editorial.md). Esta é a conferência final de um mercado de previsão; não é um formulário automático do painel.
 
-Marque cada item na ficha como **atendido**, **pendente** ou **não aplicável**, com evidência ou justificativa. Os códigos abaixo correspondem aos campos da ficha.
+Use os itens como roteiro de leitura do documento editorial único. Registre evidências, exceções e pendências no próprio texto; os códigos continuam referências de política, sem onze campos ou confirmações no parecer.
 
 | Código | Pergunta de revisão | O que registrar |
 | --- | --- | --- |
@@ -24,6 +24,6 @@ Marque cada item na ficha como **atendido**, **pendente** ou **não aplicável**
 - **Devolver:** indicar o problema, a correção necessária e quem deve fazê-la.
 - **Rejeitar:** registrar por que a proposta é inadequada, redundante ou impossível de apurar com confiança.
 
-Registrar revisor, data e versão na ficha. Se houver mudança posterior, revisar novamente os itens afetados e reconfirmar a versão final. Imediatamente antes da abertura, conferir se o resultado ainda é desconhecido, se a fonte está acessível e se os horários continuam adequados. Mercados agendados e sugestões convertidas em rascunho seguem a mesma revisão.
+O sistema registra revisor, data e versão fora do documento. Se houver mudança posterior, revisar novamente os itens afetados e reconfirmar a versão final. Imediatamente antes da abertura, conferir se o resultado ainda é desconhecido, se a fonte está acessível e se os horários continuam adequados. Mercados agendados e sugestões convertidas em rascunho seguem a mesma revisão.
 
 Aprovar na ficha não publica o mercado: a abertura continua pelo operador autorizado no painel. Diversidade de categorias orienta o planejamento do catálogo e não acrescenta uma cota a este checklist.

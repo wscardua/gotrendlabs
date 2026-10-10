@@ -1,5 +1,10 @@
 # Integration Map
 
+## 2026-10-10 — documento editorial único
+
+MCP `create/update_market_draft` → FastAPI `EditorialRecord.document` → JSON privado versionado; Admin Ops consulta projeção documental e envia assessment com texto/confirmado/decisão; FastAPI cria snapshot, decisão humana e auditoria atomicamente; MarketLifecycleEngine valida decisão vigente, confirmação documental, hash/política/conteúdo antes de publicar. Registros estruturados legados continuam consultáveis e compatíveis.
+
+
 - 2026-10-07: ajuste exclusivamente na serialização da resposta DCR (`scope` ausente omitido), PR #140 implantada/Actions 37710313470 aprovado; sem mudanças em MCP, permissões, audience, MFA, banco ou consumidores web/mobile. Smoke público DCR 201 e MCP sem token 401 aprovados; cadastro ChatGPT pendente. WFLOW-20261007-MCP-CHATGPT-DCR-001.
 
 - 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.

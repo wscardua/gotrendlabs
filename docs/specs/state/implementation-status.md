@@ -118,3 +118,7 @@ Evidência WFLOW-20261009-THUMBNAIL-RELEVANCE-001: 70 testes aprovados em 96.136
 
 
 Fechamento local em 2026-10-09: suíte completa de 450 testes aprovada em 862.190s, sem skips, com PostgreSQL isolado e provedores simulados; credenciais de inferência vazias e geração desabilitada no processo de testes. Banco de testes destruído ao concluir. Log ignorado: .runtime/badge-validation/thumbnail-semantic-close-full-tests.log. Django check, snapshot OpenAPI, compilação Python e diff aprovados; checklist de alteração de feature/arquitetura/contratos/ADR/testes/memória conferido. Commit local autorizado preparado somente com 22 arquivos de código/configuração de exemplo/docs/testes; mídia DEV, credenciais e mudanças das outras iniciativas excluídas e preservadas. Submissão da PR com descrição em português, merge e rollout aguardam a aprovação solicitada pelo usuário.
+
+## 2026-10-10 — FEAT-MCP-001 v1.5
+
+Documento editorial único implementado localmente na branch `feature/editorial-single-document-review`, com contrato MCP/FastAPI, formulário Admin Ops, projeção do legado e confirmação humana. O status geral da feature permanece parcial até validação/integração externa e rollout. Validação local: 75 testes de regressão e dois testes adicionais do contrato documental aprovados, além de Django/Ruff/OpenAPI/diff. Evidências e pendência externa constam em WFLOW-20261010-EDITORIAL-DOCUMENT-001.

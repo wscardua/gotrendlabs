@@ -1,5 +1,13 @@
 # Workflow Runs
 
+## WFLOW-20261010-EDITORIAL-DOCUMENT-001
+
+- Tipo: alteração da FEAT-MCP-001 / FEAT-EDITORIAL-001. Usuário autorizou implementar documento único e pediu branch nova após buscar `origin/main`.
+- Branch: `feature/editorial-single-document-review`, worktree isolado baseado em `origin/main` 9b798ea; alterações do checkout original preservadas.
+- Escopo: contrato JSON aditivo com documento autoritativo, projeção determinística do legado, formulário Admin Ops com um textarea e um check, confirmação humana vinculada a revisão/hash, MCP e documentos atualizados. Sem migration destrutiva.
+- Estado: implementação local concluída e validada. Regressão editorial/MCP/UI: 75 testes aprovados em PostgreSQL isolado (176,212 s); dois testes adicionais do contrato documental e projeção legada aprovados novamente (10,701 s). Django check, Ruff, OpenAPI --check, compilação Python e git diff --check aprovados. Banco de testes descartado ao fim. Dot externo, CI e deploy permanecem sem homologação nesta branch. Próxima ação: revisão da branch e validação externa após integração.
+
+
 ## WFLOW-20261009-THUMBNAIL-RELEVANCE-001
 
 - Fechamento local em 2026-10-09: suíte completa de 450 testes aprovada em 862.190s, sem skips, com PostgreSQL isolado e provedores simulados; credenciais de inferência vazias e geração desabilitada no processo de testes. Banco de testes destruído ao concluir. Log ignorado: .runtime/badge-validation/thumbnail-semantic-close-full-tests.log. Django check, snapshot OpenAPI, compilação Python e diff aprovados; checklist de alteração de feature/arquitetura/contratos/ADR/testes/memória conferido. Commit local autorizado preparado somente com 22 arquivos de código/configuração de exemplo/docs/testes; mídia DEV, credenciais e mudanças das outras iniciativas excluídas e preservadas. Submissão da PR com descrição em português, merge e rollout aguardam a aprovação solicitada pelo usuário.

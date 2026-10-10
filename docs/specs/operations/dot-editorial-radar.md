@@ -648,20 +648,18 @@ Abra as fontes específicas.
 Trechos de busca não substituem a consulta ao conteúdo original.
 
 Registre URL exata, finalidade, data/hora com offset e evidência curta.
-Use reported_verified conforme a verificação realmente realizada para
+Relate no documento o que foi realmente aberto e verificado para
 a finalidade declarada. Página aberta sem o dado pertinente, snippet ou
 metadados isolados não comprovam o fato. Verificar uma agenda não verifica
 interesse do público, e verificar a fonte hoje não comprova o resultado futuro.
 
 Separe fontes que sustentam um critério das citadas somente para documentar
 uma tentativa falha ou limitação. Registre tentativas e limitações em
-sources/gaps, nos campos aceitos pelo contrato; entradas não verificadas
-mantêm reported_verified=false. Não apague a falha nem marque uma leitura
-inexistente como verificada para eliminar pending.
+no documento; entradas não verificadas permanecem identificadas como
+pendência. Não apague a falha nem declare leitura inexistente.
 
-Quando um critério satisfied usar source_indexes, associe apenas fontes
-efetivamente verificadas que sustentem sua afirmação e sejam, em conjunto,
-suficientes para o escopo declarado. Não inclua entre seus suportes a fonte
+Quando uma afirmação depender de fonte, cite somente as fontes
+efetivamente abertas que a sustentem, com alcance e limite explícitos. Não inclua entre seus suportes a fonte
 que só documenta erro, acesso negado ou ausência de conteúdo. Uma alternativa
 verificada pode suprir a necessidade sem converter a tentativa falha em
 sucesso; registre seu alcance e preserve a limitação. Se a alternativa não
@@ -860,8 +858,8 @@ de mérito de participação, relevância brasileira, evidências, novidade,
 acompanhamento e viabilidade, respeitando a capacidade de fila. Não promova
 um candidato só pela facilidade de apuração nem imponha diversidade por cota.
 
-Registre placar e divergência relevante de forma concisa em justification,
-respeitando o limite do campo. Não crie campos extras.
+Registre placar e divergência relevante de forma concisa na seção
+CONTEXTO E DUPLICIDADE do documento. Não crie campos extras.
 
 Votação não equivale a aprovação humana nem prevê estatisticamente engajamento.
 
@@ -876,6 +874,13 @@ Consulte o schema atual antes de montar o payload.
 No contrato conhecido, o draft utiliza:
 title, summary, kind, category_id, subcategory_id, event_id, options,
 source, resolution_criteria, close_at, close_timezone e editorial_record.
+
+Na revisão 1.5, envie `editorial_record` com `policy_version`, `policy_hash`
+e um único `document` (até 60.000 caracteres). Organize nele contexto e
+duplicidade; pergunta, regras e prazos; fontes com URLs, datas de consulta e
+extratos; contingências e responsável; pendências e conclusão. Informe com
+clareza o que foi verificado pelo executor e o que depende do humano. Não envie
+campos E01–E11 junto do documento, nem confirmação ou decisão humana.
 
 Use apenas os campos, valores e limites efetivamente aceitos.
 Se o contrato evoluir, adapte o payload sem perder requisitos da política.
@@ -928,75 +933,23 @@ suportada pelo contrato, sem alegar verificação inexistente.
 
 Associe evidências às fontes por referências válidas.
 
-Antes de validate_market_draft, faça uma verificação local do payload:
-- Determine os critérios exigidos pela política vigente, considerando suas
-  condições de aplicabilidade. Confira que cada um aparece exatamente uma
-  vez na lista de evidências; compare conjuntos e conte ocorrências para
-  detectar ausências, repetições e identificadores desconhecidos. Dispensas
-  só podem seguir a representação autorizada pela política e pelo contrato.
-- Quando fontes estruturadas forem exigidas, confira a presença da lista,
-  seu conteúdo e os campos obrigatórios de cada fonte. A URL no campo source
-  público ou em texto livre não substitui a lista exigida pela ficha.
-- Confira que todas as referências de evidência apontam para fontes
-  existentes na lista, conforme a indexação e o formato do schema vigente.
-  Não deixe referências órfãs, nem invente fontes para preenchê-las.
-- Para cada critério satisfied com source_indexes, confira se todas as
-  fontes referidas foram efetivamente verificadas para a afirmação e se o
-  conjunto a sustenta suficientemente. Índice válido não basta: uma fonte
-  citada só por limitação não é suporte. Preserve essa fonte e sua falha em
-  sources/gaps, sem associá-la como comprovação nem declarar sucesso falso.
-  Se retirar a referência deixar suporte insuficiente, mantenha o critério
-  pendente e resolva a lacuna; não elimine pending por edição cosmética.
-- Confira os status e reported_verified contra o trabalho realmente feito.
-  URL preenchida não prova verificação. Preserve pending e not_verified
-  quando cabíveis; não converta pendências humanas ou técnicas em satisfied
-  para completar a lista ou obter aceitação estrutural.
-- Confira explicitamente a correspondência entre offset e fuso IANA,
-  fechamento anterior à divulgação ou disputa relevante, margem mínima
-  criação–fechamento e viabilidade da margem abertura pública–fechamento.
-  Se a abertura efetiva não ocorreu ou não foi confirmada, registre a
-  pendência e o prazo-limite calculado, sem declarar a margem já cumprida.
+Antes de validate_market_draft, confira localmente o payload:
+- `editorial_record` contém apenas policy_version, policy_hash e document.
+- O texto apresenta as cinco seções do modelo e não omite pesquisa de
+  duplicidade, fontes com URLs/datas/limites, critérios de resolução,
+  contingências, responsabilidade e pendências ainda reais.
+- Citações de fonte sustentam a afirmação declarada. Uma tentativa de acesso
+  falha continua descrita como falha, sem ser promovida a comprovação.
+- Offset, fuso IANA, fechamento e eventual anúncio esperado são coerentes.
+- Conferência do conteúdo persistido e decisão humana permanecem etapas
+  futuras; não as declare concluídas antes de ocorrerem.
 
-Corrija falhas locais antes de validar. Uma resposta permissiva do validador
-não dispensa critérios, fontes ou referências exigidos. Se não for possível
-representar os requisitos no schema, reporte a incompatibilidade e bloqueie
-as mutações afetadas, sem falsificar a conformidade.
-
-Não declare revisão humana ou verificações que não realizou.
-Antes da persistência, represente a conferência do conteúdo persistido
-como etapa do agente ainda não executada, usando a forma aceita pelo
-contrato. Atualize essa evidência somente após create_market_draft e
-get_market confirmarem o conteúdo. Se o contrato impedir essa sequência,
-reporte a incompatibilidade sem alegar verificação antecipada.
-Registre a definição do responsável pela apuração como pendência do humano
-na aprovação da pauta na plataforma e a thumbnail como pendência de produção
-humana após essa aprovação, nos critérios vigentes pertinentes. Não trate essas
-pendências futuras como falhas de pesquisa ou evidências verificadas.
-
-Execute validate_market_draft.
-Exija structurally_valid=true e examine integralmente pending, demais
-pendências e semelhantes retornados. isError=true é falha, mesmo sem campo
-de validade; preserve o código e a mensagem sem inventar o campo culpado.
-- policy_outdated bloqueia persistência sob a política antiga: recarregue
-  a política, confira versão e hash, atualize o payload e reavalie o que
-  mudou antes de validar novamente.
-- Requisitos essenciais de pesquisa pendentes impedem criação. Pendências
-  humanas futuras e conferência pós-persistência devem permanecer
-  explicitamente classificadas segundo a política e o fluxo autorizado.
-- Pendência desconhecida não é aprovação tácita: esclareça ou interrompa
-  as mutações afetadas. declared_gaps exige examinar o texto das lacunas;
-  não o apague para esconder um problema.
-- Critérios compostos podem conter partes técnicas já devidas e etapas
-  humanas futuras. Separe essas partes na evidência, mantendo ID e status
-  aceitos. Thumbnail pendente não dispensa taxonomia, avisos ou coerência;
-  nome do apurador pendente não dispensa fonte recuperável, regra objetiva
-  e procedimento tecnicamente viável. Não marque o todo como concluído
-  enquanto uma parte obrigatória estiver pendente.
-Corrija problemas solucionáveis e valide novamente. Validade estrutural
-sozinha não é autorização editorial nem prova de aceitação da submissão.
-
-Se houver incompatibilidade entre critérios vigentes e schema,
-pare as mutações afetadas e reporte; não omita requisitos.
+Execute validate_market_draft. Exija structurally_valid=true, confira pending
+(e especialmente policy_outdated) e semelhantes retornados. A validação
+estrutural não interpreta suficiência editorial do texto. Resolva o que puder
+sem apagar pendências para obter aceitação; caso contrato/política sejam
+incompatíveis, interrompa as mutações afetadas e reporte o problema. Não
+atribua ao agente verificação ou aprovação humana.
 
 Antes de cada mutação (create_market_draft, update_market_draft ou
 submit_draft_for_review), faça um checkpoint com leituras atuais:

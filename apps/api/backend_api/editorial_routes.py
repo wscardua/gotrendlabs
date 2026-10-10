@@ -868,17 +868,22 @@ def review_detail(market_id: int, authorization: str = Header(default="")):
     with get_connection() as c:
         with c.cursor() as cur:
             staff(cur, authorization)
-            m, d = domain.lock_draft(cur, market_id)
+            _, d = domain.lock_draft(cur, market_id)
+            market = domain.get_market(cur, market_id, None)
+            current_policy = domain.policy()
             cur.execute(
                 "SELECT revision,snapshot,snapshot_hash,created_at FROM gotrendlabs_agent_editorial_revisions WHERE draft_id=%s ORDER BY revision DESC LIMIT 100",
                 (market_id,),
             )
             return {
-                "market": m,
+                "market": market,
                 "draft": d,
+                "document": domain.editorial_document(d["record"], market),
+                "policy_version": current_policy["version"],
+                "policy_hash": current_policy["hash"],
                 "revisions": cur.fetchall(),
                 "pending": domain.pending(d["record"]),
-                "criteria": domain.policy()["criteria"],
+                "criteria": current_policy["criteria"],
                 "publication_gate_enforced": True,
                 "publication_gate_scope": "all_markets",
             }

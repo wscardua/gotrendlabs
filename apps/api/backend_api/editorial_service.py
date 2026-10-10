@@ -163,10 +163,12 @@ def validated(cursor, payload):
 
 def pending(record):
     p = policy()
-    entries = {x["criterion_id"]: x for x in record["evidence"]}
     result = []
     if record["policy_version"] != p["version"] or record["policy_hash"] != p["hash"]:
         result.append("policy_outdated")
+    if record.get("document"):
+        return result
+    entries = {x["criterion_id"]: x for x in record["evidence"]}
     for c in p["criteria"]:
         e = entries.get(c["id"])
         if c["publication_blocking"] and (
@@ -184,6 +186,62 @@ def pending(record):
     if (record.get("gaps") or "").strip():
         result.append("declared_gaps")
     return result
+
+
+def editorial_document(record, market=None):
+    """Project a legacy record into one readable field without changing history."""
+    if record.get("document"):
+        return record["document"]
+    market = market or {}
+    entries = {item["criterion_id"]: item for item in record.get("evidence", [])}
+    questions = {item["id"]: item["question"] for item in policy()["criteria"]}
+    statuses = {"satisfied": "atendido", "pending": "pendente", "not_verified": "não verificado"}
+
+    def add_evidence(lines, codes):
+        for code in codes:
+            item = entries.get(code)
+            if not item or not item.get("evidence", "").strip():
+                continue
+            urls = [record["sources"][index]["url"] for index in item.get("source_indexes", [])]
+            lines.append(f"{questions[code]} [{statuses.get(item['status'], item['status'])}]: {item['evidence']}")
+            if urls:
+                lines.append("Fontes citadas: " + ", ".join(urls))
+
+    lines = [
+        "CONTEXTO E DUPLICIDADE",
+        "Pergunta: " + market.get("title", ""),
+        "Resumo: " + market.get("summary", ""),
+        record.get("justification", ""),
+        "Pesquisa: " + record.get("search_coverage", ""),
+        "Mercados semelhantes: " + ", ".join(map(str, record.get("similar_market_ids", []))),
+        "Sinais internos: " + record.get("internal_signals", ""),
+        "Sinais externos: " + record.get("external_signals", ""),
+    ]
+    add_evidence(lines, ("E01", "E02", "E03"))
+    lines.extend([
+        "", "PERGUNTA, REGRAS E PRAZOS",
+        "Opções: " + ", ".join(option["label"] for option in market.get("options", [])),
+        "Resolução: " + market.get("resolution_criteria", ""),
+        "Fechamento: " + str(market.get("close_at", "")) + " (" + market.get("close_timezone", "") + ")",
+        "Anúncio esperado: " + str(record.get("expected_announcement_at") or "não informado"),
+    ])
+    add_evidence(lines, ("E04", "E05", "E07", "E08"))
+    lines.extend(["", "FONTES E EVIDÊNCIAS"])
+    for source in record.get("sources", []):
+        lines.append(f"{source['url']} | uso: {source.get('purpose', '')} | consulta: {source['consulted_at']} | verificação relatada: {source.get('reported_verified', False)} | relato do preparador: {source.get('excerpt', '')}")
+    add_evidence(lines, ("E06", "E09"))
+    lines.extend([
+        "", "CONTINGÊNCIAS E RESPONSÁVEL",
+        record.get("fallback", ""),
+        "Responsável: conferir e identificar no parecer.",
+    ])
+    add_evidence(lines, ("E10",))
+    lines.extend(["", "PENDÊNCIAS E CONCLUSÃO", record.get("gaps", "")])
+    add_evidence(lines, ("E11",))
+    missing = [code for code, item in entries.items() if not item.get("evidence", "").strip()]
+    if missing:
+        lines.append("Sem evidência registrada: " + ", ".join(missing))
+    return "\n".join(lines).strip()
 
 
 def lock_draft(cursor, market_id, integration_id=None):
@@ -295,7 +353,7 @@ def human_edit_done(cursor, market_id, d):
         return
     revision = d["revision"] + 1
     record = d["record"]
-    for entry in record["evidence"]:
+    for entry in record.get("evidence", []):
         entry["status"] = "pending"
     cursor.execute(
         "UPDATE gotrendlabs_agent_editorial_drafts SET record=%s WHERE market_id=%s",
@@ -343,6 +401,7 @@ def require_publication_approval(cursor, market_id):
         and decision.get("decision") == "approved"
         and decision.get("evidence_origin") == "human_attestation"
         and bool(decision.get("reviewer_id"))
+        and (not d["record"].get("document") or decision.get("confirmed") is True)
         and decision.get("expected_revision") == d["revision"] - 1
         and decision.get("snapshot_hash") == d["snapshot_hash"]
         and not pending(d["record"])
@@ -517,6 +576,8 @@ def prepare_human_record(cursor, market_id, payload, staff):
     if m["status"] not in {"draft", "scheduled", "open", "locked"}:
         a.fail("draft_not_editable", 409)
     record = payload.editorial_record.model_dump(mode="json")
+    if not record.get("document") and not payload.note.strip():
+        a.fail("validation_failed", 422)
     revision = d["revision"] + 1
     state = "in_review" if payload.submit_for_review else "preparation"
     cursor.execute(
@@ -564,6 +625,7 @@ def assess_human_record(cursor, market_id, payload, staff):
         snapshot_hash=prepared["snapshot_hash"],
         decision=payload.decision,
         note=payload.note,
+        confirmed=payload.confirmed,
         verified_criteria=payload.verified_criteria,
         verified_source_indexes=payload.verified_source_indexes,
     )
@@ -582,11 +644,16 @@ def decide(cursor, market_id, payload, staff):
         a.fail("version_conflict", 409)
     p = policy()
     record = d["record"]
+    if not record.get("document") and not payload.note.strip():
+        a.fail("validation_failed", 422)
     if payload.decision == "approved":
         from fastapi import HTTPException
 
         missing = pending(record)
-        if missing or not set(
+        if record.get("document"):
+            if missing or not payload.confirmed:
+                raise HTTPException(422, detail={"code": "validation_failed", "message": "Aprovação exige documento atual e confirmação humana explícita.", "pending": missing})
+        elif missing or not set(
             c["id"] for c in p["criteria"] if c["publication_blocking"]
         ).issubset(payload.verified_criteria):
             raise HTTPException(
@@ -597,7 +664,7 @@ def decide(cursor, market_id, payload, staff):
                     "pending": missing,
                 },
             )
-        for e in record["evidence"]:
+        for e in record.get("evidence", []):
             c = next(x for x in p["criteria"] if x["id"] == e["criterion_id"])
             if c["source_access_required"] and not set(e["source_indexes"]).issubset(
                 payload.verified_source_indexes
@@ -611,6 +678,7 @@ def decide(cursor, market_id, payload, staff):
                 )
     decision = {
         **payload.model_dump(mode="json"),
+        "confirmed": payload.confirmed if payload.decision == "approved" else False,
         "reviewer_id": staff["id"],
         "reviewed_at": a.now().isoformat(),
         "evidence_origin": "human_attestation",

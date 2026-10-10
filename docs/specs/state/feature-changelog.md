@@ -1,5 +1,10 @@
 # Feature Changelog
 
+## 2026-10-10 — documento único no parecer editorial
+
+FEAT-MCP-001 v1.5: preparação e parecer passam a usar um documento textual versionado. Admin Ops apresenta um campo de texto, uma confirmação humana para aprovar e decisão. A API mantém compatibilidade de leitura/entrada estruturada legada e o MCP aceita o novo documento pelos schemas compartilhados. Gate universal de publicação permanece vinculado a aprovação humana da versão atual.
+
+
 - 2026-10-07: resposta DCR omite metadados opcionais ausentes; teste com callback HTTPS ChatGPT e `ui_locales`. PR #140 implantada/Actions 37710313470 Success; 51 testes locais e CI PR/main 372 testes/OK (um skip por roles CI ausentes), smoke HTTPS DCR aprovado. Homologação ChatGPT pendente; WFLOW-20261007-MCP-CHATGPT-DCR-001.
 
 - 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.

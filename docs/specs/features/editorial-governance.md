@@ -1,10 +1,10 @@
 ---
 id: FEAT-EDITORIAL-001
 titulo: "Governança editorial de mercados"
-versao: 1.3
+versao: 1.5
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-07
+ultima_atualizacao: 2026-10-10
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -25,6 +25,21 @@ aprovacao: criterios_1_2_aprovados_em_2026-09-26_e_revisao_universal_solicitada_
 ---
 
 # Governança editorial de mercados
+
+## Escopo vigente — documento único 1.5
+
+A preparação e a revisão humana de novas versões usam um único documento
+editorial textual, organizado em contexto/duplicidade, pergunta/regras/prazos,
+fontes/evidências, contingências/responsável e pendências/conclusão. E01–E11
+permanecem guia da política aprovada, sem onze entradas ou checkboxes no
+formulário. O humano edita o texto, confirma uma vez apenas para aprovar e
+registra a decisão. O backend associa confirmação, autor, data e snapshot à
+revisão atual. A publicação continua protegida pelo gate universal vigente.
+
+Fichas anteriores são projetadas em texto para a tela sem modificar seus
+snapshots; uma nova avaliação salva uma revisão textual. Os registros e
+contratos estruturados anteriores seguem legíveis e aceitos durante transição.
+As seções 1.2/1.3 abaixo registram o comportamento histórico.
 
 ## Escopo vigente — revisão universal 1.3
 

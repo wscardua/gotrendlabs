@@ -94,27 +94,6 @@ class EditorialMarketListUiTests(SimpleTestCase):
         self.assertIn("Editar/visualizar", html)
 
 
-class EditorialEvidenceSourceUiTests(SimpleTestCase):
-    def test_editable_evidence_selects_only_explicit_catalogue_urls(self):
-        from apps.web.django.admin_ops.integration_views import _evidence_source_indexes
-
-        sources = [
-            {"url": "https://example.org/report"},
-            {"url": "https://example.org/"},
-        ]
-        self.assertEqual(
-            _evidence_source_indexes("Read https://example.org/report.", sources), [0]
-        )
-        self.assertEqual(
-            _evidence_source_indexes("Operator chose https://example.org/", sources),
-            [1],
-        )
-        self.assertEqual(_evidence_source_indexes("No source cited", sources), [])
-        self.assertEqual(
-            _evidence_source_indexes("https://example.org/report-fake", sources), []
-        )
-
-
 class EditorialPublicationNoticeTests(SimpleTestCase):
     def render_notice(self, status, editorial_status):
         return render_to_string(

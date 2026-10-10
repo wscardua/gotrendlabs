@@ -19,6 +19,10 @@ Agentes externos, começando pelo Dot, precisam consultar o editorial/catálogo 
 7. Pesquisa/agendamento externos; não adicionar pesquisa longa ao daemon. Nenhuma autoridade sobre ledger, publicação/resolução ou bots de previsão.
 8. Parecer humano persistido e versionado constitui gate universal de novas publicações, conforme mudança de escopo aprovada em 2026-10-07. Preservar integridade publicada; não reescrever definições assinadas nem aplicar publicação retroativa.
 
+## Emenda 2026-10-10 — documento único
+
+Novas fichas usam um documento textual versionado como conteúdo editorial autoritativo. O contrato estruturado anterior permanece aceito para clientes legados; a tela projeta o histórico antigo em texto sem modificar snapshots. A confirmação humana única pertence à decisão sobre revisão/hash específicos e não pode ser enviada pelo MCP. FastAPI continua responsável pela validade da decisão e pelo gate universal de publicação; a interface apenas coleta o parecer. Não há nova tabela ou mudança de fronteira.
+
 ## Impacto
 
 Novas entidades, migrations/grants, contratos, telas Admin Ops, adaptador e configuração de deploy; web/mobile públicos continuam compatíveis. Bibliotecas OAuth/MCP e protocolo de delegação foram fixados na implementação descrita abaixo, preservando as regras. Status Dot/produção depende de evidência real.

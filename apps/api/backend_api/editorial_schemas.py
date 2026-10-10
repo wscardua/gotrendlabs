@@ -107,10 +107,15 @@ class Evidence(Strict):
 class EditorialRecord(Strict):
     policy_version: str = Field(max_length=20)
     policy_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
-    justification: str = Field(min_length=1, max_length=3000)
+    document: str = Field(
+        default="",
+        max_length=60000,
+        description="Ficha editorial única: contexto e duplicidade; pergunta, regras e prazos; fontes e evidências com URL e data; contingências, responsável, pendências e conclusão. Relato do agente não é verificação humana.",
+    )
+    justification: str = Field(default="", max_length=3000)
     internal_signals: str = Field(default="", max_length=3000)
     external_signals: str = Field(default="", max_length=3000)
-    search_coverage: str = Field(min_length=1, max_length=2000)
+    search_coverage: str = Field(default="", max_length=2000)
     similar_market_ids: list[int] = Field(default_factory=list, max_length=100)
     sources: list[Source] = Field(default_factory=list, max_length=20)
     evidence: list[Evidence] = Field(default_factory=list, max_length=11)
@@ -120,6 +125,10 @@ class EditorialRecord(Strict):
 
     @model_validator(mode="after")
     def references(self):
+        if not self.document.strip() and (not self.justification or not self.search_coverage):
+            raise ValueError("document or legacy justification and search coverage required")
+        if self.document and any((self.justification, self.search_coverage, self.sources, self.evidence, self.fallback, self.gaps, self.internal_signals, self.external_signals, self.similar_market_ids)):
+            raise ValueError("document cannot be combined with legacy editorial fields")
         if len({x.criterion_id for x in self.evidence}) != len(self.evidence):
             raise ValueError("duplicate criterion")
         if any(
@@ -137,7 +146,7 @@ class HumanEditorialRecord(Strict):
     expected_revision: int = Field(ge=1)
     editorial_record: EditorialRecord
     submit_for_review: bool = False
-    note: str = Field(min_length=1, max_length=3000)
+    note: str = Field(default="", max_length=3000)
 
 
 class Option(Strict):
@@ -196,7 +205,8 @@ class SubmitDraft(RevisionAction):
 class ReviewDecision(RevisionAction):
     snapshot_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     decision: Literal["approved", "returned", "rejected"]
-    note: str = Field(min_length=1, max_length=3000)
+    note: str = Field(default="", max_length=3000)
+    confirmed: bool = False
     # Human attestation is explicit, never inferred from an agent report.
     verified_criteria: list[str] = Field(default_factory=list, max_length=11)
     verified_source_indexes: list[int] = Field(default_factory=list, max_length=20)

@@ -1,10 +1,10 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.4
+versao: 1.5
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-07
+ultima_atualizacao: 2026-10-10
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
@@ -30,6 +30,14 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 ---
 
 # MCP editorial e gestão de integrações
+
+## Revisão 1.5 — documento editorial único (2026-10-10)
+
+Novos drafts MCP enviam `editorial_record.document` como texto de até 60.000 caracteres, com política versão/hash. O documento reúne contexto e busca de duplicidade; pergunta, regras e prazos; URLs, datas de consulta, extratos e origem dos relatos; contingências e responsável; pendências e conclusão. O agente relata pesquisa e limitações, sem declarar conferência humana. O documento é a única fonte editável da nova ficha; campos estruturados E01–E11 continuam aceitos somente para clientes legados e preservados nos snapshots existentes. Não combinar os formatos no mesmo payload.
+
+Admin Ops mostra esse documento em um textarea, uma confirmação humana e a decisão. Ao abrir ficha antiga, a API monta projeção textual determinística com todos os valores registrados e dados atuais do mercado; a projeção não regrava o snapshot antigo. Uma nova avaliação humana salva o texto como novo registro versionado. Aprovação exige documento não vazio, política atual, confirmação explícita, revisão/hash atuais e demais condições objetivas de publicação. Devolver/rejeitar não exigem confirmação. A suficiência factual é responsabilidade do revisor; o sistema não interpreta semanticamente o texto nem apaga lacunas por marcar a confirmação. Parecer e publicação seguem ações separadas; o gate universal permanece.
+
+As seções antigas abaixo descrevem o contrato legado aceito durante transição. E01–E11 continuam orientação editorial, sem onze controles no parecer novo.
 
 ## 1. Objetivo e estado
 

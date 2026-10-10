@@ -1,6 +1,12 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
-Versão 1.4 — 2026-10-07. Implementado localmente; Dot/deploy pendentes. Autoridade: [feature](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md). Rotas abaixo estão na implementação FastAPI e no snapshot OpenAPI; sua disponibilidade externa depende do rollout autorizado.
+Versão 1.5 — 2026-10-10. Implementado localmente; Dot/deploy pendentes. Autoridade: [feature](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md). Rotas abaixo estão na implementação FastAPI e no snapshot OpenAPI; sua disponibilidade externa depende do rollout autorizado.
+
+## Revisão 1.5 — documento único (2026-10-10)
+
+`editorial_record` novo contém `policy_version`, `policy_hash` e `document` (texto não vazio, máximo 60.000 caracteres). O documento cobre contexto/duplicidade, pergunta/regras/prazos, fontes com URL e data, contingências/responsável e pendências/conclusão. O schema aceita o formato estruturado anterior em clientes antigos; um payload não pode combinar documento com campos estruturados preenchidos. A persistência JSON guarda apenas um formato autoritativo por revisão. `GET /admin/agent-editorial-reviews/{id}` fornece `document` de exibição, `policy_version` e `policy_hash` atuais; legado é projetado de forma determinística sem alteração histórica.
+
+`POST /admin/agent-editorial-reviews/{id}/assessment` recebe `editorial_record` com documento, `expected_revision`, `snapshot_hash`, `decision` e `confirmed` booleano. `confirmed=true` é obrigatório para `approved`; devolução/rejeição o dispensam. O endpoint mantém locks, transação, auditoria, snapshot e versionamento. `note`, `verified_criteria` e `verified_source_indexes` continuam aceitos apenas para decisões legadas. O MCP usa os mesmos schemas de draft, mas não possui ferramenta para enviar `confirmed` ou decisão humana. O gate de publicação exige confirmação na decisão documental, além de revisão/hash/política/conteúdo atuais. Os contratos anteriores descritos abaixo são históricos ou compatíveis para payloads estruturados.
 
 ## Princípios
 

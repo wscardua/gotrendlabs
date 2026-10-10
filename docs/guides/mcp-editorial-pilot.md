@@ -1,5 +1,17 @@
 # Piloto MCP editorial e operação
 
+## Parecer em documento único — revisão 1.5
+
+O executor envia `editorial_record.document` com contexto, duplicidade, regras,
+prazos, fontes e data de consulta, contingências e pendências. O texto distingue
+pesquisa relatada da conferência humana. No Admin Ops, o revisor ajusta esse
+mesmo documento, marca uma confirmação apenas para aprovar e escolhe a decisão.
+Devolução ou rejeição registra motivo no texto. A página não exige checks por
+E01–E11 ou por fonte; os critérios permanecem guia de leitura. O sistema salva
+texto, parecer e versão na mesma operação, preservando o histórico anterior.
+As instruções das revisões 1.2–1.4 abaixo são históricas quando descrevem
+campos separados.
+
 ## Cadastro ChatGPT OAuth/DCR
 
 Usar URL `https://gotrendlabs.com.br/mcp`, autenticação OAuth e registro Dynamic Client Registration (DCR). Deixar o ChatGPT obter seu client_id; ID/segredo de credencial de serviço não são credenciais de cliente OAuth. Não desativar autenticação para cadastrar. Sem OIDC anunciado, manter seus campos vazios/desabilitados. Ícone opcional deve respeitar as restrições apresentadas pelo formulário.
