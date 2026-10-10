@@ -1,5 +1,9 @@
 # Feature Changelog
 
+## 2026-10-10 — alinhamento do catálogo MCP editorial
+
+FEAT-MCP-001: servidor e API já aceitam o documento único; teste real produtivo de validação retornou pendência humana sem criar mercado. Testes locais passam a verificar `tools/list` de entradas/saídas e submissão. Resposta de política ganha hashes separados de checklist/modelo, ainda pendentes de implantação; cadastro `MyGoTrendLabsMCP-v2` no cliente requer atualização dos metadados. [Recibo](../testing/mcp-tools-schema-20261010.md).
+
 ## 2026-10-10 — parecer documental v1.5 implantado
 
 FEAT-MCP-001/FEAT-EDITORIAL-001: PR #148 integrada em main; CI PR/main com 454 testes/OK e Actions 38060102537 com deploy aprovado. Migrations 0004/0005 converteram quatro fichas produtivas para o documento único, mantendo as 27 URLs de fontes, snapshots e inventários de mercado/opções/previsões. API/MCP e autenticação negativa conferidos; novo parecer humano autenticado em PRD e piloto Dot ainda pendentes. [Recibo](../testing/editorial-document-production-20261010.md).

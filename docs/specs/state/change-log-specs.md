@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-10-10 — catálogo MCP documental e hashes de materiais
+
+FEAT-MCP-001: explicitados os schemas de `tools/list` para documento único, a submissão por referência à revisão persistida e hashes independentes de checklist/modelo. A política aprovada permanece v1.2; o modelo v1.5 não a substitui. Diagnóstico distingue servidor correto de catálogo antigo no cliente. [Evidência](../testing/mcp-tools-schema-20261010.md).
+
 ## 2026-10-10 — fechamento operacional da revisão 1.5
 
 Fonte de verdade reconciliada com a PR #148/Actions 38060102537: documento único e migrations 0004/0005 ativos em produção, quatro fichas e 27 URLs preservadas, status FEAT-MCP-001/FEAT-EDITORIAL-001 ainda parcial pelas homologações externas/humanas. [Recibo produtivo](../testing/editorial-document-production-20261010.md).

@@ -20,7 +20,7 @@
 
 - Admin Ops humano → #6 resolvido; MCP SDK/OAuth → #7 submetido, aprovado na UI e fechado automaticamente. Serviço client_credentials/revogação validado. Logs existentes e auditoria criptográfica verificados; precisão e fuso dos formulários corrigidos. [Evidência](../testing/dev-catalog-rehearsal-20261007.md).
 
-## MCP editorial — FEAT-MCP-001 (implementado localmente, homologação externa pendente)
+## MCP editorial — FEAT-MCP-001 (implantado, homologação externa pendente)
 
 - Dot/outro executor → MCP HTTPS → FastAPI → PostgreSQL. MCP sem banco/ORM/segredos KMS/MFA; pesquisa e agenda permanecem externas.
 - Admin Ops → FastAPI com staff ou superuser + MFA, capacidades iguais → integrações, credenciais/grants, cotas e revisão editorial.
@@ -30,6 +30,7 @@
 - Humano no Admin Ops → assessment FastAPI/MFA → ficha/snapshot/evento/parecer numa transação → gate de publicação. Uma ação na UI; `/record` e `/decision` anteriores removidos.
 - Publicação humana de todos os mercados → MarketLifecycleEngine → lock/revisão/hash/parecer humano vigente → assinatura/abertura. Recusa 409 antes da assinatura; edição invalida aprovação; gate universal de novas publicações, com validação de fechamento antes da assinatura.
 - Runtime: `apps/mcp/server.py` → delegação interna FastAPI → dez rotas editoriais restritas. Admin Ops → gestão/consentimento/parecer FastAPI; grants PostgreSQL exclusivos da API. Deploy preparado com override MCP + import Caddy e CI de PR; primeira instalação desligada. Ativação explícita pós-merge preserva workload privado 0600. Rollout produtivo executado pela PR #136; API/MCP habilitados explicitamente e dados preservados.
+- Catálogo documental: `tools/list` do MCP direto usa `editorial_record.document` em validação/criação/edição e devolve o mesmo registro em consultas; `submit_draft_for_review` referencia a revisão persistida. `get_editorial_policy` vem da FastAPI e mantém política v1.2, com hashes independentes de checklist/modelo nesta alteração. O cadastro `MyGoTrendLabsMCP-v2` no cliente ainda apresenta schema legado e requer atualização de metadados após o deploy; nenhuma mudança de mercado, grant ou agenda decorre disso.
 - Evidências: [resultados](../testing/mcp-editorial-results.md), [piloto](../../guides/mcp-editorial-pilot.md). Mobile permanece consumidor dos contratos existentes; campos novos são opcionais/aditivos.
 - Fontes: [feature](../features/mcp-editorial-agents.md), [contrato](../contracts/agent-integrations.md), [ADR](../decisions/ADR-0011-mcp-editorial-integrations.md).
 

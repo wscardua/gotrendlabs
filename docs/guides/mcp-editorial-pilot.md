@@ -85,7 +85,7 @@ Smokes: home/login/static/API health/discovery 200; Admin Ops integrações/revi
 
 ## LM Studio: pedido de editorial versus catálogo
 
-`get_editorial_policy` retorna o manual aprovado completo (`manual`), checklist, modelo de ficha e critérios E01–E11. `search_markets` lista/busca mercados existentes; `get_taxonomy` fornece categorias e eventos. As descrições e instructions MCP tornam essa distinção explícita. Depois de atualização do adapter, use **Refresh tools** no LM Studio e reconecte o MCP para atualizar instructions; inicie conversa nova para não reutilizar chamadas incorretas no histórico.
+`get_editorial_policy` retorna o manual aprovado completo (`manual`), checklist, modelo de ficha e critérios E01–E11. `version`/`hash` identificam a política aprovada v1.2; `checklist_hash` e `record_template_hash` identificam separadamente os textos servidos após a implantação desta revisão. O título do modelo v1.5 não altera a versão da política. `search_markets` lista/busca mercados existentes; `get_taxonomy` fornece categorias e eventos. As descrições e instructions MCP tornam essa distinção explícita. Depois de atualização do adapter, use **Refresh tools** no LM Studio e reconecte o MCP para atualizar instructions; inicie conversa nova para não reutilizar chamadas incorretas no histórico. Em conexão MCP personalizada de ChatGPT, use **Refresh** no cadastro do plugin e confirme o novo `tools/list`; um cadastro antigo pode rejeitar `document` antes da chamada ao servidor.
 
 Prompt de leitura:
 

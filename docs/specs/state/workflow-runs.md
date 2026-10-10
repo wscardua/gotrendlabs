@@ -1,5 +1,13 @@
 # Workflow Runs
 
+## WFLOW-20261010-MCP-TOOLS-SCHEMA-001
+
+- Origem: solicitação de alinhar `tools/list` ao documento editorial único, testar validação produtiva sem criação e versionar checklist/modelo sem alterar a política v1.2.
+- Diagnóstico: metadados da conexão MCP direta e `apps/mcp/server.py` já apresentam o schema documental; o cadastro `MyGoTrendLabsMCP-v2` do cliente ainda declara `justification`/`search_coverage` obrigatórios e rejeita `document` antes de alcançar o servidor. A validação direta em produção aceitou o documento e retornou `unresolved_editorial_gaps`, `agent_reported`, sem criação/aprovação/publicação. Captura bruta de `tools/list` no endpoint produtivo ainda pendente.
+- Escopo local: adicionar `checklist_hash` e `record_template_hash` à resposta de política, contrato OpenAPI, testes de `tools/list` real e documentação. Não alterar mercado, grant/permissão, agenda nem versão/hash da política aprovada.
+- Preparação de fechamento: revisão de impacto identificou apenas o recibo de teste fora do índice; ele está incluído no conjunto a versionar. Feature/contrato, testes, OpenAPI, guia, integration map, status, changelogs, lacunas e checklist de fechamento reconciliados. A spec funcional não muda: trata-se de metadados técnicos do MCP, sem regra editorial nova ou fronteira arquitetural nova; ADR adicional não é necessário. Suíte MCP/editorial e adaptador: 56 testes/OK em PostgreSQL isolado; teste integrado repetido após asserções finais: 1/OK; Django check, OpenAPI --check, compilação e diff passaram.
+- Estado: teste integrado de `tools/list` e retorno de política passou com serviço e OAuth; OpenAPI atualizado. Commit local e descrição de PR em preparação; PR/CI/merge/deploy aguardam aprovação da descrição pelo usuário. A atualização do cadastro externo do cliente permanece pendente mesmo após o deploy. [Evidência](../testing/mcp-tools-schema-20261010.md). Não marcar a FEAT-MCP-001 ampla como concluída enquanto Dot/piloto autenticado e teste humano produtivo seguirem pendentes.
+
 ## WFLOW-20261010-EDITORIAL-DOCUMENT-001
 
 - Tipo: alteração da FEAT-MCP-001 / FEAT-EDITORIAL-001. Usuário autorizou implementar documento único e pediu branch nova após buscar `origin/main`.

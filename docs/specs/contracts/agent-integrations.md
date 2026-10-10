@@ -4,7 +4,11 @@ Versão 1.5 — 2026-10-10. Implantada pela PR #148; Dot/piloto autenticado pend
 
 ## Revisão 1.5 — documento único (2026-10-10)
 
+`get_editorial_policy` mantém `version`/`hash` da política aprovada v1.2, calculado sobre `criteria-v1.2.json`. `checklist_hash` e `record_template_hash` identificam separadamente o conteúdo integral do checklist e do modelo, respectivamente (SHA-256 dos bytes UTF-8 servidos). O título “Modelo v1.5” é a versão do formato da ficha, não altera automaticamente a versão da política. Clientes devem reler a política e comparar o hash próprio de cada material quando precisarem detectar atualização de orientação.
+
 `editorial_record` contém somente `policy_version`, `policy_hash` e `document` (texto não vazio, máximo 60.000 caracteres). O documento cobre contexto/duplicidade, pergunta/regras/prazos, fontes com URL e data, contingências/responsável e pendências/conclusão. Campos estruturados anteriores recebem `422`. `GET /admin/agent-editorial-reviews/{id}` fornece o documento persistido e a política atual; a migração 0004 converte registros anteriores sem alterar snapshots históricos. Drafts/agendados exigem nova revisão humana; a 0005 preserva a decisão histórica de mercados já publicados.
+
+`tools/list` de `validate_market_draft`, `create_market_draft` e `update_market_draft` deve publicar exatamente esse `editorial_record`, com `document` de 1 a 60.000 caracteres, `policy_version` até 20 caracteres e `policy_hash` hexadecimal minúsculo de 64 caracteres. `get_market` e `get_draft_review` devolvem `editorial.record`/`record` no mesmo formato. `submit_draft_for_review` recebe apenas `market_id` e `submission` com `expected_revision` e `idempotency_key`; reutiliza o documento persistido. Não converter campos antigos silenciosamente: o cliente deve consolidar fontes e evidências no documento antes do envio; payloads antigos extras são rejeitados pela validação estrita.
 
 `POST /admin/agent-editorial-reviews/{id}/assessment` recebe `editorial_record` com documento, `expected_revision`, `snapshot_hash`, `decision` e `confirmed` booleano. `confirmed=true` é obrigatório para `approved`; devolução/rejeição o dispensam. O endpoint mantém locks, transação, auditoria, snapshot e versionamento. As antigas rotas `/record` e `/decision` deixam de existir. O MCP usa o mesmo schema de draft, mas não possui ferramenta para enviar `confirmed` ou decisão humana. O gate de publicação exige confirmação na decisão documental, além de revisão/hash/política/conteúdo atuais. As revisões 1.1–1.4 ao final são apenas históricas.
 
@@ -20,7 +24,7 @@ REST interno de domínio e ferramentas MCP possuem schemas versionados e mapeame
 
 | Ferramenta | Escopo | Comportamento |
 | --- | --- | --- |
-| `get_editorial_policy` | `editorial:read` | Manual, ficha, E01–E11, versão, hash e data; somente versão aprovada |
+| `get_editorial_policy` | `editorial:read` | Manual, ficha, E01–E11, versão/hash da política, hashes independentes do checklist/modelo e data; somente versão aprovada |
 | `get_taxonomy` | `catalog:read` | IDs e hierarquia disponível; bloqueados não podem ser usados |
 | `search_markets` | `catalog:read` | Busca paginada por texto/estado/evento/período; projeção mínima para duplicidade |
 | `get_market` | `catalog:read` | Conteúdo editorial mínimo; ficha privada somente para integração proprietária |

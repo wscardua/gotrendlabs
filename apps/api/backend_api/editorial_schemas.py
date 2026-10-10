@@ -214,7 +214,9 @@ class PolicyResponse(BaseModel):
     criteria: list[Criterion]
     manual: str
     checklist: str
+    checklist_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     record_template: str
+    record_template_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     as_of: datetime
 
 
