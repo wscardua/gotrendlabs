@@ -2,8 +2,7 @@
 
 ## 2026-10-10 — documento editorial único
 
-MCP `create/update_market_draft` → FastAPI `EditorialRecord.document` → JSON privado versionado; Admin Ops consulta projeção documental e envia assessment com texto/confirmado/decisão; FastAPI cria snapshot, decisão humana e auditoria atomicamente; MarketLifecycleEngine valida decisão vigente, confirmação documental, hash/política/conteúdo antes de publicar. Registros estruturados legados continuam consultáveis e compatíveis.
-
+- Dot/MCP → `EditorialRecord(policy_version, policy_hash, document)` → FastAPI → PostgreSQL; Admin Ops consome o documento persistido e registra assessment com um aceite humano. `/record` e `/decision` deixam de ser contratos ativos. Migration 0004 é uma conversão única dos registros anteriores; snapshots históricos permanecem, mas aprovações convertidas exigem nova revisão. Mobile não consome essas rotas.
 
 - 2026-10-07: ajuste exclusivamente na serialização da resposta DCR (`scope` ausente omitido), PR #140 implantada/Actions 37710313470 aprovado; sem mudanças em MCP, permissões, audience, MFA, banco ou consumidores web/mobile. Smoke público DCR 201 e MCP sem token 401 aprovados; cadastro ChatGPT pendente. WFLOW-20261007-MCP-CHATGPT-DCR-001.
 
@@ -26,7 +25,7 @@ MCP `create/update_market_draft` → FastAPI `EditorialRecord.document` → JSON
 - OAuth interativo e serviço → identidade técnica/delegação verificável → contratos editoriais restritos, ficha/revisões privadas e autoria de draft.
 - MCP → ingestão técnica autenticada FastAPI → `gotrendlabs_system_logs`; mutações → `gotrendlabs_admin_events` na mesma transação. Filtros/aba atividade reutilizam registros existentes.
 - Catálogo/editorial aprovados são dependências; analytics opcional indisponível não vira zero. Bots oficiais e daemon operacional não são executor do radar.
-- Humano no Admin Ops → assessment FastAPI/MFA → ficha/snapshot/evento/parecer numa transação → gate de publicação. Uma ação na UI, sem reenvio humano prévio; /record e /decision anteriores compatíveis.
+- Humano no Admin Ops → assessment FastAPI/MFA → ficha/snapshot/evento/parecer numa transação → gate de publicação. Uma ação na UI; `/record` e `/decision` anteriores removidos.
 - Publicação humana de todos os mercados → MarketLifecycleEngine → lock/revisão/hash/parecer humano vigente → assinatura/abertura. Recusa 409 antes da assinatura; edição invalida aprovação; gate universal de novas publicações, com validação de fechamento antes da assinatura.
 - Runtime: `apps/mcp/server.py` → delegação interna FastAPI → dez rotas editoriais restritas. Admin Ops → gestão/consentimento/parecer FastAPI; grants PostgreSQL exclusivos da API. Deploy preparado com override MCP + import Caddy e CI de PR; primeira instalação desligada. Ativação explícita pós-merge preserva workload privado 0600. Rollout produtivo executado pela PR #136; API/MCP habilitados explicitamente e dados preservados.
 - Evidências: [resultados](../testing/mcp-editorial-results.md), [piloto](../../guides/mcp-editorial-pilot.md). Mobile permanece consumidor dos contratos existentes; campos novos são opcionais/aditivos.

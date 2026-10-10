@@ -67,86 +67,13 @@ class Transfer(RevisionAction):
     responsible_id: int = Field(gt=0)
 
 
-class Source(Strict):
-    url: str = Field(max_length=1000)
-    purpose: Literal["discovery", "resolution", "fallback"]
-    reported_verified: bool = False
-    consulted_at: datetime
-    excerpt: str = Field(default="", max_length=1000)
-
-    @field_validator("url")
-    @classmethod
-    def safe_url(cls, v):
-        u = urlsplit(v)
-        if (
-            u.scheme not in ("http", "https")
-            or not u.hostname
-            or u.username
-            or u.password
-        ):
-            raise ValueError("http(s) URL without credentials required")
-        return v
-
-    @field_validator("consulted_at")
-    @classmethod
-    def aware(cls, v):
-        if not v.tzinfo:
-            raise ValueError("offset required")
-        return v
-
-
-class Evidence(Strict):
-    criterion_id: Literal[
-        "E01", "E02", "E03", "E04", "E05", "E06", "E07", "E08", "E09", "E10", "E11"
-    ]
-    status: Literal["satisfied", "pending", "not_verified"]
-    evidence: str = Field(max_length=2000)
-    source_indexes: list[int] = Field(default_factory=list, max_length=20)
-
-
 class EditorialRecord(Strict):
     policy_version: str = Field(max_length=20)
     policy_hash: str = Field(pattern=r"^[0-9a-f]{64}$")
     document: str = Field(
-        default="",
-        max_length=60000,
+        min_length=1, max_length=60000,
         description="Ficha editorial única: contexto e duplicidade; pergunta, regras e prazos; fontes e evidências com URL e data; contingências, responsável, pendências e conclusão. Relato do agente não é verificação humana.",
     )
-    justification: str = Field(default="", max_length=3000)
-    internal_signals: str = Field(default="", max_length=3000)
-    external_signals: str = Field(default="", max_length=3000)
-    search_coverage: str = Field(default="", max_length=2000)
-    similar_market_ids: list[int] = Field(default_factory=list, max_length=100)
-    sources: list[Source] = Field(default_factory=list, max_length=20)
-    evidence: list[Evidence] = Field(default_factory=list, max_length=11)
-    fallback: str = Field(default="", max_length=2000)
-    gaps: str = Field(default="", max_length=2000)
-    expected_announcement_at: datetime | None = None
-
-    @model_validator(mode="after")
-    def references(self):
-        if not self.document.strip() and (not self.justification or not self.search_coverage):
-            raise ValueError("document or legacy justification and search coverage required")
-        if self.document and any((self.justification, self.search_coverage, self.sources, self.evidence, self.fallback, self.gaps, self.internal_signals, self.external_signals, self.similar_market_ids)):
-            raise ValueError("document cannot be combined with legacy editorial fields")
-        if len({x.criterion_id for x in self.evidence}) != len(self.evidence):
-            raise ValueError("duplicate criterion")
-        if any(
-            i < 0 or i >= len(self.sources)
-            for e in self.evidence
-            for i in e.source_indexes
-        ):
-            raise ValueError("invalid source reference")
-        if self.expected_announcement_at and not self.expected_announcement_at.tzinfo:
-            raise ValueError("announcement offset required")
-        return self
-
-
-class HumanEditorialRecord(Strict):
-    expected_revision: int = Field(ge=1)
-    editorial_record: EditorialRecord
-    submit_for_review: bool = False
-    note: str = Field(default="", max_length=3000)
 
 
 class Option(Strict):
@@ -178,11 +105,6 @@ class Draft(Strict):
             raise ValueError("invalid timezone")
         if self.close_at.utcoffset() != self.close_at.astimezone(zone).utcoffset():
             raise ValueError("offset inconsistent with timezone")
-        if (
-            self.editorial_record.expected_announcement_at
-            and self.close_at >= self.editorial_record.expected_announcement_at
-        ):
-            raise ValueError("close must precede announcement")
         return self
 
 
@@ -205,11 +127,7 @@ class SubmitDraft(RevisionAction):
 class ReviewDecision(RevisionAction):
     snapshot_hash: str = Field(pattern=r"^[a-f0-9]{64}$")
     decision: Literal["approved", "returned", "rejected"]
-    note: str = Field(default="", max_length=3000)
     confirmed: bool = False
-    # Human attestation is explicit, never inferred from an agent report.
-    verified_criteria: list[str] = Field(default_factory=list, max_length=11)
-    verified_source_indexes: list[int] = Field(default_factory=list, max_length=20)
 
 
 class HumanEditorialAssessment(ReviewDecision):

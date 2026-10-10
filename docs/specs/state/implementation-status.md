@@ -121,4 +121,4 @@ Fechamento local em 2026-10-09: suíte completa de 450 testes aprovada em 862.19
 
 ## 2026-10-10 — FEAT-MCP-001 v1.5
 
-Documento editorial único implementado localmente na branch `feature/editorial-single-document-review`, com contrato MCP/FastAPI, formulário Admin Ops, projeção do legado e confirmação humana. O status geral da feature permanece parcial até validação/integração externa e rollout. Validação local: 75 testes de regressão e dois testes adicionais do contrato documental aprovados, além de Django/Ruff/OpenAPI/diff. Evidências e pendência externa constam em WFLOW-20261010-EDITORIAL-DOCUMENT-001.
+Documento editorial único implementado localmente na branch `feature/editorial-single-document-review`, com contrato exclusivo MCP/FastAPI, formulário Admin Ops e confirmação humana. Migration 0004 converte fichas anteriores uma vez e exige nova revisão; não há formato estruturado aceito em runtime. O status geral da feature permanece parcial até validação/integração externa e rollout. Evidências de testes e pendências constam em WFLOW-20261010-EDITORIAL-DOCUMENT-001.

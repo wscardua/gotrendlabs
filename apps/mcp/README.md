@@ -4,7 +4,7 @@ Na revisão editorial 1.5, `create_market_draft` e `update_market_draft` recebem
 `editorial_record` com `policy_version`, `policy_hash` e `document`. O documento
 único reúne pesquisa, regras, fontes com data de consulta, contingências e
 pendências; o agente não envia aprovação nem confirmação humana. O formato
-estruturado E01–E11 anterior continua aceito para clientes legados.
+estruturado E01–E11 anterior não é aceito pelo contrato atual.
 
 Runtime separado, SDK oficial `mcp==1.30.0`, Streamable HTTP stateless em `/mcp`, protocolo testado `2025-11-25`. Nenhum banco/ORM no adaptador. Não execute `django.setup()` neste processo.
 

@@ -2,7 +2,7 @@
 
 ## Revisão 1.5 — documento único
 
-Verificar criação/edição/submissão MCP com `editorial_record.document`; rejeição de mistura dos formatos; projeção legada sem perda de evidência; formulário com um textarea/um checkbox; erro preservando texto e decisão; aprovação sem confirmação ou documento rejeitada; devolução/rejeição sem confirmação; versão/hash obsoletos; bloqueio de publicação após edição e autoria humana. Testes antigos de onze confirmações cobrem apenas compatibilidade de clientes anteriores.
+Verificar criação/edição/submissão MCP somente com `editorial_record.document`; rejeição de qualquer campo estruturado antigo; migração única sem perda de fontes/evidências e sem aprovação herdada; formulário com um textarea/um checkbox; erro preservando texto e decisão; aprovação sem confirmação ou documento rejeitada; devolução/rejeição sem confirmação; política obsoleta exigindo atualização do documento; versão/hash obsoletos; bloqueio de publicação após edição e autoria humana. As antigas rotas `/record` e `/decision` devem retornar `404`.
 
 Estado: testes locais/CI aprovados e infraestrutura produtiva habilitada ([evidências](mcp-production-rollout-20261007.md)); Dot/piloto autenticado pendentes; consultar [resultados e pendências por critério](mcp-editorial-results.md). Usar PostgreSQL isolado real para concorrência/grants, testes unitários para funções e fluxo real para auth/UI/MCP. [Spec](../features/mcp-editorial-agents.md).
 

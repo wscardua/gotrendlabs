@@ -333,17 +333,10 @@ def consent(request):
 
 def _review_pending_label(code):
     labels = {
-        "declared_gaps": _(
-            "A ficha anterior declara lacunas. Confira e trate cada uma no documento."
-        ),
-        "policy_outdated": _("A ficha usa uma versão anterior da política editorial."),
+        "policy_outdated": _("A política editorial mudou. Consulte a política atual e atualize o documento antes de registrar o parecer."),
         "empty_document": _("O documento editorial está vazio."),
     }
-    return labels.get(
-        code,
-        _("Critério %(criterion)s: confira a evidência e as fontes exigidas.")
-        % {"criterion": code},
-    )
+    return labels.get(code, _("Pendência editorial: %(code)s") % {"code": code})
 
 
 @admin_api_required
@@ -362,15 +355,18 @@ def reviews(request, market_id=None):
             if request.method == "POST":
                 if request.POST.get("action") != "assessment":
                     raise ValueError("invalid action")
+                document = request.POST.get("document", "")
+                previous = detail["draft"]["record"]
+                policy = detail if document != previous.get("document", "") else previous
                 payload = {
                     "expected_revision": int(request.POST["expected_revision"]),
                     "snapshot_hash": request.POST["snapshot_hash"],
                     "decision": request.POST["decision"],
                     "confirmed": request.POST.get("confirmed") == "yes",
                     "editorial_record": {
-                        "policy_version": detail["policy_version"],
-                        "policy_hash": detail["policy_hash"],
-                        "document": request.POST.get("document", ""),
+                        "policy_version": policy["policy_version"],
+                        "policy_hash": policy["policy_hash"],
+                        "document": document,
                     },
                 }
                 _request(
@@ -398,12 +394,7 @@ def reviews(request, market_id=None):
                 )
     if detail:
         pending_codes = detail.get("pending", [])
-        detail["pending_labels"] = [
-            _("A ficha anterior contém critérios pendentes. Confira e trate as pendências no documento.")
-        ] if any(code.startswith("E") for code in pending_codes) else []
-        detail["pending_labels"] += [
-            _review_pending_label(code) for code in pending_codes if not code.startswith("E")
-        ]
+        detail["pending_labels"] = [_review_pending_label(code) for code in pending_codes]
     return private(
         render(
             request,

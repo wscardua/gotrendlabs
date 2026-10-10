@@ -7,7 +7,6 @@ from psycopg.types.json import Jsonb
 from apps.api.backend_api import editorial_auth as a
 from apps.api.backend_api.editorial_schemas import (
     Draft,
-    HumanEditorialRecord,
     ReviewDecision,
 )
 from apps.api.backend_api.admin_events import record_admin_event
@@ -166,84 +165,9 @@ def pending(record):
     result = []
     if record["policy_version"] != p["version"] or record["policy_hash"] != p["hash"]:
         result.append("policy_outdated")
-    if record.get("document"):
-        return result
-    entries = {x["criterion_id"]: x for x in record["evidence"]}
-    for c in p["criteria"]:
-        e = entries.get(c["id"])
-        if c["publication_blocking"] and (
-            not e or e["status"] != "satisfied" or not e["evidence"].strip()
-        ):
-            result.append(c["id"])
-        elif c["source_access_required"] and (
-            not e
-            or not e["source_indexes"]
-            or not all(
-                record["sources"][x]["reported_verified"] for x in e["source_indexes"]
-            )
-        ):
-            result.append(c["id"])
-    if (record.get("gaps") or "").strip():
-        result.append("declared_gaps")
+    if not (record.get("document") or "").strip():
+        result.append("empty_document")
     return result
-
-
-def editorial_document(record, market=None):
-    """Project a legacy record into one readable field without changing history."""
-    if record.get("document"):
-        return record["document"]
-    market = market or {}
-    entries = {item["criterion_id"]: item for item in record.get("evidence", [])}
-    questions = {item["id"]: item["question"] for item in policy()["criteria"]}
-    statuses = {"satisfied": "atendido", "pending": "pendente", "not_verified": "não verificado"}
-
-    def add_evidence(lines, codes):
-        for code in codes:
-            item = entries.get(code)
-            if not item or not item.get("evidence", "").strip():
-                continue
-            urls = [record["sources"][index]["url"] for index in item.get("source_indexes", [])]
-            lines.append(f"{questions[code]} [{statuses.get(item['status'], item['status'])}]: {item['evidence']}")
-            if urls:
-                lines.append("Fontes citadas: " + ", ".join(urls))
-
-    lines = [
-        "CONTEXTO E DUPLICIDADE",
-        "Pergunta: " + market.get("title", ""),
-        "Resumo: " + market.get("summary", ""),
-        record.get("justification", ""),
-        "Pesquisa: " + record.get("search_coverage", ""),
-        "Mercados semelhantes: " + ", ".join(map(str, record.get("similar_market_ids", []))),
-        "Sinais internos: " + record.get("internal_signals", ""),
-        "Sinais externos: " + record.get("external_signals", ""),
-    ]
-    add_evidence(lines, ("E01", "E02", "E03"))
-    lines.extend([
-        "", "PERGUNTA, REGRAS E PRAZOS",
-        "Opções: " + ", ".join(option["label"] for option in market.get("options", [])),
-        "Resolução: " + market.get("resolution_criteria", ""),
-        "Fechamento: " + str(market.get("close_at", "")) + " (" + market.get("close_timezone", "") + ")",
-        "Anúncio esperado: " + str(record.get("expected_announcement_at") or "não informado"),
-    ])
-    add_evidence(lines, ("E04", "E05", "E07", "E08"))
-    lines.extend(["", "FONTES E EVIDÊNCIAS"])
-    if market.get("source"):
-        lines.append("Fonte cadastrada no mercado (conferir): " + market["source"])
-    for source in record.get("sources", []):
-        lines.append(f"{source['url']} | uso: {source.get('purpose', '')} | consulta: {source['consulted_at']} | verificação relatada: {source.get('reported_verified', False)} | relato do preparador: {source.get('excerpt', '')}")
-    add_evidence(lines, ("E06", "E09"))
-    lines.extend([
-        "", "CONTINGÊNCIAS E RESPONSÁVEL",
-        record.get("fallback", ""),
-        "Responsável: conferir e identificar no parecer.",
-    ])
-    add_evidence(lines, ("E10",))
-    lines.extend(["", "PENDÊNCIAS E CONCLUSÃO", record.get("gaps", "")])
-    add_evidence(lines, ("E11",))
-    missing = [code for code, item in entries.items() if not item.get("evidence", "").strip()]
-    if missing:
-        lines.append("Sem evidência registrada: " + ", ".join(missing))
-    return "\n".join(lines).strip()
 
 
 def lock_draft(cursor, market_id, integration_id=None):
@@ -308,24 +232,7 @@ def initialize_human_editorial(cursor, market_id):
     record = {
         "policy_version": p["version"],
         "policy_hash": p["hash"],
-        "justification": "Justificativa editorial ainda não documentada.",
-        "search_coverage": "Pesquisa e comparação com mercados semelhantes ainda não documentadas.",
-        "internal_signals": "",
-        "external_signals": "",
-        "similar_market_ids": [],
-        "sources": [],
-        "fallback": "",
-        "gaps": "Completar ficha e verificar critérios E01–E11 antes do parecer.",
-        "expected_announcement_at": None,
-        "evidence": [
-            {
-                "criterion_id": c["id"],
-                "status": "pending",
-                "evidence": "",
-                "source_indexes": [],
-            }
-            for c in p["criteria"]
-        ],
+        "document": "",
     }
     cursor.execute(
         "INSERT INTO gotrendlabs_agent_editorial_drafts(market_id,integration_id,revision,state,record,snapshot_hash,decision) VALUES(%s,NULL,1,'preparation',%s,'','{}'::jsonb)",
@@ -355,8 +262,6 @@ def human_edit_done(cursor, market_id, d):
         return
     revision = d["revision"] + 1
     record = d["record"]
-    for entry in record.get("evidence", []):
-        entry["status"] = "pending"
     cursor.execute(
         "UPDATE gotrendlabs_agent_editorial_drafts SET record=%s WHERE market_id=%s",
         (Jsonb(record), market_id),
@@ -403,7 +308,7 @@ def require_publication_approval(cursor, market_id):
         and decision.get("decision") == "approved"
         and decision.get("evidence_origin") == "human_attestation"
         and bool(decision.get("reviewer_id"))
-        and (not d["record"].get("document") or decision.get("confirmed") is True)
+        and decision.get("confirmed") is True
         and decision.get("expected_revision") == d["revision"] - 1
         and decision.get("snapshot_hash") == d["snapshot_hash"]
         and not pending(d["record"])
@@ -572,38 +477,6 @@ def mutate(cursor, t, operation, payload, market_id=None, request_id=""):
     return response
 
 
-def prepare_human_record(cursor, market_id, payload, staff):
-    m, d = lock_draft(cursor, market_id)
-    version(d, payload.expected_revision)
-    if m["status"] not in {"draft", "scheduled", "open", "locked"}:
-        a.fail("draft_not_editable", 409)
-    record = payload.editorial_record.model_dump(mode="json")
-    if not record.get("document") and not payload.note.strip():
-        a.fail("validation_failed", 422)
-    revision = d["revision"] + 1
-    state = "in_review" if payload.submit_for_review else "preparation"
-    cursor.execute(
-        "UPDATE gotrendlabs_agent_editorial_drafts SET record=%s WHERE market_id=%s",
-        (Jsonb(record), market_id),
-    )
-    h = snapshot(cursor, market_id, None, revision)
-    cursor.execute(
-        "UPDATE gotrendlabs_agent_editorial_drafts SET revision=%s,state=%s,snapshot_hash=%s,decision='{}'::jsonb WHERE market_id=%s RETURNING *",
-        (revision, state, h, market_id),
-    )
-    result = cursor.fetchone()
-    record_admin_event(
-        cursor,
-        staff["id"],
-        "agent.record.human_update",
-        "market",
-        str(market_id),
-        payload.note,
-        integration_id=d["integration_id"],
-    )
-    return result
-
-
 def assess_human_record(cursor, market_id, payload, staff):
     m, d = lock_draft(cursor, market_id)
     version(d, payload.expected_revision)
@@ -611,25 +484,32 @@ def assess_human_record(cursor, market_id, payload, staff):
         a.fail("draft_not_editable", 409)
     if d["snapshot_hash"] != payload.snapshot_hash:
         a.fail("version_conflict", 409)
-    prepared = prepare_human_record(
-        cursor,
-        market_id,
-        HumanEditorialRecord(
-            expected_revision=d["revision"],
-            editorial_record=payload.editorial_record,
-            submit_for_review=True,
-            note=payload.note,
-        ),
-        staff,
+    if "policy_outdated" in pending(d["record"]) and payload.editorial_record.document == d["record"].get("document", ""):
+        from fastapi import HTTPException
+
+        raise HTTPException(
+            422,
+            detail={
+                "code": "validation_failed",
+                "message": "A política editorial mudou. Revise e atualize o documento antes de registrar o parecer.",
+                "pending": ["policy_outdated"],
+            },
+        )
+    revision = d["revision"] + 1
+    cursor.execute(
+        "UPDATE gotrendlabs_agent_editorial_drafts SET record=%s WHERE market_id=%s",
+        (Jsonb(payload.editorial_record.model_dump(mode="json")), market_id),
+    )
+    h = snapshot(cursor, market_id, None, revision)
+    cursor.execute(
+        "UPDATE gotrendlabs_agent_editorial_drafts SET revision=%s,state='in_review',snapshot_hash=%s,decision='{}'::jsonb WHERE market_id=%s",
+        (revision, h, market_id),
     )
     decision = ReviewDecision(
-        expected_revision=prepared["revision"],
-        snapshot_hash=prepared["snapshot_hash"],
+        expected_revision=revision,
+        snapshot_hash=h,
         decision=payload.decision,
-        note=payload.note,
         confirmed=payload.confirmed,
-        verified_criteria=payload.verified_criteria,
-        verified_source_indexes=payload.verified_source_indexes,
     )
     return decide(cursor, market_id, decision, staff)
 
@@ -644,40 +524,20 @@ def decide(cursor, market_id, payload, staff):
         a.fail("draft_not_editable", 409)
     if d["snapshot_hash"] != payload.snapshot_hash:
         a.fail("version_conflict", 409)
-    p = policy()
     record = d["record"]
-    if not record.get("document") and not payload.note.strip():
-        a.fail("validation_failed", 422)
     if payload.decision == "approved":
         from fastapi import HTTPException
 
         missing = pending(record)
-        if record.get("document"):
-            if missing or not payload.confirmed:
-                raise HTTPException(422, detail={"code": "validation_failed", "message": "Aprovação exige documento atual e confirmação humana explícita.", "pending": missing})
-        elif missing or not set(
-            c["id"] for c in p["criteria"] if c["publication_blocking"]
-        ).issubset(payload.verified_criteria):
+        if missing or not payload.confirmed:
             raise HTTPException(
                 422,
                 detail={
                     "code": "validation_failed",
-                    "message": "Aprovação bloqueada: resolva as pendências da ficha e marque os critérios que verificou independentemente.",
+                    "message": "Aprovação exige documento atual e confirmação humana explícita.",
                     "pending": missing,
                 },
             )
-        for e in record.get("evidence", []):
-            c = next(x for x in p["criteria"] if x["id"] == e["criterion_id"])
-            if c["source_access_required"] and not set(e["source_indexes"]).issubset(
-                payload.verified_source_indexes
-            ):
-                raise HTTPException(
-                    422,
-                    detail={
-                        "code": "validation_failed",
-                        "message": "Aprovação bloqueada: abra e confira as fontes exigidas pelos critérios e marque a verificação independente.",
-                    },
-                )
     decision = {
         **payload.model_dump(mode="json"),
         "confirmed": payload.confirmed if payload.decision == "approved" else False,
@@ -697,7 +557,7 @@ def decide(cursor, market_id, payload, staff):
         "agent.review." + payload.decision,
         "market",
         str(market_id),
-        payload.note,
+        "Parecer registrado no documento editorial.",
         integration_id=d["integration_id"],
     )
     # Preserve decisions alongside revisions without overwriting an old snapshot.

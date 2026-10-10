@@ -21,7 +21,7 @@ Agentes externos, começando pelo Dot, precisam consultar o editorial/catálogo 
 
 ## Emenda 2026-10-10 — documento único
 
-Novas fichas usam um documento textual versionado como conteúdo editorial autoritativo. O contrato estruturado anterior permanece aceito para clientes legados; a tela projeta o histórico antigo em texto sem modificar snapshots. A confirmação humana única pertence à decisão sobre revisão/hash específicos e não pode ser enviada pelo MCP. FastAPI continua responsável pela validade da decisão e pelo gate universal de publicação; a interface apenas coleta o parecer. Não há nova tabela ou mudança de fronteira.
+Fichas usam exclusivamente documento textual versionado como conteúdo editorial autoritativo. Uma migração única converte registros estruturados anteriores e preserva os snapshots históricos; o runtime não aceita mais o formato antigo. A confirmação humana única pertence à decisão sobre revisão/hash específicos e não pode ser enviada pelo MCP. FastAPI continua responsável pela validade da decisão e pelo gate universal de publicação; a interface apenas coleta o parecer. Não há nova tabela ou mudança de fronteira.
 
 ## Impacto
 

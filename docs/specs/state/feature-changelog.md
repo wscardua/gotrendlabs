@@ -2,7 +2,7 @@
 
 ## 2026-10-10 — documento único no parecer editorial
 
-FEAT-MCP-001 v1.5: preparação e parecer passam a usar um documento textual versionado. Admin Ops apresenta um campo de texto, uma confirmação humana para aprovar e decisão. A API mantém compatibilidade de leitura/entrada estruturada legada e o MCP aceita o novo documento pelos schemas compartilhados. Gate universal de publicação permanece vinculado a aprovação humana da versão atual.
+FEAT-MCP-001 v1.5: preparação e parecer usam exclusivamente documento textual versionado. Admin Ops apresenta um campo de texto, uma confirmação humana para aprovar e decisão; MCP/FastAPI rejeitam campos estruturados anteriores e as rotas separadas `/record` e `/decision` foram removidas. A migration 0004 converte registros existentes uma vez e exige nova revisão, preservando histórico. Gate universal de publicação permanece vinculado à aprovação humana da versão atual.
 
 
 - 2026-10-07: resposta DCR omite metadados opcionais ausentes; teste com callback HTTPS ChatGPT e `ui_locales`. PR #140 implantada/Actions 37710313470 Success; 51 testes locais e CI PR/main 372 testes/OK (um skip por roles CI ausentes), smoke HTTPS DCR aprovado. Homologação ChatGPT pendente; WFLOW-20261007-MCP-CHATGPT-DCR-001.

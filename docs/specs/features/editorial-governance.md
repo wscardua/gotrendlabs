@@ -36,9 +36,9 @@ formulário. O humano edita o texto, confirma uma vez apenas para aprovar e
 registra a decisão. O backend associa confirmação, autor, data e snapshot à
 revisão atual. A publicação continua protegida pelo gate universal vigente.
 
-Fichas anteriores são projetadas em texto para a tela sem modificar seus
-snapshots; uma nova avaliação salva uma revisão textual. Os registros e
-contratos estruturados anteriores seguem legíveis e aceitos durante transição.
+Uma migração única converte fichas anteriores em documento, preserva seus
+snapshots históricos e exige nova avaliação humana. O runtime aceita somente
+o documento textual; payloads estruturados anteriores são rejeitados.
 As seções 1.2/1.3 abaixo registram o comportamento histórico.
 
 ## Escopo vigente — revisão universal 1.3

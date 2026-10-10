@@ -4,8 +4,8 @@
 
 - Tipo: alteração da FEAT-MCP-001 / FEAT-EDITORIAL-001. Usuário autorizou implementar documento único e pediu branch nova após buscar `origin/main`.
 - Branch: `feature/editorial-single-document-review`, worktree isolado baseado em `origin/main` 9b798ea; alterações do checkout original preservadas.
-- Escopo: contrato JSON aditivo com documento autoritativo, projeção determinística do legado, formulário Admin Ops com um textarea e um check, confirmação humana vinculada a revisão/hash, MCP e documentos atualizados. Sem migration destrutiva.
-- Estado: implementação local concluída e validada. Regressão editorial/MCP/UI: 75 testes aprovados em PostgreSQL isolado (176,212 s); dois testes adicionais do contrato documental e projeção legada aprovados novamente (10,701 s). Django check, Ruff, OpenAPI --check, compilação Python e git diff --check aprovados. Banco de testes descartado ao fim. Dot externo, CI e deploy permanecem sem homologação nesta branch. Próxima ação: revisão da branch e validação externa após integração.
+- Escopo revisado pelo usuário: contrato JSON exclusivo com documento autoritativo, sem campos estruturados, `/record` ou `/decision` em runtime. Admin Ops mantém um textarea e um check; MCP usa o mesmo schema. Migration 0004 converte registros anteriores uma única vez, preserva snapshots e exige nova revisão humana; conversões acima de 60.000 caracteres falham sem truncar.
+- Estado: implementação e migration DEV concluídas; seis fichas convertidas, URLs/evidências preservadas e aprovações anteriores invalidadas. Backup privado ignorado em `.runtime/dev/editorial-before-single-document.json`. Suíte MCP/editorial: 70 testes aprovados; dois testes regressivos representativos de mercado também aprovados. Django check, migration drift, OpenAPI --check e diff passaram. Checklist de feature, contrato, arquitetura, testes e memória conferido. Dot externo, CI e deploy ainda pendentes; a migration exige nova revisão humana dos registros convertidos.
 
 
 ## WFLOW-20261009-THUMBNAIL-RELEVANCE-001
