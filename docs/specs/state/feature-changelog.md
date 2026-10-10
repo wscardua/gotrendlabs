@@ -5,7 +5,7 @@
 - Criação/edição de mercado e conversão de sugestão reutilizam nomes existentes dentro do respectivo pai, preservando IDs, slugs personalizados, avisos e bloqueios.
 - Nomes ambíguos retornam 409 sem criar cadastros. Criação implícita de nomes inéditos e CRUD explícito permanecem compatíveis.
 - Regressão reproduzida na base bcffa5d: PATCH de reclassificação aumentava subcategorias/eventos de 2 para 3; categoria com slug personalizado também provocava erro de unicidade.
-- Testes adaptados ao controle de revisão editorial vigente. Procedimento excepcional de saneamento preparado com backup e auditoria, preservando vínculos de mercados; simulação produtiva validada. Validação: suíte completa 460/OK e cinco testes de saneamento/OK; OpenAPI e diff aprovados. Deploy e execução produtiva pendentes.
+- Testes adaptados ao controle de revisão editorial vigente. Procedimento excepcional de saneamento preparado com backup e auditoria, preservando vínculos de mercados; simulação produtiva validada. Validação: suíte completa 460/OK e cinco testes de saneamento/OK; OpenAPI e diff aprovados. PR #152 integrada e Actions 38095357371 aprovado (465 testes, um skip CI, build/deploy). Saneamento produtivo concluído: duas subcategorias e um evento repetido removidos, evento distinto preservado, mercados/revisões idênticos; backup persistente e auditoria 267/268. Verificação independente sem duplicatas e health ok. [Recibo](../operations/taxonomy-duplicates-20261010.md).
 
 ## 2026-10-10 — alinhamento do catálogo MCP editorial
 

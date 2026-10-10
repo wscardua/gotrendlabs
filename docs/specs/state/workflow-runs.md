@@ -3,7 +3,7 @@
 ## WFLOW-20261010-MARKET-TAXONOMY-FIX
 
 - Tipo: correção de regressão de `FEAT-MARKET-001`; contrato `market-lifecycle.md`.
-- Status: fechamento preparado e validado na branch `feature/new-improvement-20261010`, base `origin/main` bcffa5d; aguardando aprovação explícita da descrição antes de abrir PR.
+- Status: `concluido`; PR #152 integrada em main no merge `704e420`; deploy e saneamento produtivos aprovados. Branch local `feature/new-improvement-20261010` preservada.
 - Escopo: reutilizar categoria/subcategoria/evento existentes por nome e pai, preservando IDs, slugs personalizados, avisos e bloqueios; rejeitar nomes ambíguos sem mutação. Manter criação implícita de nomes inéditos e CRUD explícito.
 - Arquitetura: FastAPI autoritativa; sem novos endpoints, payloads ou migration. Revisar efeitos nos helpers usados também por conversão de sugestões; MCP usa seu resolvedor próprio.
 - Artefatos: FastAPI, testes de integração, feature/contrato, changelog e status. Alterações da pasta original não são incorporadas integralmente.
@@ -11,7 +11,8 @@
 - Fechamento solicitado: reconciliar specs, commit, PR em português com autorização prévia, CI/merge/deploy e saneamento produtivo. Branch local deve ser preservada. Revisão de arquitetura/contrato/consumidores feita; sem mudança de fronteira que exija ADR.
 - Saneamento: inventário produtivo read-only confirmou subgrupos duplicados Geral (54→40) e Ginástica Artística (55→64). Preservar vínculos dos quatro drafts; excluir somente evento repetido 54, mover evento distinto 55 sem uso e excluir subgrupos vazios 54/55. Nenhuma categoria duplicada. Procedimento com simulação, backup 0600/fsync, locks, precondições e auditoria em `operations/taxonomy-duplicates-20261010.md`. Dry-run produtivo SSM `ab3bfd95-fe36-4847-bed0-47b21c0ad94f` aprovado, sem mutação.
 - Validação de fechamento: suíte completa 460 testes/OK (1023,239 s), cinco testes adicionais de saneamento/OK (15,648 s), OpenAPI --check, compilação e diff aprovados. Commit local da implementação `0b5273a`; revisão do intervalo contra bcffa5d sem finding bloqueante, mobile sem consumidor administrativo afetado.
-- Pendências: aprovação da descrição da PR, push/PR, CI/merge/deploy, execução autorizada do saneamento após deploy e recibo final. Nenhuma exclusão produtiva realizada na preparação. Manter branch local.
+- Publicação: descrição aprovada pelo usuário; PR [#152](https://github.com/wscardua/gotrendlabs/pull/152), CI [38094761933](https://github.com/wscardua/gotrendlabs/actions/runs/38094761933) aprovado com 465 testes (um skip CI). Merge `704e420a4679fac5d1a9d04a7675dbe70311aa00`. Actions main [38095357371](https://github.com/wscardua/gotrendlabs/actions/runs/38095357371) aprovado: 465 testes/OK (um skip CI), build e deploy concluídos; SHA e health produtivos conferidos.
+- Encerramento produtivo: SSM `bd8c3f9c-c710-4aa5-bb51-037b55284a76` removeu duas subcategorias e um evento repetido, preservando o evento distinto e integralmente os quatro mercados/revisões. Backup 0600 persistente e auditorias 267/268. Verificação independente `d871a8d5-8828-4a4c-b4a8-a2cdbe86de79` sem duplicatas, resolução repetida READ ONLY correta e health `ok`. Recibos/hashes no runbook. Nenhuma pendência deste escopo; branch local preservada. Encerrado em 2026-10-10.
 
 ## WFLOW-20261010-MCP-TOOLS-SCHEMA-001
 
