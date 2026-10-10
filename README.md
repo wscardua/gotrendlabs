@@ -195,7 +195,7 @@ Skills locais uteis:
 
 ## Operação editorial
 
-Para criar e revisar mercados, consulte o [manual editorial](docs/editorial/manual-editorial.md) e copie a [ficha de mercado](docs/editorial/ficha-de-mercado.md); use o [checklist de publicação](docs/editorial/checklist-de-publicacao.md) na revisão final. O processo cobre pauta, fonte, critérios, revisão antes da publicação, acompanhamento e resolução. Staff consulta os três documentos em `/admin-ops/editorial/` e encontra atalhos no editor de mercados. A [spec editorial](docs/specs/features/editorial-governance.md) define o escopo implementado; o checklist é operacional e não cria bloqueio automatizado de publicação no Admin Ops/API.
+Para criar e revisar mercados, consulte o [manual editorial](docs/editorial/manual-editorial.md) e use a [ficha de mercado](docs/editorial/ficha-de-mercado.md) como modelo do documento único do parecer; o [checklist de publicação](docs/editorial/checklist-de-publicacao.md) orienta a conferência humana sem criar campos adicionais. O documento reúne fontes, URLs e evidências. Staff encontra esses materiais em `/admin-ops/editorial/` e atalhos no editor de mercados. A [spec editorial](docs/specs/features/editorial-governance.md) define o escopo; a FastAPI bloqueia a publicação sem aprovação humana atual e configuração válida de fechamento.
 
 ## Thumbnails IA no Admin Ops
 

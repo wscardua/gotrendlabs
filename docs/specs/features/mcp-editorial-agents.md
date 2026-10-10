@@ -1,10 +1,10 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.4
+versao: 1.5
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-07
+ultima_atualizacao: 2026-10-10
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
@@ -30,6 +30,16 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 ---
 
 # MCP editorial e gestão de integrações
+
+## Revisão 1.5 — documento editorial único (2026-10-10)
+
+Todos os drafts MCP e pareceres humanos usam exclusivamente `editorial_record` com `policy_version`, `policy_hash` e `document` não vazio (até 60.000 caracteres). O documento reúne contexto e busca de duplicidade; pergunta, regras e prazos; URLs, datas de consulta, extratos e origem dos relatos; contingências e responsável; pendências e conclusão. O agente relata pesquisa e limitações, sem declarar conferência humana. Campos estruturados E01–E11, fontes separadas e atestações por critério não fazem parte do contrato atual; payloads com esses campos recebem `422`.
+
+Admin Ops mostra esse documento em um textarea, uma confirmação humana e a decisão. Uma avaliação humana salva o texto como novo registro versionado. Aprovação exige documento não vazio, política atual, confirmação explícita, revisão/hash atuais e a linha `Pendências para aprovação: nenhuma` na seção `PENDÊNCIAS E CONCLUSÃO`. Enquanto houver pendência declarada, o revisor deve resolvê-la e atualizar o texto antes da aprovação. Se houver linha `Anúncio esperado: ...`, a FastAPI exige timestamp com offset e `close_at` anterior ao anúncio na validação, mutações, parecer e publicação. Se a política mudou, o revisor precisa atualizar o documento antes de registrar o parecer. Devolver/rejeitar não exigem confirmação. A suficiência factual restante é responsabilidade do revisor; o sistema não interpreta semanticamente o texto. Parecer e publicação seguem ações separadas; o gate universal permanece.
+
+Uma migração única converte fichas estruturadas já persistidas para documento e preserva snapshots anteriores. Drafts/agendados convertidos voltam à preparação e exigem novo parecer antes de publicar. A migration corretiva 0005 conserva a última decisão humana como histórico corrente dos mercados já publicados ou terminais, que não podem voltar à publicação; não transforma essa decisão em nova aprovação documental. A conversão falha se o texto ultrapassar 60.000 caracteres, para evitar perda silenciosa. Não existe leitor ou escritor de ficha estruturada em runtime.
+
+As seções anteriores à revisão 1.5 abaixo permanecem como histórico da decisão; não descrevem payloads ou rotas aceitos atualmente. E01–E11 continuam orientação editorial, sem onze controles no parecer novo.
 
 ## 1. Objetivo e estado
 

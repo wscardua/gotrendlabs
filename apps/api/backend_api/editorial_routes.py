@@ -14,7 +14,6 @@ from apps.api.backend_api.db import get_connection
 from apps.api.backend_api import editorial_auth as a, editorial_service as domain
 from apps.api.backend_api.editorial_schemas import (
     HumanEditorialAssessment,
-    HumanEditorialRecord,
     ResponsibleOptions,
     PolicyResponse,
     TaxonomyResponse,
@@ -36,7 +35,6 @@ from apps.api.backend_api.editorial_schemas import (
     CreateDraft,
     UpdateDraft,
     SubmitDraft,
-    ReviewDecision,
 )
 from apps.api.backend_api.editorial_oauth import Server
 from apps.api.backend_api.admin_events import record_admin_event
@@ -868,42 +866,24 @@ def review_detail(market_id: int, authorization: str = Header(default="")):
     with get_connection() as c:
         with c.cursor() as cur:
             staff(cur, authorization)
-            m, d = domain.lock_draft(cur, market_id)
+            _, d = domain.lock_draft(cur, market_id)
+            market = domain.get_market(cur, market_id, None)
+            current_policy = domain.policy()
             cur.execute(
                 "SELECT revision,snapshot,snapshot_hash,created_at FROM gotrendlabs_agent_editorial_revisions WHERE draft_id=%s ORDER BY revision DESC LIMIT 100",
                 (market_id,),
             )
             return {
-                "market": m,
+                "market": market,
                 "draft": d,
+                "document": d["record"].get("document", ""),
+                "policy_version": current_policy["version"],
+                "policy_hash": current_policy["hash"],
                 "revisions": cur.fetchall(),
                 "pending": domain.pending(d["record"]),
-                "criteria": domain.policy()["criteria"],
                 "publication_gate_enforced": True,
                 "publication_gate_scope": "all_markets",
             }
-
-
-@router.post("/admin/agent-editorial-reviews/{market_id}/decision")
-def decision(
-    market_id: int, payload: ReviewDecision, authorization: str = Header(default="")
-):
-    with get_connection() as c:
-        with c.cursor() as cur:
-            return domain.decide(cur, market_id, payload, staff(cur, authorization))
-
-
-@router.patch("/admin/agent-editorial-reviews/{market_id}/record")
-def prepare_record(
-    market_id: int,
-    payload: HumanEditorialRecord,
-    authorization: str = Header(default=""),
-):
-    with get_connection() as c:
-        with c.cursor() as cur:
-            return domain.prepare_human_record(
-                cur, market_id, payload, staff(cur, authorization)
-            )
 
 
 @router.post("/admin/agent-editorial-reviews/{market_id}/assessment")

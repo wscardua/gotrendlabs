@@ -1,13 +1,12 @@
 import json
 import re
-from pathlib import Path
 from unittest.mock import patch
 
 from django.conf import settings
 from django.test import RequestFactory, SimpleTestCase, override_settings
 from django.urls import resolve, reverse
 
-from apps.web.django.admin_ops.editorial_content import EDITORIAL_DIR, load_editorial_reference
+from apps.web.django.admin_ops.editorial_content import EDITORIAL_DIR
 from apps.web.django.admin_ops.views import editorial_reference
 
 
@@ -34,8 +33,10 @@ class EditorialReferenceTests(SimpleTestCase):
             content = response.content.decode()
             self.assertEqual(response.status_code, 200)
             self.assertIn(expected, content)
-            self.assertIn('id="E06"', content)
-            self.assertIn("Versão 1.2", content)
+            if view == "checklist":
+                self.assertIn('id="E06"', content)
+            if view == "ficha":
+                self.assertIn("CONTEXTO E DUPLICIDADE", content)
             self.assertEqual(response["Cache-Control"], "private, no-store")
 
     def test_guest_and_non_staff_cannot_read_editorial(self):
@@ -70,7 +71,7 @@ class EditorialReferenceTests(SimpleTestCase):
         self.assertTrue(all(rule["publication_blocking"] for rule in rules["criteria"]))
         self.assertTrue(next(rule for rule in rules["criteria"] if rule["id"] == "E06")["source_access_required"])
         self.assertTrue(rules["human_decision_required"])
-        self.assertEqual(set(re.findall(r"^\| (E\d\d) \|", form, re.M)), {row[0] for row in rows})
+        self.assertIn("checklist E01–E11", form)
 
     def test_markdown_html_is_escaped(self):
         from apps.web.django.admin_ops.editorial_content import _render_document

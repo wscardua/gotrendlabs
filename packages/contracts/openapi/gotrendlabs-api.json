@@ -2918,54 +2918,11 @@
       "EditorialRecord": {
         "additionalProperties": false,
         "properties": {
-          "evidence": {
-            "items": {
-              "$ref": "#/components/schemas/Evidence"
-            },
-            "maxItems": 11,
-            "title": "Evidence",
-            "type": "array"
-          },
-          "expected_announcement_at": {
-            "anyOf": [
-              {
-                "format": "date-time",
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Expected Announcement At"
-          },
-          "external_signals": {
-            "default": "",
-            "maxLength": 3000,
-            "title": "External Signals",
-            "type": "string"
-          },
-          "fallback": {
-            "default": "",
-            "maxLength": 2000,
-            "title": "Fallback",
-            "type": "string"
-          },
-          "gaps": {
-            "default": "",
-            "maxLength": 2000,
-            "title": "Gaps",
-            "type": "string"
-          },
-          "internal_signals": {
-            "default": "",
-            "maxLength": 3000,
-            "title": "Internal Signals",
-            "type": "string"
-          },
-          "justification": {
-            "maxLength": 3000,
+          "document": {
+            "description": "Ficha editorial \u00fanica: contexto e duplicidade; pergunta, regras e prazos; fontes e evid\u00eancias com URL e data; conting\u00eancias, respons\u00e1vel, pend\u00eancias e conclus\u00e3o. Relato do agente n\u00e3o \u00e9 verifica\u00e7\u00e3o humana.",
+            "maxLength": 60000,
             "minLength": 1,
-            "title": "Justification",
+            "title": "Document",
             "type": "string"
           },
           "policy_hash": {
@@ -2977,35 +2934,12 @@
             "maxLength": 20,
             "title": "Policy Version",
             "type": "string"
-          },
-          "search_coverage": {
-            "maxLength": 2000,
-            "minLength": 1,
-            "title": "Search Coverage",
-            "type": "string"
-          },
-          "similar_market_ids": {
-            "items": {
-              "type": "integer"
-            },
-            "maxItems": 100,
-            "title": "Similar Market Ids",
-            "type": "array"
-          },
-          "sources": {
-            "items": {
-              "$ref": "#/components/schemas/Source"
-            },
-            "maxItems": 20,
-            "title": "Sources",
-            "type": "array"
           }
         },
         "required": [
           "policy_version",
           "policy_hash",
-          "justification",
-          "search_coverage"
+          "document"
         ],
         "title": "EditorialRecord",
         "type": "object"
@@ -3036,57 +2970,6 @@
           "message"
         ],
         "title": "EmailConfirmationResponse",
-        "type": "object"
-      },
-      "Evidence": {
-        "additionalProperties": false,
-        "properties": {
-          "criterion_id": {
-            "enum": [
-              "E01",
-              "E02",
-              "E03",
-              "E04",
-              "E05",
-              "E06",
-              "E07",
-              "E08",
-              "E09",
-              "E10",
-              "E11"
-            ],
-            "title": "Criterion Id",
-            "type": "string"
-          },
-          "evidence": {
-            "maxLength": 2000,
-            "title": "Evidence",
-            "type": "string"
-          },
-          "source_indexes": {
-            "items": {
-              "type": "integer"
-            },
-            "maxItems": 20,
-            "title": "Source Indexes",
-            "type": "array"
-          },
-          "status": {
-            "enum": [
-              "satisfied",
-              "pending",
-              "not_verified"
-            ],
-            "title": "Status",
-            "type": "string"
-          }
-        },
-        "required": [
-          "criterion_id",
-          "status",
-          "evidence"
-        ],
-        "title": "Evidence",
         "type": "object"
       },
       "FeedbackRewardPayload": {
@@ -3230,6 +3113,11 @@
       "HumanEditorialAssessment": {
         "additionalProperties": false,
         "properties": {
+          "confirmed": {
+            "default": false,
+            "title": "Confirmed",
+            "type": "boolean"
+          },
           "decision": {
             "enum": [
               "approved",
@@ -3247,73 +3135,19 @@
             "title": "Expected Revision",
             "type": "integer"
           },
-          "note": {
-            "maxLength": 3000,
-            "minLength": 1,
-            "title": "Note",
-            "type": "string"
-          },
           "snapshot_hash": {
             "pattern": "^[a-f0-9]{64}$",
             "title": "Snapshot Hash",
             "type": "string"
-          },
-          "verified_criteria": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 11,
-            "title": "Verified Criteria",
-            "type": "array"
-          },
-          "verified_source_indexes": {
-            "items": {
-              "type": "integer"
-            },
-            "maxItems": 20,
-            "title": "Verified Source Indexes",
-            "type": "array"
           }
         },
         "required": [
           "expected_revision",
           "snapshot_hash",
           "decision",
-          "note",
           "editorial_record"
         ],
         "title": "HumanEditorialAssessment",
-        "type": "object"
-      },
-      "HumanEditorialRecord": {
-        "additionalProperties": false,
-        "properties": {
-          "editorial_record": {
-            "$ref": "#/components/schemas/EditorialRecord"
-          },
-          "expected_revision": {
-            "minimum": 1.0,
-            "title": "Expected Revision",
-            "type": "integer"
-          },
-          "note": {
-            "maxLength": 3000,
-            "minLength": 1,
-            "title": "Note",
-            "type": "string"
-          },
-          "submit_for_review": {
-            "default": false,
-            "title": "Submit For Review",
-            "type": "boolean"
-          }
-        },
-        "required": [
-          "expected_revision",
-          "editorial_record",
-          "note"
-        ],
-        "title": "HumanEditorialRecord",
         "type": "object"
       },
       "IntegrationConfig": {
@@ -6481,60 +6315,6 @@
         "title": "ResponsibleOptions",
         "type": "object"
       },
-      "ReviewDecision": {
-        "additionalProperties": false,
-        "properties": {
-          "decision": {
-            "enum": [
-              "approved",
-              "returned",
-              "rejected"
-            ],
-            "title": "Decision",
-            "type": "string"
-          },
-          "expected_revision": {
-            "minimum": 1.0,
-            "title": "Expected Revision",
-            "type": "integer"
-          },
-          "note": {
-            "maxLength": 3000,
-            "minLength": 1,
-            "title": "Note",
-            "type": "string"
-          },
-          "snapshot_hash": {
-            "pattern": "^[a-f0-9]{64}$",
-            "title": "Snapshot Hash",
-            "type": "string"
-          },
-          "verified_criteria": {
-            "items": {
-              "type": "string"
-            },
-            "maxItems": 11,
-            "title": "Verified Criteria",
-            "type": "array"
-          },
-          "verified_source_indexes": {
-            "items": {
-              "type": "integer"
-            },
-            "maxItems": 20,
-            "title": "Verified Source Indexes",
-            "type": "array"
-          }
-        },
-        "required": [
-          "expected_revision",
-          "snapshot_hash",
-          "decision",
-          "note"
-        ],
-        "title": "ReviewDecision",
-        "type": "object"
-      },
       "ReviewResponse": {
         "properties": {
           "decision": {
@@ -6954,48 +6734,6 @@
           "state"
         ],
         "title": "SocialAuthStartResponse",
-        "type": "object"
-      },
-      "Source": {
-        "additionalProperties": false,
-        "properties": {
-          "consulted_at": {
-            "format": "date-time",
-            "title": "Consulted At",
-            "type": "string"
-          },
-          "excerpt": {
-            "default": "",
-            "maxLength": 1000,
-            "title": "Excerpt",
-            "type": "string"
-          },
-          "purpose": {
-            "enum": [
-              "discovery",
-              "resolution",
-              "fallback"
-            ],
-            "title": "Purpose",
-            "type": "string"
-          },
-          "reported_verified": {
-            "default": false,
-            "title": "Reported Verified",
-            "type": "boolean"
-          },
-          "url": {
-            "maxLength": 1000,
-            "title": "Url",
-            "type": "string"
-          }
-        },
-        "required": [
-          "url",
-          "purpose",
-          "consulted_at"
-        ],
-        "title": "Source",
         "type": "object"
       },
       "SubmitDraft": {
@@ -8640,126 +8378,6 @@
           }
         },
         "summary": "Assessment",
-        "tags": [
-          "editorial-integrations"
-        ]
-      }
-    },
-    "/admin/agent-editorial-reviews/{market_id}/decision": {
-      "post": {
-        "operationId": "decision_admin_agent_editorial_reviews__market_id__decision_post",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "market_id",
-            "required": true,
-            "schema": {
-              "title": "Market Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Authorization",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ReviewDecision"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Decision",
-        "tags": [
-          "editorial-integrations"
-        ]
-      }
-    },
-    "/admin/agent-editorial-reviews/{market_id}/record": {
-      "patch": {
-        "operationId": "prepare_record_admin_agent_editorial_reviews__market_id__record_patch",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "market_id",
-            "required": true,
-            "schema": {
-              "title": "Market Id",
-              "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "default": "",
-              "title": "Authorization",
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/HumanEditorialRecord"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Prepare Record",
         "tags": [
           "editorial-integrations"
         ]

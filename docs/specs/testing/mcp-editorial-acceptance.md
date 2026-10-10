@@ -1,5 +1,11 @@
 # Aceite e regressão — FEAT-MCP-001
 
+## Revisão 1.5 — documento único
+
+Verificar criação/edição/submissão MCP somente com `editorial_record.document`; rejeição de qualquer campo estruturado antigo; migração única sem perda de fontes/evidências e sem aprovação herdada; formulário com um textarea/um checkbox; erro preservando texto e decisão; aprovação sem confirmação ou documento rejeitada; devolução/rejeição sem confirmação; política obsoleta exigindo atualização do documento; versão/hash obsoletos; bloqueio de publicação após edição e autoria humana. As antigas rotas `/record` e `/decision` devem retornar `404`.
+
+Correção de revisão: documento com pendência declarada não pode ser aprovado até a seção final conter `Pendências para aprovação: nenhuma`; o bloqueio deve fazer rollback de texto, revisão e decisão. Anúncio esperado com timestamp/offset inválido, duplicado ou anterior/igual ao fechamento deve receber `422` em criação, edição, parecer e publicação. A migração 0005 deve preservar a decisão histórica de mercados já publicados/terminais, sem restaurar aprovação de drafts/agendados nem de revisões documentais novas.
+
 Estado: testes locais/CI aprovados e infraestrutura produtiva habilitada ([evidências](mcp-production-rollout-20261007.md)); Dot/piloto autenticado pendentes; consultar [resultados e pendências por critério](mcp-editorial-results.md). Usar PostgreSQL isolado real para concorrência/grants, testes unitários para funções e fluxo real para auth/UI/MCP. [Spec](../features/mcp-editorial-agents.md).
 
 | ID | Cenário | Evidência exigida |

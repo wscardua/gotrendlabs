@@ -138,26 +138,15 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "editorial_record": {
                 "policy_version": policy["version"],
                 "policy_hash": policy["hash"],
-                "justification": "Uncertain future event",
-                "search_coverage": "Catalog fully checked at this instant, similarity is only a suggestion",
-                "sources": [
-                    {
-                        "url": "https://example.org/mission",
-                        "purpose": "resolution",
-                        "reported_verified": True,
-                        "consulted_at": a.now().isoformat(),
-                        "excerpt": "Launch schedule pending",
-                    }
-                ],
-                "evidence": [
-                    {
-                        "criterion_id": x["id"],
-                        "status": "satisfied",
-                        "evidence": "Agent report only, human must verify",
-                        "source_indexes": [0] if x["source_access_required"] else [],
-                    }
-                    for x in policy["criteria"]
-                ],
+                "document": (
+                    "CONTEXTO E DUPLICIDADE\nUncertain future event. Catalog checked.\n\n"
+                    "PERGUNTA, REGRAS E PRAZOS\nOfficial launch announcement before deadline.\n\n"
+                    "FONTES E EVIDÊNCIAS\nhttps://example.org/mission consulted by agent at "
+                    + a.now().isoformat()
+                    + ". Launch schedule pending; human verification required.\n\n"
+                    "CONTINGÊNCIAS E RESPONSÁVEL\nHuman operator must monitor.\n\n"
+                    "PENDÊNCIAS E CONCLUSÃO\nHuman must verify before approval."
+                ),
             },
             "idempotency_key": "draft-test-key",
         }
@@ -203,6 +192,32 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "/integrations/editorial/drafts",
             json=payload or self.payload,
             headers=headers or self.agentheaders,
+        )
+
+    def approved_record(self):
+        return {
+            **self.payload["editorial_record"],
+            "document": self.payload["editorial_record"]["document"].replace(
+                "PENDÊNCIAS E CONCLUSÃO\nHuman must verify before approval.",
+                "PENDÊNCIAS E CONCLUSÃO\nPendências para aprovação: nenhuma\nConclusão: revisão humana concluída.",
+            ),
+        }
+
+    def assess(self, market_id, revision, snapshot_hash, decision="approved", document=None, headers=None):
+        record = self.approved_record() if decision == "approved" else self.payload["editorial_record"]
+        return self.client.post(
+            f"/admin/agent-editorial-reviews/{market_id}/assessment",
+            json={
+                "expected_revision": revision,
+                "snapshot_hash": snapshot_hash,
+                "editorial_record": {
+                    **record,
+                    **({"document": document} if document is not None else {}),
+                },
+                "decision": decision,
+                "confirmed": decision == "approved",
+            },
+            headers=headers or self.human,
         )
 
     def test_codex_registration_ignores_unknown_metadata_without_granting_permissions(
@@ -574,19 +589,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             ).status_code,
             409,
         )
-        decision = {
-            "expected_revision": 2,
-            "snapshot_hash": submitted["snapshot_hash"],
-            "decision": "approved",
-            "note": "Human opened and checked",
-            "verified_criteria": [x["id"] for x in domain.policy()["criteria"]],
-            "verified_source_indexes": [0],
-        }
-        r = self.client.post(
-            f"/admin/agent-editorial-reviews/{mid}/decision",
-            json=decision,
-            headers=self.human,
-        )
+        r = self.assess(mid, 2, submitted["snapshot_hash"])
         self.assertEqual(r.status_code, 200, r.text)
         self.assertEqual(
             self.client.patch(
@@ -617,15 +620,15 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         self.assertEqual(r.status_code, 409, r.text)
         r = self.client.patch(
             "/admin/markets/" + d["slug"],
-            json={**human, "expected_revision": 3},
+            json={**human, "expected_revision": 4},
             headers=self.human,
         )
         self.assertEqual(r.status_code, 200, r.text)
         draft = EditorialDraft.objects.get(market_id=mid)
-        self.assertEqual(draft.revision, 4)
+        self.assertEqual(draft.revision, 5)
         self.assertEqual(draft.state, "preparation")
         self.assertEqual(draft.decision, {})
-        self.assertEqual(EditorialRevision.objects.filter(draft_id=mid).count(), 4)
+        self.assertEqual(EditorialRevision.objects.filter(draft_id=mid).count(), 5)
         self.assertEqual(
             self.client.patch(
                 f"/integrations/editorial/drafts/{mid}",
@@ -634,80 +637,6 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             ).status_code,
             409,
         )
-
-    def test_pending_evidence_cannot_approve_and_returns_reopen(self):
-        p = {
-            **self.payload,
-            "editorial_record": {**self.payload["editorial_record"], "evidence": []},
-        }
-        r = self.create(p)
-        self.assertEqual(r.status_code, 200, r.text)
-        mid = r.json()["market_id"]
-        r = self.client.post(
-            f"/integrations/editorial/drafts/{mid}/submit",
-            json={"expected_revision": 1, "idempotency_key": "submit-001"},
-            headers=self.agentheaders,
-        )
-        self.assertEqual(r.status_code, 200, r.text)
-        decision = {
-            "expected_revision": 2,
-            "snapshot_hash": r.json()["snapshot_hash"],
-            "decision": "approved",
-            "note": "cannot approve pending",
-        }
-        self.assertEqual(
-            self.client.post(
-                f"/admin/agent-editorial-reviews/{mid}/decision",
-                json=decision,
-                headers=self.human,
-            ).status_code,
-            422,
-        )
-        r = self.client.post(
-            f"/admin/agent-editorial-reviews/{mid}/decision",
-            json={**decision, "decision": "returned"},
-            headers=self.human,
-        )
-        self.assertEqual(r.status_code, 200, r.text)
-        r = self.client.patch(
-            f"/integrations/editorial/drafts/{mid}",
-            json={
-                **self.payload,
-                "expected_revision": 3,
-                "idempotency_key": "edit-returned",
-            },
-            headers=self.agentheaders,
-        )
-        self.assertEqual(r.status_code, 200, r.text)
-
-        # A rejected revision is final for the agent; only human operations may advance it.
-        r = self.client.post(
-            f"/integrations/editorial/drafts/{mid}/submit",
-            json={"expected_revision": 4, "idempotency_key": "submit-rejected"},
-            headers=self.agentheaders,
-        )
-        self.assertEqual(r.status_code, 200, r.text)
-        r = self.client.post(
-            f"/admin/agent-editorial-reviews/{mid}/decision",
-            json={
-                "expected_revision": 5,
-                "snapshot_hash": r.json()["snapshot_hash"],
-                "decision": "rejected",
-                "note": "Human rejects this proposal",
-            },
-            headers=self.human,
-        )
-        self.assertEqual(r.status_code, 200, r.text)
-        r = self.client.patch(
-            f"/integrations/editorial/drafts/{mid}",
-            json={
-                **self.payload,
-                "expected_revision": 6,
-                "idempotency_key": "edit-rejected",
-            },
-            headers=self.agentheaders,
-        )
-        self.assertEqual(r.status_code, 409, r.text)
 
     def test_market_projection_preserves_required_nulls(self):
         from apps.api.backend_api.editorial_schemas import MarketProjection
@@ -736,18 +665,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         )
         self.assertEqual(submitted.status_code, 200, submitted.text)
         data = submitted.json()
-        approved = self.client.post(
-            f"/admin/agent-editorial-reviews/{mid}/decision",
-            json={
-                "expected_revision": data["revision"],
-                "snapshot_hash": data["snapshot_hash"],
-                "decision": "approved",
-                "note": "Isolated human attestation",
-                "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-                "verified_source_indexes": [0],
-            },
-            headers=self.human,
-        )
+        approved = self.assess(mid, data["revision"], data["snapshot_hash"])
         self.assertEqual(approved.status_code, 200, approved.text)
         return approved.json()
 
@@ -790,16 +708,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                         headers=self.agentheaders,
                     ).json()
                     if state in ("returned", "rejected"):
-                        decision = self.client.post(
-                            f"/admin/agent-editorial-reviews/{mid}/decision",
-                            json={
-                                "expected_revision": 2,
-                                "snapshot_hash": submitted["snapshot_hash"],
-                                "decision": state,
-                                "note": "Needs changes",
-                            },
-                            headers=self.human,
-                        )
+                        decision = self.assess(mid, 2, submitted["snapshot_hash"], state)
                         self.assertEqual(decision.status_code, 200, decision.text)
                 blocked = self.client.post(
                     "/admin/markets/" + d["slug"] + "/publish",
@@ -868,14 +777,14 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                 "close_at": self.payload["close_at"],
                 "close_timezone": "America/Sao_Paulo",
                 "thumb_color": "#334155",
-                "expected_revision": 3,
+                "expected_revision": 4,
             },
             headers=self.human,
         )
         self.assertEqual(changed.status_code, 200, changed.text)
         draft = EditorialDraft.objects.get(market_id=mid)
         self.assertEqual(draft.state, "preparation")
-        self.assertEqual(draft.revision, 4)
+        self.assertEqual(draft.revision, 5)
         self.assertEqual(draft.decision, {})
         blocked = self.client.post(
             "/admin/markets/" + d["slug"] + "/publish", json={}, headers=self.human
@@ -904,174 +813,38 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         self.assertEqual(published.status_code, 200, published.text)
         self.assertEqual(Market.objects.get(id=d["market_id"]).status, "open")
 
-    def test_human_prepares_record_resubmits_and_reviews_without_executor(self):
-        d = self.create().json()
-        mid = d["market_id"]
-        endpoint = f"/admin/agent-editorial-reviews/{mid}/record"
-        payload = {
-            "expected_revision": 1,
-            "editorial_record": self.payload["editorial_record"],
-            "submit_for_review": True,
-            "note": "Human checked current draft",
-        }
-        for headers in (
-            {},
-            self.memberheaders,
-            self.agentheaders,
-            self.session(self.staff, False),
-        ):
-            self.assertIn(
-                self.client.patch(endpoint, json=payload, headers=headers).status_code,
-                (401, 403),
-            )
-        submitted = self.client.patch(endpoint, json=payload, headers=self.human)
-        self.assertEqual(submitted.status_code, 200, submitted.text)
-        self.assertEqual(submitted.json()["state"], "in_review")
-        self.assertEqual(submitted.json()["revision"], 2)
-        self.assertEqual(
-            self.client.patch(
-                endpoint, json=payload, headers=self.superheaders
-            ).status_code,
-            409,
-        )
-        self.assertTrue(
-            AdminEvent.objects.filter(
-                action="agent.record.human_update", integration_id=self.iid
-            ).exists()
-        )
-        self.assertEqual(
-            self.client.post(
-                "/admin/markets/" + d["slug"] + "/publish", json={}, headers=self.human
-            ).status_code,
-            409,
-        )
-        reviewed = self.client.post(
-            f"/admin/agent-editorial-reviews/{mid}/decision",
-            json={
-                "expected_revision": 2,
-                "snapshot_hash": submitted.json()["snapshot_hash"],
-                "decision": "approved",
-                "note": "Independently checked",
-                "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-                "verified_source_indexes": [0],
-            },
-            headers=self.superheaders,
-        )
-        self.assertEqual(reviewed.status_code, 200, reviewed.text)
-        changed = self.client.patch(
-            endpoint,
-            json={**payload, "expected_revision": 3, "submit_for_review": False},
-            headers=self.human,
-        )
-        self.assertEqual(changed.status_code, 200, changed.text)
-        self.assertEqual(changed.json()["state"], "preparation")
-        self.assertEqual(changed.json()["decision"], {})
-        self.assertEqual(EditorialRevision.objects.filter(draft_id=mid).count(), 4)
-        Market.objects.filter(id=mid).update(status="open")
-        self.assertEqual(
-            self.client.patch(
-                endpoint, json={**payload, "expected_revision": 4}, headers=self.human
-            ).status_code,
-            200,
-        )
-
-    def test_human_record_validation_pending_and_web_submission(self):
+    def test_human_web_submission_and_stale_version(self):
         from django.test import Client
         from apps.web.django.accounts.api_client import AuthAPIError
-        import copy
 
-        d = self.create().json()
-        mid = d["market_id"]
-        endpoint = f"/admin/agent-editorial-reviews/{mid}/record"
-        record = copy.deepcopy(self.payload["editorial_record"])
-        record["evidence"][0]["status"] = "pending"
-        record["gaps"] = "Real unresolved gap"
-        payload = {
-            "expected_revision": 1,
-            "editorial_record": record,
-            "submit_for_review": True,
-            "note": "Retain real gaps",
-        }
-        invalid = copy.deepcopy(payload)
-        invalid["editorial_record"]["evidence"][0]["source_indexes"] = [99]
-        self.assertEqual(
-            self.client.patch(endpoint, json=invalid, headers=self.human).status_code,
-            422,
-        )
-        self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 1)
+        created = self.create().json()
+        mid = created["market_id"]
         web = Client(enforce_csrf_checks=True)
         session = web.session
         session["auth_api_token"] = self.human["Authorization"][7:]
-        session["auth_api_user"] = {
-            "id": self.staff.id,
-            "is_staff": True,
-            "display_name": "Editor",
-            "handle": "@editor",
-            "preferred_language": "pt-br",
-        }
+        session["auth_api_user"] = {"id": self.staff.id, "is_staff": True, "display_name": "Editor", "handle": "@editor", "preferred_language": "pt-br"}
         session.save()
 
         def bridge(method, path, payload=None, token=None, **kwargs):
-            r = self.client.request(
-                method, path, json=payload, headers={"Authorization": "Bearer " + token}
-            )
-            if r.status_code >= 400:
-                raise AuthAPIError("API error", r.status_code)
-            return r.json()
+            response = self.client.request(method, path, json=payload, headers={"Authorization": "Bearer " + token})
+            if response.status_code >= 400:
+                raise AuthAPIError("API error", response.status_code)
+            return response.json()
 
         url = f"/admin-ops/agent-reviews/{mid}/"
-        data = {
-            "action": "prepare-submit",
-            "expected_revision": 1,
-            "preparation_note": "Human retains gap",
-            **{
-                key: record.get(key, "")
-                for key in (
-                    "justification",
-                    "search_coverage",
-                    "internal_signals",
-                    "external_signals",
-                    "fallback",
-                    "gaps",
-                )
-            },
-            "reported_sources": ["0"],
-            "source_url_0": record["sources"][0]["url"],
-            "source_excerpt_0": record["sources"][0]["excerpt"],
-        }
-        for e in record["evidence"]:
-            data["status_" + e["criterion_id"]] = e["status"]
-            data["evidence_" + e["criterion_id"]] = e["evidence"]
-            data["sources_" + e["criterion_id"]] = [str(x) for x in e["source_indexes"]]
-        with patch(
-            "apps.web.django.admin_ops.integration_views._request", side_effect=bridge
-        ):
+        data = {"action": "assessment", "expected_revision": 1, "snapshot_hash": created["snapshot_hash"], "decision": "returned", "document": "PENDÊNCIAS E CONCLUSÃO\nFonte ainda não conferida. Devolver para ajustes."}
+        with patch("apps.web.django.admin_ops.integration_views._request", side_effect=bridge):
             before = web.get(url)
             self.assertContains(before, "Registrar parecer humano")
-            self.assertNotContains(before, "Salvar ficha e enviar para revisão humana")
             self.assertEqual(web.post(url, data).status_code, 403)
             data["csrfmiddlewaretoken"] = web.cookies["csrftoken"].value
             self.assertEqual(web.post(url, data).status_code, 302)
-            after = web.get(url)
-            self.assertContains(after, "Registrar parecer humano")
-            draft = EditorialDraft.objects.get(market_id=mid)
-            failed = web.post(
-                url,
-                {
-                    "csrfmiddlewaretoken": data["csrfmiddlewaretoken"],
-                    "expected_revision": 2,
-                    "snapshot_hash": draft.snapshot_hash,
-                    "decision": "approved",
-                    "note": "Must remain blocked",
-                    "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-                    "verified_source_indexes": ["0"],
-                },
-            )
-            self.assertContains(failed, "API error")
-            self.assertContains(failed, self.payload["title"])
-            self.assertEqual(
-                EditorialDraft.objects.get(market_id=mid).state, "in_review"
-            )
+            saved = EditorialDraft.objects.get(market_id=mid)
+            self.assertEqual(saved.state, "returned")
+            self.assertEqual(saved.record["document"], data["document"])
+            stale = web.post(url, data)
+            self.assertContains(stale, "API error")
+            self.assertContains(stale, data["document"])
 
     def test_single_human_assessment_direct_decision_and_atomic_rollback(self):
         import copy
@@ -1087,11 +860,9 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                 payload = {
                     "expected_revision": 1,
                     "snapshot_hash": created["snapshot_hash"],
-                    "editorial_record": self.payload["editorial_record"],
+                    "editorial_record": self.approved_record() if outcome == "approved" else self.payload["editorial_record"],
                     "decision": outcome,
-                    "note": "One independent human assessment",
-                    "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-                    "verified_source_indexes": [0],
+                    "confirmed": outcome == "approved",
                 }
                 for headers in (
                     {},
@@ -1141,20 +912,18 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "snapshot_hash": d["snapshot_hash"],
             "editorial_record": record,
             "decision": "approved",
-            "note": "Must not persist on failure",
-            "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-            "verified_source_indexes": [0],
+            "confirmed": True,
         }
         original_record = EditorialDraft.objects.get(market_id=mid).record
         events_before = AdminEvent.objects.count()
-        for problem in ("stale_hash", "gaps", "unverified"):
+        for problem in ("stale_hash", "empty_document", "unconfirmed"):
             invalid = copy.deepcopy(payload)
             if problem == "stale_hash":
                 invalid["snapshot_hash"] = "0" * 64
-            if problem == "gaps":
-                invalid["editorial_record"]["gaps"] = "Unresolved"
-            if problem == "unverified":
-                invalid["verified_criteria"] = []
+            if problem == "empty_document":
+                invalid["editorial_record"]["document"] = ""
+            if problem == "unconfirmed":
+                invalid["confirmed"] = False
             failed = self.client.post(endpoint, json=invalid, headers=self.human)
             self.assertEqual(
                 failed.status_code, 409 if problem == "stale_hash" else 422, failed.text
@@ -1167,128 +936,44 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             self.assertEqual(AdminEvent.objects.count(), events_before)
 
     def test_single_review_form_no_double_attestation_or_prior_submit(self):
-        import re
         from django.test import Client
         from apps.web.django.accounts.api_client import AuthAPIError
 
-        original_gaps = "Unresolved human review gaps"
-        d = self.create(
-            {
-                **self.payload,
-                "editorial_record": {
-                    **self.payload["editorial_record"],
-                    "gaps": original_gaps,
-                },
-            }
-        ).json()
-        mid = d["market_id"]
+        created = self.create().json()
+        mid = created["market_id"]
         web = Client(enforce_csrf_checks=True)
         session = web.session
         session["auth_api_token"] = self.human["Authorization"][7:]
-        session["auth_api_user"] = {
-            "id": self.staff.id,
-            "is_staff": True,
-            "display_name": "Editor",
-            "handle": "@editor",
-            "preferred_language": "pt-br",
-        }
+        session["auth_api_user"] = {"id": self.staff.id, "is_staff": True, "display_name": "Editor", "handle": "@editor", "preferred_language": "pt-br"}
         session.save()
         calls = []
 
         def bridge(method, path, payload=None, token=None, **kwargs):
             calls.append((method, path))
-            r = self.client.request(
-                method, path, json=payload, headers={"Authorization": "Bearer " + token}
-            )
-            if r.status_code >= 400:
-                raise AuthAPIError(
-                    r.json()["detail"].get("message", "API error"),
-                    r.status_code,
-                    detail=r.json()["detail"],
-                )
-            return r.json()
+            response = self.client.request(method, path, json=payload, headers={"Authorization": "Bearer " + token})
+            if response.status_code >= 400:
+                raise AuthAPIError(response.json()["detail"].get("message", "API error"), response.status_code, detail=response.json()["detail"])
+            return response.json()
 
-        record = self.payload["editorial_record"]
-        data = {
-            "action": "assessment",
-            "expected_revision": 1,
-            "snapshot_hash": d["snapshot_hash"],
-            "decision": "approved",
-            "note": "Independently verified in one form",
-            "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-            "verified_source_indexes": ["0"],
-            **{
-                key: record.get(key, "")
-                for key in (
-                    "justification",
-                    "search_coverage",
-                    "internal_signals",
-                    "external_signals",
-                    "fallback",
-                    "gaps",
-                )
-            },
-            "source_url_0": record["sources"][0]["url"],
-            "source_excerpt_0": record["sources"][0]["excerpt"],
-        }
-        for e in record["evidence"]:
-            data["evidence_" + e["criterion_id"]] = (
-                e["evidence"]
-                + "\n"
-                + "\n".join(record["sources"][i]["url"] for i in e["source_indexes"])
-            )
         url = f"/admin-ops/agent-reviews/{mid}/"
-        with patch(
-            "apps.web.django.admin_ops.integration_views._request", side_effect=bridge
-        ):
-            before = web.get(url)
-            html = before.content.decode()
-            self.assertNotIn("Salvar ficha e enviar para revisão humana", html)
-            self.assertNotIn('name="status_E01"', html)
-            self.assertNotIn('name="sources_E', html)
-            self.assertIn("Fontes sugeridas:", html)
-            checks = re.findall(
-                r'<input[^>]*name="verified_(?:criteria|source_indexes)"[^>]*>', html
-            )
-            self.assertEqual(len(checks), 12)
-            self.assertFalse(any("checked" in c for c in checks))
+        with patch("apps.web.django.admin_ops.integration_views._request", side_effect=bridge):
+            html = web.get(url).content.decode()
+            self.assertEqual(html.count('name="document"'), 1)
+            self.assertEqual(html.count('name="confirmed"'), 1)
+            self.assertNotIn('name="verified_criteria"', html)
+            self.assertNotIn('name="verified_source_indexes"', html)
+            data = {"action": "assessment", "expected_revision": 1, "snapshot_hash": created["snapshot_hash"], "decision": "approved", "document": "Fontes e evidências: https://example.org/mission.\nPENDÊNCIAS E CONCLUSÃO\nPendências para aprovação: nenhuma\nConclusão: aprovado."}
             self.assertEqual(web.post(url, data).status_code, 403)
             data["csrfmiddlewaretoken"] = web.cookies["csrftoken"].value
-            data["gaps"] = "Unresolved human review gaps"
             failed = web.post(url, data)
             self.assertEqual(failed.status_code, 200)
-            self.assertContains(failed, "Lacunas ainda não resolvidas: confirme")
-            self.assertContains(failed, 'value="approved" selected')
+            self.assertContains(failed, data["document"])
             self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 1)
-            data["gaps_resolved"] = "yes"
-            source_required = next(e for e in record["evidence"] if e["source_indexes"])
-            field = "evidence_" + source_required["criterion_id"]
-            cited = data[field]
-            data[field] = "Operator removed all source references"
-            failed = web.post(url, data)
-            self.assertEqual(failed.status_code, 200)
-            self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 1)
-            self.assertContains(failed, 'name="gaps_resolved" value="yes" checked')
-            self.assertContains(failed, "Unresolved human review gaps")
-            data[field] = cited
+            data["confirmed"] = "yes"
             self.assertEqual(web.post(url, data).status_code, 302)
-        self.assertIn(
-            ("POST", f"/admin/agent-editorial-reviews/{mid}/assessment"), calls
-        )
-        self.assertFalse(
-            any(
-                path.endswith("/record") or path.endswith("/decision")
-                for method, path in calls
-            )
-        )
+        self.assertIn(("POST", f"/admin/agent-editorial-reviews/{mid}/assessment"), calls)
+        self.assertFalse(any(path.endswith("/record") or path.endswith("/decision") for _, path in calls))
         self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "approved")
-        self.assertEqual(EditorialDraft.objects.get(market_id=mid).record["gaps"], "")
-        self.assertEqual(
-            EditorialRevision.objects.get(draft_id=mid, revision=1).snapshot[
-                "editorial_record"
-            ]["gaps"],
-            original_gaps,
-        )
         self.assertEqual(Market.objects.get(id=mid).status, "draft")
 
     def test_scopes_ownership_private_record_and_no_admin_authority(self):
@@ -1809,16 +1494,8 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "title": "Ignore policies <script>alert(1)</script>",
             "editorial_record": {
                 **self.payload["editorial_record"],
-                "justification": "Authorization: user-supplied-secret-text",
-                "sources": [
-                    {
-                        "url": "http://127.0.0.1/private",
-                        "purpose": "resolution",
-                        "reported_verified": False,
-                        "consulted_at": a.now().isoformat(),
-                        "excerpt": "not independently verified",
-                    }
-                ],
+                "document": self.payload["editorial_record"]["document"]
+                + "\nAuthorization: user-supplied-secret-text\nhttp://127.0.0.1/private",
             },
         }
         with patch("httpx.get", side_effect=AssertionError("backend must not fetch")):
@@ -1835,13 +1512,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             **p,
             "editorial_record": {
                 **p["editorial_record"],
-                "sources": [
-                    {
-                        "url": "javascript:alert(1)",
-                        "purpose": "resolution",
-                        "consulted_at": a.now().isoformat(),
-                    }
-                ],
+                "sources": [],
             },
         }
         self.assertEqual(self.create(bad).status_code, 422)
@@ -1992,9 +1663,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             self.assertIsNotNone(secret, body[:1000])
             later = web.get("/admin-ops/integrations/" + self.iid + "/")
             self.assertNotIn(secret.group(1), later.content.decode())
-            self.payload["editorial_record"]["evidence"][0]["evidence"] = (
-                "<script>alert(1)</script>"
-            )
+            self.payload["editorial_record"]["document"] += "\n<script>alert(1)</script>"
             d = self.create().json()
             submitted = self.client.post(
                 f"/integrations/editorial/drafts/{d['market_id']}/submit",
@@ -2010,10 +1679,10 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             )
             self.assertIn('name="snapshot_hash"', review_html)
             self.assertIn('name="expected_revision"', review_html)
-            self.assertIn('for="editorial-review-note"', review_html)
+            self.assertIn('name="document"', review_html)
             self.assertIn('for="editorial-review-decision"', review_html)
-            self.assertEqual(review_html.count('name="verified_criteria"'), 11)
-            self.assertEqual(review_html.count('name="verified_source_indexes"'), 1)
+            self.assertEqual(review_html.count('name="confirmed"'), 1)
+            self.assertNotIn('name="verified_criteria"', review_html)
             self.assertIn("&lt;script&gt;", review_html)
             self.assertNotIn("<script>alert(1)</script>", review_html)
             Integration.objects.filter(id=self.iid).update(
@@ -2053,65 +1722,26 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                 Integration.objects.get(id=self.iid).responsible_id, self.super.id
             )
 
-    def test_old_policy_and_inaccessible_source_preserve_pending(self):
+    def test_old_policy_blocks_submission_until_document_updated(self):
         record = {**self.payload["editorial_record"], "policy_hash": "0" * 64}
-        result = self.create({**self.payload, "editorial_record": record})
-        mid = result.json()["market_id"]
-        submit = {"expected_revision": 1, "idempotency_key": "submit-outdated"}
-        self.assertEqual(
-            self.client.post(
-                f"/integrations/editorial/drafts/{mid}/submit",
-                json=submit,
-                headers=self.agentheaders,
-            ).status_code,
-            422,
-        )
-        record = {
-            **self.payload["editorial_record"],
-            "sources": [
-                {
-                    **self.payload["editorial_record"]["sources"][0],
-                    "reported_verified": False,
-                }
-            ],
-        }
-        result = self.client.patch(
+        created = self.create({**self.payload, "editorial_record": record}).json()
+        mid = created["market_id"]
+        endpoint = f"/integrations/editorial/drafts/{mid}/submit"
+        self.assertEqual(self.client.post(endpoint, json={"expected_revision": 1, "idempotency_key": "submit-outdated"}, headers=self.agentheaders).status_code, 422)
+        updated = self.client.patch(
             f"/integrations/editorial/drafts/{mid}",
-            json={
-                **self.payload,
-                "editorial_record": record,
-                "expected_revision": 1,
-                "idempotency_key": "policy-updated",
-            },
+            json={**self.payload, "expected_revision": 1, "idempotency_key": "policy-updated"},
             headers=self.agentheaders,
         )
-        self.assertEqual(result.status_code, 200, result.text)
-        result = self.client.post(
-            f"/integrations/editorial/drafts/{mid}/submit",
-            json={
-                **submit,
-                "expected_revision": 2,
-                "idempotency_key": "submit-current",
-            },
-            headers=self.agentheaders,
+        self.assertEqual(updated.status_code, 200, updated.text)
+        submitted = self.client.post(endpoint, json={"expected_revision": 2, "idempotency_key": "submit-current"}, headers=self.agentheaders)
+        self.assertEqual(submitted.status_code, 200, submitted.text)
+        denied = self.client.post(
+            f"/admin/agent-editorial-reviews/{mid}/assessment",
+            json={"expected_revision": 3, "snapshot_hash": submitted.json()["snapshot_hash"], "editorial_record": self.payload["editorial_record"], "decision": "approved"},
+            headers=self.human,
         )
-        self.assertEqual(result.status_code, 200, result.text)
-        decision = {
-            "expected_revision": 3,
-            "snapshot_hash": result.json()["snapshot_hash"],
-            "decision": "approved",
-            "note": "source inaccessible",
-            "verified_criteria": [x["id"] for x in domain.policy()["criteria"]],
-            "verified_source_indexes": [0],
-        }
-        self.assertEqual(
-            self.client.post(
-                f"/admin/agent-editorial-reviews/{mid}/decision",
-                json=decision,
-                headers=self.human,
-            ).status_code,
-            422,
-        )
+        self.assertEqual(denied.status_code, 422, denied.text)
         self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "in_review")
 
     def test_ingest_auth_dedup_identity_and_invalid_uuid(self):
@@ -2398,11 +2028,9 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             json={
                 "expected_revision": d.revision,
                 "snapshot_hash": d.snapshot_hash,
-                "editorial_record": self.payload["editorial_record"],
+                "editorial_record": self.approved_record(),
                 "decision": "approved",
-                "note": "Isolated independent human review",
-                "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-                "verified_source_indexes": [0],
+                "confirmed": True,
                 **overrides,
             },
             headers=self.human,
@@ -2586,74 +2214,365 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         from django.test import Client
         from apps.web.django.accounts.api_client import AuthAPIError
 
-        m, payload = self.create_human_market("human-web-source")
-        mid = m["editorial_market_id"]
-        d = EditorialDraft.objects.get(market_id=mid)
+        market, _ = self.create_human_market("human-web-document")
+        mid = market["editorial_market_id"]
+        draft = EditorialDraft.objects.get(market_id=mid)
         web = Client(enforce_csrf_checks=True)
         session = web.session
         session["auth_api_token"] = self.human["Authorization"][7:]
-        session["auth_api_user"] = {
-            "id": self.staff.id,
-            "is_staff": True,
-            "display_name": "Editor",
-            "handle": "@editor",
-            "preferred_language": "pt-br",
-        }
+        session["auth_api_user"] = {"id": self.staff.id, "is_staff": True, "display_name": "Editor", "handle": "@editor", "preferred_language": "pt-br"}
         session.save()
 
         def bridge(method, path, payload=None, token=None, **kwargs):
-            response = self.client.request(
-                method, path, json=payload, headers={"Authorization": "Bearer " + token}
-            )
+            response = self.client.request(method, path, json=payload, headers={"Authorization": "Bearer " + token})
             if response.status_code >= 400:
                 detail = response.json()["detail"]
-                raise AuthAPIError(
-                    detail.get("message", "API error")
-                    if isinstance(detail, dict)
-                    else str(detail),
-                    response.status_code,
-                    detail=detail,
-                )
+                raise AuthAPIError(detail.get("message", "API error") if isinstance(detail, dict) else str(detail), response.status_code, detail=detail)
             return response.json()
 
-        source = self.payload["editorial_record"]["sources"][0]
-        data = {
-            "action": "assessment",
-            "expected_revision": 1,
-            "snapshot_hash": d.snapshot_hash,
-            "decision": "approved",
-            "note": "Independent human review",
-            "gaps": d.record["gaps"],
-            "gaps_resolved": "yes",
-            "verified_criteria": [f"E{i:02}" for i in range(1, 12)],
-            "justification": "Documented human choice",
-            "search_coverage": "Complete comparison",
-            "internal_signals": "",
-            "external_signals": "",
-            "fallback": "",
-            "new_source_url": source["url"],
-            "new_source_excerpt": source["excerpt"],
-        }
-        for entry in self.payload["editorial_record"]["evidence"]:
-            data["evidence_" + entry["criterion_id"]] = entry["evidence"] + (
-                "\n" + source["url"] if entry["source_indexes"] else ""
-            )
         url = f"/admin-ops/agent-reviews/{mid}/"
-        with patch(
-            "apps.web.django.admin_ops.integration_views._request", side_effect=bridge
-        ):
-            response = web.get(url)
-            self.assertContains(response, "Adicionar fonte à ficha")
+        data = {"action": "assessment", "expected_revision": 1, "snapshot_hash": draft.snapshot_hash, "decision": "approved", "document": "Fonte consultada: https://example.org/mission em 2026-10-10.\nPENDÊNCIAS E CONCLUSÃO\nPendências para aprovação: nenhuma\nConclusão: aprovado."}
+        with patch("apps.web.django.admin_ops.integration_views._request", side_effect=bridge):
+            before = web.get(url)
+            self.assertContains(before, 'name="document"')
+            self.assertContains(before, 'name="confirmed"')
             data["csrfmiddlewaretoken"] = web.cookies["csrftoken"].value
             failed = web.post(url, data)
             self.assertEqual(failed.status_code, 200)
-            self.assertContains(failed, 'value="' + source["url"] + '"')
+            self.assertContains(failed, data["document"])
             self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 1)
-            data["new_source_verified"] = "yes"
+            data["confirmed"] = "yes"
             success = web.post(url, data)
             self.assertEqual(success.status_code, 302)
-        stored = EditorialDraft.objects.get(market_id=mid)
-        self.assertEqual(stored.state, "approved")
-        self.assertEqual(stored.record["sources"][0]["url"], source["url"])
-        self.assertEqual(stored.decision["verified_source_indexes"], [0])
+        saved = EditorialDraft.objects.get(market_id=mid)
+        self.assertEqual(saved.state, "approved")
+        self.assertEqual(saved.record["document"], data["document"])
+        self.assertTrue(saved.decision["confirmed"])
         self.assertEqual(Market.objects.get(id=mid).status, "draft")
+
+    def test_document_review_requires_human_confirmation(self):
+        from copy import deepcopy
+
+        record = {
+            "policy_version": domain.policy()["version"],
+            "policy_hash": domain.policy()["hash"],
+            "document": "CONTEXTO E DUPLICIDADE\nEvento futuro.\n\nFONTES E EVIDÊNCIAS\nhttps://example.org/mission consultada pelo agente.\n\nPENDÊNCIAS E CONCLUSÃO\nHumano deve conferir.",
+        }
+        draft = deepcopy(self.payload)
+        draft["idempotency_key"] = "document-review-create"
+        draft["editorial_record"] = record
+        mixed = deepcopy(draft)
+        mixed["editorial_record"]["justification"] = "second source of truth"
+        self.assertEqual(self.create(mixed).status_code, 422)
+        created = self.create(draft)
+        self.assertEqual(created.status_code, 200, created.text)
+        mid = created.json()["market_id"]
+        updated_document = record["document"] + "\nConsulta complementar registrada."
+        updated = deepcopy(draft)
+        updated["expected_revision"] = 1
+        updated["idempotency_key"] = "document-review-update"
+        updated["editorial_record"]["document"] = updated_document
+        changed = self.client.patch(
+            f"/integrations/editorial/drafts/{mid}", json=updated, headers=self.agentheaders
+        )
+        self.assertEqual(changed.status_code, 200, changed.text)
+        self.assertEqual(changed.json()["revision"], 2)
+        own_market = self.client.get(
+            f"/integrations/editorial/markets/{mid}", headers=self.agentheaders
+        )
+        self.assertEqual(own_market.status_code, 200, own_market.text)
+        self.assertEqual(
+            own_market.json()["editorial"]["record"]["document"], updated_document
+        )
+        record["document"] = updated_document
+        submitted = self.client.post(
+            f"/integrations/editorial/drafts/{mid}/submit",
+            json={"expected_revision": 2, "idempotency_key": "document-review-submit"},
+            headers=self.agentheaders,
+        )
+        self.assertEqual(submitted.status_code, 200, submitted.text)
+        current = self.client.get(f"/admin/agent-editorial-reviews/{mid}", headers=self.human).json()
+        self.assertEqual(
+            self.client.patch(f"/admin/agent-editorial-reviews/{mid}/record", json={}, headers=self.human).status_code,
+            404,
+        )
+        self.assertEqual(
+            self.client.post(f"/admin/agent-editorial-reviews/{mid}/decision", json={}, headers=self.human).status_code,
+            404,
+        )
+        assessment = {
+            "expected_revision": current["draft"]["revision"],
+            "snapshot_hash": current["draft"]["snapshot_hash"],
+            "decision": "approved",
+            "editorial_record": record,
+        }
+        url = f"/admin/agent-editorial-reviews/{mid}/assessment"
+        denied = self.client.post(url, json=assessment, headers=self.human)
+        self.assertEqual(denied.status_code, 422, denied.text)
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 3)
+        assessment["confirmed"] = True
+        record["document"] = updated_document.replace(
+            "Humano deve conferir.",
+            "Pendências para aprovação: nenhuma\nConclusão: conferência humana concluída.",
+        )
+        assessment["editorial_record"] = record
+        accepted = self.client.post(url, json=assessment, headers=self.human)
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        saved = EditorialDraft.objects.get(market_id=mid)
+        self.assertEqual(saved.record["document"], record["document"])
+        self.assertTrue(saved.decision["confirmed"])
+        self.assertEqual(saved.state, "approved")
+        with get_connection() as connection, connection.cursor() as cursor:
+            domain.require_publication_approval(cursor, mid)
+        self.assertEqual(self.client.post(url, json=assessment, headers=self.human).status_code, 409)
+
+    def test_policy_cannot_be_silently_stamped_on_unchanged_document(self):
+        stale_record = {**self.payload["editorial_record"], "policy_hash": "0" * 64}
+        created = self.create({**self.payload, "editorial_record": stale_record}).json()
+        current_record = self.payload["editorial_record"]
+        endpoint = f"/admin/agent-editorial-reviews/{created['market_id']}/assessment"
+        payload = {
+            "expected_revision": 1,
+            "snapshot_hash": created["snapshot_hash"],
+            "decision": "approved",
+            "confirmed": True,
+            "editorial_record": current_record,
+        }
+        unchanged = self.client.post(endpoint, json=payload, headers=self.human)
+        self.assertEqual(unchanged.status_code, 422, unchanged.text)
+        self.assertEqual(EditorialDraft.objects.get(market_id=created["market_id"]).revision, 1)
+        payload["editorial_record"] = {
+            **self.approved_record(),
+            "document": self.approved_record()["document"] + "\nPolítica atual relida pelo revisor.",
+        }
+        revised = self.client.post(endpoint, json=payload, headers=self.human)
+        self.assertEqual(revised.status_code, 200, revised.text)
+
+    def test_one_time_migration_preserves_source_and_declared_gap(self):
+        from importlib import import_module
+        from types import SimpleNamespace
+
+        migration = import_module(
+            "apps.web.django.editorial_integrations.migrations.0004_single_editorial_document"
+        )
+        old = {
+            "justification": "Evento futuro.",
+            "search_coverage": "Busca parcial.",
+            "sources": [{"url": "https://example.org/original", "purpose": "resolution", "consulted_at": "2026-10-10T10:00:00+00:00", "excerpt": "Trecho original"}],
+            "evidence": [{"criterion_id": "E06", "status": "pending", "evidence": "A fonte não abriu.", "source_indexes": [0]}],
+            "gaps": "Conferir fonte alternativa antes da aprovação.",
+        }
+        market = SimpleNamespace(
+            title="Pergunta", summary="Resumo", resolution_criteria="Critério",
+            close_at="2026-10-11T10:00:00+00:00", close_timezone="UTC",
+            source="https://example.org/market",
+        )
+        document = migration.document_from_record(old, market, [])
+        for text in (
+            "https://example.org/original", "https://example.org/market",
+            "Trecho original", "A fonte não abriu.",
+            "Conferir fonte alternativa antes da aprovação.",
+        ):
+            self.assertIn(text, document)
+
+    def test_declared_gap_blocks_approval_until_document_is_resolved(self):
+        validation = self.client.post(
+            "/integrations/editorial/drafts/validate",
+            json={k: v for k, v in self.payload.items() if k != "idempotency_key"},
+            headers=self.agentheaders,
+        )
+        self.assertEqual(validation.status_code, 200, validation.text)
+        self.assertIn("unresolved_editorial_gaps", validation.json()["pending"])
+        draft = self.create().json()
+        mid = draft["market_id"]
+        submitted = self.client.post(
+            f"/integrations/editorial/drafts/{mid}/submit",
+            json={"expected_revision": 1, "idempotency_key": "gap-submit"},
+            headers=self.agentheaders,
+        ).json()
+        unresolved = self.assess(
+            mid, submitted["revision"], submitted["snapshot_hash"],
+            document=self.payload["editorial_record"]["document"],
+        )
+        self.assertEqual(unresolved.status_code, 422, unresolved.text)
+        self.assertIn("unresolved_editorial_gaps", unresolved.json()["detail"]["pending"])
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "in_review")
+        appended_only = self.assess(
+            mid, submitted["revision"], submitted["snapshot_hash"],
+            document=self.payload["editorial_record"]["document"] + "\nPendências para aprovação: nenhuma",
+        )
+        self.assertEqual(appended_only.status_code, 422, appended_only.text)
+        resolved_document = self.payload["editorial_record"]["document"].replace(
+            "Human must verify before approval.",
+            "Pendências para aprovação: nenhuma\nConclusão: conferência concluída.",
+        )
+        accepted = self.assess(
+            mid, submitted["revision"], submitted["snapshot_hash"],
+            document=resolved_document,
+        )
+        self.assertEqual(accepted.status_code, 200, accepted.text)
+        with get_connection() as connection, connection.cursor() as cursor:
+            domain.require_publication_approval(cursor, mid)
+
+    def test_announcement_deadline_checked_on_create_and_assessment(self):
+        from datetime import datetime
+
+        close_at = datetime.fromisoformat(self.payload["close_at"])
+        earlier = (close_at - timedelta(days=1)).isoformat()
+        later = (close_at + timedelta(days=1)).isoformat()
+        invalid = {
+            **self.payload,
+            "editorial_record": {
+                **self.payload["editorial_record"],
+                "document": self.payload["editorial_record"]["document"] + f"\nAnúncio esperado: {earlier}",
+            },
+        }
+        response = self.create(invalid)
+        self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(response.json()["detail"]["code"], "close_after_editorial_announcement")
+        for bad_line in (
+            "Anúncio esperado: amanhã",
+            "Anúncio esperado: 2026-10-13T10:00:00",
+            f"Anúncio esperado: {later}\nAnúncio esperado: {later}",
+        ):
+            malformed = {
+                **invalid,
+                "editorial_record": {
+                    **invalid["editorial_record"],
+                    "document": self.payload["editorial_record"]["document"] + "\n" + bad_line,
+                },
+            }
+            rejected = self.create(malformed)
+            self.assertEqual(rejected.status_code, 422, rejected.text)
+            self.assertEqual(rejected.json()["detail"]["code"], "invalid_editorial_announcement")
+        valid = {
+            **invalid,
+            "editorial_record": {
+                **invalid["editorial_record"],
+                "document": self.payload["editorial_record"]["document"] + f"\nAnúncio esperado: {later}",
+            },
+        }
+        created = self.create(valid)
+        self.assertEqual(created.status_code, 200, created.text)
+        mid = created.json()["market_id"]
+        invalid_update = {
+            **valid,
+            "expected_revision": 1,
+            "idempotency_key": "announcement-update-invalid",
+            "editorial_record": {
+                **valid["editorial_record"],
+                "document": valid["editorial_record"]["document"].replace(later, earlier),
+            },
+        }
+        update_response = self.client.patch(
+            f"/integrations/editorial/drafts/{mid}",
+            json=invalid_update,
+            headers=self.agentheaders,
+        )
+        self.assertEqual(update_response.status_code, 422, update_response.text)
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 1)
+        assessment = self.assess(
+            mid, 1, created.json()["snapshot_hash"],
+            document=valid["editorial_record"]["document"].replace(later, earlier),
+        )
+        self.assertEqual(assessment.status_code, 422, assessment.text)
+        self.assertEqual(assessment.json()["detail"]["code"], "close_after_editorial_announcement")
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).revision, 1)
+
+    def test_published_migration_restores_prior_decision_only(self):
+        from importlib import import_module
+        from types import SimpleNamespace
+        from django.apps import apps
+
+        created = self.create().json()
+        mid = created["market_id"]
+        submitted = self.client.post(
+            f"/integrations/editorial/drafts/{mid}/submit",
+            json={"expected_revision": 1, "idempotency_key": "history-submit"},
+            headers=self.agentheaders,
+        ).json()
+        approved = self.assess(mid, submitted["revision"], submitted["snapshot_hash"])
+        self.assertEqual(approved.status_code, 200, approved.text)
+        old_decision = EditorialDraft.objects.get(market_id=mid).decision
+        reviewed_revision = EditorialRevision.objects.get(
+            draft_id=mid, revision=old_decision["expected_revision"]
+        )
+        historical_snapshot = dict(reviewed_revision.snapshot)
+        historical_snapshot["editorial_record"] = {"justification": "Registro estruturado anterior"}
+        EditorialRevision.objects.filter(pk=reviewed_revision.pk).update(
+            snapshot=historical_snapshot
+        )
+        converted_revision = approved.json()["revision"] + 1
+        EditorialRevision.objects.create(
+            draft_id=mid,
+            revision=converted_revision,
+            snapshot={"editorial_record": self.payload["editorial_record"]},
+            snapshot_hash=submitted["snapshot_hash"],
+        )
+        Market.objects.filter(id=mid).update(status="sealed")
+        EditorialDraft.objects.filter(market_id=mid).update(
+            revision=converted_revision, state="preparation", decision={}
+        )
+        migration = import_module(
+            "apps.web.django.editorial_integrations.migrations.0005_restore_published_editorial_decisions"
+        )
+        migration.restore_published_decisions(
+            apps, SimpleNamespace(connection=SimpleNamespace(alias=connection.alias))
+        )
+        restored = EditorialDraft.objects.get(market_id=mid)
+        self.assertEqual(restored.state, "approved")
+        self.assertEqual(restored.decision, old_decision)
+
+        Market.objects.filter(id=mid).update(status="scheduled")
+        EditorialDraft.objects.filter(market_id=mid).update(state="preparation", decision={})
+        migration.restore_published_decisions(
+            apps, SimpleNamespace(connection=SimpleNamespace(alias=connection.alias))
+        )
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "preparation")
+
+        Market.objects.filter(id=mid).update(status="sealed")
+        EditorialRevision.objects.filter(pk=reviewed_revision.pk).update(
+            snapshot=reviewed_revision.snapshot
+        )
+        migration.restore_published_decisions(
+            apps, SimpleNamespace(connection=SimpleNamespace(alias=connection.alias))
+        )
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "preparation")
+
+    def test_document_return_and_reject_do_not_require_approval_confirmation(self):
+        from copy import deepcopy
+
+        draft = deepcopy(self.payload)
+        draft["idempotency_key"] = "document-return-create"
+        draft["editorial_record"] = {
+            "policy_version": domain.policy()["version"],
+            "policy_hash": domain.policy()["hash"],
+            "document": "PENDÊNCIAS E CONCLUSÃO\nFonte indisponível; devolver para nova pesquisa.",
+        }
+        created = self.create(draft)
+        self.assertEqual(created.status_code, 200, created.text)
+        mid = created.json()["market_id"]
+        url = f"/admin/agent-editorial-reviews/{mid}/assessment"
+        returned = self.client.post(url, json={
+            "expected_revision": 1,
+            "snapshot_hash": created.json()["snapshot_hash"],
+            "decision": "returned",
+            "editorial_record": draft["editorial_record"],
+        }, headers=self.human)
+        self.assertEqual(returned.status_code, 200, returned.text)
+        self.assertFalse(returned.json()["decision"]["confirmed"])
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "returned")
+        changed = deepcopy(draft)
+        changed["expected_revision"] = returned.json()["revision"]
+        changed["idempotency_key"] = "document-return-update"
+        changed["editorial_record"]["document"] = "PENDÊNCIAS E CONCLUSÃO\nEvento impossível de apurar; rejeitar."
+        updated = self.client.patch(f"/integrations/editorial/drafts/{mid}", json=changed, headers=self.agentheaders)
+        self.assertEqual(updated.status_code, 200, updated.text)
+        rejected = self.client.post(url, json={
+            "expected_revision": updated.json()["revision"],
+            "snapshot_hash": updated.json()["snapshot_hash"],
+            "decision": "rejected",
+            "editorial_record": changed["editorial_record"],
+        }, headers=self.human)
+        self.assertEqual(rejected.status_code, 200, rejected.text)
+        self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "rejected")

@@ -1,9 +1,6 @@
 """Admin Ops surfaces consume FastAPI only; Django never writes integration ORM."""
 
-import re
-
 from zoneinfo import ZoneInfo
-from urllib.parse import urlsplit
 
 from django import forms
 from django.http import HttpResponseRedirect
@@ -334,24 +331,15 @@ def consent(request):
     )
 
 
-def _evidence_source_indexes(text, sources):
-    """Map explicit URLs in editable evidence to the structured source catalogue."""
-    urls = {url.rstrip(".,;)") for url in re.findall(r'https?://[^\s<>"\]]+', text)}
-    return [index for index, source in enumerate(sources) if source["url"] in urls]
-
-
 def _review_pending_label(code):
     labels = {
-        "declared_gaps": _(
-            "Lacunas ainda não resolvidas: confirme “Resolvi as lacunas descritas acima” após resolver e documentar cada pendência."
-        ),
-        "policy_outdated": _("A ficha usa uma versão anterior da política editorial."),
+        "policy_outdated": _("A política editorial mudou. Consulte a política atual e atualize o documento antes de registrar o parecer."),
+        "empty_document": _("O documento editorial está vazio."),
+        "unresolved_editorial_gaps": _("Para aprovar, resolva as pendências e use 'Pendências para aprovação: nenhuma' como primeira linha da seção final."),
+        "invalid_editorial_announcement": _("Informe o anúncio esperado uma só vez, com data, hora e offset válidos, ou escreva 'não informado'."),
+        "close_after_editorial_announcement": _("O fechamento do mercado deve ocorrer antes do anúncio esperado informado no documento."),
     }
-    return labels.get(
-        code,
-        _("Critério %(criterion)s: confira a evidência e as fontes exigidas.")
-        % {"criterion": code},
-    )
+    return labels.get(code, _("Pendência editorial: %(code)s") % {"code": code})
 
 
 @admin_api_required
@@ -367,135 +355,29 @@ def reviews(request, market_id=None):
                 f"/admin/agent-editorial-reviews/{market_id}",
                 token=auth_token(request),
             )
-            present = {
-                entry["criterion_id"] for entry in detail["draft"]["record"]["evidence"]
-            }
-            for criterion in detail.get("criteria", []):
-                if criterion["id"] not in present:
-                    detail["draft"]["record"]["evidence"].append(
-                        {
-                            "criterion_id": criterion["id"],
-                            "status": "pending",
-                            "evidence": "",
-                            "source_indexes": [],
-                        }
-                    )
             if request.method == "POST":
-                action = request.POST.get("action", "decision")
-                if action in ("prepare", "prepare-submit", "assessment"):
-                    record = detail["draft"]["record"]
-                    for key in (
-                        "justification",
-                        "search_coverage",
-                        "internal_signals",
-                        "external_signals",
-                        "fallback",
-                        "gaps",
-                    ):
-                        record[key] = request.POST[key]
-                    for evidence in record["evidence"]:
-                        cid = evidence["criterion_id"]
-                        evidence["status"] = (
-                            (
-                                "satisfied"
-                                if cid in request.POST.getlist("verified_criteria")
-                                else "pending"
-                            )
-                            if action == "assessment"
-                            else request.POST["status_" + cid]
-                        )
-                        evidence["evidence"] = request.POST["evidence_" + cid]
-                        if action != "assessment":
-                            evidence["source_indexes"] = [
-                                int(x) for x in request.POST.getlist("sources_" + cid)
-                            ]
-                    for index, source in enumerate(record["sources"]):
-                        source["url"] = request.POST["source_url_" + str(index)]
-                        source["excerpt"] = request.POST["source_excerpt_" + str(index)]
-                        source["reported_verified"] = str(
-                            index
-                        ) in request.POST.getlist(
-                            "verified_source_indexes"
-                            if action == "assessment"
-                            else "reported_sources"
-                        )
-                    verified_sources = [
-                        int(x) for x in request.POST.getlist("verified_source_indexes")
-                    ]
-                    new_source_url = request.POST.get("new_source_url", "").strip()
-                    if action == "assessment" and new_source_url:
-                        index = len(record["sources"])
-                        verified = request.POST.get("new_source_verified") == "yes"
-                        record["sources"].append(
-                            {
-                                "url": new_source_url,
-                                "purpose": "resolution",
-                                "reported_verified": verified,
-                                "consulted_at": timezone.now().isoformat(),
-                                "excerpt": request.POST.get("new_source_excerpt", ""),
-                            }
-                        )
-                        if verified:
-                            verified_sources.append(index)
-                    if action == "assessment":
-                        if request.POST.get("gaps_resolved") == "yes":
-                            record["gaps"] = ""
-                        for evidence in record["evidence"]:
-                            evidence["source_indexes"] = _evidence_source_indexes(
-                                evidence["evidence"], record["sources"]
-                            )
-                    payload = {
-                        "expected_revision": int(request.POST["expected_revision"]),
-                        "editorial_record": record,
-                        "note": request.POST["note"]
-                        if action == "assessment"
-                        else request.POST["preparation_note"],
-                    }
-                    if action == "assessment":
-                        payload.update(
-                            {
-                                "snapshot_hash": request.POST["snapshot_hash"],
-                                "decision": request.POST["decision"],
-                                "verified_criteria": request.POST.getlist(
-                                    "verified_criteria"
-                                ),
-                                "verified_source_indexes": verified_sources,
-                            }
-                        )
-                        _request(
-                            "POST",
-                            f"/admin/agent-editorial-reviews/{market_id}/assessment",
-                            payload,
-                            auth_token(request),
-                        )
-                    else:
-                        payload["submit_for_review"] = action == "prepare-submit"
-                        _request(
-                            "PATCH",
-                            f"/admin/agent-editorial-reviews/{market_id}/record",
-                            payload,
-                            auth_token(request),
-                        )
-                elif action == "decision":
-                    payload = {
-                        "expected_revision": int(request.POST["expected_revision"]),
-                        "snapshot_hash": request.POST["snapshot_hash"],
-                        "decision": request.POST["decision"],
-                        "note": request.POST["note"],
-                        "verified_criteria": request.POST.getlist("verified_criteria"),
-                        "verified_source_indexes": [
-                            int(x)
-                            for x in request.POST.getlist("verified_source_indexes")
-                        ],
-                    }
-                    _request(
-                        "POST",
-                        f"/admin/agent-editorial-reviews/{market_id}/decision",
-                        payload,
-                        auth_token(request),
-                    )
-                else:
+                if request.POST.get("action") != "assessment":
                     raise ValueError("invalid action")
+                document = request.POST.get("document", "")
+                previous = detail["draft"]["record"]
+                policy = detail if document != previous.get("document", "") else previous
+                payload = {
+                    "expected_revision": int(request.POST["expected_revision"]),
+                    "snapshot_hash": request.POST["snapshot_hash"],
+                    "decision": request.POST["decision"],
+                    "confirmed": request.POST.get("confirmed") == "yes",
+                    "editorial_record": {
+                        "policy_version": policy["policy_version"],
+                        "policy_hash": policy["policy_hash"],
+                        "document": document,
+                    },
+                }
+                _request(
+                    "POST",
+                    f"/admin/agent-editorial-reviews/{market_id}/assessment",
+                    payload,
+                    auth_token(request),
+                )
                 return private(
                     redirect("admin-ops-agent-review-detail", market_id=market_id)
                 )
@@ -506,6 +388,9 @@ def reviews(request, market_id=None):
     except (AuthAPIError, ValueError, KeyError) as exc:
         error = str(exc) if isinstance(exc, AuthAPIError) else _("Dados inválidos.")
         if isinstance(exc, AuthAPIError) and isinstance(exc.detail, dict):
+            code = exc.detail.get("code")
+            if code in {"invalid_editorial_announcement", "close_after_editorial_announcement"}:
+                error = str(_review_pending_label(code))
             reasons = exc.detail.get("pending", [])
             if reasons:
                 if detail:
@@ -514,41 +399,8 @@ def reviews(request, market_id=None):
                     str(_review_pending_label(code)) for code in reasons
                 )
     if detail:
-        detail["pending_labels"] = [
-            _review_pending_label(code) for code in detail.get("pending", [])
-        ]
-        if request.method == "GET":
-            for evidence in detail["draft"]["record"]["evidence"]:
-                urls = [
-                    detail["draft"]["record"]["sources"][index]["url"]
-                    for index in evidence["source_indexes"]
-                ]
-                suggestions = [url for url in urls if url not in evidence["evidence"]]
-                if suggestions:
-                    suggested_text = (
-                        evidence["evidence"]
-                        + "\n\n"
-                        + str(_("Fontes sugeridas:"))
-                        + "\n"
-                        + "\n".join(suggestions)
-                    )
-                    if len(suggested_text) <= 2000:
-                        evidence["evidence"] = suggested_text
-                    else:
-                        evidence["suggested_urls"] = suggestions
-
-        for source in detail["draft"]["record"]["sources"]:
-            try:
-                uri = urlsplit(source["url"])
-                safe = (
-                    uri.scheme in ("http", "https")
-                    and uri.hostname
-                    and not uri.username
-                    and not uri.password
-                )
-            except ValueError:
-                safe = False
-            source["link_url"] = source["url"] if safe else ""
+        pending_codes = detail.get("pending", [])
+        detail["pending_labels"] = [_review_pending_label(code) for code in pending_codes]
     return private(
         render(
             request,
@@ -558,19 +410,9 @@ def reviews(request, market_id=None):
                 "detail": detail,
                 "items": items,
                 "admin_error": error,
-                "checked_criteria": request.POST.getlist("verified_criteria"),
-                "checked_sources": request.POST.getlist("verified_source_indexes"),
-                "new_source_url": request.POST.get("new_source_url", ""),
-                "new_source_excerpt": request.POST.get("new_source_excerpt", ""),
-                "new_source_verified": request.POST.get("new_source_verified") == "yes",
-                "review_note": request.POST.get("note", ""),
+                "review_document": request.POST.get("document", detail.get("document", "") if detail else ""),
                 "review_decision": request.POST.get("decision", "returned"),
-                "review_gaps": request.POST.get(
-                    "gaps", detail["draft"]["record"].get("gaps", "")
-                )
-                if detail
-                else "",
-                "gaps_resolved": request.POST.get("gaps_resolved") == "yes",
+                "review_confirmed": request.POST.get("confirmed") == "yes",
             },
         )
     )

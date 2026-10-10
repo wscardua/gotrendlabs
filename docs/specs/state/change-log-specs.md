@@ -1,5 +1,14 @@
 # Change Log de Specs
 
+## 2026-10-10 — revisão dos bloqueios da FEAT-MCP-001 v1.5
+
+Contrato, ficha e aceite explicitam declaração de pendências resolvidas no documento e comparação determinística do anúncio esperado com o fechamento. Decisões históricas de mercados já publicados são preservadas pela migration 0005; drafts/agendados convertidos exigem nova avaliação.
+
+## 2026-10-10 — FEAT-MCP-001 v1.5
+
+Contrato editorial passa a exigir documento consolidado como único formato, sem projeção ou aceitação de fichas E01–E11 em runtime. Uma migração converte os registros já persistidos, preserva histórico e reinicia revisão humana. E01–E11 permanecem orientação; confirmação global não inventa verificação independente. FEAT-MCP-001, contrato agent-integrations, ficha/checklist e estratégia de teste sincronizados.
+
+
 - 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.
 
 ## 2026-10-07 — MCP editorial implantado e habilitado em produção

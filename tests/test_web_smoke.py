@@ -207,11 +207,10 @@ def _approve_editorial_market_for_test(client, headers, slug):
     detail = client.get(f"/admin/agent-editorial-reviews/{mid}", headers=headers).json()
     p = policy()
     record = {"policy_version": p["version"], "policy_hash": p["hash"],
-              "justification": "Isolated test fixture", "search_coverage": "Isolated complete fixture",
-              "sources": [{"url": "https://example.org/test-fixture", "purpose": "resolution", "reported_verified": True, "consulted_at": timezone.now().isoformat(), "excerpt": "Verified isolated fixture"}],
-              "evidence": [{"criterion_id": c["id"], "status": "satisfied", "evidence": "Independently checked fixture", "source_indexes": [0] if c["source_access_required"] else []} for c in p["criteria"]]}
+              "document": "FONTES E EVIDÊNCIAS\nhttps://example.org/test-fixture consultada em "
+              + timezone.now().isoformat() + " por revisor humano.\nPENDÊNCIAS E CONCLUSÃO\nPendências para aprovação: nenhuma\nAprovado."}
     response = client.post(f"/admin/agent-editorial-reviews/{mid}/assessment", headers=headers,
-                           json={"expected_revision": detail["draft"]["revision"], "snapshot_hash": detail["draft"]["snapshot_hash"], "editorial_record": record, "decision": "approved", "note": "Independent fixture review", "verified_criteria": [c["id"] for c in p["criteria"]], "verified_source_indexes": [0]})
+                           json={"expected_revision": detail["draft"]["revision"], "snapshot_hash": detail["draft"]["snapshot_hash"], "editorial_record": record, "decision": "approved", "confirmed": True})
     if response.status_code != 200:
         raise AssertionError(response.text)
 

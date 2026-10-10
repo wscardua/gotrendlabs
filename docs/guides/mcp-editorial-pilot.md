@@ -1,17 +1,29 @@
 # Piloto MCP editorial e operação
 
+## Parecer em documento único — revisão 1.5
+
+O executor envia `editorial_record.document` com contexto, duplicidade, regras,
+prazos, fontes e data de consulta, contingências e pendências. O texto distingue
+pesquisa relatada da conferência humana. No Admin Ops, o revisor ajusta esse
+mesmo documento, marca uma confirmação apenas para aprovar e escolhe a decisão.
+Devolução ou rejeição registra motivo no texto. A página não exige checks por
+E01–E11 ou por fonte; os critérios permanecem guia de leitura. O sistema salva
+texto, parecer e versão na mesma operação, preservando o histórico anterior.
+As instruções das revisões 1.2–1.4 abaixo são históricas quando descrevem
+campos separados.
+
 ## Cadastro ChatGPT OAuth/DCR
 
 Usar URL `https://gotrendlabs.com.br/mcp`, autenticação OAuth e registro Dynamic Client Registration (DCR). Deixar o ChatGPT obter seu client_id; ID/segredo de credencial de serviço não são credenciais de cliente OAuth. Não desativar autenticação para cadastrar. Sem OIDC anunciado, manter seus campos vazios/desabilitados. Ícone opcional deve respeitar as restrições apresentadas pelo formulário.
 
 Em 2026-10-07, cadastro com OAuth/DCR/endpoints descobertos corretos recebeu rejeição genérica de app settings. Correção da PR #140 omite `scope: null` na resposta DCR, conforme RFC 7591; implantada pelo Actions 37710313470, com 372 testes CI/main aprovados e smoke DCR HTTPS 201 sem null. [Evidências](../specs/testing/mcp-chatgpt-dcr-20261007.md). Ainda não comprovada como causa exclusiva do erro ChatGPT: repetir cadastro, login/MFA/consentimento e leitura editorial; conservar evidência de erro caso persista.
 
-FEAT-MCP-001 no worktree `gotrendlabs-mcp`, branch `feature/mcp-editorial`, baseado em `origin/main` `9df08bc`. Checkout original, documentos e mobile preservados. PR #136 integrada e deploy Actions aprovado; MCP habilitado em produção. [Evidências](../specs/testing/mcp-production-rollout-20261007.md). Dot e piloto autenticado exigem homologação real.
+Infraestrutura MCP implantada pela PR #136 e habilitada em produção. A revisão documental v1.5 está preparada na branch `feature/editorial-single-document-review`; sua migração e ativação produtiva aguardam PR/CI/merge. [Evidências da implantação anterior](../specs/testing/mcp-production-rollout-20261007.md). Dot e piloto autenticado exigem homologação real.
 
 ## Preparar instalação/reinstalação autorizada
 
-1. Usar Python 3.11/3.12: `requirements.txt` na API/web; `apps/mcp/requirements.txt` no adapter. Venv 3.9 original preservado; este worktree tem `.venv` próprio.
-2. Aplicar migrations com role migradora via `ops/scripts/migrate_with_role.py`: `editorial_integrations.0001`, auditoria `markets.0032`, grants/índices `editorial_integrations.0002` e backfill universal `editorial_integrations.0003`. FastAPI escreve; Django não recebe acesso às tabelas privadas novas. Conferir grants efetivos; runtime não usa role migradora.
+1. Usar Python 3.11/3.12: `requirements.txt` na API/web; `apps/mcp/requirements.txt` no adapter. No desenvolvimento, reutilizar o `.venv` configurado no worktree.
+2. Aplicar migrations com role migradora via `ops/scripts/migrate_with_role.py`: `editorial_integrations.0001`, auditoria `markets.0032`, grants/índices `editorial_integrations.0002`, backfill universal `editorial_integrations.0003`, conversão documental `editorial_integrations.0004` e preservação de decisão histórica de mercados publicados/terminais `editorial_integrations.0005`. FastAPI escreve; Django não recebe acesso às tabelas privadas novas. Conferir grants efetivos; runtime não usa role migradora. Antes de 0004, criar snapshot recuperável e inventário; conversão acima de 60.000 caracteres falha sem truncar. Após 0005, conferir textos/URLs, contagens, estados e decisões. Drafts/agendados convertidos exigem nova aprovação.
 3. Configurar HTTPS com iguais `GTL_MCP_RESOURCE=https://DOMINIO/mcp` e `GTL_MCP_ISSUER=https://DOMINIO` nos dois processos. Workload aleatório ≥32 caracteres entregue somente API/adapter via secret manager/arquivo 0600, nunca Git/prompts/logs. Exemplos separados `.env.mcp-api.prod.example` e `.env.mcp.prod.example`.
 4. Adapter sem PostgreSQL/DATABASE_URL, pepper, MFA, KMS ou `.env.prod`. Imagem mínima `ops/deploy/mcp/Dockerfile`; override Compose `ops/deploy/mcp/docker-compose.override.yml`, profile `mcp`, rede interna, filesystem read-only, spool privado. O deploy padrão inclui o override e importa os handles de `Caddyfile.example` antes de API/Django. Bloquear também `/api/internal/agent-integrations*`; rotas internas não são públicas. Proxy sem cache de auth/dados privados.
 5. Iniciar com `GTL_MCP_ENABLED=0` nos dois processos. Conferir `/health`, isolamento, grants, redaction e discovery; depois habilitar explicitamente. Admin Ops → Integrações: criar pausada, definir responsável/scopes/cotas e ativar para piloto pequeno.
@@ -45,7 +57,7 @@ Defaults: pausada, 5 drafts/dia São Paulo, 60 tentativas autenticadas/minuto, 2
 
 Create/update/submit exigem chave 8–100 caracteres e payload estável. Mesmo conteúdo retorna resultado original; mesma chave/conteúdo diferente conflita. Auth atual é revalidada antes do replay. Garantia mínima 30 dias; versão inicial conserva idempotência indefinidamente. Resposta perdida: repetir com backoff/jitter e Retry-After. Adapter não repete escritas automaticamente.
 
-Preparação/devolvido permitem edição própria. Submissão cria snapshot/in_review. Parecer approved/returned/rejected referencia revisão/hash e preserva histórico. Pendência obrigatória/política antiga impede aprovação; E06/E08 exigem fonte relatada aberta e atestação humana. Edição humana invalida parecer/evidências e incrementa versão; editor existente envia expected_revision. Publicação permanece humana/serializada com assinatura existente. Todos os mercados exigem aprovação humana atual para nova publicação na FastAPI; ausência/recusa/versão antiga retorna 409 `editorial_approval_required`. No editor, publicar a versão aprovada é ação separada de salvar; qualquer save exige nova revisão. Legados publicados recebem ficha pendente sem mudança retroativa de lifecycle.
+Preparação/devolvido permitem edição própria. Submissão cria snapshot/in_review. Parecer approved/returned/rejected referencia revisão/hash e preserva histórico. Documento sem declaração de pendências resolvidas, política antiga ou anúncio conhecido anterior/igual ao fechamento impedem aprovação. O humano confere as fontes relatadas no texto e confirma uma vez; o sistema não infere suficiência factual. Edição humana invalida parecer e incrementa versão; editor existente envia expected_revision. Publicação permanece humana/serializada com assinatura existente. Todos os mercados exigem aprovação humana atual para nova publicação na FastAPI; ausência/recusa/versão antiga retorna 409 `editorial_approval_required`. No editor, publicar a versão aprovada é ação separada de salvar; qualquer save exige nova revisão. Mercados já publicados/terminais preservam decisão histórica na conversão, sem mudança retroativa de lifecycle.
 
 Backend não busca URLs, faz downloads ou pesquisa LLM. Ficha privada é domínio, independente da retenção técnica; evidências são relatos e renderizadas com escape. [Prompt de radar](dot-editorial-radar.md).
 
@@ -83,24 +95,24 @@ Confirme visualmente que a ferramenta executada foi `get_editorial_policy`. Se n
 
 Na homologação observada, DeepSeek-R1-0528-Qwen3-8B/MLX apresentou falha de parser de chamadas e LLGuidance de títulos automáticos. Não registrar homologação LM Studio como concluída por descoberta de tools ou teste SDK isolado.
 
-## Revisão humana em uma ação (v1.3)
+## Revisão humana em documento único (v1.5)
 
 1. No Admin Ops, abra Revisão editorial e selecione o rascunho. Não é necessário aprovar ou reenviar a revisão antes de registrar o parecer.
-2. Confira fontes e critérios E01–E11, marcando apenas o que verificou independentemente. Ajustes de contexto/fontes são opcionais; resolva e documente lacunas antes de aprovar.
-3. Escreva **Nota do parecer**, escolha **Aprovar**, **Devolver para ajustes** ou **Rejeitar** e clique em **Registrar parecer humano**. Ficha e decisão são persistidas juntas; uma recusa reverte toda a operação.
+2. Leia e ajuste o documento único; confira os links, datas, evidências e limites relatados. Use E01–E11 como guia de leitura, sem marcar critérios separadamente. Para aprovar, resolva as pendências e deixe `Pendências para aprovação: nenhuma` como primeira linha da seção final. Se houver anúncio esperado conhecido, confira que o fechamento ocorre antes dele.
+3. Escreva **Nota do parecer**, escolha **Aprovar**, **Devolver para ajustes** ou **Rejeitar** e clique em **Registrar parecer humano**. A aprovação exige o único check de confirmação. Documento e decisão são persistidos juntos; uma recusa reverte toda a operação.
 4. Após aprovação, a publicação permanece uma ação separada no editor. Salvar outra edição exige parecer para a nova versão.
 
-Não há dois aceites humanos. A API compõe snapshot e decisão na mesma transação, mantém locks/versionamento, MFA e auditoria. Endpoints v1.2 permanecem compatíveis, mas a UI usa o assessment único. Relatos do agente não deixam verificações humanas pré-marcadas.
+Há um único aceite humano para aprovar o documento. A API compõe snapshot e decisão na mesma transação, mantém locks/versionamento, MFA e auditoria. A UI usa apenas o assessment único; endpoints `/record` e `/decision` não existem mais. Relatos do agente não geram confirmação humana automática.
 
 ## Revisão universal e rollout (2026-10-07)
 
 1. Antes de liberar publicações, aplicar editorial_integrations.0003_universal_editorial com a role de migrations, em janela sem publicação/edição concorrente. Fazer backup; conferir contagens/hashes de mercados, opções, previsões e provas antes/depois. Não ampliar grants Django: API reutiliza grants existentes de ficha.
 2. A migration torna integração nullable e cria fichas pendentes só para mercados sem ficha. Não aprova nem altera mercado/provas. API/Admin Ops devem suportar origem humana e gate universal antes de retomar publicação.
-3. Para cada novo mercado: preencher data/hora futura, fuso IANA, escolher automático/manual, revisar ficha E01–E11 e fontes, registrar parecer aprovado da versão atual, publicar pela ação separada. Editar exige novo parecer. Conversões de sugestões seguem o mesmo fluxo.
+3. Para cada novo mercado: preencher data/hora futura, fuso IANA, escolher automático/manual, revisar o documento único e as fontes com E01–E11 como guia, registrar parecer aprovado da versão atual e publicar pela ação separada. Editar exige novo parecer. Conversões de sugestões seguem o mesmo fluxo.
 4. Conferir legados: terminais são consultáveis; abertos/fechados permitem parecer sem mudança de estado. Tratar configurações antigas incompletas como tarefa humana, sem reescrever definição assinada nem escolher prazo arbitrário.
 5. Rollback: preferir correção progressiva. Conservar migration/fichas/histórico; não reverter 0003 (origens humanas nulas impedem retorno seguro a FK obrigatória). Se voltar aplicação, usar versão compatível com origem nullable e suspender publicações até validar gate universal. Não restaurar seletivamente mercados/provas.
 
-DEV: migration aplicada e preservação de dados verificada. Produção/deploy não executados. Homologação Dot externa permanece pendente; não substituir OAuth por acesso desprotegido.
+Esta seção registra o rollout universal de 2026-10-07; seu deploy já foi concluído pela PR #136. A conversão documental 0004/0005 é uma evolução posterior e ainda aguarda produção. Homologação Dot externa permanece pendente; não substituir OAuth por acesso desprotegido.
 
 ### Quando o legado publicado não salva data/fuso
 
