@@ -2,6 +2,7 @@
 
 ## 2026-10-10 — documento editorial único
 
+- PR #148/Actions 38060102537 implantados: contrato MCP/API, UI, migrations e dados convertidos ativos em produção. Quatro documentos e 27 URLs preservados; smoke técnico aprovado. [Evidência](../testing/editorial-document-production-20261010.md). Piloto externo e parecer humano autenticado em PRD permanecem pendentes.
 - Dot/MCP → `EditorialRecord(policy_version, policy_hash, document)` → FastAPI → PostgreSQL; Admin Ops consome o documento persistido e registra assessment com um aceite humano. `/record` e `/decision` deixam de ser contratos ativos. Migration 0004 converte registros anteriores uma vez, preservando snapshots; drafts/agendados convertidos exigem nova revisão.
 - FastAPI valida `Anúncio esperado` contra `close_at` quando o horário constar no documento e exige declaração textual de pendências resolvidas antes de aprovar. Migration 0005 restaura a decisão histórica somente para mercados já publicados; drafts/agendados continuam exigindo novo parecer. Mobile não consome essas rotas.
 

@@ -6,7 +6,7 @@ Verificar criação/edição/submissão MCP somente com `editorial_record.docume
 
 Correção de revisão: documento com pendência declarada não pode ser aprovado até a seção final conter `Pendências para aprovação: nenhuma`; o bloqueio deve fazer rollback de texto, revisão e decisão. Anúncio esperado com timestamp/offset inválido, duplicado ou anterior/igual ao fechamento deve receber `422` em criação, edição, parecer e publicação. A migração 0005 deve preservar a decisão histórica de mercados já publicados/terminais, sem restaurar aprovação de drafts/agendados nem de revisões documentais novas.
 
-Estado: testes locais/CI aprovados e infraestrutura produtiva habilitada ([evidências](mcp-production-rollout-20261007.md)); Dot/piloto autenticado pendentes; consultar [resultados e pendências por critério](mcp-editorial-results.md). Usar PostgreSQL isolado real para concorrência/grants, testes unitários para funções e fluxo real para auth/UI/MCP. [Spec](../features/mcp-editorial-agents.md).
+Estado: revisão documental v1.5 implantada, migrations/dados/URLs e smoke técnico conferidos em [produção](editorial-document-production-20261010.md); CI PR/main com 454 testes/OK. Infraestrutura MCP anterior está [habilitada](mcp-production-rollout-20261007.md). Parecer humano autenticado em PRD, Dot/piloto autenticado e a observação de 0005 em mercado publicado real permanecem pendentes; consultar [resultados por critério](mcp-editorial-results.md). Usar PostgreSQL isolado real para concorrência/grants, testes unitários para funções e fluxo real para auth/UI/MCP. [Spec](../features/mcp-editorial-agents.md).
 
 | ID | Cenário | Evidência exigida |
 | --- | --- | --- |

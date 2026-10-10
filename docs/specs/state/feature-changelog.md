@@ -1,5 +1,9 @@
 # Feature Changelog
 
+## 2026-10-10 — parecer documental v1.5 implantado
+
+FEAT-MCP-001/FEAT-EDITORIAL-001: PR #148 integrada em main; CI PR/main com 454 testes/OK e Actions 38060102537 com deploy aprovado. Migrations 0004/0005 converteram quatro fichas produtivas para o documento único, mantendo as 27 URLs de fontes, snapshots e inventários de mercado/opções/previsões. API/MCP e autenticação negativa conferidos; novo parecer humano autenticado em PRD e piloto Dot ainda pendentes. [Recibo](../testing/editorial-document-production-20261010.md).
+
 ## 2026-10-10 — bloqueios objetivos do documento editorial
 
 FEAT-MCP-001/FEAT-EDITORIAL-001: aprovação documental exige declaração explícita de ausência de pendências; horário de anúncio conhecido é comparado ao fechamento pela FastAPI. Migration 0005 restaura o parecer histórico de mercados publicados/terminais convertidos, enquanto drafts e agendados aguardam novo parecer. Mantidos um textarea e um check no Admin Ops.
