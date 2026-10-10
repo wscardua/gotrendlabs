@@ -8,6 +8,8 @@ O Admin Ops envia os nomes selecionados. A FastAPI regenerava slugs e fazia upse
 
 ## Revisão de impacto
 
+Intervalo revisado: `origin/main` bcffa5d até o commit local 0b5273a; 13 arquivos de backend, testes, operação e documentação. Nenhum finding bloqueante identificado. Risco operacional moderado pela exclusão física de cadastros sem uso; mitigado pelas precondições, backup e transação.
+
 - Backend: mudança nos três helpers compartilhados por criação/edição administrativa e conversão de sugestões. CRUD explícito de taxonomia permanece compatível. Consultas parametrizadas e identificadores SQL escapados; autorizações e transações existentes preservadas.
 - Admin Ops: `accounts/api_client.py` propaga HTTP 409 como `AuthAPIError`; `admin_ops/views.py` apresenta a mensagem de erro e mantém o formulário. Não há mudança no payload ou no snapshot OpenAPI.
 - Mobile não impactado: não há consumidor de `/admin/markets`, `/admin/categories` ou `convert-draft` em `apps/mobile/lib`; os contratos públicos de mercado permanecem iguais.
@@ -52,4 +54,7 @@ O script valida todos os pares antes de alterar, mantém locks curtos nas tabela
 
 ## Evidências de execução
 
-Preparação local em andamento. PR, CI, merge, deploy e limpeza produtiva ainda não executados; preencher os resultados reais no fechamento.
+- Dry-run produtivo SSM `ab3bfd95-fe36-4847-bed0-47b21c0ad94f`: sucesso; confirmou `54→40` com exclusão do evento repetido 54 e `55→64` com transferência do evento distinto 55, sem qualquer mutação.
+- Preflight SSM `5f302f47-35fe-4740-89e7-c5b11d1cfabd`: permissões de leitura/update/delete presentes nas tabelas envolvidas, volume `/app/.runtime` gravável e caminho de backup ainda inexistente. Nenhum segredo foi impresso.
+- Cinco testes PostgreSQL de saneamento passaram: dry-run sem efeito, execução com backup/auditoria/preservação de mercado e evento distinto, recusa de origem usada, divergência de avisos e backup existente. Suíte completa da correção: 460 testes/OK em 1023,239 s, com `BACKEND_API_URL=http://127.0.0.1:9` e PostgreSQL de testes isolado; os cinco testes de saneamento executaram separadamente em `test_gotrendlabs_taxonomy_cleanup` (15,648 s/OK). OpenAPI --check, compilação e git diff --check aprovados.
+- PR, CI, merge, deploy e limpeza produtiva ainda não executados; preencher os resultados reais no fechamento.

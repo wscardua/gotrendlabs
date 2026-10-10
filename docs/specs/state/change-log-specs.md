@@ -2,7 +2,7 @@
 
 ## 2026-10-10 — FEAT-MARKET-001 taxonomia e saneamento
 
-- Feature, contrato e arquitetura de banco explicitam reutilização por nome/pai, erro 409 para ambiguidade e reparo excepcional de duplicados sem referências de mercado na origem. Runbook documenta inventário, backup, auditoria, execução e recuperação.
+- Feature `FEAT-MARKET-001` v0.10, contrato e arquitetura de banco explicitam reutilização por nome/pai, erro 409 para ambiguidade e reparo excepcional de duplicados sem referências de mercado na origem. Runbook documenta inventário, backup, auditoria, execução e recuperação.
 
 ## 2026-10-10 — catálogo MCP documental e hashes de materiais
 

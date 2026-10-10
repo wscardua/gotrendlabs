@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.9
+versao: 0.10
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-21
+ultima_atualizacao: 2026-10-10
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:

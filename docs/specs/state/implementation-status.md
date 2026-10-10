@@ -2,7 +2,7 @@
 
 ## Correção local de taxonomia — 2026-10-10
 
-- `FEAT-MARKET-001`: resolução por nome/pai antes do upsert implícito evita duplicação ao reclassificar mercados com slugs personalizados ou nomes renomeados. Sem migration ou alteração de payload. Evidências em `WFLOW-20261010-MARKET-TAXONOMY-FIX`; publicação pendente.
+- `FEAT-MARKET-001`: resolução por nome/pai antes do upsert implícito evita duplicação ao reclassificar mercados com slugs personalizados ou nomes renomeados. Sem migration ou alteração de payload. Suíte completa 460 testes e cinco testes de saneamento passaram. Dry-run produtivo confirmou limpeza sem mudar vínculos de mercados; evidências em `WFLOW-20261010-MARKET-TAXONOMY-FIX`. PR, deploy e execução do saneamento pendentes da aprovação da descrição.
 
 - 2026-10-07: resposta DCR omite `scope` ausente; 51 testes locais/OK, CI PR/main 372 testes/OK (um skip por roles CI ausentes); PR #140 e deploy Actions 37710313470 aprovados, DCR público 201 sem null conferido. Cadastro ChatGPT ainda exige repetição/homologação. WFLOW-20261007-MCP-CHATGPT-DCR-001; FEAT-MCP-001 permanece parcial.
 
