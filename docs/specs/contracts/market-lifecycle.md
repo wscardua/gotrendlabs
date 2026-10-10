@@ -29,8 +29,10 @@
 - Mercado sem campos operacionais mínimos não deve ser salvo pelo admin customizado.
 - Mercado novo ou editado não pode usar categoria/subcategoria/evento bloqueado.
 - O evento pertence à subcategoria e é a terceira camada da taxonomia do mercado (`categoria -> subcategoria -> evento`).
+- Os nomes enviados na criação/edição administrativa de mercado devem reutilizar os cadastros existentes no respectivo pai, mesmo com slug personalizado ou nome renomeado. A busca ignora caixa e espaços externos; ambiguidade retorna `409` e desfaz a transação. Slugs, avisos e bloqueios existentes são preservados.
 - Categoria, subcategoria e evento podem possuir aviso opcional (`notice`) para mercados sensíveis; os avisos são herdados por mercados vinculados e expostos como `category_notice`, `subcategory_notice` e `event_notice` no contrato público.
 - Categorias, subcategorias e eventos são preservados fisicamente; bloqueio/desbloqueio administrativo é a forma operacional de retirar ou devolver uso.
+- Duplicados sem mercados na origem podem ser consolidados por operação excepcional com backup e auditoria, preservando todos os IDs/vínculos de mercados e os eventos distintos sem uso; nunca aplicar remapeamento em definições assinadas.
 - Bloqueio de categoria/subcategoria/evento deve registrar evento administrativo e manter motivo/data do bloqueio.
 - Apenas `open` aceita novas previsões.
 - A transição `open -> locked` pode ser manual ou automática conforme `auto_close_enabled`.

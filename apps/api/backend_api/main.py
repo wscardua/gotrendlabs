@@ -21,6 +21,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
+from psycopg import sql
 
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.analytics import AnalyticsBatch, _source_ip as analytics_source_ip, ingest as ingest_analytics, summary as analytics_summary
@@ -3732,7 +3733,25 @@ def _get_feedback(cursor, feedback_id):
     return row
 
 
+def _existing_taxonomy_by_name(cursor, table, name, parent_column=None, parent_id=None):
+    # Market payloads carry display names, not the editable taxonomy slugs.
+    query = sql.SQL("SELECT id, name, slug, notice, is_blocked FROM {} WHERE lower(btrim(name)) = lower(%s)").format(sql.Identifier(table))
+    params = [name.strip()]
+    if parent_column:
+        query += sql.SQL(" AND {} = %s").format(sql.Identifier(parent_column))
+        params.append(parent_id)
+    cursor.execute(query + sql.SQL(" LIMIT 2"), params)
+    matches = cursor.fetchall()
+    if len(matches) > 1:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Há cadastros de taxonomia com o mesmo nome. Corrija a duplicidade antes de salvar o mercado.")
+    return matches[0] if matches else None
+
+
 def _upsert_category(cursor, name, slug=None, notice=None):
+    if slug is None and notice is None:
+        existing = _existing_taxonomy_by_name(cursor, "gotrendlabs_market_categories", name)
+        if existing:
+            return existing
     cleaned_slug = _slug_seed(slug or name, max_length=100)
     notice_value = (notice or "").strip() if notice is not None else ""
     should_update_notice = notice is not None
@@ -3751,6 +3770,10 @@ def _upsert_category(cursor, name, slug=None, notice=None):
 
 
 def _upsert_subcategory(cursor, category_id, name, slug=None, notice=None):
+    if slug is None and notice is None:
+        existing = _existing_taxonomy_by_name(cursor, "gotrendlabs_market_subcategories", name, "category_id", category_id)
+        if existing:
+            return existing
     cleaned_slug = _slug_seed(slug or name, max_length=100)
     notice_value = (notice or "").strip() if notice is not None else ""
     should_update_notice = notice is not None
@@ -3769,6 +3792,10 @@ def _upsert_subcategory(cursor, category_id, name, slug=None, notice=None):
 
 
 def _upsert_event(cursor, subcategory_id, name, slug=None, notice=None):
+    if slug is None and notice is None:
+        existing = _existing_taxonomy_by_name(cursor, "gotrendlabs_market_events", name, "subcategory_id", subcategory_id)
+        if existing:
+            return existing
     cleaned_slug = _slug_seed(slug or name, max_length=100)
     notice_value = (notice or "").strip() if notice is not None else ""
     should_update_notice = notice is not None
