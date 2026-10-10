@@ -1181,6 +1181,82 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                             self.assertEqual(
                                 {t.name for t in listed.tools}, expected_tools
                             )
+                            tool_schemas = {
+                                t.name: t.model_dump(by_alias=True)
+                                for t in listed.tools
+                            }
+                            for name in (
+                                "validate_market_draft",
+                                "create_market_draft",
+                                "update_market_draft",
+                            ):
+                                schema = tool_schemas[name]["inputSchema"]
+                                record = schema["$defs"]["EditorialRecord"]
+                                self.assertEqual(
+                                    set(record["properties"]),
+                                    {"policy_version", "policy_hash", "document"},
+                                )
+                                self.assertEqual(
+                                    set(record["required"]),
+                                    {"policy_version", "policy_hash", "document"},
+                                )
+                                self.assertFalse(record["additionalProperties"])
+                                self.assertEqual(
+                                    record["properties"]["document"]["minLength"], 1
+                                )
+                                self.assertEqual(
+                                    record["properties"]["document"]["maxLength"], 60000
+                                )
+                                self.assertEqual(
+                                    record["properties"]["policy_version"]["maxLength"], 20
+                                )
+                                self.assertEqual(
+                                    record["properties"]["policy_hash"]["pattern"],
+                                    "^[0-9a-f]{64}$",
+                                )
+                            for name in ("get_market", "get_draft_review"):
+                                record = tool_schemas[name]["outputSchema"]["$defs"][
+                                    "EditorialRecord"
+                                ]
+                                self.assertEqual(
+                                    set(record["properties"]),
+                                    {"policy_version", "policy_hash", "document"},
+                                )
+                            market_output = tool_schemas["get_market"]["outputSchema"]
+                            self.assertIn(
+                                {"$ref": "#/$defs/PrivateEditorial"},
+                                market_output["properties"]["editorial"]["anyOf"],
+                            )
+                            self.assertEqual(
+                                market_output["$defs"]["PrivateEditorial"]["properties"][
+                                    "record"
+                                ],
+                                {"$ref": "#/$defs/EditorialRecord"},
+                            )
+                            review_output = tool_schemas["get_draft_review"][
+                                "outputSchema"
+                            ]
+                            self.assertEqual(
+                                review_output["properties"]["record"],
+                                {"$ref": "#/$defs/EditorialRecord"},
+                            )
+                            policy_output = tool_schemas["get_editorial_policy"][
+                                "outputSchema"
+                            ]
+                            self.assertTrue(
+                                {"checklist_hash", "record_template_hash"}.issubset(
+                                    set(policy_output["required"])
+                                )
+                            )
+                            submit = tool_schemas["submit_draft_for_review"]["inputSchema"]
+                            self.assertEqual(
+                                set(submit["properties"]),
+                                {"market_id", "submission"},
+                            )
+                            self.assertEqual(
+                                set(submit["$defs"]["SubmitDraft"]["properties"]),
+                                {"expected_revision", "idempotency_key"},
+                            )
                             observed = set()
 
                             async def invoke(name, arguments):
@@ -1201,6 +1277,19 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                             self.assertTrue(policy["manual"])
                             self.assertTrue(policy["checklist"])
                             self.assertTrue(policy["record_template"])
+                            self.assertEqual(policy["version"], "1.2")
+                            self.assertEqual(
+                                policy["checklist_hash"],
+                                hashlib.sha256(
+                                    policy["checklist"].encode("utf-8")
+                                ).hexdigest(),
+                            )
+                            self.assertEqual(
+                                policy["record_template_hash"],
+                                hashlib.sha256(
+                                    policy["record_template"].encode("utf-8")
+                                ).hexdigest(),
+                            )
                             self.assertEqual(len(policy["criteria"]), 11)
                             taxonomy = await invoke("get_taxonomy", {"limit": 1})
                             self.assertTrue(taxonomy["items"])

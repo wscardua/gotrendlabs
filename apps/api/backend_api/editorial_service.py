@@ -33,12 +33,16 @@ def policy():
     criteria = json.loads(raw)
     if criteria["status"] != "approved":
         a.fail("dependency_unavailable", 503)
+    checklist = (ROOT / "docs/editorial/checklist-de-publicacao.md").read_bytes()
+    record_template = (ROOT / "docs/editorial/ficha-de-mercado.md").read_bytes()
     return {
         **criteria,
         "hash": hashlib.sha256(raw).hexdigest(),
         "manual": (ROOT / "docs/editorial/manual-editorial.md").read_text(),
-        "checklist": (ROOT / "docs/editorial/checklist-de-publicacao.md").read_text(),
-        "record_template": (ROOT / "docs/editorial/ficha-de-mercado.md").read_text(),
+        "checklist": checklist.decode("utf-8"),
+        "checklist_hash": hashlib.sha256(checklist).hexdigest(),
+        "record_template": record_template.decode("utf-8"),
+        "record_template_hash": hashlib.sha256(record_template).hexdigest(),
         "as_of": a.now().isoformat(),
     }
 

@@ -236,7 +236,8 @@ async def get_editorial_policy() -> PolicyResponse:
 
     Use quando o usuário pedir o editorial, manual, política ou critérios editoriais
     do GoTrendLabs. Não exige argumentos. Retorna texto do manual aprovado,
-    checklist, modelo de ficha, critérios E01–E11, versão e hash atuais.
+    checklist, modelo de ficha, critérios E01–E11, versão/hash da política
+    e hashes independentes do checklist e do modelo.
     Permite apresentar a política em português, sem consultar o catálogo de mercados.
     """
     return await call("get_editorial_policy", "GET", "/integrations/editorial/policy")

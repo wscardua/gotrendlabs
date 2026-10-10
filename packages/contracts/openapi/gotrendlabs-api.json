@@ -4833,6 +4833,11 @@
             "title": "Checklist",
             "type": "string"
           },
+          "checklist_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Checklist Hash",
+            "type": "string"
+          },
           "criteria": {
             "items": {
               "$ref": "#/components/schemas/Criterion"
@@ -4850,6 +4855,11 @@
           },
           "record_template": {
             "title": "Record Template",
+            "type": "string"
+          },
+          "record_template_hash": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Record Template Hash",
             "type": "string"
           },
           "source": {
@@ -4875,7 +4885,9 @@
           "criteria",
           "manual",
           "checklist",
+          "checklist_hash",
           "record_template",
+          "record_template_hash",
           "as_of"
         ],
         "title": "PolicyResponse",

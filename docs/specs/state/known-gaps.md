@@ -20,6 +20,8 @@ Diagnóstico histórico — Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001:
 
 ## MCP editorial — FEAT-MCP-001
 
+- Em 2026-10-10, os metadados da conexão MCP direta apresentam o documento único e o servidor produtivo aceitou `validate_market_draft` sem criar mercado; porém o app `MyGoTrendLabsMCP-v2` ainda entregou schema antigo (`justification`/`search_coverage` obrigatórios) e rejeitou `document` antes da chamada. Capturar `tools/list` bruto autenticado em produção, atualizar/revalidar o catálogo da conexão do cliente; a resposta de política com hashes separados para checklist/modelo permanece local até implantação. [Diagnóstico e teste](../testing/mcp-tools-schema-20261010.md).
+
 - ChatGPT: rejeição genérica de app settings com OAuth/DCR e endpoints corretos investigada; registro DCR 201 não comprova aceitação pelo ChatGPT. Correção da PR #140 implantada/Actions 37710313470 aprovado, smoke público sem metadado opcional `scope` nulo. Repetição do cadastro/consentimento pendente; causa exclusiva ainda não demonstrada. WFLOW-20261007-MCP-CHATGPT-DCR-001.
 
 - Codex Desktop/CLI: falha DCR 422 e divergência de issuer corrigidas e implantadas pela PR #138; CLI real registrou cliente/atingiu URL de autorização em produção. Consentimento humano/MFA e piloto autenticado do Desktop permanecem pendentes; não declarar grant/token emitido. [Evidências](../testing/mcp-codex-oauth-20261007.md).
