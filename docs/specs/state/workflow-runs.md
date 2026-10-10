@@ -1,5 +1,17 @@
 # Workflow Runs
 
+## WFLOW-20261010-MARKET-TAXONOMY-FIX
+
+- Tipo: correção de regressão de `FEAT-MARKET-001`; contrato `market-lifecycle.md`.
+- Status: fechamento em andamento na branch `feature/new-improvement-20261010`, base `origin/main` bcffa5d; aguardará aprovação explícita da descrição antes de abrir PR.
+- Escopo: reutilizar categoria/subcategoria/evento existentes por nome e pai, preservando IDs, slugs personalizados, avisos e bloqueios; rejeitar nomes ambíguos sem mutação. Manter criação implícita de nomes inéditos e CRUD explícito.
+- Arquitetura: FastAPI autoritativa; sem novos endpoints, payloads ou migration. Revisar efeitos nos helpers usados também por conversão de sugestões; MCP usa seu resolvedor próprio.
+- Artefatos: FastAPI, testes de integração, feature/contrato, changelog e status. Alterações da pasta original não são incorporadas integralmente.
+- Validação: falha reproduzida antes da correção (PATCH elevou subcategorias/eventos de 2 para 3; categoria com slug personalizado também gerou UniqueViolation). Após a correção, seis testes novos de taxonomia e três regressões existentes de admin/conversão passaram (9/OK) em PostgreSQL isolado; Django system checks, OpenAPI --check e diff aprovados. Usado o ambiente existente `/Users/williamsca/Documents/gotrendlabs-ai-thumbnails/.venv` (Python 3.11), pois o `.venv` da pasta original usa Python 3.9 incompatível com a main atual.
+- Fechamento solicitado: reconciliar specs, commit, PR em português com autorização prévia, CI/merge/deploy e saneamento produtivo. Branch local deve ser preservada. Revisão de arquitetura/contrato/consumidores feita; sem mudança de fronteira que exija ADR.
+- Saneamento: inventário produtivo read-only confirmou subgrupos duplicados Geral (54→40) e Ginástica Artística (55→64). Preservar vínculos dos quatro drafts; excluir somente evento repetido 54, mover evento distinto 55 sem uso e excluir subgrupos vazios 54/55. Nenhuma categoria duplicada. Procedimento com simulação, backup 0600/fsync, locks, precondições e auditoria em `operations/taxonomy-duplicates-20261010.md`. Dry-run produtivo SSM `ab3bfd95-fe36-4847-bed0-47b21c0ad94f` aprovado, sem mutação.
+- Pendências: resultado da suíte completa/testes de saneamento, aprovação da PR, CI/merge/deploy, execução autorizada do saneamento após deploy e recibo final. Nenhuma exclusão produtiva realizada na preparação.
+
 ## WFLOW-20261010-MCP-TOOLS-SCHEMA-001
 
 - Origem: solicitação de alinhar `tools/list` ao documento editorial único, testar validação produtiva sem criação e versionar checklist/modelo sem alterar a política v1.2.

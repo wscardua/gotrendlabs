@@ -1,5 +1,9 @@
 # Status de Implementação
 
+## Correção local de taxonomia — 2026-10-10
+
+- `FEAT-MARKET-001`: resolução por nome/pai antes do upsert implícito evita duplicação ao reclassificar mercados com slugs personalizados ou nomes renomeados. Sem migration ou alteração de payload. Evidências em `WFLOW-20261010-MARKET-TAXONOMY-FIX`; publicação pendente.
+
 - 2026-10-07: resposta DCR omite `scope` ausente; 51 testes locais/OK, CI PR/main 372 testes/OK (um skip por roles CI ausentes); PR #140 e deploy Actions 37710313470 aprovados, DCR público 201 sem null conferido. Cadastro ChatGPT ainda exige repetição/homologação. WFLOW-20261007-MCP-CHATGPT-DCR-001; FEAT-MCP-001 permanece parcial.
 
 - 2026-10-07: WFLOW-20261007-MCP-CODEX-OAUTH-001 corrige DCR Codex (extra application_type) e issuer exato no discovery MCP; 50 testes locais/OK e CI PR/main 371 testes/OK (um skip por roles CI ausentes); implantada pela PR #138/Actions 37699380266, registro CLI real conferido em produção. Sem migrations/permissões novas; homologação humana permanece pendente.

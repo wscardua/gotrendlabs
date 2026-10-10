@@ -141,6 +141,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - browse administrativo de mercados exibe popularidade em indicadores compactos e permite alternar entre ordem padrão, mais visualizados e mais compartilhados
 - Admin Ops gerencia categorias/subcategorias/eventos em tela de browse operacional com criação, edição, bloqueio/desbloqueio e indicação visual de estado
 - bloqueio de taxonomia é persistido em PostgreSQL e validado pela FastAPI antes de criar/editar mercados
+- criação/edição de mercado reutiliza a taxonomia existente pelo nome (ignorando caixa e espaços externos) dentro do respectivo pai, preservando ID, slug personalizado, avisos e bloqueio; nomes ambíguos no mesmo pai retornam `409` sem criar registros
 - Django consome a FastAPI e usa Postgres local como fallback de desenvolvimento para mercado, opções, consenso, wallet e ranking
 
 ## Dados e persistência
@@ -199,6 +200,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - renderização da ação de favoritar para visitante em estado readonly, sem formulário de mutação e com aviso de login ao clicar
 - renderização do filtro `Minhas previsões` apenas para usuário logado, com estado vazio quando não houver cards previstos
 - regressão para carregamento incremental do feed em blocos de 18 cards e reset do recorte ao trocar filtros
+- regressão de reclassificação com slugs personalizados/renomeação: contagens e IDs preservados; ambiguidade 409, bloqueio 422 e normalização por nome/pai cobertos. Saneamento exige simulação, backup, ausência de mercados na origem e preservação dos eventos distintos.
 - integração para bloqueio/desbloqueio de categoria e subcategoria
 - criação/edição administrativa de mercado deve rejeitar taxonomia bloqueada
 - fluxo de navegação feed -> detalhe

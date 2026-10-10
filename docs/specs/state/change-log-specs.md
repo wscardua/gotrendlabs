@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-10-10 — FEAT-MARKET-001 taxonomia e saneamento
+
+- Feature, contrato e arquitetura de banco explicitam reutilização por nome/pai, erro 409 para ambiguidade e reparo excepcional de duplicados sem referências de mercado na origem. Runbook documenta inventário, backup, auditoria, execução e recuperação.
+
 ## 2026-10-10 — catálogo MCP documental e hashes de materiais
 
 FEAT-MCP-001: explicitados os schemas de `tools/list` para documento único, a submissão por referência à revisão persistida e hashes independentes de checklist/modelo. A política aprovada permanece v1.2; o modelo v1.5 não a substitui. Diagnóstico distingue servidor correto de catálogo antigo no cliente. [Evidência](../testing/mcp-tools-schema-20261010.md).

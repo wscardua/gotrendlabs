@@ -1,5 +1,12 @@
 # Feature Changelog
 
+## 2026-10-10 — FEAT-MARKET-001 correção de duplicação da taxonomia
+
+- Criação/edição de mercado e conversão de sugestão reutilizam nomes existentes dentro do respectivo pai, preservando IDs, slugs personalizados, avisos e bloqueios.
+- Nomes ambíguos retornam 409 sem criar cadastros. Criação implícita de nomes inéditos e CRUD explícito permanecem compatíveis.
+- Regressão reproduzida na base bcffa5d: PATCH de reclassificação aumentava subcategorias/eventos de 2 para 3; categoria com slug personalizado também provocava erro de unicidade.
+- Testes adaptados ao controle de revisão editorial vigente. Procedimento excepcional de saneamento preparado com backup e auditoria, preservando vínculos de mercados; simulação produtiva validada. Deploy e execução produtiva pendentes.
+
 ## 2026-10-10 — alinhamento do catálogo MCP editorial
 
 FEAT-MCP-001: servidor e API aceitam o documento único; teste real produtivo de validação retornou pendência humana sem criar mercado. Testes locais verificam `tools/list` de entradas/saídas e submissão. Resposta de política com hashes separados de checklist/modelo implantada pela PR #150/Actions 38090503977; política v1.2 preservada. Após **Refresh tools**, o app `MyGoTrendLabsMCP-v2` aceitou `document` e manteve pendências humanas; metadados injetados na conversa anterior ainda exibiam schema legado. [Recibo](../testing/mcp-tools-schema-20261010.md).

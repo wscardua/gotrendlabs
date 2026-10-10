@@ -1,5 +1,11 @@
 # Integration Map
 
+## Correção de taxonomia — FEAT-MARKET-001 (2026-10-10)
+
+- Admin Ops → FastAPI (nomes e revisão editorial) → resolução por nome/pai → IDs existentes; CRUD explícito continua separado. Conversão de sugestões usa os mesmos helpers.
+- Reparo operacional → ambiente FastAPI/PostgreSQL → plano explícito de subcategorias sem mercados na origem → backup persistente e auditoria `taxonomy.deduplicate`; nenhuma alteração em mercados, ledger ou revisão editorial. Runbook: `operations/taxonomy-duplicates-20261010.md`.
+- Mobile sem consumidor dos endpoints administrativos alterados; MCP mantém resolução por IDs.
+
 ## 2026-10-10 — documento editorial único
 
 - PR #148/Actions 38060102537 implantados: contrato MCP/API, UI, migrations e dados convertidos ativos em produção. Quatro documentos e 27 URLs preservados; smoke técnico aprovado. [Evidência](../testing/editorial-document-production-20261010.md). Piloto externo e parecer humano autenticado em PRD permanecem pendentes.
