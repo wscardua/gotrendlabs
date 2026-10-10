@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-10-10 — fechamento operacional da revisão 1.5
+
+Fonte de verdade reconciliada com a PR #148/Actions 38060102537: documento único e migrations 0004/0005 ativos em produção, quatro fichas e 27 URLs preservadas, status FEAT-MCP-001/FEAT-EDITORIAL-001 ainda parcial pelas homologações externas/humanas. [Recibo produtivo](../testing/editorial-document-production-20261010.md).
+
 ## 2026-10-10 — revisão dos bloqueios da FEAT-MCP-001 v1.5
 
 Contrato, ficha e aceite explicitam declaração de pendências resolvidas no documento e comparação determinística do anúncio esperado com o fechamento. Decisões históricas de mercados já publicados são preservadas pela migration 0005; drafts/agendados convertidos exigem nova avaliação.

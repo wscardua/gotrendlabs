@@ -18,7 +18,7 @@ Usar URL `https://gotrendlabs.com.br/mcp`, autenticação OAuth e registro Dynam
 
 Em 2026-10-07, cadastro com OAuth/DCR/endpoints descobertos corretos recebeu rejeição genérica de app settings. Correção da PR #140 omite `scope: null` na resposta DCR, conforme RFC 7591; implantada pelo Actions 37710313470, com 372 testes CI/main aprovados e smoke DCR HTTPS 201 sem null. [Evidências](../specs/testing/mcp-chatgpt-dcr-20261007.md). Ainda não comprovada como causa exclusiva do erro ChatGPT: repetir cadastro, login/MFA/consentimento e leitura editorial; conservar evidência de erro caso persista.
 
-Infraestrutura MCP implantada pela PR #136 e habilitada em produção. A revisão documental v1.5 está preparada na branch `feature/editorial-single-document-review`; sua migração e ativação produtiva aguardam PR/CI/merge. [Evidências da implantação anterior](../specs/testing/mcp-production-rollout-20261007.md). Dot e piloto autenticado exigem homologação real.
+Infraestrutura MCP implantada pela PR #136 e habilitada em produção. A revisão documental v1.5 foi integrada pela PR #148 e implantada com migrations 0004/0005; quatro documentos e suas URLs foram conferidos. [Recibo da revisão 1.5](../specs/testing/editorial-document-production-20261010.md) e [evidência da implantação anterior](../specs/testing/mcp-production-rollout-20261007.md). Dot e piloto autenticado exigem homologação real.
 
 ## Preparar instalação/reinstalação autorizada
 

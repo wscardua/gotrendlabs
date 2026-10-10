@@ -38,7 +38,7 @@ Diagnóstico histórico — Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001:
 
 ## Editorial — evoluções futuras
 
-- `FEAT-EDITORIAL-001` entrega manual/ficha, critérios versionados, documento único e parecer humano no Admin Ops; a revisão universal foi implantada pela PR #136. A conversão documental v1.5 foi validada localmente e aguarda rollout. Avaliação LLM própria continua evolução separada.
+- `FEAT-EDITORIAL-001` entrega manual/ficha, critérios versionados, documento único e parecer humano no Admin Ops; a revisão universal foi implantada pela PR #136 e a conversão documental v1.5 pela PR #148. Teste autenticado de novo parecer em PRD ainda depende de operador staff/MFA; avaliação LLM própria continua evolução separada.
 - Mercados de integração já possuem aprovação vinculada à versão, invalidação após edição e bloqueio na publicação draft/scheduled pela FastAPI. A extensão a todos os mercados está implantada pela PR #136; automação de publicação permanece fora do escopo.
 - Não há telemetria nova; indicadores ausentes devem ser registrados como indisponíveis. O piloto foi removido na revisão v1.1. Esses itens estão fora do escopo desta entrega, não são bloqueios da implantação.
 
@@ -75,7 +75,7 @@ Diagnóstico histórico — Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001:
 - Backup retention do RDS esta em `1` dia por restricao do plano AWS `FREE`; revisar para `7` dias quando a conta permitir.
 - Agentes IA oficiais possuem primeira política de liquidez bot conservadora e determinística; estratégias econômicas avançadas, materialização temporal de estado por mercado e avaliação financeira mais rica ficam para etapa futura.
 
-- Revisão MCP/Editorial v1.5: documento único, um check humano, migrations 0004/0005 e proteção de publicação validados em DEV. CI, merge, migração e smoke de produção aguardam aprovação da PR e rollout. Dot/piloto autenticado externos continuam pendentes; a simplificação não comprova qualidade factual do parecer.
+- Revisão MCP/Editorial v1.5: documento único, um check humano e migrations 0004/0005 implantados pela PR #148, com fontes e domínio produtivos preservados. [Smoke técnico](../testing/editorial-document-production-20261010.md) aprovado; não houve teste autenticado de parecer novo nem mercado publicado/terminal para observar 0005 em PRD. Dot/piloto autenticado externos continuam pendentes; a simplificação não comprova qualidade factual do parecer.
 
 ## Revisão universal — pendências operacionais
 

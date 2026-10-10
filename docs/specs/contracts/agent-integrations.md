@@ -1,6 +1,6 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
-Versão 1.5 — 2026-10-10. Implementado localmente; Dot/deploy pendentes. Autoridade: [feature](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md). Rotas abaixo estão na implementação FastAPI e no snapshot OpenAPI; sua disponibilidade externa depende do rollout autorizado.
+Versão 1.5 — 2026-10-10. Implantada pela PR #148; Dot/piloto autenticado pendentes. Autoridade: [feature](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md). Rotas abaixo estão na FastAPI produtiva e no snapshot OpenAPI. [Evidência de rollout](../testing/editorial-document-production-20261010.md).
 
 ## Revisão 1.5 — documento único (2026-10-10)
 
