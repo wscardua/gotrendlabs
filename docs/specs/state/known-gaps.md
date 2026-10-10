@@ -38,7 +38,7 @@ Diagnóstico histórico — Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001:
 
 ## Editorial — evoluções futuras
 
-- `FEAT-EDITORIAL-001` entrega manual/ficha, consulta read-only no Admin Ops e critérios versionados. Parecer estruturado de drafts de integração pertence à FEAT-MCP-001 e está implantado pela PR #136. Avaliação LLM própria continua evolução separada; revisão universal foi solicitada em 2026-10-07 e implantada pela PR #136, com approval e configuração de fechamento na API.
+- `FEAT-EDITORIAL-001` entrega manual/ficha, critérios versionados, documento único e parecer humano no Admin Ops; a revisão universal foi implantada pela PR #136. A conversão documental v1.5 foi validada localmente e aguarda rollout. Avaliação LLM própria continua evolução separada.
 - Mercados de integração já possuem aprovação vinculada à versão, invalidação após edição e bloqueio na publicação draft/scheduled pela FastAPI. A extensão a todos os mercados está implantada pela PR #136; automação de publicação permanece fora do escopo.
 - Não há telemetria nova; indicadores ausentes devem ser registrados como indisponíveis. O piloto foi removido na revisão v1.1. Esses itens estão fora do escopo desta entrega, não são bloqueios da implantação.
 
@@ -75,14 +75,12 @@ Diagnóstico histórico — Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001:
 - Backup retention do RDS esta em `1` dia por restricao do plano AWS `FREE`; revisar para `7` dias quando a conta permitir.
 - Agentes IA oficiais possuem primeira política de liquidez bot conservadora e determinística; estratégias econômicas avançadas, materialização temporal de estado por mercado e avaliação financeira mais rica ficam para etapa futura.
 
-- Revisão MCP: preparação humana da ficha e reenvio no Admin Ops implementados localmente (v1.2); não é mais necessário executor externo para retomar parecer após save humano. Homologação Dot/HTTPS e deploy continuam pendentes.
-
-- Revisão MCP v1.3 unifica conferência/ficha e parecer em uma ação humana; sequência de dois formulários v1.2 substituída na UI. Mantém gate, snapshots e contratos anteriores; sem homologação externa/deploy.
+- Revisão MCP/Editorial v1.5: documento único, um check humano, migrations 0004/0005 e proteção de publicação validados em DEV. CI, merge, migração e smoke de produção aguardam aprovação da PR e rollout. Dot/piloto autenticado externos continuam pendentes; a simplificação não comprova qualidade factual do parecer.
 
 ## Revisão universal — pendências operacionais
 
 - DEV legados #1–#3 receberam fichas pendentes, sem aprovação inventada. #3 lider-vendas-ev-4t26 está aberto e sem close_at/close_timezone; requer análise e correção operacional pelo humano, respeitando definição assinada. Não foi fechado/cancelado/alterado automaticamente. Novas publicações com essa configuração são bloqueadas.
-- Deploy desta revisão não executado. Dot/HTTPS/renovação externa seguem pendentes conforme FEAT-MCP-001. Gate valida configuração persistida; não garante disponibilidade do daemon nem veracidade das evidências humanas.
+- A revisão universal foi implantada pela PR #136. Dot/renovação externa seguem pendentes conforme FEAT-MCP-001. O gate valida configuração persistida; não garante disponibilidade do daemon nem veracidade das evidências humanas.
 
 - 2026-10-07, fechamento legado publicado: EV tem definição assinada com prazo/fuso ausentes. PATCH comum rejeita alteração para preservar integridade; campo preenchido não significa persistido. Mensagens foram corrigidas. Não existe fluxo de retificação assinada de prazo nesta versão. Correção exige evolução explícita auditável; cancelamento/refund continua operação humana separada.
 

@@ -6,7 +6,7 @@ Versão 1.5 — 2026-10-10. Implementado localmente; Dot/deploy pendentes. Autor
 
 `editorial_record` contém somente `policy_version`, `policy_hash` e `document` (texto não vazio, máximo 60.000 caracteres). O documento cobre contexto/duplicidade, pergunta/regras/prazos, fontes com URL e data, contingências/responsável e pendências/conclusão. Campos estruturados anteriores recebem `422`. `GET /admin/agent-editorial-reviews/{id}` fornece o documento persistido e a política atual; a migração 0004 converte registros anteriores sem alterar snapshots históricos. Drafts/agendados exigem nova revisão humana; a 0005 preserva a decisão histórica de mercados já publicados.
 
-`POST /admin/agent-editorial-reviews/{id}/assessment` recebe `editorial_record` com documento, `expected_revision`, `snapshot_hash`, `decision` e `confirmed` booleano. `confirmed=true` é obrigatório para `approved`; devolução/rejeição o dispensam. O endpoint mantém locks, transação, auditoria, snapshot e versionamento. As antigas rotas `/record` e `/decision` deixam de existir. O MCP usa o mesmo schema de draft, mas não possui ferramenta para enviar `confirmed` ou decisão humana. O gate de publicação exige confirmação na decisão documental, além de revisão/hash/política/conteúdo atuais. As descrições anteriores abaixo são apenas históricas.
+`POST /admin/agent-editorial-reviews/{id}/assessment` recebe `editorial_record` com documento, `expected_revision`, `snapshot_hash`, `decision` e `confirmed` booleano. `confirmed=true` é obrigatório para `approved`; devolução/rejeição o dispensam. O endpoint mantém locks, transação, auditoria, snapshot e versionamento. As antigas rotas `/record` e `/decision` deixam de existir. O MCP usa o mesmo schema de draft, mas não possui ferramenta para enviar `confirmed` ou decisão humana. O gate de publicação exige confirmação na decisão documental, além de revisão/hash/política/conteúdo atuais. As revisões 1.1–1.4 ao final são apenas históricas.
 
 Na aprovação, o texto deve conter a seção `PENDÊNCIAS E CONCLUSÃO` com `Pendências para aprovação: nenhuma` como primeira linha de conteúdo e sem duplicá-la; a ausência, outro valor ou simples acréscimo após pendências já listadas aparece como `unresolved_editorial_gaps` em `pending` e devolve `422` ao tentar aprovar. A linha opcional `Anúncio esperado: <datetime ISO 8601 com offset>` é validada contra `close_at` pela FastAPI; formato inválido ou duplicado devolve `invalid_editorial_announcement` e fechamento igual/posterior devolve `close_after_editorial_announcement`, ambos `422`. `Anúncio esperado: não informado` documenta ausência de horário conhecido. Esta regra mantém um só campo editável, sem interpretar a suficiência factual do restante do texto.
 
@@ -43,7 +43,7 @@ REST interno de domínio e ferramentas MCP possuem schemas versionados e mapeame
 - `GET .../{id}/connections` e `POST .../{id}/connections/{grant_id}/revoke`: grants OAuth.
 - `POST .../{id}/transfer-responsibility`: transferência explícita auditada.
 - `GET /admin/agent-editorial-reviews`: fila paginada.
-- `GET /admin/agent-editorial-reviews/{market_id}` e `POST .../{market_id}/decision`: parecer humano (`approved`, `returned`, `rejected`) com revisão/hash esperado e nota.
+- `GET /admin/agent-editorial-reviews/{market_id}`: documento e estado da revisão; `POST .../{market_id}/assessment`: parecer humano (`approved`, `returned`, `rejected`) com documento, revisão/hash esperado, confirmação para aprovação e nota.
 
 Todas exigem conta ativa staff OU superuser + MFA. Ambos administram todas as integrações igualmente. CSRF no frontend, verificações também na API. IDs relacionados devem pertencer à integração indicada.
 
@@ -55,9 +55,9 @@ Prefixo `/internal/agent-integrations`: validação/troca de delegação e inges
 
 ## Payload de draft
 
-Campos permitidos: `title`, `summary`, `kind` (`binary`/`multiple`), `category_id`, `subcategory_id`, `event_id`, `options` (label/hint), `source`, `resolution_criteria`, `close_at`, `close_timezone`, `editorial_record`. Schema proíbe extras. Limites finitos para textos/listas/evidências definidos em Pydantic e MCP de forma consistente. Binário segue normalização autoritativa existente; múltiplo tem pelo menos duas opções distintas. Backend fornece defaults visuais seguros.
+Campos permitidos: `title`, `summary`, `kind` (`binary`/`multiple`), `category_id`, `subcategory_id`, `event_id`, `options` (label/hint), `source`, `resolution_criteria`, `close_at`, `close_timezone`, `editorial_record`. Schema proíbe extras. Limites finitos para textos, listas e documento definidos em Pydantic e MCP de forma consistente. Binário segue normalização autoritativa existente; múltiplo tem pelo menos duas opções distintas. Backend fornece defaults visuais seguros.
 
-`editorial_record`: `policy_version`, `policy_hash`, justificativa, sinais, cobertura de busca, semelhantes, fontes e evidências por criterion_id. Cada fonte tem URL, finalidade, verificação relatada, momento e extrato. Critério usa `satisfied`/`pending`/`not_verified`; não permite ao agente preencher decisão humana. Campo `expected_revision` é obrigatório na edição/submissão; `idempotency_key` obrigatório em mutações, repassado ao backend como chave validada.
+`editorial_record`: somente `policy_version`, `policy_hash` e `document`; URLs, finalidade, momento da consulta, extratos, origem e limites da verificação pertencem ao texto. O agente não pode preencher decisão ou confirmação humana. Campo `expected_revision` é obrigatório na edição/submissão; `idempotency_key` obrigatório em mutações, repassado ao backend como chave validada.
 
 Resposta de mutação: `market_id`, `slug`, `market_status`, `editorial_status`, `revision`, `policy_version`, `admin_url`, `request_id`, `replayed`. Nunca retornar segredo ou notas de outros recursos. Autor/responsável/integração vêm da autenticação.
 
@@ -73,13 +73,17 @@ Entidades de integração, credencial, grant/token, idempotência/cotas e ficha/
 
 Relações: integração → responsável; credencial/grant → integração; grant OAuth → usuário consentidor; token → origem revogável; draft → integração criadora; revisão/ficha → mercado + versão; eventos administrativos → integração/executor + humano responsável + request/execução. Restrições únicas para chaves idempotentes e versões. Índices para estado, expiração, quota e consultas administrativas. Revogar não apaga autoria. Separar grants para novos modelos nas roles migrator/runtime.
 
-Schemas HTTP entram no OpenAPI durante implementação, não nesta entrega documental. Ferramentas MCP possuem teste de paridade com schemas de domínio e versão de contrato.
+Schemas HTTP atuais estão no snapshot OpenAPI. Ferramentas MCP possuem teste de paridade com schemas de domínio e versão de contrato.
 
 ## Evidência e operação
 
 [Resultados locais por critério](../testing/mcp-editorial-results.md), [runbook OAuth/serviço](../../guides/mcp-editorial-pilot.md). Campos opcionais `editorial_revision`/`editorial_status` em MarketResponse e `expected_revision` na edição administrativa preservam consumidores web/mobile existentes. Somente o editor administrativo de draft com autoria técnica precisa enviar revisão esperada. Migrations mantêm defaults SQL vazios nos campos aditivos de correlação para inserts anteriores.
 
-## Revisão 1.1 — aprovação para publicação de mercados de integração
+## Histórico de revisões anteriores à 1.5 (não normativo)
+
+Os payloads e rotas editoriais descritos nas revisões 1.1–1.4 abaixo foram substituídos pela revisão 1.5 no início deste documento. Permanecem apenas para registrar a evolução das decisões; o snapshot OpenAPI define as rotas atuais. A correção OAuth após essas revisões continua vigente.
+
+### Revisão 1.1 — aprovação para publicação de mercados de integração
 
 Slug é derivado do título no backend, colisões recebem sufixo numérico; não muda na edição MCP e não identifica replay. MarketLifecycleEngine exige parecer humano aprovado/currente para todos os mercados, sob locks mercado/ficha. Sem ficha, publicação bloqueia. Retorna 409 com código `editorial_approval_required` e mensagem operacional quando decisão/revisão/hash/política/conteúdo não forem atuais. Publicar versão aprovada não salva campos do editor. Revisão detalhada informa `publication_gate_enforced=true` e `publication_gate_scope=all_markets`; gate universal.
 
