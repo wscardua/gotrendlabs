@@ -2,7 +2,7 @@
 
 ## 2026-10-10 — alinhamento do catálogo MCP editorial
 
-FEAT-MCP-001: servidor e API já aceitam o documento único; teste real produtivo de validação retornou pendência humana sem criar mercado. Testes locais passam a verificar `tools/list` de entradas/saídas e submissão. Resposta de política ganha hashes separados de checklist/modelo, ainda pendentes de implantação; cadastro `MyGoTrendLabsMCP-v2` no cliente requer atualização dos metadados. [Recibo](../testing/mcp-tools-schema-20261010.md).
+FEAT-MCP-001: servidor e API aceitam o documento único; teste real produtivo de validação retornou pendência humana sem criar mercado. Testes locais verificam `tools/list` de entradas/saídas e submissão. Resposta de política com hashes separados de checklist/modelo implantada pela PR #150/Actions 38090503977; política v1.2 preservada. Após **Refresh tools**, o app `MyGoTrendLabsMCP-v2` aceitou `document` e manteve pendências humanas; metadados injetados na conversa anterior ainda exibiam schema legado. [Recibo](../testing/mcp-tools-schema-20261010.md).
 
 ## 2026-10-10 — parecer documental v1.5 implantado
 
