@@ -1,4 +1,6 @@
 
+
+- [ADR-0015](ADR-0015-prepublication-market-deletion.md): exclusão física de mercados pré-publicação e parecer, com operação restrita/auditada.
 - `ADR-0011-mcp-editorial-integrations.md`: MCP editorial sem banco, OAuth/serviço, gestão administrativa equivalente e reutilização de auditoria; implantação/habilitação produtiva pela PR #136, com HTTPS/grants/isolamento conferidos; Dot/piloto autenticado pendentes.
 # Decisions
 

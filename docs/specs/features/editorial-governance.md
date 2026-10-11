@@ -1,10 +1,10 @@
 ---
 id: FEAT-EDITORIAL-001
 titulo: "Governança editorial de mercados"
-versao: 1.5
+versao: 1.7
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-10
+ultima_atualizacao: 2026-10-11
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -39,7 +39,7 @@ revisão atual. A publicação continua protegida pelo gate universal vigente.
 Uma migração única converte fichas anteriores em documento, preserva seus
 snapshots históricos e exige nova avaliação humana. O runtime aceita somente
 o documento textual; payloads estruturados anteriores são rejeitados.
-Para aprovar, o documento declara na seção final `Pendências para aprovação: nenhuma` e o humano confirma a conferência. Quando houver horário conhecido de divulgação na linha `Anúncio esperado: ...`, a FastAPI rejeita fechamento igual ou posterior. Mercados já publicados mantêm a última decisão histórica durante a conversão; drafts e agendados precisam de nova revisão antes da publicação.
+Para aprovar, basta a decisão approved com confirmação humana explícita: o revisor atesta ter conferido o conteúdo e resolvido as pendências, assumindo a responsabilidade editorial. Não se exige frase, seção final, alteração do texto/política ou formato de anúncio no parecer humano. Validações automáticas de documento/anúncio permanecem na preparação por agentes; alertas são informativos para o humano. Publicação respeita a decisão aprovada da revisão/hash atual sem revalidar o conteúdo editorial. Mercados já publicados mantêm a última decisão histórica durante a conversão; drafts e agendados precisam de nova revisão antes da publicação.
 As seções 1.2/1.3 abaixo registram o comportamento histórico.
 
 ## Escopo vigente — revisão universal 1.3
@@ -152,3 +152,21 @@ Todo mercado possui ficha editorial estruturada e revisão humana, independentem
 ## Integração FEAT-THUMB-001
 
 Thumbnails podem ser geradas a partir do texto/classificação atuais sem salvar ficha/mercado. Confirmar no salvamento altera image_url e invalida o parecer como outras edições. Publicar versão aprovada continua exigindo revisão humana do snapshot salvo; seleção nova pendente orienta salvar/revisar. Geração não aprova nem publica. [Feature](ai-market-thumbnails.md).
+
+## Exclusão de mercados em preparação ou revisão (2026-10-11)
+
+Operador staff/superuser com MFA pode excluir fisicamente um mercado com lifecycle `draft`, parecer `preparation` ou `in_review` e nenhuma publicação, previsão ou prova de integridade. A FastAPI revalida estado e revisão sob lock; conflito retorna 409 sem alteração. Outros estados editoriais e lifecycle não permitem exclusão.
+
+Admin Ops oferece Excluir mercado na lista, editor e revisão, seguido de confirmação explícita via POST/CSRF. A confirmação reutiliza o shell e painel do Admin Ops, com mercado/estado, aviso de remoção definitiva e ações agrupadas; no celular, botões em linhas separadas. A transação remove mercado, opções, ficha/parecer, todas as revisões, dependências de apresentação. Sugestões mantêm seu histórico e crédito, com converted_market_id desvinculado; auditorias administrativas são preservadas. Não há restauração. Slug pode ser reutilizado em uma criação nova.
+
+A função PostgreSQL restrita `delete_prepublication_editorial` permite apenas esta exceção ao histórico editorial protegido; não concede DELETE geral sobre revisões. Provas criptográficas continuam intocáveis. Jobs de thumbnail são desvinculados, expirados e têm snapshot/usage apagados; conserva-se somente o registro técnico necessário às cotas. Resultados atrasados do worker são ignorados; mídia gerada órfã segue o prune existente, sem apagar arquivos manuais/compartilhados na transação.
+
+MCP omite o mercado removido naturalmente. Consulta, edição, submissão e replay de pedidos anteriores retornam not_found; chaves/hash idempotentes ficam como recibo mínimo de exclusão para evitar recriação pelo mesmo pedido, sem conservar parecer ou snapshot. Nova chave cria novo ID. Não há ferramenta de exclusão MCP.
+
+## Compatibilidade de quebras de linha no parecer
+
+Anúncio esperado e declaração final de pendências devem ser interpretados igualmente com LF, CRLF (formulários web) e CR. Normalizar apenas uma cópia para validação; preservar o documento original persistido e o cálculo de snapshot/hash. Os critérios de conteúdo aplicam-se aos validadores automáticos de preparação MCP/API e aos alertas informativos. Parecer humano approved com confirmed=true atesta revisão e resolução das pendências sem bloquear por anúncio ou declaração textual; publicação conserva os controles de autoria, revisão/hash/snapshot e os requisitos operacionais do mercado.
+
+## Fechamento da entrega em 2026-10-11
+
+O escopo de exclusão pré-publicação e aprovação por responsabilidade humana está implementado e validado localmente; publicação aguarda aprovação da PR, CI e verificação em PRD. O status amplo da feature permanece parcial por evoluções fora deste escopo. Estado operacional e evidências no WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL.

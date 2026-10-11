@@ -1,5 +1,31 @@
 # Feature Changelog
 
+## 2026-10-11 — fechamento da entrega de exclusão e parecer
+
+Escopo entregue localmente: exclusão física de draft preparation/in_review e parecer/revisões, dependências tratadas, auditoria preservada; proteção de identidade nas ações administrativas e thumbnails; aprovação editorial por confirmação humana, com gates de autoria/versão/snapshot preservados. Specs, contratos/OpenAPI, ADR-0015, checklist v1.3/modelo v1.6, guias, aceite e memória reconciliados. MCP mantém validações automáticas e não recebe exclusão/aprovação; textos e hashes de checklist/modelo atualizados dinamicamente. Mobile não consome as rotas administrativas. Publicação em main/PRD aguarda aprovação da descrição da PR pelo usuário; CI, migrations/grants e smoke produtivo ainda pendentes. Branch local deve ser preservada. A observação sobre legado não abre nova alteração de contrato nesta entrega.
+
+## 2026-10-11 — correções da revisão de exclusão e parecer
+
+Protegida geração de thumbnail contra aba antiga após exclusão/recriação do slug: expected_market_id validado sob lock antes de job/cotas; cliente legado sem ID rejeitado após exclusão anterior. Regra compartilhada com as demais mutações administrativas, contexto/hash de geração preservados, badges sem novo campo. Reconciliado texto CRLF com a atestação humana. 70 testes/OK (109.566s), browsers de mercados/badges aprovados com HTTP/provedores simulados; Django/Node/compilação/OpenAPI/diff aprovados. DEV serve schema e JS atualizados. MCP sem ajuste de ferramentas/schemas/permissões: geração é administrativa, validações automáticas de preparação preservadas e replays testados. Mobile não consome a rota administrativa. Sem migration adicional, geração paga, commit/push ou deploy.
+
+## 2026-10-11 — aprovação sob responsabilidade humana
+
+Aprovação + confirmação humana constituem atestado de revisão, resolução das pendências e responsabilidade editorial. Removidos gates de conteúdo no parecer humano e sua reaplicação na publicação; preservados staff/MFA, schema, versão/hash/snapshot, estado e auditoria. UI sem frases obrigatórias; MCP mantém validações da preparação e não recebe aprovação. Feature v1.7/modelo v1.6, política v1.2/hash inalterados. 91 cenários validados: 90 na suíte ampla e caso com expectativa antiga corrigido em reexecução de 7 testes/OK. DEV atualizado; sem deploy produtivo.
+
+## 2026-10-11 — correção do parecer enviado pelo formulário
+
+CRLF de textarea não provoca mais invalid_editorial_announcement nem falsa pendência na seção final. Datas/offset/duplicidade/fechamento permanecem validados; texto persistido e hashes preservados. 11 testes locais e Chrome POST aprovados; sem migration ou deploy produtivo.
+
+## 2026-10-11 — correções após revisão da exclusão
+
+Edição/publicação/fechamento/cancelamento verificam ID original; pedidos legados sem ID bloqueados após reutilização de slug excluído. Mídia versionada restaurada; diretório DEV configurável sem symlink na árvore rastreada. 88 testes locais aprovados (236.790s), OpenAPI/Django/compilação/diff aprovados e serviços DEV atualizados. Orientação de anúncio esperado esclarecida; erro específico reportado ainda depende da linha rejeitada para reprodução. Sem PR/deploy.
+
+## 2026-10-11 — exclusão física de mercados em preparação/revisão
+
+FEAT-MARKET-001 / FEAT-EDITORIAL-001: por plano aprovado, substituir proposta lógica não publicada. Confirmação remove definitivamente mercado/opções/ficha/parecer/revisões; só draft preparation/in_review, sem publicação/previsões/provas. ID/revisão previnem confirmação obsoleta; operação auditada e atômica. Recibos técnicos mínimos preservam cotas e impedem replay MCP de sucesso. Validação local concluída: 204 testes de regressão e 21 após ajuste final, navegador desktop/celular e checks aprovados; migrations aplicadas no DEV local e serviços reiniciados na feature a pedido do usuário; sem PR/deploy produtivo; [ADR-0015](../decisions/ADR-0015-prepublication-market-deletion.md), [aceite](../testing/market-deletion-acceptance.md).
+
+Ajuste visual posterior: confirmação segue painel/cabeçalho Admin Ops, organiza aviso e ações e empilha botões no celular; CSS versionado. Seis testes web e browser desktop/celular aprovados, disponibilizado no DEV.
+
 ## 2026-10-11 — aviso histórico de thumbnail
 
 FEAT-THUMB-001 / FEAT-BADGE-IMAGE-001: abertura do editor retoma apenas gerações em andamento; estados terminais históricos não apresentam erro sobre imagem salva. Polling de geração ativa mantém mensagens de falha/expiração. Sem alteração de validade, backend, API ou mídia. Implantado pela PR #154/Actions 38136371456, CI/build/deploy aprovados e JS público conferido.

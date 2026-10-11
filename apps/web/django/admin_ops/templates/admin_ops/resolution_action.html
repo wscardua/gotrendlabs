@@ -23,6 +23,7 @@
       {% if action == "resolve" and form %}
         <form class="form-grid" method="post" style="margin-top:18px">
           {% csrf_token %}
+          {% if market %}<input type="hidden" name="expected_market_id" value="{% firstof request.POST.expected_market_id market.editorial_market_id %}">{% endif %}
           <div class="field">
             <label for="{{ form.winning_option_id.id_for_label }}">Resultado <span class="required-marker">Obrigatório</span></label>
             {{ form.winning_option_id }}
@@ -49,6 +50,7 @@
       {% elif action == "cancel-refund" %}
         <form class="form-grid" method="post" style="margin-top:18px">
           {% csrf_token %}
+          {% if market %}<input type="hidden" name="expected_market_id" value="{% firstof request.POST.expected_market_id market.editorial_market_id %}">{% endif %}
           <div class="field full">
             <label for="id_note">Justificativa operacional</label>
             <textarea id="id_note" name="note" required>Desfazer resolução e retornar mercado para fechado.</textarea>

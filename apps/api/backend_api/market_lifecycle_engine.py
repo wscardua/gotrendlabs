@@ -38,6 +38,8 @@ class MarketLifecycleEngine:
     def publish_market(self, row, slug, note=""):
         self.cursor.execute("SELECT status FROM gotrendlabs_markets WHERE id=%s FOR UPDATE", (row["id"],))
         current = self.cursor.fetchone()
+        if not current:
+            raise HTTPException(404, "Mercado não encontrado.")
         row = {**row, "status": current["status"]}
         if row["status"] == "open":
             return

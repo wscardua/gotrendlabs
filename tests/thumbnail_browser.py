@@ -215,9 +215,10 @@ with sync_playwright() as pw:
         if request.request.method == "POST":
             current["calls"] += 1
             body = request.request.post_data_json
+            assert body["expected_market_id"] == market["editorial_market_id"]
             current["job"] = {
                 "request_id": body["request_id"],
-                "snapshot": {k: v for k, v in body.items() if k != "request_id"},
+                "snapshot": {k: v for k, v in body.items() if k not in {"request_id", "expected_market_id"}},
                 "state": "running",
             }
         if current["job"]:

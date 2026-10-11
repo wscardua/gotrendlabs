@@ -1,4 +1,62 @@
+## WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL
+
+- Tipo: fechamento de implementação/publicação. Status: preparação concluída; aguardando aprovação da PR.
+- Escopo entregue localmente: exclusão física de draft preparation/in_review e parecer/revisões, dependências tratadas, auditoria preservada; proteção de identidade nas ações administrativas e thumbnails; aprovação editorial por confirmação humana, com gates de autoria/versão/snapshot preservados. Specs, contratos/OpenAPI, ADR-0015, checklist v1.3/modelo v1.6, guias, aceite e memória reconciliados. MCP mantém validações automáticas e não recebe exclusão/aprovação; textos e hashes de checklist/modelo atualizados dinamicamente. Mobile não consome as rotas administrativas. Publicação em main/PRD aguarda aprovação da descrição da PR pelo usuário; CI, migrations/grants e smoke produtivo ainda pendentes. Branch local deve ser preservada. A observação sobre legado não abre nova alteração de contrato nesta entrega.
+- Base: origin/main e4c3cbb43b31af9db52abdd21090da94d8027aec, conferida com fetch; branch feature/delete-draft-review-markets.
+- Validação final documental: 9 testes/OK (14.398s), incluindo cliente MCP real OAuth/service, conteúdo/hash do checklist/modelo; OpenAPI, migration drift e diff aprovados. Log /tmp/gtl-feature-close-doc-tests.log.
+- Checklist universal/local satisfeito; produção só será concluída após CI/merge/deploy e verificação. Evidências anteriores: 204 testes de regressão inicial, 88 pós-revisão, 70 na rodada final e browsers mercados/badges/exclusão. Sem repetir contagens como uma suíte única.
+- Plano de rollout: [runbook de exclusão e parecer](../../guides/prepublication-editorial-rollout.md). Retomada: submeter PR com descrição aprovada, acompanhar Actions, backup recuperável antes de migrations, conferir grants/runtime/serviços e registrar PR/SHA/run/resultado.
+
+## Correções da revisão atual — 2026-10-11
+
+- Status: concluído no escopo de implementação e validação local. Escopo autorizado: proteger geração de thumbnail contra aba antiga após exclusão/recriação e reconciliar orientação CRLF com a atestação humana. ID validado sob lock antes de reservar cotas; pedidos legados sem ID aceitos somente em slugs nunca excluídos. MCP não expõe geração administrativa; nenhuma nova ferramenta ou permissão. Documento editorial exposto permanece consistente com aprovação humana.
+- Evidência: Protegida geração de thumbnail contra aba antiga após exclusão/recriação do slug: expected_market_id validado sob lock antes de job/cotas; cliente legado sem ID rejeitado após exclusão anterior. Regra compartilhada com as demais mutações administrativas, contexto/hash de geração preservados, badges sem novo campo. Reconciliado texto CRLF com a atestação humana. 70 testes/OK (109.566s), browsers de mercados/badges aprovados com HTTP/provedores simulados; Django/Node/compilação/OpenAPI/diff aprovados. DEV serve schema e JS atualizados. MCP sem ajuste de ferramentas/schemas/permissões: geração é administrativa, validações automáticas de preparação preservadas e replays testados. Mobile não consome a rota administrativa. Sem migration adicional, geração paga, commit/push ou deploy. Logs locais /tmp/gtl-thumbnail-identity-tests.log, /tmp/gtl-thumbnail-identity-browser.log e /tmp/gtl-thumbnail-identity-badge-browser.log. Smoke com roles produtivas continua requisito de rollout, conforme aceite de exclusão.
+
+## WFLOW-20261011-HUMAN-EDITORIAL-ATTESTATION
+
+- Status: concluído localmente; publicação/homologação produtiva pendentes. Mudança explicitamente solicitada pelo usuário. Aprovação + confirmação constituem atestado humano de revisão/resolução das pendências. Remover gates automáticos de conteúdo no parecer humano e revalidação na publicação; preservar autorização, versão/hash/snapshot, estado, schema, auditoria e validação da preparação de agentes. Feature editorial v1.7 e contrato atualizados antes da implementação.
+- Implementação: assessment humano não valida anúncio/política/declaração textual; approved exige confirmed=true. Gate de publicação conserva decisão/revisão/hash/snapshot/autoria, sem gates editoriais de conteúdo. Fonte/date/hash/documento e autoria auditados; preparação MCP preservada. UI explica responsabilidade e alertas informativos; modelo da ficha v1.6, política aprovada v1.2/hash inalterados.
+- Validação: 91 cenários na suíte ampla (251.951s): 90 aprovados, única falha foi expectativa antiga de revisão não avançar após aprovação. Expectativa corrigida; reexecução do caso e seis testes de referência editorial: 7/OK (4.477s), DB isolado test_gtl_mcp_human_attestation_final. Todos os cenários validados; falha transitória de criação de DB durante teardown resolvida com banco isolado separado. Django/compilação/OpenAPI/diff aprovados; DEV API/web HTTP200. Sem migration, aprovação real ou alteração/deploy produtivo. [Aceite](../testing/human-editorial-attestation-acceptance.md).
+
+## Correção de CRLF no parecer editorial — 2026-10-11
+
+- Status: correção concluída localmente, publicação produtiva pendente. Usuário identificou produção /admin-ops/agent-reviews/44/. Consulta somente leitura via MCP confirmou uma linha válida Anúncio esperado: não informado. Reproduzido 422 ao trocar LF por CRLF, formato de textarea/form web. Normalizar quebras somente para validação de anúncio/pendências, preservando documento e hashes. Nenhum parecer ou dado produtivo alterado.
+- Correção: cópia normalizada LF para anúncio e declaração de pendências; original persistido/hash preservados. Teste API aceita/aprova CRLF para não informado/offset/Z, conservando documento. Rejeições de dados inválidos, datas sem offset, duplicidade, fechamento indevido e pendências continuam ativas.
+- Evidência: 11 testes/OK (10.523s), DB isolado, Chrome headless comprova CRLF no POST de textarea. OpenAPI/compilação/diff aprovados; reload DEV e health/web HTTP200. [Aceite](../testing/editorial-newlines-acceptance.md). Nenhum acesso AWS necessário, edição de parecer produtivo, commit/push ou deploy.
+
+## Correções da revisão — 2026-10-11
+
+- Status: recomendações da revisão concluídas localmente; diagnóstico do erro editorial depende da linha exata solicitada ao usuário. PATCH/publish/cancel/lock validam ID sob lock; pedidos legados sem ID rejeitados após exclusão no mesmo slug. Formulários enviam o ID original, inclusive após erro. Mídia versionada restaurada; GOTRENDLABS_MEDIA_ROOT e roots públicos do launcher DEV apontam para arquivos preservados sem symlink rastreado.
+- Evidência: 88 testes aprovados em 236.790s (exclusão/recriação, formulários, editorial e MCP) em PostgreSQL isolado; OpenAPI/check Django/compilação/diff aprovados. DEV API/web/worker reiniciados sem jobs ativos; API, página, imagem preservada e discovery público HTTP200. Sem exclusão real, consumo pago, commit/push ou deploy.
+- Anúncio esperado: linhas salvas no DEV válidas; testes diretos confirmam ISO com offset, Z e não informado. Datas sem fuso, valores inválidos e linhas duplicadas retornam 422. Orientação da página/erro agora tem exemplo completo e exige observações em outra linha. Validador e regra fechamento anterior ao anúncio preservados; não afirmar que o erro específico do usuário foi corrigido sem reproduzir a linha rejeitada.
+
 # Workflow Runs
+
+## WFLOW-20261011-PHYSICAL-MARKET-DELETION
+
+- Status: `concluido` no escopo de implementação e validação local; substitui a abordagem lógica do WFLOW-20261011-DELETE-PREPUBLICATION-MARKET por instrução expressa do usuário e plano aprovado.
+- Branch/worktree: feature/delete-draft-review-markets, base origin/main e4c3cbb atualizada; worktree isolado gotrendlabs-delete-markets. Nenhuma das abordagens foi publicada.
+- Escopo: DELETE físico de draft preparation/in_review, incluindo opções, ficha, parecer e revisões; limpar dependências e desvincular sugestões; conservar auditoria administrativa.
+- Arquitetura: FastAPI autoriza staff/MFA, lock mercado/ficha/revisão, protege previsões e provas; função PostgreSQL restrita remove histórico editorial somente de elegíveis, sem grant geral DELETE. Sem deleted_at.
+- MCP: chaves idempotentes eliminadas logicamente por recibo mínimo de exclusão, impedindo replay de sucesso ou recriação pelo mesmo pedido; nova chave pode criar novo mercado.
+- Validação: 204 testes de regressão aprovados (531.145s), 24 focados (45.809s) e repetição final de 21 após ajuste da função SQL para alertas (58.995s). Confirmação Chrome desktop/celular sem JavaScript e inspeção visual aprovadas. Django check, drift de migrations, OpenAPI e diff aprovados. Venv Python3.11 existente, PostgreSQL isolado, providers simulados.
+- Fechamento: ADR-0015, specs/contratos/OpenAPI, README, integração, changelogs, status e [aceite](../testing/market-deletion-acceptance.md) reconciliados. Sem commit/PR/deploy, inferência paga ou exclusão real. Migrations editorial_integrations.0006/admin_ops.0026 e smoke com roles reais devem acompanhar futura implantação; grants locais conferidos por catálogo, testes executados como proprietário do banco isolado.
+
+- Disponibilização DEV solicitada pelo usuário: em 2026-10-11, PostgreSQL/proxy/API/web/MCP/executor reiniciados e runtime trocado da worktree editorial-single-document para gotrendlabs-delete-markets. Migrations editorial_integrations.0006/admin_ops.0026 aplicadas com credencial de migração; seis mercados e mídia preservados, fila sem queued/running antes da parada. Health API direto/proxy, web e discovery OAuth HTTP200; função restrita disponível para a role FastAPI. Nenhuma exclusão real ou deploy produtivo.
+
+- Correção visual solicitada pelo usuário: confirmação integrada ao painel Admin Ops, cabeçalho/estado/aviso/ações alinhados, botões empilhados no celular e CSS administrativo versionado para invalidar cache. Seis testes web e browser desktop/celular sem JavaScript aprovados; CSS atualizado conferido via HTTP no DEV. Contrato e regra de exclusão preservados.
+
+## WFLOW-20261011-DELETE-PREPUBLICATION-MARKET
+
+- Tipo: alteração FEAT-MARKET-001 / FEAT-EDITORIAL-001 solicitada pelo usuário.
+- Status: `substituido` pelo WFLOW-20261011-PHYSICAL-MARKET-DELETION após correção de escopo aprovada pelo usuário. Registro abaixo é histórico da implementação lógica não publicada; branch `feature/delete-draft-review-markets`, base `origin/main` e4c3cbb atualizada; worktree isolado, alterações anteriores preservadas.
+- Objetivo: excluir da operação mercados draft em preparação ou revisão, com confirmação, autorização staff/MFA e auditoria.
+- Desenho: exclusão lógica por deleted_at; histórico editorial append-only e referências preservados. FastAPI valida sob lock de mercado e revisão; Django apenas apresenta confirmação e chama DELETE. Sem permissão MCP de exclusão ou restauração. ADR documenta a retenção.
+- Artefatos: migration/modelo, serviço/API/schema, consultas administrativas/editoriais/thumbnails, cliente/views/templates, OpenAPI, specs/contratos/ADR/testes e memória operacional.
+- Testes: preparação/revisão; estados proibidos; autenticação/MFA; revisão obsoleta; previsão/integridade; desaparecimento de listas/detalhes; mutações posteriores; auditoria/rollback; confirmação GET/POST/CSRF. Regressões de editorial/publicação/thumbnails.
+- Evidências: 163 testes focados/regressões aprovados em 352,443 s (17 novos), PostgreSQL isolado `test_gtl_delete_checks`, venv existente `gotrendlabs-ai-thumbnails/.venv` Python 3.11. Chrome desktop/celular sem JavaScript aprovado e capturas inspecionadas. Django check, makemigrations --check --dry-run, OpenAPI --check, compilação e diff --check aprovados. Log local `/tmp/market-deletion-regression.log`; [aceite](../testing/market-deletion-acceptance.md).
+- Checklist universal/alteração/implementação conferido: spec antes do código; arquitetura/segurança e fronteiras revisadas; ADR-0015, contrato, OpenAPI, testes, README, changelogs, integração e estado sincronizados. Nenhuma permissão ampliada ou mudança em regras de wallet/publicação. Histórico editorial preservado.
+- Limites: sem PR, CI remoto, deploy, migration no DEV compartilhado/PRD ou exclusão de mercado real. Migration markets.0033 deve anteceder o novo runtime. Implementação local sem pendências; publicação é etapa posterior.
 
 ## WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS
 

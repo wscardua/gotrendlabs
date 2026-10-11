@@ -16,6 +16,7 @@
       </div>
     </div>
     <section class="panel admin-dashboard-panel">
+    {% for message in messages %}<div class="notice" role="status">{{ message }}</div>{% endfor %}
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     <form class="admin-filter-form market-search-form" method="get" role="search">
       {% if active_status %}<input type="hidden" name="status" value="{{ active_status }}">{% endif %}
@@ -71,6 +72,7 @@
           </td>
           <td>
             <div class="table-actions">
+              {% if market.can_delete %}<a class="btn small ghost" href="{% url 'admin-ops-market-delete' slug=market.slug %}">{% trans 'Excluir mercado' %}</a>{% endif %}
               <a class="btn small" href="{% url 'admin-ops-market-edit' market.slug %}">Editar/visualizar</a>
               {% if market.editorial_market_id %}
                 <a class="btn small ghost" href="{% url 'admin-ops-agent-review-detail' market_id=market.editorial_market_id %}">{% trans 'Revisão editorial' %}</a>

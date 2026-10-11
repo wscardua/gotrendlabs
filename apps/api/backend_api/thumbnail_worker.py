@@ -94,7 +94,7 @@ def run_once(provider=generate):
             with get_connection() as conn, conn.cursor() as cursor:
                 cursor.execute("SELECT * FROM gotrendlabs_thumbnail_jobs WHERE id=%s FOR UPDATE", (job["id"],))
                 current = cursor.fetchone()
-                if current["state"] != "running" or current["claim_token"] != token or current["lease_until"] <= s.now():
+                if not current or current["state"] != "running" or current["claim_token"] != token or current["lease_until"] <= s.now():
                     raise ProviderFailure("lease_expired", uncertain=True)
                 if not eligible(cursor, job):
                     raise ProviderFailure("ineligible")
@@ -113,7 +113,7 @@ def run_once(provider=generate):
                 with get_connection() as connection, connection.cursor() as cursor:
                     cursor.execute("SELECT * FROM gotrendlabs_thumbnail_jobs WHERE id=%s FOR UPDATE", (job["id"],))
                     current = cursor.fetchone()
-                    if current["state"] != "running" or current["claim_token"] != token or current["lease_until"] <= s.now():
+                    if not current or current["state"] != "running" or current["claim_token"] != token or current["lease_until"] <= s.now():
                         return True
                     if not eligible(cursor, job):
                         raise ProviderFailure("ineligible")
@@ -157,7 +157,7 @@ def run_once(provider=generate):
                 (job["id"],),
             )
             current = cursor.fetchone()
-            if current["state"] != "running" or current["claim_token"] != token:
+            if not current or current["state"] != "running" or current["claim_token"] != token:
                 return True  # fenced late result cannot restore an abandoned job
             if usage is None:
                 usage = current["usage"]  # Preserve stage evidence after an unexpected crash/error.

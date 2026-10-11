@@ -123,6 +123,7 @@ try:
                 return
             if r.request.method == "POST":
                 body = r.request.post_data_json
+                assert "expected_market_id" not in body
                 current["calls"].append(body)
                 current["job"] = {
                     "request_id": body["request_id"],

@@ -13,6 +13,7 @@ from PIL import Image, UnidentifiedImageError
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 from apps.api.backend_api import thumbnail_settings as config
+from apps.api.backend_api.market_identity import validate_market_identity
 
 VERSION = "market-thumbnail-bedrock-v5"
 ACTIVE = ("queued", "running")
@@ -47,6 +48,7 @@ def public_root(kind="market"):
 class GeneratePayload(BaseModel):
     model_config = ConfigDict(extra="forbid")
     request_id: UUID
+    expected_market_id: int | None = Field(default=None, ge=1)
     title: str = Field(min_length=1, max_length=240)
     summary: str = Field(min_length=1, max_length=4000)
     category: str = Field(min_length=1, max_length=80)
@@ -54,7 +56,7 @@ class GeneratePayload(BaseModel):
     event: str = Field(default="", max_length=80)
 
     def context(self):
-        values = self.model_dump(exclude={"request_id"})
+        values = self.model_dump(exclude={"request_id", "expected_market_id"})
         if any(
             not values[k].strip()
             for k in ("title", "summary", "category", "subcategory")
@@ -131,6 +133,7 @@ def request_job(cursor, slug, payload, staff):
     # Serialize all reservations, including global limit. This lock ends before provider I/O.
     cursor.execute("SELECT pg_advisory_xact_lock(%s)", (73019011,))
     row = market(cursor, slug, lock=True)
+    validate_market_identity(cursor, slug, row["id"], payload.expected_market_id)
     require_draft(row)
     cursor.execute(
         "SELECT * FROM gotrendlabs_thumbnail_jobs WHERE id=%s", (payload.request_id,)

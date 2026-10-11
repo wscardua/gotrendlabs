@@ -1,8 +1,8 @@
 # Checklist de publicação de mercado
 
-Versão 1.2 — usar depois de preparar a [ficha](ficha-de-mercado.md), seguindo o [manual](manual-editorial.md). Esta é a conferência final de um mercado de previsão; não é um formulário automático do painel.
+Versão 1.3 — usar depois de preparar a [ficha](ficha-de-mercado.md), seguindo o [manual](manual-editorial.md). Esta é a conferência final de um mercado de previsão; não é um formulário automático do painel.
 
-Use os itens como roteiro de leitura do documento editorial único. Registre evidências, exceções e pendências no próprio texto; os códigos continuam referências de política, sem onze campos ou confirmações no parecer. Para aprovar, resolva cada pendência e declare `Pendências para aprovação: nenhuma` na seção final. Quando houver divulgação conhecida, informe `Anúncio esperado:` com data/hora e offset; o sistema exige fechamento anterior.
+Use os itens como roteiro de leitura do documento editorial único. Registre evidências, exceções e pendências no próprio texto; os códigos continuam referências de política, sem onze campos ou confirmações no parecer. Ao escolher Aprovar e confirmar a revisão, o operador atesta que conferiu o conteúdo, resolveu as pendências e assume a responsabilidade editorial. A aprovação humana não exige frase específica, seção final ou validação automática de anúncio no documento. Na preparação MCP/API, informe `Anúncio esperado:` com data/hora e offset ou `não informado`, conforme seus validadores.
 
 | Código | Pergunta de revisão | O que registrar |
 | --- | --- | --- |
@@ -18,7 +18,7 @@ Use os itens como roteiro de leitura do documento editorial único. Registre evi
 | E10 | Alguém está responsável por acompanhar e apurar? | Nome, disponibilidade e agenda de consultas |
 | E11 | O conteúdo no painel é exatamente o que foi revisado? | Número/data da versão da ficha e conferência final |
 
-“Não aplicável” pode servir para tradução quando só existe um idioma. Não dispensa incerteza, fonte, prazo, responsabilidade ou busca por perguntas equivalentes. Qualquer pendência obrigatória impede aprovação editorial.
+“Não aplicável” pode servir para tradução quando só existe um idioma. Não dispensa incerteza, fonte, prazo, responsabilidade ou busca por perguntas equivalentes. O operador deve resolver as pendências antes de confirmar a aprovação; alertas automáticos orientam a revisão sem substituir o atestado humano.
 
 - **Aprovar:** os requisitos foram atendidos e a versão no painel corresponde à revisada.
 - **Devolver:** indicar o problema, a correção necessária e quem deve fazê-la.

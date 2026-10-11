@@ -15,7 +15,8 @@ from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Max, Q
 from django.shortcuts import redirect, render
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
+from django.utils.translation import gettext as _
 from django.utils import timezone
 
 from apps.web.django.accounts.api_client import (
@@ -41,6 +42,7 @@ from apps.web.django.accounts.api_client import (
     admin_get_ai_agents,
     admin_deactivate_badge,
     admin_delete_event,
+    admin_delete_market,
     admin_get_badges,
     admin_get_market,
     admin_get_market_participants,
@@ -2720,6 +2722,36 @@ def editorial_reference(request):
 
 
 @admin_api_required
+@require_http_methods(["GET", "POST"])
+def market_delete(request, slug):
+    token = auth_token(request)
+    market = None
+    error = ""
+    status_code = 200
+    try:
+        market = admin_get_market(token, slug)
+        if request.method == "POST":
+            if request.POST.get("confirm") != "yes":
+                raise AuthAPIError(_("Confirme a exclusão do mercado."), 400)
+            try:
+                revision = int(request.POST.get("expected_revision", ""))
+                market_id = int(request.POST.get("expected_market_id", ""))
+                if revision < 1 or market_id < 1:
+                    raise ValueError
+            except (TypeError, ValueError):
+                raise AuthAPIError(_("Recarregue a página para confirmar a versão atual."), 400)
+            admin_delete_market(token, slug, revision, market_id)
+            messages.success(request, _("Mercado excluído com sucesso."))
+            return redirect("admin-ops-markets")
+    except AuthAPIError as exc:
+        error = str(exc)
+        status_code = exc.status_code or 502
+    return render(request, "admin_ops/market_delete.html", {
+        "title": _("Excluir mercado"), "market": market, "admin_error": error,
+    }, status=status_code)
+
+
+@admin_api_required
 def market_form(request, mode="new", slug=None):
     token = auth_token(request)
     market = None
@@ -2731,6 +2763,7 @@ def market_form(request, mode="new", slug=None):
             market = _market_resolution_meta(admin_get_market(token, slug))
         except AuthAPIError as exc:
             error = str(exc)
+    expected_market_id = request.POST.get("expected_market_id") or None
     publication_attempt = request.method == "POST" and request.POST.get("action") == "publish-reviewed"
     if publication_attempt and market:
         try:
@@ -2738,7 +2771,7 @@ def market_form(request, mode="new", slug=None):
                 raise AuthAPIError("Salve o rascunho com a thumbnail e revise a versão antes de publicar.")
             if not market.get("editorial_revision"):
                 raise AuthAPIError("Esta ação é exclusiva da versão editorial aprovada.")
-            admin_publish_market(token, slug, request.POST.get("admin_notes") or "Publicação da versão aprovada")
+            admin_publish_market(token, slug, request.POST.get("admin_notes") or "Publicação da versão aprovada", expected_market_id=expected_market_id)
             messages.success(request, "Versão editorial aprovada publicada.")
             return redirect("admin-ops-market-edit", slug=market["slug"])
         except AuthAPIError as exc:
@@ -2754,7 +2787,7 @@ def market_form(request, mode="new", slug=None):
     if request.method == "POST" and not publication_attempt:
         if request.POST.get("action") == "lock" and mode != "new":
             try:
-                market = admin_lock_market(token, slug, request.POST.get("admin_notes") or "Fechado manualmente pelo admin.")
+                market = admin_lock_market(token, slug, request.POST.get("admin_notes") or "Fechado manualmente pelo admin.", expected_market_id=expected_market_id)
                 messages.success(request, "Mercado fechado manualmente com sucesso.")
                 return redirect("admin-ops-market-edit", slug=market["slug"])
             except AuthAPIError as exc:
@@ -2818,16 +2851,16 @@ def market_form(request, mode="new", slug=None):
                 except ValueError:
                     raise AuthAPIError("Revisão editorial inválida. Recarregue a ficha antes de salvar.")
                 save_submitted = True
-                market = admin_update_market(token, slug, {**form.to_payload(), "expected_revision": expected_revision})
+                market = admin_update_market(token, slug, {**form.to_payload(), "expected_revision": expected_revision, "expected_market_id": expected_market_id})
                 slug = market["slug"]
             saved_draft = True
             if action == "publish" and mode == "new":
                 message = "Rascunho salvo. Confira a ficha e registre o parecer humano antes de publicar."
             elif action == "publish":
-                market = admin_publish_market(token, slug, form.cleaned_data.get("admin_notes") or "")
+                market = admin_publish_market(token, slug, form.cleaned_data.get("admin_notes") or "", expected_market_id=expected_market_id)
                 message = "Mercado publicado."
             elif action == "cancel":
-                market = admin_cancel_market(token, slug, form.cleaned_data.get("admin_notes") or "Cancelado pelo admin.")
+                market = admin_cancel_market(token, slug, form.cleaned_data.get("admin_notes") or "Cancelado pelo admin.", expected_market_id=expected_market_id)
                 message = "Mercado cancelado."
             else:
                 message = "Mercado/contrato salvo com sucesso."
@@ -2991,7 +3024,7 @@ def resolution_action(request, action, slug=None):
                 error = "A justificativa é obrigatória para desfazer uma resolução."
                 return render(request, "admin_ops/resolution_action.html", {"title": titles[action], "action": action, "slug": slug, "market": market, "form": form, "admin_error": error})
             try:
-                canceled = admin_cancel_market(token, market["slug"], note)
+                canceled = admin_cancel_market(token, market["slug"], note, expected_market_id=request.POST.get("expected_market_id") or None)
                 messages.success(request, f"Resolução desfeita: {canceled['title']}")
                 return redirect("admin-ops-resolution")
             except AuthAPIError as exc:

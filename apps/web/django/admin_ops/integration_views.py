@@ -333,10 +333,10 @@ def consent(request):
 
 def _review_pending_label(code):
     labels = {
-        "policy_outdated": _("A política editorial mudou. Consulte a política atual e atualize o documento antes de registrar o parecer."),
+        "policy_outdated": _("A ficha foi preparada com outra versão da política. Confira a política atual durante sua revisão."),
         "empty_document": _("O documento editorial está vazio."),
-        "unresolved_editorial_gaps": _("Para aprovar, resolva as pendências e use 'Pendências para aprovação: nenhuma' como primeira linha da seção final."),
-        "invalid_editorial_announcement": _("Informe o anúncio esperado uma só vez, com data, hora e offset válidos, ou escreva 'não informado'."),
+        "unresolved_editorial_gaps": _("O relato recebido indica pendências. Confira sua resolução antes de confirmar a aprovação."),
+        "invalid_editorial_announcement": _("Use uma única linha no formato 'Anúncio esperado: 2026-12-01T15:00:00-03:00'. Se o horário não for conhecido, use 'Anúncio esperado: não informado'. Não acrescente observações nessa linha."),
         "close_after_editorial_announcement": _("O fechamento do mercado deve ocorrer antes do anúncio esperado informado no documento."),
     }
     return labels.get(code, _("Pendência editorial: %(code)s") % {"code": code})

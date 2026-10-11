@@ -108,6 +108,7 @@ urlpatterns = [
     path("admin-ops/markets/<slug:slug>/thumbnails/<uuid:request_id>/", thumbnail_views.jobs, name="admin-ops-thumbnail-status"),
     path("admin-ops/markets/<slug:slug>/thumbnails/<uuid:request_id>/preview/", thumbnail_views.preview, name="admin-ops-thumbnail-preview"),
     path("admin-ops/markets/new/", admin_ops_views.market_form, {"mode": "new"}, name="admin-ops-market-new"),
+    path("admin-ops/markets/<slug:slug>/delete/", admin_ops_views.market_delete, name="admin-ops-market-delete"),
     path("admin-ops/markets/<slug:slug>/edit/", admin_ops_views.market_form, {"mode": "edit"}, name="admin-ops-market-edit"),
     path("admin-ops/resolution/<slug:slug>/<str:action>/", admin_ops_views.resolution_action, name="admin-ops-resolution-market-action"),
     path("admin-ops/resolution/<str:action>/", admin_ops_views.resolution_action, name="admin-ops-resolution-action"),

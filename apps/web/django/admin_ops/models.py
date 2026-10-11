@@ -240,7 +240,7 @@ class ThumbnailJob(models.Model):
         db_table = 'gotrendlabs_thumbnail_jobs'
         constraints = [models.CheckConstraint(check=models.Q(state__in=['queued','running','succeeded','failed','uncertain','expired']), name='gtl_thumb_state'),
                        models.UniqueConstraint(fields=['market'], condition=models.Q(state__in=['queued','running']), name='gtl_thumb_one_active'),
-                       models.CheckConstraint(check=(models.Q(kind='market', market__isnull=False, badge__isnull=True, editor_id__isnull=True) | models.Q(kind='badge', market__isnull=True, editor_id__isnull=False)), name='gtl_image_target'),
+                       models.CheckConstraint(check=(models.Q(kind='market', market__isnull=False, badge__isnull=True, editor_id__isnull=True) | models.Q(kind='badge', market__isnull=True, editor_id__isnull=False) | models.Q(kind='market', market__isnull=True, badge__isnull=True, editor_id__isnull=True, state='expired', error_code='market_deleted', snapshot={})), name='gtl_image_target'),
                        models.UniqueConstraint(fields=['badge'], condition=models.Q(kind='badge', state__in=['queued','running'], badge__isnull=False), name='gtl_badge_one_active'),
                        models.UniqueConstraint(fields=['operator','editor_id'], condition=models.Q(kind='badge', state__in=['queued','running'], badge__isnull=True), name='gtl_badge_editor_active')]
         indexes = [models.Index(fields=['created_at','operator','market'],name='gtl_thumb_quota'),

@@ -39,7 +39,7 @@
 - A transição `locked -> resolved` exige operador ou processo autorizado, evidência, justificativa, opção vencedora, data/hora efetiva e timezone de resolução.
 - `resolved_at` deve guardar o momento efetivo da resolução; `resolution_timezone` deve preservar o timezone selecionado para apresentação/auditoria.
 - Timezone de resolução no Admin Ops deve ser selecionado a partir de lista controlada, não informado em texto livre.
-- Para todos os mercados (FEAT-EDITORIAL-001 v1.3 / FEAT-MCP-001 v1.4), `draft/scheduled -> open` exige parecer humano aprovado da revisão/hash/conteúdo/política atuais. Verificar após lock do mercado e antes da assinatura; recusar com `409 detail.code=editorial_approval_required`. Edição invalida aprovação. Ausência de ficha ou parecer atual bloqueia igualmente mercados humanos e MCP.
+- Para todos os mercados (FEAT-EDITORIAL-001 v1.3 / FEAT-MCP-001 v1.4), `draft/scheduled -> open` exige parecer humano aprovado da revisão/hash atuais, com conteúdo atestado pelo revisor. Verificar após lock do mercado e antes da assinatura; recusar com `409 detail.code=editorial_approval_required`. Edição invalida aprovação. Ausência de ficha ou parecer atual bloqueia igualmente mercados humanos e MCP.
 - No backend, publicação, fechamento manual, fechamento automático, cancelamento, resolução e desfazer resolução devem permanecer centralizados em `MarketLifecycleEngine`, operando sobre cursor/transação recebidos de fora.
 - Cancelamento administrativo muda o mercado para `canceled`, preserva o registro e deve gravar evento administrativo.
 - `canceled` devolve 100% dos stakes bloqueados por previsões abertas, marca previsões como `canceled` e não altera reputação.
@@ -80,7 +80,7 @@
 
 ## Revisão aprovada pelo usuário em 2026-10-07 — gate universal
 
-Todo mercado possui ficha editorial estruturada e revisão humana, independentemente de origem. Nova publicação exige aprovação vigente da versão/hash/política/conteúdo e configuração válida de fechamento. Ambos os modos exigem data/hora futura e fuso válido; automático registra auto_close_enabled=true para execução pelo daemon, manual registra false e deixa a ação staff disponível. A validação não comprova a disponibilidade momentânea do daemon. Legados publicados recebem ficha pendente sem mudar lifecycle, previsões ou provas; nenhum parecer fictício. Substitui explicitamente a exceção anterior para mercados humanos.
+Todo mercado possui ficha editorial estruturada e revisão humana, independentemente de origem. Nova publicação exige aprovação humana confirmada da versão/hash atuais e configuração válida de fechamento. Ambos os modos exigem data/hora futura e fuso válido; automático registra auto_close_enabled=true para execução pelo daemon, manual registra false e deixa a ação staff disponível. A validação não comprova a disponibilidade momentânea do daemon. Legados publicados recebem ficha pendente sem mudar lifecycle, previsões ou provas; nenhum parecer fictício. Substitui explicitamente a exceção anterior para mercados humanos.
 
 ### Fechamento incompleto em definição publicada
 
@@ -93,3 +93,19 @@ O formulário interpreta `datetime-local` como hora de parede no fuso explicitam
 ## Thumbnail administrativa de draft
 
 FEAT-THUMB-001 acrescenta ao PATCH administrativo `thumbnail_candidate_id` e `thumbnail_expected_image_url`. Confirmação por ID sob o lock existente exige draft, autorização staff/MFA, arquivo/candidata validada não expirada e ausência de conflito. image_url é derivada no backend e permanece no contrato público. Geração/status não alteram mercado. Alteração mantém invalidação do parecer editorial; publicação da versão aprovada não incorpora uma seleção pendente silenciosamente. [Contrato detalhado](admin-thumbnails.md).
+
+## Exclusão de mercados em preparação ou revisão (2026-10-11)
+
+Operador staff/superuser com MFA pode excluir fisicamente um mercado com lifecycle `draft`, parecer `preparation` ou `in_review` e nenhuma publicação, previsão ou prova de integridade. A FastAPI revalida estado e revisão sob lock; conflito retorna 409 sem alteração. Outros estados editoriais e lifecycle não permitem exclusão.
+
+Admin Ops oferece Excluir mercado na lista, editor e revisão, seguido de confirmação explícita via POST/CSRF. A transação remove mercado, opções, ficha/parecer, todas as revisões, dependências de apresentação. Sugestões mantêm seu histórico e crédito, com converted_market_id desvinculado; auditorias administrativas são preservadas. Não há restauração. Slug pode ser reutilizado em uma criação nova.
+
+A função PostgreSQL restrita `delete_prepublication_editorial` permite apenas esta exceção ao histórico editorial protegido; não concede DELETE geral sobre revisões. Provas criptográficas continuam intocáveis. Jobs de thumbnail são desvinculados, expirados e têm snapshot/usage apagados; conserva-se somente o registro técnico necessário às cotas. Resultados atrasados do worker são ignorados; mídia gerada órfã segue o prune existente, sem apagar arquivos manuais/compartilhados na transação.
+
+MCP omite o mercado removido naturalmente. Consulta, edição, submissão e replay de pedidos anteriores retornam not_found; chaves/hash idempotentes ficam como recibo mínimo de exclusão para evitar recriação pelo mesmo pedido, sem conservar parecer ou snapshot. Nova chave cria novo ID. Não há ferramenta de exclusão MCP.
+
+`DELETE /admin/markets/{slug}?expected_revision=N&expected_market_id=ID`: ID e revisão positivos obrigatórios, 204 sem corpo; ausente/excluído 404; sem sessão 401; sem staff/MFA 403; estado/revisão/vínculos protegidos 409. ID confirmado impede excluir outro mercado recriado no mesmo slug. Operação e evento market.delete são atômicos. MarketResponse.can_delete é apenas indicação para UI e false na projeção pública.
+
+### Identidade das ações administrativas após reutilização de slug
+
+PATCH e publish/cancel/lock aceitam `expected_market_id` positivo. Sob lock do mercado, ID divergente retorna 409 sem mutação. Admin Ops envia o ID da página original em todos esses pedidos. Clientes legados sem ID continuam aceitos somente quando não existe auditoria `market.delete` para o slug; após exclusão, ID é obrigatório (409/recarregar). Revisão editorial continua sendo verificada separadamente. Assim, formulários anteriores à atualização também não atingem um mercado recriado.

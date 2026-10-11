@@ -180,7 +180,13 @@ def pending(record):
     return result
 
 
+def _document_validation_text(document):
+    # Browser forms use CRLF; inspect a normalized copy without changing hashes.
+    return document.replace("\r\n", "\n").replace("\r", "\n")
+
+
 def document_announcement(document):
+    document = _document_validation_text(document)
     matches = re.findall(r"(?im)^[ \t]*Anúncio esperado[ \t]*:[ \t]*(.*?)[ \t]*$", document)
     if not matches:
         return None
@@ -205,6 +211,7 @@ def validate_document_timing(document, close_at):
 
 
 def approval_document_pending(document):
+    document = _document_validation_text(document)
     section = re.search(r"(?im)^[ \t]*PENDÊNCIAS E CONCLUSÃO[ \t]*$", document)
     if section is None:
         return ["unresolved_editorial_gaps"]
@@ -365,7 +372,6 @@ def require_publication_approval(cursor, market_id):
         and decision.get("confirmed") is True
         and decision.get("expected_revision") == d["revision"] - 1
         and decision.get("snapshot_hash") == d["snapshot_hash"]
-        and not pending(d["record"])
     )
     if valid:
         cursor.execute(
@@ -374,7 +380,6 @@ def require_publication_approval(cursor, market_id):
         )
         revision = cursor.fetchone()
         current = get_market(cursor, market_id, None)
-        validate_document_timing(d["record"]["document"], current["close_at"])
         current.pop("editorial", None)
         current["editorial_record"] = d["record"]
         expected = dict(revision["snapshot"]) if revision else {}
@@ -412,6 +417,14 @@ def mutate(cursor, t, operation, payload, market_id=None, request_id=""):
     if old:
         if old["payload_hash"] != payload_hash:
             a.fail("idempotency_conflict", 409)
+        if old["response"].get("deleted"):
+            a.fail("not_found", 404)
+        # Serialize replay with deletion; historical success is valid only while
+        # its resource still exists. Keep keys to prevent accidental recreation.
+        cursor.execute("SELECT id FROM gotrendlabs_markets WHERE id=%s FOR SHARE",
+                       (old["response"]["market_id"],))
+        if not cursor.fetchone():
+            a.fail("not_found", 404)
         return {**old["response"], "replayed": True}
     from apps.api.backend_api import main
 
@@ -540,19 +553,6 @@ def assess_human_record(cursor, market_id, payload, staff):
         a.fail("draft_not_editable", 409)
     if d["snapshot_hash"] != payload.snapshot_hash:
         a.fail("version_conflict", 409)
-    cursor.execute("SELECT close_at FROM gotrendlabs_markets WHERE id=%s", (market_id,))
-    validate_document_timing(payload.editorial_record.document, cursor.fetchone()["close_at"])
-    if "policy_outdated" in pending(d["record"]) and payload.editorial_record.document == d["record"].get("document", ""):
-        from fastapi import HTTPException
-
-        raise HTTPException(
-            422,
-            detail={
-                "code": "validation_failed",
-                "message": "A política editorial mudou. Revise e atualize o documento antes de registrar o parecer.",
-                "pending": ["policy_outdated"],
-            },
-        )
     revision = d["revision"] + 1
     cursor.execute(
         "UPDATE gotrendlabs_agent_editorial_drafts SET record=%s WHERE market_id=%s",
@@ -582,18 +582,16 @@ def decide(cursor, market_id, payload, staff):
         a.fail("draft_not_editable", 409)
     if d["snapshot_hash"] != payload.snapshot_hash:
         a.fail("version_conflict", 409)
-    record = d["record"]
     if payload.decision == "approved":
         from fastapi import HTTPException
 
-        missing = pending(record)
-        if missing or not payload.confirmed:
+        if not payload.confirmed:
             raise HTTPException(
                 422,
                 detail={
                     "code": "validation_failed",
-                    "message": "Aprovação exige documento atual e confirmação humana explícita.",
-                    "pending": missing,
+                    "message": "Aprovação exige confirmação humana explícita da revisão e resolução das pendências.",
+                    "pending": [],
                 },
             )
     decision = {

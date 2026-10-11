@@ -11,6 +11,7 @@
         <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}?view=checklist#E04" target="_blank" rel="noopener">Pergunta e opções<span class="sr-only"> (abre nova aba)</span></a>
         <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}?view=checklist#E06" target="_blank" rel="noopener">Fonte<span class="sr-only"> (abre nova aba)</span></a>
         <a class="btn small ghost" href="{% url 'admin-ops-editorial' %}?view=checklist#E07" target="_blank" rel="noopener">Prazos<span class="sr-only"> (abre nova aba)</span></a>
+        {% if market.can_delete %}<a class="btn small ghost" href="{% url 'admin-ops-market-delete' slug=market.slug %}">{% trans 'Excluir mercado' %}</a>{% endif %}
       </nav>
     </header>
   <section class="editor-layout">
@@ -33,6 +34,7 @@
       {% if is_readonly %}<div class="notice red market-readonly-notice">{% if market.status == 'sealed' %}Mercado selado é somente leitura; correções exigem novo evento append-only.{% else %}Mercado resolvido fica em modo somente leitura. Desfaça a resolução antes de editar. Essa ação só está disponível antes do prazo de selagem.{% endif %}</div>{% endif %}
       <form id="market-editor" class="form-grid" method="post" enctype="multipart/form-data" data-market-form>
         {% csrf_token %}
+          {% if market %}<input type="hidden" name="expected_market_id" value="{% firstof request.POST.expected_market_id market.editorial_market_id %}">{% endif %}
         {% if market.editorial_revision %}<input type="hidden" name="editorial_revision" value="{{ market.editorial_revision }}"><p class="full market-editorial-status">{% trans 'Revisão editorial' %} {{ market.editorial_revision }} · {% include 'admin_ops/partials/editorial_state.html' with state=market.editorial_status %}{% if market.status == 'draft' or market.status == 'scheduled' %}<br>{% trans 'Publicação exige parecer humano aprovado para a versão atual. Salvar alterações exige nova revisão.' %}{% endif %}</p>{% endif %}
         <fieldset class="form-grid full" {% if is_readonly %}disabled{% endif %}>
         <div class="editor-section full">
