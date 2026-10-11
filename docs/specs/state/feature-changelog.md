@@ -2,7 +2,7 @@
 
 - Prévia de quatro linhas para critérios longos, com Ver critério completo/Recolher critério; textos curtos não exibem controle. Quebras de linha preservadas e URLs longas contidas.
 - Navegação por teclado, aria-expanded/aria-controls, recálculo responsivo e texto integral sem JavaScript/na impressão validados em Chromium com o exemplo Netflix.
-- Sem mudança de conteúdo editorial, domínio ou MCP. Review sem findings; versões de CSS/JS atualizadas para publicação. Implementação local concluída, submissão da PR aguardando aprovação. WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
+- Sem mudança de conteúdo editorial, domínio ou MCP. Review sem findings; versões de CSS/JS atualizadas para publicação. Implantada pela PR #160, merge ec624d7, CI/deploy e smoke produtivo aprovados. Branch local preservada. WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
 
 ## 2026-10-11 — Identidade no formulário de publicação revisada
 
