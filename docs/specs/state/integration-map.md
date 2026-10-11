@@ -1,5 +1,9 @@
 # Integration Map
 
+## PR #156 — fluxo ativo em PRD (2026-10-11)
+
+Admin Ops → FastAPI staff/MFA → função editorial restrita/limpeza/auditoria transacional; migrations 0006/0026 aplicadas. API/web/MCP/daemon/worker implantados no SHA 32a4513. MCP get_editorial_policy serve checklist/modelo atualizados; novas capacidades administrativas não são expostas. Smoke com roles reais e rollback passou. [Recibo](../testing/prepublication-editorial-production-20261011.md).
+
 ## 2026-10-11 — exclusão pré-publicação
 
 Admin Ops → confirmação POST/CSRF com ID/revisão → DELETE FastAPI staff/MFA → locks e proteção de previsões/provas → remoção física de mercado/opções/ficha/parecer/revisões/dependências + auditoria. Migrations editorial_integrations.0006 (função editorial restrita) e admin_ops.0026 (recibo técnico de thumbnail desvinculado) antecedem runtime. Sugestões e auditorias são desvinculadas; jobs expirados perdem conteúdo, conservando cotas. MCP get/update/submit/replay passam a not_found após exclusão; chaves/hash são marcadores mínimos para não recriar por retentativa. Nova chave permite novo ID/slug reutilizado. Mobile não consome DELETE administrativo; can_delete é aditivo/false na projeção pública. Sem nova ferramenta/scope MCP. Geração administrativa de thumbnail também valida o ID original sob lock; sem ID após exclusão anterior do slug retorna 409 antes de reservar cota. Endpoint não é exposto no MCP ou consumido pelo mobile.
