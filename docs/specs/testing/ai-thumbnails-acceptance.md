@@ -128,4 +128,6 @@ Fechamento local em 2026-10-09: suíte completa de 450 testes aprovada em 862.19
 - Abrir com queued/running: retomar polling e indicador de espera; se expirar durante acompanhamento, mostrar mensagem e liberar controles.
 - Executar aceites de mercado e badge para proteger componente compartilhado, upload/undo, carregamento tardio e salvamento.
 
-Evidência: `tests/thumbnail_browser.py` falhou na base com alerta histórico e passou após correção; `tests/badge_image_browser.py` também aprovado. Chrome headless com templates/JS reais e respostas simuladas, sem consumo pago. Django check, node --check e git diff --check aprovados. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS; implementação local, deploy não realizado.
+Evidência: `tests/thumbnail_browser.py` falhou na base com alerta histórico e passou após correção; `tests/badge_image_browser.py` também aprovado. Chrome headless com templates/JS reais e respostas simuladas, sem consumo pago. Django check, node --check e git diff --check aprovados. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS; implantado pela PR #154/Actions 38136371456; CI PR/main 465 testes com um skip, build/deploy aprovados, JS público com hash idêntico e health ok.
+
+Pós-deploy: aceite de navegador completo aprovado com o JS baixado do domínio produtivo e respostas de API simuladas. Arquivo idêntico ao validado; sem sessão humana autenticada produtiva ou alteração de mercado. Health produtivo ok.
