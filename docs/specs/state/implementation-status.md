@@ -1,6 +1,6 @@
-## Correção local — publicação revisada (2026-10-11)
+## Correção implantada — publicação revisada (2026-10-11)
 
-Formulário de publicação aprovada alinhado ao contrato de identidade existente. Correção local na branch fix/admin-reviewed-publication-identity; implantação produtiva pendente. Detalhes/testes em WFLOW-20261011-PUBLISH-FORM-IDENTITY. Status amplo das features preservado.
+Formulário de publicação aprovada alinhado ao contrato de identidade existente. Correção implantada pela PR #158, merge d80b100, Actions 38170273991 aprovado e verificação do formulário no container produtivo concluída. Detalhes/testes em WFLOW-20261011-PUBLISH-FORM-IDENTITY. Status amplo das features preservado.
 
 # Status de Implementação
 
