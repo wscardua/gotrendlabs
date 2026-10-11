@@ -146,6 +146,72 @@ class ThumbnailIntegrationTests(AppendOnlyTransactionTestCase):
         w.run_once(provider)
         self.assertEqual(self.job(job["request_id"])["state"], "succeeded")
 
+    def _delete_during_provider(self, checkpoint):
+        from apps.api.backend_api.editorial_service import initialize_human_editorial
+        from apps.web.django.admin_ops.models import ThumbnailJob
+        with get_connection() as conn, conn.cursor() as cursor:
+            initialize_human_editorial(cursor, self.market.pk)
+        job, _ = self.request()
+        def provider(claimed):
+            response = self.api.delete('/admin/markets/thumb-market', headers=self.headers,
+                params={'expected_revision': 1, 'expected_market_id': self.market.pk})
+            self.assertEqual(response.status_code, 204, response.text)
+            if checkpoint:
+                claimed['_checkpoint']({'planner': {'state': 'validated'}})
+            return png(), 'late-result', None
+        self.assertTrue(w.run_once(provider))
+        self.assertFalse(Market.objects.filter(pk=self.market.pk).exists())
+        retained = ThumbnailJob.objects.get(pk=job['request_id'])
+        self.assertIsNone(retained.market_id)
+        self.assertEqual(retained.state, 'expired')
+        self.assertEqual(retained.error_code, 'market_deleted')
+        self.assertEqual(retained.snapshot, {})
+        self.assertIsNone(retained.usage)
+        self.assertFalse(s.private_root().exists() and any(s.private_root().glob('*.png')))
+        self.assertFalse(w.run_once(provider))
+        replacement = Market.objects.create(category_id=self.market.category_id, subcategory_id=self.market.subcategory_id,
+            slug='thumb-market', title='Replacement?', summary='new', kind='binary', status='draft')
+        with patch.dict(os.environ, {'GTL_THUMB_OPERATOR_LIMIT': '1'}):
+            response = self.api.post(self.path, json=self.payload(expected_market_id=replacement.pk), headers=self.headers)
+        self.assertEqual(response.status_code, 429, response.text)
+        self.assertEqual(self.api.get(self.path + '/' + job['request_id'], headers=self.headers).status_code, 404)
+
+    def test_stale_generation_cannot_target_recreated_slug(self):
+        from apps.api.backend_api.editorial_service import initialize_human_editorial
+        from apps.web.django.admin_ops.models import ThumbnailJob
+        with get_connection() as conn, conn.cursor() as cursor:
+            initialize_human_editorial(cursor, self.market.pk)
+        response = self.api.delete('/admin/markets/thumb-market', headers=self.headers,
+            params={'expected_revision': 1, 'expected_market_id': self.market.pk})
+        self.assertEqual(response.status_code, 204, response.text)
+        replacement = Market.objects.create(category_id=self.market.category_id,
+            subcategory_id=self.market.subcategory_id, slug='thumb-market', title='New market?',
+            summary='New context', kind='binary', status='draft')
+        for fields, expected_status in [({}, 409),
+                ({'expected_market_id': self.market.pk}, 409),
+                ({'expected_market_id': 0}, 422),
+                ({'expected_market_id': 'invalid'}, 422)]:
+            response = self.api.post(self.path, json=self.payload(**fields), headers=self.headers)
+            self.assertEqual(response.status_code, expected_status, response.text)
+            self.assertFalse(ThumbnailJob.objects.exists())
+        job, body = self.request(expected_market_id=replacement.pk, title=replacement.title,
+            summary=replacement.summary)
+        self.assertNotIn('expected_market_id', job['snapshot'])
+        self.assertEqual(ThumbnailJob.objects.get(pk=job['request_id']).market_id, replacement.pk)
+        self.assertEqual(self.api.post(self.path, json=body, headers=self.headers).json(), job)
+        observed = []
+        def provider(claimed):
+            observed.append((claimed['market_id'], claimed['snapshot']['title']))
+            return png(), 'replacement-result', None
+        self.assertTrue(w.run_once(provider))
+        self.assertEqual(observed, [(replacement.pk, replacement.title)])
+
+    def test_deleted_market_ignores_late_provider_result(self):
+        self._delete_during_provider(checkpoint=False)
+
+    def test_deleted_market_ignores_late_provider_checkpoint(self):
+        self._delete_during_provider(checkpoint=True)
+
     def test_planner_checkpoint_survives_unknown_error_without_replay(self):
         job, _ = self.request()
         evidence = {"planner": {"state": "validated", "provider_id": "simulated",
@@ -1089,6 +1155,19 @@ class ThumbnailWebTests(SimpleTestCase):
         )
         request.session = self.session
         return market_form(request, mode="edit", slug="draft")
+
+    def test_market_identity_comes_from_original_form(self):
+        self.market['editorial_market_id'] = 99
+        self.market['editorial_revision'] = 1
+        with patch('apps.web.django.admin_ops.views.admin_update_market', return_value=self.market) as update:
+            response = self.post({'expected_market_id': '7', 'editorial_revision': '1'})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(update.call_args.args[2]['expected_market_id'], '7')
+        for action, method in (('publish-reviewed', 'publish'), ('lock', 'lock')):
+            with patch(f'apps.web.django.admin_ops.views.admin_{method}_market', return_value=self.market) as mutation:
+                response = self.post({'action': action, 'expected_market_id': '7'})
+            self.assertEqual(response.status_code, 302)
+            self.assertEqual(mutation.call_args.kwargs['expected_market_id'], '7')
 
     def test_generation_selection_excludes_old_upload(self):
         from django.core.files.uploadedfile import SimpleUploadedFile

@@ -13342,6 +13342,25 @@ body[data-theme="dark"] .mfa-recovery-guide-grid strong {
 }
 
 /* Market operations follows the shared Admin Ops header and table composition. */
+/* Keep the destructive-action confirmation readable and close to its controls. */
+.market-delete-page { padding-top: 28px; gap: 24px; }
+.market-delete-header .large-title { margin: 10px 0 0; font-size: 32px; line-height: 1.15; letter-spacing: -.035em; }
+.market-delete-panel { display: grid; gap: 24px; width: 100%; max-width: 820px; min-width: 0; padding: 28px; }
+.market-delete-summary h2 { margin: 0; font-size: 24px; line-height: 1.3; overflow-wrap: anywhere; }
+.market-delete-meta { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.market-delete-slug { min-width: 0; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+.market-delete-panel p { margin: 0; max-width: 70ch; line-height: 1.55; overflow-wrap: anywhere; }
+.market-delete-panel .notice { margin: 0; }
+.market-delete-warning p { margin-top: 6px; font-weight: 400; }
+.market-delete-actions { padding-top: 20px; border-top: 1px solid var(--line); }
+.market-delete-page .section-actions { justify-content: flex-start; flex-wrap: wrap; margin: 0; }
+@media (max-width: 640px) {
+  .market-delete-header .large-title { font-size: 26px; }
+  .market-delete-panel { padding: 20px; gap: 20px; }
+  .market-delete-summary h2 { font-size: 20px; }
+  .market-delete-actions .btn { width: 100%; }
+}
+
 .admin-markets-page .large-title { font-size: 34px; line-height: 1.05; letter-spacing: -.04em; }
 .admin-markets-page > section { min-width: 0; }
 .admin-markets-page .section-head { align-items: center; }

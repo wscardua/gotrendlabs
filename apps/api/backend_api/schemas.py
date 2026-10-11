@@ -723,6 +723,7 @@ class MarketResponse(BaseModel):
     closure_configuration_errors: List[str] = Field(default_factory=list)
     editorial_market_id: Optional[int] = None
     editorial_revision: Optional[int] = None
+    can_delete: bool = False
     editorial_status: Optional[str] = None
     slug: str
     title: str
@@ -936,6 +937,7 @@ class AdminMarketOptionPayload(BaseModel):
 
 
 class AdminMarketPayload(BaseModel):
+    expected_market_id: Optional[int] = Field(default=None, ge=1)
     thumbnail_candidate_id: Optional[UUID] = None
     thumbnail_expected_image_url: Optional[str] = None
     expected_revision: Optional[int] = None
@@ -969,6 +971,10 @@ class AdminMarketPayload(BaseModel):
 
 class AdminMarketActionPayload(BaseModel):
     note: str = ""
+
+
+class AdminMarketTargetActionPayload(AdminMarketActionPayload):
+    expected_market_id: Optional[int] = Field(default=None, ge=1)
 
 
 class AdminMarketIntegrityCorrectionPayload(BaseModel):

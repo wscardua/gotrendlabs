@@ -74,6 +74,7 @@ from apps.api.backend_api.schemas import (
     AdminUserWalletAdjustmentPayload,
     FeedbackRewardPayload,
     AdminMarketActionPayload,
+    AdminMarketTargetActionPayload,
     AdminMarketListResponse,
     AdminMarketParticipantListResponse,
     AdminMarketPayload,
@@ -2041,6 +2042,9 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "editorial_market_id": row["id"] if editorial_meta else None,
         "editorial_revision": editorial_meta["revision"] if editorial_meta else None,
         "editorial_status": editorial_meta["state"] if editorial_meta else None,
+        "can_delete": bool(editorial_meta and row["status"] == "draft" and not row["published_at"]
+                           and editorial_meta["state"] in {"preparation", "in_review"}
+                           and not definition_registered),
         "slug": row["slug"],
         "title": row["title"],
         "category": row["category"],
@@ -6642,13 +6646,37 @@ def admin_get_market(slug: str, authorization: str = Header(default="")):
             return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
+@app.delete("/admin/markets/{slug}", status_code=status.HTTP_204_NO_CONTENT)
+def admin_delete_market(
+    slug: str,
+    expected_revision: int = Query(..., ge=1),
+    expected_market_id: int = Query(..., ge=1),
+    authorization: str = Header(default=""),
+):
+    from apps.api.backend_api.market_deletion import delete_market
+
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            delete_market(cursor, slug, expected_revision, staff["id"], expected_market_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def _admin_market_target(cursor, slug, expected_market_id):
+    """Fence stale forms, including legacy requests after a slug is reused."""
+    cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug=%s FOR UPDATE", (slug,))
+    row = _admin_market_by_slug(cursor, slug)
+    from apps.api.backend_api.market_identity import validate_market_identity
+    validate_market_identity(cursor, slug, row["id"], expected_market_id)
+    return row
+
+
 @app.patch("/admin/markets/{slug}", response_model=MarketResponse)
 def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            cursor.execute("SELECT id FROM gotrendlabs_markets WHERE slug=%s FOR UPDATE", (slug,))
-            row = _admin_market_by_slug(cursor, slug)
+            row = _admin_market_target(cursor, slug, payload.expected_market_id)
             from apps.api.backend_api.editorial_service import human_edit_guard, human_edit_done
             editorial_draft = human_edit_guard(cursor, row["id"], payload.expected_revision)
             if row["status"] in {"resolved", "sealed"}:
@@ -6797,21 +6825,21 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
 
 
 @app.post("/admin/markets/{slug}/publish", response_model=MarketResponse)
-def admin_publish_market(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+def admin_publish_market(slug: str, payload: AdminMarketTargetActionPayload, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            row = _admin_market_by_slug(cursor, slug)
+            row = _admin_market_target(cursor, slug, payload.expected_market_id)
             _market_lifecycle_engine(cursor, staff["id"]).publish_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
 
 @app.post("/admin/markets/{slug}/cancel", response_model=MarketResponse)
-def admin_cancel_market(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+def admin_cancel_market(slug: str, payload: AdminMarketTargetActionPayload, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            row = _admin_market_by_slug(cursor, slug)
+            row = _admin_market_target(cursor, slug, payload.expected_market_id)
             _market_lifecycle_engine(cursor, staff["id"]).cancel_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 
@@ -7032,11 +7060,11 @@ def admin_get_market_resolution_audit(
 
 
 @app.post("/admin/markets/{slug}/lock", response_model=MarketResponse)
-def admin_lock_market(slug: str, payload: AdminMarketActionPayload, authorization: str = Header(default="")):
+def admin_lock_market(slug: str, payload: AdminMarketTargetActionPayload, authorization: str = Header(default="")):
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            row = _admin_market_by_slug(cursor, slug)
+            row = _admin_market_target(cursor, slug, payload.expected_market_id)
             _market_lifecycle_engine(cursor, staff["id"]).lock_market(row, slug, payload.note)
             return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
 

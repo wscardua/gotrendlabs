@@ -1,0 +1,41 @@
+{% extends "admin_base.html" %}
+{% load i18n %}
+{% block title %}GoTrendLabs Admin | {% trans 'Excluir mercado' %}{% endblock %}
+{% block content %}
+<main class="shell admin-layout market-delete-page">
+  <header class="market-delete-header">
+    <span class="eyebrow">{% trans 'Operação editorial' %}</span>
+    <h1 class="large-title">{% trans 'Excluir mercado' %}</h1>
+  </header>
+  <section class="panel market-delete-panel" {% if market %}aria-labelledby="market-delete-title"{% endif %}>
+    {% if admin_error %}<div class="notice red" role="alert">{{ admin_error }}</div>{% endif %}
+    {% if market %}
+      <div class="market-delete-summary">
+        <h2 id="market-delete-title">{{ market.title }}</h2>
+        <div class="market-delete-meta">
+          {% include 'admin_ops/partials/editorial_state.html' with state=market.editorial_status %}
+          <span class="market-delete-slug">{{ market.slug }}</span>
+        </div>
+      </div>
+      {% if market.can_delete %}
+        <div class="notice red market-delete-warning">
+          <strong>{% trans 'Esta ação não pode ser desfeita.' %}</strong>
+          <p>{% trans 'O mercado, suas opções, o parecer editorial e todas as revisões serão excluídos definitivamente.' %}</p>
+        </div>
+        <form class="market-delete-actions" method="post">
+          {% csrf_token %}
+          <input type="hidden" name="expected_market_id" value="{{ market.editorial_market_id }}">
+          <input type="hidden" name="expected_revision" value="{{ market.editorial_revision }}">
+          <div class="section-actions">
+            <a class="btn ghost" href="{% url 'admin-ops-market-edit' slug=market.slug %}">{% trans 'Voltar sem excluir' %}</a>
+            <button class="btn danger" type="submit" name="confirm" value="yes">{% trans 'Confirmar exclusão' %}</button>
+          </div>
+        </form>
+      {% else %}
+        <p>{% trans 'A exclusão está disponível apenas para rascunhos em preparação ou revisão, antes da publicação.' %}</p>
+        <a class="btn ghost" href="{% url 'admin-ops-market-edit' slug=market.slug %}">{% trans 'Voltar ao mercado' %}</a>
+      {% endif %}
+    {% else %}<a class="btn ghost" href="{% url 'admin-ops-markets' %}">{% trans 'Voltar aos mercados' %}</a>{% endif %}
+  </section>
+</main>
+{% endblock %}

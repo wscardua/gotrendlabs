@@ -358,20 +358,24 @@ def admin_get_market_participants(token, slug):
     return _request("GET", f"/admin/markets/{slug}/participants", token=token)
 
 
+def admin_delete_market(token, slug, expected_revision, expected_market_id):
+    return _request("DELETE", f"/admin/markets/{slug}?expected_revision={int(expected_revision)}&expected_market_id={int(expected_market_id)}", token=token)
+
+
 def admin_update_market(token, slug, data):
     return _normalize_market_payload(_request("PATCH", f"/admin/markets/{slug}", data, token=token))
 
 
-def admin_publish_market(token, slug, note=""):
-    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/publish", {"note": note}, token=token))
+def admin_publish_market(token, slug, note="", expected_market_id=None):
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/publish", {"note": note, "expected_market_id": expected_market_id}, token=token))
 
 
-def admin_cancel_market(token, slug, note=""):
-    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/cancel", {"note": note}, token=token))
+def admin_cancel_market(token, slug, note="", expected_market_id=None):
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/cancel", {"note": note, "expected_market_id": expected_market_id}, token=token))
 
 
-def admin_lock_market(token, slug, note=""):
-    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/lock", {"note": note}, token=token))
+def admin_lock_market(token, slug, note="", expected_market_id=None):
+    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/lock", {"note": note, "expected_market_id": expected_market_id}, token=token))
 
 
 def admin_resolve_market(token, slug, winning_option_id, source_url="", note="", resolved_at=None, resolution_timezone=""):

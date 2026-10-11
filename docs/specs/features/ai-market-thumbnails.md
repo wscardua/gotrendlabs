@@ -1,7 +1,7 @@
 ---
 id: FEAT-THUMB-001
 titulo: Thumbnails IA no editor Admin Ops
-versao: 1.4
+versao: 1.5
 status_spec: aprovada
 status_impl: parcial
 ultima_atualizacao: 2026-10-11
@@ -72,3 +72,7 @@ Uma chamada textual e uma imagem por solicitação, sem retry/fallback, mesma re
 ## Recuperação do editor — 2026-10-11
 
 Ao abrir ou recarregar o editor, recuperar somente gerações queued/running. Estados terminais históricos (succeeded/failed/uncertain/expired) não selecionam candidata nem exibem alerta sobre a imagem persistida. Mensagens de falha/expiração de solicitações iniciadas ou retomadas em andamento continuam visíveis quando recebidas por polling. A validade da candidata privada não expira a imagem já salva; não iniciar geração automaticamente.
+
+## Identidade após exclusão física
+
+Geração envia o ID original do mercado, preservado nas retentativas. FastAPI valida sob lock antes de cotas/fila; aba antiga após reutilização do slug recebe 409. Cliente legado sem ID é aceito apenas quando não há auditoria de exclusão para o slug. Snapshot/hash continuam somente com contexto editorial; fluxo compartilhado de badges preservado.

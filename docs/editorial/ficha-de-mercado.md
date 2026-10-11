@@ -1,6 +1,6 @@
 # Ficha editorial de mercado
 
-Modelo v1.5 para o campo único `editorial_record.document`. O agente prepara este texto; o revisor humano o confere, corrige e registra sua decisão no Admin Ops. O sistema registra autor, data, revisão e hash separadamente. Preencher esta ficha não publica um mercado.
+Modelo v1.6 para o campo único `editorial_record.document`. O agente prepara este texto; o revisor humano o confere, corrige e registra sua decisão no Admin Ops. O sistema registra autor, data, revisão e hash separadamente. Preencher esta ficha não publica um mercado.
 
 ## CONTEXTO E DUPLICIDADE
 
@@ -24,6 +24,6 @@ Definir o tratamento de adiamento, cancelamento, divergência, dado corrigido e 
 
 Listar pendências e limites reais; concluir se recomenda aprovação, devolução ou rejeição e por quê. Devolução e rejeição devem indicar a correção ou razão dentro deste mesmo texto.
 
-Para aprovação, resolver cada pendência e usar `Pendências para aprovação: nenhuma` como primeira linha de conteúdo desta seção, seguida da conclusão. Enquanto houver pendência, descrevê-la no lugar dessa linha; apenas acrescentar a declaração ao fim de uma lista de pendências não libera a aprovação. Essa declaração não substitui a conferência humana das fontes e evidências.
+Na preparação pelo agente, descrever todas as pendências; se não houver pendências conhecidas, usar `Pendências para aprovação: nenhuma` como primeira linha de conteúdo desta seção. Isso serve ao relato e aos alertas automáticos, sem constituir aprovação. No parecer humano, não há frase ou seção obrigatória: ao confirmar a revisão e aprovar, o revisor atesta que resolveu as pendências e assume a responsabilidade editorial.
 
-O [checklist E01–E11](checklist-de-publicacao.md) orienta a leitura do documento, sem campos ou confirmações individuais no parecer. Para aprovar, o humano confirma uma vez que revisou o conteúdo, conferiu as fontes necessárias e não encontrou pendências. A decisão e a publicação são ações distintas.
+O [checklist E01–E11](checklist-de-publicacao.md) orienta a leitura do documento, sem campos ou confirmações individuais no parecer. Para aprovar, o humano confirma uma vez que revisou o conteúdo, conferiu as fontes necessárias e resolveu as pendências e assume a responsabilidade editorial. A decisão e a publicação são ações distintas.

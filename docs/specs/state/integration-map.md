@@ -1,5 +1,9 @@
 # Integration Map
 
+## 2026-10-11 — exclusão pré-publicação
+
+Admin Ops → confirmação POST/CSRF com ID/revisão → DELETE FastAPI staff/MFA → locks e proteção de previsões/provas → remoção física de mercado/opções/ficha/parecer/revisões/dependências + auditoria. Migrations editorial_integrations.0006 (função editorial restrita) e admin_ops.0026 (recibo técnico de thumbnail desvinculado) antecedem runtime. Sugestões e auditorias são desvinculadas; jobs expirados perdem conteúdo, conservando cotas. MCP get/update/submit/replay passam a not_found após exclusão; chaves/hash são marcadores mínimos para não recriar por retentativa. Nova chave permite novo ID/slug reutilizado. Mobile não consome DELETE administrativo; can_delete é aditivo/false na projeção pública. Sem nova ferramenta/scope MCP. Geração administrativa de thumbnail também valida o ID original sob lock; sem ID após exclusão anterior do slug retorna 409 antes de reservar cota. Endpoint não é exposto no MCP ou consumido pelo mobile.
+
 ## Correção de taxonomia — FEAT-MARKET-001 (2026-10-10)
 
 - Admin Ops → FastAPI (nomes e revisão editorial) → resolução por nome/pai → IDs existentes; CRUD explícito continua separado. Conversão de sugestões usa os mesmos helpers.
@@ -10,7 +14,7 @@
 
 - PR #148/Actions 38060102537 implantados: contrato MCP/API, UI, migrations e dados convertidos ativos em produção. Quatro documentos e 27 URLs preservados; smoke técnico aprovado. [Evidência](../testing/editorial-document-production-20261010.md). Piloto externo e parecer humano autenticado em PRD permanecem pendentes.
 - Dot/MCP → `EditorialRecord(policy_version, policy_hash, document)` → FastAPI → PostgreSQL; Admin Ops consome o documento persistido e registra assessment com um aceite humano. `/record` e `/decision` deixam de ser contratos ativos. Migration 0004 converte registros anteriores uma vez, preservando snapshots; drafts/agendados convertidos exigem nova revisão.
-- FastAPI valida `Anúncio esperado` contra `close_at` quando o horário constar no documento e exige declaração textual de pendências resolvidas antes de aprovar. Migration 0005 restaura a decisão histórica somente para mercados já publicados; drafts/agendados continuam exigindo novo parecer. Mobile não consome essas rotas.
+- FastAPI mantém validação de anúncio na preparação de agentes. Parecer humano aprovado com confirmed=true atesta conteúdo e resolução das pendências sem declaração textual obrigatória; publicação verifica revisão/hash/snapshot e autoria, sem revalidar conteúdo. Migration 0005 restaura a decisão histórica somente para mercados já publicados; drafts/agendados continuam exigindo novo parecer. Mobile não consome essas rotas.
 
 - 2026-10-07: ajuste exclusivamente na serialização da resposta DCR (`scope` ausente omitido), PR #140 implantada/Actions 37710313470 aprovado; sem mudanças em MCP, permissões, audience, MFA, banco ou consumidores web/mobile. Smoke público DCR 201 e MCP sem token 401 aprovados; cadastro ChatGPT pendente. WFLOW-20261007-MCP-CHATGPT-DCR-001.
 

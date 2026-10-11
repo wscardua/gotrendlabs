@@ -85,3 +85,40 @@ class EditorialReferenceTests(SimpleTestCase):
 
         rendered = _render_document("[checklist](checklist-de-publicacao.md)")
         self.assertIn(self.url + "?view=checklist", rendered)
+
+
+class EditorialDocumentLineEndingTests(SimpleTestCase):
+    def test_browser_line_endings_accept_valid_announcement_and_conclusion(self):
+        from datetime import datetime
+        from apps.api.backend_api.editorial_service import document_announcement, approval_document_pending
+
+        for newline in ('\n', '\r\n', '\r'):
+            for value in ('não informado', '2026-12-01T15:00:00-03:00', '2026-12-01T18:00:00Z'):
+                document = newline.join([
+                    'PERGUNTA, REGRAS E PRAZOS', 'Anúncio esperado: ' + value,
+                    'Horário exato não confirmado.' if value == 'não informado' else 'Fonte oficial.',
+                    '', 'PENDÊNCIAS E CONCLUSÃO', 'Pendências para aprovação: nenhuma', 'Conclusão: aprovado.',
+                ])
+                with self.subTest(newline=newline, value=value):
+                    announced_at = document_announcement(document)
+                    if value == 'não informado':
+                        self.assertIsNone(announced_at)
+                    else:
+                        self.assertEqual(announced_at, datetime.fromisoformat('2026-12-01T18:00:00+00:00'))
+                    self.assertEqual(approval_document_pending(document), [])
+
+    def test_browser_line_endings_preserve_announcement_and_pending_guards(self):
+        from datetime import datetime
+        from fastapi import HTTPException
+        from apps.api.backend_api.editorial_service import document_announcement, validate_document_timing, approval_document_pending
+
+        for newline in ('\n', '\r\n', '\r'):
+            for value in ('amanhã', '2026-12-01T15:00:00', 'não informado' + newline + 'Anúncio esperado: não informado'):
+                with self.subTest(newline=newline, value=value), self.assertRaises(HTTPException) as raised:
+                    document_announcement('Anúncio esperado: ' + value + newline + 'Observação.')
+                self.assertEqual(raised.exception.detail['code'], 'invalid_editorial_announcement')
+            with self.assertRaises(HTTPException) as raised:
+                validate_document_timing('Anúncio esperado: 2026-12-01T15:00:00-03:00' + newline + 'Fonte.', datetime.fromisoformat('2026-12-01T18:00:00+00:00'))
+            self.assertEqual(raised.exception.detail['code'], 'close_after_editorial_announcement')
+            for conclusion in ('Fonte pendente.', 'Pendências para aprovação: nenhuma' + newline + 'Pendências para aprovação: nenhuma'):
+                self.assertEqual(approval_document_pending('PENDÊNCIAS E CONCLUSÃO' + newline + conclusion), ['unresolved_editorial_gaps'])

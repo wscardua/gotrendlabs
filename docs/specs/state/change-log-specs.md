@@ -1,5 +1,25 @@
 # Change Log de Specs
 
+## 2026-10-11 — fechamento da entrega de exclusão e parecer
+
+Escopo entregue localmente: exclusão física de draft preparation/in_review e parecer/revisões, dependências tratadas, auditoria preservada; proteção de identidade nas ações administrativas e thumbnails; aprovação editorial por confirmação humana, com gates de autoria/versão/snapshot preservados. Specs, contratos/OpenAPI, ADR-0015, checklist v1.3/modelo v1.6, guias, aceite e memória reconciliados. MCP mantém validações automáticas e não recebe exclusão/aprovação; textos e hashes de checklist/modelo atualizados dinamicamente. Mobile não consome as rotas administrativas. Publicação em main/PRD aguarda aprovação da descrição da PR pelo usuário; CI, migrations/grants e smoke produtivo ainda pendentes. Branch local deve ser preservada. A observação sobre legado não abre nova alteração de contrato nesta entrega.
+
+## 2026-10-11 — correções da revisão de exclusão e parecer
+
+Protegida geração de thumbnail contra aba antiga após exclusão/recriação do slug: expected_market_id validado sob lock antes de job/cotas; cliente legado sem ID rejeitado após exclusão anterior. Regra compartilhada com as demais mutações administrativas, contexto/hash de geração preservados, badges sem novo campo. Reconciliado texto CRLF com a atestação humana. 70 testes/OK (109.566s), browsers de mercados/badges aprovados com HTTP/provedores simulados; Django/Node/compilação/OpenAPI/diff aprovados. DEV serve schema e JS atualizados. MCP sem ajuste de ferramentas/schemas/permissões: geração é administrativa, validações automáticas de preparação preservadas e replays testados. Mobile não consome a rota administrativa. Sem migration adicional, geração paga, commit/push ou deploy.
+
+## 2026-10-11 — aprovação sob responsabilidade humana
+
+Aprovação + confirmação humana constituem atestado de revisão, resolução das pendências e responsabilidade editorial. Removidos gates de conteúdo no parecer humano e sua reaplicação na publicação; preservados staff/MFA, schema, versão/hash/snapshot, estado e auditoria. UI sem frases obrigatórias; MCP mantém validações da preparação e não recebe aprovação. Feature v1.7/modelo v1.6, política v1.2/hash inalterados. 91 cenários validados: 90 na suíte ampla e caso com expectativa antiga corrigido em reexecução de 7 testes/OK. DEV atualizado; sem deploy produtivo.
+
+## 2026-10-11 — compatibilidade de quebras de linha editoriais
+
+FEAT-EDITORIAL-001 e contrato agent-integrations explicitam leitura equivalente LF/CRLF/CR sem reescrever documento/snapshot/hash; matriz editorial-newlines-acceptance cobre os gates preservados. Mercado produtivo 44 consultado somente leitura, regressão reproduzida e corrigida localmente.
+
+## 2026-10-11 — WFLOW-20261011-DELETE-PREPUBLICATION-MARKET
+
+Governança editorial 1.6 e feed 0.11 documentam exclusão física pré-publicação aprovada pelo usuário, substituindo proposta lógica local não publicada. Contrato define DELETE staff/MFA com expected_market_id/expected_revision, 204 e conflitos 409; ADR-0015 restringe remoção do histórico editorial aos elegíveis. MCP retorna not_found inclusive nos replays. Sem deleted_at; migrations editorial_integrations.0006/admin_ops.0026 preservam privilégios/cotas.
+
 ## 2026-10-11 — retomada do editor de imagens
 
 Specs de thumbnails v1.4 e badges v1.3 explicitam a apresentação de jobs históricos versus solicitações ativas; contrato administrativo e aceite alinhados. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS.

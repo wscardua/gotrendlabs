@@ -1,7 +1,7 @@
 # Contrato administrativo de thumbnails
 
 Bearer staff/superuser com MFA vigente em todas as rotas.
-- POST /admin/markets/{slug}/thumbnails: request_id UUID e title (1–240), summary (1–4000), category/subcategory (1–80), event (até 80). Retorna job. Sem outros campos, sem mutação de mercado. Retransmissão da mesma identidade/contexto retorna mesmo job; conflito 409. Limites 429, disabled 503, não draft 409.
+- POST /admin/markets/{slug}/thumbnails: request_id UUID e title (1–240), summary (1–4000), category/subcategory (1–80), event (até 80), expected_market_id opcional inteiro positivo. O editor envia sempre o ID original da página; validar identidade sob lock antes de reservar cotas. ID diferente ou ausente após exclusão anterior do slug retorna 409, sem job. Clientes legados sem ID continuam aceitos somente para slugs nunca excluídos. ID não integra snapshot/hash do contexto nem instruções do provedor. Retorna job. Sem outros campos, sem mutação de mercado. Retransmissão da mesma identidade/contexto retorna mesmo job; conflito 409. Limites 429, disabled 503, não draft 409.
 - GET /admin/markets/{slug}/thumbnails: recupera job ativo ou último do operador, sem geração.
 - GET /admin/markets/{slug}/thumbnails/{request_id}: estado, snapshot_hash, snapshot, candidate_id quando succeeded, expires_at, mensagem simples. Sem arquivo/base64/segredos.
 - GET /admin/markets/{slug}/thumbnails/{request_id}/preview: PNG privado, no-store, staff/MFA, vínculo draft e validade. Django faz proxy autenticado sem token no navegador.

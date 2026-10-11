@@ -1,5 +1,29 @@
 # Status de Implementação
 
+## 2026-10-11 — fechamento da entrega de exclusão e parecer
+
+Escopo entregue localmente: exclusão física de draft preparation/in_review e parecer/revisões, dependências tratadas, auditoria preservada; proteção de identidade nas ações administrativas e thumbnails; aprovação editorial por confirmação humana, com gates de autoria/versão/snapshot preservados. Specs, contratos/OpenAPI, ADR-0015, checklist v1.3/modelo v1.6, guias, aceite e memória reconciliados. MCP mantém validações automáticas e não recebe exclusão/aprovação; textos e hashes de checklist/modelo atualizados dinamicamente. Mobile não consome as rotas administrativas. Publicação em main/PRD aguarda aprovação da descrição da PR pelo usuário; CI, migrations/grants e smoke produtivo ainda pendentes. Branch local deve ser preservada. A observação sobre legado não abre nova alteração de contrato nesta entrega.
+
+## 2026-10-11 — correções da revisão de exclusão e parecer
+
+Protegida geração de thumbnail contra aba antiga após exclusão/recriação do slug: expected_market_id validado sob lock antes de job/cotas; cliente legado sem ID rejeitado após exclusão anterior. Regra compartilhada com as demais mutações administrativas, contexto/hash de geração preservados, badges sem novo campo. Reconciliado texto CRLF com a atestação humana. 70 testes/OK (109.566s), browsers de mercados/badges aprovados com HTTP/provedores simulados; Django/Node/compilação/OpenAPI/diff aprovados. DEV serve schema e JS atualizados. MCP sem ajuste de ferramentas/schemas/permissões: geração é administrativa, validações automáticas de preparação preservadas e replays testados. Mobile não consome a rota administrativa. Sem migration adicional, geração paga, commit/push ou deploy.
+
+## 2026-10-11 — aprovação sob responsabilidade humana
+
+Aprovação + confirmação humana constituem atestado de revisão, resolução das pendências e responsabilidade editorial. Removidos gates de conteúdo no parecer humano e sua reaplicação na publicação; preservados staff/MFA, schema, versão/hash/snapshot, estado e auditoria. UI sem frases obrigatórias; MCP mantém validações da preparação e não recebe aprovação. Feature v1.7/modelo v1.6, política v1.2/hash inalterados. 91 cenários validados: 90 na suíte ampla e caso com expectativa antiga corrigido em reexecução de 7 testes/OK. DEV atualizado; sem deploy produtivo.
+
+## 2026-10-11 — parecer editorial com CRLF corrigido localmente
+
+Erro do mercado produtivo 44 reproduzido com quebra CRLF enviada por textarea. Validação de anúncio e pendências normaliza somente uma cópia; documento/hashes e gates preservados. 11 testes/OK (10.523s), Chrome POST/CRLF e checks aprovados. DEV atualizado; produção aguarda publicação/homologação. Diagnóstico anterior pendente da linha foi resolvido pela consulta MCP somente leitura.
+
+## 2026-10-11 — correções após revisão da exclusão
+
+Edição/publicação/fechamento/cancelamento verificam ID original; pedidos legados sem ID bloqueados após reutilização de slug excluído. Mídia versionada restaurada; diretório DEV configurável sem symlink na árvore rastreada. 88 testes locais aprovados (236.790s), OpenAPI/Django/compilação/diff aprovados e serviços DEV atualizados. Orientação de anúncio esperado esclarecida; erro específico reportado ainda depende da linha rejeitada para reprodução. Sem PR/deploy.
+
+## 2026-10-11 — exclusão física pré-publicação (validada localmente)
+
+FEAT-MARKET-001 / FEAT-EDITORIAL-001: abordagem lógica substituída por plano aprovado de exclusão física de mercado/opções/ficha/parecer/revisões. Staff/MFA + ID/revisão confirmados, locks e proteção de previsões/provas. Função SQL restrita e registros técnicos de thumbnail sem conteúdo preservam segurança/cotas. Replays MCP recusam mercado removido. 204 testes de regressão e 21 de exclusão após o ajuste final aprovados; confirmação desktop/celular, Django/migrations/OpenAPI/diff aprovados. Migrations editorial_integrations.0006/admin_ops.0026 aplicadas no DEV local a pedido do usuário; serviços reiniciados na worktree da feature, health/web/discovery HTTP200. Sem PR/deploy produtivo. [Aceite](../testing/market-deletion-acceptance.md).
+
 ## Correção de aviso de thumbnail em produção — 2026-10-11
 
 Componente web compartilhado ajustado para recuperar somente queued/running na abertura. Fix validado localmente: regressão reproduzida antes e corrigida depois, aceites de navegador de thumbnails e badges aprovados, Django/JS/diff sem erros; publicado pela PR #154/Actions 38136371456 com build/deploy aprovados, hash do JS público conferido e health ok. Status amplo das features permanece parcial. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS.

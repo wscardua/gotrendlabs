@@ -197,6 +197,10 @@ Skills locais uteis:
 
 Para criar e revisar mercados, consulte o [manual editorial](docs/editorial/manual-editorial.md) e use a [ficha de mercado](docs/editorial/ficha-de-mercado.md) como modelo do documento único do parecer; o [checklist de publicação](docs/editorial/checklist-de-publicacao.md) orienta a conferência humana sem criar campos adicionais. O documento reúne fontes, URLs e evidências. Staff encontra esses materiais em `/admin-ops/editorial/` e atalhos no editor de mercados. A [spec editorial](docs/specs/features/editorial-governance.md) define o escopo; a FastAPI bloqueia a publicação sem aprovação humana atual e configuração válida de fechamento.
 
+## Exclusão de mercados em preparação/revisão
+
+No Admin Ops, `Excluir mercado` leva à confirmação para drafts em preparação ou revisão. A FastAPI exige staff/MFA e revisão atual, bloqueia mercados publicados/com previsões/provas e remove fisicamente mercado, opções, parecer e revisões. As migrations `editorial_integrations.0006_prepublication_deletion` e `admin_ops.0026_deleted_market_thumbnail_receipts` devem ser aplicadas antes do novo runtime. [Contrato e regras](docs/specs/contracts/market-lifecycle.md), [aceite](docs/specs/testing/market-deletion-acceptance.md).
+
 ## Thumbnails IA no Admin Ops
 
 Rascunhos existentes possuem **Gerar thumbnail**, **Gerar outra** e **Desfazer troca**, com seleção para o salvamento existente. Worker dedicado: `python -m apps.api.backend_api.thumbnail_worker`. Desligado por default; modelos/cotas/retenção em Configurações do Sistema, Bedrock Core default e credencial Bedrock do executor. [Runbook completo](docs/guides/admin-ai-thumbnails-runbook.md), [spec](docs/specs/features/ai-market-thumbnails.md), [aceite](docs/specs/testing/ai-thumbnails-acceptance.md). Duas gerações reais Core concluídas no DEV; rollout/habilitação produtiva concluídos pela PR #143, com executor/grants/mounts e health verificados. Smoke humano/MFA e inferência/qualidade visual produtivos pendentes; estado atual no workflow de fechamento.
@@ -204,3 +208,5 @@ Rascunhos existentes possuem **Gerar thumbnail**, **Gerar outra** e **Desfazer t
 ### Imagens de badges por IA
 
 Criar/editar badge permite gerar um par 1:1 (tema claro e escuro), regenerar e desfazer, confirmando ambos no salvamento existente. O editor informa Gerando/Aguarde e recupera trabalhos ativos na recarga, na mesma sessão. Executor e parâmetros compartilhados com thumbnails; habilitação própria off por default. Limites globais/operador contam 2 imagens por par e 1 por thumbnail; limite por item conta solicitações. [Spec](docs/specs/features/ai-badge-images.md), [runbook](docs/guides/admin-ai-badge-images-runbook.md), [testes](docs/specs/testing/ai-badge-images-acceptance.md). Implementação local; publicação/homologação produtiva pendentes.
+
+No DEV com worktrees, `GOTRENDLABS_MEDIA_ROOT` pode apontar Django para a mídia existente; mantenha `GTL_THUMB_PUBLIC_ROOT` e `GTL_BADGE_PUBLIC_ROOT` alinhados para os produtores de arquivos. Não substitua o diretório `media/` versionado por um symlink.

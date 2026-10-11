@@ -1428,6 +1428,7 @@ function initThumbnailEditor(form) {
   if (!fileInput) return;
   const aliases = isBadge ? {thumbnail_origin:'badge_image_origin',thumbnail_candidate_id:'badge_image_candidate_id'} : {};
   const field = (name) => form.elements[aliases[name] || name];
+  const expectedMarketId = isBadge ? null : Number(field('expected_market_id')?.value) || null;
   const thumb = document.querySelector('[data-preview-thumb]');
   const initialUrl = field('image_url').value;
   const initialDarkUrl = isBadge ? field('image_dark_url').value : '';
@@ -1555,7 +1556,7 @@ function initThumbnailEditor(form) {
     inFlightSnapshot=inFlightId ? inFlightSnapshot : snapshot; inFlightId=id;
     busy(true);
     try { const job=await fetchJob(controls.dataset.url,{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':field('csrfmiddlewaretoken').value},
-      body:JSON.stringify({...inFlightSnapshot,request_id:id,...(isBadge ? {badge_code:form.dataset.badgeCode || ''} : {})})}); await accept(job,selectionRevision); }
+      body:JSON.stringify({...inFlightSnapshot,request_id:id,...(isBadge ? {badge_code:form.dataset.badgeCode || ''} : {expected_market_id:expectedMarketId})})}); await accept(job,selectionRevision); }
     catch(error) { busy(false); if(error.status && error.status<500) {inFlightId=null; inFlightSnapshot=null;} say(error.message,true); }
   });
   function onSubmit(event) {

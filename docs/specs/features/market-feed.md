@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.10
+versao: 0.11
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-10
+ultima_atualizacao: 2026-10-11
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -230,3 +230,17 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 ## Impacto de mudança
 
 Mudanças aqui podem afetar descoberta, categorias e contratos de listagem consumidos também pelo admin.
+
+## Exclusão de mercados em preparação ou revisão (2026-10-11)
+
+Operador staff/superuser com MFA pode excluir fisicamente um mercado com lifecycle `draft`, parecer `preparation` ou `in_review` e nenhuma publicação, previsão ou prova de integridade. A FastAPI revalida estado e revisão sob lock; conflito retorna 409 sem alteração. Outros estados editoriais e lifecycle não permitem exclusão.
+
+Admin Ops oferece Excluir mercado na lista, editor e revisão, seguido de confirmação explícita via POST/CSRF. A transação remove mercado, opções, ficha/parecer, todas as revisões, dependências de apresentação. Sugestões mantêm seu histórico e crédito, com converted_market_id desvinculado; auditorias administrativas são preservadas. Não há restauração. Slug pode ser reutilizado em uma criação nova.
+
+A função PostgreSQL restrita `delete_prepublication_editorial` permite apenas esta exceção ao histórico editorial protegido; não concede DELETE geral sobre revisões. Provas criptográficas continuam intocáveis. Jobs de thumbnail são desvinculados, expirados e têm snapshot/usage apagados; conserva-se somente o registro técnico necessário às cotas. Resultados atrasados do worker são ignorados; mídia gerada órfã segue o prune existente, sem apagar arquivos manuais/compartilhados na transação.
+
+MCP omite o mercado removido naturalmente. Consulta, edição, submissão e replay de pedidos anteriores retornam not_found; chaves/hash idempotentes ficam como recibo mínimo de exclusão para evitar recriação pelo mesmo pedido, sem conservar parecer ou snapshot. Nova chave cria novo ID. Não há ferramenta de exclusão MCP.
+
+## Fechamento da entrega em 2026-10-11
+
+O escopo de exclusão pré-publicação e aprovação por responsabilidade humana está implementado e validado localmente; publicação aguarda aprovação da PR, CI e verificação em PRD. O status amplo da feature permanece parcial por evoluções fora deste escopo. Estado operacional e evidências no WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL.
