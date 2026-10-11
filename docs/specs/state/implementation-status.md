@@ -1,8 +1,8 @@
 # Status de Implementação
 
-## Correção local de aviso de thumbnail — 2026-10-11
+## Correção de aviso de thumbnail em produção — 2026-10-11
 
-Componente web compartilhado ajustado para recuperar somente queued/running na abertura. Fix validado localmente: regressão reproduzida antes e corrigida depois, aceites de navegador de thumbnails e badges aprovados, Django/JS/diff sem erros; ainda não publicado. Status amplo das features permanece parcial. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS.
+Componente web compartilhado ajustado para recuperar somente queued/running na abertura. Fix validado localmente: regressão reproduzida antes e corrigida depois, aceites de navegador de thumbnails e badges aprovados, Django/JS/diff sem erros; publicado pela PR #154/Actions 38136371456 com build/deploy aprovados, hash do JS público conferido e health ok. Status amplo das features permanece parcial. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS.
 
 ## Correção de taxonomia em produção — 2026-10-10
 

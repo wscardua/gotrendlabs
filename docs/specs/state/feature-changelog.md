@@ -2,7 +2,7 @@
 
 ## 2026-10-11 — aviso histórico de thumbnail
 
-FEAT-THUMB-001 / FEAT-BADGE-IMAGE-001: abertura do editor retoma apenas gerações em andamento; estados terminais históricos não apresentam erro sobre imagem salva. Polling de geração ativa mantém mensagens de falha/expiração. Sem alteração de validade, backend, API ou mídia.
+FEAT-THUMB-001 / FEAT-BADGE-IMAGE-001: abertura do editor retoma apenas gerações em andamento; estados terminais históricos não apresentam erro sobre imagem salva. Polling de geração ativa mantém mensagens de falha/expiração. Sem alteração de validade, backend, API ou mídia. Implantado pela PR #154/Actions 38136371456, CI/build/deploy aprovados e JS público conferido.
 
 ## 2026-10-10 — FEAT-MARKET-001 correção de duplicação da taxonomia
 

@@ -3,7 +3,7 @@
 ## WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS
 
 - Tipo: correção de FEAT-THUMB-001; componente compartilhado com FEAT-BADGE-IMAGE-001.
-- Status: `concluido` para implementação e validação local; branch `fix/thumbnail-expired-editor-20261011`, base remota atualizada `28512d3`, worktree isolado.
+- Status: `concluido` para implementação, publicação e validação técnica produtiva; branch `fix/thumbnail-expired-editor-20261011`, base remota atualizada `28512d3`, worktree isolado.
 - Objetivo: não apresentar erro de geração histórica ao abrir editor com imagem persistida; recuperar apenas queued/running e preservar mensagens das solicitações acompanhadas na tela.
 - Artefatos: JS compartilhado, teste real de navegador, spec/contrato/aceite e memória operacional.
 - Arquitetura: ajuste de apresentação; validade, promoção, limpeza e autorização permanecem no backend. Sem alteração de API, banco, mobile ou fronteira; ADR não necessário.
@@ -12,7 +12,7 @@
 - Checklist: specs/contrato/aceite/changelogs/status alinhados; fronteiras preservadas, sem dependências novas que alterem integration map, sem ADR ou migration. Nenhuma pendência de validação deste fix; homologações amplas das features permanecem independentes.
 - Revisão de branch: intervalo `28512d3..c516bff`, dez arquivos revisados; nenhum problema identificável, risco baixo. Mobile sem consumidor dos endpoints administrativos de thumbnails/badges. Checks JS/diff aprovados; evidências dos aceites de navegador conferidas. Cobertura residual: estados históricos testados diretamente no editor de mercado; badges cobertos pela suíte geral do componente compartilhado.
 - Fechamento solicitado em 2026-10-11: specs de thumbnails/badges, contrato, aceite, changelogs e status reconciliados. Sem necessidade de migration, configuração produtiva, novo ADR ou alteração de OpenAPI. Base remota reconferida em `28512d3`, sem avanço concorrente.
-- Publicação: aguardando aprovação explícita da descrição da PR, conforme pedido do usuário. Após aprovação: push/PR via GitHub, CI completo, merge, acompanhamento de build/deploy e verificação do JS servido e comportamento de retomada. Preservar branch local e registrar recibos produtivos ao concluir. Produção ainda não alterada por este fix.
+- Publicação autorizada e concluída: PR [#154](https://github.com/wscardua/gotrendlabs/pull/154), merge `9df364ebe20edfacc69fcddd4d4b0b038da02dfb`. CI PR [38135783975](https://github.com/wscardua/gotrendlabs/actions/runs/38135783975) e main [38136371456](https://github.com/wscardua/gotrendlabs/actions/runs/38136371456) aprovados (465 testes em ambos, um skip CI); build/deploy Success. Host no SHA esperado; health `ok` via SSM `1c9b0a36-4ff2-438c-83b7-c72e2315e3b0`. JavaScript baixado de `https://gotrendlabs.com.br/static/js/gotrendlabs.js` idêntico ao validado, SHA-256 `f4a265226d152b76c4af5dc7dea445a20e4f6af3b04df56c5be40d1c7cd4db9c`. Nenhuma migration, mudança de configuração ou mutação de mercado necessária. Branch local preservada. Aceite de navegador completo repetido com o JS baixado de produção e respostas simuladas aprovado (`/tmp/thumb-production-browser.log`), sem inferência paga ou edição de mercado real. Limite: não foi realizada sessão humana autenticada no Admin Ops produtivo. Encerrado em 2026-10-11.
 
 ## WFLOW-20261010-MARKET-TAXONOMY-FIX
 
