@@ -1,3 +1,11 @@
+## Fechamento produtivo — WFLOW-20261011-PUBLISH-FORM-IDENTITY
+
+- Status: concluído em produção e funcionamento confirmado pelo usuário em 2026-10-11; este registro substitui as pendências locais abaixo.
+- PR #158: https://github.com/wscardua/gotrendlabs/pull/158; commit da correção df727563e7094aef14d077bcf2a8d0f6320a60f0; merge d80b1006a94ddbef09b55b852e625721beed5268.
+- CI da PR 38169538314 e main/deploy 38170273991: sucesso; 496 testes, 2 skips por execução, build/OpenAPI aprovados. SSM deploy 4d41d9a1-129a-45e0-813a-59f500101c36: Success; serviços ativos, nenhuma migration pendente.
+- Verificação produtiva somente leitura, SSM 03f9e381-169a-49e1-b4de-afdc2a1350ca: Success; SHA do servidor confere, template renderizado no container Django envia ID atual e preserva ID original após erro. Mercado reportado permanece draft, ID 50, com auditoria de exclusão anterior no slug; causa confirmada. API/banco ok. Home retorna 302 e runtime informa manutenção web ativa; configuração não alterada por esta entrega.
+- MCP e mobile não exigem ajustes. Nenhum mercado real foi publicado/alterado pelo agente. Branch local fix/admin-reviewed-publication-identity preservada. Fechamento documental autorizado pelo usuário, incluindo confirmação de funcionamento; entrega docs-only não exige novo deploy. Detalhes e limites no [recibo produtivo](../testing/reviewed-publication-production-20261011.md).
+
 ## WFLOW-20261011-PUBLISH-FORM-IDENTITY
 
 - Status: implementação e revisão local concluídas; fechamento produtivo aguardando autorização do usuário para submeter a PR.
