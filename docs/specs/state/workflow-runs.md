@@ -1,7 +1,7 @@
 ## WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW
 
 - Tipo: change-feature + implementation-cycle; FEAT-MARKET-002 v0.6.
-- Status: implementação concluída localmente; publicação preparada, aguardando aprovação do usuário antes de submeter a PR.
+- Status: concluído e validado em produção em 2026-10-11. Publicação autorizada pelo usuário após aprovação da descrição da PR.
 - Base: origin/main atualizada por fetch, cc97e9af5b10ab1ada83c2c87ed549dec4cf3de9; branch fix/resolution-criteria-preview em worktree própria. Alterações locais anteriores preservadas na árvore original.
 - Objetivo/entrega: critério longo com prévia de quatro linhas e controle para expandir/recolher somente quando necessário. Texto completo, quebras de linha, fonte, status e avisos preservados. Sem JS e na impressão, leitura integral.
 - Artefatos: template markets/detail.html, base.html (versões de assets), CSS/JS compartilhados, feature market-detail.md, implementation-status.md e changelogs.
@@ -12,7 +12,10 @@
 - DEV local atualizado: serviço web em 127.0.0.1:8003 passou da worktree gotrendlabs-delete-markets para esta branch; proxy localhost:8000 preservado, API/banco/MCP mantidos. Configuração e ambiente virtual existentes reutilizados via .runtime/dev/start-web.py. HTML de mercado local e JS público confirmam o componente novo. O slug Netflix de produção não existe no banco DEV (404).
 - Review da branch: nenhum problema identificável no diff; check Django, sintaxe JS, whitespace e aceites Chromium repetidos com sucesso. Cobertura residual: Safari/Firefox/leitor de tela não exercitados e scripts de aceitação locais não versionados. Versões de CSS/JS atualizadas em base.html para evitar reutilização de assets anteriores na publicação.
 - Checklist universal revisado: specs/aceite, arquitetura, contratos, segurança, validação e memória sincronizados. Status amplo da feature permanece parcial. Sem novas dependências, migrações, flags ou alterações de OpenAPI, mobile e MCP. README, integration-map e ADR dispensados por não mudar operação, integrações ou arquitetura.
-- Publicação solicitada pelo usuário: preparar commit e PR em português, mostrar descrição e obter autorização antes da submissão. Após aprovação, push/PR, CI, merge e acompanhamento do deploy Actions com smoke de produção; preservar branch local. Sem merge/deploy até esta etapa. Registrar recibos de PR/Actions/produção após execução.
+- Publicação: [PR #160](https://github.com/wscardua/gotrendlabs/pull/160), commit bf81c0ff351af316b3eb6ccea017ff7daae75731, merge ec624d7e54881349e9b7c17b6048902d680aa55f. [CI da PR](https://github.com/wscardua/gotrendlabs/actions/runs/38179693020) e [CI/deploy main](https://github.com/wscardua/gotrendlabs/actions/runs/38180444186) aprovados: 496 testes, 2 skips em cada execução, build de produção e snapshot OpenAPI válidos.
+- Deploy SSM a626e02b-7eec-46c6-9664-2d7d62dc0862 confirmou Success. Nenhuma migração, flag ou configuração adicional foi necessária para esta melhoria.
+- Smoke produtivo: mercado Netflix HTTP 200, API /api/health HTTP 200, assets com versão 20261011-resolution-criteria-preview e Chromium real com viewport 1280px/390px aprovados. Quatro linhas, expandir/recolher por Enter/Espaço, conteúdo integral inalterado e impressão completa conferidos; componente mobile inspecionado visualmente. Sem mutações de mercado ou dados de usuário.
+- Branch local fix/resolution-criteria-preview preservada. Evidências pós-deploy registradas em fechamento exclusivamente documental, sem necessidade de novo deploy da aplicação. Nenhuma pendência funcional deste escopo; cobertura residual de navegadores/leitor de tela registrada acima.
 
 ## Fechamento produtivo — WFLOW-20261011-PUBLISH-FORM-IDENTITY
 

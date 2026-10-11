@@ -79,7 +79,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 
 ## Implementação atual
 
-- prévia expansível de critérios implementada e validada localmente na v0.6; publicação acompanhada em `WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW`
+- prévia expansível de critérios da v0.6 implantada pela PR #160 e validada em produção em 2026-10-11; evidências em `WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW`
 
 - detalhe público persistido em PostgreSQL com opções e snapshot de probabilidade
 - `GET /markets/{slug}` expõe contrato compatível com os templates atuais

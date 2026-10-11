@@ -1,6 +1,6 @@
-## 2026-10-11 — prévia do critério de resolução validada localmente
+## 2026-10-11 — prévia do critério de resolução implantada em produção
 
-FEAT-MARKET-002 v0.6: quatro linhas com expansão/recolhimento acessível; texto integral sem JS/na impressão, fonte/status/avisos preservados. Branch fix/resolution-criteria-preview baseada em origin/main cc97e9a. Check Django no ambiente existente Python 3.11, sintaxe JS e aceite Chromium desktop/mobile aprovados. Sem alteração em API, banco ou MCP. Publicação preparada, aguardando aprovação da descrição da PR; versões de CSS/JS atualizadas para renovação de cache. Status amplo da feature preservado. Evidências em WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
+FEAT-MARKET-002 v0.6: quatro linhas com expansão/recolhimento acessível; texto integral sem JS/na impressão, fonte/status/avisos preservados. Branch fix/resolution-criteria-preview baseada em origin/main cc97e9a. Check Django no ambiente existente Python 3.11, sintaxe JS e aceite Chromium desktop/mobile aprovados. Sem alteração em API, banco ou MCP. PR #160 integrada (ec624d7), CI da PR e main com 496 testes/2 skips por execução, build/OpenAPI e deploy Actions 38180444186 aprovados. Smoke real no mercado Netflix e health HTTP 200; versões CSS/JS, quatro linhas, teclado, conteúdo integral e impressão conferidos em 1280px/390px. Branch local preservada. Status amplo da feature preservado. Evidências em WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
 
 ## Correção implantada — publicação revisada (2026-10-11)
 
