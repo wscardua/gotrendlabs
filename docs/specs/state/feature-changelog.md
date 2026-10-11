@@ -1,3 +1,7 @@
+## 2026-10-11 — Identidade no formulário de publicação revisada
+
+- FEAT-EDITORIAL-001/FEAT-MARKET-001: formulário separado de publicação passa a enviar expected_market_id da página original e preserva o valor submetido após erro. Corrige 409 indevido após reutilização de slug, sem relaxar validação backend ou conceder permissões MCP. Validação e pendência produtiva em WFLOW-20261011-PUBLISH-FORM-IDENTITY.
+
 # Feature Changelog
 
 ## 2026-10-11 — exclusão e parecer implantados em PRD

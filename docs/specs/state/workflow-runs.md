@@ -1,3 +1,18 @@
+## WFLOW-20261011-PUBLISH-FORM-IDENTITY
+
+- Status: implementação e revisão local concluídas; fechamento produtivo aguardando autorização do usuário para submeter a PR.
+- Retomada: fetch de origin/main realizado antes de criar a nova branch em worktree isolada gotrendlabs-reviewed-publication-fix; patch local da investigação reaplicado sem conflitos. Ambiente virtual existente gotrendlabs-ai-thumbnails/.venv reutilizado.
+- Escopo: correção de regressão FEAT-EDITORIAL-001/FEAT-MARKET-001, contrato market-lifecycle. Branch fix/admin-reviewed-publication-identity baseada em origin/main f12e5e9, worktree isolada; alterações preexistentes preservadas.
+- Causa: formulário separado `data-editorial-publish` omitia expected_market_id; após reutilização do slug a API rejeita corretamente pedidos sem identidade. Campo já existia apenas no formulário principal de edição.
+- Correção: enviar ID original também na publicação revisada, preservando o ID submetido quando a página reapresenta erro. Backend continua validando identidade sob lock; nenhuma flexibilização de proteção/revisão.
+- Arquitetura/MCP: ajuste exclusivo de consumidor Django ao contrato existente. Ferramentas, schemas, permissões, erros, replays e orientação editorial MCP não exigem mudanças; nenhuma permissão de publicar é concedida ao agente. Sem migration, OpenAPI, dependência ou ADR novo.
+- Testes: regressão usa campos extraídos do HTML real de publicação no POST da view, cobrindo página nova e ID original após erro; falhou antes da correção pela ausência do campo. Validação repetida na nova branch com o venv existente: 17 testes de interface editorial aprovados e regressão de exclusão/recriação aprovada em PostgreSQL isolado test_gtl_reviewed_publication_fix (ID antigo/ausente → 409; ID atual permite mutações). Django system check e git diff --check aprovados. Checklist universal revisado; changelog, status e aceite atualizados.
+- Revisão de branch: nenhum problema identificável no diff, risco baixo. Reexecução dos 17 testes de interface aprovada; mobile não consome a rota administrativa. Lacuna residual: publicação ponta a ponta com HTML real e API após reutilização de slug ainda não coberta em um único teste.
+- Fechamento documental: feature editorial e contrato lifecycle explicitam o envio no formulário separado. Changelog, status, aceite e memória sincronizados; integration-map/ADR/OpenAPI dispensados porque não há nova dependência, fronteira ou schema.
+- Publicação: título/descrição em português preparados para autorização antes da PR, conforme pedido expresso do usuário. Após autorização: push, PR via MCP GitHub, CI aprovado, merge em main, acompanhar Actions/build/deploy e smoke produtivo. Preservar a branch local. Não marcar produção concluída antes das evidências.
+- Rollout: alteração de template entregue pelo deploy padrão; nenhuma migration, segredo ou configuração nova. Validar SHA/runtime, saúde web/API e presença do campo no formulário renderizado. Registrar PR, SHA e run/resultado no fechamento; publicar recibo documental pelo fluxo padrão. Publicação de mercado real não faz parte do smoke.
+- Pendência: autorização para PR e posterior implantação/verificação produtiva. Mercado real permanece inalterado.
+
 ## Fechamento produtivo — WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL
 
 - Status: concluído no escopo técnico de entrega/implantação; substitui as pendências de publicação local registradas anteriormente para esta entrega.
