@@ -1,10 +1,10 @@
 ---
 id: FEAT-BADGE-IMAGE-001
 titulo: Imagens IA na criação e edição de badges
-versao: 1.2
+versao: 1.3
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-09
+ultima_atualizacao: 2026-10-11
 contratos_afetados: [admin-badge-images.md, reputation-ranking.md]
 dependencias: [FEAT-THUMB-001, FEAT-AUTH-001, FEAT-REP-001]
 impacta: [admin-ops, frontend-web, backend-api, database, scheduler-jobs]
@@ -42,3 +42,8 @@ Fonte atual: WFLOW-20261009-BADGE-CLOSE-001; implementação local completa, par
 ## 2026-10-09 — Estado produtivo atual de imagens administrativas
 
 PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes em ambos com um skip por roles CI ausentes (cenário aprovado localmente). Migration0025/grants/constraints/mounts/executor conferidos; habilitação auditada de badges concluída, política de thumbnails preservada. Stable Image Core/Oregon, badges1:1, timeout180s, limites10 imagens/operador e50 globais por24h,5 solicitações/item, retenção24h. Fila vazia, sem inferência paga ou alteração de mercados/concessões reais. Branch local preservada. Manutenção pública ativa preservada; Admin Ops exige login. Homologação humana/MFA e coerência visual real permanecem pendentes. [Evidência produtiva](../testing/ai-badge-images-production-20261009.md). Registros anteriores são histórico das etapas.
+
+
+## Recuperação do editor — 2026-10-11
+
+Ao abrir ou recarregar o editor, recuperar somente gerações queued/running. Estados terminais históricos (succeeded/failed/uncertain/expired) não selecionam candidata nem exibem alerta sobre a imagem persistida. Mensagens de falha/expiração de solicitações iniciadas ou retomadas em andamento continuam visíveis quando recebidas por polling. A validade da candidata privada não expira a imagem já salva; não iniciar geração automaticamente.

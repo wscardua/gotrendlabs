@@ -1,10 +1,10 @@
 ---
 id: FEAT-THUMB-001
 titulo: Thumbnails IA no editor Admin Ops
-versao: 1.3
+versao: 1.4
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-09
+ultima_atualizacao: 2026-10-11
 origem: [pedido_usuario_20261009]
 contratos_afetados: [admin-thumbnails.md, market-lifecycle.md]
 dependencias: [FEAT-AUTH-001, FEAT-EDITORIAL-001, FEAT-MARKET-001]
@@ -67,3 +67,8 @@ Uma chamada textual e uma imagem por solicitação, sem retry/fallback, mesma re
 ## Homologação DEV e preparação de PRD v5
 
 2026-10-09 — Homologação DEV v5: operador informou “em dev local parece estar legal” e autorizou preparar PRD. Consulta local somente leitura confirmou três jobs v5 succeeded (34ccb8f0, bcc57be2, 5cb97131), iniciados pelo operador, com planner openai.gpt-oss-20b/Mantle us-east-1 e imagem Core/us-west-2. Tempos de processamento: 17.804s, 9.663s e 15.883s; uso textual retornado registrado, sem afirmar custo faturado. Acesso efetivo e aprovação visual informal do fluxo DEV confirmados; não substituem matriz visual sistemática, medição de engajamento ou homologação do token/modelo em PRD. Nenhuma inferência paga iniciada pelo assistente. Próxima etapa: aprovação da descrição atualizada da PR, CI completo, merge/deploy e verificação produtiva; preservar modelo de imagem e políticas atuais de PRD.
+
+
+## Recuperação do editor — 2026-10-11
+
+Ao abrir ou recarregar o editor, recuperar somente gerações queued/running. Estados terminais históricos (succeeded/failed/uncertain/expired) não selecionam candidata nem exibem alerta sobre a imagem persistida. Mensagens de falha/expiração de solicitações iniciadas ou retomadas em andamento continuam visíveis quando recebidas por polling. A validade da candidata privada não expira a imagem já salva; não iniciar geração automaticamente.

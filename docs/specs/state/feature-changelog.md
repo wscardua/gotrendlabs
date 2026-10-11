@@ -1,5 +1,9 @@
 # Feature Changelog
 
+## 2026-10-11 — aviso histórico de thumbnail
+
+FEAT-THUMB-001 / FEAT-BADGE-IMAGE-001: abertura do editor retoma apenas gerações em andamento; estados terminais históricos não apresentam erro sobre imagem salva. Polling de geração ativa mantém mensagens de falha/expiração. Sem alteração de validade, backend, API ou mídia.
+
 ## 2026-10-10 — FEAT-MARKET-001 correção de duplicação da taxonomia
 
 - Criação/edição de mercado e conversão de sugestão reutilizam nomes existentes dentro do respectivo pai, preservando IDs, slugs personalizados, avisos e bloqueios.

@@ -120,3 +120,12 @@ Validação local v3: 70 testes aprovados em 96.136s, PostgreSQL isolado/provedo
 
 
 Fechamento local em 2026-10-09: suíte completa de 450 testes aprovada em 862.190s, sem skips, com PostgreSQL isolado e provedores simulados; credenciais de inferência vazias e geração desabilitada no processo de testes. Banco de testes destruído ao concluir. Log ignorado: .runtime/badge-validation/thumbnail-semantic-close-full-tests.log. Django check, snapshot OpenAPI, compilação Python e diff aprovados; checklist de alteração de feature/arquitetura/contratos/ADR/testes/memória conferido. Commit local autorizado preparado somente com 22 arquivos de código/configuração de exemplo/docs/testes; mídia DEV, credenciais e mudanças das outras iniciativas excluídas e preservadas. Submissão da PR com descrição em português, merge e rollout aguardam a aprovação solicitada pelo usuário.
+
+
+## Regressão de retomada — 2026-10-11
+
+- Abrir editor com imagem salva e último job expired/failed/uncertain/succeeded: nenhum alerta histórico, imagem atual e origem current preservadas, candidata vazia e nenhuma chamada de geração.
+- Abrir com queued/running: retomar polling e indicador de espera; se expirar durante acompanhamento, mostrar mensagem e liberar controles.
+- Executar aceites de mercado e badge para proteger componente compartilhado, upload/undo, carregamento tardio e salvamento.
+
+Evidência: `tests/thumbnail_browser.py` falhou na base com alerta histórico e passou após correção; `tests/badge_image_browser.py` também aprovado. Chrome headless com templates/JS reais e respostas simuladas, sem consumo pago. Django check, node --check e git diff --check aprovados. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS; implementação local, deploy não realizado.
