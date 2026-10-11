@@ -112,7 +112,7 @@ Há um único aceite humano para aprovar o documento. A API compõe snapshot e d
 4. Conferir legados: terminais são consultáveis; abertos/fechados permitem parecer sem mudança de estado. Tratar configurações antigas incompletas como tarefa humana, sem reescrever definição assinada nem escolher prazo arbitrário.
 5. Rollback: preferir correção progressiva. Conservar migration/fichas/histórico; não reverter 0003 (origens humanas nulas impedem retorno seguro a FK obrigatória). Se voltar aplicação, usar versão compatível com origem nullable e suspender publicações até validar gate universal. Não restaurar seletivamente mercados/provas.
 
-Esta seção registra o rollout universal de 2026-10-07; seu deploy já foi concluído pela PR #136. A conversão documental 0004/0005 foi implantada pela PR #148; a exclusão física 0006 e a aprovação por responsabilidade humana aguardam o rollout desta branch. Homologação Dot externa permanece pendente; não substituir OAuth por acesso desprotegido.
+Esta seção registra o rollout universal de 2026-10-07; seu deploy já foi concluído pela PR #136. A conversão documental 0004/0005 foi implantada pela PR #148; a exclusão física 0006/0026 e a aprovação por responsabilidade humana foram implantadas pela PR #156, com smoke técnico aprovado. Homologação Dot externa permanece pendente; não substituir OAuth por acesso desprotegido.
 
 ### Quando o legado publicado não salva data/fuso
 

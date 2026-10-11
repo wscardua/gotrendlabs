@@ -199,7 +199,7 @@ Para criar e revisar mercados, consulte o [manual editorial](docs/editorial/manu
 
 ## Exclusão de mercados em preparação/revisão
 
-No Admin Ops, `Excluir mercado` leva à confirmação para drafts em preparação ou revisão. A FastAPI exige staff/MFA e revisão atual, bloqueia mercados publicados/com previsões/provas e remove fisicamente mercado, opções, parecer e revisões. As migrations `editorial_integrations.0006_prepublication_deletion` e `admin_ops.0026_deleted_market_thumbnail_receipts` devem ser aplicadas antes do novo runtime. [Contrato e regras](docs/specs/contracts/market-lifecycle.md), [aceite](docs/specs/testing/market-deletion-acceptance.md).
+No Admin Ops, `Excluir mercado` leva à confirmação para drafts em preparação ou revisão. A FastAPI exige staff/MFA e revisão atual, bloqueia mercados publicados/com previsões/provas e remove fisicamente mercado, opções, parecer e revisões. As migrations `editorial_integrations.0006_prepublication_deletion` e `admin_ops.0026_deleted_market_thumbnail_receipts` devem ser aplicadas antes do novo runtime. [Contrato e regras](docs/specs/contracts/market-lifecycle.md), [aceite](docs/specs/testing/market-deletion-acceptance.md). Implantado pela PR #156, com migrations/grants e smoke técnico aprovados; [recibo produtivo](docs/specs/testing/prepublication-editorial-production-20261011.md). Aprovar e confirmar o parecer registra responsabilidade humana sem exigir frases específicas no documento.
 
 ## Thumbnails IA no Admin Ops
 

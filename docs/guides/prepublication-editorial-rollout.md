@@ -1,6 +1,6 @@
 # Publicação: exclusão pré-publicação e parecer humano
 
-Entrega de 2026-10-11, branch `feature/delete-draft-review-markets`, WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL. Implementação local concluída; este documento descreve verificações pendentes de produção, sem afirmar implantação.
+Entrega de 2026-10-11, branch `feature/delete-draft-review-markets`, WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL. Entrega técnica implantada pela PR #156; CI/main/SSM e smokes aprovados. [Recibo produtivo](../specs/testing/prepublication-editorial-production-20261011.md). O roteiro abaixo fica como referência operacional; homologação humana final do painel permanece pendente.
 
 ## Fluxo GitHub
 

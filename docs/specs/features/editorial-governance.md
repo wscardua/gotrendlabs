@@ -169,4 +169,4 @@ Anúncio esperado e declaração final de pendências devem ser interpretados ig
 
 ## Fechamento da entrega em 2026-10-11
 
-O escopo de exclusão pré-publicação e aprovação por responsabilidade humana está implementado e validado localmente; publicação aguarda aprovação da PR, CI e verificação em PRD. O status amplo da feature permanece parcial por evoluções fora deste escopo. Estado operacional e evidências no WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL.
+O escopo de exclusão pré-publicação e aprovação por responsabilidade humana está implantado em PRD pela PR #156 e verificado tecnicamente com roles reais; a homologação final do painel autenticado permanece com o operador. O status amplo da feature permanece parcial por evoluções fora deste escopo. Estado operacional e evidências no WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL.
