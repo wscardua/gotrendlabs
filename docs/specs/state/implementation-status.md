@@ -1,3 +1,7 @@
+## Correção local — publicação revisada (2026-10-11)
+
+Formulário de publicação aprovada alinhado ao contrato de identidade existente. Correção local na branch fix/admin-reviewed-publication-identity; implantação produtiva pendente. Detalhes/testes em WFLOW-20261011-PUBLISH-FORM-IDENTITY. Status amplo das features preservado.
+
 # Status de Implementação
 
 ## 2026-10-11 — exclusão e parecer implantados em PRD

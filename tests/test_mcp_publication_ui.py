@@ -1,3 +1,4 @@
+from html.parser import HTMLParser
 from unittest.mock import patch
 
 from django.template.loader import render_to_string
@@ -37,6 +38,46 @@ class EditorialPublicationUiTests(SimpleTestCase):
             "fixture", "proposal", "Publicação da versão aprovada", expected_market_id="9"
         )
         update.assert_not_called()
+
+    def test_publication_form_submits_original_market_identity(self):
+        class PublicationFormParser(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.in_publication_form = False
+                self.fields = {}
+
+            def handle_starttag(self, tag, attrs):
+                attrs = dict(attrs)
+                if tag == "form":
+                    self.in_publication_form = "data-editorial-publish" in attrs
+                if self.in_publication_form and tag in {"input", "button"} and "name" in attrs:
+                    self.fields[attrs["name"]] = attrs.get("value", "")
+
+            def handle_endtag(self, tag):
+                if tag == "form":
+                    self.in_publication_form = False
+
+        market = {"slug": "proposal", "status": "draft", "editorial_revision": 3,
+                  "editorial_status": "approved", "editorial_market_id": 50}
+        # Fresh page and a failed POST re-rendered after replacement of the market.
+        for original_id in (None, "44"):
+            with self.subTest(original_id=original_id):
+                display_request = (RequestFactory().get("/") if original_id is None else
+                                   RequestFactory().post("/", {"expected_market_id": original_id}))
+                parser = PublicationFormParser()
+                parser.feed(render_to_string("admin_ops/partials/editorial_publication.html",
+                                             {"market": market, "request": display_request}))
+                self.assertEqual(parser.fields.get("expected_market_id"), original_id or "50")
+                request = RequestFactory().post("/admin-ops/markets/proposal/edit/", parser.fields)
+                request.session = {"auth_api_token": "fixture", "auth_api_user": {"id": 1, "is_staff": True}}
+                with (patch("apps.web.django.admin_ops.views.admin_get_market", return_value=market),
+                      patch("apps.web.django.admin_ops.views.admin_publish_market") as publish,
+                      patch("apps.web.django.admin_ops.views.admin_update_market") as update,
+                      patch("apps.web.django.admin_ops.views.messages.success")):
+                    response = market_form(request, mode="edit", slug="proposal")
+                self.assertEqual(response.status_code, 302)
+                self.assertEqual(publish.call_args.kwargs["expected_market_id"], original_id or "50")
+                update.assert_not_called()
 
     def test_editor_preserves_utc_instant_in_selected_timezone(self):
         initial = _market_initial(

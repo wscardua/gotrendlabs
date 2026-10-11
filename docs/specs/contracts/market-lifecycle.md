@@ -109,3 +109,5 @@ MCP omite o mercado removido naturalmente. Consulta, edição, submissão e repl
 ### Identidade das ações administrativas após reutilização de slug
 
 PATCH e publish/cancel/lock aceitam `expected_market_id` positivo. Sob lock do mercado, ID divergente retorna 409 sem mutação. Admin Ops envia o ID da página original em todos esses pedidos. Clientes legados sem ID continuam aceitos somente quando não existe auditoria `market.delete` para o slug; após exclusão, ID é obrigatório (409/recarregar). Revisão editorial continua sendo verificada separadamente. Assim, formulários anteriores à atualização também não atingem um mercado recriado.
+
+O envio do ID original também se aplica ao formulário independente de publicação da versão aprovada (`publish-reviewed`), sem depender do formulário de edição ou de JavaScript. Em reapresentação de erro, preservar o ID submetido para que a FastAPI continue rejeitando abas antigas.
