@@ -1,3 +1,7 @@
+## 2026-10-11 — detalhe do mercado v0.6
+
+FEAT-MARKET-002 documenta prévia de quatro linhas, expansão/recolhimento, preservação do conteúdo/avisos e aceite de acessibilidade, responsividade e impressão. Contratos de domínio/MCP permanecem inalterados. WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
+
 # Change Log de Specs
 
 ## 2026-10-11 — exclusão e parecer implantados em PRD

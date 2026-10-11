@@ -1,3 +1,7 @@
+## 2026-10-11 — prévia do critério de resolução validada localmente
+
+FEAT-MARKET-002 v0.6: quatro linhas com expansão/recolhimento acessível; texto integral sem JS/na impressão, fonte/status/avisos preservados. Branch fix/resolution-criteria-preview baseada em origin/main cc97e9a. Check Django no ambiente existente Python 3.11, sintaxe JS e aceite Chromium desktop/mobile aprovados. Sem alteração em API, banco ou MCP. Publicação preparada, aguardando aprovação da descrição da PR; versões de CSS/JS atualizadas para renovação de cache. Status amplo da feature preservado. Evidências em WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
+
 ## Correção implantada — publicação revisada (2026-10-11)
 
 Formulário de publicação aprovada alinhado ao contrato de identidade existente. Correção implantada pela PR #158, merge d80b100, Actions 38170273991 aprovado e verificação do formulário no container produtivo concluída. Detalhes/testes em WFLOW-20261011-PUBLISH-FORM-IDENTITY. Status amplo das features preservado.

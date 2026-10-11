@@ -1,3 +1,19 @@
+## WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW
+
+- Tipo: change-feature + implementation-cycle; FEAT-MARKET-002 v0.6.
+- Status: implementação concluída localmente; publicação preparada, aguardando aprovação do usuário antes de submeter a PR.
+- Base: origin/main atualizada por fetch, cc97e9af5b10ab1ada83c2c87ed549dec4cf3de9; branch fix/resolution-criteria-preview em worktree própria. Alterações locais anteriores preservadas na árvore original.
+- Objetivo/entrega: critério longo com prévia de quatro linhas e controle para expandir/recolher somente quando necessário. Texto completo, quebras de linha, fonte, status e avisos preservados. Sem JS e na impressão, leitura integral.
+- Artefatos: template markets/detail.html, base.html (versões de assets), CSS/JS compartilhados, feature market-detail.md, implementation-status.md e changelogs.
+- Revisão: skills spec-orchestrator, workflow-governor, django-web, architecture-guard, test-strategy e test-engineer; contratos market-lifecycle, prediction-payloads e i18n-content revisados. Estado de expansão e medição restritos à apresentação web, HTML escapado pelo Django e labels preparados para tradução. Sem domínio, persistência ou fronteira nova; ADR e integration-map dispensados.
+- Impacto MCP: nenhum ajuste de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. O critério integral permanece inalterado nos dados/contratos; o recorte é visual e não concede permissões humanas ao MCP.
+- Validação: check Django aprovado com o ambiente existente gotrendlabs-ai-thumbnails/.venv (Python 3.11), node --check e git diff --check aprovados. O .venv da árvore original usa Python 3.9 e falhou em anotação int | None preexistente na main; nenhum ambiente foi criado/alterado.
+- Navegador: Chromium com HTML público do exemplo Netflix, fragmento Django renderizado e CSS/JS desta branch; desktop 1280px e mobile 390px, limite de quatro linhas, teclado Enter/Espaço, expansão/recolhimento, texto curto sem botão, leitura sem JS, impressão, redimensionamento expandido e URL longa aprovados. Conteúdo integral conferido após expandir. Validação isolada, sem gravar dados ou usar serviços produtivos.
+- DEV local atualizado: serviço web em 127.0.0.1:8003 passou da worktree gotrendlabs-delete-markets para esta branch; proxy localhost:8000 preservado, API/banco/MCP mantidos. Configuração e ambiente virtual existentes reutilizados via .runtime/dev/start-web.py. HTML de mercado local e JS público confirmam o componente novo. O slug Netflix de produção não existe no banco DEV (404).
+- Review da branch: nenhum problema identificável no diff; check Django, sintaxe JS, whitespace e aceites Chromium repetidos com sucesso. Cobertura residual: Safari/Firefox/leitor de tela não exercitados e scripts de aceitação locais não versionados. Versões de CSS/JS atualizadas em base.html para evitar reutilização de assets anteriores na publicação.
+- Checklist universal revisado: specs/aceite, arquitetura, contratos, segurança, validação e memória sincronizados. Status amplo da feature permanece parcial. Sem novas dependências, migrações, flags ou alterações de OpenAPI, mobile e MCP. README, integration-map e ADR dispensados por não mudar operação, integrações ou arquitetura.
+- Publicação solicitada pelo usuário: preparar commit e PR em português, mostrar descrição e obter autorização antes da submissão. Após aprovação, push/PR, CI, merge e acompanhamento do deploy Actions com smoke de produção; preservar branch local. Sem merge/deploy até esta etapa. Registrar recibos de PR/Actions/produção após execução.
+
 ## Fechamento produtivo — WFLOW-20261011-PUBLISH-FORM-IDENTITY
 
 - Status: concluído em produção e funcionamento confirmado pelo usuário em 2026-10-11; este registro substitui as pendências locais abaixo.
