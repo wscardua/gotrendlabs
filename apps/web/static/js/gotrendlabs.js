@@ -1584,7 +1584,10 @@ function initThumbnailEditor(form) {
   });
   window.addEventListener('pagehide', () => {alive=false; clearTimeout(timer);});
   render();
-  // Recover an active request after navigation. A completed historical job isn't auto-selected.
-  fetchJob(controls.dataset.url).then(job => {if(job && !active) accept(job,revision,['queued','running'].includes(job.state));}).catch(() => {});
+  // Only resume active work after navigation. Terminal jobs describe historical
+  // candidates, not the saved image; their status must not become a new error.
+  fetchJob(controls.dataset.url).then(job => {
+    if(job && !active && ['queued','running'].includes(job.state)) accept(job,revision);
+  }).catch(() => {});
 }
 $$('[data-market-form], [data-ai-badge-editor]').forEach(initThumbnailEditor);

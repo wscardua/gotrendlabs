@@ -288,6 +288,35 @@ with sync_playwright() as pw:
     undo = page.locator("[data-thumbnail-undo]")
     thumb = page.locator("[data-preview-thumb] img")
     editor = page.locator("[data-market-form]")
+    # Historical terminal jobs must not appear as errors for the saved image.
+    for state in ("expired", "failed", "uncertain", "succeeded"):
+        current.update(job={"request_id": "historical", "snapshot": {},
+                            "message": "Esta thumbnail expirou. Gere outra."},
+                       mode=state, calls=0)
+        with page.expect_response("**/admin-ops/markets/fixture/thumbnails/"):
+            page.goto(base)
+        page.wait_for_function("typeof initThumbnailEditor === 'function'")
+        expect(status).to_be_empty()
+        expect(origin).to_have_value("current")
+        expect(page.locator("[name=thumbnail_candidate_id]")).to_have_value("")
+        expect(thumb).to_have_attribute("src", "/fixture/current.png")
+        expect(generate).to_be_enabled()
+        assert current["calls"] == 0
+
+    # Reload resumes active work; expiry observed by polling still reports an error.
+    for state in ("queued", "running"):
+        current.update(job={"request_id": "active", "snapshot": {},
+                            "message": "Esta thumbnail expirou. Gere outra."},
+                       mode=state, calls=0)
+        page.goto(base)
+        expect(generate).to_be_disabled()
+        expect(page.locator("[data-thumbnail-progress]")).to_be_visible()
+        current["mode"] = "expired"
+        expect(status).to_contain_text("Esta thumbnail expirou", timeout=5000)
+        expect(generate).to_be_enabled()
+        expect(origin).to_have_value("current")
+        assert current["calls"] == 0
+
     reset()
     page.screenshot(path=str(OUT / "editor-desktop.png"), full_page=True)
     expect(page.locator(".market-editor-help")).not_to_have_attribute("open", "")

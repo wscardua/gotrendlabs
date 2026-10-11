@@ -1,5 +1,9 @@
 # Change Log de Specs
 
+## 2026-10-11 — retomada do editor de imagens
+
+Specs de thumbnails v1.4 e badges v1.3 explicitam a apresentação de jobs históricos versus solicitações ativas; contrato administrativo e aceite alinhados. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS.
+
 ## 2026-10-10 — FEAT-MARKET-001 taxonomia e saneamento
 
 - Feature `FEAT-MARKET-001` v0.10, contrato e arquitetura de banco explicitam reutilização por nome/pai, erro 409 para ambiguidade e reparo excepcional de duplicados sem referências de mercado na origem. Runbook documenta inventário, backup, auditoria, execução e recuperação.

@@ -1,5 +1,17 @@
 # Workflow Runs
 
+## WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS
+
+- Tipo: correção de FEAT-THUMB-001; componente compartilhado com FEAT-BADGE-IMAGE-001.
+- Status: `concluido` para implementação e validação local; branch `fix/thumbnail-expired-editor-20261011`, base remota atualizada `28512d3`, worktree isolado.
+- Objetivo: não apresentar erro de geração histórica ao abrir editor com imagem persistida; recuperar apenas queued/running e preservar mensagens das solicitações acompanhadas na tela.
+- Artefatos: JS compartilhado, teste real de navegador, spec/contrato/aceite e memória operacional.
+- Arquitetura: ajuste de apresentação; validade, promoção, limpeza e autorização permanecem no backend. Sem alteração de API, banco, mobile ou fronteira; ADR não necessário.
+- Estratégia: reproduzir expired histórico com imagem atual; cobrir demais estados terminais, retomada ativa e expired recebido por polling. Provedor simulado, sem inferência paga.
+- Evidências: teste de navegador falhou antes da correção exibindo “Esta thumbnail expirou. Gere outra.” no carregamento; passou após a correção cobrindo quatro estados terminais e queued/running com expiração durante polling. Aceites completos `tests/thumbnail_browser.py` e `tests/badge_image_browser.py` aprovados no Chrome headless, sem provedor pago; Django check, node --check e diff --check aprovados. Ambiente virtual existente `gotrendlabs-ai-thumbnails/.venv` (Python 3.11). Logs em `/tmp/thumbnail-expired-{before,after,badges}.log`.
+- Checklist: specs/contrato/aceite/changelogs/status alinhados; fronteiras preservadas, sem dependências novas que alterem integration map, sem ADR ou migration. Nenhuma pendência de validação deste fix; homologações amplas das features permanecem independentes.
+- Retomada: fechamento/publicação via commit, PR e deploy quando solicitado; produção ainda não alterada nesta etapa.
+
 ## WFLOW-20261010-MARKET-TAXONOMY-FIX
 
 - Tipo: correção de regressão de `FEAT-MARKET-001`; contrato `market-lifecycle.md`.

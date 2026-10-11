@@ -1,5 +1,9 @@
 # Status de Implementação
 
+## Correção local de aviso de thumbnail — 2026-10-11
+
+Componente web compartilhado ajustado para recuperar somente queued/running na abertura. Fix validado localmente: regressão reproduzida antes e corrigida depois, aceites de navegador de thumbnails e badges aprovados, Django/JS/diff sem erros; ainda não publicado. Status amplo das features permanece parcial. WFLOW-20261011-THUMBNAIL-HISTORICAL-STATUS.
+
 ## Correção de taxonomia em produção — 2026-10-10
 
 - `FEAT-MARKET-001`: resolução por nome/pai antes do upsert implícito evita duplicação ao reclassificar mercados com slugs personalizados ou nomes renomeados. Sem migration ou alteração de payload. Suíte completa 460 testes e cinco testes de saneamento passaram. Dry-run produtivo confirmou limpeza sem mudar vínculos de mercados; evidências em `WFLOW-20261010-MARKET-TAXONOMY-FIX`. PR #152 integrada; Actions 38095357371 com testes/build/deploy aprovados. Saneamento executado com backup e auditoria: duas subcategorias e um evento repetido removidos, evento distinto preservado; mercados/revisões intactos. Verificação final sem duplicatas e health ok. Correção concluída; o status amplo da feature permanece independente deste reparo.

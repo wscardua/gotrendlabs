@@ -17,3 +17,8 @@ GET/PUT `/admin/thumbnail-settings`: staff/MFA vigente; payload completo dos par
 ### Execução interna semântica (v5)
 
 Sem alteração do payload/shape público: um job de mercado reserva até uma chamada textual limitada e uma imagem. Persistir orchestrator e parâmetros próprios GTL_THUMB_PLANNER_* no provider_config; usage privado contém checkpoints e IDs/uso por etapa, brief final e sujeitos. Campos privados e raciocínio do modelo não são enviados/persistidos. Nenhuma ferramenta habilitada, store=false, sem retry/fallback. Checkpoints revalidam autorização/claim/lease; falha textual impede imagem. Polling não revela brief ou dispara chamadas. Configuração de modelo de imagem segue endpoint/painel existente; parâmetros textuais independentes são configuração ambiental da API. V3/v4 não são reinterpretadas ou repetidas; candidatas concluídas preservadas.
+
+
+## Apresentação na retomada do editor
+
+Ao abrir ou recarregar o editor, recuperar somente gerações queued/running. Estados terminais históricos (succeeded/failed/uncertain/expired) não selecionam candidata nem exibem alerta sobre a imagem persistida. Mensagens de falha/expiração de solicitações iniciadas ou retomadas em andamento continuam visíveis quando recebidas por polling. A validade da candidata privada não expira a imagem já salva; não iniciar geração automaticamente. O GET continua retornando o último job conforme contrato; filtro de apresentação pertence ao componente web compartilhado com badges. Sem alteração de payload, expiração ou promoção.
