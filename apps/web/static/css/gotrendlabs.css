@@ -7346,6 +7346,34 @@ input[type="range"] {
   margin-top: 12px;
 }
 
+.resolution-criteria-text {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  line-height: 1.55;
+}
+
+.resolution-criteria.is-collapsed .resolution-criteria-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+}
+
+.resolution-criteria-toggle {
+  margin-bottom: 14px;
+}
+
+@media print {
+  .resolution-criteria.is-collapsed .resolution-criteria-text {
+    display: block;
+    overflow: visible;
+  }
+
+  .resolution-criteria-toggle {
+    display: none;
+  }
+}
+
 .badge-browse-cell {
   display: flex;
   align-items: center;

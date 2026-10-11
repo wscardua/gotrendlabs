@@ -1,3 +1,9 @@
+## 2026-10-11 — FEAT-MARKET-002 v0.6: critério expansível
+
+- Prévia de quatro linhas para critérios longos, com Ver critério completo/Recolher critério; textos curtos não exibem controle. Quebras de linha preservadas e URLs longas contidas.
+- Navegação por teclado, aria-expanded/aria-controls, recálculo responsivo e texto integral sem JavaScript/na impressão validados em Chromium com o exemplo Netflix.
+- Sem mudança de conteúdo editorial, domínio ou MCP. Review sem findings; versões de CSS/JS atualizadas para publicação. Implementação local concluída, submissão da PR aguardando aprovação. WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
+
 ## 2026-10-11 — Identidade no formulário de publicação revisada
 
 - FEAT-EDITORIAL-001/FEAT-MARKET-001: formulário separado de publicação passa a enviar expected_market_id da página original e preserva o valor submetido após erro. Corrige 409 indevido após reutilização de slug, sem relaxar validação backend ou conceder permissões MCP. Implantada pela PR #158, com CI/deploy e verificação produtiva aprovados; evidências em WFLOW-20261011-PUBLISH-FORM-IDENTITY.

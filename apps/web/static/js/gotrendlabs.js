@@ -21,6 +21,30 @@ $$("[data-theme-toggle]").forEach((button) => {
 
 syncThemeButtons();
 
+// Keep the full editorial text available without JavaScript and when printing.
+$$("[data-resolution-criteria]").forEach((container) => {
+  const content = $(".resolution-criteria-text", container);
+  const button = $(".resolution-criteria-toggle", container);
+  let expanded = false;
+
+  function updateCriteria() {
+    const previewHeight = parseFloat(getComputedStyle(content).lineHeight) * 4;
+    const hasOverflow = content.scrollHeight > previewHeight + 1;
+    button.hidden = !hasOverflow;
+    container.classList.toggle("is-collapsed", hasOverflow && !expanded);
+    button.setAttribute("aria-expanded", String(expanded));
+    button.textContent = expanded ? button.dataset.collapseLabel : button.dataset.expandLabel;
+  }
+
+  button.addEventListener("click", () => {
+    expanded = !expanded;
+    updateCriteria();
+  });
+  updateCriteria();
+  new ResizeObserver(updateCriteria).observe(content);
+  document.fonts.ready.then(updateCriteria);
+});
+
 $$("[data-context-back]").forEach((link) => {
   let safeReferrer = "";
   try {

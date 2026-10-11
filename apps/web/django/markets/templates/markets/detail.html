@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs | {{ market.title }}{% endblock %}
 {% block content %}
 <main class="shell layout-detail">
@@ -103,7 +104,13 @@
         <p>Este mercado foi cancelado pela operação. GT₵ reservadas foram devolvidas integralmente e reputação não foi alterada.</p>
         <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span></div>
       {% else %}
-        <p>{{ market.resolution_criteria }}</p>
+        <div class="resolution-criteria" data-resolution-criteria>
+          <p id="resolution-criteria-text" class="resolution-criteria-text">{{ market.resolution_criteria }}</p>
+          <button type="button" class="btn ghost small resolution-criteria-toggle" hidden
+                  aria-expanded="false" aria-controls="resolution-criteria-text"
+                  data-expand-label="{% translate 'Ver critério completo' %}"
+                  data-collapse-label="{% translate 'Recolher critério' %}">{% translate 'Ver critério completo' %}</button>
+        </div>
         <div class="tags"><span class="tag">Fonte esperada: {{ market.source }}</span><span class="tag">Status: {% if market.status == "locked" %}Em apuração{% else %}{{ market.status_label }}{% endif %}</span></div>
       {% endif %}
     </section>

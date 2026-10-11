@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-002
 titulo: "Detalhe do mercado"
-versao: 0.5
+versao: 0.6
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-16
+ultima_atualizacao: 2026-10-11
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -46,6 +46,9 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 
 ## Comportamento esperado
 
+- critérios de resolução longos mostram prévia de quatro linhas, com ações `Ver critério completo` e `Recolher critério`; textos curtos dispensam o controle
+- expansão preserva o texto integral e suas quebras de linha; fonte, status e avisos permanecem visíveis fora do recorte
+- controle acessível por teclado informa o estado expandido; sem JavaScript e na impressão, o critério aparece integralmente
 - opções disponíveis variam conforme o tipo do mercado
 - estado do mercado governa disponibilidade de ação
 - resolução final fica visível quando existir
@@ -75,6 +78,8 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - `database`: mercado, opções, comentários agregados e resolução
 
 ## Implementação atual
+
+- prévia expansível de critérios implementada e validada localmente na v0.6; publicação acompanhada em `WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW`
 
 - detalhe público persistido em PostgreSQL com opções e snapshot de probabilidade
 - `GET /markets/{slug}` expõe contrato compatível com os templates atuais
@@ -116,6 +121,9 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 - medir ações de compartilhamento acionadas nas páginas sociais de mercado/resultado
 
 ## Testes esperados
+
+- critério longo/curto em desktop e celular; expansão/recolhimento via teclado, redimensionamento, URLs longas e conteúdo integral preservado
+- sem JavaScript e na impressão, texto completo disponível; fonte/status/avisos fora do recorte
 
 - integração do detalhe por tipo de mercado
 - fluxo de detalhe com mercado aberto, locked e resolved
