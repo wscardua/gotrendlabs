@@ -10,7 +10,7 @@ class EditorialPublicationUiTests(SimpleTestCase):
     def test_publish_reviewed_uses_saved_version_without_saving_form(self):
         request = RequestFactory().post(
             "/admin-ops/markets/proposal/edit/",
-            {"action": "publish-reviewed", "title": "Unsaved change"},
+            {"action": "publish-reviewed", "title": "Unsaved change", "expected_market_id": "9"},
         )
         request.session = {
             "auth_api_token": "fixture",
@@ -21,6 +21,7 @@ class EditorialPublicationUiTests(SimpleTestCase):
                 "apps.web.django.admin_ops.views.admin_get_market",
                 return_value={
                     "slug": "proposal",
+                    "editorial_market_id": 9,
                     "editorial_revision": 3,
                     "editorial_status": "approved",
                     "status": "draft",
@@ -33,7 +34,7 @@ class EditorialPublicationUiTests(SimpleTestCase):
             response = market_form(request, mode="edit", slug="proposal")
         self.assertEqual(response.status_code, 302)
         publish.assert_called_once_with(
-            "fixture", "proposal", "Publicação da versão aprovada"
+            "fixture", "proposal", "Publicação da versão aprovada", expected_market_id="9"
         )
         update.assert_not_called()
 

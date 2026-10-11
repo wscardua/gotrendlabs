@@ -1,3 +1,8 @@
+## PR #156 — acompanhamento do CI
+
+- PR autorizada/submetida: https://github.com/wscardua/gotrendlabs/pull/156. Primeiro run 38148616230: build/OpenAPI aprovados, 495 testes com uma falha/2 skips; falha era expectativa de mock anterior ao envio do ID original em publicação. Fixture/asserção atualizadas para verificar expected_market_id; repetir CI antes de merge.
+- Snapshot PRD gotrendlabs-before-pr156-20261011 disponível antes de migrations. Preflight confirma role FastAPI com permissões de limpeza e ausência de jobs ativos. Smoke transacional com role real no DEV passou (exclusão preparation/in_review, revisões, auditoria, ID antigo, atestação/publicação e rollback).
+
 ## WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL
 
 - Tipo: fechamento de implementação/publicação. Status: preparação concluída; aguardando aprovação da PR.
