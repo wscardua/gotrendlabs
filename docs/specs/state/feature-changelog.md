@@ -14,7 +14,7 @@
 
 - Web inicia a jornada quando o ticket inicial fica visível; abandono antes da escolha pode ser contado, e o clique não duplica o início.
 - Mobile registra reabertura do mesmo mercado após visitar outro sem contar rebuilds como visitas.
-- Contrato JSON e cálculo autoritativo da FastAPI preservados; correção validada localmente, com publicação produtiva pendente.
+- Contrato JSON e cálculo autoritativo da FastAPI preservados; PR #162 integrada, CI/deploy e smoke web/API produtivos aprovados. Distribuição de novo binário mobile permanece separada.
 
 ## 2026-10-11 — exclusão e parecer implantados em PRD
 
