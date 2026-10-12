@@ -38,7 +38,7 @@ class MarketDetailScreen extends ConsumerStatefulWidget {
 
 class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
   late int _tab;
-  final Set<String> _trackedViewSlugs = <String>{};
+  String? _trackedViewSlug;
 
   @override
   void initState() {
@@ -55,6 +55,7 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
       _tab = widget.initialTab == MarketDetailTab.community ? 1 : 0;
     }
     if (widget.slug != oldWidget.slug) {
+      _trackedViewSlug = null;
       _refreshAfterFrame(widget.slug);
     }
   }
@@ -76,18 +77,22 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
   }
 
   void _trackMarketViewAfterRender(String slug) {
-    if (_trackedViewSlugs.contains(slug)) {
+    if (_trackedViewSlug == slug) {
       return;
     }
-    _trackedViewSlugs.add(slug);
+    _trackedViewSlug = slug;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) {
-        _trackedViewSlugs.remove(slug);
+      if (!mounted || widget.slug != slug) {
+        if (_trackedViewSlug == slug) _trackedViewSlug = null;
         return;
       }
       unawaited(_trackMarketView(slug));
       unawaited(ref.read(analyticsTrackerProvider).screen('market_detail'));
-      unawaited(ref.read(analyticsTrackerProvider).track('market_detail_viewed', properties: {'market_slug': slug}));
+      unawaited(
+        ref
+            .read(analyticsTrackerProvider)
+            .track('market_detail_viewed', properties: {'market_slug': slug}),
+      );
     });
   }
 

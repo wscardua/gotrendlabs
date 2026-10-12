@@ -1,10 +1,10 @@
 ---
 id: FEAT-ANALYTICS-001
 titulo: "Analytics proprio web e mobile"
-versao: 0.4
+versao: 0.5
 status_spec: aprovada
-status_impl: implementada_validada
-ultima_atualizacao: 2026-09-29
+status_impl: implementada_localmente
+ultima_atualizacao: 2026-10-12
 origem:
   - conversa de produto de 2026-09-29
 contratos_afetados:
@@ -57,6 +57,8 @@ Contas cadastradas usam `gotrendlabs_users.date_joined` como entrada e `user_id`
 
 O funil de desistência agrupa eventos de `prediction_started`, `prediction_option_selected`/`prediction_preview_viewed` e `prediction_submit_clicked` por sessao e mercado. Uma jornada so entra na contagem de abandono depois de 30 minutos sem atividade na sessao. O dashboard distingue parada antes da escolha e apos a escolha, sem afirmar o motivo nem confundir clique com previsao persistida. As conclusoes continuam medidas no banco de dominio.
 
+Na web, `prediction_started` ocorre uma vez por visualização quando o ticket inicial entra na área visível. Se houver escolha antes do callback de visibilidade, o clique registra o início antes da escolha; ticket de reforço/revisão não inicia previsão inicial. Abrir um mercado sem ver o ticket não inicia a jornada. No mobile, voltar a um mercado após abrir outro gera nova visualização; rebuild do mesmo detalhe não gera outra.
+
 Django renderiza `/admin-ops/analytics/` usando somente esse contrato. A pagina mostra estados de vazio e erro, nao dados ficticios.
 
 ## Estado das cargas
@@ -69,7 +71,7 @@ A atualização da GeoLite ocorre por comando backend explícito `python -m apps
 
 Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. Dados de auditoria, ledger e eventos administrativos nao participam do purge. Agregados, regras de insight, funis adicionais, fila offline mobile e catalogo ampliado seguem iteracoes por contrato; nao se deve afirmar cobertura onde a coleta nao esta instalada.
 
-## Evoluções fora do escopo v0.4
+## Evoluções fora do escopo v0.5
 
 - Gravacao de sessao, heatmap, GPS ou IP bruto no analytics.
 - Fila offline duravel no mobile, funis personalizados e atribuicao exata de conclusao por tentativa. O agrupamento sessao/mercado nao distingue duas tentativas no mesmo mercado durante a mesma sessao.
@@ -83,6 +85,8 @@ Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. 
 - Autorizacao: resumo staff protegido por autenticacao e MFA.
 - Web: template e endpoint proxy com CSRF, sem incluir Admin Ops na coleta.
 - Mobile: abertura de tela por navegacao real, sem emissao em rebuild/polling.
+- Web: ticket visto sem escolha conta como início e pode aparecer em abandono antes da escolha; escolha não duplica o início e ticket de posição não inicia previsão inicial.
+- Mobile: sequência A → B → A registra três aberturas, sem contar rebuilds.
 - Retenção: coortes maduras e imaturas, retorno em outra sessão anônima, retorno autenticado em outro dispositivo e exclusão de staff/bots.
 - Geografia: contorno das 27 UFs sem JavaScript, filtros de UF/cidade e estado ausente da GeoLite.
 - Operação: última remessa, volume de 24 h, atualização GeoLite válida/inválida e expurgo sem afetar ledger/auditoria.

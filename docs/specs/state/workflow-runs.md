@@ -85,6 +85,19 @@
 
 # Workflow Runs
 
+## WFLOW-20261012-ANALYTICS-JOURNEY-CLOSEOUT
+
+- Tipo: `change-feature` + `test-review-cycle` + fechamento operacional da `FEAT-ANALYTICS-001` v0.5.
+- Estado: correções implementadas e validadas localmente; PR, deploy e smoke produtivo pendentes.
+- Base: `origin/main` atualizada; a v0.4 já foi integrada pela PR `#133` e validada em produção. Branch de entrega isolada para preservar alterações locais não relacionadas da `feature/first-party-analytics`.
+- Mudança: início do ticket web ao entrar na área visível, antes de escolher; deduplicação por visualização e exclusão do ticket de posição. Flutter registra reabertura A → B → A sem emitir por rebuild.
+- Artefatos: JS web, tela e teste Flutter, teste JS executado no CI, feature, contrato de eventos, integração, README mobile, changelogs e estado.
+- Produção somente leitura antes da PR: segredo Django/FastAPI coincide; Caddy `172.19.0.6` pertence ao CIDR confiável `172.19.0.0/16`; rate limit ativo. Logs recentes: 140 requisições de analytics e nenhum 429 em 24 horas. O limite continua compartilhado por usuários sob o mesmo IP público, por desenho.
+- MCP: ferramentas, schemas, contratos, permissões, erros, replays e orientação editorial não mudam. Os gatilhos observacionais dos clientes foram corrigidos, sem novo campo, permissão ou regra de domínio para o MCP.
+- Arquitetura: FastAPI continua autoritativa; sem migration, novo endpoint, mudança de payload OpenAPI ou ADR. O fluxo de eventos usa os mesmos consumidores.
+- Validação no worktree de entrega: teste JS do ciclo visibilidade → escolha e escolha anterior ao callback, 107 testes Flutter, `flutter analyze`, `manage.py check`, 6 testes do contrato analítico, teste do proxy Django, snapshot OpenAPI e `git diff --check` aprovados.
+- Próxima ação: publicar PR em português após aprovação da descrição, acompanhar CI/merge/deploy e atualizar este recibo e status da v0.5 com smoke produtivo.
+
 ## WFLOW-20261011-PHYSICAL-MARKET-DELETION
 
 - Status: `concluido` no escopo de implementação e validação local; substitui a abordagem lógica do WFLOW-20261011-DELETE-PREPUBLICATION-MARKET por instrução expressa do usuário e plano aprovado.
