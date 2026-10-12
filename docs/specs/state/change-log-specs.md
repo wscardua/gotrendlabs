@@ -7,7 +7,7 @@ FEAT-MARKET-002 documenta prévia de quatro linhas, expansão/recolhimento, pres
 ## 2026-10-12 — FEAT-ANALYTICS-001 v0.5
 
 - Especificado o gatilho observável de `prediction_started` web antes da escolha e a reabertura mobile A → B → A, com regressões JS/Flutter. Sem alteração no schema OpenAPI, persistência ou fronteira FastAPI.
-- O estado da v0.5 permanece local até CI/deploy/smoke; a v0.4 já validada em produção conserva seu histórico.
+- PR #162 integrada, CI/deploy e smoke web/API produtivos aprovados; status v0.5 atualizado para `implementada_validada`. A distribuição de novo binário mobile permanece separada.
 
 ## 2026-10-11 — exclusão e parecer implantados em PRD
 

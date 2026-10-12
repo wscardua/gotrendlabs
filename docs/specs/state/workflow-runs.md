@@ -88,7 +88,7 @@
 ## WFLOW-20261012-ANALYTICS-JOURNEY-CLOSEOUT
 
 - Tipo: `change-feature` + `test-review-cycle` + fechamento operacional da `FEAT-ANALYTICS-001` v0.5.
-- Estado: correções implementadas e validadas localmente; PR, deploy e smoke produtivo pendentes.
+- Estado: código integrado pela PR [#162](https://github.com/wscardua/gotrendlabs/pull/162), CI e deploy aprovados; smoke técnico produtivo aprovado. Distribuição de novo binário mobile segue como etapa própria.
 - Base: `origin/main` atualizada; a v0.4 já foi integrada pela PR `#133` e validada em produção. Branch de entrega isolada para preservar alterações locais não relacionadas da `feature/first-party-analytics`.
 - Mudança: início do ticket web ao entrar na área visível, antes de escolher; deduplicação por visualização e exclusão do ticket de posição. Flutter registra reabertura A → B → A sem emitir por rebuild.
 - Artefatos: JS web, tela e teste Flutter, teste JS executado no CI, feature, contrato de eventos, integração, README mobile, changelogs e estado.
@@ -96,7 +96,9 @@
 - MCP: ferramentas, schemas, contratos, permissões, erros, replays e orientação editorial não mudam. Os gatilhos observacionais dos clientes foram corrigidos, sem novo campo, permissão ou regra de domínio para o MCP.
 - Arquitetura: FastAPI continua autoritativa; sem migration, novo endpoint, mudança de payload OpenAPI ou ADR. O fluxo de eventos usa os mesmos consumidores.
 - Validação no worktree de entrega: teste JS do ciclo visibilidade → escolha e escolha anterior ao callback, 107 testes Flutter, `flutter analyze`, `manage.py check`, 6 testes do contrato analítico, teste do proxy Django, snapshot OpenAPI e `git diff --check` aprovados.
-- Próxima ação: publicar PR em português após aprovação da descrição, acompanhar CI/merge/deploy e atualizar este recibo e status da v0.5 com smoke produtivo.
+- Publicação: commit `1ef6734`, merge `04b1a1896bf990fd3ea5b80f396a3345c922aab0`. [CI da PR](https://github.com/wscardua/gotrendlabs/actions/runs/38284272790) e [CI/deploy da main](https://github.com/wscardua/gotrendlabs/actions/runs/38285443363) aprovados; 496 testes e 2 skips na main, build, snapshot OpenAPI e teste JS aprovados. Deploy SSM concluído em Success.
+- Smoke produtivo: SSM read-only `09872c5c-9011-4d5a-9dd7-4a9771b45ea6` confirmou SHA do servidor e contêineres web/API ativos. `/api/health` retornou `ok`, banco `ok` e manutenção web/mobile desligada. Home pública referencia `analytics.js?v=20261012`; arquivo HTTPS retornou 200 e SHA-256 `1461963278b965a31a017dfb90674d4a867118897c29e923adc306467dc6b1d3`, igual ao código validado.
+- Ativação: nenhuma migration, flag ou configuração de produção adicional. O código Flutter está integrado e coberto por 107 testes locais, mas aparelhos instalados ainda dependem da distribuição de novo binário; não houve publicação de APK/Play nesta entrega. Branch local preservada.
 
 ## WFLOW-20261011-PHYSICAL-MARKET-DELETION
 
