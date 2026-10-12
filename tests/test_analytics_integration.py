@@ -63,6 +63,150 @@ class AnalyticsIntegrationTests(AppendOnlyTransactionTestCase):
             self.assertGreaterEqual(report["collection_24h"]["events"], 1)
         self.assertEqual(self.api.get("/admin/analytics/summary").status_code, 401)
 
+    def test_platform_comparison_counts_distincts_and_respects_filters(self):
+        now = datetime.now(timezone.utc)
+        visitor = str(uuid4())
+        user_id = 42  # Analytics stores a logical bigint user ID without a foreign key.
+        sessions = []
+        for platform, visitor_id in (("web", visitor), ("web", visitor),
+                                     ("mobile", str(uuid4())), ("web", str(uuid4())),
+                                     ("mobile", str(uuid4())), ("web", str(uuid4()))):
+            session_id = str(uuid4())
+            payload = {"visitor_id": visitor_id, "session_id": session_id, "events": [
+                {"event_id": str(uuid4()), "view_id": str(uuid4()),
+                 "name": "screen_viewed" if platform == "mobile" else "page_viewed",
+                 "screen_key": "today", "occurred_at": now.isoformat()}
+                for _ in range(2)
+            ]}
+            response = self.api.post("/analytics/events", json=payload,
+                                     headers={"X-GoTrendLabs-Client": platform})
+            self.assertEqual(response.status_code, 200, response.text)
+            sessions.append(session_id)
+            replay = self.api.post("/analytics/events", json=payload,
+                                   headers={"X-GoTrendLabs-Client": platform})
+            self.assertEqual(replay.json()["accepted"], 0)
+        with connection.cursor() as cursor:
+            for session in (sessions[0], sessions[2]):
+                cursor.execute("UPDATE gotrendlabs_analytics_sessions SET country_code='BR', "
+                               "region_code='SP', city_name='São Paulo' WHERE id=%s", [session])
+            for session in (sessions[1], sessions[2]):
+                cursor.execute("UPDATE gotrendlabs_analytics_events SET user_id=%s, "
+                               "auth_state='authenticated', actor_type='user' WHERE session_id=%s",
+                               [user_id, session])
+            for session, actor in ((sessions[3], "staff"), (sessions[4], "bot")):
+                cursor.execute("UPDATE gotrendlabs_analytics_events SET actor_type=%s "
+                               "WHERE session_id=%s", [actor, session])
+            cursor.execute("UPDATE gotrendlabs_analytics_events SET received_at=%s WHERE session_id=%s",
+                           [now - timedelta(days=8), sessions[5]])
+            cursor.execute("UPDATE gotrendlabs_analytics_events SET received_at=%s WHERE id="
+                           "(SELECT id FROM gotrendlabs_analytics_events WHERE session_id=%s LIMIT 1)",
+                           [now - timedelta(days=2), sessions[0]])
+        with get_connection() as api_connection, api_connection.cursor() as cursor:
+            with patch("apps.api.backend_api.analytics.datetime", wraps=datetime) as clock:
+                clock.now.return_value = now
+                report = summary(cursor)
+                web, mobile = report["platforms"]
+                self.assertEqual(web, {"platform": "web", "visitors": 1, "sessions": 2,
+                                       "users": 1, "views": 4, "session_share": 66.7})
+                self.assertEqual(mobile, {"platform": "mobile", "visitors": 1, "sessions": 1,
+                                          "users": 1, "views": 2, "session_share": 33.3})
+                self.assertEqual(report["totals"]["users"], 1)
+                self.assertEqual(report["totals"]["sessions"], 3)
+                self.assertEqual(len(report["platform_daily"]), 8)
+                daily = {row["day"]: row for row in report["platform_daily"]}
+                self.assertEqual(daily[now.date().isoformat()]["web_sessions"], 2)
+                self.assertEqual(daily[(now - timedelta(days=2)).date().isoformat()]["web_sessions"], 1)
+                self.assertEqual(daily[(now - timedelta(days=1)).date().isoformat()]["web_sessions"], 0)
+                selected = summary(cursor, platform="mobile")
+                self.assertEqual(len(selected["platforms"]), 1)
+                self.assertEqual(selected["platforms"][0]["session_share"], 100.0)
+                self.assertTrue(all(row["web_sessions"] == 0 for row in selected["platform_daily"]))
+                regional = summary(cursor, region="SP", city="São Paulo")
+                self.assertEqual([row["sessions"] for row in regional["platforms"]], [1, 1])
+                self.assertEqual([row["session_share"] for row in regional["platforms"]], [50.0, 50.0])
+                authenticated = summary(cursor, audience="authenticated")
+                self.assertEqual([row["sessions"] for row in authenticated["platforms"]], [1, 1])
+                anonymous = summary(cursor, audience="anonymous")
+                self.assertEqual([row["sessions"] for row in anonymous["platforms"]], [1, 0])
+                self.assertEqual([row["views"] for row in summary(cursor, days=1)["platforms"]], [3, 2])
+                empty = summary(cursor, region="XX")
+                self.assertTrue(all(row["sessions"] == 0 and row["session_share"] is None
+                                    for row in empty["platforms"]))
+                self.assertTrue(all(row["web_sessions"] == row["mobile_sessions"] == 0
+                                    for row in empty["platform_daily"]))
+
+    def test_collection_by_platform_is_global_human_and_reports_absent_history(self):
+        now = datetime.now(timezone.utc)
+        ids = []
+        for platform in ("web", "mobile", "mobile"):
+            event_id = str(uuid4())
+            ids.append(event_id)
+            response = self.api.post("/analytics/events", json={
+                "visitor_id": str(uuid4()), "session_id": str(uuid4()), "events": [{
+                    "event_id": event_id, "name": "screen_viewed", "view_id": str(uuid4()),
+                    "screen_key": "today", "occurred_at": now.isoformat(),
+                }]}, headers={"X-GoTrendLabs-Client": platform})
+            self.assertEqual(response.status_code, 200, response.text)
+        older = now - timedelta(days=2)
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE gotrendlabs_analytics_events SET received_at=%s WHERE id=%s", [older, ids[1]])
+            cursor.execute("UPDATE gotrendlabs_analytics_events SET actor_type='bot' WHERE id=%s", [ids[2]])
+        with get_connection() as api_connection, api_connection.cursor() as cursor:
+            report = summary(cursor, days=1, platform="web", audience="authenticated", region="XX")
+            self.assertEqual(report["totals"]["sessions"], 0)
+            web, mobile = report["collection_platforms"]
+            self.assertEqual(sum(row["events_24h"] for row in report["collection_platforms"]),
+                             report["collection_24h"]["events"])
+            self.assertEqual(web["platform"], "web")
+            self.assertEqual(web["events_24h"], 1)
+            self.assertIsNotNone(web["last_event_at"])
+            self.assertEqual(mobile, {"platform": "mobile", "events_24h": 0, "last_event_at": older.isoformat()})
+        with connection.cursor() as cursor:
+            cursor.execute("UPDATE gotrendlabs_analytics_events SET actor_type='staff' WHERE id=%s", [ids[1]])
+        with get_connection() as api_connection, api_connection.cursor() as cursor:
+            self.assertEqual(summary(cursor)["collection_platforms"][1],
+                             {"platform": "mobile", "events_24h": 0, "last_event_at": None})
+
+    def test_platform_comparison_is_consistent_during_concurrent_ingestion(self):
+        def visit(platform):
+            payload = {"visitor_id": str(uuid4()), "session_id": str(uuid4()), "events": [{
+                "event_id": str(uuid4()), "view_id": str(uuid4()), "name": "screen_viewed",
+                "screen_key": "today", "occurred_at": datetime.now(timezone.utc).isoformat(),
+            }]}
+            response = self.api.post("/analytics/events", json=payload,
+                                     headers={"X-GoTrendLabs-Client": platform})
+            self.assertEqual(response.status_code, 200, response.text)
+
+        visit("web")
+        class ConcurrentIngestionCursor:
+            inserted = False
+
+            def __init__(self, cursor):
+                self.cursor = cursor
+
+            def execute(self, query, args=None):
+                result = self.cursor.execute(query, args)
+                if not self.inserted and "COUNT(DISTINCT s.visitor_id) AS visitors" in query:
+                    # A second connection commits after the aggregate query's snapshot.
+                    self.inserted = True
+                    visit("mobile")
+                return result
+
+            def __getattr__(self, name):
+                return getattr(self.cursor, name)
+
+        with get_connection() as api_connection, api_connection.cursor() as cursor:
+            concurrent = ConcurrentIngestionCursor(cursor)
+            report = summary(concurrent)
+            self.assertTrue(concurrent.inserted)
+            self.assertEqual(sum(row["sessions"] for row in report["platforms"]),
+                             report["totals"]["sessions"])
+            self.assertEqual([row["sessions"] for row in report["platforms"]], [1, 0])
+            self.assertEqual([row["session_share"] for row in report["platforms"]], [100.0, 0.0])
+            fresh = summary(cursor)
+            self.assertEqual(fresh["totals"]["sessions"], 2)
+            self.assertEqual([row["session_share"] for row in fresh["platforms"]], [50.0, 50.0])
+
     def test_client_cannot_submit_confirmed_domain_event(self):
         payload = {"visitor_id": str(uuid4()), "session_id": str(uuid4()), "events": [{
             "event_id": str(uuid4()), "name": "prediction_created",

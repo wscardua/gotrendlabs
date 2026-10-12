@@ -1,0 +1,46 @@
+{% load i18n analytics_display %}
+<section class="analytics-section" id="plataformas" aria-labelledby="analytics-platform-title">
+  <div class="analytics-section-title">
+    <div><h2 id="analytics-platform-title">{% trans 'Acessos por plataforma' %}</h2><span class="analytics-scope">{% trans 'Segue os filtros de navegação' %}</span></div>
+    <p>{% trans 'Sessões distintas observadas no recorte.' %}</p>
+  </div>
+  {% if filters.platform != 'all' %}<p class="analytics-method">{% trans 'Uma plataforma selecionada. Selecione Todas para comparar Web e App mobile.' %}</p>{% endif %}
+  <div class="analytics-platform-grid">
+    {% for row in report.platforms %}
+      <article class="analytics-panel analytics-platform-card is-{{ row.platform }}" data-platform="{{ row.platform }}">
+        <div class="analytics-panel-head"><h3>{% if row.platform == 'web' %}{% trans 'Web' %}{% else %}{% trans 'App mobile' %}{% endif %}</h3><span class="analytics-platform-share">{% if row.session_share != None %}{{ row.session_share|analytics_number:1 }}%{% else %}—{% endif %} <small>{% trans 'das sessões do recorte' %}</small></span></div>
+        <div class="analytics-platform-sessions"><strong>{{ row.sessions|analytics_number }}</strong><span>{% trans 'sessões' %}</span></div>
+        {% if not row.sessions %}<p class="analytics-platform-empty">{% trans 'Nenhum evento recebido neste período e recorte.' %}</p>{% endif %}
+        <dl class="analytics-platform-metrics">
+          <div><dt>{% trans 'Visitantes únicos' %}</dt><dd>{{ row.visitors|analytics_number }}</dd></div>
+          <div><dt>{% trans 'Visualizações' %}</dt><dd>{{ row.views|analytics_number }}</dd></div>
+          <div><dt>{% trans 'Contas ativas' %}</dt><dd>{{ row.users|analytics_number }}</dd></div>
+        </dl>
+      </article>
+    {% endfor %}
+  </div>
+  <p class="analytics-method">{% trans 'Web inclui navegadores de computador e celular. App mobile identifica o aplicativo instalado. Visitantes são identificadores, não pessoas. Contas por plataforma não devem ser somadas como pessoas únicas.' %}</p>
+  <article class="analytics-panel">
+    <div class="analytics-panel-head"><h3>{% trans 'Sessões por dia' %}</h3><small>{% trans 'UTC · primeiro e último dia podem ser parciais' %}</small></div>
+    <div class="analytics-platform-legend" aria-label="{% trans 'Plataformas no gráfico' %}">{% for row in report.platforms %}<span class="is-{{ row.platform }}" data-series-label="{{ row.platform }}">{% if row.platform == 'web' %}{% trans 'Web' %}{% else %}{% trans 'App mobile' %}{% endif %}</span>{% endfor %}</div>
+    <div class="analytics-platform-chart" data-platform-chart hidden>
+      <svg viewBox="0 0 720 220" role="img" aria-labelledby="analytics-platform-chart-title analytics-platform-chart-desc">
+        <title id="analytics-platform-chart-title">{% trans 'Evolução diária de sessões por plataforma' %}</title>
+        <desc id="analytics-platform-chart-desc">{% trans 'Consulte os valores pelo controle de dia ou pela tabela abaixo. Toque ou mova o ponteiro sobre o gráfico para selecionar uma data.' %}</desc>
+      </svg>
+      <div class="analytics-chart-controls">
+        <label for="analytics-chart-day">{% trans 'Consultar dia (UTC)' %}</label>
+        <input id="analytics-chart-day" type="range" min="0" max="0" value="0" step="1" aria-describedby="analytics-chart-hint">
+        <small id="analytics-chart-hint">{% trans 'Use as setas para mudar o dia; Home e End vão ao início e ao fim.' %}</small>
+        <output class="analytics-chart-value" for="analytics-chart-day" aria-live="polite" aria-atomic="true"></output>
+      </div>
+    </div>
+    <details class="analytics-platform-daily" open><summary>{% trans 'Valores diários' %}</summary>
+      <div class="analytics-table-wrap" tabindex="0" aria-label="{% trans 'Valores diários de sessões' %}"><table><thead><tr><th scope="col">{% trans 'Dia (UTC)' %}</th>{% for row in report.platforms %}<th scope="col">{% if row.platform == 'web' %}{% trans 'Web' %}{% else %}{% trans 'App mobile' %}{% endif %}</th>{% endfor %}</tr></thead><tbody>{% for day in report.platform_daily %}<tr><th scope="row">{{ day.day|analytics_date }}</th>{% for row in report.platforms %}<td>{% if row.platform == 'web' %}{{ day.web_sessions|analytics_number }}{% else %}{{ day.mobile_sessions|analytics_number }}{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody></table></div>
+    </details>
+    <p class="analytics-method">{% trans 'Uma sessão pode aparecer em mais de um dia; o total do período conta cada sessão uma vez. A medição depende das telas instrumentadas e do envio dos eventos.' %}</p>
+  </article>
+  <details class="analytics-method-details"><summary>{% trans 'Como calculamos os acessos' %}</summary><p>{% trans 'Visitantes representam navegadores e instalações identificados, não pessoas nem o total de instalações. A mesma conta pode usar ambas as plataformas. Dias sem eventos no recorte aparecem com zero, sem comprovar ausência de uso.' %}</p></details>
+  {{ report.platforms|json_script:'analytics-platform-totals' }}
+  {{ report.platform_daily|json_script:'analytics-platform-daily' }}
+</section>

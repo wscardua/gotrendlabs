@@ -226,7 +226,8 @@ def summary(cursor, *, days=7, platform="all", audience="all", region="", city="
         raise HTTPException(422, detail="Filtro inválido.")
     if len(region) > 20 or len(city) > 120:
         raise HTTPException(422, detail="Região inválida.")
-    since = datetime.now(timezone.utc) - timedelta(days=days)
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=days)
     where = ["e.received_at >= %s", "e.actor_type IN ('visitor', 'user')"]
     args = [since]
     if platform != "all":
@@ -243,14 +244,44 @@ def summary(cursor, *, days=7, platform="all", audience="all", region="", city="
         args.append(city)
     filtered = " FROM gotrendlabs_analytics_events e JOIN gotrendlabs_analytics_sessions s ON s.id=e.session_id WHERE " + " AND ".join(where)
     cursor.execute("""
-        SELECT COUNT(DISTINCT s.visitor_id) AS visitors,
+        SELECT e.platform, COUNT(DISTINCT s.visitor_id) AS visitors,
                COUNT(DISTINCT e.session_id) AS sessions,
                COUNT(DISTINCT e.user_id) AS users,
                COUNT(*) FILTER (WHERE e.name IN ('page_viewed','screen_viewed')) AS views,
                COUNT(DISTINCT e.session_id) FILTER (WHERE e.received_at >= now() - interval '5 minutes') AS recent_sessions,
                COUNT(DISTINCT e.session_id) FILTER (WHERE s.country_code IS NOT NULL) AS located_sessions
-    """ + filtered, args)
-    totals = dict(cursor.fetchone())
+    """ + filtered + " GROUP BY GROUPING SETS ((), (e.platform))", args)
+    # One statement keeps the denominator and platform counts in the same snapshot.
+    # The empty grouping set also emits the global zero row when there are no events.
+    platform_counts = {}
+    for row in cursor.fetchall():
+        counts = dict(row)
+        key = counts.pop("platform")
+        if key is None:
+            totals = counts
+        else:
+            platform_counts[key] = {"platform": key, **{
+                field: counts[field] for field in ("visitors", "sessions", "users", "views")}}
+    platforms = []
+    for key in (("web", "mobile") if platform == "all" else (platform,)):
+        counts = platform_counts.get(key, {"platform": key, "visitors": 0,
+                                           "sessions": 0, "users": 0, "views": 0})
+        counts["session_share"] = (round(counts["sessions"] * 100 / totals["sessions"], 1)
+                                   if totals["sessions"] else None)
+        platforms.append(counts)
+    cursor.execute("""
+        SELECT (e.received_at AT TIME ZONE 'UTC')::date AS day,
+               COUNT(DISTINCT e.session_id) FILTER (WHERE e.platform='web') AS web_sessions,
+               COUNT(DISTINCT e.session_id) FILTER (WHERE e.platform='mobile') AS mobile_sessions
+    """ + filtered + " GROUP BY 1 ORDER BY 1", args)
+    daily_counts = {row["day"]: dict(row) for row in cursor.fetchall()}
+    platform_daily = []
+    day = since.date()
+    while day <= now.date():
+        counts = daily_counts.get(day, {"web_sessions": 0, "mobile_sessions": 0})
+        platform_daily.append({"day": day.isoformat(), "web_sessions": counts["web_sessions"],
+                               "mobile_sessions": counts["mobile_sessions"]})
+        day += timedelta(days=1)
     cursor.execute("""
         SELECT date_trunc('day', e.received_at)::date AS day,
                COUNT(DISTINCT e.session_id) AS sessions,
@@ -434,17 +465,30 @@ def summary(cursor, *, days=7, platform="all", audience="all", region="", city="
         ingestion["completed_at"] = ingestion["completed_at"].isoformat()
         ingestion["duplicates"] = ingestion["received"] - ingestion["accepted"]
     cursor.execute("""
-        SELECT COUNT(*) AS events, COUNT(DISTINCT e.session_id) AS sessions,
-               COUNT(DISTINCT s.visitor_id) AS visitors
+        SELECT e.platform,
+               COUNT(*) FILTER (WHERE e.received_at >= now() - interval '24 hours') AS events,
+               COUNT(DISTINCT e.session_id) FILTER (WHERE e.received_at >= now() - interval '24 hours') AS sessions,
+               COUNT(DISTINCT s.visitor_id) FILTER (WHERE e.received_at >= now() - interval '24 hours') AS visitors,
+               MAX(e.received_at) AS last_event_at
         FROM gotrendlabs_analytics_events e
         JOIN gotrendlabs_analytics_sessions s ON s.id=e.session_id
-        WHERE e.received_at >= now() - interval '24 hours'
-          AND e.actor_type IN ('visitor', 'user')
+        WHERE e.actor_type IN ('visitor', 'user')
+        GROUP BY GROUPING SETS ((), (e.platform))
     """)
-    collection_24h = dict(cursor.fetchone())
-    cursor.execute("SELECT received_at FROM gotrendlabs_analytics_events WHERE actor_type IN ('visitor','user') ORDER BY received_at DESC LIMIT 1")
-    latest_event = cursor.fetchone()
-    collection_24h["last_event_at"] = latest_event["received_at"].isoformat() if latest_event else None
+    # Operational totals and origins also share one ingestion snapshot.
+    collection_by_platform = {}
+    for record in cursor.fetchall():
+        row = dict(record)
+        key = row.pop("platform")
+        if row["last_event_at"]:
+            row["last_event_at"] = row["last_event_at"].isoformat()
+        if key is None:
+            collection_24h = row
+        else:
+            collection_by_platform[key] = {"platform": key, "events_24h": row["events"],
+                                           "last_event_at": row["last_event_at"]}
+    collection_platforms = [collection_by_platform.get(key, {
+        "platform": key, "last_event_at": None, "events_24h": 0}) for key in ("web", "mobile")]
     cursor.execute("""
         SELECT started_at, completed_at, status, database_build_at, database_type,
                file_size_bytes, node_count, error_code
@@ -459,15 +503,17 @@ def summary(cursor, *, days=7, platform="all", audience="all", region="", city="
     retention = calculate_retention(cursor)
     return {"period_days": days, "generated_at": datetime.now(timezone.utc).isoformat(),
             "totals": totals, "daily": daily, "screens": screens, "geography": geography,
+            "platforms": platforms, "platform_daily": platform_daily,
             "regions": regions, "cities": cities, "geo_daily": geo_daily,
             "trend_region": trend_region, "region_daily": region_daily,
             "sources": sources, "markets": markets, "funnel": funnel,
             "abandonment": abandonment, "authenticated_funnel": authenticated_funnel, "insights": insights[:5],
             "last_ingestion": ingestion, "collection_24h": collection_24h,
+            "collection_platforms": collection_platforms,
             "last_geolite_run": geolite_run, "geolite_file": geolite_file_status(),
             "retention": retention,
             "domain_totals": {"signups": signups, **prediction_counts},
-            "coverage": "Navegação observada desde a ativação da coleta. Cadastros e previsões vêm do banco de domínio e são globais: filtros de plataforma, público e região não se aplicam a esses totais."}
+            "coverage": "Navegação observada no histórico retido. Cadastros e previsões vêm do banco de domínio e seguem o período selecionado; filtros de plataforma, público e localização não se aplicam a esses totais."}
 
 
 def prune(cursor, *, now=None, retention_days=90):

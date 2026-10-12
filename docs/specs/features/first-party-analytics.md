@@ -1,12 +1,13 @@
 ---
 id: FEAT-ANALYTICS-001
 titulo: "Analytics proprio web e mobile"
-versao: 0.5
+versao: 0.7
 status_spec: aprovada
-status_impl: implementada_validada
+status_impl: implementada_localmente
 ultima_atualizacao: 2026-10-12
 origem:
   - conversa de produto de 2026-09-29
+  - comparação Web/App e revisão de usabilidade de 2026-10-12
 contratos_afetados:
   - analytics-events.md
 dependencias:
@@ -49,6 +50,22 @@ Conclusoes de dominio sao medidas por registros autoritativos existentes (usuari
 
 A leitura geografica retorna estados e cidades do Brasil ordenados por sessoes, serie diaria de cobertura geografica e serie diaria da UF filtrada ou da UF mais acessada. O Admin Ops inclui SVG local das 27 UFs gerado a partir das malhas simplificadas oficiais do IBGE, com intensidade relativa e filtro por clique. O contorno permanece visivel sem JavaScript e a tabela preserva valores exatos. Cidade e UF sao estimativas de IP da sessao; ausencia de localizacao nao e convertida em local conhecido. A serie diaria conta sessoes distintas por dia e uma sessao ativa em dois dias aparece em ambos.
 
+## Acessos por plataforma
+
+O resumo inclui `platforms` e `platform_daily`, calculados pela FastAPI com os mesmos filtros de período, plataforma, público e geografia. Todas compara Web e App mobile lado a lado; um filtro específico mostra somente a plataforma selecionada. Acesso significa sessão distinta observada, seguindo a definição existente do resumo. Cada plataforma informa sessões, participação nas sessões do recorte, visitantes distintos, visualizações de páginas/telas e contas autenticadas distintas. Totais globais e distribuição por plataforma são calculados na mesma instrução SQL para manter o numerador e o denominador no mesmo snapshot durante ingestão concorrente. Sem sessões, a participação é nula e aparece como travessão; contagens permanecem zero.
+
+Web inclui navegadores de desktop e celular; App mobile identifica o cliente Flutter pelo header já enviado. Visitantes representam IDs de navegador/instalação, não pessoas nem total de instalações. A mesma conta pode aparecer nas duas plataformas, portanto contas por plataforma não são somadas como contas únicas gerais. Não há mudança no aplicativo nem na coleta.
+
+O Admin Ops mostra a comparação após o resumo e duas linhas de sessões diárias com tabela acessível de valores exatos, disponível sem JavaScript. Os dias são UTC, preenchidos com zero quando não há eventos no recorte; a janela móvel usa `received_at`, com primeiro/último dia possivelmente parciais. Sessões em dias diferentes podem aparecer em ambos: totais do período não são soma dos únicos diários. Limites de instrumentação e perdas de envio continuam válidos.
+
+## Usabilidade do Admin Ops (v0.7)
+
+A página apresenta navegação entre resumo, comportamento, retenção, geografia e saúde da coleta. Filtros aplicados ficam explícitos no resumo e nas seções de navegação; retenção tem escopo global próprio de 90 dias. Totais do domínio seguem o período selecionado, mas não plataforma/público/geografia; indicadores da coleta são globais de 24 horas ou histórico retido. UF usa seleção das 27 unidades; cidades oferecem sugestões do ranking existente no recorte, sem afirmar catálogo completo. Limpar filtros retorna ao recorte padrão.
+
+Cards compactos preservam números e ressalvas essenciais; tabelas extensas mantêm cabeçalho fixo e rolagem própria para conter a altura da página; metodologia detalhada usa elementos expansíveis. Datas/números seguem o idioma preferido do operador autenticado; o atributo lang e Content-Language acompanham esse idioma. Os fusos dos cálculos são mantidos e os textos ficam preparados para tradução. O gráfico tem datas intermediárias e consulta de valores via ponteiro, toque e teclado, com tabela disponível sem JavaScript. Legendas distinguem cor e traçado. Não são introduzidas comparação com período anterior ou novas taxas de conversão.
+
+Saúde da medição prioriza o estado atual da GeoLite, separando a execução histórica. Problemas conhecidos de arquivo são sinalizados no topo. Ausência de eventos não é tratada como falha comprovada nem ausência de uso. `collection_platforms` informa, por Web/App mobile, a última recepção de evento humano ainda retido e volume humano nas últimas 24 h, independentemente dos filtros. Totais operacionais e origens compartilham uma instrução SQL/snapshot. Não mede a última remessa por plataforma nem cobertura de instrumentação; ausência de registro é explícita. Sem mudança Flutter, persistência ou permissões MCP.
+
 ## Retenção de produto
 
 A FastAPI calcula coortes D1, D7 e D30 em `America/Sao_Paulo`, independentemente dos filtros de navegação. Dn e a proporção que teve `page_viewed` ou `screen_viewed` no dia de calendário exatamente n dias após a entrada. Só coortes com o dia Dn completo entram no denominador. O primeiro dia parcial da coleta e cadastros anteriores à coleta são excluídos; o período de observação é limitado aos últimos 90 dias. A API devolve totais e coortes semanais com numerador, denominador e percentual, ou percentual nulo quando não há coorte madura.
@@ -71,7 +88,7 @@ A atualização da GeoLite ocorre por comando backend explícito `python -m apps
 
 Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. Dados de auditoria, ledger e eventos administrativos nao participam do purge. Agregados, regras de insight, funis adicionais, fila offline mobile e catalogo ampliado seguem iteracoes por contrato; nao se deve afirmar cobertura onde a coleta nao esta instalada.
 
-## Evoluções fora do escopo v0.5
+## Evoluções fora do escopo v0.7
 
 - Gravacao de sessao, heatmap, GPS ou IP bruto no analytics.
 - Fila offline duravel no mobile, funis personalizados e atribuicao exata de conclusao por tentativa. O agrupamento sessao/mercado nao distingue duas tentativas no mesmo mercado durante a mesma sessao.
@@ -79,6 +96,10 @@ Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. 
 - Integracao de terceiros para hospedagem ou coleta.
 
 ## Testes esperados
+
+- Comparação: distintos por período/plataforma, percentuais, replays, filtros de público/geografia/período, exclusão de atores internos, plataformas/dias sem eventos e renderização com/sem JavaScript.
+- Usabilidade: filtros/escopos explícitos, coleta global humana por plataforma, GeoLite atual versus carga histórica, tabela sem JS, consulta diária por teclado/ponteiro e formatação pt-BR/en pelo idioma do operador.
+- Publicação: CI completo e build aprovados antes do merge; Actions/deploy da main concluídos, assets atuais, resumo staff/MFA e renderização produtiva conferidos antes de marcar a v0.7 implantada. Evidências em WFLOW-20261012-ANALYTICS-CLOSEOUT.
 
 - Contrato: nomes/propriedades rejeitados, lote limitado e UUID idempotente.
 - Integracao PostgreSQL: visitante anonimo, visualizacao, deduplicacao e leitura de resumo.

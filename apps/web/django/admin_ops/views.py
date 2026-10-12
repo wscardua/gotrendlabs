@@ -16,7 +16,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count, Max, Q
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_GET, require_http_methods
-from django.utils.translation import gettext as _
+from django.utils.translation import gettext as _, override
 from django.utils import timezone
 
 from apps.web.django.accounts.api_client import (
@@ -1279,10 +1279,20 @@ def analytics(request):
     except AuthAPIError as exc:
         report = None
         error = str(exc)
-    return render(request, "admin_ops/analytics.html", {"report": report, "admin_error": error,
-                  "filters": {"days": query.get("days", "7"), "platform": query.get("platform", "all"),
-                              "audience": query.get("audience", "all"), "region": query.get("region", ""),
-                              "city": query.get("city", "")}})
+    context = {
+        "report": report, "admin_error": error,
+        "region_choices": "AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO".split(),
+        "filters": {
+            "days": query.get("days", "7"), "platform": query.get("platform", "all"),
+            "audience": query.get("audience", "all"), "region": query.get("region", ""),
+            "city": query.get("city", ""),
+        },
+    }
+    language = request.session[USER_KEY]["preferred_language"]
+    with override(language):
+        response = render(request, "admin_ops/analytics.html", context)
+    response.headers["Content-Language"] = language
+    return response
 
 
 @admin_api_required
