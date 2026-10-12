@@ -1,6 +1,6 @@
 ## Correção da prévia web — 2026-10-12
 
-FEAT-PRED-001 v0.6 implementada localmente para reduzir rajadas do slider, eliminar consultas de página na prévia, usar `stake_amount` e tratar timeout/erro HTTP. Publicação produtiva pendente. PRs #162/#163 são de analytics e não resolveram este incidente. Fonte de retomada: WFLOW-20261012-PREDICTION-PREVIEW-500.
+FEAT-PRED-001 v0.6: correção do slider implantada pela PR #164, merge `0fddd54`, CI/deploy `38289674859` aprovados (503 testes, 2 skips). Prévia HTTPS com 137 GT₵, entrada inválida inline, hashes de assets e Chrome com JS produtivo validados. Nenhum novo 500/erro de slots na observação inicial dos contêineres recriados. PRs #162/#163 tratavam somente analytics. [Evidências e limites](../testing/prediction-preview-production-20261012.md); workflow WFLOW-20261012-PREDICTION-PREVIEW-500.
 
 ## 2026-10-11 — prévia do critério de resolução implantada em produção
 
