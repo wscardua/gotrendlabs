@@ -87,7 +87,7 @@
 
 ## WFLOW-20261012-PREDICTION-PREVIEW-500
 
-- Estado: correção implementada localmente; testes direcionados aprovados, publicação pendente de aprovação da PR.
+- Estado: correção da prévia implantada e validada tecnicamente em produção em 2026-10-12 pela PR [#164](https://github.com/wscardua/gotrendlabs/pull/164).
 - Escopo: FEAT-PRED-001 v0.6; branch `fix/prediction-preview-timeouts` criada da `origin/main` atualizada `4de51ba` em worktree isolada. Ambiente virtual existente reutilizado.
 - Diagnóstico produtivo read-only: SSM `bbdfa690-0e57-4d4d-81c4-d966eb8589d4` confirmou `TimeoutError` em `/markets/.../predict/`; SSM `90953352-d707-4479-9117-5c8f447e05a7` confirmou PostgreSQL sem slots livres (`remaining connection slots are reserved`) em chamadas API de mercado, carteira e prévia. SSM `569f4aac-7be4-46a4-9f3f-c8e2d42ef0c8` encontrou limite 79 e 9 conexões totais fora do pico; nenhuma alteração de configuração produtiva.
 - Causa amplificadora: cada movimento do slider disparava fetch; cada fragmento consultava mercado e executava contexto global de carteira/perfil/notificações. Timeout não era convertido em AuthAPIError; JS inseria qualquer corpo HTTP no ticket. A view ainda lia `amount`, embora o formulário enviasse `stake_amount`.
@@ -96,7 +96,9 @@
 - Arquitetura/segurança: FastAPI continua calculando e validando opção/stake. `choice` é apenas rótulo visual escapado; CSRF/sessão e confirmação de previsão preservados. Sem migration, pool novo, mudança de JSON/OpenAPI ou ADR.
 - MCP: sem ajuste de ferramentas, schemas, contratos públicos, permissões, erros, replays ou orientação editorial. Mudança no adaptador HTML/cliente web; mobile usa diretamente a FastAPI e não requer alteração.
 - Validação: sete testes sem banco aprovados; Node cobre 500 movimentos, fila serial, resposta antiga, HTTP 500, HTML inesperado e recuperação. Chrome headless real confirmou 500 movimentos → uma chamada, valor atual, serialização e erro seguro. Checks de sintaxe/diff aprovados. Nove testes Django aprovados (incluindo fragmento e tela de posição) em PostgreSQL isolado `test_gtl_preview_fix_20261012`; banco de teste removido. Snapshot OpenAPI e regressão analytics passaram. A primeira tentativa do runner isolado omitiu o argumento `test` usado pelas settings para habilitar o hasher de testes; reexecutado no modo correto com sucesso.
-- Próxima ação: concluir regressão/checagem, apresentar PR em português para aprovação, acompanhar CI/deploy e validar asset/fragmento/health/logs produtivos sem gerar rajada de carga no servidor real.
+- Publicação: commit `b0b4c52`, merge `0fddd544861334c245ee24a7e3163fc8c40e75ac`. CI PR `38288512471` e main/deploy `38289674859` aprovados: 503 testes, 2 skips, build, OpenAPI e testes JS. Deploy SSM `a9cc1689-364c-4a16-8ed4-27b01bc06ed4` Success.
+- Smoke: prévia HTTPS do mercado reportado com 137 GT₵ retornou 200, marcador de fragmento/no-store e valor correto; entrada inválida retornou mensagem inline. Hashes dos dois assets públicos conferem; Chrome com o JS baixado repetiu o aceite de rajada/ordem/erro 500 com respostas simuladas, sem carga produtiva em rajada. SSM read-only `66d95802-3da8-4547-9310-bf7a79f55b2b` confirmou SHA do host, contêineres ativos e nenhum novo HTTP 500/erro de slots nos contêineres recriados até o smoke. API/banco saudáveis.
+- Fechamento: nenhuma migration ou configuração produtiva adicional. Branch local preservada. Página já aberta precisa ser recarregada para usar o JS novo. Janela inicial curta de observação; este aceite não representa ensaio de capacidade global sob muitos usuários. Evidências em [recibo produtivo](../testing/prediction-preview-production-20261012.md).
 
 
 ## WFLOW-20261012-ANALYTICS-JOURNEY-CLOSEOUT
