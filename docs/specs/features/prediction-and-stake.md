@@ -1,10 +1,10 @@
 ---
 id: FEAT-PRED-001
 titulo: "Previsão e stake"
-versao: 0.5
+versao: 0.6
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-21
+ultima_atualizacao: 2026-10-12
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -57,6 +57,9 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - segunda previsão do mesmo usuário no mesmo mercado retorna erro claro
 - confirmação registra a previsão e o impacto financeiro correspondente
 - prévia calcula retorno estimado no backend sem persistir previsão, ledger ou probabilidade
+- Web envia `stake_amount` atual após pausa de 300 ms, com no máximo uma prévia em andamento por ticket; mudanças intermediárias são consolidadas e respostas antigas não substituem a seleção atual.
+- Prévia web consulta somente o endpoint de prévia, sem recarregar detalhe do mercado, carteira, perfil ou notificações. Fragmentos não executam os context processors da página.
+- Timeout/falha de rede/HTTP mostra erro inline recuperável; HTML de erro 500 ou de redirecionamento não pode entrar no ticket. Uma falha não deve exibir retorno zero como se fosse cálculo válido.
 - usuário visitante visualiza opções e consenso, mas não vê controle de stake nem confirma previsão
 - usuário com previsão já registrada vê aviso destacado e controles de previsão desabilitados
 - mercado aberto não deve iniciar com opção pré-selecionada; o usuário precisa escolher explicitamente uma opção antes do envio ser válido
@@ -121,6 +124,7 @@ Usuário autenticado acessa um mercado aberto, escolhe uma opção, informa stak
 - regressão para ticket iniciar sem opção marcada, exigir escolha explícita e não induzir o usuário pela primeira opção
 - regressão para estado sem saldo disponível no detalhe de mercado
 - regressão de hidratação local quando a FastAPI não entrega campos visuais novos
+- regressão de rajada de slider, ordem das respostas, recuperação após HTTP 500/timeout e uso do valor `stake_amount` escolhido; preview sem consultas do contexto global
 
 ## Critérios de aceite
 

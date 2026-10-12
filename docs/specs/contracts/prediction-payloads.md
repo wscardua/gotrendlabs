@@ -41,6 +41,8 @@ Saída mínima:
 
 A prévia não cria previsão, não altera wallet/ledger e não persiste alteração de probabilidade.
 
+O adaptador HTML Django recebe `option_id`, `stake_amount` e `choice` (rótulo exclusivamente visual, escapado no template). Validação da opção e cálculo continuam na FastAPI. O fragmento é identificado por `X-GTL-Preview: 1` e `Cache-Control: no-store`, sem contexto global da página. O navegador aceita somente respostas bem-sucedidas com esse marcador e sem redirecionamento; consolida movimentos por 300 ms e serializa chamadas por ticket. Erros esperados da API são apresentados inline no fragmento. JSON/OpenAPI da FastAPI permanece inalterado.
+
 ## Reforço e revisão de posição
 
 `POST /markets/{slug}/position-preview`

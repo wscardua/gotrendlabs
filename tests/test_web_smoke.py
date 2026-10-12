@@ -12256,7 +12256,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         with patch("apps.web.django.markets.views.preview_prediction", return_value={"estimated_return": 240}):
             response = self.client.post(
                 reverse("prediction-preview", args=["openai-gpt6-2026"]),
-                {"choice": "SIM", "amount": "120", "option_id": option.id},
+                {"choice": "SIM", "stake_amount": "120", "option_id": option.id},
                 HTTP_HX_REQUEST="true",
             )
 

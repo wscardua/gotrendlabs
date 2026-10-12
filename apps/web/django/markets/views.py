@@ -1,5 +1,7 @@
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 from django.db import DatabaseError
 from django.db.models import F
 from django.urls import reverse
@@ -347,78 +349,69 @@ def prediction_receipt(request, slug, prediction_id):
     return render(request, template_name, context)
 
 
+def _preview_response(template, context):
+    # These fragments need no page/session context processors (wallet/profile/etc.).
+    response = HttpResponse(render_to_string(template, context))
+    response["X-GTL-Preview"] = "1"
+    response["Cache-Control"] = "no-store"
+    return response
+
+
+def _preview_inputs(request):
+    option_id = int(request.POST.get("option_id", ""))
+    amount = int(request.POST.get("stake_amount", ""))
+    return option_id, amount
+
+
+@require_POST
 def prediction_preview(request, slug):
+    context = {"choice": request.POST.get("choice", ""), "preview_error": ""}
     try:
-        market = get_market(slug)
-    except AuthAPIError:
-        market = local_market(slug)
-    market = _with_option_ids(slug, market)
-    amount = int(request.POST.get("amount", "80") or 80)
-    option_id = request.POST.get("option_id") or market["options"][0]["id"]
-    selected_option = next((option for option in market["options"] if str(option.get("id")) == str(option_id)), market["options"][0])
-    choice = request.POST.get("choice") or selected_option.get("label")
-    preview_error = ""
-    try:
-        preview = preview_prediction(
-            slug,
-            {
-                "option_id": selected_option["id"],
+        option_id, amount = _preview_inputs(request)
+    except (ValueError, TypeError):
+        context["preview_error"] = _("Selecione uma opção e informe um valor válido.")
+    else:
+        context["amount"] = amount
+        try:
+            preview = preview_prediction(slug, {
+                "option_id": option_id,
                 "stake_amount": amount,
                 "client_locale": getattr(request, "LANGUAGE_CODE", "pt-br"),
-            },
-        )
-        estimated_return = preview["estimated_return"]
-    except AuthAPIError as exc:
-        estimated_return = 0
-        preview_error = str(exc)
-    return render(
-        request,
-        "markets/partials/prediction_preview.html",
-        {"market": market, "amount": amount, "choice": choice, "estimated_return": estimated_return, "preview_error": preview_error},
-    )
+            })
+            context["estimated_return"] = preview["estimated_return"]
+        except AuthAPIError as exc:
+            context["preview_error"] = str(exc)
+    return _preview_response("markets/partials/prediction_preview.html", context)
 
 
+@require_POST
 def position_action_preview(request, slug):
-    try:
-        market = get_market(slug, auth_token(request) if is_authenticated(request) else None)
-    except AuthAPIError:
-        market = local_market(slug)
-    market = _with_option_ids(slug, market)
-    action = request.POST.get("action") or "reinforcement"
-    amount = int(request.POST.get("stake_amount") or request.POST.get("amount") or 0)
-    option_id = request.POST.get("option_id") or market["options"][0]["id"]
-    selected_option = next((option for option in market["options"] if str(option.get("id")) == str(option_id)), market["options"][0])
-    preview = {}
-    preview_error = ""
+    context = {
+        "action": request.POST.get("action", "reinforcement"),
+        "option": {"label": request.POST.get("choice", "")},
+        "preview": {}, "preview_error": "",
+    }
     if not is_authenticated(request):
-        preview_error = "Entre na conta para reforçar ou revisar posição."
+        context["preview_error"] = _("Entre na conta para reforçar ou revisar posição.")
     else:
         try:
-            preview = preview_position_action(
-                auth_token(request),
-                slug,
-                {
-                    "action": action,
-                    "option_id": selected_option["id"],
+            option_id, amount = _preview_inputs(request)
+        except (ValueError, TypeError):
+            context["preview_error"] = _("Selecione uma opção e informe um valor válido.")
+        else:
+            context["amount"] = amount
+            try:
+                preview = preview_position_action(auth_token(request), slug, {
+                    "action": context["action"],
+                    "option_id": option_id,
                     "stake_amount": amount,
                     "client_locale": getattr(request, "LANGUAGE_CODE", "pt-br"),
-                },
-            )
-            preview_error = preview.get("blocked_reason") or ""
-        except AuthAPIError as exc:
-            preview_error = str(exc)
-    return render(
-        request,
-        "markets/partials/position_action_preview.html",
-        {
-            "market": market,
-            "action": action,
-            "option": selected_option,
-            "amount": amount,
-            "preview": preview,
-            "preview_error": preview_error,
-        },
-    )
+                })
+                context["preview"] = preview
+                context["preview_error"] = preview.get("blocked_reason") or ""
+            except AuthAPIError as exc:
+                context["preview_error"] = str(exc)
+    return _preview_response("markets/partials/position_action_preview.html", context)
 
 
 @require_POST

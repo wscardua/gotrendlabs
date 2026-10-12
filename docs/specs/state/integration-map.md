@@ -239,3 +239,7 @@ Thumbnails: montagem visual v3 no backend (thumbnail_prompt.py), chamada Runtime
 
 
 2026-10-09 — Preflight PRD somente leitura: SSM3c6b5fda confirmou SHA b033afe4, seis serviços ativos e credencial Bedrock presente no executor (valor não exposto), switch ambiental 1, defaults textuais 20b/us-east-1. Consulta inicial da política precisou ser corrigida por uso inadequado do context manager; SSM8f95b96a concluiu Success sem stderr: thumbnail_enabled=true, Core/stability.stable-image-core-v1:1, us-west-2, 3:2, timeout180s, limites operador50/mercado50/global50 por24h e retenção24h; nenhum queued/running. Valores atuais substituem o recibo histórico de defaults10/5 no que se refere à configuração efetiva observada, sem alterar os defaults da spec. Preservar essas escolhas no deploy. Nenhuma mutação produtiva ou inferência; preflight não comprova acesso de inferência Mantle do token produtivo.
+
+## Prévia web de previsão e posição
+
+Slider/opção → fila por ticket com pausa de 300 ms → POST Django com CSRF → única chamada ao endpoint FastAPI de prévia → fragmento HTML sem contexto global. Nenhuma chamada de detalhe/carteira/perfil/notificações é necessária para renderizar a prévia. FastAPI conserva os cálculos e validações; confirmação segue seu fluxo próprio.

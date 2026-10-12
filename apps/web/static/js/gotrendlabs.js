@@ -606,68 +606,7 @@ document.addEventListener("click", (event) => {
     submit.disabled = false;
     submit.removeAttribute("disabled");
   }
-  updatePredictionPreview();
-});
-
-function updatePredictionPreview() {
-  $$("[data-amount]").forEach((range) => {
-    const amount = Number(range.value || 0);
-    const output = $(`[data-amount-output="${range.dataset.amount}"]`);
-    if (output) output.textContent = `${range.value} GT₵`;
-    const lockedBox = $(`[data-locked-output="${range.dataset.amount}"]`);
-    if (lockedBox) lockedBox.textContent = `${range.value} GT₵`;
-  });
-  const form = $("[data-prediction-preview-url]");
-  const preview = $("#prediction-preview");
-  if (!form || !preview) return;
-  const optionInput = $("[data-selected-option-id]:checked", form) || $("[data-selected-option-id][type='hidden']", form);
-  if (!optionInput?.value) return;
-  const body = new FormData(form);
-  fetch(form.dataset.predictionPreviewUrl, {
-    method: "POST",
-    body,
-    credentials: "same-origin",
-    headers: {"X-Requested-With": "XMLHttpRequest"},
-  })
-    .then((response) => response.text())
-    .then((html) => {
-      preview.innerHTML = html;
-    })
-    .catch(() => {});
-}
-
-function updatePositionActionPreview(form) {
-  const targetId = form.dataset.previewTarget;
-  const preview = targetId ? document.getElementById(targetId) : null;
-  if (!preview) return;
-  const optionInput = $("[data-selected-option-id]:checked", form) || $("[name='option_id'][type='hidden']", form);
-  if (!optionInput?.value) return;
-  const body = new FormData(form);
-  fetch(form.dataset.positionPreviewUrl, {
-    method: "POST",
-    body,
-    credentials: "same-origin",
-    headers: {"X-Requested-With": "XMLHttpRequest"},
-  })
-    .then((response) => response.text())
-    .then((html) => {
-      preview.innerHTML = html;
-    })
-    .catch(() => {});
-}
-
-$$("[data-amount]").forEach((range) => {
-  range.addEventListener("input", updatePredictionPreview);
-  range.addEventListener("input", () => {
-    const form = range.closest("[data-position-preview-url]");
-    if (form) updatePositionActionPreview(form);
-  });
-  updatePredictionPreview();
-});
-
-$$("[data-position-preview-url]").forEach((form) => {
-  form.addEventListener("change", () => updatePositionActionPreview(form));
-  updatePositionActionPreview(form);
+  window.gtlUpdatePredictionPreview?.(form);
 });
 
 let pendingConfirmTrigger = null;
