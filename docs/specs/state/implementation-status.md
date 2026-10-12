@@ -1,3 +1,7 @@
+## Correção da prévia web — 2026-10-12
+
+FEAT-PRED-001 v0.6 implementada localmente para reduzir rajadas do slider, eliminar consultas de página na prévia, usar `stake_amount` e tratar timeout/erro HTTP. Publicação produtiva pendente. PRs #162/#163 são de analytics e não resolveram este incidente. Fonte de retomada: WFLOW-20261012-PREDICTION-PREVIEW-500.
+
 ## 2026-10-11 — prévia do critério de resolução implantada em produção
 
 FEAT-MARKET-002 v0.6: quatro linhas com expansão/recolhimento acessível; texto integral sem JS/na impressão, fonte/status/avisos preservados. Branch fix/resolution-criteria-preview baseada em origin/main cc97e9a. Check Django no ambiente existente Python 3.11, sintaxe JS e aceite Chromium desktop/mobile aprovados. Sem alteração em API, banco ou MCP. PR #160 integrada (ec624d7), CI da PR e main com 496 testes/2 skips por execução, build/OpenAPI e deploy Actions 38180444186 aprovados. Smoke real no mercado Netflix e health HTTP 200; versões CSS/JS, quatro linhas, teclado, conteúdo integral e impressão conferidos em 1280px/390px. Branch local preservada. Status amplo da feature preservado. Evidências em WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.

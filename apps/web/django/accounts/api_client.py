@@ -6,6 +6,7 @@ import urllib.request
 from urllib.parse import urlencode
 
 from django.conf import settings
+from django.utils.translation import gettext as _
 
 
 class AuthAPIError(Exception):
@@ -52,6 +53,8 @@ def _request(method, path, payload=None, token=None, timeout=5, extra_headers=No
         message = detail.get("message") if isinstance(detail, dict) else detail
         fallback = "Serviço da API retornou erro interno." if exc.code >= 500 else "Não foi possível concluir a requisição."
         raise AuthAPIError(message or fallback, exc.code, detail=detail) from exc
+    except (TimeoutError, ConnectionError) as exc:
+        raise AuthAPIError(_("O serviço demorou para responder. Tente novamente."), status_code=503) from exc
     except urllib.error.URLError as exc:
         raise AuthAPIError("Serviço de autenticação indisponível.") from exc
 

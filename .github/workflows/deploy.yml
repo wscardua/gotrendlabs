@@ -137,6 +137,10 @@ jobs:
         if: needs.detect-changes.outputs.docs_only != 'true'
         run: node tests/test_analytics_web_events.js
 
+      - name: Test prediction preview requests
+        if: needs.detect-changes.outputs.docs_only != 'true'
+        run: node tests/test_prediction_preview_web.js
+
       - name: Run test suite
         if: needs.detect-changes.outputs.docs_only != 'true'
         env:

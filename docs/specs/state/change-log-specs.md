@@ -4,6 +4,10 @@ FEAT-MARKET-002 documenta prévia de quatro linhas, expansão/recolhimento, pres
 
 # Change Log de Specs
 
+## 2026-10-12 — Prévia web e erro 500
+
+FEAT-PRED-001 v0.6 corrige envio do stake, consolida movimentos do slider e elimina consultas de contexto na prévia. Timeout/HTTP inválido recebe feedback inline sem inserir página 500. Contrato FastAPI/mobile/MCP preservado. Validação local; publicação pendente. Evidências em WFLOW-20261012-PREDICTION-PREVIEW-500.
+
 ## 2026-10-12 — FEAT-ANALYTICS-001 v0.5
 
 - Especificado o gatilho observável de `prediction_started` web antes da escolha e a reabertura mobile A → B → A, com regressões JS/Flutter. Sem alteração no schema OpenAPI, persistência ou fronteira FastAPI.

@@ -297,9 +297,10 @@
             </div>
             <div class="position-action-panels">
               {% if market.viewer_position.can_reinforce %}
-                <form class="position-action-panel reinforcement-panel" method="post" action="{% url 'position-action-confirm' market.slug %}" data-position-preview-url="{% url 'position-action-preview' market.slug %}" data-preview-target="position-reinforcement-preview">
+                <form class="position-action-panel reinforcement-panel" method="post" action="{% url 'position-action-confirm' market.slug %}" data-preview-loading="{% trans 'Atualizando prévia…' %}" data-preview-error="{% trans 'Não foi possível atualizar a prévia. Ajuste o valor ou a opção para tentar novamente.' %}" data-position-preview-url="{% url 'position-action-preview' market.slug %}" data-preview-target="position-reinforcement-preview">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="reinforcement">
+                  <input type="hidden" name="choice" value="{{ existing_prediction.option_label }}">
                   <input type="hidden" name="option_id" value="{{ existing_prediction.option_id }}">
                   <div class="field"><label>GT₵ para reforçar</label><div class="range-row"><input name="stake_amount" data-amount="reinforcement" type="range" min="1" max="500" value="80"><strong data-amount-output="reinforcement">80 GT₵</strong></div></div>
                   <div id="position-reinforcement-preview" class="calc compact-calc"></div>
@@ -308,7 +309,7 @@
                 </form>
               {% endif %}
               {% if market.viewer_position.can_revise %}
-                <form class="position-action-panel revision-panel" method="post" action="{% url 'position-action-confirm' market.slug %}" data-position-preview-url="{% url 'position-action-preview' market.slug %}" data-preview-target="position-revision-preview">
+                <form class="position-action-panel revision-panel" method="post" action="{% url 'position-action-confirm' market.slug %}" data-preview-loading="{% trans 'Atualizando prévia…' %}" data-preview-error="{% trans 'Não foi possível atualizar a prévia. Ajuste o valor ou a opção para tentar novamente.' %}" data-position-preview-url="{% url 'position-action-preview' market.slug %}" data-preview-target="position-revision-preview">
                   {% csrf_token %}
                   <input type="hidden" name="action" value="revision">
                   <input type="hidden" name="stake_amount" value="0">
@@ -365,7 +366,7 @@
         </div>
         <a class="btn primary" href="{% url 'wallet' %}">Ver carteira educativa</a>
       {% else %}
-        <form method="post" action="{% url 'prediction-confirm' market.slug %}" data-prediction-preview-url="{% url 'prediction-preview' market.slug %}">
+        <form method="post" action="{% url 'prediction-confirm' market.slug %}" data-preview-loading="{% trans 'Atualizando prévia…' %}" data-preview-error="{% trans 'Não foi possível atualizar a prévia. Ajuste o valor ou a opção para tentar novamente.' %}" data-prediction-preview-url="{% url 'prediction-preview' market.slug %}">
           {% csrf_token %}
           <div class="binary-ticket">
             <div class="prediction-choice-prompt">

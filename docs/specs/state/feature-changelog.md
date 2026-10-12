@@ -10,6 +10,10 @@
 
 # Feature Changelog
 
+## 2026-10-12 — Prévia web e erro 500
+
+FEAT-PRED-001 v0.6 corrige envio do stake, consolida movimentos do slider e elimina consultas de contexto na prévia. Timeout/HTTP inválido recebe feedback inline sem inserir página 500. Contrato FastAPI/mobile/MCP preservado. Validação local; publicação pendente. Evidências em WFLOW-20261012-PREDICTION-PREVIEW-500.
+
 ## 2026-10-12 — FEAT-ANALYTICS-001 jornada observada v0.5
 
 - Web inicia a jornada quando o ticket inicial fica visível; abandono antes da escolha pode ser contado, e o clique não duplica o início.
