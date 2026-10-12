@@ -1,8 +1,23 @@
+## 2026-10-12 — reconciliação de fechamento do Analytics
+
+FEAT-ANALYTICS-001 v0.7 passa a referenciar os gates de publicação e evidências; README/runbook descrevem ativação por deploy padrão. Known-gaps distingue estado GeoLite histórico/atual e limitações da validação PostgreSQL local. Workflow de fechamento e relatório de revisão registram impacto MCP ausente e preservação da branch local.
+
 ## 2026-10-11 — detalhe do mercado v0.6
 
 FEAT-MARKET-002 documenta prévia de quatro linhas, expansão/recolhimento, preservação do conteúdo/avisos e aceite de acessibilidade, responsividade e impressão. Contratos de domínio/MCP permanecem inalterados. Fechamento produtivo reconciliado após PR #160/Actions 38180444186 e smoke público aprovados. WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW.
 
 # Change Log de Specs
+
+## 2026-10-12 — FEAT-ANALYTICS-001 v0.7
+
+- Define densidade/navegação e escopos de navegação, retenção e operação; formatação pelo idioma do operador, GeoLite atual, leitura diária acessível e sugestões de cidade limitadas ao ranking.
+- Contrato staff inclui collection_platforms (platform, events_24h, last_event_at) global humano no histórico retido. Não representa remessa por origem, cobertura, instalações ou ausência comprovada de uso.
+- Sem alteração de métricas, Flutter, persistência, permissões ou exposição MCP. Aceite e workflow de usabilidade registrados.
+
+## 2026-10-12 — FEAT-ANALYTICS-001 v0.6
+
+- Contrato staff inclui platforms e platform_daily; define sessões como acesso, participação no recorte, únicos por período, filtros, dias UTC e ausência de dados.
+- Comparação usa eventos já existentes e não exige novo binário mobile. Sem mudança de escrita, identidade, permissões ou persistência.
 
 ## 2026-10-12 — Prévia web e erro 500
 

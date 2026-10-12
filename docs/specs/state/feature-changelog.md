@@ -1,3 +1,7 @@
+## 2026-10-12 — fechamento documental do Analytics v0.7
+
+Comparação Web/App mobile e usabilidade administrativa reconciliadas com specs, contrato, aceites, README, runbook e memória. Revisão sem problema identificável no diff; publicação e validação produtiva pendentes de aprovação/CI/deploy. WFLOW-20261012-ANALYTICS-CLOSEOUT registra gates e limites, sem afirmar conclusão produtiva.
+
 ## 2026-10-11 — FEAT-MARKET-002 v0.6: critério expansível
 
 - Prévia de quatro linhas para critérios longos, com Ver critério completo/Recolher critério; textos curtos não exibem controle. Quebras de linha preservadas e URLs longas contidas.
@@ -9,6 +13,20 @@
 - FEAT-EDITORIAL-001/FEAT-MARKET-001: formulário separado de publicação passa a enviar expected_market_id da página original e preserva o valor submetido após erro. Corrige 409 indevido após reutilização de slug, sem relaxar validação backend ou conceder permissões MCP. Implantada pela PR #158, com CI/deploy e verificação produtiva aprovados; evidências em WFLOW-20261011-PUBLISH-FORM-IDENTITY.
 
 # Feature Changelog
+
+## 2026-10-12 — FEAT-ANALYTICS-001 usabilidade v0.7
+
+- Página compacta com navegação, filtros/escopos explícitos e metodologia expansível; GeoLite atual separado da execução histórica, aviso conhecido no topo e ausência de eventos sem inferir falta de uso.
+- Consulta diária por ponteiro/toque/controle de teclado e tabela sem JS; datas intermediárias, traçado coerente e números/datas pelo idioma do operador. UF por seleção, sugestões de cidades do ranking e limpar filtros.
+- FastAPI agrega collection_platforms global humano sobre registros existentes; sem mudança Flutter, escrita, banco, staff/MFA ou MCP. Preserva GROUPING SETS da comparação v0.6.
+- Entrega local validada conforme [aceite](../testing/analytics-usability-acceptance.md); suíte normal com migrations/publicação pendentes. Sem commit ou deploy.
+
+## 2026-10-12 — FEAT-ANALYTICS-001 comparação Web/App mobile
+
+- v0.6: FastAPI agrega sessões, participação, visitantes, visualizações e contas por plataforma, além de sessões diárias UTC com dias sem eventos preenchidos.
+- Finding do review corrigido: totais e distribuição usam GROUPING SETS na mesma instrução, evitando percentuais inconsistentes durante ingestão concorrente; regressão PostgreSQL falhou antes e passou depois.
+- Admin Ops apresenta comparação lado a lado, gráfico responsivo e tabela diária acessível sem JavaScript; todos os filtros são respeitados.
+- Coleta e aplicativo Flutter preservados; Web inclui navegador de celular. Contas nas duas origens não são somadas como pessoas únicas. Implementação local; publicação pendente.
 
 ## 2026-10-12 — Prévia web e erro 500
 

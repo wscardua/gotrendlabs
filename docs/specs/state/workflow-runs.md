@@ -1,3 +1,19 @@
+## WFLOW-20261012-ANALYTICS-CLOSEOUT
+
+- Tipo: close-feature; FEAT-ANALYTICS-001 v0.6/v0.7, comparação Web/App mobile e usabilidade administrativa.
+- Status: preparação documental e revisão concluídas; aguardando aprovação do usuário da descrição da PR antes da publicação. Não concluir rollout antes de CI, merge, deploy e smoke reais.
+- Base revisada: origin/main cea46e24fa404fabb027210a4d0a5614b10e9d84, atualizada por fetch em 2026-10-12; branch feature/analytics-platform-comparison na worktree gotrendlabs-analytics-platform-comparison. Alterações da árvore original e branch local preservadas.
+- Fonte da verdade: feature v0.7, contrato analytics-events, matrizes de comparação/usabilidade, changelogs, implementation-status, integration-map, known-gaps, README e runbook produtivo reconciliados. Memória distingue GeoLite historicamente instalada do arquivo ausente no DEV atual; produção depende de nova verificação.
+- Arquitetura: agregações permanecem na FastAPI; Django/JS apresentam o contrato staff existente. Sem nova fronteira ou ADR, migração, dependência, flag, segredo ou alteração Flutter. Web inclui navegador em celular; App mobile identifica eventos da plataforma mobile, não instalações ou cobertura de coleta.
+- Impacto MCP: ferramentas, schemas, contratos, permissões, erros, replays e orientação editorial não exigem ajustes. O MCP não consome o resumo administrativo; sua indisponibilidade de Analytics permanece explícita. Nenhuma permissão humana é transferida ao MCP.
+- Revisão: nenhum problema identificável no diff; [relatório](../testing/analytics-branch-impact-review-20261012.md). Recepção humana global por plataforma e totais usam o mesmo snapshot de consulta; filtros não são confundidos com os escopos globais de retenção/operação.
+- Evidências locais nesta preparação: 17 testes de contrato/apresentação/usabilidade/navegação aprovados; ciclo de eventos web, sintaxe JS, OpenAPI --check e git diff --check aprovados, usando ambiente virtual existente Python 3.11. Três cenários FastAPI/PostgreSQL previamente aprovados em schema isolado: comparação/filtros, concorrência e saúde global por plataforma. QA visual local e limites constam no aceite de usabilidade.
+- Limite de validação: criação/remoção do banco de testes local ficou bloqueada; o schema isolado não replica FKs/triggers e não substitui suíte normal com migrations. CI completo da PR com PostgreSQL limpo é gate obrigatório antes do merge. Toque físico, leitor de tela, outros navegadores e volume produtivo de 90 dias não homologados.
+- Publicação preparada: commit/push, PR em português via GitHub MCP, CI, merge e acompanhamento de Actions. ENABLE_PROD_DEPLOY=1 e DEPLOY_BRANCH=main confirmados somente leitura. Não houve commit, PR, merge ou mudança produtiva nesta preparação.
+- Plano de rollout: deploy padrão recompila API/web e executa collectstatic; verificar SHA implantado, Actions/SSM, saúde, proteção administrativa, contrato platforms/platform_daily/collection_platforms e assets 20261012-usability. Não gerar eventos sintéticos em produção; registrar evidência atual de GeoLite sem confundir execução histórica com disponibilidade atual.
+- Retomada: obter aprovação explícita da descrição da PR; preservar branch local; registrar identificadores reais de commit/PR/Actions/SSM e resultado do smoke após execução. Corrigir falhas reais antes de concluir.
+- Iniciado/atualizado em: 2026-10-12. Encerramento produtivo pendente.
+
 ## WFLOW-20261011-RESOLUTION-CRITERIA-PREVIEW
 
 - Tipo: change-feature + implementation-cycle; FEAT-MARKET-002 v0.6.
@@ -84,6 +100,37 @@
 - Anúncio esperado: linhas salvas no DEV válidas; testes diretos confirmam ISO com offset, Z e não informado. Datas sem fuso, valores inválidos e linhas duplicadas retornam 422. Orientação da página/erro agora tem exemplo completo e exige observações em outra linha. Validador e regra fechamento anterior ao anúncio preservados; não afirmar que o erro específico do usuário foi corrigido sem reproduzir a linha rejeitada.
 
 # Workflow Runs
+
+## WFLOW-20261012-ANALYTICS-USABILITY
+
+- Tipo: change-feature + implementation-cycle; FEAT-ANALYTICS-001 v0.7.
+- Estado: concluído localmente; publicação e suíte normal com migrations pendentes. Escopo autorizado após análise visual e prompt de execução.
+- Branch/worktree: feature/analytics-platform-comparison; preserva implementação v0.6 e correção de concorrência.
+- Escopo: densidade, navegação, filtros/escopos, consulta acessível do gráfico, i18n e saúde atual da GeoLite; última recepção humana por plataforma via agregação backend existente, com totais operacionais e origens no mesmo snapshot. Flutter, coleta, persistência e regras de métricas preservados.
+- Specs e contrato atualizados antes do código. Django somente apresenta/formata; FastAPI agrega dados. Sem nova fronteira, migration, dependência ou ADR.
+- MCP validado: apps/mcp/server.py não consome resumo staff; editorial_routes.py mantém analytics indisponível/null. Ferramentas, schemas MCP, permissões, erros, replays e orientação editorial sem ajuste; nenhuma permissão humana vira permissão MCP.
+- Validação executada: testes sem banco de contrato/apresentação/formatação/filtros/idioma/erro/navegação, nova regressão PostgreSQL de coleta global humana e duas regressões v0.6 em schemas isolados; checks Django, migration drift, Node, diff e exportador OpenAPI aprovados. Chrome nativo no DEV e com fixtures isoladas: desktop/390px/claro/escuro/teclado/ponteiro/sem JS, 1/7/30/90 dias, sobreposição e período vazio. Toque físico e auditoria integral WCAG não homologados. Nenhum reinício de serviço compartilhado ou evento fictício no DEV.
+- Pendência herdada: suíte normal com migrations não iniciada por travamento DDL do PostgreSQL local; permanece pendente. LIKE de schemas não replica triggers/FKs. Checklist universal revisado; sem migration, nova dependência ou ADR. Evidência: [aceite de usabilidade](../testing/analytics-usability-acceptance.md). DEV em localhost:8000/admin-ops/analytics/ com assets v20261012-usability e health 200. Sem commit/push/merge/deploy.
+
+## WFLOW-20261012-ANALYTICS-PLATFORM-COMPARISON
+
+- Tipo: change-feature + implementation-cycle; FEAT-ANALYTICS-001 v0.6.
+- Status: concluído localmente, incluindo correção do finding de concorrência; publicação pendente.
+- Base: origin/main cea46e2; branch feature/analytics-platform-comparison em worktree isolado. Alterações locais anteriores preservadas.
+- Objetivo: comparar sessões, participação, visitantes, visualizações, contas ativas e evolução diária de Web/App mobile sem atualizar Flutter.
+- Artefatos: FastAPI analytics, template/assets Django, testes, contrato e memória operacional.
+- Arquitetura/segurança: agregação exclusiva da FastAPI sobre eventos existentes; Django renderiza números e desenha a série. Filtros, staff/MFA e exclusão de atores internos preservados. Sem migration, novas dependências ou mudança de fronteiras; ADR não necessário.
+- Contrato: platforms contém apenas plataformas selecionadas, com zeros quando sem eventos e participação nula sem sessões; platform_daily preenche dias UTC sem eventos. Janela rolling por received_at; primeiro/último dia podem ser parciais.
+- Impacto MCP: nenhum ajuste em ferramentas, schemas, contratos MCP, permissões, erros, replays ou orientação editorial. `apps/mcp/server.py` não consome o resumo staff; o contexto editorial mantém analytics indisponível, sem transformar acesso humano Admin Ops em permissão MCP. Escrita/idempotência dos eventos preservadas.
+- Validação: oito testes de contrato/apresentação passaram; regressão nova de PostgreSQL passou em schema vazio isolado com estruturas copiadas, removido ao final. Chromium desktop 1280px/mobile 390px com template/CSS/JS reais passou para ambas/única/vazia, tabela sem JS, teclado e ausência de overflow/erros JS. Django check, makemigrations --check, node --check e git diff --check aprovados. Exportador OpenAPI executado e --check aprovado; snapshot não muda porque o endpoint existente não tipa a resposta. Ambiente virtual Python 3.11 existente reutilizado; Python 3.9 original incompatível com main.
+- Limite de validação: a suíte normal de 16 testes não iniciou por travamento do PostgreSQL local ao criar/remover bancos de testes; SQLite também não suporta SQL de migrations preexistentes. Cenário novo executado isoladamente sem flush dos bancos existentes; nenhuma alegação de suíte completa aprovada. Tentativa de contêiner temporário não iniciou e foi removida. Operações DDL locais permaneceram travadas apesar de cancelamento/terminação solicitados; os serviços compartilhados não foram reiniciados.
+- Evidência e comandos: [aceite da comparação](../testing/analytics-platform-comparison-acceptance.md). Sem migration, ADR ou novas dependências de runtime; checklist universal revisado.
+- DEV local ativado: processos web/API passaram da worktree gotrendlabs-slider-preview para gotrendlabs-analytics-platform-comparison; ambiente, banco, media, proxy localhost:8000 e MCP preservados. Configuração existente reutilizada em arquivos ignorados .runtime/dev. Health HTTP 200, JS/CSS novos HTTP 200, agregação com a role DEV e renderização completa do dashboard com dados DEV aprovadas (7 dias: Web 3 sessões, App mobile 0). Página staff redireciona corretamente para login sem sessão. Sem deploy produtivo.
+- Próxima ação: revisar diff; resolver travamento do PostgreSQL local e executar suíte normal antes da publicação. Sem commit, PR ou deploy nesta entrega.
+
+
+- Retomada após review: percentuais podiam usar numerador/denominador de snapshots diferentes em READ COMMITTED. Correção aplicada: GROUPING SETS retorna resumo global e plataformas em uma única instrução; preserva contas distintas globais e todos os filtros. Teste reproduz commit de nova sessão em outra conexão entre leituras.
+- Evidência da correção: teste PostgreSQL com commit de segunda sessão em outra conexão após o primeiro SELECT falhou antes (soma 2 vs total 1) e passou após a correção; nova leitura vê ambas as sessões e percentuais de 50%/50%. Regressão de filtros/zeros e oito testes de contrato/apresentação passaram. Cenários PostgreSQL executados em schema isolado e removido; limite da suíte normal com migrations continua registrado. OpenAPI --check, Django system checks e diff --check aprovados. DEV recarregou automaticamente o código e health HTTP 200; a role FastAPI DEV confirmou total 3, Web 3/100%, App mobile 0/0%. MCP sem impacto adicional: shape, permissões, escrita e idempotência preservados.
 
 ## WFLOW-20261012-PREDICTION-PREVIEW-500
 
