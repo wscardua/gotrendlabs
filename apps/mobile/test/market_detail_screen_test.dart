@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:gotrendlabs_mobile/src/core/api_client.dart';
+import 'package:gotrendlabs_mobile/src/core/analytics_tracker.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_controller.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_models.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/market_detail_screen.dart';
@@ -10,6 +11,44 @@ import 'package:gotrendlabs_mobile/src/features/markets/markets_providers.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/markets_repository.dart';
 
 void main() {
+  testWidgets('records each market opening on an A-B-A navigation', (
+    tester,
+  ) async {
+    final slug = ValueNotifier<String>('market-a');
+    final repository = _RecordingMarketsRepository();
+    final analytics = _RecordingAnalyticsTracker();
+    addTearDown(slug.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(
+            _UnauthenticatedAuthController.new,
+          ),
+          marketDetailProvider.overrideWith(
+            (ref, value) async => _market(slug: value),
+          ),
+          marketsRepositoryProvider.overrideWithValue(repository),
+          analyticsTrackerProvider.overrideWithValue(analytics),
+        ],
+        child: MaterialApp(
+          home: ValueListenableBuilder<String>(
+            valueListenable: slug,
+            builder: (context, value, _) => MarketDetailScreen(slug: value),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    slug.value = 'market-b';
+    await tester.pumpAndSettle();
+    slug.value = 'market-a';
+    await tester.pumpAndSettle();
+
+    expect(repository.visits, ['market-a', 'market-b', 'market-a']);
+    expect(analytics.marketViews, ['market-a', 'market-b', 'market-a']);
+  });
+
   testWidgets('MarketDetailScreen opens community tab from initial tab', (
     tester,
   ) async {
@@ -205,6 +244,34 @@ class _NoopMarketsRepository extends MarketsRepository {
   Future<void> trackView(String slug) async {}
 }
 
+class _RecordingMarketsRepository extends _NoopMarketsRepository {
+  final visits = <String>[];
+
+  @override
+  Future<void> trackView(String slug) async => visits.add(slug);
+}
+
+class _RecordingAnalyticsTracker extends AnalyticsTracker {
+  _RecordingAnalyticsTracker()
+    : super(ApiClient(tokenStore: MemoryTokenStore()));
+
+  final marketViews = <String>[];
+
+  @override
+  Future<void> screen(String key) async {}
+
+  @override
+  Future<void> track(
+    String name, {
+    String targetKey = '',
+    Map<String, Object> properties = const {},
+  }) async {
+    if (name == 'market_detail_viewed') {
+      marketViews.add(properties['market_slug'] as String);
+    }
+  }
+}
+
 class _IntegrityMarketsRepository extends _NoopMarketsRepository {
   @override
   Future<Map<String, dynamic>> integrity(String slug) async => {
@@ -262,12 +329,13 @@ const _longSummary =
     'Resumo completo do mercado com contexto suficiente para o usuário entender a condição antes de escolher uma opção.';
 
 Market _market({
+  String slug = 'mercado-longo',
   String status = 'open',
   String statusLabel = 'Aberto',
   String integrityStatus = '',
 }) {
   final json = <String, dynamic>{
-    'slug': 'mercado-longo',
+    'slug': slug,
     'title': _longTitle,
     'category': 'Tecnologia',
     'subcategory': 'Apps',

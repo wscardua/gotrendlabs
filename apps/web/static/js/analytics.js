@@ -20,6 +20,7 @@
   let view = id();
   let queue = [];
   let sending = false;
+  let startedTickets = new WeakSet();
   const utm = key => (new URLSearchParams(location.search).get(key) || '').replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 120);
   const route = () => {
     const path = location.pathname;
@@ -68,11 +69,37 @@
     card.dataset.analyticsObserved = '1';
     observer?.observe(card);
   });
+  const startTicket = form => {
+    if (!form || startedTickets.has(form)) return;
+    startedTickets.add(form);
+    event('prediction_started', 'prediction_ticket', { market_slug: market(form) });
+  };
+  const ticketObserver = 'IntersectionObserver' in window ? new IntersectionObserver(entries => {
+    for (const entry of entries) {
+      if (!entry.isIntersecting) continue;
+      ticketObserver.unobserve(entry.target);
+      startTicket(entry.target);
+    }
+  }, { threshold: 0.2 }) : null;
+  const watchTickets = (root = document) => {
+    const forms = [...root.querySelectorAll('form[data-prediction-preview-url]')];
+    if (root.matches?.('form[data-prediction-preview-url]')) forms.push(root);
+    for (const form of forms) {
+      if (ticketObserver) {
+        ticketObserver.unobserve(form);
+        ticketObserver.observe(form);
+      } else {
+        startTicket(form);
+      }
+    }
+  };
   const pageView = () => {
     view = id();
+    startedTickets = new WeakSet();
     event('page_viewed');
     if (route() === 'market_detail') event('market_detail_viewed', '', { market_slug: market(null) });
     watchCards();
+    watchTickets();
   };
   document.addEventListener('click', e => {
     const target = e.target.closest('a, button, [data-choice]');
@@ -81,11 +108,11 @@
     if (target.matches('[data-filter]')) event('market_filter_applied', 'market_filter', { filter: target.dataset.filter });
     if (card && target.closest('a')) event('market_card_clicked', 'market_card', { market_slug: card.dataset.marketSlug, placement: route() });
     else if (target.matches('[data-choice]')) {
-      if (!window.gtlAnalyticsPredictionStarted) {
-        event('prediction_started', 'prediction_ticket', { market_slug: market(target) });
-        window.gtlAnalyticsPredictionStarted = true;
+      const predictionForm = target.closest('form[data-prediction-preview-url]');
+      if (predictionForm) {
+        startTicket(predictionForm);
+        event('prediction_option_selected', 'prediction_option', { market_slug: market(target) });
       }
-      event('prediction_option_selected', 'prediction_option', { market_slug: market(target) });
     }
     else if (target.closest('[data-share-native], [data-share-track], [data-share-badge]')) event('share_started', 'share', { kind: 'web' });
     else if (target.closest('.badge-share-link')) event('badge_share_clicked', 'badge_share');
@@ -127,7 +154,10 @@
       }
     }
   }, { passive: true });
-  document.addEventListener('htmx:afterSwap', e => watchCards(e.target));
+  document.addEventListener('htmx:afterSwap', e => {
+    watchCards(e.target);
+    watchTickets(e.target);
+  });
   document.addEventListener('htmx:pushedIntoHistory', pageView);
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
   setInterval(flush, 5000);
