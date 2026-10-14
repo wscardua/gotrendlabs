@@ -3,7 +3,7 @@ id: FEAT-ANALYTICS-001
 titulo: "Analytics proprio web e mobile"
 versao: 0.7
 status_spec: aprovada
-status_impl: implementada_localmente
+status_impl: implementada_validada
 ultima_atualizacao: 2026-10-12
 origem:
   - conversa de produto de 2026-09-29
@@ -124,3 +124,7 @@ Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. 
 - Dashboard distingue zero dados de falha de coleta e mostra limites de estimativa geografica.
 - Dashboard mostra última remessa e volume humano de 24 h; mostra última execução GeoLite separada do estado real do arquivo, inclusive quando uma atualização falha.
 - Retenção D1/D7/D30 distingue coortes maduras, visitantes e contas; o mapa SVG mostra as 27 UFs sem depender de JavaScript para o contorno.
+
+## Publicação v0.7 — 2026-10-12
+
+Comparação e usabilidade implantadas pela PR #166, merge `4f1557f`, CI da PR/main com 515 testes e 2 skips por execução, deploy e smoke técnico aprovados. [Recibo produtivo](../testing/analytics-production-20261012.md) registra SHA, Actions/SSM, agregações reais, assets e GeoLite pronta. Fluxo autenticado completo no navegador/MFA produtivo e homologações de acessibilidade/carga permanecem nos limites registrados; não se afirma cobertura completa da coleta.

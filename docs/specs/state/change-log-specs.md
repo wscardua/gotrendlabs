@@ -1,3 +1,7 @@
+## 2026-10-12 — evidência produtiva do Analytics v0.7
+
+Status da feature, README, aceites, workflow, implementation-status, changelog e known-gaps atualizados após PR #166/Actions 38321666957 e smoke aprovados. GeoLite produtiva pronta confirmada; ausência no DEV e limites de homologação preservados. [Recibo](../testing/analytics-production-20261012.md) distingue conclusão técnica de fluxo autenticado completo ainda não homologado.
+
 ## 2026-10-12 — reconciliação de fechamento do Analytics
 
 FEAT-ANALYTICS-001 v0.7 passa a referenciar os gates de publicação e evidências; README/runbook descrevem ativação por deploy padrão. Known-gaps distingue estado GeoLite histórico/atual e limitações da validação PostgreSQL local. Workflow de fechamento e relatório de revisão registram impacto MCP ausente e preservação da branch local.

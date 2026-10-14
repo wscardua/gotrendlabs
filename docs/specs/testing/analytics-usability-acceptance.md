@@ -1,3 +1,7 @@
+## Atualização de publicação — 2026-10-12
+
+PR #166 integrada; CI completo da PR e main aprovado com 515 testes/2 skips por execução, incluindo migrations em PostgreSQL limpo. Deploy e smoke técnico produtivo aprovados; [evidências e limites](analytics-production-20261012.md). Os registros locais abaixo são históricos; suas ressalvas não significam que o gate de CI permaneça pendente.
+
 # Aceite local — usabilidade do Analytics
 
 - Data: 2026-10-12; FEAT-ANALYTICS-001 v0.7.
