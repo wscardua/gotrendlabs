@@ -1,3 +1,14 @@
+## Encerramento produtivo — WFLOW-20261012-ANALYTICS-CLOSEOUT
+
+- Status: encerramento técnico concluído em 2026-10-12; este registro substitui as pendências locais e de publicação abaixo. Homologações residuais mantidas no recibo; não equivalem a falha de implantação.
+- Publicação autorizada após aprovação da descrição pelo usuário; PR #166 via GitHub MCP, commit ddb2c114b47d4b2237ce5b972c051454543def8b, merge/SHA produtiva 4f1557f075d835d1a4ba6cc2cb6e6f32b7c885ba.
+- CI da PR 38320462241 e main/deploy 38321666957: sucesso, 515 testes/2 skips por execução, build/OpenAPI/JS aprovados. Deploy SSM ff3a0a0b-04c5-471e-9661-881244214d43 Success; smoke SSM 297eba2d-0389-4ead-96ae-2954e35d4806 Success.
+- Smoke técnico: SHA, serviços ativos/MCP healthy, API HTTP 200, resumo anônimo 401, hashes CSS/JS, agregações sob role real e transação somente leitura, filtros/recorte vazio, operação global, série de 90 dias e template interno pt-BR aprovados. GeoLite produtiva pronta; arquivo DEV continua ausente.
+- Sem migration, flag, segredo, ajuste de configuração ou mudança Flutter. MCP não consome o resumo; ferramentas/schemas/contratos/permissões/erros/replays/orientação editorial não exigem ajuste. Sem nova permissão para agentes.
+- Branch local feature/analytics-platform-comparison preservada, atualizada por fast-forward ao merge. Nenhum evento sintético, token administrativo ou dado de usuário/mercado criado/alterado; temporário privado do smoke removido.
+- Fonte da verdade reconciliada: feature, README, aceites, known-gaps, changelogs, status e [recibo produtivo](../testing/analytics-production-20261012.md). Evidências reais também registradas na PR #166. Reconciliação documental pós-deploy autorizada pelo usuário em 2026-10-14 após aprovação da descrição da PR; entrega exclusivamente documental, sem novo deploy da aplicação.
+- Limites: fluxo autenticado completo no navegador/MFA produtivo, toque físico, leitor de tela, outros navegadores e carga volumétrica não homologados. CI limpo satisfez o gate de migrations; travamento CREATE/DROP local permanece sem correção neste escopo.
+
 ## WFLOW-20261012-ANALYTICS-CLOSEOUT
 
 - Tipo: close-feature; FEAT-ANALYTICS-001 v0.6/v0.7, comparação Web/App mobile e usabilidade administrativa.

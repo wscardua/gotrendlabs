@@ -1,3 +1,7 @@
+## 2026-10-12 — Analytics v0.7 implantado
+
+Encerramento técnico concluído: PR #166 integrada, merge `4f1557f`, CI da PR/main com 515 testes/2 skips por execução, build/OpenAPI/JS e deploy Actions 38321666957 aprovados. Smoke somente leitura confirmou SHA, saúde HTTP 200, proteção anônima 401, comparação/filtros/zeros, operação global, série de 90 dias, renderização interna e hashes dos assets. GeoLite produtiva ready; DEV atual sem arquivo. Sem ajuste adicional de configuração, Flutter ou MCP. Branch local preservada. [Evidências e limites](../testing/analytics-production-20261012.md). Este registro substitui as pendências de publicação locais abaixo.
+
 ## 2026-10-12 — fechamento preparado do Analytics v0.7
 
 Implementação e revisão locais concluídas; documentação funcional, contrato, aceites, operação e memória reconciliados em WFLOW-20261012-ANALYTICS-CLOSEOUT. Publicação aguarda aprovação da descrição da PR pelo usuário. CI completo com migrations, merge, deploy e smoke produtivo ainda pendentes; a entrega não está declarada ativa em produção. Sem mudança Flutter ou ajuste MCP.

@@ -1,3 +1,7 @@
+## 2026-10-12 — fechamento técnico produtivo do Analytics v0.7
+
+Comparação Web/App mobile e usabilidade implantadas pela PR #166; CI da PR e main, deploy SSM e smoke técnico aprovados. Nenhuma migration/flag ou atualização mobile exigida. Branch local preservada; memória e specs reconciliadas com [evidências reais e homologações residuais](../testing/analytics-production-20261012.md).
+
 ## 2026-10-12 — fechamento documental do Analytics v0.7
 
 Comparação Web/App mobile e usabilidade administrativa reconciliadas com specs, contrato, aceites, README, runbook e memória. Revisão sem problema identificável no diff; publicação e validação produtiva pendentes de aprovação/CI/deploy. WFLOW-20261012-ANALYTICS-CLOSEOUT registra gates e limites, sem afirmar conclusão produtiva.
