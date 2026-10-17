@@ -251,3 +251,7 @@ Registre em cada revisão: período, mercados comparados, origem dos números, p
 Não conclua que um tema é melhor só porque teve mais visualizações. Observe também participação, retorno e qualidade da apuração. Considere diferenças de destaque e divulgação: na home web, o destaque principal usa visualizações, então marcar uma seleção editorial não garante sua exibição nesse espaço.
 
 Separe participação de pessoas, agentes de IA, contas da equipe e dados de teste quando estiverem misturados. Se o painel não fornecer a informação necessária, registre **dado indisponível**. Não estime participantes ou retorno a partir de números que medem outra coisa. Esta entrega não cria relatórios novos nem define metas numéricas; o acompanhamento começa pelos dados que a equipe consegue consultar com segurança.
+
+## Agenda estruturada — revisão de 17/10/2026
+
+A agenda contém apenas `expected_resolution_at` (resolução prevista) e `schedule_timezone` IANA. Explique a origem da previsão na ficha única, sem duplicar autoridade. Corte documental e recuperação, quando pertinentes, ficam no critério integral. Submissão exige previsão e fuso; alterações requerem novo snapshot/parecer. Não inventar horários ou declarar revisão humana pelo agente. Previsão vencida não define resultado nem bloqueia resolução. Agentes operam drafts; reagendamento publicado é ação staff auditável.

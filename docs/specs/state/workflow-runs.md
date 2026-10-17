@@ -3704,3 +3704,131 @@ PR #143 integrada, merge 15b980585982cfa6706a38d57016614a41ba956d. CI final 408 
 Habilitação produtiva de thumbnails autorizada e concluída: banco e GTL_THUMB_ENABLED=1 na API/worker, Core/Oregon/3:2/180s, limites 10/5/50 por 24h e retenção 24h. Configuração preservada, alteração auditada como operação de sistema; backups de envs 0600 no host. Fila vazia antes/depois, nenhuma chamada paga iniciada, nenhum mercado editado pelo assistente. Site/API HTTP 200 e configurações anônimas 401. Branch local preservada.
 
 Fechamento técnico concluído; homologação de fluxo autenticado/MFA, consumo produtivo e qualidade visual real permanece pendente. Não afirmar inferência real validada em produção. Fonte externa atual: [PR #143](https://github.com/wscardua/gotrendlabs/pull/143) e [Actions](https://github.com/wscardua/gotrendlabs/actions/runs/37964971891). Registros anteriores descrevem etapas históricas, substituídos por esta atualização para estado operacional atual. Evidência documental pós-rollout preparada localmente para versionamento na próxima PR aprovada.
+
+## WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA
+
+- Tipo: new-feature
+- Status: concluido
+- Escopo concluído: implementação e verificação locais; revisão de dados e implantação produtiva continuam pendentes, sem autorização neste workflow.
+- Base: origin/main 7029dd8, branch feature/structured-resolution-agenda, worktree isolado; alterações anteriores preservadas.
+- Objetivo: agenda estruturada ponta a ponta, provas append-only, inventário revisável sem mutação produtiva.
+- Etapa: entrega local verificada; contratos, arquitetura, migrações, API/MCP, Admin Ops/painel/fila, web, Flutter, ferramenta revisável e documentação implementados.
+- Skills: orchestrator, governor, spec-editor, software-architect, architecture-guard, postgres, fastapi, django, mobile (arquitetura/contrato/implementação/UX/docs/testes), test-strategy/engineer e frontend-design.
+- Arquitetura: FastAPI valida/classifica/muta; Django e Flutter apresentam; PostgreSQL conserva projeção; ledger assinado conserva versões. Sem job, notificações ou efeitos financeiros.
+- MCP: estender implementação editorial existente; mesmos scopes e gates humanos; agenda entra no snapshot/hash/replay. Nenhuma permissão nova para publicar/resolver/reagendar.
+- Produção: consulta MCP em 2026-10-17T20:01:26Z: 11 itens visíveis, complete_for_query, has_more=false; 9 públicos e 2 drafts. Não é inventário irrestrito do banco. Paridade de implantação não alegada.
+- Artefatos: specs agenda, ADR, contratos lifecycle/integrity/agents/events, modelos/migrations, API/MCP, Admin Ops/contracts, web, Flutter, testes, OpenAPI, inventário/runbook e estado.
+- Pendências editoriais: nunca inferir horários ausentes; inventário requer revisão explícita por mercado.
+- Evidências: 123 testes consolidados aprovados; 55 de integridade/domínio/painel; 26 finais de agenda/UI/API/migração; smoke daemon aprovado; Flutter analyze sem problemas, 115 testes e APK debug compilado. OpenAPI export/check, consistência migrations, Django check e diff check aprovados.
+- CLI isolado: dry-run would_apply, apply explícito, replay already_applied; verificação sem erros. Backup restaurado em banco separado comprovou versão anterior preservada.
+- QA: capturas Chromium 1440/390 sem overflow e tela Android real com entrada temporária de QA sem Firebase; limitação do bootstrap padrão documentada. Nenhuma mutação produtiva.
+- Checklist universal/new-feature/implementação/testes de workflow-checklists.md aplicado: spec/frontmatter/contratos/ADR/arquitetura/segurança, testes, changelogs, status, integration-map e known-gaps atualizados; evidências e pendências em docs/specs/testing/resolution-agenda-results.md.
+- Próxima ação: revisar diff e inventário por mercado; seguir runbook com autorização específica de implantação produtiva. Sem merge/deploy/migração produtiva nesta entrega.
+
+## WFLOW-20261017-SIMPLIFY-RESOLUTION-AGENDA
+
+- Tipo: change-feature; status: concluido. Solicitação posterior do usuário substitui a agenda de três prazos por resolução prevista e fuso.
+- Escopo: contrato, domínio, PostgreSQL, Admin Ops/painel, web, Flutter, MCP/editorial, ferramenta e docs/testes.
+- Desenho aprovado: FastAPI continua autoridade; publicação exige previsão futura posterior ao fechamento e fuso IANA. Não impor corte ou recuperação estruturados; critérios integrais continuam autoridade da decisão humana. Previsão não é gate de resolução nem automação financeira.
+- Preservar previsão original, revisões assinadas, motivo/ator/versão/concorrência e definição histórica. Colunas retiradas do modelo ativo são conservadas fisicamente para verificar snapshots já assinados, sem escrita/consumo funcional. Novos snapshots contêm só previsão/fuso e metadados de histórico.
+- MCP: ajustar schemas/política/snapshots/replays; sem novos scopes ou permissões.
+- Aceite: formulário só previsão/fuso; publicação incompleta/offset inválido/ordem rejeitados; atraso só pela previsão; resolução não bloqueada pela previsão; provas anteriores e reagendamento preservados; clientes, OpenAPI, testes PostgreSQL/Flutter e docs alinhados.
+- Verificação: 125 testes backend/MCP/integridade e rodada final de 27 testes aprovados; Flutter analyze limpo/115 testes; schema/OpenAPI/checks e QA Chromium desktop/estreito aprovados. Evidências em resolution-agenda-simplification-results.md.
+- Checklist universal/alterar-feature/implementação/testes aplicado; artefatos impactados sincronizados.
+- Próxima ação externa: revisar diff e inventário v2; implantação/backfill exigem autorização própria. Sem produção, merge ou deploy.
+
+## WFLOW-20261017-MARKET-CYCLE-LAYOUT
+
+- Tipo: change-feature; status: concluido. Objetivo: encaixar ciclo/previsão na linguagem visual do detalhe público, conforme feedback do usuário.
+- Escopo: template web, CSS/tokens existentes, cache do asset e documentação de detalhe. Previsão integrada ao mesmo cartão; seis etapas em grade 3×2 legível; ausência/reagendamento/terminais preservados. Desktop/estreito e temas claro/escuro.
+- Fronteiras e MCP: mudança somente de apresentação. Sem alteração de domínio, payloads, ferramentas, schemas, scopes, erros, replay ou política editorial; MCP e Flutter não exigem ajustes. Sem nova ADR/OpenAPI/migration.
+- Aceite: previsão deixa de ser parágrafo solto; card alinha com o ticket, rótulos sem quebra artificial, teclado/semântica preservados, sem overflow em 390/320 px, estados existentes renderizam.
+- Evidências: 4 testes web existentes aprovados (5.323s), Django check e diff check; navegador real no mercado indicado, desktop 1374 CSS px, 390/320 CSS px, temas claro/escuro. Sem overflow ou corte dos rótulos. Cache CSS versionado; web local reiniciada e viewport/tema restaurados.
+- Checklist universal/alterar-feature/implementação/testes aplicado: spec, frontend, regressão, changelogs/status e conclusão de impacto MCP registrados. Contratos/integrações/arquitetura não mudaram; sem nova ADR/OpenAPI/migration.
+- Relatório: docs/specs/testing/market-cycle-layout.md. Próxima ação: revisão do visual local pelo usuário; sem produção/merge/deploy.
+
+## WFLOW-20261017-RESOLUTION-SHORTCUT
+
+- Tipo: change-feature; status: concluido. Usuário solicita botão ao lado de “Fecha em”.
+- Escopo: atalho visual no cabeçalho do detalhe para o cartão existente do ciclo, condicionado à previsão disponível; mesma linha do fechamento, com wrap em viewport estreito, foco de teclado e alvo legível sob cabeçalho fixo. Sem popup ou regra nova.
+- MCP/API/Flutter: sem mudanças em ferramentas, schemas, permissões, erros, replay ou política editorial; alteração exclusiva de navegação HTML/CSS web, sem ajustes necessários nesses consumidores.
+- Aceite: botão/atalho próximo ao fechamento, navegação real ao ciclo/data/fuso, ausência não inventa data, teclado e claro/escuro/estreito preservados.
+- Evidências: 2 testes web existentes aprovados (3.210s); navegação por Enter confirma hash/foco no heading e data/fuso visíveis, desktop 1374 e celular 390 CSS px; claro/escuro, sem overflow. Web local reiniciada e cache CSS versionado. Tema/viewport originais restaurados.
+- Checklist universal/alterar-feature/implementação/testes aplicado; spec, changelogs/status e evidência atualizados. Não há novos contratos/integrações/ADR ou gaps.
+- Próxima ação: revisão visual pelo usuário; sem produção/merge/deploy.
+
+### Correção solicitada pelo usuário — informação, sem botão
+
+- O atalho anterior é substituído por informação estática no mesmo estilo da tag de fechamento, com data/fuso no cabeçalho. Previsão, ausência e nota de reagendamento saem do cartão do ciclo e ficam apenas nesse grupo de metadados. Sem ícone, link ou interação.
+- Apenas apresentação web; análise MCP anterior permanece válida, sem mudança de contratos, permissões, domínio ou Flutter. Aceite: uma única previsão no cabeçalho, nenhuma previsão no ciclo, desktop/estreito legíveis.
+
+- Correção concluída: fechamento e previsão são spans com a mesma classe `tag`, alinhados na mesma linha em desktop; previsão/ausência/original somente no cabeçalho. Ciclo mostra apenas as etapas. CSS de link/foco/âncora e do antigo rodapé removido.
+- Evidência atual: 2 testes web aprovados (3.084s), Django check/diff check; QA no mercado indicado em desktop 1374 e celular 390 CSS px, zero elementos interativos no grupo e zero overflow. Capturas em output/resolution-info. Web reiniciada; CSS versionado e viewport restaurado.
+- Checklist universal/alterar-feature/implementação/testes reaplicado; spec/changelogs/status/relatório corrigidos para a decisão final. MCP/API/Flutter continuam sem mudança.
+
+### Exibição compacta do fuso da previsão — 17/10/2026
+
+- Retomada WFLOW-20261017-RESOLUTION-SHORTCUT: usar BRT nos rótulos da previsão vigente/original quando o fuso cadastrado é America/Sao_Paulo, reutilizando a convenção já usada no fechamento. Instantes e fuso IANA persistidos permanecem intactos; demais fusos mantêm sua identificação explícita.
+- FastAPI fornece o rótulo de apresentação comum a web/Flutter. MCP analisado: seus campos estruturados não mudam; sem ajuste de ferramentas/schemas/permissões/replays/política. Sem mudança de payload/OpenAPI, domínio ou migração.
+- Aceite: cabeçalho exibe data/hora BRT; original reagendada usa a mesma convenção; UTC e labels fora da agenda preservados. Verificar localmente antes de concluir.
+
+- Exibição compacta concluída: rótulos vigente/original usam BRT, fuso IANA persistido intacto. Nove testes de agenda aprovados; checagens diretas BRT/UTC/label completo aprovadas; OpenAPI --check e diff check aprovados. Página local inspecionada com texto exato solicitado; captura output/resolution-info/desktop-brt.png. Checklist de alteração reaplicado; sem implantação produtiva.
+
+## WFLOW-20261017-MOBILE-CRITERIA-DEADLINES
+
+- Tipo: change-feature; status: concluido. Pedido: reavaliar critério longo e fechamento no mobile físico.
+- Evidência anterior: bf81c0f/PR160 implementou prévia expansível na web; código Flutter desta branch ainda renderiza critério integral. O app mostra prazo relativo em hero/métricas, sem data de fechamento ao lado da previsão.
+- Desenho: prévia real de quatro linhas respeitando largura/fonte, expandir/recolher com conteúdo integral sem reescrita; textos curtos sem botão. Metadados mostram `close_label` e `expected_resolution_label` da API, distintos e sem inferência de datas/estado no app.
+- MCP/contratos: somente apresentação Flutter com campos existentes. Ferramentas/schemas/permissões/erros/replays/orientação editorial MCP e OpenAPI não precisam mudar. Sem regra de domínio, permissão administrativa ou efeito financeiro.
+- Aceite: expandir/recolher mantém texto, quatro linhas/curto/fonte ampliada; fechamento absoluto fornecido pela API e previsão separados; ausência explícita sem data fictícia; testes/analyze, build e atualização do pacote físico local sem apagar dados.
+- Evidência: Flutter analyze limpo, 118 testes aprovados; build QA e install -r Success no Samsung SM-G980F. Após desbloqueio pelo usuário, critério de quatro linhas/controle e as duas datas distintos inspecionados no mercado FURIA local. Não foram feitas previsões ou login. Relatório em docs/specs/testing/mobile-criteria-deadlines.md.
+- Checklist universal/alterar-feature/implementação/testes aplicado: specs/arquitetura/aceite, testes, changelogs/status/integration-map/README/known-gaps e impacto MCP registrados. Sem mudança de contratos/ADR/OpenAPI necessária.
+- Limite: fonte ampliada validada no componente; limitações existentes da tela inteira em hero/métricas registradas. Próxima ação: usuário testar a versão física atualizada; sem produção/merge/deploy.
+
+## WFLOW-20261017-RESTORE-MOBILE-CRITERIA
+
+- Tipo: alterar-feature; status: concluido. Restaurar apresentação aprovada em WFLOW-20261012-MOBILE-AUTH-CRITERIA-001, encontrada como alteração local no checkout gotrendlabs-mobile-login-fix. A conclusão anterior de que existia apenas na web era incorreta: o componente Flutter estava fora do histórico commitado.
+- Desenho/aceite antes do código: reutilizar ResolutionCriteriaText original, prévia de três linhas, leitura integral selecionável em bottom sheet rolável, fechar e retornar sem deslocar o detalhe. Manter fechamento/previsão atuais. Testar longo, curto, vazio, fonte 1×/2×, analyze e físico.
+- Arquitetura/MCP: apresentação somente; sem alteração de API, schema, domínio, persistência, ferramentas, permissões, erros, replays ou política MCP. Sem ADR necessário; sem trazer alterações de autenticação do outro checkout.
+
+- Evidências finais: flutter analyze sem issues (3s), flutter test 120 aprovados; build debug Success, install -r Success no pacote .local do Samsung SM-G980F. Prévia/datas, abertura do painel, rolagem e fechamento conferidos no físico. Capturas privadas .runtime/mobile-physical/restored-sheet.png e restored-preview.png. App deixado na prévia. Checklist universal/alterar-feature/implementação/testes reaplicado; docs/spec/aceite/changelog/status/README/relatório corrigidos. Sem novas dependências nem mudanças de contrato/MCP. Sem produção, merge ou deploy.
+
+## WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT
+
+- Tipo: alterar-feature; status: concluido. Objetivo: integrar fechamento e previsão aos metadados do resumo, retirando-os do card de critérios. Desenho: rodapé do resumo com divisor discreto, tipografia secundária, linhas com quebra natural; preservar os labels autoritativos e a nota de reagendamento. Critério mantém prévia de três linhas/painel completo.
+- Aceite: datas junto do resumo e fora do card de critérios, sem botões, sem overflow do novo bloco em viewport estreito/fonte ampliada; analyze/testes e inspeção Samsung.
+- MCP: apresentação Flutter com labels existentes, sem impacto em ferramentas/schemas/contratos/permissões/erros/replays/política editorial. Sem API/domínio/persistência/ADR ou dependência nova.
+
+- Evidência: flutter analyze sem issues (3.9s), flutter test 120 aprovados; build e instalação .local Success. Inspeção física Samsung FURIA confirma datas em duas linhas no rodapé do resumo, tipografia menor, divisor e ausência de overflow observado. Captura privada .runtime/mobile-physical/placement-summary.png; app deixado nessa posição. Não foi executado novo QA visual de fonte ampliada neste ajuste; permanece o limite já documentado de hero/métricas nessa escala. Checklist universal/alterar-feature/implementação/testes aplicado; specs/aceite/changelog/status/README atualizados. Sem mudança de integração/API/MCP.
+
+## WFLOW-20261017-AGENDA-REVIEW-FIXES
+
+- Tipo: corrigir-feature; status: concluido. Corrigir findings da revisão de working tree contra origin/main 7029dd8: helper de datas administrativas, erros de agenda no transporte MCP e documentação mobile divergente.
+- Desenho/aceite antes do código: restaurar formato de datas anterior nas telas de email/push; preservar códigos públicos fixos schedule_incomplete/schedule_timezone_invalid/schedule_offset_required/schedule_order_invalid/schedule_expired no MCP; códigos desconhecidos e mensagens livres continuam sanitizados. Testar transporte sem rede, negativa de scope e pendências reais REST; testar datas vazias/fusos e página de dispositivos.
+- Documentação: três linhas/painel inferior selecionável e rolável, prazos no rodapé do resumo; remover orientação obsoleta sobre campos retirados na pendência editorial.
+- Arquitetura/MCP: nenhuma nova regra de domínio, endpoint, permissão, scope, replay/idempotência, dado financeiro ou persistência. Ajuste explícito do contrato de erros MCP; sem ADR/migration necessários. Usar skills de testes, Django, contratos/domain e documentação pertinentes. Validação isolada PostgreSQL, OpenAPI e diff; sem produção/merge/deploy.
+
+- Evidência final: 120 testes backend/agenda/integridade/editorial/MCP/transporte/Admin aprovados em 201.458s, PostgreSQL Docker isolado test_gtl_review_agenda_20261017. Inclui os cinco novos testes e o teste da página de dispositivos que falhou no review; rodada inicial dos cinco novos passou em 0.135s (cobertura sobreposta). OpenAPI --check e git diff --check aprovados. Log privado /tmp/gtl-agenda-fixes-tests.log.
+- Checklist universal/alterar-feature/implementação/testes reaplicado: desenho/contrato antes do código, testes e consumidores revisados, erros documentados, specs mobile/arquitetura/mensagem editorial/estado/changelogs/integration-map sincronizados. Sem ADR/migration necessários; MCP mantém ferramentas/scopes/permissões e replays. Sem nova validação visual ou build Flutter por não haver alteração de código mobile nesta rodada.
+- Retomada: revisão final/PR apenas quando solicitada; implantação e inventário produtivo continuam dependentes do runbook e autorização própria. Sem bloqueio local das três correções.
+
+## WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT
+
+- Tipo: change-feature/fechamento; status: em_andamento. Pedido: reconciliar specs/memória, commit, PR em português com aprovação prévia da descrição, CI/merge/main e implantação/ativação produtiva quando aplicável. Preservar branch local e alterações de outros checkouts.
+- Branch feature/structured-resolution-agenda, base origin/main 7029dd8 reconfirmada por fetch. Revisão e correções locais concluídas; execução anterior WFLOW-20261017-AGENDA-REVIEW-FIXES.
+- Etapa atual: preparar fechamento e commit; suíte completa local em PostgreSQL isolado; título/descrição serão apresentados antes de abrir PR. Não criar PR/merge/deploy até a aprovação solicitada pelo usuário.
+- Arquitetura/MCP: somente expected_resolution_at/schedule_timezone ativos; histórico/assinaturas preservados. MCP usa servidor/schemas existentes, novos campos e códigos de validação, sem novas ferramentas/scopes/poderes sobre publicados. ADR-0016 registra os complementos.
+- Produção: CI de PR testa; main faz deploy condicional ENABLE_PROD_DEPLOY=1 via SSM/deploy.sh, que migra schema com role própria e reinicia serviços. Antes do futuro merge, confirmar backup recuperável e preflight/roles; acompanhar Actions e smoke. Complementos de dados exigem inventário atualizado/revisado; não inventar horários ou aprovações humanas. Ausências ativas ficam explícitas; terminais não recebem previsão fabricada.
+- Mobile: QA local físico aprovado; Actions atual não distribui APK/AAB/Play. Manter release Android como etapa distinta e não alegar atualização dos apps instalados por deploy web/API.
+- Artefatos: feature/contratos/ADR/specs/editorial/OpenAPI, runbook/inventário, testes e docs/state; recibo canônico de fechamento será docs/specs/testing/resolution-agenda-closeout-20261017.md; memória externa com ponte para esse recibo.
+
+- Conferência documental do fechamento: ADR da agenda renumerada para ADR-0016 para evitar colisão com ADR-0012 de thumbnails; referências atualizadas, decisão anterior preservada. Checklist textual E05 sincronizado com a política ativa 1.4 e teste editorial atualizado.
+- Rodada ampla: 552 testes/688.537s, cinco falhas de fixtures/mocks do contrato anterior, todas com ajustes locais preparados. Duas edições já revalidadas (2/13.637s); rodada final de 98 testes cobre os cinco casos e agenda/MCP/editorial. Não declarar a execução ampla inicial como verde.
+
+- Revalidação de fechamento concluída: 98 testes aprovados/192.350s, incluindo as cinco falhas corrigidas da rodada ampla de 552/688.537s. Rodadas com sobreposição, sem declarar a primeira como verde. Flutter analyze/120 testes novamente aprovados; JS/OpenAPI/Django/migration drift/links/diff aprovados. Dockerfile check passou; build local completo limitado por espaço no Docker; exigir CI/build PR aprovados antes do merge.
+- Preflight somente leitura AWS/SSM: EC2 running/seis serviços ativos/MCP healthy, 7.8G livres; RDS available/criptografado/retention 1 dia/LatestRestorableTime 2026-10-17T22:31:43Z. SSM 920e7f9d-90a7-496b-82e8-c4e79d366849 Success/0/sem stderr. Sem mutação de dados/configurações produtivas. Reconfirmar backup imediatamente antes do futuro merge.
+- Etapa: commit local preparado e descrição exata em .runtime/release/pr-body.md para aprovação do usuário ANTES da PR; nenhum push/PR/merge/deploy feito. Checklist de fechamento aplicado e memória externa atualizada. Artefatos privados/gerados de QA não selecionados permanecem locais; não houve limpeza.
+
+### Continuação autorizada — WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT
+
+Descrição aprovada pelo usuário; commit caee7aa enviado e [PR #170](https://github.com/wscardua/gotrendlabs/pull/170) aberta. [CI completo](https://github.com/wscardua/gotrendlabs/actions/runs/39077098980) e snapshot manual criptografado gotrendlabs-before-resolution-agenda-20261017 em acompanhamento; merge somente com ambos aprovados/disponíveis. Status documental em_andamento nesta fotografia anterior ao merge. O recibo operacional final (CI, snapshot, merge, deploy, smoke e pendências) será publicado na timeline da PR, referenciada pelo [fechamento](../testing/resolution-agenda-closeout-20261017.md). Nenhuma permissão MCP adicional, edição de mercado ou revisão editorial implícita.

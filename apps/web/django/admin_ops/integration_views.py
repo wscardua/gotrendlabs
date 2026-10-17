@@ -333,6 +333,7 @@ def consent(request):
 
 def _review_pending_label(code):
     labels = {
+        "schedule_incomplete": _("A agenda está incompleta. Informe a resolução prevista e seu fuso e confira a coerência com os critérios antes de publicar."),
         "policy_outdated": _("A ficha foi preparada com outra versão da política. Confira a política atual durante sua revisão."),
         "empty_document": _("O documento editorial está vazio."),
         "unresolved_editorial_gaps": _("O relato recebido indica pendências. Confira sua resolução antes de confirmar a aprovação."),

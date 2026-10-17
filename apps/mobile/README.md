@@ -153,3 +153,19 @@ Estado no Play Console em 2026-09-26: bundle `14 (1.2.0)` ativo no track `Closed
 O AAB esperado fica em `build/app/outputs/bundle/release/app-release.aab`. O arquivo `.aab`, APKs, keystores, `android/key.properties` e `google-services.json` permanecem fora do Git.
 
 Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.
+
+## Agenda de resolução — 2026-10-17
+
+O detalhe consome agenda FastAPI (`expected_resolution_at`, original, fuso, versão/classificação) e mostra previsão antes do critério integral. Reagendamento aparece com previsão original; ausência não produz data. Locked usa “Em apuração”; terminais não mostram contagem de fechamento pendente. Sem operações administrativas Flutter. Testes de repository/model/widget atualizados; evidências e limites no relatório `docs/specs/testing/resolution-agenda-results.md` (caminho relativo à raiz).
+
+Detalhe: fechamento e resolução prevista são informações distintas recebidas da FastAPI. Critérios longos mostram quatro linhas, com “Ver critério completo / Recolher critério”; textos curtos não exibem botão. A expansão é apenas visual e preserva o texto integral. Ver `docs/specs/testing/mobile-criteria-deadlines.md`.
+
+
+### Critério mobile: apresentação anterior restaurada — 17/10/2026
+
+Restaurado ResolutionCriteriaText aprovado em 12/10: prévia de três linhas e leitura integral selecionável em painel inferior rolável com Fechar. Substitui a expansão inline de quatro linhas. Mantém fechamento/resolução prevista; sem mudança de API/MCP. Origem e validações em WFLOW-20261017-RESTORE-MOBILE-CRITERIA.
+
+
+### Prazos no resumo mobile — 17/10/2026
+
+Fechamento e resolução prevista passam ao rodapé do resumo com divisor e tipografia secundária. Card de critérios mantém apenas a regra e acesso ao painel completo. Labels da FastAPI preservados; sem alteração de API/MCP. Evidências em WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT.

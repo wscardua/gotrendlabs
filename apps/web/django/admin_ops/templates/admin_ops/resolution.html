@@ -9,19 +9,21 @@
         <p class="muted">Revise mercados fechados, publique decisões e desfaça resoluções quando houver necessidade operacional. Acompanhe também a janela de selagem e consulte históricos finalizados.</p>
       </div>
     </div>
+    <details><summary>Situações da fila (fechados, resolvidos e selados) — antes do filtro temporal</summary>{% for item in market_data.schedule_summary %}<p>{{ item.label }}: {{ item.total }}</p>{% endfor %}</details>
     {% if admin_error %}<div class="tag risk">{{ admin_error }}</div>{% endif %}
     {% if messages %}{% for message in messages %}<div class="tag safe">{{ message }}</div>{% endfor %}{% endif %}
+    <form method="get" class="admin-filter-form"><label class="field"><span>Situação temporal</span><select name="temporal"><option value="">Todas</option>{% for item in market_data.schedule_summary %}<option value="{{ item.code }}" {% if active_temporal == item.code %}selected{% endif %}>{{ item.label }}</option>{% endfor %}</select></label><label class="field"><span>Ordenação</span><select name="order"><option value="next_resolution">Próxima apuração / atraso</option><option value="resolution_desc" {% if active_order == 'resolution_desc' %}selected{% endif %}>Resolução recente</option><option value="resolution_asc" {% if active_order == 'resolution_asc' %}selected{% endif %}>Resolução antiga</option><option value="pending_first" {% if active_order == 'pending_first' %}selected{% endif %}>Pendentes primeiro</option></select></label><button class="btn small">Filtrar</button></form>
     <div class="filters" data-filter-group>
       <button class="filter active" data-filter>Fechados e resolvidos</button>
-      <a class="filter {% if active_order == 'resolution_desc' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=resolution_desc">Resolução recente</a>
-      <a class="filter {% if active_order == 'resolution_asc' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=resolution_asc">Resolução antiga</a>
-      <a class="filter {% if active_order == 'pending_first' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=pending_first">Pendentes primeiro</a>
+      <a class="filter {% if active_order == 'resolution_desc' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=resolution_desc&temporal={{ active_temporal|urlencode }}">Resolução recente</a>
+      <a class="filter {% if active_order == 'resolution_asc' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=resolution_asc&temporal={{ active_temporal|urlencode }}">Resolução antiga</a>
+      <a class="filter {% if active_order == 'pending_first' %}active{% endif %}" href="{% url 'admin-ops-resolution' %}?order=pending_first&temporal={{ active_temporal|urlencode }}">Pendentes primeiro</a>
     </div>
     <table class="table">
       <tr><th>Mercado</th><th>Status</th><th>Resolução</th><th>Impacto</th><th>Ações</th></tr>
       {% for market in market_data.markets %}
         <tr>
-          <td>{{ market.title }}</td>
+          <td>{{ market.title }}<p>{{ market.resolution_schedule.label }}</p><small>{{ market.expected_resolution_label }}</small>{% if market.resolution_schedule.can_reschedule %}<a href="{% url 'admin-ops-market-reschedule' market.slug %}">Reagendar</a>{% endif %}</td>
           <td>{{ market.status_label }}</td>
           <td>
             {% if market.resolved_at_label %}

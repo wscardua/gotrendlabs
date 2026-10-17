@@ -70,3 +70,9 @@ Esses eventos são registrados em `gotrendlabs_admin_events` nas primeiras fatia
 ## 2026-10-09 — Imagens IA de badges
 
 Imagens de badges persistem auditoria administrativa badge_image.request/apply/settings_update. Estados do executor usam eventos compartilhados thumbnail.running/succeeded/failed/uncertain com entity_type badge e identidade da definição/editor. Não registrar base64, credenciais ou conquistas do usuário no prompt.
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+Eventos de integridade da agenda: `market_schedule_registered`, `market_schedule_rescheduled` (eventos antigos de recuperação são apenas históricos). São emitidos na transação autoritativa com snapshot/proveniência/ator; não disparam comunicações, jobs ou liquidação automática nesta entrega.

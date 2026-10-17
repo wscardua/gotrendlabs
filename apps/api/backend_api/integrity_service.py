@@ -706,6 +706,9 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
 
     cursor.execute("SELECT * FROM market_integrity_definitions WHERE market_id=%s", (market["id"],))
     definition = cursor.fetchone()
+    from .resolution_schedule import verify as verify_schedule
+    schedule_errors = verify_schedule(cursor, market)
+    errors.extend(schedule_errors)
     definition_valid = definition_matches_current = None
     if definition:
         try:
@@ -911,6 +914,7 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         bool(definition_valid and definition_matches_current)
         and commitments_valid
         and market_events_valid
+        and not schedule_errors
         and (market["status"] != "resolved" or bool(result_matches_current))
         and (market["status"] != "sealed" or bool(seal_valid and result_matches_current and merkle_valid))
     )
@@ -938,6 +942,7 @@ def verify_market_integrity_records(cursor, market: dict, *, ledger_audit=None):
         "result_matches_current": result_matches_current,
         "prediction_commitments_valid": commitments_valid if definition else None,
         "merkle_root_valid": merkle_valid,
+        "schedule_valid": (not schedule_errors) if market.get("schedule_version") or schedule_errors else None,
         "market_events_valid": market_events_valid,
         "ledger_chain_valid": ledger_valid,
         "ledger_verified_through_sequence": ledger_audit["verified_through_sequence"],

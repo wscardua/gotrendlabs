@@ -11,6 +11,70 @@ import 'package:gotrendlabs_mobile/src/features/markets/markets_providers.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/markets_repository.dart';
 
 void main() {
+  testWidgets(
+    'schedule shows revised and original forecast without countdown',
+    (tester) async {
+      final market = _market(
+        agenda: {
+          'expected_resolution_at': '2026-11-04T15:00:00Z',
+          'expected_resolution_label': '04/11/2026 12:00',
+          'original_expected_resolution_at': '2026-11-04T14:00:00Z',
+          'original_expected_resolution_label': '04/11/2026 11:00',
+          'schedule_timezone': 'America/Sao_Paulo',
+          'schedule_version': 2,
+          'resolution_schedule': {'code': 'resolution_scheduled'},
+        },
+      );
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              _UnauthenticatedAuthController.new,
+            ),
+            marketDetailProvider.overrideWith((ref, slug) async => market),
+            marketsRepositoryProvider.overrideWithValue(
+              _NoopMarketsRepository(),
+            ),
+          ],
+          child: const MaterialApp(
+            home: MarketDetailScreen(slug: 'mercado-longo'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Resolução prevista: 04/11/2026 12:00'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('Reagendada. Previsão original: 04/11/2026 11:00'),
+        findsOneWidget,
+      );
+      expect(market.scheduleVersion, 2);
+      expect(market.scheduleClassification, 'resolution_scheduled');
+    },
+  );
+
+  testWidgets('short criteria needs no expansion and deadlines stay distinct', (
+    tester,
+  ) async {
+    await _pumpCriteriaMarket(
+      tester,
+      _market(
+        agenda: {
+          'close_label': 'Fecha em 18/10/2026 12:00 BRT',
+          'expected_resolution_label': '20/10/2026 18:03 BRT',
+        },
+      ),
+    );
+    expect(find.text('Ver critério de resolução completo'), findsNothing);
+    expect(find.text('Fecha em 18/10/2026 12:00 BRT'), findsOneWidget);
+    expect(
+      find.text('Resolução prevista: 20/10/2026 18:03 BRT'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('records each market opening on an A-B-A navigation', (
     tester,
   ) async {
@@ -333,6 +397,8 @@ Market _market({
   String status = 'open',
   String statusLabel = 'Aberto',
   String integrityStatus = '',
+  Map<String, dynamic> agenda = const {},
+  String criteria = 'Critério',
 }) {
   final json = <String, dynamic>{
     'slug': slug,
@@ -359,7 +425,7 @@ Market _market({
     'thumb': 'GT',
     'thumb_color': '#35A7FF',
     'summary': _longSummary,
-    'resolution_criteria': 'Critério',
+    'resolution_criteria': criteria,
     'viewer_has_favorite': false,
     'viewer_has_prediction': false,
     'options': [
@@ -388,5 +454,31 @@ Market _market({
       'key_fingerprint': 'fingerprint',
     };
   }
-  return Market.fromJson(json);
+  return Market.fromJson({...json, ...agenda});
+}
+
+Future<void> _pumpCriteriaMarket(
+  WidgetTester tester,
+  Market market, {
+  double scale = 1,
+}) async {
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        authControllerProvider.overrideWith(_UnauthenticatedAuthController.new),
+        marketDetailProvider.overrideWith((ref, slug) async => market),
+        marketsRepositoryProvider.overrideWithValue(_NoopMarketsRepository()),
+      ],
+      child: MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.linear(scale)),
+          child: child!,
+        ),
+        home: const MarketDetailScreen(slug: 'mercado-longo'),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
 }

@@ -1,0 +1,327 @@
+{
+  "schema": "gtl-resolution-agenda/v2",
+  "inventory_id": "20261017-visible-catalog",
+  "queried_at": "2026-10-17T20:01:26Z",
+  "coverage": "11 visible markets; complete_for_query at 20:01:26Z; not unrestricted database inventory",
+  "markets": [
+    {
+      "market_id": 45,
+      "slug": "qual-novela-vencera-o-emmy-internacional-2026",
+      "status": "open",
+      "definition_hash": "aaeb666c5ed6b9f13d2a28ae7e3928ad64bf78dfdfcca6d882322e4f1fcb5b3b",
+      "definition_version": 1,
+      "editorial_revision": 7,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": "2026-12-01T12:00:00-03:00",
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "explicit_text_candidate",
+          "excerpt": "Previsões encerram em 22/11/2026 às 18h00, America/Sao_Paulo (UTC−03:00), antes do dia previsto para a cerimônia, 23/11/2026 em Nova York. O horário da cerimônia não foi informado nas fontes verificadas. Adiamento não reabre nem desloca esse fechamento. O corte objetivo para anúncios e correções oficiais é 30/11/2026 às 23h59min59s, America/Sao_Paulo (UTC−03:00), inclusive. Só são elegíveis resultados e retificações publicados até esse instante. A apuração definitiva ocorrerá somente após o corte, com consulta planejada para 01/12/2026 às 12h00 no mesmo fuso; atraso do operador não altera a versão elegível. Se o resultado for divulgado antecipadamente, a equipe solicitará fechamento imediato e registrará o ocorrido, sem reescrever prazos ou ocultar previsões posteriores ao anúncio.",
+          "source": "MCP get_market(45).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação"
+      ]
+    },
+    {
+      "market_id": 51,
+      "slug": "quem-ficara-em-1o-na-netflix-brasil-na-semana-de-26-10-a-1o-11",
+      "status": "open",
+      "definition_hash": "df1d78bc182db2907644882fc629f6b100cf32bac1feb1e8773aaa59fd053680",
+      "definition_version": 1,
+      "editorial_revision": 7,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": "2026-11-11T12:00:00-03:00",
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "explicit_text_candidate",
+          "excerpt": "A apuração está planejada para 11/11/2026 às 12h00, após o corte. Até 17/11/2026 às 18h00, poderão ser recuperadas provas da edição ou de retificações já elegíveis, sem admitir publicações ou correções posteriores ao corte. A demora do operador não muda a edição, a ordem das retificações nem o limite de elegibilidade. Preservar URL, identificação do período, posição, identidade do vencedor, data real da consulta e cópia da evidência efetivamente usada.",
+          "source": "MCP get_market(51).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação"
+      ]
+    },
+    {
+      "market_id": 52,
+      "slug": "modern-warfare-4-sera-no-1-na-steam-brasil-entre-20-e-27-de-outubro",
+      "status": "locked",
+      "definition_hash": "19de72b4adb0f8aa012e47bef4c45948997ecbba5d17e795f2091a116e7cf80a",
+      "definition_version": 1,
+      "editorial_revision": 6,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": "2026-11-04T12:00:00-03:00",
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "explicit_text_candidate",
+          "excerpt": "A apuração está planejada para 04/11/2026 às 12h00, após o corte. Até 07/11/2026 às 18h00, poderão ser recuperadas provas da edição ou de retificações já elegíveis, sem admitir publicações ou correções posteriores ao corte. A demora do operador não muda a edição, a ordem das retificações nem o limite de elegibilidade. Preservar URL, identificação do período, posição, identidade do vencedor, data real da consulta e cópia da evidência efetivamente usada.",
+          "source": "MCP get_market(52).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação"
+      ]
+    },
+    {
+      "market_id": 35,
+      "slug": "quem-avanca-a-final-da-libertadores-masculina-2026-fluminense-ou-palmeiras",
+      "status": "locked",
+      "definition_hash": "e3c222cf2f4258637abc602f0911bc882d7c151ec209c615f9753dcaec4199ce",
+      "definition_version": 1,
+      "editorial_revision": 14,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "",
+          "source": "MCP get_market(35).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado."
+      ]
+    },
+    {
+      "market_id": 36,
+      "slug": "o-corinthians-sera-campeao-da-libertadores-feminina-2026",
+      "status": "locked",
+      "definition_hash": "c255fe6f2f76a1e507b329779bf0859068175a19713d456fa61fbcccfb38f743",
+      "definition_version": 1,
+      "editorial_revision": 12,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "",
+          "source": "MCP get_market(36).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado."
+      ]
+    },
+    {
+      "market_id": 38,
+      "slug": "o-brasil-ganhara-medalha-feminina-por-equipes-no-mundial-de-ginastica-artistica-de-2026",
+      "status": "open",
+      "definition_hash": "b0fc58f25ae656254e2d52d47f036b9c453d28a124e26e852a6b3f8e302b3207",
+      "definition_version": 1,
+      "editorial_revision": 14,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "",
+          "source": "MCP get_market(38).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado."
+      ]
+    },
+    {
+      "market_id": 39,
+      "slug": "joao-fonseca-sera-campeao-de-simples-do-atp-500-da-basileia-de-2026",
+      "status": "open",
+      "definition_hash": "f0018b711efc98e7bd2568b150dcdbe6d5bf3db6d7a58c403438adb92a547f88",
+      "definition_version": 1,
+      "editorial_revision": 7,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "",
+          "source": "MCP get_market(39).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado."
+      ]
+    },
+    {
+      "market_id": 44,
+      "slug": "quem-vencera-o-segundo-turno-presidencial-de-2026-flavio-bolsonaro-ou-lula",
+      "status": "open",
+      "definition_hash": "2d2bf86be9431ed57694ef9d26871d8865ab1ee0ea671cd3b7817d3ee0a6e1bd",
+      "definition_version": 1,
+      "editorial_revision": 14,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "",
+          "source": "MCP get_market(44).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado."
+      ]
+    },
+    {
+      "market_id": 50,
+      "slug": "qual-album-vencera-album-do-ano-no-latin-grammy-2026",
+      "status": "open",
+      "definition_hash": "5ecfa12459ccc9e68bf28e041208039ea3fdfac05c2443acd0b3d6a565b62998",
+      "definition_version": 1,
+      "editorial_revision": 8,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "",
+          "source": "MCP get_market(50).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado."
+      ]
+    },
+    {
+      "market_id": 53,
+      "slug": "o-volei-renata-sera-campeao-da-supercopa-masculina-de-volei-2026",
+      "status": "draft",
+      "definition_hash": null,
+      "definition_version": null,
+      "editorial_revision": 7,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "Apuração a partir 31/10",
+          "source": "MCP get_market(53).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado.",
+        "Draft: completar agenda pelo fluxo editorial e submeter novamente; ferramenta de complementos não aplica em drafts."
+      ]
+    },
+    {
+      "market_id": 55,
+      "slug": "qual-obra-vencera-romance-literario-no-premio-jabuti-2026",
+      "status": "draft",
+      "definition_hash": null,
+      "definition_version": null,
+      "editorial_revision": 7,
+      "expected_schedule_version": 0,
+      "reviewed": false,
+      "reviewer": null,
+      "reviewed_at": null,
+      "reason": "Complemento de agenda derivado de critérios existentes; aguarda revisão explícita",
+      "proposed": {
+        "expected_resolution_at": null,
+        "schedule_timezone": "America/Sao_Paulo"
+      },
+      "sources": {
+        "expected_resolution_at": {
+          "origin": "operational_decision_pending",
+          "excerpt": "Apuração a partir de 31/10",
+          "source": "MCP get_market(55).resolution_criteria; catalog captured 2026-10-17",
+          "timezone": "America/Sao_Paulo"
+        }
+      },
+      "pending": [
+        "Revisão explícita e confirmação da revisão editorial na aplicação",
+        "Horário de resolução não explícito: decisão operacional humana necessária, sem alterar contrato publicado.",
+        "Draft: completar agenda pelo fluxo editorial e submeter novamente; ferramenta de complementos não aplica em drafts."
+      ]
+    }
+  ],
+  "contract_revision": "Simplified at user request: forecast and timezone only; no reviewed production application."
+}

@@ -1,0 +1,67 @@
+{
+  "market_slug": "joao-fonseca-sera-campeao-de-simples-do-atp-500-da-basileia-de-2026",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "binary",
+      "event": "ATP500 2026",
+      "title": "João Fonseca será campeão de simples do ATP 500 da Basileia de 2026?",
+      "options": [
+        {
+          "id": 89,
+          "hint": "Opção afirmativa",
+          "label": "SIM",
+          "order": 1
+        },
+        {
+          "id": 90,
+          "hint": "Opção negativa",
+          "label": "NAO",
+          "order": 2
+        }
+      ],
+      "summary": "João Fonseca está confirmado no Swiss Indoors Basel e defenderá o título conquistado em 2025, diante de adversários como Ben Shelton, Félix Auger-Aliassime e Taylor Fritz. A pergunta trata do campeão de simples da edição de 2026, cuja chave principal está prevista de 26 de outubro a 1º de novembro.",
+      "category": "Esporte",
+      "close_at": "2026-10-23T15:00:00Z",
+      "event_id": 69,
+      "market_id": 39,
+      "category_id": 18,
+      "market_slug": "joao-fonseca-sera-campeao-de-simples-do-atp-500-da-basileia-de-2026",
+      "subcategory": "Tenis",
+      "published_at": "2026-10-11T15:43:27.196793Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 65,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://www.swissindoorsbasel.ch/en/tournament/tournament-news/",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "O mercado considera somente o campeão oficial da chave de simples masculina profissional dos Swiss Indoors Basel, edição 2026, na Basileia. Não contam duplas, qualificatório isolado, outro torneio, títulos anteriores ou ranking posterior.\r\n\r\nVence Sim se o registro oficial atribuir a João Fonseca o título de simples dessa edição. Vence Não se o registro oficial atribuir o título a outro atleta. Retirada, ausência, desclassificação ou eliminação de Fonseca não transfere a pergunta a seu substituto: se a edição atribuir o título a outro atleta, vence Não. Vitória por abandono, walkover ou decisão administrativa conta conforme a atribuição oficial do título. Empate parcial em partida não decide o mercado; vale o título oficialmente atribuído. Se, excepcionalmente, houver título compartilhado oficialmente atribuído a Fonseca, ele conta como campeão para Sim.\r\n\r\nAs previsões encerram em 23/10/2026 às 12h00 de Brasília. Serão considerados documentos e correções oficiais publicados até 08/11/2026 às 23h59min59s de Brasília, inclusive. Se um documento tiver somente data, a data oficial exibida de 08/11 estará integralmente incluída; se trouxer hora e fuso, o instante será convertido para Brasília. A revisão mais recente publicada dentro desse corte substitui a anterior. Decisões posteriores não mudam o resultado contratado.\r\n\r\nA evidência principal será a notícia ou o comunicado específico e datado da organização Swiss Indoors Basel que identifique o campeão de simples de 2026, disponível a partir da página oficial de notícias. Em caso de retificação ou divergência, uma decisão formal da ATP sobre o título prevalece sobre relato anterior do organizador; em seguida, prevalece a retificação oficial específica identificável sobre a versão corrigida. Um relato oficial datado da ATP ou reprodução integral identificável do documento original poderá servir quando o registro do organizador estiver indisponível. Imprensa e placares de terceiros não substituirão a evidência oficial. A ficha de apuração deve registrar emissor, edição, prova, URL, data, horário de consulta e versão/correção efetivamente utilizada. Não se presume arquivo de todas as versões nem disponibilidade permanente. Se uma página consultada depois não permitir comprovar que aquele conteúdo ou correção já estava publicado no corte, não se reconstruirá a versão por suposição; será necessário um registro oficial datado corroborante, ou a evidência permanecerá insuficiente.\r\n\r\nAdiamento só preserva uma resposta esportiva se resultar em atribuição oficial do título publicada dentro do corte. Cancelamento, edição sem campeão, título suspenso ou retirado sem atribuição final válida, ausência de evidência ou conflito oficial insolúvel não determinam Não por si sós. A recuperação de documento publicado dentro do corte pode aguardar até 10/11/2026 às 18h00 de Brasília. Persistindo insuficiência, encaminhar à revisão editorial e ao operador conforme o procedimento vigente, sem fabricar resposta nem prometer cancelamento ou reabertura.\r\n\r\nSe a competição for antecipada ou Fonseca tiver retirada definitiva anunciada antes da abertura, reavaliar imediatamente a incerteza e não abrir uma pergunta já resolvida. Se o fato se tornar conhecido durante a participação, o responsável deverá solicitar o fechamento e registrar o ocorrido, sem apagar previsões ou mudar prazos para esconder o problema. Não foi designado responsável nesta pesquisa nem contratado monitoramento contínuo."
+    },
+    "hash": "f0018b711efc98e7bd2568b150dcdbe6d5bf3db6d7a58c403438adb92a547f88",
+    "signature": "tH+V17vzz8CwrVtAqZ0X0fvIYEf2Q54IXs99NOTpqltBSQFWgMgevXEWs+HkjLQveRtTKKMNQtRlosLMcaxPAQ==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 2,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 3,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:3",
+      "payload_hash": "f0018b711efc98e7bd2568b150dcdbe6d5bf3db6d7a58c403438adb92a547f88",
+      "previous_event_hash": "6948045712136d3fe21d88d71a9b910cc31d460bf81201f3a7de5c65d98db33d",
+      "event_hash": "8f75a35513c1cb915712211ebe819569a2e24756611282c2670dd848969a31ee",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T15:43:27.196793+00:00"
+    }
+  ]
+}

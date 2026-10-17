@@ -1,3 +1,4 @@
+from apps.api.backend_api import resolution_schedule as schedules
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
 from functools import lru_cache
@@ -1677,7 +1678,7 @@ def _resolution_timezone(row):
     return row["close_timezone"] or "UTC"
 
 
-def _datetime_label(value, timezone_name):
+def _datetime_label(value, timezone_name, *, compact=False):
     if not value:
         return ""
     try:
@@ -1686,7 +1687,7 @@ def _datetime_label(value, timezone_name):
         target_timezone = timezone.utc
         timezone_name = "UTC"
     localized = value.astimezone(target_timezone) if value.tzinfo else value.replace(tzinfo=timezone.utc).astimezone(target_timezone)
-    return f"{localized.strftime('%d/%m/%Y %H:%M')} {timezone_name or 'UTC'}"
+    return f"{localized.strftime('%d/%m/%Y %H:%M')} {_timezone_short_label(timezone_name) if compact else timezone_name or 'UTC'}"
 
 
 def _timezone_short_label(timezone_name):
@@ -1715,6 +1716,8 @@ def _market_rows(cursor, where_sql="", params=None, order_sql="m.display_order A
                m.primary_outcome,
                m.volume_gtl, m.participants, m.source, m.closes_in, m.close_label,
                m.thumb, m.thumb_color, m.image_url, m.resolution_criteria, m.admin_notes,
+               m.expected_resolution_at, m.original_expected_resolution_at,
+               m.schedule_timezone, m.schedule_version,
                m.resolution_type, m.resolved_at, m.resolution_timezone, m.winning_option_id, m.resolution_note,
                m.close_at, m.close_timezone, m.auto_close_enabled, m.is_featured, m.view_count, m.share_count, m.created_at,
                m.published_at, m.seal_due_at, m.sealed_at, m.integrity_version,
@@ -1923,8 +1926,10 @@ def _market_comments(cursor, market_id=None, *, slug=None, visible_only=True, vi
     return [_comment_response(row) for row in cursor.fetchall()]
 
 
-def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filter_public_image=True):
-    row = _with_effective_market_status(row)
+def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filter_public_image=True, schedule_now=None):
+    schedule_classification = schedules.classification(row, now=schedule_now)
+    if filter_public_image:
+        row = _with_effective_market_status(row)
     cursor.execute(
         """
         SELECT id, label, probability_exact, hint
@@ -2039,6 +2044,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "admin_notes": (row.get("admin_notes") or "") if not filter_public_image else "",
         "editorial_origin": ("mcp" if editorial_meta["integration_id"] else "human") if editorial_meta else None,
         "closure_configuration_errors": _closure_configuration_errors(row) if not filter_public_image else [],
+        "market_id": row["id"],
         "editorial_market_id": row["id"] if editorial_meta else None,
         "editorial_revision": editorial_meta["revision"] if editorial_meta else None,
         "editorial_status": editorial_meta["state"] if editorial_meta else None,
@@ -2081,6 +2087,13 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "close_timezone": row["close_timezone"],
         "auto_close_enabled": row["auto_close_enabled"],
         "is_featured": bool(row["is_featured"]) if "is_featured" in row else False,
+        **{key: (row.get(key).isoformat() if row.get(key) else None) for key in (*schedules.DATES, 'original_expected_resolution_at')},
+        "schedule_timezone": row.get('schedule_timezone') or '',
+        "schedule_version": row.get('schedule_version') or 0,
+        "resolution_schedule": schedule_classification,
+        "schedule_history": [e['payload_json']['payload_snapshot'] for e in schedules.history(cursor, row['id'])],
+        "expected_resolution_label": _datetime_label(row['expected_resolution_at'], row['schedule_timezone'], compact=True) if row.get('expected_resolution_at') else '',
+        "original_expected_resolution_label": _datetime_label(row['original_expected_resolution_at'], row['schedule_timezone'], compact=True) if row.get('original_expected_resolution_at') else '',
         "resolved_at": row["resolved_at"].isoformat() if "resolved_at" in row and row["resolved_at"] else None,
         "published_at": row["published_at"].isoformat() if "published_at" in row and row["published_at"] else None,
         "seal_due_at": row["seal_due_at"].isoformat() if "seal_due_at" in row and row["seal_due_at"] else None,
@@ -4002,7 +4015,7 @@ def _closure_configuration_errors(market, *, publishing=False):
 def _validate_publishable(cursor, market_id):
     cursor.execute(
         """
-        SELECT title, summary, source, resolution_criteria, close_at, close_timezone, thumb_color,
+        SELECT expected_resolution_at,schedule_timezone, title, summary, source, resolution_criteria, close_at, close_timezone, thumb_color,
                kind, category_id, subcategory_id, event_id, auto_close_enabled
         FROM gotrendlabs_markets
         WHERE id = %s
@@ -4010,6 +4023,7 @@ def _validate_publishable(cursor, market_id):
         (market_id,),
     )
     market = cursor.fetchone()
+    schedules.validate_schedule(market, required=True, publishing=True)
     closure_errors = _closure_configuration_errors(market, publishing=True)
     if closure_errors:
         raise HTTPException(422, detail={"code": "closure_configuration_invalid", "message": "Publicação bloqueada: " + " ".join(closure_errors), "errors": closure_errors})
@@ -4766,7 +4780,7 @@ def _market_integrity_contract(cursor, slug):
     definition = cursor.fetchone()
     cursor.execute("SELECT * FROM market_seals WHERE market_id=%s", (market["id"],))
     seal = cursor.fetchone()
-    cursor.execute("SELECT sequence,event_type,payload_reference,payload_hash,previous_event_hash,event_hash,key_id,key_fingerprint,occurred_at FROM integrity_ledger_events WHERE market_id=%s AND event_type <> 'prediction_committed' ORDER BY sequence", (market["id"],))
+    cursor.execute("SELECT sequence,event_type,payload_reference,payload_hash,previous_event_hash,event_hash,key_id,key_fingerprint,occurred_at,protocol_version,payload_json,signature,algorithm FROM integrity_ledger_events WHERE market_id=%s AND event_type <> 'prediction_committed' ORDER BY sequence", (market["id"],))
     events = [{**dict(row), "occurred_at": row["occurred_at"].isoformat()} for row in cursor.fetchall()]
     cursor.execute("SELECT COUNT(*) commitment_count FROM prediction_commitments WHERE market_id=%s", (market["id"],))
     commitment_count = int(cursor.fetchone()["commitment_count"])
@@ -4799,7 +4813,7 @@ def _market_integrity_contract(cursor, slug):
             "included_in_seal": bool(seal),
             "predictions_root": seal["predictions_root"] if seal else "",
         },
-        "ledger_events": events,
+        "ledger_events": [{**e, "signature": encode_signature(e["signature"])} for e in events],
     }
 
 
@@ -6475,6 +6489,9 @@ def admin_moderate_comment(comment_id: int, payload: CommentModerationPayload, a
 
 @app.get("/admin/markets", response_model=AdminMarketListResponse)
 def admin_list_markets(
+    temporal: str = "",
+    resolution_queue: bool = False,
+    active_contracts: bool = False,
     status_filter: Optional[str] = Query(default=None, alias="status"),
     q: str = Query(default=""),
     order: str = "display",
@@ -6485,6 +6502,10 @@ def admin_list_markets(
             _current_staff_user(cursor, authorization)
             params = []
             where = []
+            if active_contracts:
+                where.append("m.status IN ('draft','scheduled','open','locked')")
+            if resolution_queue:
+                where.append("m.status IN ('locked','resolved','sealed')")
             if status_filter:
                 where.append("lower(m.status) = lower(%s)")
                 params.append(status_filter)
@@ -6494,6 +6515,7 @@ def admin_list_markets(
                 params.extend([pattern, pattern, pattern])
             where_sql = f"WHERE {' AND '.join(where)}" if where else ""
             order_sql = {
+                "pending_first": "CASE WHEN m.status='locked' THEN 0 ELSE 1 END, m.resolved_at DESC NULLS LAST, m.id ASC",
                 "resolution_asc": "m.resolved_at ASC NULLS LAST, m.display_order ASC, m.id ASC",
                 "resolution_desc": "m.resolved_at DESC NULLS LAST, m.display_order ASC, m.id ASC",
                 "created_asc": "m.created_at ASC, m.id ASC",
@@ -6502,11 +6524,22 @@ def admin_list_markets(
                 "shares_desc": "m.share_count DESC, m.view_count DESC, m.display_order ASC, m.id ASC",
             }.get(order, "m.display_order ASC, m.id ASC")
             rows = _market_rows(cursor, where_sql, params, order_sql)
+            schedule_now = datetime.now(timezone.utc)
+            from collections import Counter
+            schedule_counts = dict(Counter(schedules.classification(r, now=schedule_now)['code'] for r in rows))
+            if temporal:
+                if temporal not in schedules.LABELS:
+                    schedules.fail('schedule_filter_invalid', 'Filtro temporal inválido.')
+                rows = [r for r in rows if schedules.classification(r, now=schedule_now)['code'] == temporal]
+            if order in {'next_resolution', 'overdue'}:
+                rows.sort(key=lambda r: (r['status'] in schedules.TERMINAL, r.get('expected_resolution_at') is None, r.get('expected_resolution_at') or datetime.max.replace(tzinfo=timezone.utc), r['id']))
             cursor.execute("SELECT status, COUNT(*) AS total FROM gotrendlabs_markets GROUP BY status")
             counts = {row["status"]: row["total"] for row in cursor.fetchall()}
             return {
-                "markets": [_market_response(cursor, row, include_comments=False, filter_public_image=False) for row in rows],
+                "markets": [_market_response(cursor, row, include_comments=False, filter_public_image=False, schedule_now=schedule_now) for row in rows],
                 "counts": counts,
+                "schedule_counts": schedule_counts,
+                "schedule_summary": [{"code":code,"label":label,"total":schedule_counts.get(code,0)} for code,label in schedules.LABELS.items()],
             }
 
 
@@ -6593,9 +6626,9 @@ def _insert_market_draft(cursor, payload, category, subcategory, event, actor_id
              source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
              close_at, close_timezone, auto_close_enabled, is_featured,
              resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
-             view_count, share_count, integrity_version, display_order, created_at, updated_at)
+             view_count, share_count, integrity_version, schedule_timezone, schedule_version, display_order, created_at, updated_at)
         VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                0, 0, '', (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
+                0, 0, '', '', 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
         RETURNING id
         """,
         (
@@ -6632,6 +6665,7 @@ def _insert_market_draft(cursor, payload, category, subcategory, event, actor_id
         ),
     )
     market_id = cursor.fetchone()["id"]
+    schedules.save_draft(cursor, market_id, payload)
     _save_market_options(cursor, market_id, options)
     if record_event:
         from apps.api.backend_api.editorial_service import initialize_human_editorial
@@ -6819,6 +6853,7 @@ def admin_update_market(slug: str, payload: AdminMarketPayload, authorization: s
                     row["id"],
                 ),
             )
+            schedules.save_draft(cursor, row["id"], payload)
             _save_market_options(cursor, row["id"], options, preserve_existing_probability=preserve_operational_fields)
             human_edit_done(cursor, row["id"], editorial_draft)
             _record_admin_event(cursor, staff["id"], "market.update", "market", new_slug, payload.admin_notes)
@@ -7265,11 +7300,11 @@ def admin_convert_suggestion_to_draft(suggestion_id: int, payload: AdminMarketAc
                      source, closes_in, close_label, thumb, thumb_color, image_url, resolution_criteria,
                      close_at, close_timezone, auto_close_enabled, is_featured,
                      resolution_type, resolution_timezone, resolution_note, admin_notes, created_by_id, updated_by_id,
-                     view_count, share_count, display_order, created_at, updated_at)
+                     view_count, share_count, schedule_timezone, schedule_version, integrity_version, display_order, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, %s, 'draft', 'Rascunho', %s, '0 GT₵', '0 usuários',
                         %s, %s, '', '', '#d8ece2', '', 'A definir pela curadoria antes da publicação.',
                         %s, 'America/Sao_Paulo', true, false, '', '', '', %s, %s, %s,
-                        0, 0, (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
+                        0, 0, '', 0, '', (SELECT COALESCE(MAX(display_order), 0) + 1 FROM gotrendlabs_markets), %s, %s)
                 RETURNING id
                 """,
                 (
@@ -8900,3 +8935,14 @@ app.include_router(thumbnail_router)
 
 from apps.api.backend_api.badge_image_routes import router as badge_image_router
 app.include_router(badge_image_router)
+
+
+@app.post("/admin/markets/{slug}/reschedule", response_model=MarketResponse)
+def admin_reschedule_market(slug: str, payload: schedules.Reschedule, authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            staff = _current_staff_user(cursor, authorization)
+            row = _admin_market_target(cursor, slug, payload.expected_market_id)
+            schedules.reschedule(cursor, row['id'], payload, actor_id=staff['id'])
+            _record_admin_event(cursor, staff['id'], 'market.reschedule', 'market', slug, payload.reason)
+            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)

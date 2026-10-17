@@ -443,6 +443,8 @@ def _clean_market_wall_time(form, cleaned_data, date_field, zone_field):
 
 
 class AdminMarketForm(forms.Form):
+    expected_resolution_at = MarketLocalDateTimeField(label="Resolução prevista", required=False, widget=forms.DateTimeInput(attrs={"type":"datetime-local", "step":"any"}, format="%Y-%m-%dT%H:%M:%S"))
+    schedule_timezone = forms.ChoiceField(label="Fuso da resolução prevista", required=False, choices=(("", "Selecionar"), ("America/Sao_Paulo", "America/Sao_Paulo"), ("UTC", "UTC"), ("America/New_York", "America/New_York"), ("Europe/London", "Europe/London")))
     title = forms.CharField(label="Pergunta PT-BR", max_length=240)
     slug = forms.SlugField(label="Slug", max_length=160, required=False)
     summary = forms.CharField(label="Resumo", widget=forms.Textarea(attrs={"rows": 4}))
@@ -512,6 +514,8 @@ class AdminMarketForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         _clean_market_wall_time(self, cleaned_data, "close_at", "close_timezone")
+        for field in ("expected_resolution_at",):
+            _clean_market_wall_time(self, cleaned_data, field, "schedule_timezone")
         category_name = cleaned_data.get("category")
         subcategory_name = cleaned_data.get("subcategory")
         event_name = cleaned_data.get("event")
@@ -619,6 +623,8 @@ class AdminMarketForm(forms.Form):
             "resolution_criteria": self.cleaned_data.get("resolution_criteria") or "",
             "close_at": self.cleaned_data["close_at"].isoformat(),
             "close_timezone": self.cleaned_data["close_timezone"],
+            **{k: self.cleaned_data[k].isoformat() if self.cleaned_data.get(k) else None for k in ("expected_resolution_at",)},
+            "schedule_timezone": self.cleaned_data.get("schedule_timezone") or "",
             "auto_close_enabled": self.cleaned_data.get("auto_close_enabled", False),
             "is_featured": self.cleaned_data.get("is_featured", False),
             "resolution_type": self.initial.get("resolution_type") or "",

@@ -19,6 +19,7 @@ import 'market_cards.dart';
 import 'market_models.dart';
 import 'markets_providers.dart';
 import 'prediction_ticket.dart';
+import 'resolution_criteria_card.dart';
 
 enum MarketDetailTab { overview, community }
 
@@ -273,15 +274,54 @@ class _OverviewTab extends ConsumerWidget {
       children: [
         GtlSurface(
           color: GtlColors.surfaceGlass,
-          child: GtlEditorialHeader(
-            kicker: market.category,
-            title: market.title,
-            body: market.summary.isEmpty
-                ? (market.subcategory.isEmpty
-                      ? market.event
-                      : market.subcategory)
-                : market.summary,
-            icon: Icons.public,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              GtlEditorialHeader(
+                kicker: market.category,
+                title: market.title,
+                body: market.summary.isEmpty
+                    ? (market.subcategory.isEmpty
+                          ? market.event
+                          : market.subcategory)
+                    : market.summary,
+                icon: Icons.public,
+              ),
+              const SizedBox(height: 16),
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              DefaultTextStyle.merge(
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: GtlColors.textSecondary),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      market.closeLabel.isEmpty
+                          ? 'Fechamento não informado.'
+                          : market.closeLabel,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      market.expectedResolutionLabel.isEmpty
+                          ? (market.isResolved ||
+                                    market.isSealed ||
+                                    market.status == 'canceled'
+                                ? 'Agenda histórica não informada.'
+                                : 'Agenda de resolução em revisão.')
+                          : 'Resolução prevista: ${market.expectedResolutionLabel}',
+                    ),
+                    if (market.originalExpectedResolutionAt.isNotEmpty &&
+                        market.originalExpectedResolutionAt !=
+                            market.expectedResolutionAt)
+                      Text(
+                        'Reagendada. Previsão original: ${market.originalExpectedResolutionLabel}.',
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 12),
@@ -298,10 +338,9 @@ class _OverviewTab extends ConsumerWidget {
                 subtitle: 'Fonte auditável antes do resultado',
               ),
               const SizedBox(height: 10),
-              Text(
-                market.resolutionCriteria.isEmpty
-                    ? 'Critério não informado.'
-                    : market.resolutionCriteria,
+              ResolutionCriteriaText(
+                key: ValueKey('criteria-${market.slug}'),
+                criteria: market.resolutionCriteria,
               ),
               if (market.isResolved || market.isSealed) ...[
                 const SizedBox(height: 14),

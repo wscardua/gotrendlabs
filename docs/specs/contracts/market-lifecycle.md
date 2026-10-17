@@ -111,3 +111,15 @@ MCP omite o mercado removido naturalmente. Consulta, edição, submissão e repl
 PATCH e publish/cancel/lock aceitam `expected_market_id` positivo. Sob lock do mercado, ID divergente retorna 409 sem mutação. Admin Ops envia o ID da página original em todos esses pedidos. Clientes legados sem ID continuam aceitos somente quando não existe auditoria `market.delete` para o slug; após exclusão, ID é obrigatório (409/recarregar). Revisão editorial continua sendo verificada separadamente. Assim, formulários anteriores à atualização também não atingem um mercado recriado.
 
 O envio do ID original também se aplica ao formulário independente de publicação da versão aprovada (`publish-reviewed`), sem depender do formulário de edição ou de JavaScript. Em reapresentação de erro, preservar o ID submetido para que a FastAPI continue rejeitando abas antigas.
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+### Payload e operações da agenda
+
+`MarketResponse` expõe `market_id`, `expected_resolution_at` nullable, `schedule_timezone`, `original_expected_resolution_at`, `schedule_version`, `resolution_schedule` e `schedule_history`, além de rótulos de exibição. Null é draft incompleto/ativo pendente/ausência histórica terminal conforme status e versão, nunca fechamento substituto. `resolution_schedule` informa code/label/as_of/can_resolve/can_reschedule; flags descrevem elegibilidade de estado, não concedem autorização ao chamador.
+
+- `GET /admin/markets`: `temporal`, `order=next_resolution|overdue|pending_first|resolution_asc|resolution_desc`, `resolution_queue` e `active_contracts`; busca/status existentes preservados. `schedule_counts`/`schedule_summary` e `schedule_count_scope=filtered_query_before_temporal_filter` são calculados antes de recorte da UI. A API usa o mesmo instante para filtro, contador e classificação das linhas.
+- `POST /admin/markets/{slug}/reschedule`: expected_market_id, expected_version, expected_resolution_at com offset, reason. Staff/MFA vigentes; sem permissão MCP.
+- Códigos: schedule_incomplete, schedule_timezone_invalid, schedule_offset_required, schedule_order_invalid, schedule_expired, schedule_protected, schedule_terminal, schedule_integrity_failed, schedule_version_conflict e market_identity_conflict. Conflitos retornam 409; validação/estado 422; assinatura usa erro 503 existente. OpenAPI é a enumeração executável dos schemas.

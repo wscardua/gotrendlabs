@@ -90,6 +90,10 @@ class Market(models.Model):
     is_featured = models.BooleanField(default=False, db_index=True)
     view_count = models.PositiveIntegerField(default=0)
     share_count = models.PositiveIntegerField(default=0)
+    expected_resolution_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    original_expected_resolution_at = models.DateTimeField(null=True, blank=True)
+    schedule_timezone = models.CharField(max_length=64, blank=True, default="")
+    schedule_version = models.PositiveIntegerField(default=0)
     resolved_at = models.DateTimeField(null=True, blank=True)
     published_at = models.DateTimeField(null=True, blank=True)
     seal_due_at = models.DateTimeField(null=True, blank=True, db_index=True)
@@ -126,9 +130,13 @@ class Market(models.Model):
 
     class Meta:
         db_table = "gotrendlabs_markets"
+        constraints = [
+            models.CheckConstraint(check=models.Q(schedule_version=0) | (models.Q(expected_resolution_at__isnull=False,original_expected_resolution_at__isnull=False) & ~models.Q(schedule_timezone="")), name="schedule_registered_complete"),
+        ]
         ordering = ["display_order", "id"]
         indexes = [
             models.Index(fields=["status", "display_order"]),
+            models.Index(fields=["status", "expected_resolution_at"], name="market_resolution_schedule_idx"),
             models.Index(fields=["category", "status"]),
             models.Index(fields=["subcategory", "status"]),
             models.Index(fields=["event", "status"]),

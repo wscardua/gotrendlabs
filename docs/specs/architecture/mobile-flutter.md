@@ -247,3 +247,9 @@ Analitica nao deve conter dados pessoais sensiveis nem valores que permitam reco
 ## Impacto de mudanca
 
 Mudancas nesta arquitetura podem afetar contratos FastAPI, OpenAPI, estrutura do app Flutter e criterios de teste mobile.
+
+## Agenda de resolução — 2026-10-17
+
+O detalhe consome agenda FastAPI (`expected_resolution_at`, original, fuso, versão/classificação) e mostra previsão antes do critério integral. Reagendamento aparece com previsão original; ausência não produz data. Locked usa “Em apuração”; terminais não mostram contagem de fechamento pendente. Sem operações administrativas Flutter. Testes de repository/model/widget atualizados; evidências e limites no relatório `docs/specs/testing/resolution-agenda-results.md` (caminho relativo à raiz).
+
+Detalhe mobile: `close_label` e previsão ficam no rodapé do resumo. O card do critério mantém prévia de três linhas e abre texto integral selecionável em painel inferior rolável com Fechar. Somente o estado de apresentação é local; conteúdo integral, estados e datas são da FastAPI. Sem campos/endpoints novos ou impacto MCP deste ajuste visual. Ver WFLOW-20261017-RESTORE-MOBILE-CRITERIA e WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT.

@@ -152,3 +152,15 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 Mudanças neste contrato impactam previsão, comentários e compartilhamento.
 
 O detalhe apresenta definicao registrada, prazo de selagem e historico `sealed` conforme o resumo de integridade da API, com acao `Verificar integridade`.
+
+## Agenda estruturada (2026-10-17)
+
+Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+## Encaixe visual do ciclo — 17/10/2026
+
+O cartão do ciclo contém título e seis etapas em grade 3×2 legível, com tokens do site. A resolução prevista aparece somente no cabeçalho, junto ao fechamento, como informação estática no mesmo estilo de tag; sem botão, ícone ou navegação. Mostra data/fuso retornados pela API. Nota de reagendamento/original e ausência em ativo também pertencem ao grupo de metadados do cabeçalho, sem data fabricada. O ciclo não repete esses dados.
+
+Em telas estreitas, as informações quebram de linha sem overflow. Estados terminais e regras de resolução permanecem. Somente apresentação web; sem alteração de MCP/API/Flutter.
+
+Rótulos da previsão usam “BRT” para o fuso America/Sao_Paulo, seguindo o fechamento. O cadastro e o contrato estruturado conservam o identificador IANA; o rótulo compacto é produzido pela FastAPI para os consumidores.

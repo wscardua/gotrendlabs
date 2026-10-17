@@ -1,0 +1,421 @@
+{
+  "as_of": "2026-10-17T20:08:00Z",
+  "coverage": "11 visible markets; complete_for_query at 20:01:26Z; not unrestricted database inventory",
+  "items": [
+    {
+      "id": 45,
+      "market": {
+        "id": 45,
+        "slug": "qual-novela-vencera-o-emmy-internacional-2026",
+        "title": "Qual novela vencerá o Emmy Internacional 2026?",
+        "summary": "A categoria Telenovela do Emmy Internacional 2026 reúne uma produção brasileira, duas turcas e a segunda temporada de uma produção espanhola. A cerimônia está prevista para 23 de novembro, em Nova York. Qual será o resultado: uma das quatro como única vencedora ou mais de uma novela co-vencedora? GT₵ são créditos educativos, sem dinheiro real.",
+        "kind": "multiple",
+        "status": "open",
+        "category_id": 15,
+        "subcategory_id": 68,
+        "event_id": 72,
+        "close_at": "2026-11-22T21:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.iemmys.tv/category/press-releases/",
+        "resolution_criteria": "Vence a opção individual que a International Academy of Television Arts & Sciences identificar como única vencedora da categoria Telenovela da 54ª edição do International Emmy Awards, edição 2026. As quatro opções individuais correspondem a Garota do Momento; Leyla; Uzak Sehir [Far Away]; e Valle Salvaje – Season 2 [Wild Valley]. Grafias equivalentes não criam outra opção. Outra temporada de Valle Salvaje não está incluída na opção individual. A quinta alternativa, “Mais de uma novela vencedora”, vence se a Academia identificar duas ou mais novelas distintas como oficialmente co-vencedoras da mesma categoria/edição, incluindo eventual título substituto. Múltiplos troféus ou profissionais premiados pela mesma novela não contam como múltiplas novelas.\r\n\r\nA fonte principal será o comunicado oficial datado de vencedores de 2026, localizado em https://www.iemmys.tv/category/press-releases/. A entrada Telenovela/2026 em https://www.iemmys.tv/international-emmy-awards/winners-archive/ só será alternativa se houver prova recuperável de versão elegível até o corte abaixo; sem isso, apenas corrobora e não decide. O anúncio de indicados comprova as opções, não a vitória. Notícias, vídeos, torcida, probabilidades e outras categorias/edições não decidem o resultado.\r\n\r\nPrevisões encerram em 22/11/2026 às 18h00, America/Sao_Paulo (UTC−03:00), antes do dia previsto para a cerimônia, 23/11/2026 em Nova York. O horário da cerimônia não foi informado nas fontes verificadas. Adiamento não reabre nem desloca esse fechamento. O corte objetivo para anúncios e correções oficiais é 30/11/2026 às 23h59min59s, America/Sao_Paulo (UTC−03:00), inclusive. Só são elegíveis resultados e retificações publicados até esse instante. A apuração definitiva ocorrerá somente após o corte, com consulta planejada para 01/12/2026 às 12h00 no mesmo fuso; atraso do operador não altera a versão elegível. Se o resultado for divulgado antecipadamente, a equipe solicitará fechamento imediato e registrará o ocorrido, sem reescrever prazos ou ocultar previsões posteriores ao anúncio.\r\n\r\nO registro-base é o comunicado oficial datado. Retificação oficial expressa, datada e publicada até o corte prevalece sobre a versão anterior. Publicação sem horário exige evidência suficiente de anterioridade ao corte; data/fuso ambíguos não bastam. Atualização silenciosa posterior, sem versão recuperável elegível, não decide. Divergências não esclarecidas por evidência elegível impedem atribuir vencedora. A equipe preservará URL, data/fuso de publicação, horário de consulta e cópia da versão usada; a existência futura dessa cópia não é presumida.\r\n\r\nSe houver duas ou mais novelas oficialmente co-vencedoras, selecionar exclusivamente “Mais de uma novela vencedora”, sem desempate entre elas. Empate de pontuação sem declaração oficial de co-vitória não basta. A opção técnica corresponde a uma única opção vencedora do mercado, não a liquidação múltipla, reembolso ou cancelamento automático. Se a evidência não esclarecer se houve uma ou mais novelas vencedoras, buscar evidência oficial elegível até o corte e encaminhar à revisão humana/operação.\r\n\r\nSe a categoria for cancelada, retirada ou não concedida, se aparecer uma única vencedora fora das quatro opções individuais, ou se houver alteração material nas candidaturas que impeça aplicar estas regras, nenhuma alternativa será declarada vencedora por exclusão: encaminhamento à revisão humana/operação, preservando o histórico. Se a cerimônia atrasar ou as fontes falharem, recuperar prova de anúncios/correções elegíveis até o corte, com consultas diárias às 12h00 entre 01/12 e 07/12 e verificação final em 07/12/2026 às 18h00 (America/Sao_Paulo, UTC−03:00). Essa recuperação não inclui novos resultados ou correções publicados depois do corte. O limite de 07/12 é para escalonamento, não prova de derrota nem autorização para inventar resultado. Sem evidência suficiente ao término, manter a apuração pendente e encaminhar à operação/suporte conforme recursos efetivamente disponíveis. Prova elegível descoberta depois da resolução exige registro e conferência do estado e da janela real de correção no painel; correção oficial publicada depois do corte não altera a versão que decide este mercado. Histórico selado não será reescrito.",
+        "options": [
+          {
+            "label": "Garota do Momento",
+            "hint": "Brasil"
+          },
+          {
+            "label": "Leyla",
+            "hint": "Turquia"
+          },
+          {
+            "label": "Uzak Sehir",
+            "hint": "Turquia; título internacional Far Away"
+          },
+          {
+            "label": "Valle Salvaje — temporada 2",
+            "hint": "Espanha; Season 2 [Wild Valley]"
+          },
+          {
+            "label": "Mais de uma novela vencedora",
+            "hint": "Duas ou mais novelas distintas oficialmente co-vencedoras da categoria Telenovela 2026"
+          }
+        ],
+        "editorial": {
+          "revision": 7,
+          "state": "approved",
+          "snapshot_hash": "c57aa5d8b84a792d95c710cd7e47d87b8ef874136855f77f56c51a95ec921e23"
+        }
+      }
+    },
+    {
+      "id": 51,
+      "market": {
+        "id": 51,
+        "slug": "quem-ficara-em-1o-na-netflix-brasil-na-semana-de-26-10-a-1o-11",
+        "title": "Quem ficará em 1º na Netflix Brasil na semana de 26/10 a 1º/11?",
+        "summary": "Lupin — Parte 4 tem estreia anunciada para 23 de outubro de 2026, e Ninguém Quer — Temporada 3, para 22 de outubro. Na semana seguinte, qual série ou temporada liderará o Top 10 semanal de Séries da Netflix no Brasil? Outras produções e temporadas anteriores também podem chegar ao primeiro lugar. O resultado será definido pelo ranking oficial, conforme as regras; as previsões usam GT₵, créditos educativos sem dinheiro real.",
+        "kind": "multiple",
+        "status": "open",
+        "category_id": 24,
+        "subcategory_id": 23,
+        "event_id": 20,
+        "close_at": "2026-10-22T02:59:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.netflix.com/tudum/top10/brazil/tv",
+        "resolution_criteria": "Vale exclusivamente a edição do Top 10 semanal de Séries da Netflix no Brasil referente a 26/10–01/11/2026, identificada pela semana 2026-11-01. Não vale ranking diário do aplicativo, lista global, filmes nem soma de temporadas.\r\n\r\nVence a opção correspondente à única entrada que ocupar a posição 1: “Lupin — Parte 4” para a parte 4 de Lupin; “Ninguém Quer — Temporada 3” para a temporada 3 de Nobody Wants This; “Outra série ou temporada” para qualquer outra entrada da lista TV, incluindo temporadas anteriores dessas duas séries e outros programas classificados ali pela Netflix. Tradução ou mudança de grafia só é aceita se a fonte identificar a mesma obra e temporada. Não misturar ou somar temporadas.\r\n\r\nFonte primária: https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv, filtros country_iso2=BR, category=TV, week=2026-11-01, weekly_rank=1. Conferência alternativa oficial: https://www.netflix.com/tudum/top10/brazil/tv, selecionando a mesma semana. A regra resolve pela posição publicada, não por cálculo próprio de audiência. Em conflito sem retificação oficial explicativa, não escolher uma apresentação conforme o resultado desejado.\r\n\r\nPrevisões encerram em 21/10/2026 às 23h59, America/Sao_Paulo (UTC−03:00). A semana observada continua a mesma em caso de adiamento, cancelamento ou retirada das estreias. A ausência das duas temporadas permite “Outra” apenas se um outro líder único da edição estiver comprovado; ausência da edição não determina resposta. Divulgação esperada em 03/11/2026, conforme a cadência semanal, sem horário confirmado.\r\n\r\nO registro-base é a edição semanal oficial identificada por país, categoria e período, e não o estado da página inteira em um instante nem a primeira consulta do operador. A edição-base e as retificações oficiais expressas são elegíveis quando publicadas até 10/11/2026 às 23h59min59s, inclusive, no horário de Brasília (UTC−03:00). Atraso da publicação-base só é aceito até esse mesmo corte. Entre retificações elegíveis que alterem o campo decisório, prevalece a última, com data e anterioridade ao corte verificáveis. A data da semana não prova sozinha quando ocorreu uma retificação. Não afirmar que uma página atual é a versão original só por conservar o período no título.\r\n\r\nA apuração está planejada para 11/11/2026 às 12h00, após o corte. Até 17/11/2026 às 18h00, poderão ser recuperadas provas da edição ou de retificações já elegíveis, sem admitir publicações ou correções posteriores ao corte. A demora do operador não muda a edição, a ordem das retificações nem o limite de elegibilidade. Preservar URL, identificação do período, posição, identidade do vencedor, data real da consulta e cópia da evidência efetivamente usada.\r\n\r\nO arquivo por semana demonstra recuperação de edições; não garante todas as versões históricas nem uma captura futura. Se houver divergência material entre fontes, retificação tardia que impeça recuperar o dado elegível, alteração silenciosa identificada, data/fuso inconclusivos para ordenar retificações ou ausência de prova suficiente, não escolher resposta por suposição. Encaminhar à operação humana para esclarecimento e eventual tratamento permitido pela plataforma, preservando as regras; não há cancelamento, reabertura ou resolução automática prometidos. Erro de aplicação da regra é diferente de correção tardia da fonte e deve seguir o estado e a janela real de correção da plataforma.\r\n\r\nEmpate real na posição 1, edição sem líder único ou identidade de temporada ambígua exige esclarecimento oficial e encaminhamento humano; não desempatar por ordem alfabética ou atribuir “Outra” por falta de prova. Não alterar a semana para acomodar imprevistos. Se houver divulgação excepcional do resultado antes do fechamento, o responsável deve solicitar encerramento e registrar o ocorrido, sem presumir monitoramento automático.",
+        "options": [
+          {
+            "label": "Lupin — Parte 4",
+            "hint": ""
+          },
+          {
+            "label": "Ninguém Quer — Temporada 3",
+            "hint": ""
+          },
+          {
+            "label": "Outra série ou temporada",
+            "hint": ""
+          }
+        ],
+        "editorial": {
+          "revision": 7,
+          "state": "approved",
+          "snapshot_hash": "84a1caff58782992cd0d409fd51d05defbeee9afab28ac0bc4cf7a9e0cfc961c"
+        }
+      }
+    },
+    {
+      "id": 52,
+      "market": {
+        "id": 52,
+        "slug": "modern-warfare-4-sera-no-1-na-steam-brasil-entre-20-e-27-de-outubro",
+        "title": "Modern Warfare 4 será nº 1 na Steam Brasil entre 20 e 27 de outubro?",
+        "summary": "Call of Duty: Modern Warfare 4 tem lançamento anunciado para 23 de outubro e acesso antecipado à campanha em 16 de outubro. A pergunta considera a liderança por receita na edição semanal brasileira da Steam de 20 a 27 de outubro de 2026. GT₵ são créditos educativos, sem dinheiro real.",
+        "kind": "binary",
+        "status": "locked",
+        "category_id": 21,
+        "subcategory_id": 16,
+        "event_id": 13,
+        "close_at": "2026-10-16T02:59:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://store.steampowered.com/charts/",
+        "resolution_criteria": "Vale exclusivamente a edição Weekly Top Sellers da Steam, Brazil/BR, identificada pelo período 20–27/10/2026. O acesso público é https://store.steampowered.com/charts/ : selecionar Weekly Charts, a edição correspondente e Brazil. Não vale ranking ao vivo, global ou filtrado apenas por jogos pagos.\r\n\r\nVence Sim se Call of Duty: Modern Warfare 4, app Steam 4435490, ocupar a posição oficial 1 na edição, inclusive em empate expressamente declarado pela Steam na posição 1. Vence Não se outro produto for líder e MW4 não receber posição 1. Ausência de MW4 só permite Não quando a edição e o líder estiverem comprovados sem ambiguidade de agregação.\r\n\r\nA posição é por receita e mantém todos os produtos que a Steam incluir, inclusive jogos gratuitos, DLC e hardware. Não são cópias vendidas, jogadores ou avaliações. Edições, pré-vendas e compras internas seguem a atribuição oficial, sem somar receitas por conta própria. Call of Duty genérico, Warzone e Modern Warfare III não substituem MW4. Mudança de nome com mesmo app ID não muda o objeto; fusão que impeça identificá-lo exige esclarecimento, sem inferir resposta.\r\n\r\nPrevisões encerram em 15/10/2026 às 23h59, America/Sao_Paulo (UTC−03:00), antes do período observado. A semana permanece 20–27/10 mesmo se o lançamento ou acesso antecipado atrasar ou for cancelado: pré-vendas elegíveis podem contar. Não basta liderar em algum dia. Publicação esperada em 27/10 às 05h00 de Brasília, equivalente à terça-feira 01h00 em America/Los_Angeles, conforme o cabeçalho atual da Steam, sujeita a atraso.\r\n\r\nO registro-base é a edição semanal oficial identificada por país, categoria e período, e não o estado da página inteira em um instante nem a primeira consulta do operador. A edição-base e as retificações oficiais expressas são elegíveis quando publicadas até 03/11/2026 às 23h59min59s, inclusive, no horário de Brasília (UTC−03:00). Atraso da publicação-base só é aceito até esse mesmo corte. Entre retificações elegíveis que alterem o campo decisório, prevalece a última, com data e anterioridade ao corte verificáveis. A data da semana não prova sozinha quando ocorreu uma retificação. Não afirmar que uma página atual é a versão original só por conservar o período no título.\r\n\r\nA apuração está planejada para 04/11/2026 às 12h00, após o corte. Até 07/11/2026 às 18h00, poderão ser recuperadas provas da edição ou de retificações já elegíveis, sem admitir publicações ou correções posteriores ao corte. A demora do operador não muda a edição, a ordem das retificações nem o limite de elegibilidade. Preservar URL, identificação do período, posição, identidade do vencedor, data real da consulta e cópia da evidência efetivamente usada.\r\n\r\nO arquivo por semana demonstra recuperação de edições; não garante todas as versões históricas nem uma captura futura. Se houver divergência material entre fontes, retificação tardia que impeça recuperar o dado elegível, alteração silenciosa identificada, data/fuso inconclusivos para ordenar retificações ou ausência de prova suficiente, não escolher resposta por suposição. Encaminhar à operação humana para esclarecimento e eventual tratamento permitido pela plataforma, preservando as regras; não há cancelamento, reabertura ou resolução automática prometidos. Erro de aplicação da regra é diferente de correção tardia da fonte e deve seguir o estado e a janela real de correção da plataforma.\r\n\r\nEm indisponibilidade, recuperar a mesma edição no arquivo oficial ou endereço oficial sucessor que preserve país, período e produto. SteamDB global, estimativas e notícias não substituem o ranking BR. Empate mal definido, edição ausente ou falta de prova nunca viram Não automaticamente. Divulgação excepcional antecipada exige solicitar fechamento e registrar o ocorrido, sem presumir monitoramento automático.",
+        "options": [
+          {
+            "label": "SIM",
+            "hint": "Opção afirmativa"
+          },
+          {
+            "label": "NAO",
+            "hint": "Opção negativa"
+          }
+        ],
+        "editorial": {
+          "revision": 6,
+          "state": "approved",
+          "snapshot_hash": "7bd65915fd594fa58f0eba0b57d1dbae83b7b4b2ddbd4be1f4a097ebcd6eb073"
+        }
+      }
+    },
+    {
+      "id": 35,
+      "market": {
+        "id": 35,
+        "slug": "quem-avanca-a-final-da-libertadores-masculina-2026-fluminense-ou-palmeiras",
+        "title": "Quem avança à final da Libertadores masculina 2026: Fluminense ou Palmeiras?",
+        "summary": "Fluminense e Palmeiras disputarão uma vaga na final em dois jogos: 14 de outubro, no Maracanã, e 21 de outubro, em São Paulo, ambos programados para 21h30. Quem terminar o confronto classificado pela CONMEBOL será a resposta, incluindo o desempate oficial quando necessário.",
+        "kind": "multiple",
+        "status": "locked",
+        "category_id": 18,
+        "subcategory_id": 8,
+        "event_id": 67,
+        "close_at": "2026-10-14T23:30:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://gol.conmebol.com/libertadores/pt-br",
+        "resolution_criteria": "Vence a opção correspondente ao clube que a CONMEBOL identificar como classificado para a final da Libertadores masculina de 2026 no confronto de semifinal Fluminense x Palmeiras. Consideram-se o confronto inteiro, os desempates oficiais e eventual classificação administrativa. Uma vitória na ida ou na volta, isoladamente, não determina a resposta. Empate em um jogo não é opção vencedora.\r\n\r\nAs previsões encerram-se em 14/10/2026 às 20h30, horário de São Paulo, antes da primeira partida. O confronto deve ter resultado oficial identificável até 24/10/2026 às 23h59min59s, nesse fuso. Adiamento ou mudança de estádio não altera a identidade do confronto nem estende o fechamento. Se houver antecipação, será necessária revisão do fechamento antes da abertura; resultado conhecido ou disputa iniciada impede abrir a pergunta.\r\n\r\nA evidência será um comunicado, súmula, decisão ou notícia oficial datada da CONMEBOL referente a esse confronto. Entre registros divergentes, prevalece uma decisão formal sobre a classificação; depois, a súmula ou comunicado específico; depois, a notícia oficial do confronto. Uma retificação formal, com data identificável até o corte de 24/10, prevalece sobre o registro corrigido. Uma página dinâmica sem versão recuperável não substituirá um documento datado para decidir uma divergência. Alterações ou decisões posteriores ao corte não modificam a resposta contratada.\r\n\r\nDesistência, substituição ou desclassificação só determina uma opção se a CONMEBOL atribuir a vaga a Fluminense ou Palmeiras dentro da janela. Se os dois forem excluídos, outro clube receber a vaga, não houver classificado, o confronto for cancelado sem atribuição da vaga, ou houver decisão expressamente provisória/suspensa sem conclusão até o corte, não se escolherá vencedor por suposição. Se a fonte estiver indisponível, buscar outro registro oficial da mesma entidade que comprove a mesma classificação, respeitando o corte. A obtenção da evidência pode esperar até 26/10 às 23h59min59s. Persistindo ausência ou conflito insolúvel, encaminhar ao operador autorizado para o tratamento previsto pela plataforma, sem resolver como uma das equipes por falta de informação. Nenhum cancelamento ou reabertura automáticos são prometidos.\r\n\r\nQuando o documento trouxer apenas a data, será elegível se a data local exibida for anterior ou igual ao dia do corte documental. Quando houver horário e fuso, usa-se o instante convertido para America/Sao_Paulo. A consulta posterior não altera o corte nem permite reconstruir versões por suposição. A rota oficial de apuração é https://gol.conmebol.com/libertadores/pt-br, usando o registro específico datado do confronto ou título.",
+        "options": [
+          {
+            "label": "Fluminense",
+            "hint": "CONMEBOL atribui ao Fluminense a vaga na final neste confronto e dentro da janela contratada."
+          },
+          {
+            "label": "Palmeiras",
+            "hint": "CONMEBOL atribui ao Palmeiras a vaga na final neste confronto e dentro da janela contratada."
+          }
+        ],
+        "editorial": {
+          "revision": 14,
+          "state": "approved",
+          "snapshot_hash": "c97f719dcb68f1d8e6dc3c20c0f43bcf0ed4f5c4fdcb0ea96b5a4949baa975b8"
+        }
+      }
+    },
+    {
+      "id": 36,
+      "market": {
+        "id": 36,
+        "slug": "o-corinthians-sera-campeao-da-libertadores-feminina-2026",
+        "title": "O Corinthians será campeão da Libertadores Feminina 2026?",
+        "summary": "O Corinthians defenderá o título continental depois do vice-campeonato brasileiro. A edição de 2026 acontece no Equador de 15 a 31 de outubro. A pergunta trata da campeã oficial do torneio inteiro, não de uma partida ou classificação de fase.",
+        "kind": "binary",
+        "status": "locked",
+        "category_id": 18,
+        "subcategory_id": 8,
+        "event_id": 66,
+        "close_at": "2026-10-15T19:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://gol.conmebol.com/libertadores/pt-br/news",
+        "resolution_criteria": "As previsões encerram em 15 de outubro de 2026, às 16h de Brasília (UTC−3), antes dos primeiros jogos programados da CONMEBOL Libertadores Feminina 2026.\r\n\r\n“Sim” vence se o Sport Club Corinthians Paulista for o único clube oficialmente reconhecido pela CONMEBOL como campeão dessa edição, dentro das condições abaixo. “Não” vence se outro clube for o único campeão oficialmente reconhecido. Avançar de fase, vencer uma partida ou terminar em primeiro no grupo não basta. Uma eliminação antecipada do Corinthians, sozinha, não antecipa a resolução: a apuração aguardará a campeã e o corte documental.\r\n\r\nVale uma conclusão esportiva ou administrativa da edição ocorrida até 7 de novembro de 2026, às 23h59min59s de Brasília, inclusive. Um título decidido por desempate oficial, pênaltis, desistência, W.O. ou decisão administrativa conta somente se a CONMEBOL o reconhecer como título da edição. A identificação de uma única campeã é necessária para atribuir “Sim” ou “Não”.\r\n\r\nO corte documental é 9 de novembro de 2026, às 12h00min00s de Brasília, inclusive. Valem decisões e correções oficiais publicadas até esse instante sobre uma conclusão ocorrida dentro do prazo definido. O corte não depende da primeira consulta feita pela equipe. Decisões ou correções publicadas depois desse instante ficam fora da apuração deste mercado.\r\n\r\nA fonte prioritária será um documento ou comunicado oficial identificável e datado da CONMEBOL que reconheça a campeã da edição, localizado em https://gol.conmebol.com/libertadores/pt-br/news ou nos documentos oficiais ali vinculados. Em caso de indisponibilidade, será consultado o canal oficial da mesma entidade em https://copaamerica.com/pt/noticias. O documento usado na resolução deverá ter título ou identificação equivalente, URL específica, indicação da edição e data de publicação ou versão que permita verificar se pertence ao período aceito. Se publicado no dia do corte, será necessário comprovar também sua publicação até o horário-limite.\r\n\r\nUma decisão administrativa ou correção oficial explícita prevalece sobre notícia anterior ou placar provisório. Entre versões da mesma autoridade, vale a mais recente com publicação comprovada dentro do corte. Versões posteriores podem ser consultadas para localizar evidência histórica, mas não substituem a prova de qual decisão ou correção estava publicada dentro do prazo. Não se presume a existência de um histórico integral de todas as páginas.\r\n\r\nAdiamentos serão acompanhados até o limite de conclusão estabelecido. Alterações de local, adversário ou formato, por si mesmas, não determinam “Sim” ou “Não”, desde que a CONMEBOL mantenha a identidade da edição 2026 e reconheça uma única campeã. Não há promessa de reabertura ou de qualquer mudança automática nos prazos de participação.\r\n\r\nSe houver cancelamento da competição, ausência de campeã única, conclusão posterior ao limite, divergência oficial irresolúvel, ou impossibilidade de comprovar uma versão documental elegível, a equipe não atribuirá “Sim” ou “Não” por suposição. O caso será encaminhado ao operador para tratamento conforme o procedimento vigente da plataforma, sem promessa de cancelamento, reembolso ou reabertura.\r\n\r\nSe a fonte estiver inacessível, a equipe aguardará até 10 de novembro de 2026, às 12h de Brasília, para recuperar um documento oficial datado ou evidência histórica verificável que cumpra o corte de publicação acima. Essa espera não amplia o período de decisões ou correções consideradas. Falta de acesso não equivale a “Não”. Sem evidência suficiente até esse prazo, o caso será encaminhado ao operador conforme o procedimento vigente.\r\n\r\nSe uma decisão oficial tornar a resposta pública antes do fechamento programado, a equipe deverá informar o operador para tratar o encerramento antecipado conforme os recursos e procedimentos vigentes. Se houver participação após divulgação decisiva ou não for possível verificar a integridade temporal, a ocorrência será encaminhada ao operador, sem atribuição automática de resultado ou promessa de medida operacional.",
+        "options": [
+          {
+            "label": "SIM",
+            "hint": "Opção afirmativa"
+          },
+          {
+            "label": "NAO",
+            "hint": "Opção negativa"
+          }
+        ],
+        "editorial": {
+          "revision": 12,
+          "state": "approved",
+          "snapshot_hash": "e70ceb25ddd3c4ea70b2399dc57770730bbe9edfb4bc100c1ffb14bdc1157e9b"
+        }
+      }
+    },
+    {
+      "id": 38,
+      "market": {
+        "id": 38,
+        "slug": "o-brasil-ganhara-medalha-feminina-por-equipes-no-mundial-de-ginastica-artistica-de-2026",
+        "title": "O Brasil ganhará medalha feminina por equipes no Mundial de Ginástica Artística de 2026?",
+        "summary": "A seleção brasileira feminina foi convocada para o Mundial de Rotterdam, com Rebeca Andrade e Flávia Saraiva. A pergunta trata de ouro, prata ou bronze da equipe, não de medalhas individuais. As qualificatórias femininas começam em 18/10 e a final por equipes está prevista para 21/10.",
+        "kind": "binary",
+        "status": "open",
+        "category_id": 18,
+        "subcategory_id": 64,
+        "event_id": 65,
+        "close_at": "2026-10-18T13:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.gymnastics.sport/site/events/detail.php?id=17247&type=sport",
+        "resolution_criteria": "As previsões encerram em 18/10/2026 às 10h00 de Brasília (UTC−3), antes da primeira sessão de qualificatórias femininas.\r\n\r\nEste mercado considera somente a medalha da equipe sênior feminina do Brasil na competição por equipes do 54º Campeonato Mundial de Ginástica Artística, edição Rotterdam 2026. Não contam medalhas individuais, masculinas, prêmios especiais, posições nas qualificatórias ou classificações olímpicas posteriores.\r\n\r\nVence “Sim” se a classificação final oficial da World Gymnastics, após o julgamento dos recursos aplicáveis, atribuir ao Brasil/BRA uma medalha de ouro, prata ou bronze nesta prova. Um empate reconhecido oficialmente com atribuição de medalha ao Brasil também conta como “Sim”.\r\n\r\nVence “Não” se o resultado oficial final não atribuir medalha ao Brasil, inclusive por eliminação nas qualificatórias, desistência, ausência, desclassificação ou posição fora das medalhas. A substituição de atletas não muda a identidade da equipe brasileira. Não se transforma uma desclassificação de atleta isolada automaticamente em “Não”: vale seu efeito na classificação final da equipe.\r\n\r\nPara esta apuração serão considerados os resultados e comunicados oficiais publicados até 27 de outubro de 2026, às 23h59min59s, horário de Brasília, inclusive. Se o documento indicar apenas a data, a data oficial de 27/10 está integralmente incluída. Se indicar horário e fuso, o limite é aplicado após conversão para Brasília. Uma correção oficial publicada dentro do corte substitui a versão anterior; correções posteriores não entram nesta apuração.\r\n\r\nSe houver adiamento, a nova data só conta se permitir resultado oficial da prova publicado dentro desse corte. Cancelamento da prova ou adiamento para além do corte, sem classificação final válida dessa prova, não determina “Não”: nesses casos não há resposta esportiva comprovada dentro das condições e a apuração é encaminhada ao operador conforme o procedimento vigente, sem promessa de cancelamento ou reabertura do mercado. A ausência de medalha ao Brasil determina “Não” somente quando comprovada pela classificação final ou decisão oficial conclusiva relativa à participação brasileira nessa prova efetivamente disputada. A mera ausência de um documento não prova nenhum resultado.\r\n\r\nA fonte prioritária é a classificação oficial final da World Gymnastics/Swiss Timing disponibilizada a partir da página do evento 17247: https://www.gymnastics.sport/site/events/detail.php?id=17247&type=sport . Uma reprodução integral do mesmo documento pela organização local ou pela CBG poderá servir para consultá-lo se o original estiver indisponível; um texto jornalístico não substitui a classificação. Comunicados oficiais da World Gymnastics podem comprovar cancelamento, adiamento ou correção. Entre documentos oficiais válidos, prevalece a revisão mais recente publicada dentro do corte. Divergência sem revisão identificável não será resolvida por escolha arbitrária de fonte.\r\n\r\nSe for necessário recuperar documento publicado dentro do corte, a equipe aguardará até 30 de outubro de 2026, às 18h00 de Brasília. Sem evidência suficiente, ou com divergência oficial não resolvida, a apuração permanecerá pendente de revisão editorial, sem declarar “Não” por ausência de acesso. Esta regra não promete reabertura ou cancelamento do mercado. O registro da apuração deve identificar emissor, título/prova, edição, data e revisão do documento efetivamente utilizado.",
+        "options": [
+          {
+            "label": "SIM",
+            "hint": "Opção afirmativa"
+          },
+          {
+            "label": "NAO",
+            "hint": "Opção negativa"
+          }
+        ],
+        "editorial": {
+          "revision": 14,
+          "state": "approved",
+          "snapshot_hash": "debb8284652ef390a3b265b71fae0d987d5a7f11bfa2c504c024226be956d4ab"
+        }
+      }
+    },
+    {
+      "id": 39,
+      "market": {
+        "id": 39,
+        "slug": "joao-fonseca-sera-campeao-de-simples-do-atp-500-da-basileia-de-2026",
+        "title": "João Fonseca será campeão de simples do ATP 500 da Basileia de 2026?",
+        "summary": "João Fonseca está confirmado no Swiss Indoors Basel e defenderá o título conquistado em 2025, diante de adversários como Ben Shelton, Félix Auger-Aliassime e Taylor Fritz. A pergunta trata do campeão de simples da edição de 2026, cuja chave principal está prevista de 26 de outubro a 1º de novembro.",
+        "kind": "binary",
+        "status": "open",
+        "category_id": 18,
+        "subcategory_id": 65,
+        "event_id": 69,
+        "close_at": "2026-10-23T15:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.swissindoorsbasel.ch/en/tournament/tournament-news/",
+        "resolution_criteria": "O mercado considera somente o campeão oficial da chave de simples masculina profissional dos Swiss Indoors Basel, edição 2026, na Basileia. Não contam duplas, qualificatório isolado, outro torneio, títulos anteriores ou ranking posterior.\r\n\r\nVence Sim se o registro oficial atribuir a João Fonseca o título de simples dessa edição. Vence Não se o registro oficial atribuir o título a outro atleta. Retirada, ausência, desclassificação ou eliminação de Fonseca não transfere a pergunta a seu substituto: se a edição atribuir o título a outro atleta, vence Não. Vitória por abandono, walkover ou decisão administrativa conta conforme a atribuição oficial do título. Empate parcial em partida não decide o mercado; vale o título oficialmente atribuído. Se, excepcionalmente, houver título compartilhado oficialmente atribuído a Fonseca, ele conta como campeão para Sim.\r\n\r\nAs previsões encerram em 23/10/2026 às 12h00 de Brasília. Serão considerados documentos e correções oficiais publicados até 08/11/2026 às 23h59min59s de Brasília, inclusive. Se um documento tiver somente data, a data oficial exibida de 08/11 estará integralmente incluída; se trouxer hora e fuso, o instante será convertido para Brasília. A revisão mais recente publicada dentro desse corte substitui a anterior. Decisões posteriores não mudam o resultado contratado.\r\n\r\nA evidência principal será a notícia ou o comunicado específico e datado da organização Swiss Indoors Basel que identifique o campeão de simples de 2026, disponível a partir da página oficial de notícias. Em caso de retificação ou divergência, uma decisão formal da ATP sobre o título prevalece sobre relato anterior do organizador; em seguida, prevalece a retificação oficial específica identificável sobre a versão corrigida. Um relato oficial datado da ATP ou reprodução integral identificável do documento original poderá servir quando o registro do organizador estiver indisponível. Imprensa e placares de terceiros não substituirão a evidência oficial. A ficha de apuração deve registrar emissor, edição, prova, URL, data, horário de consulta e versão/correção efetivamente utilizada. Não se presume arquivo de todas as versões nem disponibilidade permanente. Se uma página consultada depois não permitir comprovar que aquele conteúdo ou correção já estava publicado no corte, não se reconstruirá a versão por suposição; será necessário um registro oficial datado corroborante, ou a evidência permanecerá insuficiente.\r\n\r\nAdiamento só preserva uma resposta esportiva se resultar em atribuição oficial do título publicada dentro do corte. Cancelamento, edição sem campeão, título suspenso ou retirado sem atribuição final válida, ausência de evidência ou conflito oficial insolúvel não determinam Não por si sós. A recuperação de documento publicado dentro do corte pode aguardar até 10/11/2026 às 18h00 de Brasília. Persistindo insuficiência, encaminhar à revisão editorial e ao operador conforme o procedimento vigente, sem fabricar resposta nem prometer cancelamento ou reabertura.\r\n\r\nSe a competição for antecipada ou Fonseca tiver retirada definitiva anunciada antes da abertura, reavaliar imediatamente a incerteza e não abrir uma pergunta já resolvida. Se o fato se tornar conhecido durante a participação, o responsável deverá solicitar o fechamento e registrar o ocorrido, sem apagar previsões ou mudar prazos para esconder o problema. Não foi designado responsável nesta pesquisa nem contratado monitoramento contínuo.",
+        "options": [
+          {
+            "label": "SIM",
+            "hint": "Opção afirmativa"
+          },
+          {
+            "label": "NAO",
+            "hint": "Opção negativa"
+          }
+        ],
+        "editorial": {
+          "revision": 7,
+          "state": "approved",
+          "snapshot_hash": "ea0eceea2b6a7c76786ab63ce7316de8936cd9382a5efdd545870402dbf672da"
+        }
+      }
+    },
+    {
+      "id": 44,
+      "market": {
+        "id": 44,
+        "slug": "quem-vencera-o-segundo-turno-presidencial-de-2026-flavio-bolsonaro-ou-lula",
+        "title": "Quem vencerá o segundo turno presidencial de 2026: Flávio Bolsonaro ou Lula?",
+        "summary": "Quem será anunciado oficialmente eleito pelo TSE no segundo turno, considerando atos e comunicados publicados até 01/11/2026 às23h59 de Brasília? Previsão informativa; não é pesquisa eleitoral nem recomendação de candidato.",
+        "kind": "multiple",
+        "status": "open",
+        "category_id": 51,
+        "subcategory_id": 67,
+        "event_id": 70,
+        "close_at": "2026-10-24T02:59:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.tse.jus.br/comunicacao/noticias | anúncio oficial datado de eleito e atos formais de correção",
+        "resolution_criteria": "Vence a opção correspondente à pessoa que o TSE anunciar oficialmente como eleita presidente da República no segundo turno ordinário nacional de 2026, incluindo votos do exterior, por comunicado ou ato oficial datado publicado até 01/11/2026 às 23h59min59s, inclusive, America/Sao_Paulo. Flávio Bolsonaro e Lula identificam pessoas, não substitutos partidários. O evento está programado para 25/10/2026. Um anúncio inequívoco de eleito feito pelo próprio TSE é suficiente mesmo antes de 100% das seções; não bastam liderança parcial, cálculo da plataforma, pesquisa ou projeção de imprensa. Hierarquia: ato formal do TSE que proclame ou retifique expressamente o vencedor prevalece sobre comunicado de sua Secretaria de Comunicação; entre atos da mesma autoridade vale a retificação expressa mais recente publicada até o corte. Na ausência de ato prevalecente, usar o anúncio inequívoco de eleito no portal de notícias do TSE (https://www.tse.jus.br/comunicacao/noticias). Painel Resultados e arquivos oficiais corroboram a apuração, mas não substituem sozinhos prova temporal do anúncio. Registrar URL específico, data/hora de publicação e conteúdo decisivo. Uma notícia com atualização posterior ao corte só vale com versão recuperável que comprove o conteúdo relevante até o corte; a data original da página isoladamente não basta. Correções ou decisões posteriores não alteram este resultado datado. Empate ou desclassificação será tratado apenas conforme a declaração ou retificação inequívoca do TSE dentro do corte. Se nenhum dos dois nomes for anunciado eleito, outro nome vencer, houver substituição que inviabilize o par, adiamento/cancelamento ou atos oficiais contraditórios sem solução, manter sem resultado para revisão, sem vitória presumida, reabertura de participações ou prorrogação automática do corte. Se faltar evidência suficiente no corte, aguardar até 08/11/2026 às 23h59min59s de Brasília, inclusive, apenas para recuperar prova do que foi publicado até o corte; não incorporar fatos posteriores. Persistindo a falta ou ambiguidade, manter sem resultado e encaminhar ao responsável editorial e suporte. Não há reabertura, anulação ou mudança de regra automática. Ação operacional depende das permissões e do estado do painel; depois do selamento, preservar o histórico e registrar eventual correção em entrada adicional.",
+        "options": [
+          {
+            "label": "Flávio Bolsonaro",
+            "hint": ""
+          },
+          {
+            "label": "Lula",
+            "hint": ""
+          }
+        ],
+        "editorial": {
+          "revision": 14,
+          "state": "approved",
+          "snapshot_hash": "a887e234ed573ef79e01547781763488214234ccd252d83307f8e679ac1a7a9e"
+        }
+      }
+    },
+    {
+      "id": 50,
+      "market": {
+        "id": 50,
+        "slug": "qual-album-vencera-album-do-ano-no-latin-grammy-2026",
+        "title": "Qual álbum vencerá Álbum do Ano no Latin Grammy 2026?",
+        "summary": "Anitta, Rosalía, Karol G e outros artistas disputam Álbum do Ano no Latin Grammy 2026. Qual álbum levará o prêmio? Se dois ou mais álbuns dividirem oficialmente a vitória, o resultado será “Empate entre álbuns”. Cerimônia prevista para 12 de novembro.",
+        "kind": "multiple",
+        "status": "open",
+        "category_id": 52,
+        "subcategory_id": 69,
+        "event_id": 73,
+        "close_at": "2026-11-12T00:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.latingrammy.com/pt/awards/",
+        "resolution_criteria": "Considera-se exclusivamente Álbum do Ano da 27ª edição do Latin Grammy (2026), segundo o registro elegível abaixo. Vence a opção à qual pertença o único álbum oficialmente vencedor: EQUILIBRIVM — Anitta; LUX (Complete Works) — Rosalía; Tropicoqueta — Karol G; FREE SPIRITS — CA7RIEL & Paco Amoroso; ou Taracá — Jorge Drexler. “Outro álbum indicado” inclui exclusivamente estes cinco trabalhos: Vendrán Suaves Lluvias — Silvana Estrada; Femme Fatale — Mon Laferte; Muda — Carín León; La Vida Era Más Corta — Milo J; ¿Dónde Es El After? — Rawayana. Nenhum álbum pertence a dois grupos. A identidade é a obra e o artista indicados, independentemente de diferenças meramente gráficas de caixa ou acentuação. EQUILIBRIVM II não é EQUILIBRIVM. Indicação, homenagem, apresentação ou vitória em outra categoria não contam.\r\n\r\nAs seis opções de álbuns só vencem quando houver um único álbum oficialmente vencedor. Se dois ou mais álbuns distintos dividirem oficialmente o prêmio, vence exclusivamente “Empate entre álbuns”, inclusive quando todos estiverem na lista de “Outro álbum indicado”. Vários artistas ou produtores premiados pelo mesmo álbum não são empate. Empate de votos sem declaração oficial de co-vencedores não basta. Não há desempate por ordem de anúncio, popularidade ou escolha da equipe. Vencedor fora dos dez trabalhos enumerados exige revisão humana administrativa; “Outro” não significa prêmio não concedido, falta de prova ou álbum não listado. Alteração oficial da lista exige revalidação humana antes da abertura; depois de publicado, não reescrever opções para acomodar resultado inesperado.\r\n\r\nPrevisões encerram em 2026-11-11T21:00:00-03:00, fuso America/Sao_Paulo. O fechamento permanece mesmo se o evento for adiado. Considerar resultado da mesma edição/categoria anunciado publicamente até 2026-11-19T23:59:59-03:00, inclusive. Usar como base anúncio oficial datado da cerimônia, comunicado ou publicação de vencedor da Academia Latina da Gravação. Uma atualização silenciosa de página consultada posteriormente não substitui o registro-base. Incorporar somente correções oficiais expressas com publicação comprovada até esse corte; entre elas, prevalece a mais recente que expressamente retifique o resultado anterior. Correções posteriores ao corte não mudam a resposta contratual. Se não for possível comprovar a data de uma alteração, não presumir sua tempestividade.\r\n\r\nFonte principal: https://www.latingrammy.com/pt/awards/ e publicação oficial da edição/categoria acessível nesse portal. Alternativa: anúncio ou transmissão oficial identificável e datada da Academia Latina da Gravação. A cobertura datada da emissora oficial Univision pode corroborar o anúncio; correção expressa tempestiva da Academia prevalece sobre a emissora. Divergência que essa prioridade não solucione exige revisão administrativa.\r\n\r\nAguardar o corte de correções antes da resolução definitiva. Até 2026-11-22T23:59:59-03:00, inclusive, a equipe poderá recuperar evidências publicadas dentro do corte anterior; essa janela não aceita novos resultados ou correções tardias. Registrar URL, instituição, data/hora de publicação e conteúdo decisivo. O momento de recuperação não altera o registro elegível. Falha de acesso não determina opção vencedora. Cancelamento, prêmio não concedido ou retirado sem resultado elegível conclusivo, alteração sem data comprovável, divergência não solucionada, ausência de prova suficiente ao fim da recuperação ou resultado sem uma única opção aplicável serão encaminhados à revisão humana administrativa, sem escolher resposta por suposição. Não se promete cancelamento, reabertura, reembolso, prorrogação ou outra mudança automática de estado; o tratamento depende das ações efetivamente disponíveis na plataforma.",
+        "options": [
+          {
+            "label": "EQUILIBRIVM — Anitta",
+            "hint": ""
+          },
+          {
+            "label": "LUX (Complete Works) — Rosalía",
+            "hint": ""
+          },
+          {
+            "label": "Tropicoqueta — Karol G",
+            "hint": ""
+          },
+          {
+            "label": "FREE SPIRITS — CA7RIEL & Paco Amoroso",
+            "hint": ""
+          },
+          {
+            "label": "Taracá — Jorge Drexler",
+            "hint": ""
+          },
+          {
+            "label": "Outro álbum indicado",
+            "hint": ""
+          },
+          {
+            "label": "Empate entre álbuns",
+            "hint": "Dois ou mais álbuns dividem oficialmente o prêmio, inclusive os listados em Outro."
+          }
+        ],
+        "editorial": {
+          "revision": 8,
+          "state": "approved",
+          "snapshot_hash": "ea829a0c352193e581e46111e51cf6a0a3dda6b2066d6edeed4e3e7b0b974afd"
+        }
+      }
+    },
+    {
+      "id": 53,
+      "market": {
+        "id": 53,
+        "slug": "o-volei-renata-sera-campeao-da-supercopa-masculina-de-volei-2026",
+        "title": "O Vôlei Renata será campeão da Supercopa masculina de vôlei 2026?",
+        "summary": "Sada Cruzeiro e Vôlei Renata disputam a final única em 23 de outubro, às 21 h, em São José (SC). O Cruzeiro defende o título; o Renata busca sua primeira Supercopa depois de vencer o rival na Copa Brasil 2026. A pergunta considera o campeão oficialmente declarado pela CBV, conforme o corte e as regras. GT₵ são créditos educativos, sem dinheiro real. Apuração a partir de 31/10, após o corte dos documentos oficiais em 30/10.",
+        "kind": "binary",
+        "status": "draft",
+        "category_id": 18,
+        "subcategory_id": 71,
+        "event_id": 74,
+        "close_at": "2026-10-22T23:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://wp.cbv.com.br/institucional/notas-oficiais",
+        "resolution_criteria": "Pergunta sobre o campeão único da Supercopa masculina de vôlei 2026. “Sim” se o Vôlei Renata for declarado campeão único pela CBV; “Não” se outro clube for declarado campeão único. Não trata de Copa Brasil/Superliga. Fonte principal: nota oficial CBV de aprovação/homologação do resultado; índice https://wp.cbv.com.br/institucional/notas-oficiais . Contam documentos publicados até 30/10/2026 inclusive, dia civil America/Sao_Paulo encerrando 23:59:59-03:00. Data 30/10 incluída;31/10 excluída. Entre notas, vale a mais recente que expressamente homologue/retifique o título; mesma data: maior número. Alternativa somente na ausência de nota: comunicado datado da própria CBV que explicitamente declare campeão; nota prevalece sobre notícia. Documentos sem data recuperável, tabelas ao vivo e notícias de terceiros não decidem. Desempates esportivos ou decisão administrativa/W.O. contam somente pelo campeão oficialmente declarado. Adiamento não prorroga participação; resultado deve estar dentro do corte. Cancelamento/substituição só geram resposta se houver campeão único declarado. Co-título, ausência de campeão ou conflito não solucionado: aguardar evidência até 02/11/2026 às 23:59:59-03:00 e encaminhar ao humano conforme procedimentos da plataforma, sem presumir “Não” ou cancelamento automático. Apuração a partir 31/10; corte independe do momento da consulta. Correções oficiais publicadas após corte não alteram resposta contratada; erro do operador na aplicação da regra segue procedimento humano, sem promessa de reabertura. Fechamento 22/10/2026 às 20 h America/Sao_Paulo, antes do jogo previsto 23/10 às 21 h. GT₵ são créditos educativos, sem dinheiro real.",
+        "options": [
+          {
+            "label": "SIM",
+            "hint": "Opção afirmativa"
+          },
+          {
+            "label": "NAO",
+            "hint": "Opção negativa"
+          }
+        ],
+        "editorial": {
+          "revision": 7,
+          "state": "approved",
+          "snapshot_hash": "e006a55f5eb32f91a17557a4d3cd7e856016890e3412467946f8aebd5d5c6095"
+        }
+      }
+    },
+    {
+      "id": 55,
+      "market": {
+        "id": 55,
+        "slug": "qual-obra-vencera-romance-literario-no-premio-jabuti-2026",
+        "title": "Qual obra vencerá Romance Literário no Prêmio Jabuti 2026?",
+        "summary": "Seu livro preferido será também a escolha do júri? Cinco obras disputam Romance Literário no Jabuti 2026, com anúncio previsto para 27 de outubro. A pergunta trata dessa categoria, não de Livro do Ano. GT₵ são créditos educativos, sem dinheiro real. Apuração a partir de 31/10, considerando comunicados oficiais até 30/10 às 23h59 de Brasília.",
+        "kind": "multiple",
+        "status": "draft",
+        "category_id": 53,
+        "subcategory_id": 72,
+        "event_id": 75,
+        "close_at": "2026-10-26T21:00:00Z",
+        "close_timezone": "America/Sao_Paulo",
+        "source": "https://www.premiojabuti.com.br/jabuti/noticias/",
+        "resolution_criteria": "Considera-se exclusivamente a categoria Romance Literário da 68ª edição do Prêmio Jabuti (2026), não Livro do Ano nem Romance de Entretenimento. Vence a opção com a obra declarada única vencedora pela Câmara Brasileira do Livro (CBL). As cinco obras nomeadas são Coração sem medo (Itamar Vieira Junior), Dança de enganos (Milton Hatoum), Meridiana (Eliana Alves Cruz), Uma delicada coleção de ausências (Aline Bei) e Vez em quando, Billie Holiday (Evandro Affonso Ferreira). “Outro resultado oficial” vence somente se a CBL declarar outra obra vencedora ou, excepcionalmente, mais de uma obra co-vencedora. O regulamento prevê desempate pelo júri; empate de notas não significa co-vitória.\r\nParticipação até 26/10/2026 às 18h00 (America/Sao_Paulo, UTC−03), antes da cerimônia prevista para 27/10, cujo horário não foi confirmado. Vale o resultado oficial da edição de 2026 e retificações em comunicados oficiais publicados até 30/10/2026 às 23h59min00s de Brasília, inclusive no instante-limite. Apuração a partir de 31/10. Correções da fonte publicadas depois desse corte não alteram a resposta contratada; erro de aplicação da regra será encaminhado ao humano conforme o procedimento da plataforma.\r\nFonte prioritária: publicação oficial da CBL/Prêmio Jabuti identificando edição, categoria e vencedor, acessível a partir de https://www.premiojabuti.com.br/jabuti/noticias/ e do arquivo Premiados por Edição. Em divergência, prevalece a retificação oficial mais recente com data verificável dentro do corte. A lista anual corrobora o comunicado; sozinha, uma edição silenciosa sem data recuperável não estabelece o resultado no corte. Alternativa: matéria datada da CNN Brasil ou PublishNews que reproduza expressamente o anúncio oficial da mesma categoria/edição e permita verificar o corte; não substitui decisão da CBL por opinião do veículo.\r\nAdiamento: mantém-se fechamento e corte, sem aceitar previsões depois do fechamento. Se houver vencedor oficial dentro do corte, aplica-se a regra. Cancelamento, prêmio não atribuído, nenhuma decisão até o corte, documento indisponível ou divergência sem solução não contam como “Outro resultado oficial”: aguardar evidência recuperável até 06/11/2026 às 23h59 de Brasília, exclusivamente de decisão publicada dentro do corte; persistindo a falta, encaminhar ao responsável humano sem escolher resposta por suposição nem prometer cancelamento automático. Desistência/desclassificação de finalista segue o vencedor oficialmente declarado. Não se usa voto, comentário ou ranking de redes sociais na resolução. GT₵ são créditos educativos, sem dinheiro real.",
+        "options": [
+          {
+            "label": "Coração sem medo — Itamar Vieira Junior",
+            "hint": ""
+          },
+          {
+            "label": "Dança de enganos — Milton Hatoum",
+            "hint": ""
+          },
+          {
+            "label": "Meridiana — Eliana Alves Cruz",
+            "hint": ""
+          },
+          {
+            "label": "Uma delicada coleção de ausências — Aline Bei",
+            "hint": ""
+          },
+          {
+            "label": "Vez em quando, Billie Holiday — Evandro Affonso Ferreira",
+            "hint": ""
+          },
+          {
+            "label": "Outro resultado oficial",
+            "hint": ""
+          }
+        ],
+        "editorial": {
+          "revision": 7,
+          "state": "approved",
+          "snapshot_hash": "574873b01cb7e566c775de1e16a25bb2c7894714d181716045927ede18374238"
+        }
+      }
+    }
+  ]
+}

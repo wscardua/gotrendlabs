@@ -161,3 +161,24 @@ PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes
 2026-10-09 — Preflight PRD somente leitura: SSM3c6b5fda confirmou SHA b033afe4, seis serviços ativos e credencial Bedrock presente no executor (valor não exposto), switch ambiental 1, defaults textuais 20b/us-east-1. Consulta inicial da política precisou ser corrigida por uso inadequado do context manager; SSM8f95b96a concluiu Success sem stderr: thumbnail_enabled=true, Core/stability.stable-image-core-v1:1, us-west-2, 3:2, timeout180s, limites operador50/mercado50/global50 por24h e retenção24h; nenhum queued/running. Valores atuais substituem o recibo histórico de defaults10/5 no que se refere à configuração efetiva observada, sem alterar os defaults da spec. Preservar essas escolhas no deploy. Nenhuma mutação produtiva ou inferência; preflight não comprova acesso de inferência Mantle do token produtivo.
 
 - Documento editorial único v1.5: cliente MCP/Dot externo precisa atualizar o schema das ferramentas e passar por homologação real após rollout. Testes locais não comprovam que uma configuração já cadastrada no Dot foi atualizada.
+
+## Agenda — implantação e revisão de dados pendentes (2026-10-17)
+
+- Não houve merge/deploy/migração produtiva. Complementos dos ativos aguardam inventário atualizado e revisão humana explícita; estado final produtivo exige todos os ativos abrangidos regularizados.
+- IDs 35/36/38/39/44/50: sem hora explícita de resolução. IDs 45/51/52: candidatos explícitos reconferidos, ainda não aprovados. IDs 53/55: detalhes agora acessíveis, mas hora de apuração ausente; completar pelo fluxo de drafts, sem backfill publicado.
+- Revisões editoriais não expostas a esta identidade precisam de confirmação staff antes da aplicação; ausência na projeção MCP não significa inexistência no banco.
+- Bootstrap Android local sem configuração Firebase lança PlatformException antes do runApp; limita o smoke do bootstrap padrão. QA da agenda utiliza entrada temporária sem Firebase e API/DB isolados, sem alteração do bootstrap de produção. Atualização do APK de QA também encontrou pouco espaço no emulador existente; sem remoção de dados do usuário.
+- Grants separados em staging e sequência coordenada de implantação devem seguir `docs/operations/resolution-agenda-runbook.md`.
+
+## 2026-10-17 — Agenda simplificada por solicitação do usuário
+
+WFLOW-20261017-SIMPLIFY-RESOLUTION-AGENDA substitui o modelo de três prazos por `expected_resolution_at` e `schedule_timezone`. FastAPI continua autoridade; clientes web/Admin/Flutter e MCP seguem o mesmo contrato. Históricos assinados preservados; campos retirados não têm uso operacional. Política 1.4/ficha 1.8; inventário v2 exige nova revisão. Detalhes e verificações em `docs/specs/testing/resolution-agenda-simplification-results.md`. Produção continua pendente, sem autorização de merge/deploy/backfill.
+
+## Fonte ampliada no detalhe Flutter — 17/10/2026
+
+Testes do critério expansível a 2× passaram no componente isolado. O ensaio da tela inteira a 2×/390 px revelou overflow em `_HeroMeta` e `_CompactMetricTile` de market_cards.dart, fora das linhas desta alteração. Não foi relaxada assertiva nem alegada validação completa da tela nesse tamanho de fonte. Revisar o dimensionamento desses componentes em tarefa própria; comportamento normal e critérios a 1×/2× cobertos. Ver WFLOW-20261017-MOBILE-CRITERIA-DEADLINES.
+
+
+## Fechamento da agenda — preparação em 17/10/2026
+
+Descrição da PR ainda depende de aprovação explícita do usuário antes da submissão. Backfill segue inventário atualizado/revisado; horários pendentes não são decisões automatizáveis. CI main pode aplicar schema e reiniciar serviços, mas não distribui Flutter. Build Docker local completo limitado por falta de espaço no Docker durante apt; Dockerfile check passou, sem limpeza de imagens/volumes de outras tarefas. Exigir build Actions aprovado antes do merge. Recibo atual em ../testing/resolution-agenda-closeout-20261017.md.

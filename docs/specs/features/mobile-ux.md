@@ -382,3 +382,7 @@ Evitar:
 - ticket de previsao nao induz escolha padrao
 - design parece nativo mobile e coerente com o produto, nao uma copia de web responsiva
 - telas implementadas devem ser revisadas com `gotrendlabs-mobile-ux-designer` e screenshots do emulador antes de encerrar a fatia visual
+
+## Critérios longos e prazos no detalhe — 17/10/2026
+
+A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (`expected_resolution_label`) da FastAPI no rodapé do resumo, após divisor discreto, com tipografia secundária e quebra natural. As datas não integram o card do critério. O critério precede o ticket e mantém a apresentação aprovada em 12/10: prévia de três linhas; textos longos oferecem “Ver critério de resolução completo”, abrindo painel inferior com texto integral selecionável, rolagem e Fechar. Texto curto não recebe ação extra. Sem expansão dentro da página, reescrita do texto ou cálculo local dos prazos. Testar fonte ampliada, fechamento do painel e manutenção do detalhe.

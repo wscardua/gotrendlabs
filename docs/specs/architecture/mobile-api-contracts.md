@@ -463,3 +463,9 @@ Mensagens tecnicas devem ficar fora da UI final.
 - mutacoes autenticadas usam apenas FastAPI
 - contrato novo necessario e documentado antes de implementado
 - lacunas de auth mobile estao registradas antes de login persistente
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+Detalhe mobile: `close_label` e previsão ficam no rodapé do resumo. O card do critério mantém prévia de três linhas e abre texto integral selecionável em painel inferior rolável com Fechar. Somente o estado de apresentação é local; conteúdo integral, estados e datas são da FastAPI. Sem campos/endpoints novos ou impacto MCP deste ajuste visual. Ver WFLOW-20261017-RESTORE-MOBILE-CRITERIA e WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT.

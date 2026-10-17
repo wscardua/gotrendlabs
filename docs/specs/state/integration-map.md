@@ -259,3 +259,24 @@ Thumbnails: montagem visual v3 no backend (thumbnail_prompt.py), chamada Runtime
 ## Prévia web de previsão e posição
 
 Slider/opção → fila por ticket com pausa de 300 ms → POST Django com CSRF → única chamada ao endpoint FastAPI de prévia → fragmento HTML sem contexto global. Nenhuma chamada de detalhe/carteira/perfil/notificações é necessária para renderizar a prévia. FastAPI conserva os cálculos e validações; confirmação segue seu fluxo próprio.
+
+## 2026-10-17 — Agenda estruturada de apuração
+
+WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA: implementação local de projeção PostgreSQL e eventos assinados vinculados à definição original; FastAPI autoritativa para validação/classificação/reagendamento/recuperação; MCP editorial existente com política 1.3 e revisão de snapshot; Admin Ops/fila/painel de contratos; detalhe web/Flutter; comando de complemento com dry-run e inventário revisável. Sem mutação financeira por vencimento e sem job/notification/resolução automática. Migração produtiva e revisão de dados permanecem separadas da validação local. Referência: `features/market-resolution-agenda.md`, ADR-0016 e `testing/resolution-agenda-results.md`.
+
+## 2026-10-17 — Agenda simplificada por solicitação do usuário
+
+WFLOW-20261017-SIMPLIFY-RESOLUTION-AGENDA substitui o modelo de três prazos por `expected_resolution_at` e `schedule_timezone`. FastAPI continua autoridade; clientes web/Admin/Flutter e MCP seguem o mesmo contrato. Históricos assinados preservados; campos retirados não têm uso operacional. Política 1.4/ficha 1.8; inventário v2 exige nova revisão. Detalhes e verificações em `docs/specs/testing/resolution-agenda-simplification-results.md`. Produção continua pendente, sem autorização de merge/deploy/backfill.
+
+Simplificação concluída e verificada localmente: 125 + rodada final 27 testes backend/MCP/UI (sobrepostos), Flutter analyze/115 testes, OpenAPI/checks e Chromium desktop/estreito aprovados.
+
+## 2026-10-17 — Mobile: critério compacto e fechamento explícito
+
+WFLOW-20261017-MOBILE-CRITERIA-DEADLINES: critério com quatro linhas e expandir/recolher sem reescrever conteúdo; fechamento (`close_label`) ao lado da informação de resolução prevista, usando labels da API. Texto curto não exibe controle. Flutter analyze limpo/118 testes aprovados/build debug e atualização do pacote físico QA concluídos. Conferência visual no aparelho aguarda desbloqueio da tela; limitação geral de fonte 2× em hero/métricas registrada em known-gaps. Sem mudança de API/MCP/permissões/produção. Evidências em `docs/specs/testing/mobile-criteria-deadlines.md`.
+
+QA físico de WFLOW-20261017-MOBILE-CRITERIA-DEADLINES concluído após desbloqueio pelo usuário: prévia/controle e datas distintas conferidos no Samsung, sem mutação de mercado. Versão de teste deixada aberta nessa seção.
+
+
+## 2026-10-17 — Revisão da integração da agenda
+
+MCP preserva códigos schedule_incomplete/schedule_timezone_invalid/schedule_offset_required/schedule_order_invalid/schedule_expired da FastAPI; texto livre/código desconhecido não é exposto e scopes permanecem iguais. Mobile atual usa prévia de três linhas com painel inferior e prazos no rodapé do resumo; substitui a apresentação expansível de quatro linhas descrita no registro histórico acima. Sem nova dependência. Ver WFLOW-20261017-AGENDA-REVIEW-FIXES.

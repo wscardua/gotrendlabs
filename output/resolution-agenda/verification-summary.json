@@ -1,0 +1,80 @@
+{
+  "recorded_at": "2026-10-17T20:36:16.950597+00:00",
+  "backend_runs": [
+    {
+      "run": "consolidated",
+      "tests": 123,
+      "seconds": 219.873,
+      "result": "passed"
+    },
+    {
+      "run": "core_integrity",
+      "tests": 55,
+      "seconds": 51.115,
+      "result": "passed"
+    },
+    {
+      "run": "final_ui_api_migration",
+      "tests": 26,
+      "seconds": 20.135,
+      "result": "passed"
+    },
+    {
+      "run": "editorial_review",
+      "tests": 11,
+      "seconds": 8.606,
+      "result": "passed"
+    },
+    {
+      "run": "daemon",
+      "tests": 1,
+      "seconds": 1.407,
+      "result": "passed"
+    },
+    {
+      "run": "reschedule_error_state",
+      "tests": 1,
+      "seconds": 1.729,
+      "result": "passed"
+    }
+  ],
+  "flutter_tests": 115,
+  "flutter_analyze": "passed",
+  "debug_apk_build": "passed",
+  "keyboard": "passed",
+  "cli": {
+    "cli-dry-run": {
+      "mode": "dry-run",
+      "markets": [
+        {
+          "market_id": 2,
+          "action": "would_apply"
+        }
+      ]
+    },
+    "cli-apply": {
+      "mode": "apply",
+      "markets": [
+        {
+          "market_id": 2,
+          "action": "apply"
+        }
+      ]
+    },
+    "cli-replay": {
+      "mode": "apply",
+      "markets": [
+        {
+          "market_id": 2,
+          "action": "already_applied"
+        }
+      ]
+    },
+    "cli-verification": {
+      "fixture": "fixture-cli-agenda",
+      "schedule_version": 1,
+      "verification_errors": []
+    }
+  },
+  "scope": "local isolated implementation; no production mutation, merge or deploy"
+}

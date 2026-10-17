@@ -1,0 +1,78 @@
+{
+  "market_slug": "quem-avanca-a-final-da-libertadores-masculina-2026-fluminense-ou-palmeiras",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "multiple",
+      "event": "Libertadores Masculina 2026",
+      "title": "Quem avança à final da Libertadores masculina 2026: Fluminense ou Palmeiras?",
+      "options": [
+        {
+          "id": 81,
+          "hint": "CONMEBOL atribui ao Fluminense a vaga na final neste confronto e dentro da janela contratada.",
+          "label": "Fluminense",
+          "order": 1
+        },
+        {
+          "id": 82,
+          "hint": "CONMEBOL atribui ao Palmeiras a vaga na final neste confronto e dentro da janela contratada.",
+          "label": "Palmeiras",
+          "order": 2
+        }
+      ],
+      "summary": "Fluminense e Palmeiras disputarão uma vaga na final em dois jogos: 14 de outubro, no Maracanã, e 21 de outubro, em São Paulo, ambos programados para 21h30. Quem terminar o confronto classificado pela CONMEBOL será a resposta, incluindo o desempate oficial quando necessário.",
+      "category": "Esporte",
+      "close_at": "2026-10-14T23:30:00Z",
+      "event_id": 67,
+      "market_id": 35,
+      "category_id": 18,
+      "market_slug": "quem-avanca-a-final-da-libertadores-masculina-2026-fluminense-ou-palmeiras",
+      "subcategory": "Futebol",
+      "published_at": "2026-10-11T16:10:35.608708Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 8,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://gol.conmebol.com/libertadores/pt-br",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "Vence a opção correspondente ao clube que a CONMEBOL identificar como classificado para a final da Libertadores masculina de 2026 no confronto de semifinal Fluminense x Palmeiras. Consideram-se o confronto inteiro, os desempates oficiais e eventual classificação administrativa. Uma vitória na ida ou na volta, isoladamente, não determina a resposta. Empate em um jogo não é opção vencedora.\r\n\r\nAs previsões encerram-se em 14/10/2026 às 20h30, horário de São Paulo, antes da primeira partida. O confronto deve ter resultado oficial identificável até 24/10/2026 às 23h59min59s, nesse fuso. Adiamento ou mudança de estádio não altera a identidade do confronto nem estende o fechamento. Se houver antecipação, será necessária revisão do fechamento antes da abertura; resultado conhecido ou disputa iniciada impede abrir a pergunta.\r\n\r\nA evidência será um comunicado, súmula, decisão ou notícia oficial datada da CONMEBOL referente a esse confronto. Entre registros divergentes, prevalece uma decisão formal sobre a classificação; depois, a súmula ou comunicado específico; depois, a notícia oficial do confronto. Uma retificação formal, com data identificável até o corte de 24/10, prevalece sobre o registro corrigido. Uma página dinâmica sem versão recuperável não substituirá um documento datado para decidir uma divergência. Alterações ou decisões posteriores ao corte não modificam a resposta contratada.\r\n\r\nDesistência, substituição ou desclassificação só determina uma opção se a CONMEBOL atribuir a vaga a Fluminense ou Palmeiras dentro da janela. Se os dois forem excluídos, outro clube receber a vaga, não houver classificado, o confronto for cancelado sem atribuição da vaga, ou houver decisão expressamente provisória/suspensa sem conclusão até o corte, não se escolherá vencedor por suposição. Se a fonte estiver indisponível, buscar outro registro oficial da mesma entidade que comprove a mesma classificação, respeitando o corte. A obtenção da evidência pode esperar até 26/10 às 23h59min59s. Persistindo ausência ou conflito insolúvel, encaminhar ao operador autorizado para o tratamento previsto pela plataforma, sem resolver como uma das equipes por falta de informação. Nenhum cancelamento ou reabertura automáticos são prometidos.\r\n\r\nQuando o documento trouxer apenas a data, será elegível se a data local exibida for anterior ou igual ao dia do corte documental. Quando houver horário e fuso, usa-se o instante convertido para America/Sao_Paulo. A consulta posterior não altera o corte nem permite reconstruir versões por suposição. A rota oficial de apuração é https://gol.conmebol.com/libertadores/pt-br, usando o registro específico datado do confronto ou título."
+    },
+    "hash": "e3c222cf2f4258637abc602f0911bc882d7c151ec209c615f9753dcaec4199ce",
+    "signature": "C/Dk1goOYerGfBVUPqzkMgOyf3drPOcXPEJLk9w6tcj6TY6aUqMGjXZtGA1+oW3zi9ka1M0m6Flg9Xc0dMcpDA==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 1,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 5,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:5",
+      "payload_hash": "e3c222cf2f4258637abc602f0911bc882d7c151ec209c615f9753dcaec4199ce",
+      "previous_event_hash": "d44815e20b97171b032779eaff4f8e115f26bff48e46987825cb78362f6cfbfa",
+      "event_hash": "58cbef2daabfc1db7e326a693df20ab5617d5b9d8e851289611fa30640f7ecb0",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T16:10:35.608708+00:00"
+    },
+    {
+      "sequence": 12,
+      "event_type": "market_locked",
+      "payload_reference": "market:quem-avanca-a-final-da-libertadores-masculina-2026-fluminense-ou-palmeiras:locked",
+      "payload_hash": "5d5267a698aeef2c1f9784e91c005e1cbf69b406a77a25a7e1812d8e39770606",
+      "previous_event_hash": "ab6fef8a61b72c94aecdf3f0dd3292968d76b4ee6109fc6dab56cd2313f87584",
+      "event_hash": "e8ed411eaff8f4de6c5967cf3b982ed551be6e861e667a43d474b2fc5950c09d",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-14T23:30:35.325151+00:00"
+    }
+  ]
+}

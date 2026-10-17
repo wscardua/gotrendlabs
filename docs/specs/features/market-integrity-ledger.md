@@ -69,7 +69,7 @@ Estado terminal alternativo: `canceled`.
 
 Na publicacao, a FastAPI cria `market_integrity_definitions` na mesma transacao da mudanca para `open`. O payload inclui identificador/versao, titulo, resumo, tipo, taxonomia, opcoes ordenadas, criterio e fonte de resolucao, datas, timezone e regra de fechamento. Sem assinatura valida a transacao falha.
 
-Como a plataforma ainda não foi lançada ao público, mercados atuais sem definição assinada não são migrados nem permanecem no catálogo. Um comando operacional explícito, idempotente e protegido por `dry-run` remove todos os mercados sem `market_integrity_definitions`, inclusive rascunhos/agendados pré-lançamento, e seus efeitos operacionais relacionados, depois de inventário e snapshot validado. Toda publicação criada após o corte deve ter definição assinada pelo fluxo autoritativo; a API preserva defesa para recusar previsão ou selagem sem essa prova.
+A limpeza pré-lançamento é um procedimento histórico encerrado e não se aplica à agenda. Mercados atuais possuem provas e previsões que devem ser preservadas. A agenda inicial/complemento é append-only, vinculada ao hash da definição; veja ADR-0016. Toda nova publicação exige definição e agenda assinadas na mesma transação. Não executar purge para preencher agendas.
 
 ## Compromissos de previsao
 
@@ -222,7 +222,7 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 
 ## Rollout e reversao
 
-1. Inventariar e criar snapshot validado do banco de produção pré-lançamento; remover todos os mercados atuais sem definição assinada, sem migração retroativa ou modo legado.
+1. Procedimento histórico pré-lançamento: não reutilizar a limpeza para a agenda. Inventariar, criar snapshot recuperável e seguir o runbook específico de complementos append-only.
 2. Aplicar schema e triggers.
 3. Criar chave KMS/alias e politica IAM minima; configurar segredo de commitment no secret manager/runtime.
 4. Publicar FastAPI/daemon antes de habilitar novos mercados.

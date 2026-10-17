@@ -60,3 +60,7 @@
 Exceção restrita para revisões editoriais de draft preparation/in_review: função public.delete_prepublication_editorial(bigint,integer), SECURITY DEFINER, objetos qualificados, search_path pg_catalog, EXECUTE revogado de PUBLIC e concedido a gotrendlabs_fastapi. Revalida locks/estado/revisão e ausência de previsões/provas antes do DELETE. A função também remove os alertas mutáveis vinculados ao rascunho elegível; não desvincula alertas como globais nem remove provas. Nenhum grant geral DELETE/UPDATE de revisões é ampliado. Função e dependências são operadas na transação FastAPI auditada. [ADR-0015](../decisions/ADR-0015-prepublication-market-deletion.md).
 
 ThumbnailJob admite mercado nulo apenas para tentativa de mercado expired/market_deleted, snapshot vazio e ausência de badge/editor. Essa exceção preserva as cotas históricas de geração sem reter mercado ou conteúdo editorial. Limpeza de mídia gerada permanece com o worker/prune existente.
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.

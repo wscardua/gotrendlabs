@@ -1,5 +1,7 @@
 """Restricted editorial contract shared by REST and MCP; no administrative payloads."""
 
+from apps.api.backend_api.resolution_schedule import ScheduleFields
+
 from datetime import datetime
 from uuid import UUID
 from typing import Literal
@@ -81,7 +83,7 @@ class Option(Strict):
     hint: str = Field(default="", max_length=160)
 
 
-class Draft(Strict):
+class Draft(Strict, ScheduleFields):
     title: str = Field(min_length=1, max_length=240)
     summary: str = Field(min_length=1, max_length=5000)
     kind: Literal["binary", "multiple"]
@@ -238,6 +240,10 @@ class TaxonomyResponse(BaseModel):
 
 
 class SearchItem(BaseModel):
+    expected_resolution_at: datetime | None = None
+    original_expected_resolution_at: datetime | None = None
+    schedule_timezone: str = ""
+    schedule_version: int = 0
     id: int
     slug: str
     title: str

@@ -2745,14 +2745,46 @@ input[type="range"] {
   margin: 6px 0 0;
 }
 
+.detail-title-block .page-kicker-row {
+  margin-bottom: 0;
+}
+
+.market-schedule-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.market-schedule-meta .tag {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
 .market-lifecycle-card {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
-  padding: 8px;
+  gap: 14px;
+  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 18px;
   background: #fbf7ed;
+}
+
+.market-cycle-title {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.market-lifecycle-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .lifecycle-step {
@@ -2780,9 +2812,9 @@ input[type="range"] {
 .lifecycle-step strong {
   max-width: 100%;
   font-size: 11px;
-  line-height: 1.1;
+  line-height: 1.35;
   text-align: center;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
 }
 
 .lifecycle-step.done {
@@ -13486,3 +13518,12 @@ body[data-theme="dark"] .market-editor-main .editor-section { background: transp
 @media (prefers-reduced-motion: reduce) {
   .image-generation-spinner { animation: none; }
 }
+
+/* Agenda: every planned marker has a text row; no progress implication. */
+.contract-phases { grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); }
+.contract-phase { min-width:0; overflow-wrap:anywhere; }
+.contract-market details { margin-top:.75rem; }
+.contracts-marker.marker-planned { border-radius:0; transform:translate(-50%,-50%) rotate(45deg); background:var(--panel,#fff); border:2px solid currentColor; }
+
+.contracts-filter-form select { max-width:100%; }
+@media(max-width:700px) { .contract-phases { grid-template-columns:repeat(2,minmax(0,1fr)); } .contracts-filter-form { flex-wrap:wrap; } }

@@ -28,7 +28,7 @@ def sha(value):
 
 
 def policy():
-    path = ROOT / "docs/editorial/criteria-v1.2.json"
+    path = ROOT / "docs/editorial/criteria-v1.4.json"
     raw = path.read_bytes()
     criteria = json.loads(raw)
     if criteria["status"] != "approved":
@@ -82,7 +82,7 @@ def search(
     cursor, q="", status="", event_id=None, after=0, limit=20, from_at=None, to_at=None
 ):
     cursor.execute(
-        """SELECT id,slug,title,summary,kind,status,category_id,subcategory_id,event_id,close_at,close_timezone
+        """SELECT id,slug,title,summary,kind,status,category_id,subcategory_id,event_id,close_at,close_timezone,expected_resolution_at,schedule_timezone,schedule_version,original_expected_resolution_at
        FROM gotrendlabs_markets WHERE id>%s AND (title ILIKE %s OR summary ILIKE %s) AND (%s='' OR status=%s)
        AND (%s::bigint IS NULL OR event_id=%s) AND (%s::timestamptz IS NULL OR close_at>=%s) AND (%s::timestamptz IS NULL OR close_at<=%s) ORDER BY id LIMIT %s""",
         (
@@ -114,7 +114,7 @@ def search(
 
 def get_market(cursor, market_id, integration_id):
     cursor.execute(
-        "SELECT id,slug,title,summary,kind,status,source,resolution_criteria,close_at,close_timezone,category_id,subcategory_id,event_id,auto_close_enabled,thumb_color,image_url,thumb,is_featured FROM gotrendlabs_markets WHERE id=%s",
+        "SELECT id,slug,title,summary,kind,status,source,resolution_criteria,close_at,close_timezone,expected_resolution_at,schedule_timezone,schedule_version,original_expected_resolution_at,category_id,subcategory_id,event_id,auto_close_enabled,thumb_color,image_url,thumb,is_featured FROM gotrendlabs_markets WHERE id=%s",
         (market_id,),
     )
     m = cursor.fetchone()
@@ -495,6 +495,8 @@ def mutate(cursor, t, operation, payload, market_id=None, request_id=""):
                     market_id,
                 ),
             )
+            from .resolution_schedule import save_draft
+            save_draft(cursor, market_id, payload)
             main._save_market_options(cursor, market_id, options)
             h = snapshot(cursor, market_id, payload, revision)
         else:
@@ -512,6 +514,8 @@ def mutate(cursor, t, operation, payload, market_id=None, request_id=""):
                     "editorial_record": d["record"],
                 }
             )
+            from .resolution_schedule import validate_schedule
+            validate_schedule(draft.model_dump(), required=True, publishing=True)
             validate_document_timing(draft.editorial_record.document, draft.close_at)
             if "policy_outdated" in pending(d["record"]):
                 a.fail("validation_failed", 422)
