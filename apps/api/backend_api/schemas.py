@@ -1,4 +1,6 @@
 from uuid import UUID
+from apps.api.backend_api.resolution_schedule import ScheduleFields
+
 from datetime import date, datetime
 from typing import Any, List, Literal, Optional, Union
 
@@ -717,7 +719,24 @@ class MarketIntegritySummary(BaseModel):
     key_fingerprint: str = ""
 
 
+class ResolutionScheduleResponse(BaseModel):
+    code: Literal['terminal','closure_inconsistent','schedule_pending','resolution_scheduled','resolution_overdue']
+    label: str
+    as_of: str
+    can_reschedule: bool
+    can_resolve: bool
+
+
 class MarketResponse(BaseModel):
+    market_id: int
+    expected_resolution_at: str | None = None
+    original_expected_resolution_at: str | None = None
+    schedule_timezone: str = ""
+    schedule_version: int = 0
+    resolution_schedule: ResolutionScheduleResponse
+    schedule_history: list[dict] = Field(default_factory=list)
+    expected_resolution_label: str = ""
+    original_expected_resolution_label: str = ""
     admin_notes: str = ""
     editorial_origin: Optional[Literal["mcp", "human"]] = None
     closure_configuration_errors: List[str] = Field(default_factory=list)
@@ -821,6 +840,7 @@ class MarketIntegrityVerificationResponse(BaseModel):
     result_matches_current: Optional[bool] = None
     prediction_commitments_valid: Optional[bool] = None
     merkle_root_valid: Optional[bool] = None
+    schedule_valid: Optional[bool] = None
     market_events_valid: bool = False
     ledger_chain_valid: Optional[bool] = None
     ledger_verified_through_sequence: int = 0
@@ -937,7 +957,7 @@ class AdminMarketOptionPayload(BaseModel):
     hint: str = Field(default="", max_length=160)
 
 
-class AdminMarketPayload(BaseModel):
+class AdminMarketPayload(ScheduleFields):
     expected_market_id: Optional[int] = Field(default=None, ge=1)
     thumbnail_candidate_id: Optional[UUID] = None
     thumbnail_expected_image_url: Optional[str] = None
@@ -1144,6 +1164,9 @@ class QueueListResponse(BaseModel):
 class AdminMarketListResponse(BaseModel):
     markets: List[MarketResponse]
     counts: dict
+    schedule_counts: dict = Field(default_factory=dict)
+    schedule_summary: list[dict] = Field(default_factory=list)
+    schedule_count_scope: str = "filtered_query_before_temporal_filter"
 
 
 class AdminMarketParticipantResponse(BaseModel):

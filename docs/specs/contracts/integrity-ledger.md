@@ -47,3 +47,11 @@ A verificacao exige cobertura exata entre `gotrendlabs_predictions` e `predictio
 - `409`: prova Merkle ainda indisponivel antes de `sealed`
 - `422`: estado de dominio incompativel
 - `503`: signer indisponivel em mutacao; nenhuma mutacao parcial e confirmada
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+### Complementos da agenda
+
+Eventos `market_schedule_registered`, `market_schedule_rescheduled` (eventos antigos de recuperação são apenas históricos) contêm snapshot assinado com definition_hash, before/after, actor_id, reason e provenance. After protege campos da agenda, original e versão. A auditoria valida assinatura/metadados, hash de payload, ligação à definição, continuidade de versões e projeção; erro afeta market_valid/overall_valid e impede selagem. `schedule_valid=null` indica ausência histórica sem agenda; true somente para agenda registrada verificada, false para divergência. O pacote público expõe assinaturas, algoritmo e payload_json dos eventos sem reconstruir/reassinar definições antigas.

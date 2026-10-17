@@ -1,0 +1,97 @@
+{
+  "market_slug": "qual-album-vencera-album-do-ano-no-latin-grammy-2026",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "multiple",
+      "event": "Latin Grammy 2026",
+      "title": "Qual álbum vencerá Álbum do Ano no Latin Grammy 2026?",
+      "options": [
+        {
+          "id": 113,
+          "hint": "",
+          "label": "EQUILIBRIVM — Anitta",
+          "order": 1
+        },
+        {
+          "id": 114,
+          "hint": "",
+          "label": "LUX (Complete Works) — Rosalía",
+          "order": 2
+        },
+        {
+          "id": 115,
+          "hint": "",
+          "label": "Tropicoqueta — Karol G",
+          "order": 3
+        },
+        {
+          "id": 116,
+          "hint": "",
+          "label": "FREE SPIRITS — CA7RIEL & Paco Amoroso",
+          "order": 4
+        },
+        {
+          "id": 117,
+          "hint": "",
+          "label": "Taracá — Jorge Drexler",
+          "order": 5
+        },
+        {
+          "id": 118,
+          "hint": "",
+          "label": "Outro álbum indicado",
+          "order": 6
+        },
+        {
+          "id": 119,
+          "hint": "Dois ou mais álbuns dividem oficialmente o prêmio, inclusive os listados em Outro.",
+          "label": "Empate entre álbuns",
+          "order": 7
+        }
+      ],
+      "summary": "Anitta, Rosalía, Karol G e outros artistas disputam Álbum do Ano no Latin Grammy 2026. Qual álbum levará o prêmio? Se dois ou mais álbuns dividirem oficialmente a vitória, o resultado será “Empate entre álbuns”. Cerimônia prevista para 12 de novembro.",
+      "category": "Música",
+      "close_at": "2026-11-12T00:00:00Z",
+      "event_id": 73,
+      "market_id": 50,
+      "category_id": 52,
+      "market_slug": "qual-album-vencera-album-do-ano-no-latin-grammy-2026",
+      "subcategory": "Premiação",
+      "published_at": "2026-10-11T20:17:55.282196Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 69,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://www.latingrammy.com/pt/awards/",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "Considera-se exclusivamente Álbum do Ano da 27ª edição do Latin Grammy (2026), segundo o registro elegível abaixo. Vence a opção à qual pertença o único álbum oficialmente vencedor: EQUILIBRIVM — Anitta; LUX (Complete Works) — Rosalía; Tropicoqueta — Karol G; FREE SPIRITS — CA7RIEL & Paco Amoroso; ou Taracá — Jorge Drexler. “Outro álbum indicado” inclui exclusivamente estes cinco trabalhos: Vendrán Suaves Lluvias — Silvana Estrada; Femme Fatale — Mon Laferte; Muda — Carín León; La Vida Era Más Corta — Milo J; ¿Dónde Es El After? — Rawayana. Nenhum álbum pertence a dois grupos. A identidade é a obra e o artista indicados, independentemente de diferenças meramente gráficas de caixa ou acentuação. EQUILIBRIVM II não é EQUILIBRIVM. Indicação, homenagem, apresentação ou vitória em outra categoria não contam.\r\n\r\nAs seis opções de álbuns só vencem quando houver um único álbum oficialmente vencedor. Se dois ou mais álbuns distintos dividirem oficialmente o prêmio, vence exclusivamente “Empate entre álbuns”, inclusive quando todos estiverem na lista de “Outro álbum indicado”. Vários artistas ou produtores premiados pelo mesmo álbum não são empate. Empate de votos sem declaração oficial de co-vencedores não basta. Não há desempate por ordem de anúncio, popularidade ou escolha da equipe. Vencedor fora dos dez trabalhos enumerados exige revisão humana administrativa; “Outro” não significa prêmio não concedido, falta de prova ou álbum não listado. Alteração oficial da lista exige revalidação humana antes da abertura; depois de publicado, não reescrever opções para acomodar resultado inesperado.\r\n\r\nPrevisões encerram em 2026-11-11T21:00:00-03:00, fuso America/Sao_Paulo. O fechamento permanece mesmo se o evento for adiado. Considerar resultado da mesma edição/categoria anunciado publicamente até 2026-11-19T23:59:59-03:00, inclusive. Usar como base anúncio oficial datado da cerimônia, comunicado ou publicação de vencedor da Academia Latina da Gravação. Uma atualização silenciosa de página consultada posteriormente não substitui o registro-base. Incorporar somente correções oficiais expressas com publicação comprovada até esse corte; entre elas, prevalece a mais recente que expressamente retifique o resultado anterior. Correções posteriores ao corte não mudam a resposta contratual. Se não for possível comprovar a data de uma alteração, não presumir sua tempestividade.\r\n\r\nFonte principal: https://www.latingrammy.com/pt/awards/ e publicação oficial da edição/categoria acessível nesse portal. Alternativa: anúncio ou transmissão oficial identificável e datada da Academia Latina da Gravação. A cobertura datada da emissora oficial Univision pode corroborar o anúncio; correção expressa tempestiva da Academia prevalece sobre a emissora. Divergência que essa prioridade não solucione exige revisão administrativa.\r\n\r\nAguardar o corte de correções antes da resolução definitiva. Até 2026-11-22T23:59:59-03:00, inclusive, a equipe poderá recuperar evidências publicadas dentro do corte anterior; essa janela não aceita novos resultados ou correções tardias. Registrar URL, instituição, data/hora de publicação e conteúdo decisivo. O momento de recuperação não altera o registro elegível. Falha de acesso não determina opção vencedora. Cancelamento, prêmio não concedido ou retirado sem resultado elegível conclusivo, alteração sem data comprovável, divergência não solucionada, ausência de prova suficiente ao fim da recuperação ou resultado sem uma única opção aplicável serão encaminhados à revisão humana administrativa, sem escolher resposta por suposição. Não se promete cancelamento, reabertura, reembolso, prorrogação ou outra mudança automática de estado; o tratamento depende das ações efetivamente disponíveis na plataforma."
+    },
+    "hash": "5ecfa12459ccc9e68bf28e041208039ea3fdfac05c2443acd0b3d6a565b62998",
+    "signature": "mdnf+VtEFdhILbg93jV+YKLnYIZHFW9CaqQfU9K/y4HQK+POHylo8bKHhUvQrCV8R5O37UKnI+qjcjeBXLuQDg==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 1,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 7,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:7",
+      "payload_hash": "5ecfa12459ccc9e68bf28e041208039ea3fdfac05c2443acd0b3d6a565b62998",
+      "previous_event_hash": "92a13bc8e76865859965944b11f866364acbd470190a90091826e42a4fbca071",
+      "event_hash": "148dd535c0f693dbcf4a310b8e3d6f47c23a03125a92b2edd3e49de780608f2a",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T20:17:55.282196+00:00"
+    }
+  ]
+}

@@ -140,12 +140,15 @@ BADGE_STORAGE = FileSystemStorage(location=settings.MEDIA_ROOT / "badge_images",
 LOAD_MORE_STEP = 10
 MAX_UPLOAD_IMAGE_BYTES = 5 * 1024 * 1024
 ALLOWED_UPLOAD_FORMATS = {"JPEG", "PNG", "WEBP"}
-CONTRACT_TIMELINE_STATUSES = ("draft", "scheduled", "open", "locked")
+CONTRACT_TIMELINE_STATUSES = ("draft", "scheduled", "open", "locked", "resolved", "sealed", "canceled")
 CONTRACT_TIMELINE_STATUS_LABELS = {
     "draft": "Rascunhos",
     "scheduled": "Agendados",
     "open": "Abertos",
     "locked": "Fechados",
+    "resolved": "Resolvidos",
+    "sealed": "Selados",
+    "canceled": "Cancelados",
 }
 
 EMAIL_DELIVERY_STATUS_LABELS = {
@@ -515,10 +518,11 @@ def _parse_contract_timeline_datetime(value):
     return parsed
 
 
-def _contract_timeline_label(value):
+def _contract_timeline_label(value, zone_name=None):
     if not value:
         return ""
-    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
+    zone_name = zone_name or timezone.get_current_timezone_name()
+    return timezone.localtime(value, ZoneInfo(zone_name)).strftime("%d/%m/%Y %H:%M:%S") + " " + zone_name
 
 
 def _contract_timeline_position(value, starts_at, span_seconds):
@@ -548,77 +552,38 @@ def _contract_timeline_marker_context(label, value, today):
 
 
 def _contract_timeline_phase_context(row, today):
-    status = row["market"].get("status") or "draft"
-    close_at = row["close_at"]
-    resolved_at = row["resolved_at"]
-    close_is_past = bool(close_at and close_at <= today)
-    close_is_soon = bool(close_at and today < close_at <= today + timedelta(days=3))
-    labels = {
-        "draft": ("Preparação", "Rascunho pronto para revisar"),
-        "scheduled": ("Agendado", "Contrato aguardando operação"),
-        "open": ("Em operação", "Recebendo previsões até o fechamento"),
-        "locked": ("Em apuração", "Fechado, aguardando resolução"),
-    }
-    current_label, current_note = labels.get(status, ("Operacional", "Acompanhar próximo marco"))
-    phases = [
-        {
-            "label": "Criação",
-            "state": "done",
-            "date_label": _contract_timeline_label(row["starts_at"]),
-            "note": "Contrato criado",
-        },
-        {
-            "label": "Operação",
-            "state": "active" if status == "open" and not close_is_past else "done" if status == "locked" or close_is_past else "pending",
-            "date_label": "em curso" if status == "open" and not close_is_past else "concluída" if status == "locked" or close_is_past else "aguardando",
-            "note": "Janela de previsões",
-        },
-        {
-            "label": "Fechamento",
-            "state": "done" if status == "locked" or resolved_at else "active" if close_is_past else "pending",
-            "date_label": _contract_timeline_label(close_at) or "sem data",
-            "note": "Prazo vencido" if close_is_past and status != "locked" else "Fechamento próximo" if close_is_soon else "Prazo do mercado",
-            "urgency": "overdue" if close_is_past and status != "locked" else "soon" if close_is_soon else "",
-            "alert_label": "Atrasado" if close_is_past and status != "locked" else "Próximo" if close_is_soon else "",
-        },
-        {
-            "label": "Resolução",
-            "state": "done" if resolved_at else "active" if status == "locked" else "pending",
-            "date_label": _contract_timeline_label(resolved_at) or "pendente",
-            "note": "Resultado auditável",
-        },
-    ]
-    first_pending_index = next((index for index, phase in enumerate(phases) if phase["state"] == "pending"), None)
-    for index, phase in enumerate(phases):
-        if phase["state"] == "done":
-            phase["time_label"] = "Passado"
-        elif phase["state"] == "active":
-            phase["time_label"] = "Agora"
-        elif first_pending_index == index:
-            phase["time_label"] = "Próxima"
-        else:
-            phase["time_label"] = "Futuro"
-    return {
-        "current_phase_label": current_label,
-        "current_phase_note": current_note,
-        "current_phase_class": status,
-        "phase_steps": phases,
-    }
+    market = row["market"]
+    schedule = market.get("resolution_schedule") or {}
+    terminal = market.get("status") in {"resolved", "sealed", "canceled"}
+    steps = [{"label": "Criação", "state": "done", "date_label": _contract_timeline_label(row["starts_at"]), "note":"Registro efetivo", "time_label":"Registrado"}]
+    published_at = _parse_contract_timeline_datetime(market.get("published_at"))
+    if published_at:
+        steps.append({"label":"Publicação", "state":"done", "date_label":_contract_timeline_label(published_at), "note":"Registro efetivo", "time_label":"Registrada"})
+    for field, label in (("close_at", "Fechamento"), ("expected_resolution_at", "Resolução prevista"), ("resolved_at", "Resolução efetiva")):
+        stamp = _parse_contract_timeline_datetime(market.get(field))
+        actual = field == "resolved_at" and bool(stamp)
+        steps.append({"label":label, "state":"done" if actual else "pending" if terminal else "active" if field == "expected_resolution_at" else "pending",
+            "date_label":_contract_timeline_label(stamp, market.get("close_timezone") if field == "close_at" else market.get("resolution_timezone") if field == "resolved_at" else market.get("schedule_timezone")) or "Não informada", "note":market.get("schedule_timezone") if field != "close_at" else market.get("close_timezone"),
+            "time_label":"Registrada" if actual else "Planejada" if stamp else "Pendente"})
+    return {"current_phase_label":schedule.get("label", "Agenda pendente de revisão"),
+            "current_phase_note":"Previsão operacional; a decisão segue os critérios do mercado.",
+            "current_phase_class":schedule.get("code", "schedule_pending"), "phase_steps":steps}
 
 
-def _build_contract_timeline(markets, *, today=None):
+def _build_contract_timeline(markets, *, today=None, include_terminal=False):
     today = today or timezone.now()
     parsed_rows = []
     for market in markets:
         status = market.get("status") or ""
-        if status not in CONTRACT_TIMELINE_STATUSES:
+        if status not in CONTRACT_TIMELINE_STATUSES or (not include_terminal and status in {"resolved","sealed","canceled"}):
             continue
         starts_at = _parse_contract_timeline_datetime(market.get("created_at"))
         if not starts_at:
             continue
         close_at = _parse_contract_timeline_datetime(market.get("close_at"))
         resolved_at = _parse_contract_timeline_datetime(market.get("resolved_at"))
-        ends_at = resolved_at or close_at or starts_at
+        agenda_points = [_parse_contract_timeline_datetime(market.get(k)) for k in ("expected_resolution_at",)]
+        ends_at = max([stamp for stamp in [resolved_at, close_at, starts_at, *agenda_points] if stamp])
         parsed_rows.append(
             {
                 "market": market,
@@ -641,7 +606,7 @@ def _build_contract_timeline(markets, *, today=None):
         }
 
     starts_at = min(row["starts_at"] for row in parsed_rows)
-    ends_at = max(row["ends_at"] for row in parsed_rows)
+    ends_at = max(today, max(row["ends_at"] for row in parsed_rows))
     if ends_at <= starts_at:
         ends_at = starts_at + timedelta(days=1)
     span_seconds = (ends_at - starts_at).total_seconds()
@@ -680,12 +645,16 @@ def _build_contract_timeline(markets, *, today=None):
                 "status_class": market.get("status") or "draft",
                 **phase_context,
                 "starts_at_label": _contract_timeline_label(row["starts_at"]),
-                "close_at_label": _contract_timeline_label(row["close_at"]),
-                "resolved_at_label": _contract_timeline_label(row["resolved_at"]),
+                "close_at_label": _contract_timeline_label(row["close_at"],market.get("close_timezone")),
+                "resolved_at_label": _contract_timeline_label(row["resolved_at"],market.get("resolution_timezone")),
                 "bar_left": starts_at_position,
                 "bar_width": max(1.4, ends_at_position - starts_at_position),
-                "bar_progress_width": max(0, progress_end_position - starts_at_position),
+                "bar_progress_width": 0,
                 "markers": [
+                    *([{"label":"Publicação: "+_contract_timeline_label(_parse_contract_timeline_datetime(market['published_at'])), "position":_contract_timeline_position(_parse_contract_timeline_datetime(market['published_at']),starts_at,span_seconds), "class":"published", "time_class":"past"}] if market.get('published_at') else []),
+                    *[{"label": label + ": " + _contract_timeline_label(_parse_contract_timeline_datetime(market.get(key)), market.get("schedule_timezone")) + " " + (market.get("schedule_timezone") or ""),
+                       "position": _contract_timeline_position(_parse_contract_timeline_datetime(market.get(key)), starts_at, span_seconds), "class":"planned", "time_class":_contract_timeline_marker_context(label,_parse_contract_timeline_datetime(market.get(key)),today)["time_class"]}
+                      for key,label in (("expected_resolution_at","Resolução prevista"),) if market.get(key)],
                     {
                         **_contract_timeline_marker_context("Criação", row["starts_at"], today),
                         "position": starts_at_position,
@@ -717,6 +686,13 @@ def _build_contract_timeline(markets, *, today=None):
             }
         )
 
+    # Stagger nearby/coincident markers without changing their time coordinates.
+    for item in rows:
+        previous_position, lane = None, 0
+        for marker in sorted(item['markers'],key=lambda m:m['position']):
+            lane = (lane + 1) % 3 if previous_position is not None and marker['position']-previous_position < 3 else 0
+            marker['lane_top'] = 25 + lane * 25
+            previous_position = marker['position']
     return {
         "rows": rows,
         "axis_ticks": axis_ticks,
@@ -923,7 +899,12 @@ def _market_initial(market):
         except (ValueError, ZoneInfoNotFoundError):
             pass
     options = market.get("options", [])
+    agenda_initial = {"schedule_timezone": market.get("schedule_timezone") or ""}
+    for field in ("expected_resolution_at",):
+        value = _parse_datetime(market.get(field))
+        agenda_initial[field] = value.astimezone(ZoneInfo(market["schedule_timezone"])).replace(tzinfo=None).isoformat() if value and market.get("schedule_timezone") else ""
     initial = {
+        **agenda_initial,
         "title": market.get("title", ""),
         "slug": market.get("slug", ""),
         "summary": market.get("summary", ""),
@@ -2039,13 +2020,13 @@ def contracts(request):
     status_filter = requested_status if requested_status in CONTRACT_TIMELINE_STATUSES else ""
     search_query = request.GET.get("q") or ""
     try:
-        market_data = admin_get_markets(auth_token(request), status=status_filter, q=search_query, order="created_asc")
+        market_data = admin_get_markets(auth_token(request), status=status_filter, q=search_query, order=request.GET.get("order") or "next_resolution", temporal=request.GET.get("temporal") or "", active_contracts=not status_filter and request.GET.get("temporal") != "terminal")
     except AuthAPIError as exc:
         market_data = {"markets": [], "counts": {}}
         error = str(exc)
     else:
         error = ""
-    timeline = _build_contract_timeline(market_data.get("markets", []))
+    timeline = _build_contract_timeline(market_data.get("markets", []), include_terminal=status_filter in {"resolved","sealed","canceled"} or request.GET.get("temporal") == "terminal")
     visible_rows, contract_pagination = _slice_load_more(request, timeline.get("rows", []))
     timeline = {**timeline, "rows": visible_rows}
     return render(
@@ -2057,6 +2038,9 @@ def contracts(request):
             "market_data": market_data,
             "admin_error": error,
             "active_status": status_filter,
+            "active_temporal": request.GET.get("temporal") or "",
+            "active_order": request.GET.get("order") or "next_resolution",
+            "temporal_filters": [(k,v) for k,v in __import__('apps.api.backend_api.resolution_schedule', fromlist=['LABELS']).LABELS.items()],
             "search_query": search_query,
             "status_filters": [
                 {"value": value, "label": label, "count": market_data.get("counts", {}).get(value, 0)}
@@ -2489,29 +2473,19 @@ def moderation(request):
 def resolution(request):
     token = auth_token(request)
     error = ""
-    active_order = request.GET.get("order") or "resolution_desc"
+    active_order = request.GET.get("order") or "next_resolution"
     try:
-        locked_data = admin_get_markets(token, status="locked", order=active_order)
-        resolved_data = admin_get_markets(token, status="resolved", order=active_order)
-        sealed_data = admin_get_markets(token, status="sealed", order=active_order)
-        market_data = {
-            "markets": [*locked_data.get("markets", []), *resolved_data.get("markets", []), *sealed_data.get("markets", [])],
-            "counts": {**locked_data.get("counts", {}), **resolved_data.get("counts", {}), **sealed_data.get("counts", {})},
-        }
+        market_data = admin_get_markets(token, resolution_queue=True, order=active_order, temporal=request.GET.get("temporal") or "")
     except AuthAPIError as exc:
         market_data = {"markets": [], "counts": {}}
         error = str(exc)
     market_data["markets"] = [_market_resolution_meta(market) for market in market_data.get("markets", [])]
-    dated_markets = [market for market in market_data["markets"] if _parse_datetime(market.get("resolved_at"))]
-    pending_markets = [market for market in market_data["markets"] if not _parse_datetime(market.get("resolved_at"))]
-    dated_markets.sort(key=lambda market: _parse_datetime(market.get("resolved_at")), reverse=active_order != "resolution_asc")
-    market_data["markets"] = [*pending_markets, *dated_markets] if active_order == "pending_first" else [*dated_markets, *pending_markets]
     visible_markets, resolution_pagination = _slice_load_more(request, market_data["markets"])
     market_data = {**market_data, "markets": visible_markets}
     return render(
         request,
         "admin_ops/resolution.html",
-        {"market_data": market_data, "resolution_pagination": resolution_pagination, "admin_error": error, "active_order": active_order},
+        {"market_data": market_data, "resolution_pagination": resolution_pagination, "admin_error": error, "active_order": active_order, "active_temporal": request.GET.get("temporal") or ""},
     )
 
 
@@ -3238,3 +3212,24 @@ def category_action(request, action):
             "admin_error": error,
         },
     )
+
+
+@admin_api_required
+def market_reschedule(request, slug):
+    from apps.web.django.accounts.api_client import _request
+    try:
+        market = admin_get_market(auth_token(request), slug)
+    except AuthAPIError as exc:
+        return render(request, 'admin_ops/market_reschedule.html', {'market':None, 'admin_error':str(exc)}, status=503)
+    error = ""
+    if request.method == 'POST':
+        try:
+            _request('POST', f'/admin/markets/{slug}/reschedule', token=auth_token(request), payload={
+                'expected_market_id': int(request.POST.get('expected_market_id', '0')),
+                'expected_version': int(request.POST.get('expected_version', '0')),
+                'expected_resolution_at': request.POST.get('expected_resolution_at'),
+                'reason': request.POST.get('reason', '')})
+            return redirect('admin-ops-contracts')
+        except (AuthAPIError, ValueError) as exc:
+            error = str(exc)
+    return render(request, 'admin_ops/market_reschedule.html', {'market':market, 'admin_error':error})

@@ -15,6 +15,11 @@ void main() {
       return {
         'markets': [
           {
+            'expected_resolution_at': '2026-11-04T15:00:00Z',
+            'expected_resolution_label': '04/11/2026 12:00',
+            'schedule_timezone': 'America/Sao_Paulo',
+            'schedule_version': 1,
+            'resolution_schedule': {'code': 'resolution_scheduled'},
             'slug': 'btc-junho',
             'title': 'Bitcoin fecha acima de 80k?',
             'category': 'Mercado',
@@ -59,6 +64,10 @@ void main() {
 
     expect(markets, hasLength(1));
     expect(markets.first.slug, 'btc-junho');
+    expect(markets.first.expectedResolutionAt, '2026-11-04T15:00:00Z');
+    expect(markets.first.scheduleTimezone, 'America/Sao_Paulo');
+    expect(markets.first.scheduleClassification, 'resolution_scheduled');
+    expect(markets.first.scheduleVersion, 1);
     expect(markets.first.totalParticipants, 3);
     expect(markets.first.humanParticipants, 2);
     expect(markets.first.options.first.label, 'SIM');

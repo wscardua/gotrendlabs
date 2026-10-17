@@ -248,3 +248,7 @@ MCP omite o mercado removido naturalmente. Consulta, edição, submissão e repl
 ## Fechamento da entrega em 2026-10-11
 
 O escopo de exclusão pré-publicação e aprovação por responsabilidade humana está implantado em PRD pela PR #156 e verificado tecnicamente com roles reais; a homologação final do painel autenticado permanece com o operador. O status amplo da feature permanece parcial por evoluções fora deste escopo. Estado operacional e evidências no WFLOW-20261011-CLOSE-PREPUBLICATION-EDITORIAL.
+
+## Agenda estruturada (2026-10-17)
+
+Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.

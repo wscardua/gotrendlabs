@@ -30,3 +30,5 @@ Use este diretório para registrar decisões técnicas estáveis e mudanças que
 - [ADR-0012 — fila persistente e thumbnails privadas](ADR-0012-private-thumbnail-worker.md), aceita em 2026-10-09, implementação local.
 
 - [ADR-0014 — interpretação semântica de thumbnails](ADR-0014-semantic-thumbnail-brief.md), conceito visual via modelo textual e imagem com checkpoints separados.
+
+- [ADR-0016 — Agenda assinada por complemento append-only](ADR-0016-resolution-agenda.md).

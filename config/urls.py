@@ -90,6 +90,7 @@ urlpatterns = [
     path("admin-ops/ai-agent-actions/<int:action_id>/", admin_ops_views.ai_agent_action_detail, name="admin-ops-ai-agent-action-detail"),
     path("admin-ops/markets/", admin_ops_views.markets, name="admin-ops-markets"),
     path("admin-ops/editorial/", admin_ops_views.editorial_reference, name="admin-ops-editorial"),
+    path("admin-ops/markets/<slug:slug>/reschedule/", admin_ops_views.market_reschedule, name="admin-ops-market-reschedule"),
     path("admin-ops/contracts/", admin_ops_views.contracts, name="admin-ops-contracts"),
     path("admin-ops/users/", admin_ops_views.users, name="admin-ops-users"),
     path("admin-ops/users/<int:user_id>/", admin_ops_views.user_detail, name="admin-ops-user-detail"),

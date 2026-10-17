@@ -427,7 +427,7 @@ Usuário acompanha resultado no perfil e ranking
 
 A criação e revisão seguem o [manual editorial](../editorial/manual-editorial.md), a [ficha reutilizável](../editorial/ficha-de-mercado.md), o [checklist de publicação](../editorial/checklist-de-publicacao.md) e a [FEAT-EDITORIAL-001](features/editorial-governance.md). O manual parte do conceito de mercado de previsão e suas opções de resposta. Diversidade temática orienta o planejamento do catálogo, sem cotas como requisito de aprovação individual. Cada proposta deve justificar relevância, incerteza, anti-repetição, fonte verificável, critérios objetivos, opções, encerramento/observação/apuração, exceções e responsável antes da aprovação editorial.
 
-O parecer operacional (`aprovar`, `devolver`, `rejeitar`) não altera estados de mercado nem publica automaticamente. Pendências obrigatórias impedem aprovação editorial; a publicação continua pelos contratos staff existentes. A entrega inclui consulta dos documentos no Admin Ops para staff e critérios versionados para evolução futura, sem bloqueio automático adicional na API. A definição assinada permanece protegida depois da publicação; revisões e correções obedecem o ciclo de vida e a selagem vigentes.
+O parecer operacional (`aprovar`, `devolver`, `rejeitar`) não altera estados de mercado nem publica automaticamente. Pendências obrigatórias impedem aprovação editorial; a publicação continua pelos contratos staff existentes. A entrega inclui consulta dos documentos no Admin Ops para staff e critérios versionados para evolução futura, com gate autoritativo de parecer humano atual na API. A definição assinada permanece protegida depois da publicação; revisões e correções obedecem o ciclo de vida e a selagem vigentes.
 
 ---
 
@@ -1002,7 +1002,7 @@ class Market:
     close_at: datetime
     close_timezone: str
     auto_close_enabled: bool
-    resolution_date: datetime
+    expected_resolution_at: datetime
     resolution_source_url: str | None
     result: str | None
     result_option_id: UUID | None
@@ -1037,7 +1037,7 @@ Descrição dos campos:
 - `close_at`: data e hora exata de encerramento para novas previsões.
 - `close_timezone`: fuso oficial usado na configuração de encerramento.
 - `auto_close_enabled`: indica se o mercado deve ser fechado automaticamente pelo scheduler.
-- `resolution_date`: data-limite ou momento previsto para a resolução.
+Agenda vigente: somente `expected_resolution_at` e `schedule_timezone`, com previsão original e revisões auditáveis; condições documentais permanecem no critério integral. Consulte a feature FEAT-RESOLUTION-AGENDA-001 (revisão 1.1).
 - `resolution_source_url`: fonte pública usada para justificar o resultado final.
 - `result`: campo legado ou simplificado para binário, por exemplo `yes` ou `no`.
 - `result_option_id`: identificador da opção vencedora quando o mercado for resolvido por alternativa.

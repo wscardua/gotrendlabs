@@ -1,0 +1,78 @@
+{
+  "market_slug": "o-corinthians-sera-campeao-da-libertadores-feminina-2026",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "binary",
+      "event": "Libertadores Feminina 2026",
+      "title": "O Corinthians será campeão da Libertadores Feminina 2026?",
+      "options": [
+        {
+          "id": 83,
+          "hint": "Opção afirmativa",
+          "label": "SIM",
+          "order": 1
+        },
+        {
+          "id": 84,
+          "hint": "Opção negativa",
+          "label": "NAO",
+          "order": 2
+        }
+      ],
+      "summary": "O Corinthians defenderá o título continental depois do vice-campeonato brasileiro. A edição de 2026 acontece no Equador de 15 a 31 de outubro. A pergunta trata da campeã oficial do torneio inteiro, não de uma partida ou classificação de fase.",
+      "category": "Esporte",
+      "close_at": "2026-10-15T19:00:00Z",
+      "event_id": 66,
+      "market_id": 36,
+      "category_id": 18,
+      "market_slug": "o-corinthians-sera-campeao-da-libertadores-feminina-2026",
+      "subcategory": "Futebol",
+      "published_at": "2026-10-11T19:27:56.393559Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 8,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://gol.conmebol.com/libertadores/pt-br/news",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "As previsões encerram em 15 de outubro de 2026, às 16h de Brasília (UTC−3), antes dos primeiros jogos programados da CONMEBOL Libertadores Feminina 2026.\r\n\r\n“Sim” vence se o Sport Club Corinthians Paulista for o único clube oficialmente reconhecido pela CONMEBOL como campeão dessa edição, dentro das condições abaixo. “Não” vence se outro clube for o único campeão oficialmente reconhecido. Avançar de fase, vencer uma partida ou terminar em primeiro no grupo não basta. Uma eliminação antecipada do Corinthians, sozinha, não antecipa a resolução: a apuração aguardará a campeã e o corte documental.\r\n\r\nVale uma conclusão esportiva ou administrativa da edição ocorrida até 7 de novembro de 2026, às 23h59min59s de Brasília, inclusive. Um título decidido por desempate oficial, pênaltis, desistência, W.O. ou decisão administrativa conta somente se a CONMEBOL o reconhecer como título da edição. A identificação de uma única campeã é necessária para atribuir “Sim” ou “Não”.\r\n\r\nO corte documental é 9 de novembro de 2026, às 12h00min00s de Brasília, inclusive. Valem decisões e correções oficiais publicadas até esse instante sobre uma conclusão ocorrida dentro do prazo definido. O corte não depende da primeira consulta feita pela equipe. Decisões ou correções publicadas depois desse instante ficam fora da apuração deste mercado.\r\n\r\nA fonte prioritária será um documento ou comunicado oficial identificável e datado da CONMEBOL que reconheça a campeã da edição, localizado em https://gol.conmebol.com/libertadores/pt-br/news ou nos documentos oficiais ali vinculados. Em caso de indisponibilidade, será consultado o canal oficial da mesma entidade em https://copaamerica.com/pt/noticias. O documento usado na resolução deverá ter título ou identificação equivalente, URL específica, indicação da edição e data de publicação ou versão que permita verificar se pertence ao período aceito. Se publicado no dia do corte, será necessário comprovar também sua publicação até o horário-limite.\r\n\r\nUma decisão administrativa ou correção oficial explícita prevalece sobre notícia anterior ou placar provisório. Entre versões da mesma autoridade, vale a mais recente com publicação comprovada dentro do corte. Versões posteriores podem ser consultadas para localizar evidência histórica, mas não substituem a prova de qual decisão ou correção estava publicada dentro do prazo. Não se presume a existência de um histórico integral de todas as páginas.\r\n\r\nAdiamentos serão acompanhados até o limite de conclusão estabelecido. Alterações de local, adversário ou formato, por si mesmas, não determinam “Sim” ou “Não”, desde que a CONMEBOL mantenha a identidade da edição 2026 e reconheça uma única campeã. Não há promessa de reabertura ou de qualquer mudança automática nos prazos de participação.\r\n\r\nSe houver cancelamento da competição, ausência de campeã única, conclusão posterior ao limite, divergência oficial irresolúvel, ou impossibilidade de comprovar uma versão documental elegível, a equipe não atribuirá “Sim” ou “Não” por suposição. O caso será encaminhado ao operador para tratamento conforme o procedimento vigente da plataforma, sem promessa de cancelamento, reembolso ou reabertura.\r\n\r\nSe a fonte estiver inacessível, a equipe aguardará até 10 de novembro de 2026, às 12h de Brasília, para recuperar um documento oficial datado ou evidência histórica verificável que cumpra o corte de publicação acima. Essa espera não amplia o período de decisões ou correções consideradas. Falta de acesso não equivale a “Não”. Sem evidência suficiente até esse prazo, o caso será encaminhado ao operador conforme o procedimento vigente.\r\n\r\nSe uma decisão oficial tornar a resposta pública antes do fechamento programado, a equipe deverá informar o operador para tratar o encerramento antecipado conforme os recursos e procedimentos vigentes. Se houver participação após divulgação decisiva ou não for possível verificar a integridade temporal, a ocorrência será encaminhada ao operador, sem atribuição automática de resultado ou promessa de medida operacional."
+    },
+    "hash": "c255fe6f2f76a1e507b329779bf0859068175a19713d456fa61fbcccfb38f743",
+    "signature": "YRt9Tfr0lPrJTONjFSmhe4FXuwfAqA2JpovbOkKM9Yd6NJur+tJNzwp1CWuoL1UVH2CQzJh/u1ztD2lGSHD1CQ==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 2,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 6,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:6",
+      "payload_hash": "c255fe6f2f76a1e507b329779bf0859068175a19713d456fa61fbcccfb38f743",
+      "previous_event_hash": "58cbef2daabfc1db7e326a693df20ab5617d5b9d8e851289611fa30640f7ecb0",
+      "event_hash": "92a13bc8e76865859965944b11f866364acbd470190a90091826e42a4fbca071",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T19:27:56.393559+00:00"
+    },
+    {
+      "sequence": 17,
+      "event_type": "market_locked",
+      "payload_reference": "market:o-corinthians-sera-campeao-da-libertadores-feminina-2026:locked",
+      "payload_hash": "278bf4130cc7b65c8b6414de690bb0ab24314c7d5ead1ca2768b1c11c98c3dec",
+      "previous_event_hash": "1f8c37f73d89fe011a39dffdeeb46e3634b3ca4afbfae36c0b10e8acafdd4d89",
+      "event_hash": "406f561f0b435e090920ed13d28dddec11014561147088c45ad818926c0fc719",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-15T19:02:39.654454+00:00"
+    }
+  ]
+}

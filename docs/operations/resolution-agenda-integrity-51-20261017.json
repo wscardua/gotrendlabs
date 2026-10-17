@@ -1,0 +1,73 @@
+{
+  "market_slug": "quem-ficara-em-1o-na-netflix-brasil-na-semana-de-26-10-a-1o-11",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "multiple",
+      "event": "Geral",
+      "title": "Quem ficará em 1º na Netflix Brasil na semana de 26/10 a 1º/11?",
+      "options": [
+        {
+          "id": 120,
+          "hint": "",
+          "label": "Lupin — Parte 4",
+          "order": 1
+        },
+        {
+          "id": 121,
+          "hint": "",
+          "label": "Ninguém Quer — Temporada 3",
+          "order": 2
+        },
+        {
+          "id": 122,
+          "hint": "",
+          "label": "Outra série ou temporada",
+          "order": 3
+        }
+      ],
+      "summary": "Lupin — Parte 4 tem estreia anunciada para 23 de outubro de 2026, e Ninguém Quer — Temporada 3, para 22 de outubro. Na semana seguinte, qual série ou temporada liderará o Top 10 semanal de Séries da Netflix no Brasil? Outras produções e temporadas anteriores também podem chegar ao primeiro lugar. O resultado será definido pelo ranking oficial, conforme as regras; as previsões usam GT₵, créditos educativos sem dinheiro real.",
+      "category": "Séries",
+      "close_at": "2026-10-22T02:59:00Z",
+      "event_id": 20,
+      "market_id": 51,
+      "category_id": 24,
+      "market_slug": "quem-ficara-em-1o-na-netflix-brasil-na-semana-de-26-10-a-1o-11",
+      "subcategory": "Netflix",
+      "published_at": "2026-10-11T21:37:40.644965Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 23,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://www.netflix.com/tudum/top10/brazil/tv",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "Vale exclusivamente a edição do Top 10 semanal de Séries da Netflix no Brasil referente a 26/10–01/11/2026, identificada pela semana 2026-11-01. Não vale ranking diário do aplicativo, lista global, filmes nem soma de temporadas.\r\n\r\nVence a opção correspondente à única entrada que ocupar a posição 1: “Lupin — Parte 4” para a parte 4 de Lupin; “Ninguém Quer — Temporada 3” para a temporada 3 de Nobody Wants This; “Outra série ou temporada” para qualquer outra entrada da lista TV, incluindo temporadas anteriores dessas duas séries e outros programas classificados ali pela Netflix. Tradução ou mudança de grafia só é aceita se a fonte identificar a mesma obra e temporada. Não misturar ou somar temporadas.\r\n\r\nFonte primária: https://www.netflix.com/tudum/top10/data/all-weeks-countries.tsv, filtros country_iso2=BR, category=TV, week=2026-11-01, weekly_rank=1. Conferência alternativa oficial: https://www.netflix.com/tudum/top10/brazil/tv, selecionando a mesma semana. A regra resolve pela posição publicada, não por cálculo próprio de audiência. Em conflito sem retificação oficial explicativa, não escolher uma apresentação conforme o resultado desejado.\r\n\r\nPrevisões encerram em 21/10/2026 às 23h59, America/Sao_Paulo (UTC−03:00). A semana observada continua a mesma em caso de adiamento, cancelamento ou retirada das estreias. A ausência das duas temporadas permite “Outra” apenas se um outro líder único da edição estiver comprovado; ausência da edição não determina resposta. Divulgação esperada em 03/11/2026, conforme a cadência semanal, sem horário confirmado.\r\n\r\nO registro-base é a edição semanal oficial identificada por país, categoria e período, e não o estado da página inteira em um instante nem a primeira consulta do operador. A edição-base e as retificações oficiais expressas são elegíveis quando publicadas até 10/11/2026 às 23h59min59s, inclusive, no horário de Brasília (UTC−03:00). Atraso da publicação-base só é aceito até esse mesmo corte. Entre retificações elegíveis que alterem o campo decisório, prevalece a última, com data e anterioridade ao corte verificáveis. A data da semana não prova sozinha quando ocorreu uma retificação. Não afirmar que uma página atual é a versão original só por conservar o período no título.\r\n\r\nA apuração está planejada para 11/11/2026 às 12h00, após o corte. Até 17/11/2026 às 18h00, poderão ser recuperadas provas da edição ou de retificações já elegíveis, sem admitir publicações ou correções posteriores ao corte. A demora do operador não muda a edição, a ordem das retificações nem o limite de elegibilidade. Preservar URL, identificação do período, posição, identidade do vencedor, data real da consulta e cópia da evidência efetivamente usada.\r\n\r\nO arquivo por semana demonstra recuperação de edições; não garante todas as versões históricas nem uma captura futura. Se houver divergência material entre fontes, retificação tardia que impeça recuperar o dado elegível, alteração silenciosa identificada, data/fuso inconclusivos para ordenar retificações ou ausência de prova suficiente, não escolher resposta por suposição. Encaminhar à operação humana para esclarecimento e eventual tratamento permitido pela plataforma, preservando as regras; não há cancelamento, reabertura ou resolução automática prometidos. Erro de aplicação da regra é diferente de correção tardia da fonte e deve seguir o estado e a janela real de correção da plataforma.\r\n\r\nEmpate real na posição 1, edição sem líder único ou identidade de temporada ambígua exige esclarecimento oficial e encaminhamento humano; não desempatar por ordem alfabética ou atribuir “Outra” por falta de prova. Não alterar a semana para acomodar imprevistos. Se houver divulgação excepcional do resultado antes do fechamento, o responsável deve solicitar encerramento e registrar o ocorrido, sem presumir monitoramento automático."
+    },
+    "hash": "df1d78bc182db2907644882fc629f6b100cf32bac1feb1e8773aaa59fd053680",
+    "signature": "ngPg+3NDz+0gnSFxKMEVOK3gcEh02hvpF0IOAnjSLpMDXpA9LXjnis0XBGJ4sqdonNtWw95m4OcTe5sjLR/qBw==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 2,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 9,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:9",
+      "payload_hash": "df1d78bc182db2907644882fc629f6b100cf32bac1feb1e8773aaa59fd053680",
+      "previous_event_hash": "ddaa9a5b5879ec6d7c754c42fcfd366a964c9312ee97414f42d040737fd7104a",
+      "event_hash": "520381576bcdf33c3c392e2e02e91e6821bc86101d1f7c423226827a32de6249",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T21:37:40.644965+00:00"
+    }
+  ]
+}

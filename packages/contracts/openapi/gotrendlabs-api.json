@@ -1101,6 +1101,24 @@
             },
             "title": "Markets",
             "type": "array"
+          },
+          "schedule_count_scope": {
+            "default": "filtered_query_before_temporal_filter",
+            "title": "Schedule Count Scope",
+            "type": "string"
+          },
+          "schedule_counts": {
+            "additionalProperties": true,
+            "title": "Schedule Counts",
+            "type": "object"
+          },
+          "schedule_summary": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Schedule Summary",
+            "type": "array"
           }
         },
         "required": [
@@ -1246,6 +1264,7 @@
         "type": "object"
       },
       "AdminMarketPayload": {
+        "additionalProperties": false,
         "properties": {
           "admin_notes": {
             "default": "",
@@ -1308,6 +1327,18 @@
             ],
             "title": "Expected Market Id"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
           "expected_revision": {
             "anyOf": [
               {
@@ -1364,6 +1395,12 @@
           "resolution_type": {
             "default": "",
             "title": "Resolution Type",
+            "type": "string"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Schedule Timezone",
             "type": "string"
           },
           "slug": {
@@ -2738,6 +2775,18 @@
             "title": "Event Id",
             "type": "integer"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
           "idempotency_key": {
             "maxLength": 100,
             "minLength": 8,
@@ -2765,6 +2814,12 @@
             "maxLength": 5000,
             "minLength": 1,
             "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Schedule Timezone",
             "type": "string"
           },
           "source": {
@@ -2888,6 +2943,18 @@
             "title": "Event Id",
             "type": "integer"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
           "kind": {
             "enum": [
               "binary",
@@ -2908,6 +2975,12 @@
             "maxLength": 5000,
             "minLength": 1,
             "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Schedule Timezone",
             "type": "string"
           },
           "source": {
@@ -3763,6 +3836,17 @@
             ],
             "title": "Result Matches Current"
           },
+          "schedule_valid": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Valid"
+          },
           "seal_valid": {
             "anyOf": [
               {
@@ -3889,6 +3973,18 @@
             ],
             "title": "Event Id"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -3904,9 +4000,31 @@
             "title": "Options",
             "type": "array"
           },
+          "original_expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Expected Resolution At"
+          },
           "resolution_criteria": {
             "title": "Resolution Criteria",
             "type": "string"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "title": "Schedule Timezone",
+            "type": "string"
+          },
+          "schedule_version": {
+            "default": 0,
+            "title": "Schedule Version",
+            "type": "integer"
           },
           "slug": {
             "title": "Slug",
@@ -4093,6 +4211,22 @@
             "title": "Event Notice",
             "type": "string"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
+          "expected_resolution_label": {
+            "default": "",
+            "title": "Expected Resolution Label",
+            "type": "string"
+          },
           "human_participants": {
             "default": 0,
             "title": "Human Participants",
@@ -4120,6 +4254,10 @@
             "title": "Kind",
             "type": "string"
           },
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
           "market_like_count": {
             "default": 0,
             "title": "Market Like Count",
@@ -4131,6 +4269,22 @@
             },
             "title": "Options",
             "type": "array"
+          },
+          "original_expected_resolution_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Expected Resolution At"
+          },
+          "original_expected_resolution_label": {
+            "default": "",
+            "title": "Original Expected Resolution Label",
+            "type": "string"
           },
           "participants": {
             "description": "R\u00f3tulo do total de contas distintas humanas e bot com previs\u00f5es abertas.",
@@ -4170,6 +4324,9 @@
             "title": "Resolution Note",
             "type": "string"
           },
+          "resolution_schedule": {
+            "$ref": "#/components/schemas/ResolutionScheduleResponse"
+          },
           "resolution_timezone": {
             "default": "",
             "title": "Resolution Timezone",
@@ -4195,6 +4352,24 @@
             "default": "",
             "title": "Resolved At Label",
             "type": "string"
+          },
+          "schedule_history": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "title": "Schedule History",
+            "type": "array"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "title": "Schedule Timezone",
+            "type": "string"
+          },
+          "schedule_version": {
+            "default": 0,
+            "title": "Schedule Version",
+            "type": "integer"
           },
           "seal_due_at": {
             "anyOf": [
@@ -4342,6 +4517,8 @@
           }
         },
         "required": [
+          "market_id",
+          "resolution_schedule",
           "slug",
           "title",
           "category",
@@ -6317,6 +6494,80 @@
         "title": "ReputationResponse",
         "type": "object"
       },
+      "Reschedule": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_market_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Expected Market Id",
+            "type": "integer"
+          },
+          "expected_resolution_at": {
+            "format": "date-time",
+            "title": "Expected Resolution At",
+            "type": "string"
+          },
+          "expected_version": {
+            "minimum": 1.0,
+            "title": "Expected Version",
+            "type": "integer"
+          },
+          "reason": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "expected_market_id",
+          "expected_version",
+          "expected_resolution_at",
+          "reason"
+        ],
+        "title": "Reschedule",
+        "type": "object"
+      },
+      "ResolutionScheduleResponse": {
+        "properties": {
+          "as_of": {
+            "title": "As Of",
+            "type": "string"
+          },
+          "can_reschedule": {
+            "title": "Can Reschedule",
+            "type": "boolean"
+          },
+          "can_resolve": {
+            "title": "Can Resolve",
+            "type": "boolean"
+          },
+          "code": {
+            "enum": [
+              "terminal",
+              "closure_inconsistent",
+              "schedule_pending",
+              "resolution_scheduled",
+              "resolution_overdue"
+            ],
+            "title": "Code",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "label",
+          "as_of",
+          "can_reschedule",
+          "can_resolve"
+        ],
+        "title": "ResolutionScheduleResponse",
+        "type": "object"
+      },
       "ResponsibleOption": {
         "additionalProperties": false,
         "properties": {
@@ -6467,6 +6718,18 @@
             ],
             "title": "Event Id"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
           "id": {
             "title": "Id",
             "type": "integer"
@@ -6474,6 +6737,28 @@
           "kind": {
             "title": "Kind",
             "type": "string"
+          },
+          "original_expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Expected Resolution At"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "title": "Schedule Timezone",
+            "type": "string"
+          },
+          "schedule_version": {
+            "default": 0,
+            "title": "Schedule Version",
+            "type": "integer"
           },
           "slug": {
             "title": "Slug",
@@ -7352,6 +7637,18 @@
             "title": "Event Id",
             "type": "integer"
           },
+          "expected_resolution_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Resolution At"
+          },
           "expected_revision": {
             "minimum": 1.0,
             "title": "Expected Revision",
@@ -7384,6 +7681,12 @@
             "maxLength": 5000,
             "minLength": 1,
             "title": "Resolution Criteria",
+            "type": "string"
+          },
+          "schedule_timezone": {
+            "default": "",
+            "maxLength": 64,
+            "title": "Schedule Timezone",
             "type": "string"
           },
           "source": {
@@ -11095,6 +11398,36 @@
         "parameters": [
           {
             "in": "query",
+            "name": "temporal",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Temporal",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "resolution_queue",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Resolution Queue",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "active_contracts",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Active Contracts",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
             "name": "status",
             "required": false,
             "schema": {
@@ -11709,6 +12042,65 @@
           }
         },
         "summary": "Admin Publish Market"
+      }
+    },
+    "/admin/markets/{slug}/reschedule": {
+      "post": {
+        "operationId": "admin_reschedule_market_admin_markets__slug__reschedule_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Reschedule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Reschedule Market"
       }
     },
     "/admin/markets/{slug}/resolution-audit": {

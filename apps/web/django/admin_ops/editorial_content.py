@@ -44,9 +44,9 @@ def load_editorial_reference(view="manual"):
     view = view if view in DOCUMENTS else "manual"
     title, filename = DOCUMENTS[view]
     document = (EDITORIAL_DIR / filename).read_text(encoding="utf-8")
-    raw_criteria = (EDITORIAL_DIR / "criteria-v1.2.json").read_bytes()
+    raw_criteria = (EDITORIAL_DIR / "criteria-v1.4.json").read_bytes()
     rules = json.loads(raw_criteria)
-    if rules["version"] != "1.2" or rules["status"] != "approved":
+    if rules["version"] != "1.4" or rules["status"] != "approved":
         raise ValueError("Versão editorial inválida")
     return {
         "active_view": view,

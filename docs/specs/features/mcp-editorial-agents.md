@@ -222,3 +222,7 @@ O editor exibe bloqueio de publicação apenas em draft/scheduled sem parecer ap
 ### Correção de interoperabilidade OAuth Codex
 
 WFLOW-20261007-MCP-CODEX-OAUTH-001: registro dinâmico deve ignorar metadados desconhecidos (RFC 7591), preservando validação dos campos reconhecidos e sem autoridade derivada dos extras. Discovery deve conservar issuer textual exato entre resource metadata, AS e resposta iss. Correção da falha 422 Codex implantada pela PR #138; CI/main/deploy aprovados, CLI real atingiu autorização em produção. [Evidências](../testing/mcp-codex-oauth-20261007.md). Consentimento humano/piloto produtivo e homologação Dot continuam pendentes.
+
+## Agenda estruturada (2026-10-17)
+
+Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.

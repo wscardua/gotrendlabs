@@ -603,3 +603,41 @@ PR #144 integrada em main edac7c7; CI PR e main/build/deploy Success, 442 testes
 ## 2026-10-09 — Incidente: auditoria do worker de imagens
 
 Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001: primeira solicitação produtiva informada permanece queued, sem started_at/provider_id/arquivo. Worker falha na auditoria porque thumbnail_service.event importava main, ativando exigência de pepper/TOTP exclusivos da API. Diagnóstico por SSM/read-only e probes com rollback, sem inferência ou mutação em mercados. Correção local usa diretamente admin_events, sem distribuir segredos HTTP ao executor. Teste em subprocesso com ambiente production, segredos HTTP vazios e provedor simulado cobre claim, sucesso e eventos persistidos. Rollout corretivo e conclusão da solicitação real ainda pendentes; não afirmar latência do provedor, acesso efetivo ou qualidade real por esse incidente.
+
+## 2026-10-17 — Agenda estruturada de apuração
+
+WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA: implementação local de projeção PostgreSQL e eventos assinados vinculados à definição original; FastAPI autoritativa para validação/classificação/reagendamento/recuperação; MCP editorial existente com política 1.3 e revisão de snapshot; Admin Ops/fila/painel de contratos; detalhe web/Flutter; comando de complemento com dry-run e inventário revisável. Sem mutação financeira por vencimento e sem job/notification/resolução automática. Migração produtiva e revisão de dados permanecem separadas da validação local. Referência: `features/market-resolution-agenda.md`, ADR-0016 e `testing/resolution-agenda-results.md`.
+
+## 2026-10-17 — Agenda simplificada por solicitação do usuário
+
+WFLOW-20261017-SIMPLIFY-RESOLUTION-AGENDA substitui o modelo de três prazos por `expected_resolution_at` e `schedule_timezone`. FastAPI continua autoridade; clientes web/Admin/Flutter e MCP seguem o mesmo contrato. Históricos assinados preservados; campos retirados não têm uso operacional. Política 1.4/ficha 1.8; inventário v2 exige nova revisão. Detalhes e verificações em `docs/specs/testing/resolution-agenda-simplification-results.md`. Produção continua pendente, sem autorização de merge/deploy/backfill.
+
+## 2026-10-17 — Ciclo e previsão integrados no detalhe web
+
+WFLOW-20261017-MARKET-CYCLE-LAYOUT: previsão/ausência/reagendamento integrados ao mesmo cartão do ciclo, etapas em grade 3×2 legível, tokens/temas do site e CSS versionado. Correção apenas de apresentação; MCP/API/Flutter e regras preservados. Quatro testes web e QA real em desktop/390/320 px aprovados. Ver `docs/specs/testing/market-cycle-layout.md`.
+
+## 2026-10-17 — Atalho de resolução junto ao fechamento
+
+WFLOW-20261017-RESOLUTION-SHORTCUT: detalhe web exibe “Resolução prevista” ao lado do fechamento quando há data; link nativo leva ao ciclo com foco e recuo para o cabeçalho fixo. Dois testes existentes e QA real desktop/celular/claro/escuro aprovados. Apenas apresentação/navegação web; MCP/API/Flutter inalterados.
+
+Correção final do usuário: o atalho foi removido. “Resolução prevista: data e fuso” é informação estática no mesmo estilo do fechamento, somente no cabeçalho; o ciclo não repete a previsão. Dois testes e QA desktop/celular aprovados; sem alterações de contrato/MCP/Flutter.
+
+2026-10-17: rótulos da resolução prevista vigente/original abreviam America/Sao_Paulo para BRT, mantendo o fuso estruturado. FastAPI fornece a apresentação comum; MCP estruturado e permissões inalterados. Nove testes/checagens BRT/UTC/OpenAPI e página local verificados.
+
+## 2026-10-17 — Mobile: critério compacto e fechamento explícito
+
+WFLOW-20261017-MOBILE-CRITERIA-DEADLINES: critério com quatro linhas e expandir/recolher sem reescrever conteúdo; fechamento (`close_label`) ao lado da informação de resolução prevista, usando labels da API. Texto curto não exibe controle. Flutter analyze limpo/118 testes aprovados/build debug e atualização do pacote físico QA concluídos. Conferência visual no aparelho aguarda desbloqueio da tela; limitação geral de fonte 2× em hero/métricas registrada em known-gaps. Sem mudança de API/MCP/permissões/produção. Evidências em `docs/specs/testing/mobile-criteria-deadlines.md`.
+
+QA físico de WFLOW-20261017-MOBILE-CRITERIA-DEADLINES concluído após desbloqueio pelo usuário: prévia/controle e datas distintas conferidos no Samsung, sem mutação de mercado. Versão de teste deixada aberta nessa seção.
+
+
+## 2026-10-17 — Correções da revisão da agenda
+
+WFLOW-20261017-AGENDA-REVIEW-FIXES: restaurado helper administrativo de datas, preservados erros de validação da agenda no transporte MCP, orientação de agenda incompleta ajustada e specs mobile sincronizadas com três linhas/painel inferior e prazos no resumo. Sem novas permissões/contratos de payload ou mudanças Flutter. Evidências em docs/specs/testing/resolution-agenda-review-fixes.md; resultado final no workflow.
+
+
+## 17/10/2026 — Preparação do fechamento da resolução prevista
+
+Contrato final e evidências consolidados em [fechamento da agenda](../testing/resolution-agenda-closeout-20261017.md). Branch feature/structured-resolution-agenda preservada; implementação validada localmente e fechamento GitHub/produção em preparação, condicionado à aprovação prévia da descrição da PR solicitada pelo usuário. Não declarar dados migrados ou release mobile distribuída por deploy web/API. Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT.
+
+Fechamento local preparado: rodada ampla de 552 identificou cinco fixtures/mocks desatualizados; ajustes revalidados com 98 testes aprovados (192.350s), sem relaxar regras da aplicação. Flutter analyze/120 testes, JS/OpenAPI/Django/migrations/links/diff aprovados; build Docker local limitado por espaço. ADR da agenda renumerada para ADR-0016 para preservar ADR-0012 de thumbnails; checklist alinhado à política ativa. Commit/PR/implantação seguem WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT, com aprovação prévia da descrição ainda pendente.

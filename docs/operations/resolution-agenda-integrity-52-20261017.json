@@ -1,0 +1,78 @@
+{
+  "market_slug": "modern-warfare-4-sera-no-1-na-steam-brasil-entre-20-e-27-de-outubro",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "binary",
+      "event": "Geral",
+      "title": "Modern Warfare 4 será nº 1 na Steam Brasil entre 20 e 27 de outubro?",
+      "options": [
+        {
+          "id": 123,
+          "hint": "Opção afirmativa",
+          "label": "SIM",
+          "order": 1
+        },
+        {
+          "id": 124,
+          "hint": "Opção negativa",
+          "label": "NAO",
+          "order": 2
+        }
+      ],
+      "summary": "Call of Duty: Modern Warfare 4 tem lançamento anunciado para 23 de outubro e acesso antecipado à campanha em 16 de outubro. A pergunta considera a liderança por receita na edição semanal brasileira da Steam de 20 a 27 de outubro de 2026. GT₵ são créditos educativos, sem dinheiro real.",
+      "category": "Games",
+      "close_at": "2026-10-16T02:59:00Z",
+      "event_id": 13,
+      "market_id": 52,
+      "category_id": 21,
+      "market_slug": "modern-warfare-4-sera-no-1-na-steam-brasil-entre-20-e-27-de-outubro",
+      "subcategory": "Steam",
+      "published_at": "2026-10-11T21:30:56.289469Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 16,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://store.steampowered.com/charts/",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "Vale exclusivamente a edição Weekly Top Sellers da Steam, Brazil/BR, identificada pelo período 20–27/10/2026. O acesso público é https://store.steampowered.com/charts/ : selecionar Weekly Charts, a edição correspondente e Brazil. Não vale ranking ao vivo, global ou filtrado apenas por jogos pagos.\r\n\r\nVence Sim se Call of Duty: Modern Warfare 4, app Steam 4435490, ocupar a posição oficial 1 na edição, inclusive em empate expressamente declarado pela Steam na posição 1. Vence Não se outro produto for líder e MW4 não receber posição 1. Ausência de MW4 só permite Não quando a edição e o líder estiverem comprovados sem ambiguidade de agregação.\r\n\r\nA posição é por receita e mantém todos os produtos que a Steam incluir, inclusive jogos gratuitos, DLC e hardware. Não são cópias vendidas, jogadores ou avaliações. Edições, pré-vendas e compras internas seguem a atribuição oficial, sem somar receitas por conta própria. Call of Duty genérico, Warzone e Modern Warfare III não substituem MW4. Mudança de nome com mesmo app ID não muda o objeto; fusão que impeça identificá-lo exige esclarecimento, sem inferir resposta.\r\n\r\nPrevisões encerram em 15/10/2026 às 23h59, America/Sao_Paulo (UTC−03:00), antes do período observado. A semana permanece 20–27/10 mesmo se o lançamento ou acesso antecipado atrasar ou for cancelado: pré-vendas elegíveis podem contar. Não basta liderar em algum dia. Publicação esperada em 27/10 às 05h00 de Brasília, equivalente à terça-feira 01h00 em America/Los_Angeles, conforme o cabeçalho atual da Steam, sujeita a atraso.\r\n\r\nO registro-base é a edição semanal oficial identificada por país, categoria e período, e não o estado da página inteira em um instante nem a primeira consulta do operador. A edição-base e as retificações oficiais expressas são elegíveis quando publicadas até 03/11/2026 às 23h59min59s, inclusive, no horário de Brasília (UTC−03:00). Atraso da publicação-base só é aceito até esse mesmo corte. Entre retificações elegíveis que alterem o campo decisório, prevalece a última, com data e anterioridade ao corte verificáveis. A data da semana não prova sozinha quando ocorreu uma retificação. Não afirmar que uma página atual é a versão original só por conservar o período no título.\r\n\r\nA apuração está planejada para 04/11/2026 às 12h00, após o corte. Até 07/11/2026 às 18h00, poderão ser recuperadas provas da edição ou de retificações já elegíveis, sem admitir publicações ou correções posteriores ao corte. A demora do operador não muda a edição, a ordem das retificações nem o limite de elegibilidade. Preservar URL, identificação do período, posição, identidade do vencedor, data real da consulta e cópia da evidência efetivamente usada.\r\n\r\nO arquivo por semana demonstra recuperação de edições; não garante todas as versões históricas nem uma captura futura. Se houver divergência material entre fontes, retificação tardia que impeça recuperar o dado elegível, alteração silenciosa identificada, data/fuso inconclusivos para ordenar retificações ou ausência de prova suficiente, não escolher resposta por suposição. Encaminhar à operação humana para esclarecimento e eventual tratamento permitido pela plataforma, preservando as regras; não há cancelamento, reabertura ou resolução automática prometidos. Erro de aplicação da regra é diferente de correção tardia da fonte e deve seguir o estado e a janela real de correção da plataforma.\r\n\r\nEm indisponibilidade, recuperar a mesma edição no arquivo oficial ou endereço oficial sucessor que preserve país, período e produto. SteamDB global, estimativas e notícias não substituem o ranking BR. Empate mal definido, edição ausente ou falta de prova nunca viram Não automaticamente. Divulgação excepcional antecipada exige solicitar fechamento e registrar o ocorrido, sem presumir monitoramento automático."
+    },
+    "hash": "19de72b4adb0f8aa012e47bef4c45948997ecbba5d17e795f2091a116e7cf80a",
+    "signature": "tL+dkOmnE3NyLowakJWK5oFWwEjhBAh98Wrh+nLTsHX6HjAdJ7zskkm9bruKMzCfanfOGfMO0IxQrqc7IibSDA==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 1,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 8,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:8",
+      "payload_hash": "19de72b4adb0f8aa012e47bef4c45948997ecbba5d17e795f2091a116e7cf80a",
+      "previous_event_hash": "148dd535c0f693dbcf4a310b8e3d6f47c23a03125a92b2edd3e49de780608f2a",
+      "event_hash": "ddaa9a5b5879ec6d7c754c42fcfd366a964c9312ee97414f42d040737fd7104a",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T21:30:56.289469+00:00"
+    },
+    {
+      "sequence": 23,
+      "event_type": "market_locked",
+      "payload_reference": "market:modern-warfare-4-sera-no-1-na-steam-brasil-entre-20-e-27-de-outubro:locked",
+      "payload_hash": "a62b64dc6486ff35006dd154226300ff74da9d809bc957ab7f9458bfc43139dc",
+      "previous_event_hash": "8f55b4711ecc5eb24052543d5ee483d67000d9011a18e7200e38940df5d483c0",
+      "event_hash": "b2cfa8bdee5955f2af8fae01487c822a824b887bea781845ca4730365dd25a55",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-16T03:03:31.094296+00:00"
+    }
+  ]
+}

@@ -174,3 +174,7 @@ O escopo de exclusão pré-publicação e aprovação por responsabilidade human
 ## Correção do formulário de publicação aprovada (2026-10-11)
 
 O formulário separado de “Publicar versão aprovada” envia `expected_market_id` do mercado exibido, conforme o contrato de lifecycle. Ao reapresentar erro, conserva o ID originalmente submetido; nunca o substitui silenciosamente pelo ID de outro mercado no mesmo slug. A publicação continua usando a versão salva e aprovada, sem salvar alterações do editor. Correção de implementação do contrato vigente, sem nova regra editorial ou permissão MCP. Implantação concluída pela PR #158; CI/deploy e verificação do template no container produtivo registrados em WFLOW-20261011-PUBLISH-FORM-IDENTITY.
+
+## Agenda estruturada (2026-10-17)
+
+Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.

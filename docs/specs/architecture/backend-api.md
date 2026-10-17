@@ -99,3 +99,7 @@
 ## 2026-10-09 — Imagens IA de badges
 
 badge_image_service/routes definem contexto, ownership/sessão/editor e versão/URLs da definição. Fila gotrendlabs_thumbnail_jobs tipada por kind com FK/editor/constraints, limites globais compartilhados. Worker/provedor reutilizados sem acoplar política de badge à elegibilidade draft de mercados. Candidata confirmada atomicamente em criação/edição; contratos públicos e concessões preservados.
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.

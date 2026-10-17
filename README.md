@@ -212,3 +212,10 @@ Rascunhos existentes possuem **Gerar thumbnail**, **Gerar outra** e **Desfazer t
 Criar/editar badge permite gerar um par 1:1 (tema claro e escuro), regenerar e desfazer, confirmando ambos no salvamento existente. O editor informa Gerando/Aguarde e recupera trabalhos ativos na recarga, na mesma sessão. Executor e parâmetros compartilhados com thumbnails; habilitação própria off por default. Limites globais/operador contam 2 imagens por par e 1 por thumbnail; limite por item conta solicitações. [Spec](docs/specs/features/ai-badge-images.md), [runbook](docs/guides/admin-ai-badge-images-runbook.md), [testes](docs/specs/testing/ai-badge-images-acceptance.md). Implementação local; publicação/homologação produtiva pendentes.
 
 No DEV com worktrees, `GOTRENDLABS_MEDIA_ROOT` pode apontar Django para a mídia existente; mantenha `GTL_THUMB_PUBLIC_ROOT` e `GTL_BADGE_PUBLIC_ROOT` alinhados para os produtores de arquivos. Não substitua o diretório `media/` versionado por um symlink.
+
+Agenda estruturada (implementação local, implantação pendente): [contrato](docs/specs/features/market-resolution-agenda.md), [runbook e migração revisável](docs/operations/resolution-agenda-runbook.md), [evidências de validação](docs/specs/testing/resolution-agenda-results.md).
+
+
+## 17/10/2026 — Preparação do fechamento da resolução prevista
+
+Contrato final e evidências consolidados em [fechamento da agenda](docs/specs/testing/resolution-agenda-closeout-20261017.md). Branch feature/structured-resolution-agenda preservada; implementação validada localmente e fechamento GitHub/produção em preparação, condicionado à aprovação prévia da descrição da PR solicitada pelo usuário. Não declarar dados migrados ou release mobile distribuída por deploy web/API. Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT.

@@ -330,3 +330,11 @@ Antes de considerar a UI pronta:
 - wallet, reputacao e badges sao leitura do backend
 - UI segue a direcao dark-first definida em `mobile-ux.md`
 - nenhuma regra critica foi duplicada no app
+
+## Agenda de resolução — 2026-10-17
+
+O detalhe consome agenda FastAPI (`expected_resolution_at`, original, fuso, versão/classificação) e mostra previsão antes do critério integral. Reagendamento aparece com previsão original; ausência não produz data. Locked usa “Em apuração”; terminais não mostram contagem de fechamento pendente. Sem operações administrativas Flutter. Testes de repository/model/widget atualizados; evidências e limites no relatório `docs/specs/testing/resolution-agenda-results.md` (caminho relativo à raiz).
+
+## Critérios longos e prazos no detalhe — 17/10/2026
+
+A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (`expected_resolution_label`) da FastAPI no rodapé do resumo, após divisor discreto, com tipografia secundária e quebra natural. As datas não integram o card do critério. O critério precede o ticket e mantém a apresentação aprovada em 12/10: prévia de três linhas; textos longos oferecem “Ver critério de resolução completo”, abrindo painel inferior com texto integral selecionável, rolagem e Fechar. Texto curto não recebe ação extra. Sem expansão dentro da página, reescrita do texto ou cálculo local dos prazos. Testar fonte ampliada, fechamento do painel e manutenção do detalhe.

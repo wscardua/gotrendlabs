@@ -135,6 +135,8 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             .astimezone(__import__("zoneinfo").ZoneInfo("America/Sao_Paulo"))
             .isoformat(),
             "close_timezone": "America/Sao_Paulo",
+            "expected_resolution_at": (a.now() + timedelta(days=5)).isoformat(),
+            "schedule_timezone": "America/Sao_Paulo",
             "editorial_record": {
                 "policy_version": policy["version"],
                 "policy_hash": policy["hash"],
@@ -646,6 +648,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "source": self.payload["source"],
             "resolution_criteria": self.payload["resolution_criteria"],
             "close_at": self.payload["close_at"],
+                **{k:self.payload[k] for k in ("expected_resolution_at","schedule_timezone")},
             "close_timezone": "America/Sao_Paulo",
             "thumb_color": "#334155",
             "options": [],
@@ -811,6 +814,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                 "source": self.payload["source"],
                 "resolution_criteria": self.payload["resolution_criteria"],
                 "close_at": self.payload["close_at"],
+                **{k:self.payload[k] for k in ("expected_resolution_at","schedule_timezone")},
                 "close_timezone": "America/Sao_Paulo",
                 "thumb_color": "#334155",
                 "expected_revision": 4,
@@ -1081,17 +1085,19 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         )
 
     def test_calls_scope_denials_and_reduction_remain_persistent(self):
-        Integration.objects.filter(id=self.iid).update(calls_per_minute=1)
-        self.assertEqual(
-            self.client.get(
-                "/integrations/editorial/policy", headers=self.agentheaders
-            ).status_code,
-            200,
-        )
-        r = self.client.get("/integrations/editorial/policy", headers=self.agentheaders)
-        self.assertEqual(r.status_code, 429)
-        self.assertIn("retry-after", r.headers)
-        self.assertEqual(Quota.objects.get(bucket__startswith="call:").count, 2)
+        frozen_now = a.now()
+        with patch.object(a,"now",return_value=frozen_now):
+            Integration.objects.filter(id=self.iid).update(calls_per_minute=1)
+            self.assertEqual(
+                self.client.get(
+                    "/integrations/editorial/policy", headers=self.agentheaders
+                ).status_code,
+                200,
+            )
+            r = self.client.get("/integrations/editorial/policy", headers=self.agentheaders)
+            self.assertEqual(r.status_code, 429)
+            self.assertIn("retry-after", r.headers)
+            self.assertEqual(Quota.objects.get(bucket__startswith="call:").count, 2)
 
     def test_audit_failure_aborts_technical_failure_does_not(self):
         with patch(
@@ -1313,7 +1319,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                             self.assertTrue(policy["manual"])
                             self.assertTrue(policy["checklist"])
                             self.assertTrue(policy["record_template"])
-                            self.assertEqual(policy["version"], "1.2")
+                            self.assertEqual(policy["version"], "1.4")
                             self.assertEqual(
                                 policy["checklist_hash"],
                                 hashlib.sha256(
@@ -1469,6 +1475,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "source": self.payload["source"],
             "resolution_criteria": self.payload["resolution_criteria"],
             "close_at": self.payload["close_at"],
+                **{k:self.payload[k] for k in ("expected_resolution_at","schedule_timezone")},
             "close_timezone": "America/Sao_Paulo",
             "thumb_color": "#334155",
             "options": [],
@@ -2138,6 +2145,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "source": self.payload["source"],
             "resolution_criteria": self.payload["resolution_criteria"],
             "close_at": self.payload["close_at"],
+                **{k:self.payload[k] for k in ("expected_resolution_at","schedule_timezone")},
             "close_timezone": "America/Sao_Paulo",
             "thumb_color": "#334155",
             **overrides,
@@ -2696,3 +2704,28 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         }, headers=self.human)
         self.assertEqual(rejected.status_code, 200, rejected.text)
         self.assertEqual(EditorialDraft.objects.get(market_id=mid).state, "rejected")
+
+    def test_schedule_replay_conflict_and_snapshot_changes(self):
+        created=self.create();self.assertEqual(created.status_code,200,created.text)
+        value=created.json();market_id=value['market_id']
+        replay=self.create();self.assertEqual(replay.json()["market_id"],value["market_id"]);self.assertTrue(replay.json()["replayed"])
+        changed={**self.payload,'expected_resolution_at':(a.now()+timedelta(days=6)).isoformat()}
+        conflict=self.create(payload=changed);self.assertEqual(conflict.status_code,409,conflict.text)
+        updated=self.client.patch(f'/integrations/editorial/drafts/{market_id}',json={**changed,'idempotency_key':'agenda-update-0001','expected_revision':value['revision']},headers=self.agentheaders)
+        self.assertEqual(updated.status_code,200,updated.text)
+        self.assertNotEqual(updated.json()['snapshot_hash'],value['snapshot_hash'])
+        current=self.client.get(f'/integrations/editorial/markets/{market_id}',headers=self.agentheaders)
+        self.assertEqual(current.status_code,200,current.text)
+        self.assertTrue(current.json()['expected_resolution_at'])
+
+    def test_incomplete_draft_submission_blocked_and_staff_permission_not_inferred(self):
+        payload={**self.payload,'expected_resolution_at':None,'schedule_timezone':''}
+        validation=self.client.post('/integrations/editorial/drafts/validate',json={k:v for k,v in payload.items() if k != 'idempotency_key'},headers=self.agentheaders)
+        self.assertEqual(validation.status_code,200,validation.text)
+        self.assertIn('schedule_incomplete',validation.json()['pending'])
+        created=self.create(payload=payload);self.assertEqual(created.status_code,200,created.text)
+        value=created.json()
+        response=self.client.post(f"/integrations/editorial/drafts/{value['market_id']}/submit",json={'idempotency_key':'agenda-submit-0001','expected_revision':value['revision']},headers=self.agentheaders)
+        self.assertEqual(response.status_code,422,response.text)
+        forbidden=self.client.post(f"/admin/markets/{value['slug']}/reschedule",json={'expected_market_id':value['market_id'],'expected_version':1,'expected_resolution_at':(a.now()+timedelta(days=6)).isoformat(),'reason':'No permission'},headers=self.agentheaders)
+        self.assertIn(forbidden.status_code,[401,403])

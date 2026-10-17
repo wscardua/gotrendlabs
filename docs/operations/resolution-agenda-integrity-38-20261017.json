@@ -1,0 +1,67 @@
+{
+  "market_slug": "o-brasil-ganhara-medalha-feminina-por-equipes-no-mundial-de-ginastica-artistica-de-2026",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "binary",
+      "event": "Mundial2026",
+      "title": "O Brasil ganhará medalha feminina por equipes no Mundial de Ginástica Artística de 2026?",
+      "options": [
+        {
+          "id": 87,
+          "hint": "Opção afirmativa",
+          "label": "SIM",
+          "order": 1
+        },
+        {
+          "id": 88,
+          "hint": "Opção negativa",
+          "label": "NAO",
+          "order": 2
+        }
+      ],
+      "summary": "A seleção brasileira feminina foi convocada para o Mundial de Rotterdam, com Rebeca Andrade e Flávia Saraiva. A pergunta trata de ouro, prata ou bronze da equipe, não de medalhas individuais. As qualificatórias femininas começam em 18/10 e a final por equipes está prevista para 21/10.",
+      "category": "Esporte",
+      "close_at": "2026-10-18T13:00:00Z",
+      "event_id": 65,
+      "market_id": 38,
+      "category_id": 18,
+      "market_slug": "o-brasil-ganhara-medalha-feminina-por-equipes-no-mundial-de-ginastica-artistica-de-2026",
+      "subcategory": "Ginástica Artística",
+      "published_at": "2026-10-11T15:39:11.891233Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 64,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://www.gymnastics.sport/site/events/detail.php?id=17247&type=sport",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "As previsões encerram em 18/10/2026 às 10h00 de Brasília (UTC−3), antes da primeira sessão de qualificatórias femininas.\r\n\r\nEste mercado considera somente a medalha da equipe sênior feminina do Brasil na competição por equipes do 54º Campeonato Mundial de Ginástica Artística, edição Rotterdam 2026. Não contam medalhas individuais, masculinas, prêmios especiais, posições nas qualificatórias ou classificações olímpicas posteriores.\r\n\r\nVence “Sim” se a classificação final oficial da World Gymnastics, após o julgamento dos recursos aplicáveis, atribuir ao Brasil/BRA uma medalha de ouro, prata ou bronze nesta prova. Um empate reconhecido oficialmente com atribuição de medalha ao Brasil também conta como “Sim”.\r\n\r\nVence “Não” se o resultado oficial final não atribuir medalha ao Brasil, inclusive por eliminação nas qualificatórias, desistência, ausência, desclassificação ou posição fora das medalhas. A substituição de atletas não muda a identidade da equipe brasileira. Não se transforma uma desclassificação de atleta isolada automaticamente em “Não”: vale seu efeito na classificação final da equipe.\r\n\r\nPara esta apuração serão considerados os resultados e comunicados oficiais publicados até 27 de outubro de 2026, às 23h59min59s, horário de Brasília, inclusive. Se o documento indicar apenas a data, a data oficial de 27/10 está integralmente incluída. Se indicar horário e fuso, o limite é aplicado após conversão para Brasília. Uma correção oficial publicada dentro do corte substitui a versão anterior; correções posteriores não entram nesta apuração.\r\n\r\nSe houver adiamento, a nova data só conta se permitir resultado oficial da prova publicado dentro desse corte. Cancelamento da prova ou adiamento para além do corte, sem classificação final válida dessa prova, não determina “Não”: nesses casos não há resposta esportiva comprovada dentro das condições e a apuração é encaminhada ao operador conforme o procedimento vigente, sem promessa de cancelamento ou reabertura do mercado. A ausência de medalha ao Brasil determina “Não” somente quando comprovada pela classificação final ou decisão oficial conclusiva relativa à participação brasileira nessa prova efetivamente disputada. A mera ausência de um documento não prova nenhum resultado.\r\n\r\nA fonte prioritária é a classificação oficial final da World Gymnastics/Swiss Timing disponibilizada a partir da página do evento 17247: https://www.gymnastics.sport/site/events/detail.php?id=17247&type=sport . Uma reprodução integral do mesmo documento pela organização local ou pela CBG poderá servir para consultá-lo se o original estiver indisponível; um texto jornalístico não substitui a classificação. Comunicados oficiais da World Gymnastics podem comprovar cancelamento, adiamento ou correção. Entre documentos oficiais válidos, prevalece a revisão mais recente publicada dentro do corte. Divergência sem revisão identificável não será resolvida por escolha arbitrária de fonte.\r\n\r\nSe for necessário recuperar documento publicado dentro do corte, a equipe aguardará até 30 de outubro de 2026, às 18h00 de Brasília. Sem evidência suficiente, ou com divergência oficial não resolvida, a apuração permanecerá pendente de revisão editorial, sem declarar “Não” por ausência de acesso. Esta regra não promete reabertura ou cancelamento do mercado. O registro da apuração deve identificar emissor, título/prova, edição, data e revisão do documento efetivamente utilizado."
+    },
+    "hash": "b0fc58f25ae656254e2d52d47f036b9c453d28a124e26e852a6b3f8e302b3207",
+    "signature": "pFtrs5jzHGSfJmUWANTdGjc+vlTrsBxI+ePSkA/lKN7cGOIli2NbL1UGCu3UVicLGDgk/tEVNIa7faRhyUwVCQ==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 2,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 2,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:2",
+      "payload_hash": "b0fc58f25ae656254e2d52d47f036b9c453d28a124e26e852a6b3f8e302b3207",
+      "previous_event_hash": "31d97703e1ed157be696cfa8780ee33026554ae6afc93f976b3af80af78e88aa",
+      "event_hash": "6948045712136d3fe21d88d71a9b910cc31d460bf81201f3a7de5c65d98db33d",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T15:39:11.891233+00:00"
+    }
+  ]
+}

@@ -245,3 +245,7 @@ MVP deve permitir medir futuramente:
 ## Impacto de mudanca
 
 Mudancas neste MVP podem exigir ajustes em contratos publicos de mercado, auth, comentarios, wallet e ranking.
+
+## Critérios longos e prazos no detalhe — 17/10/2026
+
+A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (`expected_resolution_label`) da FastAPI no rodapé do resumo, após divisor discreto e com tipografia secundária. Critério em card próprio antes do ticket: prévia de três linhas e, somente para texto longo, “Ver critério de resolução completo” abre painel inferior com texto integral selecionável, rolagem e Fechar. Não expande dentro da página. Ausência não inventa data. Medição respeita largura/escala de fonte; conferir texto curto, longo, vazio e retorno ao detalhe após fechar.

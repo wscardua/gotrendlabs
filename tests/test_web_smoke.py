@@ -199,6 +199,19 @@ def _seed_test_email_templates():
             )
 
 
+
+def _market_write_payload(market):
+    """Build a request from the current write contract, not a response echo."""
+    from apps.api.backend_api.schemas import AdminMarketPayload, AdminMarketOptionPayload
+    payload = {key: value for key, value in market.items() if key in AdminMarketPayload.model_fields}
+    payload["expected_market_id"] = market["market_id"]
+    payload["options"] = [
+        {key: value for key, value in option.items() if key in AdminMarketOptionPayload.model_fields}
+        for option in market["options"]
+    ]
+    return payload
+
+
 def _approve_editorial_market_for_test(client, headers, slug):
     """Explicit isolated-fixture human attestation before testing downstream lifecycle."""
     from apps.api.backend_api.editorial_service import policy
@@ -2412,11 +2425,11 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                              thumb_color, image_url, resolution_criteria, resolution_type, close_at, close_timezone,
                              auto_close_enabled, resolved_at, resolution_timezone, canceled_at, winning_option_id,
                              resolution_note, admin_notes, category_id, subcategory_id, created_by_id, updated_by_id,
-                             display_order, view_count, share_count, is_featured, created_at, updated_at)
+                             display_order, view_count, share_count, is_featured, schedule_timezone, schedule_version, evidence_recovery_status, created_at, updated_at)
                         VALUES
                             (%s, %s, 'Resumo daemon', 'binary', %s, %s, '', '', '', 'Fonte',
                              '', '', '', '#136f4a', '', 'Critério', '', %s, 'America/Sao_Paulo',
-                             %s, NULL, '', NULL, NULL, '', '', %s, %s, %s, %s, 0, 0, 0, false, %s, %s)
+                             %s, NULL, '', NULL, NULL, '', '', %s, %s, %s, %s, 0, 0, 0, false, '', 0, 'not_recorded', %s, %s)
                         """,
                         (
                             slug,
@@ -4138,6 +4151,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério público verificável.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
                 "auto_close_enabled": False,
             },
@@ -4836,6 +4851,15 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         staff_headers = {"Authorization": f"Bearer {staff_register.json()['session']['token']}"}
         headers = {"Authorization": f"Bearer {user_register.json()['session']['token']}"}
         Market.objects.filter(slug="openai-gpt6-2026").update(auto_close_enabled=False)
+        # Explicit signed agenda fixture for the downstream position/settlement test.
+        market = Market.objects.get(slug="openai-gpt6-2026")
+        Market.objects.filter(pk=market.pk).update(
+            expected_resolution_at=timezone.now() + timedelta(days=1), schedule_timezone="UTC",
+        )
+        from apps.api.backend_api.resolution_schedule import register as register_schedule
+        with get_connection() as agenda_connection:
+            with agenda_connection.cursor() as agenda_cursor:
+                register_schedule(agenda_cursor, market.id, actor_id=None, provenance={"origin": "isolated_position_fixture"})
         sim = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="SIM")
         nao = MarketOption.objects.get(market__slug="openai-gpt6-2026", label="NAO")
 
@@ -5106,6 +5130,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério público verificável.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
                 "auto_close_enabled": False,
             },
@@ -5339,6 +5365,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério público verificável.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
                 "auto_close_enabled": False,
                 "options": [
@@ -5501,6 +5529,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério público verificável.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
                 "auto_close_enabled": False,
             },
@@ -5594,6 +5624,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério público verificável.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
                 "auto_close_enabled": False,
             },
@@ -5724,6 +5756,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério público verificável.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
                 "auto_close_enabled": False,
             },
@@ -5740,13 +5774,13 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         created_notes = "Ensaio privado de persistência"
         draft_notes = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
         saved_notes = client.patch("/admin/markets/preserva-dados-internos", headers=staff_headers,
-                                  json={**draft_notes, "expected_revision": draft_notes["editorial_revision"], "admin_notes": created_notes})
+                                  json={**_market_write_payload(draft_notes), "expected_revision": draft_notes["editorial_revision"], "admin_notes": created_notes})
         self.assertEqual(saved_notes.status_code, 200)
         self.assertEqual(saved_notes.json()["admin_notes"], created_notes)
         self.assertEqual(client.get("/markets/preserva-dados-internos").json()["admin_notes"], "")
         before = client.get("/admin/markets/preserva-dados-internos", headers=staff_headers).json()
         for field, value in (
-            ("close_at", "2027-01-10T23:59:00-03:00"),
+            ("close_at", "2026-12-30T23:59:00-03:00"),
             ("close_timezone", "UTC"),
             ("auto_close_enabled", True),
         ):
@@ -5754,7 +5788,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 denied = client.patch(
                     "/admin/markets/preserva-dados-internos",
                     headers=staff_headers,
-                    json={**before, "expected_revision": before["editorial_revision"], field: value},
+                    json={**_market_write_payload(before), "expected_revision": before["editorial_revision"], field: value},
                 )
                 self.assertEqual(denied.status_code, 422)
                 self.assertIn("Alterações não salvas", denied.json()["detail"])
@@ -5764,7 +5798,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         before_option_state = [(option["label"], option["probability_exact"], option["sparkline_path"]) for option in before["options"]]
         before_series = [(series["label"], series["path"]) for series in before["sparkline_series"]]
         dangerous_payload = {
-            **before,
+            **_market_write_payload(before),
             "expected_revision": before["editorial_revision"],
             "title": "Mercado preserva dados internos? Editado",
             "summary": "Texto editado sem limpar dados coletados.",
@@ -5806,7 +5840,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         resolved_payload = resolved.json()
         self.assertEqual([(series["label"], series["path"]) for series in resolved_payload["sparkline_series"]], before_series)
         resolved_dangerous_payload = {
-            **resolved_payload,
+            **_market_write_payload(resolved_payload),
             "expected_revision": resolved_payload["editorial_revision"],
             "title": "Mercado preserva dados internos? Pós-resolução",
             "status_label": "Rascunho",
@@ -6029,6 +6063,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
             },
         )
@@ -6055,6 +6091,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
             },
         )
@@ -6094,6 +6132,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Critério",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "thumb_color": "#d8ece2",
             },
         )
@@ -6106,6 +6146,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             "resolution_criteria": "Critério",
             "close_at": "2026-12-31T23:59:00-03:00",
             "close_timezone": "America/Sao_Paulo",
+            "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+            "schedule_timezone": "America/Sao_Paulo",
             "thumb_color": "#d8ece2",
         }
         invalid_market = client.post(
@@ -6138,6 +6180,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                 "resolution_criteria": "Será resolvido com relatório público consolidado.",
                 "close_at": "2026-12-31T23:59:00-03:00",
                 "close_timezone": "America/Sao_Paulo",
+                "expected_resolution_at": "2027-01-01T12:00:00-03:00",
+                "schedule_timezone": "America/Sao_Paulo",
                 "image_url": "/media/market_thumbnails/teste.png",
                 "thumb": "EN",
                 "thumb_color": "#d8ece2",
@@ -6181,7 +6225,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         make_featured = client.patch(
             "/admin/markets/energia-solar-maioria-2030",
             headers=headers,
-            json={**valid_market.json(), "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"], "is_featured": True, "auto_close_enabled": False},
+            json={**_market_write_payload(valid_market.json()), "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"], "is_featured": True, "auto_close_enabled": False},
         )
         self.assertEqual(make_featured.status_code, 200)
         self.assertTrue(make_featured.json()["is_featured"])
@@ -6240,7 +6284,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         predicted_option.refresh_from_db()
         probability_after_prediction = predicted_option.probability_exact
         edited_market_payload = {
-            **valid_market.json(),
+            **_market_write_payload(valid_market.json()),
             "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"],
             "title": "Energia solar será maioria em 2030? Revisado",
             "summary": "Mercado administrativo real para energia solar revisado.",
@@ -6393,7 +6437,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         canceled_feature_attempt = client.patch(
             "/admin/markets/energia-solar-maioria-2030",
             headers=headers,
-            json={**valid_market.json(), "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"], "is_featured": True},
+            json={**_market_write_payload(valid_market.json()), "expected_revision": client.get("/admin/markets/energia-solar-maioria-2030", headers=headers).json()["editorial_revision"], "is_featured": True},
         )
         self.assertEqual(canceled_feature_attempt.status_code, 422)
         self.assertTrue(AdminEvent.objects.filter(action="market.cancel", entity_identifier="energia-solar-maioria-2030").exists())
@@ -9896,7 +9940,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         }
         with patch(
             "apps.web.django.admin_ops.views.admin_get_markets",
-            side_effect=lambda _token, status="", **_filters: {"markets": resolution_rows.get(status, []), "counts": {}},
+            side_effect=lambda _token, resolution_queue=False, **_filters: {"markets": [market for rows in resolution_rows.values() for market in rows] if resolution_queue else [], "counts": {}},
         ):
             resolution = self.client.get(reverse("admin-ops-resolution"))
         self.assertContains(resolution, "Auditar integridade", count=3)
@@ -10024,37 +10068,18 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         html = response.content.decode()
         self.assertLess(html.find("Legenda"), html.find("Contrato em rascunho"))
         self.assertContains(response, "Criação")
-        self.assertContains(response, "Operação")
-        self.assertContains(response, "Fechamento")
-        self.assertContains(response, "Resolução")
-        self.assertContains(response, "Em operação")
-        self.assertContains(response, "Passado")
-        self.assertContains(response, "Agora")
-        self.assertContains(response, "Próxima")
-        self.assertContains(response, "Futuro")
-        self.assertContains(response, "contracts-bar-progress")
-        self.assertContains(response, "marker-time-past")
-        self.assertContains(response, "marker-time-future")
-        self.assertContains(response, "Fechamento próximo")
-        self.assertContains(response, "phase-urgency-soon")
-        self.assertContains(response, "Próximo")
+        self.assertNotContains(response, "Corte documental")
+        self.assertContains(response, "Resolução prevista")
+        self.assertNotContains(response, "Limite de recuperação")
+        self.assertContains(response, "Agenda pendente de revisão")
+        self.assertNotContains(response, 'class="contracts-bar-progress"')
+        self.assertNotRegex(response.content.decode(), r"left: [0-9]+,[0-9]+%")
         self.assertContains(response, "Hoje")
-        self.assertContains(response, reverse("admin-ops-market-edit", args=["open-contract"]))
-        self.assertNotContains(response, 'class="panel admin-menu"')
-        markets_mock.assert_called_once_with("staff-token", status="", q="", order="created_asc")
+        markets_mock.assert_called_once_with("staff-token", status="", q="", order="next_resolution", temporal="", active_contracts=True)
         timeline = response.context["timeline"]
         self.assertEqual(timeline["total"], 4)
-        self.assertEqual(timeline["rows"][0]["market"]["slug"], "draft-contract")
-        self.assertEqual(timeline["rows"][0]["starts_at_label"].split()[0], "31/05/2026")
-        self.assertEqual(timeline["rows"][0]["phase_steps"][2]["urgency"], "soon")
-        self.assertEqual(timeline["rows"][0]["phase_steps"][2]["alert_label"], "Próximo")
-        self.assertEqual(timeline["rows"][2]["current_phase_label"], "Em operação")
-        self.assertEqual([phase["time_label"] for phase in timeline["rows"][2]["phase_steps"]], ["Passado", "Agora", "Próxima", "Futuro"])
-        self.assertGreater(timeline["rows"][2]["bar_progress_width"], 0)
-        self.assertEqual([marker["time_class"] for marker in timeline["rows"][2]["markers"]], ["past", "future"])
-        self.assertEqual(timeline["rows"][3]["phase_steps"][3]["state"], "active")
-        self.assertEqual(timeline["rows"][3]["phase_steps"][3]["time_label"], "Agora")
-        self.assertAlmostEqual(timeline["today_position"], 50.0)
+        self.assertEqual(timeline["rows"][2]["bar_progress_width"], 0)
+        self.assertEqual(timeline["rows"][3]["phase_steps"][2]["state"], "active")
 
         paginated_market_data = {
             "markets": [
@@ -10085,7 +10110,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value=market_data) as markets_mock:
             response = self.client.get(f"{reverse('admin-ops-contracts')}?status=open&q=contrato")
         self.assertEqual(response.status_code, 200)
-        markets_mock.assert_called_once_with("staff-token", status="open", q="contrato", order="created_asc")
+        markets_mock.assert_called_once_with("staff-token", status="open", q="contrato", order="next_resolution", temporal="", active_contracts=False)
 
         with patch("apps.web.django.admin_ops.views.admin_get_markets", return_value={"markets": [], "counts": {}}):
             response = self.client.get(reverse("admin-ops-contracts"))
@@ -10644,6 +10669,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         }
 
         def resolution_markets(token, **filters):
+            if filters.get("resolution_queue"):
+                return {"markets": [locked_market, resolved_market], "counts": {"locked": 1, "resolved": 1}}
             if filters.get("status") == "locked":
                 return {"markets": [locked_market], "counts": {"locked": 1, "resolved": 1}}
             if filters.get("status") == "resolved":
@@ -11106,8 +11133,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             for index in range(1, 13)
         ]
 
-        def resolution_markets_payload(token, status="", order="resolution_desc"):
-            if status == "locked":
+        def resolution_markets_payload(token, resolution_queue=False, order="resolution_desc", temporal=""):
+            if resolution_queue:
                 return {"markets": resolution_markets, "counts": {"locked": 12}}
             return {"markets": [], "counts": {"resolved": 0}}
 
@@ -12289,3 +12316,14 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertContains(response, "SIM")
         self.assertContains(response, "120 GT₵")
         self.assertContains(response, "240 GT₵")
+
+    def test_agenda_reschedule_unavailable_api_is_visible_without_mutation_form(self):
+        session = self.client.session
+        session[TOKEN_KEY] = 'staff-token'
+        session[USER_KEY] = {'id':41,'is_staff':True,'display_name':'Fixture staff','handle':'fixture-staff','email':'fixture@example.test','preferred_language':'pt-br'}
+        session.save()
+        with patch('apps.web.django.admin_ops.views.admin_get_market',side_effect=AuthAPIError('API indisponível')):
+            response=self.client.get(reverse('admin-ops-market-reschedule',args=['fixture-market']))
+        self.assertEqual(response.status_code,503)
+        self.assertContains(response,'API indisponível',status_code=503)
+        self.assertNotContains(response,'name="expected_resolution_at"',status_code=503)

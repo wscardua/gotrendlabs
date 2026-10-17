@@ -141,6 +141,14 @@
             </div>
             <div class="field full"><label for="{{ form.close_label.id_for_label }}">Mensagem pública de fechamento</label>{{ form.close_label }}<small>Opcional. Texto curto exibido ao usuário sobre o fechamento; não controla o daemon.</small></div>
             <div class="field full"><label for="{{ form.source.id_for_label }}">Fonte esperada <span class="required-marker">Obrigatório</span></label>{{ form.source }}</div>
+            <fieldset class="field full"><legend>Resolução prevista</legend>
+              <p>Informe quando a resolução é esperada. Depois de publicar, alterações ficam registradas no histórico.</p>
+              <div class="form-grid">
+                <div class="field">{{ form.expected_resolution_at.label_tag }}{{ form.expected_resolution_at }}{{ form.expected_resolution_at.errors }}</div>
+                <div class="field">{{ form.schedule_timezone.label_tag }}{{ form.schedule_timezone }}{{ form.schedule_timezone.errors }}</div>
+              </div>
+            </fieldset>
+            {% if market.resolution_schedule.can_reschedule %}<a class="btn" href="{% url 'admin-ops-market-reschedule' market.slug %}">Reagendar resolução</a>{% endif %}
             <div class="field full"><label for="{{ form.resolution_criteria.id_for_label }}">Critério de resolução <span class="required-marker">Obrigatório</span></label>{{ form.resolution_criteria }}</div>
           </div>
         </div>

@@ -1,4 +1,5 @@
 {% extends "admin_base.html" %}
+{% load l10n %}
 {% block title %}GoTrendLabs Admin | Contratos{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
@@ -24,18 +25,22 @@
           <span>Buscar contrato</span>
           <input type="search" name="q" value="{{ search_query }}" placeholder="Nome, slug, categoria ou evento">
         </label>
+        <label class="field"><span>Situação temporal</span><select name="temporal"><option value="">Todas</option>{% for key,label in temporal_filters %}<option value="{{ key }}" {% if active_temporal == key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label class="field"><span>Ordenação</span><select name="order"><option value="next_resolution">Próxima apuração / mais antiga primeiro</option><option value="created_asc" {% if active_order == 'created_asc' %}selected{% endif %}>Criação</option></select></label>
         <button class="btn small" type="submit">Filtrar</button>
         {% if search_query %}<a class="btn small ghost" href="{% url 'admin-ops-contracts' %}{% if active_status %}?status={{ active_status }}{% endif %}">Limpar</a>{% endif %}
       </form>
 
+      <small class="muted">Filtros por estado: totais do catálogo completo.</small>
       <div class="filters contracts-filters">
-        <a class="filter {% if not active_status %}active{% endif %}" href="{% url 'admin-ops-contracts' %}{% if search_query %}?q={{ search_query|urlencode }}{% endif %}">Ativos e pendentes</a>
+        <a class="filter {% if not active_status %}active{% endif %}" href="{% url 'admin-ops-contracts' %}?temporal={{ active_temporal|urlencode }}&order={{ active_order|urlencode }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">Ativos e pendentes</a>
         {% for item in status_filters %}
-          <a class="filter {% if active_status == item.value %}active{% endif %}" href="{% url 'admin-ops-contracts' %}?status={{ item.value }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">{{ item.label }} {{ item.count|default:0 }}</a>
+          <a class="filter {% if active_status == item.value %}active{% endif %}" href="{% url 'admin-ops-contracts' %}?status={{ item.value }}&temporal={{ active_temporal|urlencode }}&order={{ active_order|urlencode }}{% if search_query %}&q={{ search_query|urlencode }}{% endif %}">{{ item.label }} {{ item.count|default:0 }}</a>
         {% endfor %}
       </div>
     </div>
 
+    <details><summary>Contadores da consulta antes do filtro temporal (categorias exclusivas)</summary>{% for item in market_data.schedule_summary %}<p>{{ item.label }}: {{ item.total }}</p>{% endfor %}</details>
     <div class="contracts-summary-strip" aria-label="Resumo do painel de contratos">
       <div>
         <span>Contratos carregados</span>
@@ -61,7 +66,7 @@
         <span><i class="legend-dot marker-time-now"></i> marco hoje</span>
         <span><i class="legend-dot marker-time-future"></i> marco futuro</span>
         <span><i class="legend-today"></i> hoje</span>
-        <span><i class="phase-dot legend-done"></i> passado</span>
+        <span>Marcos planejados não indicam conclusão; o avanço do tempo não mede progresso.</span>
         <span><i class="phase-dot legend-active"></i> agora</span>
         <span><i class="phase-dot legend-pending"></i> futuro</span>
       </div>
@@ -82,17 +87,19 @@
               </div>
               <p>{{ row.market.category }} / {{ row.market.subcategory }} / {{ row.market.event }}</p>
               <small>{{ row.current_phase_note }}</small>
+              {% if row.market.resolution_schedule.can_reschedule %}<a class="btn small ghost" href="{% url 'admin-ops-market-reschedule' row.market.slug %}">Reagendar resolução</a>{% endif %}
+              {% if row.market.schedule_history %}<details><summary>Previsão original e histórico</summary><p>Original: {{ row.market.original_expected_resolution_label }}</p>{% for event in row.market.schedule_history %}<p>{{ event.after.expected_resolution_at }} — {{ event.reason }}</p>{% endfor %}</details>{% endif %}
             </div>
 
             <div class="contract-flow" aria-label="Fases do mercado">
               <div class="contract-date-rail" aria-label="Linha compacta de datas">
                 {% if timeline.has_today %}
-                  <span class="contracts-today-line row-line" style="left: {{ timeline.today_position }}%;" aria-label="Hoje"></span>
+                  <span class="contracts-today-line row-line" style="left: {{ timeline.today_position|unlocalize }}%;" aria-label="Hoje"></span>
                 {% endif %}
-                <span class="contracts-bar" style="left: {{ row.bar_left }}%; width: {{ row.bar_width }}%;"></span>
-                <span class="contracts-bar-progress" style="left: {{ row.bar_left }}%; width: {{ row.bar_progress_width }}%;" aria-hidden="true"></span>
+                <span class="contracts-bar" style="left: {{ row.bar_left|unlocalize }}%; width: {{ row.bar_width|unlocalize }}%;"></span>
+
                 {% for marker in row.markers %}
-                  <span class="contracts-marker marker-{{ marker.class }} marker-time-{{ marker.time_class }}" style="left: {{ marker.position }}%;" title="{{ marker.label }}" aria-label="{{ marker.label }}"></span>
+                  <span class="contracts-marker marker-{{ marker.class }} marker-time-{{ marker.time_class }}" style="left: {{ marker.position|unlocalize }}%; top: {{ marker.lane_top|unlocalize }}%;" title="{{ marker.label }}" aria-label="{{ marker.label }}"></span>
                 {% endfor %}
               </div>
 

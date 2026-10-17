@@ -69,7 +69,7 @@ Resposta de mutação: `market_id`, `slug`, `market_status`, `editorial_status`,
 
 Paginação: `items`, `next_cursor`, `has_more`, `as_of`, `coverage`; limite default 20, máximo 100. Busca truncada informa limite e não comprova deduplicação completa. Métricas incluem unidade, período, timezone e `availability`; `null` representa ausência, não zero.
 
-Erros estáveis: `unauthenticated` (401), `forbidden_scope`/`integration_inactive`/`resource_forbidden` (403 ou 404 para recurso não visível), `not_found` (404), `version_conflict`/`idempotency_conflict`/`draft_not_editable` (409), `validation_failed` (422), `quota_exceeded` (429 com retry quando aplicável), `dependency_unavailable` (503). OAuth usa erros padronizados próprios. No MCP mapear erros de ferramenta/protocolo corretamente e registrar resultado de negócio mesmo com HTTP 200.
+Erros estáveis: `unauthenticated` (401), `forbidden_scope`/`integration_inactive`/`resource_forbidden` (403 ou 404 para recurso não visível), `not_found` (404), `version_conflict`/`idempotency_conflict`/`draft_not_editable` (409), `validation_failed` e os códigos `schedule_incomplete`, `schedule_timezone_invalid`, `schedule_offset_required`, `schedule_order_invalid`, `schedule_expired` (422), `quota_exceeded` (429 com retry quando aplicável), `dependency_unavailable` (503). OAuth usa erros padronizados próprios. No MCP mapear erros de ferramenta/protocolo corretamente e registrar resultado de negócio mesmo com HTTP 200.
 
 ## Modelagem lógica mínima
 
@@ -136,3 +136,15 @@ Drafts preparation/in_review podem ser excluídos por operador humano staff/MFA;
 ## Quebras de linha no documento editorial (2026-10-11)
 
 Validação do anúncio e da declaração de pendências interpreta LF, CRLF e CR como quebras de linha equivalentes. A normalização ocorre somente na leitura pelo validador; documento persistido, snapshot e hash não são reescritos. Os critérios de conteúdo aplicam-se aos validadores automáticos de preparação MCP/API e aos alertas informativos. Parecer humano approved com confirmed=true atesta revisão e resolução das pendências sem bloquear por anúncio ou declaração textual; publicação conserva os controles de autoria, revisão/hash/snapshot e os requisitos operacionais do mercado.
+
+## Agenda de resolução — 2026-10-17
+
+Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+### Agenda no editorial existente
+
+Schemas REST/MCP compartilham `ScheduleFields`. Drafts podem declarar ausências; submissão/publicação exigem agenda completa coerente. SearchItem/MarketProjection expõem agenda/original/versão e mantêm paginação/coverage. Os campos entram nos snapshots e nos hashes de payload/idempotência existentes: alteração não herda aprovação e mesma chave com payload diferente conflita. Política 1.3, ficha única modelo 1.7; hashes calculados dos arquivos vigentes. Não foram criados scopes ou ferramentas para reagendamento/resolução/publicação.
+
+### Erros de validação da agenda no transporte MCP — 17/10/2026
+
+O MCP preserva os códigos fixos `schedule_incomplete`, `schedule_timezone_invalid`, `schedule_offset_required`, `schedule_order_invalid` e `schedule_expired` retornados pela FastAPI. São pendências corrigíveis do draft, sem tratá-las como indisponibilidade. Mensagens livres e códigos desconhecidos não são propagados; erros técnicos continuam `dependency_unavailable`. Sem novos scopes, ferramentas ou permissões administrativas, nem alteração de replays.

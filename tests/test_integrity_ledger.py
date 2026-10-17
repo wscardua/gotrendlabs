@@ -231,6 +231,15 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         _seed_test_badges()
         _seed_test_markets()
         _seed_test_email_templates()
+        from apps.api.backend_api import resolution_schedule as schedule
+        with get_connection() as connection:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id FROM gotrendlabs_markets WHERE status='open'")
+                ids = [r['id'] for r in cursor.fetchall()]
+                for market_id in ids:
+                    cursor.execute("UPDATE gotrendlabs_markets SET expected_resolution_at=%s,schedule_timezone='UTC' WHERE id=%s",
+                        (django_timezone.now()+timedelta(days=1),market_id))
+                    schedule.register(cursor,market_id,actor_id=None,provenance={'origin':'isolated_fixture'})
         self.client = TestClient(app)
         self.staff_headers = self._register("Integrity Staff", "integrity-staff@example.com")
         self.user_headers = self._register("Integrity User", "integrity-user@example.com")
@@ -912,3 +921,37 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         self.assertEqual(summary["scan_failures"], 1)
         self.assertEqual(summary["issues_detected"], 0)
         self.assertFalse(IntegrityAlert.objects.exists())
+
+    def test_agenda_complement_after_prediction_preserves_commitment_and_finances(self):
+        from apps.api.backend_api import resolution_schedule as schedule
+        source = Market.objects.get(slug='openai-gpt6-2026')
+        now = django_timezone.now()
+        legacy = Market.objects.create(category=source.category,subcategory=source.subcategory,event=source.event,
+            slug='agenda-historical-prediction',title='Fixture histórica assinada',status='open',kind='binary',
+            close_at=now+timedelta(hours=1),close_timezone='UTC',published_at=now,integrity_version=integrity_service.PROTOCOL_VERSION)
+        for label in ['SIM','NAO']:
+            legacy.options.create(label=label,probability_exact=50)
+        with get_connection() as conn:
+            with conn.cursor() as cur:integrity_service.register_market_definition(cur,legacy.id,occurred_at=now)
+        option=legacy.options.first()
+        response=self.client.post(f'/markets/{legacy.slug}/predict',headers=self.user_headers,json={'option_id':option.id,'stake_amount':25,'client_locale':'pt-br'})
+        self.assertEqual(response.status_code,201,response.text)
+        commitment=PredictionCommitment.objects.get(market=legacy)
+        protected=(bytes(commitment.canonical_payload),commitment.commitment_hash,bytes(commitment.signature))
+        definition=MarketIntegrityDefinition.objects.get(market=legacy)
+        original=(bytes(definition.canonical_payload),definition.payload_hash,bytes(definition.signature))
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT COUNT(*) AS n,COALESCE(SUM(amount),0) AS total FROM gotrendlabs_wallet_ledger')
+                money=cur.fetchone()
+                cur.execute("UPDATE gotrendlabs_markets SET expected_resolution_at=%s,schedule_timezone='UTC' WHERE id=%s",(now+timedelta(days=2),legacy.id))
+                schedule.register(cur,legacy.id,actor_id=None,provenance={'origin':'isolated_backfill_test'})
+                cur.execute('SELECT * FROM gotrendlabs_markets WHERE id=%s',(legacy.id,))
+                verification=integrity_service.verify_market_integrity_records(cur,cur.fetchone())
+                self.assertTrue(verification['market_valid'],verification)
+                self.assertTrue(verification['prediction_commitments_valid'])
+                cur.execute('SELECT COUNT(*) AS n,COALESCE(SUM(amount),0) AS total FROM gotrendlabs_wallet_ledger')
+                self.assertEqual(cur.fetchone(),money)
+        commitment.refresh_from_db();definition.refresh_from_db()
+        self.assertEqual(protected,(bytes(commitment.canonical_payload),commitment.commitment_hash,bytes(commitment.signature)))
+        self.assertEqual(original,(bytes(definition.canonical_payload),definition.payload_hash,bytes(definition.signature)))

@@ -57,13 +57,15 @@ class EditorialReferenceTests(SimpleTestCase):
         self.assertIn("O que é um mercado de previsão", response.content.decode())
 
     def test_criteria_match_approved_checklist_and_form(self):
-        rules = json.loads((EDITORIAL_DIR / "criteria-v1.2.json").read_text(encoding="utf-8"))
+        rules = json.loads((EDITORIAL_DIR / "criteria-v1.4.json").read_text(encoding="utf-8"))
         checklist = (EDITORIAL_DIR / "checklist-de-publicacao.md").read_text(encoding="utf-8")
         form = (EDITORIAL_DIR / "ficha-de-mercado.md").read_text(encoding="utf-8")
         rows = re.findall(r"^\| (E\d\d) \| ([^|]+) \| ([^|]+) \|$", checklist, re.M)
         self.assertEqual(len(rows), 11)
-        self.assertEqual(rules["version"], "1.2")
+        self.assertEqual(rules["version"], "1.4")
         self.assertEqual(rules["status"], "approved")
+        from apps.web.django.admin_ops.editorial_content import load_editorial_reference
+        self.assertEqual(load_editorial_reference("checklist")["criteria"], rules["criteria"])
         self.assertEqual(
             [{key: rule[key] for key in ("id", "question", "evidence")} for rule in rules["criteria"]],
             [{"id": code, "question": question.strip(), "evidence": evidence.strip()} for code, question, evidence in rows],

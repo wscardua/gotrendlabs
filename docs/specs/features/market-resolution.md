@@ -141,3 +141,7 @@ Alta sensibilidade; mudanças afetam contratos centrais e múltiplas features de
 ## Finalizacao criptografica
 
 Resolucao inicia janela configuravel de 12 horas. Durante a janela, desfazer exige motivo e limpa o prazo. Vencido o prazo, o daemon cria Seal/Merkle e muda para `sealed`; falha de assinatura preserva `resolved`. Depois de selado nao ha desfazer/cancelar, apenas correcao append-only.
+
+## Agenda estruturada (2026-10-17)
+
+Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.

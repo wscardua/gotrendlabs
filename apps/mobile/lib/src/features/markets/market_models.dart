@@ -132,6 +132,13 @@ class Market {
     required this.resolutionCriteria,
     required this.resolutionNote,
     required this.resolvedAtLabel,
+    this.expectedResolutionLabel = '',
+    this.originalExpectedResolutionLabel = '',
+    this.expectedResolutionAt = '',
+    this.originalExpectedResolutionAt = '',
+    this.scheduleTimezone = '',
+    this.scheduleClassification = '',
+    this.scheduleVersion = 0,
     required this.publishedAt,
     required this.sealDueAt,
     required this.sealedAt,
@@ -174,6 +181,13 @@ class Market {
   final String resolutionCriteria;
   final String resolutionNote;
   final String resolvedAtLabel;
+  final String expectedResolutionLabel;
+  final String originalExpectedResolutionLabel;
+  final String expectedResolutionAt;
+  final String originalExpectedResolutionAt;
+  final String scheduleTimezone;
+  final String scheduleClassification;
+  final int scheduleVersion;
   final String publishedAt;
   final String sealDueAt;
   final String sealedAt;
@@ -195,6 +209,8 @@ class Market {
   String get probabilityLabel => formatProbability(primaryProbability);
   String get volumeLabel => formatGtl(humanVolumeGtl);
   String get timeRemainingLabel {
+    if (isLocked) return 'Em apuração';
+    if (isResolved || isSealed || status == 'canceled') return statusLabel;
     final short = closesIn.trim();
     if (short.isNotEmpty && short != 'fim') {
       return short;
@@ -247,6 +263,19 @@ class Market {
       resolutionCriteria: safeString(json['resolution_criteria']),
       resolutionNote: safeString(json['resolution_note']),
       resolvedAtLabel: safeString(json['resolved_at_label']),
+      expectedResolutionLabel: safeString(json['expected_resolution_label']),
+      originalExpectedResolutionLabel: safeString(
+        json['original_expected_resolution_label'],
+      ),
+      expectedResolutionAt: safeString(json['expected_resolution_at']),
+      originalExpectedResolutionAt: safeString(
+        json['original_expected_resolution_at'],
+      ),
+      scheduleTimezone: safeString(json['schedule_timezone']),
+      scheduleClassification: safeString(
+        (json['resolution_schedule'] as Map?)?['code'],
+      ),
+      scheduleVersion: safeInt(json['schedule_version']),
       publishedAt: safeString(json['published_at']),
       sealDueAt: safeString(json['seal_due_at']),
       sealedAt: safeString(json['sealed_at']),

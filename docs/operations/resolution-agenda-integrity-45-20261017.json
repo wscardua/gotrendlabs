@@ -1,0 +1,85 @@
+{
+  "market_slug": "qual-novela-vencera-o-emmy-internacional-2026",
+  "status": "registered",
+  "protocol_version": "gtl-integrity/v1",
+  "definition": {
+    "payload": {
+      "kind": "multiple",
+      "event": "Emmy2027",
+      "title": "Qual novela vencerá o Emmy Internacional 2026?",
+      "options": [
+        {
+          "id": 101,
+          "hint": "Brasil",
+          "label": "Garota do Momento",
+          "order": 1
+        },
+        {
+          "id": 102,
+          "hint": "Turquia",
+          "label": "Leyla",
+          "order": 2
+        },
+        {
+          "id": 103,
+          "hint": "Turquia; título internacional Far Away",
+          "label": "Uzak Sehir",
+          "order": 3
+        },
+        {
+          "id": 104,
+          "hint": "Espanha; Season 2 [Wild Valley]",
+          "label": "Valle Salvaje — temporada 2",
+          "order": 4
+        },
+        {
+          "id": 105,
+          "hint": "Duas ou mais novelas distintas oficialmente co-vencedoras da categoria Telenovela 2026",
+          "label": "Mais de uma novela vencedora",
+          "order": 5
+        }
+      ],
+      "summary": "A categoria Telenovela do Emmy Internacional 2026 reúne uma produção brasileira, duas turcas e a segunda temporada de uma produção espanhola. A cerimônia está prevista para 23 de novembro, em Nova York. Qual será o resultado: uma das quatro como única vencedora ou mais de uma novela co-vencedora? GT₵ são créditos educativos, sem dinheiro real.",
+      "category": "Cinema",
+      "close_at": "2026-11-22T21:00:00Z",
+      "event_id": 72,
+      "market_id": 45,
+      "category_id": 15,
+      "market_slug": "qual-novela-vencera-o-emmy-internacional-2026",
+      "subcategory": "Premiações",
+      "published_at": "2026-10-11T16:02:19.110440Z",
+      "close_timezone": "America/Sao_Paulo",
+      "subcategory_id": 68,
+      "protocol_version": "gtl-integrity/v1",
+      "resolution_source": "https://www.iemmys.tv/category/press-releases/",
+      "auto_close_enabled": true,
+      "definition_version": 1,
+      "resolution_criteria": "Vence a opção individual que a International Academy of Television Arts & Sciences identificar como única vencedora da categoria Telenovela da 54ª edição do International Emmy Awards, edição 2026. As quatro opções individuais correspondem a Garota do Momento; Leyla; Uzak Sehir [Far Away]; e Valle Salvaje – Season 2 [Wild Valley]. Grafias equivalentes não criam outra opção. Outra temporada de Valle Salvaje não está incluída na opção individual. A quinta alternativa, “Mais de uma novela vencedora”, vence se a Academia identificar duas ou mais novelas distintas como oficialmente co-vencedoras da mesma categoria/edição, incluindo eventual título substituto. Múltiplos troféus ou profissionais premiados pela mesma novela não contam como múltiplas novelas.\r\n\r\nA fonte principal será o comunicado oficial datado de vencedores de 2026, localizado em https://www.iemmys.tv/category/press-releases/. A entrada Telenovela/2026 em https://www.iemmys.tv/international-emmy-awards/winners-archive/ só será alternativa se houver prova recuperável de versão elegível até o corte abaixo; sem isso, apenas corrobora e não decide. O anúncio de indicados comprova as opções, não a vitória. Notícias, vídeos, torcida, probabilidades e outras categorias/edições não decidem o resultado.\r\n\r\nPrevisões encerram em 22/11/2026 às 18h00, America/Sao_Paulo (UTC−03:00), antes do dia previsto para a cerimônia, 23/11/2026 em Nova York. O horário da cerimônia não foi informado nas fontes verificadas. Adiamento não reabre nem desloca esse fechamento. O corte objetivo para anúncios e correções oficiais é 30/11/2026 às 23h59min59s, America/Sao_Paulo (UTC−03:00), inclusive. Só são elegíveis resultados e retificações publicados até esse instante. A apuração definitiva ocorrerá somente após o corte, com consulta planejada para 01/12/2026 às 12h00 no mesmo fuso; atraso do operador não altera a versão elegível. Se o resultado for divulgado antecipadamente, a equipe solicitará fechamento imediato e registrará o ocorrido, sem reescrever prazos ou ocultar previsões posteriores ao anúncio.\r\n\r\nO registro-base é o comunicado oficial datado. Retificação oficial expressa, datada e publicada até o corte prevalece sobre a versão anterior. Publicação sem horário exige evidência suficiente de anterioridade ao corte; data/fuso ambíguos não bastam. Atualização silenciosa posterior, sem versão recuperável elegível, não decide. Divergências não esclarecidas por evidência elegível impedem atribuir vencedora. A equipe preservará URL, data/fuso de publicação, horário de consulta e cópia da versão usada; a existência futura dessa cópia não é presumida.\r\n\r\nSe houver duas ou mais novelas oficialmente co-vencedoras, selecionar exclusivamente “Mais de uma novela vencedora”, sem desempate entre elas. Empate de pontuação sem declaração oficial de co-vitória não basta. A opção técnica corresponde a uma única opção vencedora do mercado, não a liquidação múltipla, reembolso ou cancelamento automático. Se a evidência não esclarecer se houve uma ou mais novelas vencedoras, buscar evidência oficial elegível até o corte e encaminhar à revisão humana/operação.\r\n\r\nSe a categoria for cancelada, retirada ou não concedida, se aparecer uma única vencedora fora das quatro opções individuais, ou se houver alteração material nas candidaturas que impeça aplicar estas regras, nenhuma alternativa será declarada vencedora por exclusão: encaminhamento à revisão humana/operação, preservando o histórico. Se a cerimônia atrasar ou as fontes falharem, recuperar prova de anúncios/correções elegíveis até o corte, com consultas diárias às 12h00 entre 01/12 e 07/12 e verificação final em 07/12/2026 às 18h00 (America/Sao_Paulo, UTC−03:00). Essa recuperação não inclui novos resultados ou correções publicados depois do corte. O limite de 07/12 é para escalonamento, não prova de derrota nem autorização para inventar resultado. Sem evidência suficiente ao término, manter a apuração pendente e encaminhar à operação/suporte conforme recursos efetivamente disponíveis. Prova elegível descoberta depois da resolução exige registro e conferência do estado e da janela real de correção no painel; correção oficial publicada depois do corte não altera a versão que decide este mercado. Histórico selado não será reescrito."
+    },
+    "hash": "aaeb666c5ed6b9f13d2a28ae7e3928ad64bf78dfdfcca6d882322e4f1fcb5b3b",
+    "signature": "Dbba/cte9FZN58pCxRS19GUAjyEhNIS06Xb0uVIknQwUSeLKC9Q94iao/IH6WP5tn6+xcLMio5gb9P/fL5liCQ==",
+    "algorithm": "ED25519_SHA_512",
+    "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+    "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+    "protocol_version": "gtl-integrity/v1"
+  },
+  "seal": null,
+  "prediction_commitments": {
+    "count": 2,
+    "included_in_seal": false,
+    "predictions_root": ""
+  },
+  "ledger_events": [
+    {
+      "sequence": 4,
+      "event_type": "market_published",
+      "payload_reference": "market_definition:4",
+      "payload_hash": "aaeb666c5ed6b9f13d2a28ae7e3928ad64bf78dfdfcca6d882322e4f1fcb5b3b",
+      "previous_event_hash": "8f75a35513c1cb915712211ebe819569a2e24756611282c2670dd848969a31ee",
+      "event_hash": "d44815e20b97171b032779eaff4f8e115f26bff48e46987825cb78362f6cfbfa",
+      "key_id": "arn:aws:kms:us-east-1:204620194924:key/bcbb43d0-cfba-465d-9c1d-500776ede30c",
+      "key_fingerprint": "b971f3baf64555002c200d2d34098aa0566da9a796feffae45e4b6145af5124a",
+      "occurred_at": "2026-10-11T16:02:19.110440+00:00"
+    }
+  ]
+}

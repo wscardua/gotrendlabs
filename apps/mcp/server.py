@@ -218,6 +218,11 @@ async def call(tool, method, path, payload=None, params=None):
                     "idempotency_conflict",
                     "draft_not_editable",
                     "validation_failed",
+                    "schedule_incomplete",
+                    "schedule_timezone_invalid",
+                    "schedule_offset_required",
+                    "schedule_order_invalid",
+                    "schedule_expired",
                     "quota_exceeded",
                     "dependency_unavailable",
                 }:
@@ -308,7 +313,7 @@ async def get_editorial_signals(days: int = 7) -> SignalsResponse:
 
 @mcp.tool(annotations=READ)
 async def validate_market_draft(draft: Draft) -> ValidationResponse:
-    """Valida draft e editorial_record.document (até 60 mil caracteres). Informe anúncio conhecido em linha ISO com offset; o fechamento deve ser anterior. Pendências humanas aparecem em pending e não impedem submissão ao revisor; o agente não deve declará-las resolvidas. Pesquisas são relatos do agente, não verificações humanas."""
+    """Valida draft, resolução prevista e fuso IANA e editorial_record.document (até 60 mil caracteres). Submissão exige agenda completa coerente com critérios; nunca invente horas ou use fechamento como previsão. Informe anúncio conhecido em linha ISO com offset; o fechamento deve ser anterior. Pendências humanas aparecem em pending e não impedem submissão ao revisor; o agente não deve declará-las resolvidas. Pesquisas são relatos do agente, não verificações humanas."""
     return await call(
         "validate_market_draft",
         "POST",

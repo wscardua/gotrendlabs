@@ -53,6 +53,8 @@ class MarketLifecycleEngine:
         require_publication_approval(self.cursor, row["id"])
         now = datetime.now(timezone.utc)
         definition = register_market_definition(self.cursor, row["id"], occurred_at=now)
+        from .resolution_schedule import register
+        register(self.cursor, row["id"], actor_id=self.staff_id)
         self.cursor.execute(
             """
             UPDATE gotrendlabs_markets
@@ -123,6 +125,8 @@ class MarketLifecycleEngine:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="Apenas mercados fechados podem ser resolvidos.",
             )
+        from .resolution_schedule import require_resolution
+        require_resolution(self.cursor, row["id"])
         evidence = (payload.source_url or "").strip()
         note = (payload.note or "").strip()
         if not evidence and not note:

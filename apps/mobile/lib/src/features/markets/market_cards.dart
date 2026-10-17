@@ -169,7 +169,16 @@ class MarketHeroCard extends ConsumerWidget {
           ? InkWell(
               borderRadius: BorderRadius.circular(GtlRadii.large),
               onTap: () {
-                ref.read(analyticsTrackerProvider).track('market_card_clicked', targetKey: 'hero_card', properties: {'market_slug': market.slug, 'placement': 'mobile_hero'});
+                ref
+                    .read(analyticsTrackerProvider)
+                    .track(
+                      'market_card_clicked',
+                      targetKey: 'hero_card',
+                      properties: {
+                        'market_slug': market.slug,
+                        'placement': 'mobile_hero',
+                      },
+                    );
                 context.push('/markets/${market.slug}');
               },
               child: card,
@@ -199,7 +208,16 @@ class MarketCompactCard extends ConsumerWidget {
         padding: EdgeInsets.zero,
         color: GtlColors.surfaceGlass,
         onTap: () {
-          ref.read(analyticsTrackerProvider).track('market_card_clicked', targetKey: 'compact_card', properties: {'market_slug': market.slug, 'placement': 'mobile_list'});
+          ref
+              .read(analyticsTrackerProvider)
+              .track(
+                'market_card_clicked',
+                targetKey: 'compact_card',
+                properties: {
+                  'market_slug': market.slug,
+                  'placement': 'mobile_list',
+                },
+              );
           context.push('/markets/${market.slug}');
         },
         child: Row(
@@ -378,8 +396,12 @@ class MarketMetricPanel extends StatelessWidget {
         () => context.push(_marketCommunityPath(market)),
       ),
       (
-        'Encerra em',
-        market.closesIn.isEmpty ? 'fim' : market.closesIn,
+        market.isOpen || market.status == 'scheduled'
+            ? 'Encerra em'
+            : 'Previsões',
+        market.isOpen || market.status == 'scheduled'
+            ? (market.closesIn.isEmpty ? 'fim' : market.closesIn)
+            : 'Encerradas',
         Icons.timer_outlined,
         GtlColors.accentYellow,
         null,
