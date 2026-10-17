@@ -1,6 +1,6 @@
 # GoTrendLabs
 
-Atualização 2026-10-17: Participantes públicos humanos + bots distintos, Revisar desabilitado sem aviso web e subtítulos Aumentar sua posição/Mudar sua escolha concluídos localmente. Fechamento e publicação aguardam aprovação da PR; [evidências e plano](docs/specs/testing/participants-closeout-20261017.md). O deploy web/API não distribui uma nova versão Flutter.
+Atualização 2026-10-17: participantes públicos humanos + bots distintos e ações de posição web implantados pela [PR #168](https://github.com/wscardua/gotrendlabs/pull/168), com CI/build/deploy e smoke produtivo aprovados. [Evidências e limites](docs/specs/testing/participants-closeout-20261017.md). O código Flutter está validado; distribuição aos apps instalados exige próxima release mobile.
 
 GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao publica e resolucao auditavel de mercados. O produto combina uma interface web server-rendered em Django com uma API de dominio em FastAPI e persistencia em PostgreSQL.
 

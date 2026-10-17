@@ -1,3 +1,7 @@
+## 2026-10-17 — participantes e ações de posição: encerramento produtivo
+
+Fatia web/API de FEAT-MARKET-001/002 e FEAT-AIAGENT-001 implantada e validada tecnicamente pela PR #168/Actions `39061727984`; SHA `1d4003f`, CI PR/main com 518 testes/2 skips, smoke SQL/API/template aprovado e configuração preservada. Código Flutter validado com 114 testes/analyze; distribuição exige próxima release mobile. Demais escopos das features mantêm seus status anteriores. [Evidências e limites](../testing/participants-closeout-20261017.md). Substitui a preparação e as pendências abaixo.
+
 ## 2026-10-17 — participantes públicos e ações de posição
 
 Fatia de FEAT-MARKET-001/002 e FEAT-AIAGENT-001 concluída e validada localmente; demais escopos dessas features mantêm seus status anteriores. Total humano + bot autoritativo na FastAPI, web sem aviso de Revisar bloqueado e subtítulos aprovados. Preparação da PR/deploy autorizada, submissão condicionada à aprovação da descrição. Flutter validado no código, release binária ainda pendente. [Evidências](../testing/participants-closeout-20261017.md). Este registro atualiza a pendência de publicação local abaixo.
