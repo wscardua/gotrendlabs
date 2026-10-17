@@ -2063,6 +2063,7 @@ def _market_response(cursor, row, *, viewer_id=None, include_comments=True, filt
         "secondary_probability_exact": float(secondary_probability_exact),
         "volume_gtl": _currency_label(public_metrics["volume_gtl"]),
         "participants": public_metrics["participants"],
+        "total_participants": public_metrics["total_participants"],
         "human_participants": public_metrics["human_participants"],
         "bot_participants": public_metrics["bot_participants"],
         "human_volume_gtl": public_metrics["human_volume_gtl"],

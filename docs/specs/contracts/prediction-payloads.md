@@ -150,4 +150,6 @@ Campos derivados esperados nas respostas de mercado usadas pelo frontend:
 - Previsões bot oficiais são `Prediction` reais de usuários `is_bot=true`, criadas somente pelo backend/daemon quando flags e limites permitirem.
 - Previsoes bot usam o mesmo escritor transacional de previsao inicial e geram compromisso e evento de integridade antes do commit; falha do signer reverte previsao, wallet e metricas do agente naquele savepoint.
 - Previsão bot é bloqueada quando `human_participants=0` ou abaixo de `ai_min_humans_for_prediction`.
-- Respostas de mercado expõem `human_participants`, `bot_participants`, `human_volume_gtl`, `bot_volume_gtl` e `total_volume_gtl`; `participants` e `volume_gtl` legados representam humanos.
+- Respostas de mercado expõem `participants` (rótulo) e `total_participants` (inteiro obrigatório): contas distintas com previsões abertas, incluindo humanos e bots. Múltiplas entradas da mesma conta não duplicam a contagem. Web e mobile exibem esse total sem separação visual. `human_participants`, `bot_participants`, `human_volume_gtl`, `bot_volume_gtl` e `total_volume_gtl` continuam explícitos; `volume_gtl` representa volume humano.
+
+- `viewer_position.can_revise=false` mantém a opção de revisão desabilitada na web, sem aviso adicional de `revision_blocked_reason`, conforme preferência do usuário após QA local. O campo permanece no contrato e no subtítulo existente do Flutter. Desativação, janela encerrada e limite atingido continuam decididos na FastAPI, sem alterar prazos, limites ou penalidade.

@@ -7269,6 +7269,31 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertLess(open_html.index("market-lifecycle-card"), open_html.index("data-viewer-position"))
         self.assertLess(open_html.index("data-viewer-position"), open_html.index("position-action-tabs"))
 
+        for reason in (
+            "Revisão de posição desativada no Admin Ops.",
+            "Janela de revisão encerrada para este mercado.",
+            "Limite de revisões atingido neste mercado.",
+        ):
+            for can_reinforce in (True, False):
+                with self.subTest(reason=reason, can_reinforce=can_reinforce):
+                    blocked_market = {
+                        **api_market,
+                        "viewer_position": {
+                            **api_market["viewer_position"],
+                            "can_reinforce": can_reinforce,
+                            "can_revise": False,
+                            "revision_blocked_reason": reason,
+                        },
+                    }
+                    with patch("apps.web.django.markets.views.get_market", return_value=blocked_market):
+                        blocked_response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
+                    self.assertNotContains(blocked_response, reason)
+                    self.assertNotContains(blocked_response, 'id="position-revision-blocked"')
+                    self.assertNotContains(blocked_response, 'name="action" value="revision"')
+                    if can_reinforce:
+                        self.assertRegex(blocked_response.content.decode(), r'id="position-tab-revise"[^>]*disabled')
+                        self.assertContains(blocked_response, 'name="action" value="reinforcement"')
+
         position_state_labels = {
             "locked": "Registrada, aguardando resultado",
             "resolved": "Resultado da sua posição",

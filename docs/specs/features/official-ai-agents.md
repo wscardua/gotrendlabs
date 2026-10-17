@@ -1,10 +1,10 @@
 ---
 id: FEAT-AIAGENT-001
 titulo: "Agentes IA oficiais"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-27
+ultima_atualizacao: 2026-10-17
 origem:
   - solicitação de produto para comentários IA oficiais e liquidez bot controlada
 contratos_afetados:
@@ -42,7 +42,7 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 - Agentes `analyst` podem ter override opcional `max_comments_per_market_override`; quando preenchido, o limite por mercado é contado para comentários visíveis do próprio usuário bot do agente, e quando vazio herda o limite global.
 - Previsão bot só ocorre com `ai_agents_enabled=true`, `ai_predictions_enabled=true`, mercado `open`, saldo disponível e `human_participants >= ai_min_humans_for_prediction`.
 - Mercado com 0 humanos nunca recebe previsão bot; se chegar ao fechamento sem humanos, o daemon cancela e aplica refund de previsões abertas.
-- Participantes públicos e `volume_gtl` legado representam apenas humanos; contratos também expõem métricas separadas de bot e total.
+- Participantes públicos (`participants` e `total_participants`) contam contas distintas com previsões abertas, incluindo humanos e bots, sem separação visual. Uma conta com várias entradas conta uma vez. `volume_gtl` representa volume humano; métricas humanas/bot explícitas continuam disponíveis para operação e elegibilidade.
 - Ranking, badges, streaks, recompensas e reputação pública excluem bots.
 
 ## Tipos de agente

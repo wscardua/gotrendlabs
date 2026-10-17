@@ -1,10 +1,10 @@
 ---
 id: TEST-MOBILE-001
 titulo: "Criterios de aceite mobile"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-26
+ultima_atualizacao: 2026-10-17
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -18,6 +18,12 @@ aprovacao: pendente
 ---
 
 # Criterios de aceite mobile
+
+## Aceite local — 2026-10-17
+
+- cards/painel usam `total_participants` obrigatório da FastAPI, incluindo humanos + bots sem separação; vazio/singular/plural corretos; ausência do campo não assume zero nem humanos
+- motivo de `Trocar escolha` bloqueada visível junto da opção, inclusive com `Aumentar posição` expandido; desativação, janela e limite cobertos
+- métricas humanas usadas em ordenação/engajamento não mudam; app não decide elegibilidade ou limites
 
 - Cadastro exige data de nascimento, envia `birth_date` à FastAPI e explica que a plataforma é exclusiva para maiores de 18 anos; erro de menoridade retornado pelo backend permanece visível e não autentica o usuário.
 

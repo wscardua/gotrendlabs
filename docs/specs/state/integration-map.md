@@ -1,3 +1,15 @@
+## 2026-10-17 — fechamento participantes/posição
+
+Contrato FastAPI → web/Flutter alinhado com total distinto obrigatório; a web usa can_revise para desabilitar sem aviso. Deploy padrão recompila API/web; não há migration, backfill, nova flag, grant ou ajuste MCP. O workflow não distribui Flutter; nova versão do app é fluxo separado. [Fechamento e smoke previsto](../testing/participants-closeout-20261017.md).
+
+## 2026-10-17 — preferência web após QA
+
+Web omite o aviso de `revision_blocked_reason`; continua usando `can_revise` da FastAPI para desabilitar Revisar. API/Flutter mantêm seus contratos e comportamento. Sem nova dependência ou ajuste MCP (ferramentas, schemas, permissões, erros, replays e orientação editorial). Substitui a apresentação web registrada abaixo.
+
+## 2026-10-17 — participantes públicos e revisão bloqueada
+
+FastAPI `market_public_metrics` → `MarketResponse.participants`/`total_participants` → web/cards/painel Flutter. Somente previsões abertas; recortes humanos/bots internos, volume, ranking, elegibilidade e sinais editoriais mantidos. `viewer_position.revision_blocked_reason` → aviso visível web e subtítulo mobile independentemente de reforço. MCP `search_markets`/`get_market` usam `SearchItem`/`MarketProjection` editoriais próprios, sem `MarketResponse`; `get_editorial_signals` mantém humanos/bots por previsões no período. Sem ajuste em ferramentas, schemas MCP, scopes/permissões, erros, replay/idempotência ou orientação editorial; nenhuma ação humana concede capacidade ao MCP.
+
 # Integration Map
 
 ## PR #156 — fluxo ativo em PRD (2026-10-11)

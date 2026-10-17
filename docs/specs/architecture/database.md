@@ -46,7 +46,7 @@
 - Configuração operacional de agentes IA fica em `gotrendlabs_site_config`; o segredo do provedor LLM permanece fora do banco (`OPENAI_API_KEY` para OpenAI ou `AWS_BEARER_TOKEN_BEDROCK` para Bedrock).
 - `gotrendlabs_ai_agents` liga um agente oficial a um usuário `is_bot=true` e guarda persona/estilo editáveis sem substituir o template seguro de código.
 - `gotrendlabs_ai_agent_actions` guarda auditoria de ações IA com status, motivo, payload resumido, referência a mercado/comentário/previsão e hash/versão do prompt; o purge operacional remove ações mais antigas que `gotrendlabs_site_config.ai_audit_retention_days`.
-- Métricas públicas devem conseguir distinguir participantes/volume humanos e bots; rótulos legados preservam leitura humana.
+- Métricas distinguem recortes humanos e bots para operação; a projeção pública `participants` representa o total de contas distintas humanas e bot com previsões abertas. O rótulo de volume mantém o recorte humano.
 - Notificações in-app ficam em `gotrendlabs_user_notifications`, com destinatário obrigatório, ator/mercado/comentário opcionais, `event_type`, `source_key`, título, corpo, `metadata`, estado de leitura e constraint única por `(recipient_id, source_key)`.
 - `source_key` deve representar a origem idempotente do evento por destinatário, permitindo uma notificação por usuário afetado sem duplicar ações repetidas.
 

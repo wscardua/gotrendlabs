@@ -742,7 +742,8 @@ class MarketResponse(BaseModel):
     secondary_probability: int
     secondary_probability_exact: float = 0
     volume_gtl: str
-    participants: str
+    participants: str = Field(description="Rótulo do total de contas distintas humanas e bot com previsões abertas.")
+    total_participants: int = Field(description="Total de contas distintas humanas e bot com previsões abertas.", ge=0)
     human_participants: int = 0
     bot_participants: int = 0
     human_volume_gtl: int = 0

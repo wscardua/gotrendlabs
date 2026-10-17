@@ -1,10 +1,10 @@
 ---
 id: ARCH-MOBILE-API-001
 titulo: "Contratos API para mobile"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-06-20
+ultima_atualizacao: 2026-10-17
 origem:
   - docs/specs/architecture/backend-api.md
   - packages/contracts/openapi/gotrendlabs-api.json
@@ -21,6 +21,8 @@ aprovacao: pendente
 ---
 
 # Contratos API para mobile
+
+O app exibe `MarketResponse.total_participants` em cards e painel de métricas, incluindo humanos e bots. A contagem é inteiro obrigatório, sem fallback, e vem pronta da FastAPI; `human_participants` mantém o recorte explícito para usos humanos.
 
 ## Integridade verificável
 
@@ -165,6 +167,7 @@ Campos minimos esperados:
 - `volume_gtl`
 - `human_volume_gtl`
 - `participants`
+- `total_participants` (inteiro obrigatório de contas distintas humanas + bots com previsões abertas)
 - `market_like_count`
 
 `primary_probability*` é compatibilidade de leitura derivada da opção líder em `options[].probability_exact`; o app não deve calcular nem corrigir consenso localmente.
@@ -326,7 +329,7 @@ Requisitos mobile:
 - reforco mobile usa `action=reinforcement`, a mesma `option_id` da posicao ativa e `stake_amount` informado pelo usuario
 - revisao mobile usa `action=revision`, uma `option_id` diferente da ativa e `stake_amount=0`, preservando custo, valor encerrado e nova posicao estimada calculados pela FastAPI
 - confirmacao de reforco/revisao exige preview valido da FastAPI com `allowed=true` e assinatura ainda coerente com acao/opcao/valor selecionados
-- bloqueios devem exibir `blocked_reason`, `reinforcement_blocked_reason` ou `revision_blocked_reason` sem traduzir para regra local
+- bloqueios devem exibir `blocked_reason`, `reinforcement_blocked_reason` ou `revision_blocked_reason` sem traduzir para regra local; a razão de `Trocar escolha` permanece visível no subtítulo mesmo com `Aumentar posição` disponível
 
 ### Comentarios
 

@@ -1,3 +1,15 @@
+## 2026-10-17 — reconciliação de fechamento
+
+Specs/contratos/arquitetura/aceite/estado reconciliados com o QA final; frontmatter mobile válido. Novo recibo separa código concluído, deploy web/API pendente e próxima release Flutter. Impacto MCP explicitamente sem ajustes; nenhum status produtivo afirmado antes de Actions/smoke. WFLOW-20261017-PARTICIPANTS-CLOSEOUT.
+
+## 2026-10-17 — Revisar web: preferência revisada no QA
+
+Feature de detalhe e contrato de previsões atualizados: a web indica indisponibilidade pela opção Revisar desabilitada e não mostra aviso explicativo. Motivo continua disponível no backend e no Flutter; sem alteração de regras ou OpenAPI.
+
+## 2026-10-17 — contrato público de participantes e aviso de revisão
+
+`participants` e `total_participants` obrigatório representam humanos + bots distintos em previsões abertas. Specs de feed/detalhe, agentes, arquiteturas API/banco/mobile e contrato de previsões alinhados. Motivo de revisão bloqueada visível independentemente de reforço; sem alteração das regras de revisão. WFLOW-20261017-TOTAL-PARTICIPANTS.
+
 ## 2026-10-12 — evidência produtiva do Analytics v0.7
 
 Status da feature, README, aceites, workflow, implementation-status, changelog e known-gaps atualizados após PR #166/Actions 38321666957 e smoke aprovados. GeoLite produtiva pronta confirmada; ausência no DEV e limites de homologação preservados. [Recibo](../testing/analytics-production-20261012.md) distingue conclusão técnica de fluxo autenticado completo ainda não homologado.

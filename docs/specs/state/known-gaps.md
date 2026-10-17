@@ -1,3 +1,7 @@
+## Participantes públicos e ações de posição — fechamento 2026-10-17
+
+Implementação/QA local concluídos; aguardam aprovação da descrição da PR, CI/build, merge/deploy e smoke reais. App Flutter validado no código, mas a mudança visual da contagem só chega a apps instalados por nova release mobile; esta PR não publica APK/AAB nem altera build mínima. QA visual ampliado em dispositivo físico/fontes ampliadas e carga não executados. Não há migration, mudança de bot/economia ou ajuste MCP pendente. [Recibo](../testing/participants-closeout-20261017.md).
+
 # Known Gaps
 
 ## Relevância visual de thumbnails — 2026-10-09

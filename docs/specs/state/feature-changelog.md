@@ -1,3 +1,19 @@
+## 2026-10-17 — fechamento local de participantes e ações de posição
+
+Implementação, review e QA reconciliados com o comportamento final: total distinto humano + bot, contrato obrigatório, Revisar web sem aviso e subtítulos aprovados. Frontmatter corrigido; novo teste backend incluído no índice para o commit. Suíte backend completa: 518 testes/2 skips; Flutter: 114 testes/analyze, com checks aprovados. Publicação condicionada à aprovação da descrição da PR, CI e smoke reais. Distribuição Flutter exige release própria. [Recibo](../testing/participants-closeout-20261017.md). WFLOW-20261017-PARTICIPANTS-CLOSEOUT.
+
+## 2026-10-17 — ajuste após QA: Revisar sem aviso adicional
+
+Por solicitação do usuário após testar os mercados locais, a web remove o aviso `Revisar: ...` e mantém a opção desabilitada como indicação de indisponibilidade. Substitui a decisão de apresentação web anterior deste mesmo dia. Backend/contrato, prazos, limites, contagem de participantes e comportamento preexistente Flutter permanecem iguais. MCP sem impacto em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial.
+
+## 2026-10-17 — participantes públicos e motivo de Revisar
+
+- FastAPI fornece rótulo `participants` e inteiro obrigatório `total_participants` com contas distintas humanas + bots em previsões abertas; reforços não duplicam contas e previsões revisadas/resolvidas/canceladas continuam excluídas.
+- Web consome o rótulo; cards/painel Flutter usam o total sem fallback, com singular/plural corretos. Volume humano, métricas internas, elegibilidade bot, ranking, recompensas e probabilidades preservados.
+- Aviso visível de `revision_blocked_reason` próximo de Revisar mesmo com Reforçar disponível, associado ao controle por `aria-describedby`. Flutter já atende pelo subtítulo de Trocar escolha; regressões cobrem desativação, janela e limite.
+- Validação: 17 testes backend/web/MCP com PostgreSQL isolado e migrations reais; suíte Flutter completa com 114 testes; analyze, OpenAPI, checks Django/migrations e diff aprovados. MCP sem ajustes: projeções editoriais e sinais humanos/bots próprios preservados, sem novas capacidades.
+- Concluído localmente na branch `fix/participants-review-reason`, worktree separado para preservar a árvore original. Sem commit, push, PR, deploy ou alteração produtiva. WFLOW-20261017-TOTAL-PARTICIPANTS.
+
 ## 2026-10-12 — fechamento técnico produtivo do Analytics v0.7
 
 Comparação Web/App mobile e usabilidade implantadas pela PR #166; CI da PR e main, deploy SSM e smoke técnico aprovados. Nenhuma migration/flag ou atualização mobile exigida. Branch local preservada; memória e specs reconciliadas com [evidências reais e homologações residuais](../testing/analytics-production-20261012.md).

@@ -292,8 +292,8 @@
             <input class="position-tab-radio" id="position-tab-reinforce" type="radio" name="position-action-tab" {% if market.viewer_position.can_reinforce %}checked{% endif %} {% if not market.viewer_position.can_reinforce %}disabled{% endif %}>
             <input class="position-tab-radio" id="position-tab-revise" type="radio" name="position-action-tab" {% if not market.viewer_position.can_reinforce and market.viewer_position.can_revise %}checked{% endif %} {% if not market.viewer_position.can_revise %}disabled{% endif %}>
             <div class="position-tab-labels">
-              <label for="position-tab-reinforce"><strong>Reforçar</strong><small>Mesma opção</small></label>
-              <label for="position-tab-revise"><strong>Revisar</strong><small>Outra opção</small></label>
+              <label for="position-tab-reinforce"><strong>Reforçar</strong><small>{% trans "Aumentar sua posição" %}</small></label>
+              <label for="position-tab-revise"><strong>Revisar</strong><small>{% trans "Mudar sua escolha" %}</small></label>
             </div>
             <div class="position-action-panels">
               {% if market.viewer_position.can_reinforce %}
@@ -343,9 +343,6 @@
         {% endif %}
         {% if not market.viewer_position.can_reinforce and not market.viewer_position.can_revise and market.viewer_position.reinforcement_blocked_reason %}
           <div class="notice yellow">{{ market.viewer_position.reinforcement_blocked_reason }}</div>
-        {% endif %}
-        {% if not market.viewer_position.can_revise and not market.viewer_position.can_reinforce and market.viewer_position.revision_blocked_reason %}
-          <div class="notice yellow">{{ market.viewer_position.revision_blocked_reason }}</div>
         {% endif %}
       {% elif viewer.balance_gtl|default:0 <= 0 %}
         <div class="balance-empty-callout">

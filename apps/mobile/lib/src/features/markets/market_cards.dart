@@ -139,7 +139,7 @@ class MarketHeroCard extends ConsumerWidget {
                             _HeroMeta(
                               icon: Icons.groups_2_outlined,
                               label:
-                                  '${market.humanParticipants} participantes',
+                                  '${market.totalParticipants} ${market.totalParticipants == 1 ? 'participante' : 'participantes'}',
                             ),
                             _HeroMeta(
                               icon: Icons.forum_outlined,
@@ -365,7 +365,7 @@ class MarketMetricPanel extends StatelessWidget {
       ),
       (
         'Participantes',
-        market.humanParticipants.toString(),
+        market.totalParticipants.toString(),
         Icons.groups_2_outlined,
         GtlColors.accentCyan,
         null,

@@ -28,6 +28,7 @@ void main() {
             'primary_probability_exact': 51.4,
             'human_volume_gtl': 20,
             'human_participants': 2,
+            'total_participants': 3,
             'comment_count': 1,
             'market_like_count': 3,
             'view_count': 4,
@@ -58,6 +59,8 @@ void main() {
 
     expect(markets, hasLength(1));
     expect(markets.first.slug, 'btc-junho');
+    expect(markets.first.totalParticipants, 3);
+    expect(markets.first.humanParticipants, 2);
     expect(markets.first.options.first.label, 'SIM');
   });
 

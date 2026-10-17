@@ -493,6 +493,53 @@ void main() {
     );
   });
 
+  for (final reason in [
+    'Revisão de posição desativada no Admin Ops.',
+    'Janela de revisão encerrada para este mercado.',
+    'Limite de revisões atingido neste mercado.',
+  ]) {
+    testWidgets('Revision reason stays visible with reinforcement: $reason', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              _AuthenticatedAuthController.new,
+            ),
+            walletProvider.overrideWith((ref) async => _wallet()),
+          ],
+          child: MaterialApp(
+            home: Scaffold(
+              body: SingleChildScrollView(
+                child: PredictionTicket(
+                  market: _positionMarket(
+                    viewerPosition: {
+                      ..._viewerPosition(),
+                      'can_revise': false,
+                      'revision_blocked_reason': reason,
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(find.text(reason), findsOneWidget);
+      await tester.ensureVisible(find.text('Aumentar posição'));
+      await tester.tap(find.text('Aumentar posição'));
+      await tester.pumpAndSettle();
+      expect(find.text('GT₵ para aumentar'), findsOneWidget);
+      await tester.ensureVisible(find.text(reason));
+      expect(find.text(reason).hitTestable(), findsOneWidget);
+      expect(
+        find.widgetWithText(FilledButton, 'Pré-visualizar troca'),
+        findsNothing,
+      );
+    });
+  }
+
   testWidgets('Position action frames stay closed with a single action', (
     tester,
   ) async {
@@ -747,6 +794,7 @@ Market _market({Map<String, dynamic>? viewerPosition}) {
     'primary_probability_exact': 64.0,
     'human_volume_gtl': 120,
     'human_participants': 8,
+    'total_participants': 8,
     'comment_count': 2,
     'market_like_count': 1,
     'view_count': 10,

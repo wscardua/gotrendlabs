@@ -1,3 +1,9 @@
+## 2026-10-17 — participantes públicos e ações de posição
+
+Fatia de FEAT-MARKET-001/002 e FEAT-AIAGENT-001 concluída e validada localmente; demais escopos dessas features mantêm seus status anteriores. Total humano + bot autoritativo na FastAPI, web sem aviso de Revisar bloqueado e subtítulos aprovados. Preparação da PR/deploy autorizada, submissão condicionada à aprovação da descrição. Flutter validado no código, release binária ainda pendente. [Evidências](../testing/participants-closeout-20261017.md). Este registro atualiza a pendência de publicação local abaixo.
+
+Atualização local 2026-10-17: participantes públicos humanos + bots distintos via FastAPI (`total_participants` obrigatório no Flutter) e Revisar bloqueado indicado na web pela opção desabilitada, sem aviso adicional (preferência atualizada após QA local). WFLOW-20261017-TOTAL-PARTICIPANTS; publicação fora do escopo.
+
 ## 2026-10-12 — Analytics v0.7 implantado
 
 Encerramento técnico concluído: PR #166 integrada, merge `4f1557f`, CI da PR/main com 515 testes/2 skips por execução, build/OpenAPI/JS e deploy Actions 38321666957 aprovados. Smoke somente leitura confirmou SHA, saúde HTTP 200, proteção anônima 401, comparação/filtros/zeros, operação global, série de 90 dias, renderização interna e hashes dos assets. GeoLite produtiva ready; DEV atual sem arquivo. Sem ajuste adicional de configuração, Flutter ou MCP. Branch local preservada. [Evidências e limites](../testing/analytics-production-20261012.md). Este registro substitui as pendências de publicação locais abaixo.
