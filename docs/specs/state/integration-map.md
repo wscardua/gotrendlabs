@@ -1,3 +1,7 @@
+## 2026-10-17 — rollout confirmado de participantes/posição
+
+PR #168/Actions `39061727984` implantados: FastAPI → web com total humano + bot distinto, contrato obrigatório para Flutter e Revisar web sem aviso/subtítulos aprovados. Role `gotrendlabs_fastapi`/READ ONLY, SQL/API e template real conferidos; serviços ativos/MCP healthy, configurações idênticas ao preflight. Sem migration/backfill/grant/flag, nova permissão ou ajuste MCP. Flutter instalado depende de release própria. [Recibo](../testing/participants-closeout-20261017.md). Atualiza as pendências de rollout registradas abaixo.
+
 ## 2026-10-17 — fechamento participantes/posição
 
 Contrato FastAPI → web/Flutter alinhado com total distinto obrigatório; a web usa can_revise para desabilitar sem aviso. Deploy padrão recompila API/web; não há migration, backfill, nova flag, grant ou ajuste MCP. O workflow não distribui Flutter; nova versão do app é fluxo separado. [Fechamento e smoke previsto](../testing/participants-closeout-20261017.md).

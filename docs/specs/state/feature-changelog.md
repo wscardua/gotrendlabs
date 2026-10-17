@@ -1,3 +1,7 @@
+## 2026-10-17 — participantes e ações de posição implantados
+
+PR #168 integrada (merge `1d4003f`), CI PR/main com 518 testes/2 skips por execução e build/deploy Actions `39061727984` aprovados. Smoke técnico confirmou total distinto em 9 mercados (6 com bots), contrato obrigatório, template/subtítulos e configuração preservada. Revisar web sem aviso; Flutter validado no código, distribuição por próxima release própria. Branch local preservada; nenhum dado sintético ou alteração de configuração em produção. [Recibo](../testing/participants-closeout-20261017.md). Este registro substitui as pendências de publicação abaixo.
+
 ## 2026-10-17 — fechamento local de participantes e ações de posição
 
 Implementação, review e QA reconciliados com o comportamento final: total distinto humano + bot, contrato obrigatório, Revisar web sem aviso e subtítulos aprovados. Frontmatter corrigido; novo teste backend incluído no índice para o commit. Suíte backend completa: 518 testes/2 skips; Flutter: 114 testes/analyze, com checks aprovados. Publicação condicionada à aprovação da descrição da PR, CI e smoke reais. Distribuição Flutter exige release própria. [Recibo](../testing/participants-closeout-20261017.md). WFLOW-20261017-PARTICIPANTS-CLOSEOUT.

@@ -1,3 +1,7 @@
+## 2026-10-17 — evidência produtiva de participantes/posição
+
+Estado, known-gaps, changelog, mapa de integração, README e recibo reconciliados com PR #168/merge `1d4003f`, CI/build/deploy e smoke técnico aprovados. Metadados mobile/frontmatter corrigidos preservados. Código Flutter validado; distribuição mobile e QA físico ampliado seguem separados. WFLOW-20261017-PARTICIPANTS-CLOSEOUT.
+
 ## 2026-10-17 — reconciliação de fechamento
 
 Specs/contratos/arquitetura/aceite/estado reconciliados com o QA final; frontmatter mobile válido. Novo recibo separa código concluído, deploy web/API pendente e próxima release Flutter. Impacto MCP explicitamente sem ajustes; nenhum status produtivo afirmado antes de Actions/smoke. WFLOW-20261017-PARTICIPANTS-CLOSEOUT.
