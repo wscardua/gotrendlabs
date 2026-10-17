@@ -158,9 +158,11 @@ def _prediction_totals(cursor, market_id):
 
 def market_public_metrics(cursor, market_id):
     totals = _prediction_totals(cursor, market_id)
+    total_participants = totals["human_participants"] + totals["bot_participants"]
     return {
         **totals,
-        "participants": _participants_label(totals["human_participants"]),
+        "total_participants": total_participants,
+        "participants": _participants_label(total_participants),
         "volume_gtl": _volume_label(totals["human_volume_gtl"]),
         "human_volume_label": _volume_label(totals["human_volume_gtl"]),
         "bot_volume_label": _volume_label(totals["bot_volume_gtl"]),

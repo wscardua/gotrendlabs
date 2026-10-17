@@ -24,6 +24,36 @@ void main() {
 
     expect(find.text('O mercado teste ficará aberto?'), findsOneWidget);
     expect(find.text('64%'), findsOneWidget);
+    expect(find.text('9 participantes'), findsOneWidget);
+    expect(find.text('8 participantes'), findsNothing);
+  });
+
+  for (final total in [0, 1, 2]) {
+    testWidgets('Public participant label handles $total accounts', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MarketHeroCard(
+              market: _market(totalParticipants: total),
+              api: ApiClient(tokenStore: MemoryTokenStore()),
+            ),
+          ),
+        ),
+      );
+      expect(
+        find.text('$total ${total == 1 ? 'participante' : 'participantes'}'),
+        findsOneWidget,
+      );
+    });
+  }
+
+  test('Market requires total_participants without compatibility defaults', () {
+    expect(
+      () => Market.fromJson({'human_participants': 8}),
+      throwsA(isA<TypeError>()),
+    );
   });
 
   testWidgets('MarketHeroCard does not invent category initials', (
@@ -230,6 +260,9 @@ void main() {
       ),
     );
 
+    expect(find.text('9'), findsOneWidget);
+    expect(find.text('8'), findsNothing);
+
     final firstRow = [
       find.text('PROBABILIDADE'),
       find.text('VOLUME GT₵'),
@@ -345,6 +378,7 @@ void main() {
 }
 
 Market _market({
+  int totalParticipants = 9,
   String category = 'Tecnologia',
   String thumb = 'GT',
   bool favorite = false,
@@ -369,6 +403,7 @@ Market _market({
     'primary_probability_exact': 64.0,
     'human_volume_gtl': 120,
     'human_participants': 8,
+    'total_participants': totalParticipants,
     'comment_count': 2,
     'market_like_count': 1,
     'view_count': 10,

@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-002
 titulo: "Detalhe do mercado"
-versao: 0.6
+versao: 0.7
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-11
+ultima_atualizacao: 2026-10-17
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -14,6 +14,7 @@ contratos_afetados:
 dependencias:
   - FEAT-MARKET-001
 impacta:
+  - future-mobile
   - frontend-web
   - backend-api
   - database
@@ -45,6 +46,12 @@ Exibir a pergunta do mercado, opções disponíveis, contexto, probabilidade agr
 Usuário entra no mercado, entende o contexto, avalia opções, acompanha comentários e decide prever.
 
 ## Comportamento esperado
+
+- ações web usam os subtítulos `Reforçar — Aumentar sua posição` e `Revisar — Mudar sua escolha`, conforme preferência validada no QA local
+
+- participantes públicos usam o total distinto de humanos + bots com previsões abertas calculado pela FastAPI, sem separação visual
+- na web, quando `can_revise=false`, a opção Revisar permanece desabilitada, sem aviso adicional explicando o motivo; desativação, janela encerrada e limite atingido continuam decididos pelo backend. Preferência ajustada após QA local em 2026-10-17
+- Flutter mantém a razão visível no subtítulo de `Trocar escolha`, inclusive com `Aumentar posição` disponível
 
 - critérios de resolução longos mostram prévia de quatro linhas, com ações `Ver critério completo` e `Recolher critério`; textos curtos dispensam o controle
 - expansão preserva o texto integral e suas quebras de linha; fonte, status e avisos permanecem visíveis fora do recorte

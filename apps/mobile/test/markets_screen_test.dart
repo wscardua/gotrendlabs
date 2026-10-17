@@ -372,6 +372,7 @@ Market _market({
     'primary_probability_exact': 64.0,
     'human_volume_gtl': volume,
     'human_participants': participants,
+    'total_participants': participants,
     'comment_count': 2,
     'market_like_count': 1,
     'view_count': 10,

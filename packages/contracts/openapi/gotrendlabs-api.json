@@ -4133,6 +4133,7 @@
             "type": "array"
           },
           "participants": {
+            "description": "R\u00f3tulo do total de contas distintas humanas e bot com previs\u00f5es abertas.",
             "title": "Participants",
             "type": "string"
           },
@@ -4290,6 +4291,12 @@
             "title": "Title",
             "type": "string"
           },
+          "total_participants": {
+            "description": "Total de contas distintas humanas e bot com previs\u00f5es abertas.",
+            "minimum": 0.0,
+            "title": "Total Participants",
+            "type": "integer"
+          },
           "total_volume_gtl": {
             "default": 0,
             "title": "Total Volume Gtl",
@@ -4348,6 +4355,7 @@
           "secondary_probability",
           "volume_gtl",
           "participants",
+          "total_participants",
           "source",
           "closes_in",
           "close_label",

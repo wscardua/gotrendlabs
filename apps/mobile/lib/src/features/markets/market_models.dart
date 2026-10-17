@@ -117,6 +117,7 @@ class Market {
     required this.primaryProbabilityExact,
     required this.humanVolumeGtl,
     required this.humanParticipants,
+    required this.totalParticipants,
     required this.commentCount,
     required this.likeCount,
     required this.viewCount,
@@ -158,6 +159,7 @@ class Market {
   final double primaryProbabilityExact;
   final int humanVolumeGtl;
   final int humanParticipants;
+  final int totalParticipants;
   final int commentCount;
   final int likeCount;
   final int viewCount;
@@ -230,6 +232,7 @@ class Market {
       primaryProbabilityExact: safeDouble(json['primary_probability_exact']),
       humanVolumeGtl: safeInt(json['human_volume_gtl']),
       humanParticipants: safeInt(json['human_participants']),
+      totalParticipants: json['total_participants'] as int,
       commentCount: safeInt(json['comment_count']),
       likeCount: safeInt(json['market_like_count']),
       viewCount: safeInt(json['view_count']),

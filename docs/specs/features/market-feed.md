@@ -1,19 +1,21 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.11
+versao: 0.12
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-11
+ultima_atualizacao: 2026-10-17
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
+  - prediction-payloads.md
   - market-lifecycle.md
   - i18n-content.md
   - wallet-ledger.md
 dependencias:
   - FEAT-AUTH-001
 impacta:
+  - future-mobile
   - frontend-web
   - backend-api
   - database
@@ -51,6 +53,8 @@ Exibir mercados relevantes com filtros e informações suficientes para descober
 Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e entra no detalhe da pergunta escolhida.
 
 ## Comportamento esperado
+
+- participantes públicos incluem contas distintas humanas e bot com previsões abertas, usando `participants` na web e `total_participants` obrigatório no Flutter; reforços/múltiplas entradas não duplicam contas, e métricas humanas internas permanecem separadas
 
 - feed exibe mercados coerentes com o status
 - mercados em apuração (`status=locked`) ou resolvidos permanecem legíveis
