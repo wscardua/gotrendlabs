@@ -1,6 +1,6 @@
 # Fechamento da resolução prevista — 17/10/2026
 
-Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT. **Estado: implementação local validada e commit preparado; PR/merge/deploy aguardam autorização prévia da descrição.** Este documento consolida o estado final de produto e substitui descrições históricas de soluções abandonadas, sem apagar seus registros.
+Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT. **Estado desta revisão: implementação local validada; descrição aprovada pelo usuário e PR #170 aberta. CI/backup/merge/deploy em acompanhamento.** Este documento consolida o estado final de produto e substitui descrições históricas de soluções abandonadas, sem apagar seus registros.
 
 ## Fonte da verdade
 
@@ -20,7 +20,7 @@ Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT. **Estado: implementação lo
 
 ## GitHub e implantação
 
-Aguardando apresentação e autorização da descrição da PR pelo usuário. Não há PR/merge/deploy desta feature ainda. A branch local será preservada. Workflow `.github/workflows/deploy.yml`: PR executa CI/build; main pode disparar deploy por SSM quando ENABLE_PROD_DEPLOY=1. Deploy aplica schema com role de migration e reinicia Django/FastAPI/daemon/MCP/executor configurado.
+Descrição apresentada e aprovada pelo usuário com “prossiga”. [PR #170](https://github.com/wscardua/gotrendlabs/pull/170), commit caee7aa, enviada; [CI da PR](https://github.com/wscardua/gotrendlabs/actions/runs/39077098980) iniciado. Esta é a fotografia anterior ao merge; o registro operacional dos resultados posteriores, incluindo SHA, Actions e smoke produtivo, será publicado na timeline da PR, sem confundir schema com backfill editorial. A branch local será preservada. Workflow `.github/workflows/deploy.yml`: PR executa CI/build; main pode disparar deploy por SSM quando ENABLE_PROD_DEPLOY=1. Deploy aplica schema com role de migration e reinicia Django/FastAPI/daemon/MCP/executor configurado.
 
 Antes do merge: confirmar backup recuperável/preflight. Após merge: acompanhar CI/build/deploy, SHA/serviços/health/OpenAPI/MCP e migrations reais; verificar grants/assinaturas e situações sem mutações de teste. Falha de CI/deploy exige correção antes de declarar sucesso.
 
@@ -57,4 +57,8 @@ O primeiro resultado completo não é declarado como aprovado. A verificação a
 - Flutter analyze sem issues (3.7s) e 120 testes aprovados novamente no fechamento; sem alteração Flutter nesta etapa de fixtures/docs.
 - JavaScript analytics/prévia, OpenAPI --check, Django check, makemigrations --check --dry-run, links novos, scan limitado de padrões de credenciais e diff check aprovados. O scan não equivale a auditoria exaustiva de segredos.
 - Dockerfile check passou; build completo local limitado por falta de espaço no Docker durante apt. Build CI é obrigatório antes do merge; nenhuma imagem/volume do usuário foi removido.
-- Checklist universal/alterar-feature/implementação/testes/publicação aplicado. Fonte da verdade/specs/contratos/ADR-0016/estado/README/memória reconciliados; branch local será mantida. Aprovação da descrição da PR ainda pendente; sem push/PR/merge/deploy da feature.
+- Checklist universal/alterar-feature/implementação/testes/publicação aplicado. Fonte da verdade/specs/contratos/ADR-0016/estado/README/memória reconciliados; branch local será mantida. Descrição aprovada; push e PR #170 realizados. Merge e implantação exigem CI completo aprovado e snapshot disponível; resultados posteriores constam na timeline da PR.
+
+## Acompanhamento autorizado
+
+Snapshot manual criptografado `gotrendlabs-before-resolution-agenda-20261017` solicitado via AWS MCP em 2026-10-17T22:57:15Z (PostgreSQL 16.13). Aguardar `available` antes do merge. Isso fornece ponto recuperável; restauração deste snapshot não foi ensaiada nesta execução. ENABLE_PROD_DEPLOY=1 confirmado. A conclusão operacional e eventuais falhas/correções serão registradas na [timeline da PR #170](https://github.com/wscardua/gotrendlabs/pull/170); inventário permanece não revisado e distribuição mobile separada.
