@@ -219,3 +219,8 @@ Agenda estruturada (implementação local, implantação pendente): [contrato](d
 ## 17/10/2026 — Preparação do fechamento da resolução prevista
 
 Contrato final e evidências consolidados em [fechamento da agenda](docs/specs/testing/resolution-agenda-closeout-20261017.md). Branch feature/structured-resolution-agenda preservada; implementação validada localmente e fechamento GitHub/produção em preparação, condicionado à aprovação prévia da descrição da PR solicitada pelo usuário. Não declarar dados migrados ou release mobile distribuída por deploy web/API. Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT.
+
+
+### 17/10/2026 — Rollout e correção MCP da agenda
+
+PR #170 integrada; migrations da agenda aplicadas. Serviço MCP restaurado após falha na imagem isolada; correção permanente/CI em preparação. Fonte vigente e recibo: [fechamento da agenda](docs/specs/testing/resolution-agenda-closeout-20261017.md). O backfill das agendas segue revisão explícita; deploy web/API não distribui Flutter.

@@ -1,6 +1,6 @@
 """Restricted editorial contract shared by REST and MCP; no administrative payloads."""
 
-from apps.api.backend_api.resolution_schedule import ScheduleFields
+from apps.api.backend_api.resolution_schedule_contract import ScheduleFields
 
 from datetime import datetime
 from uuid import UUID

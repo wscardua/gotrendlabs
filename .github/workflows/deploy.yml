@@ -117,6 +117,10 @@ jobs:
         if: needs.detect-changes.outputs.docs_only != 'true'
         run: docker build --tag gotrendlabs:ci .
 
+      - name: Build and validate isolated MCP image
+        if: needs.detect-changes.outputs.docs_only != 'true'
+        run: docker build --file ops/deploy/mcp/Dockerfile --tag gotrendlabs-mcp:ci .
+
       - name: Set up Python
         if: needs.detect-changes.outputs.docs_only != 'true'
         uses: actions/setup-python@v6
