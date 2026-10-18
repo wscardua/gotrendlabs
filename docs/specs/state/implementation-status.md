@@ -1,5 +1,9 @@
 ## 2026-10-18 — agenda produtiva regularizada
 
+## 2026-10-18 — correção local das etapas de contratos
+
+Correção de apresentação concluída na branch `fix/contracts-timeline-states`, baseada em `origin/main` e914df7. Estados e classificação continuam na FastAPI; Django apresenta fechamento, previsão histórica/vencida, resolução efetiva, prazo e selagem sem inferências pelo relógio. 37 testes em PostgreSQL isolado, checks e inspeção desktop/390px aprovados. MCP/Flutter/OpenAPI sem ajuste necessário. Produção consultada somente para leitura: 35/36/52 locked, 53/55 open. [Evidências e limitações](../testing/contracts-timeline-acceptance-20261018.md). PR pendente de aprovação prévia do título/descrição; sem merge/deploy.
+
 Implementação/rollout concluídos pelas PRs #170/#171, deploy d4c2348 aprovado. Complementos de dados agora aplicados com autorização explícita: nove públicos versão 1, datas aprovadas às 20h BRT, definições/previsões/finanças preservadas e integridade pública válida incluindo agendas. Na aplicação, drafts 53/55 passaram à revisão 8/preparation, sem publicação pelo executor. Consulta MCP posterior encontrou ambos abertos, revisão 10/approved e agenda versão 1 às 20h BRT; não atribuir essa publicação posterior à operação de backfill. 98 regressões/219.402s OK, dry-run, snapshot dedicado, aplicação transacional/replay e auditoria full/checkpoint 37 confirmados. Sem novo código/deploy/contrato/MCP scope. [Recibo](../../operations/resolution-agenda-application-20261018.md). Este estado substitui as pendências históricas de rollout/backfill abaixo; release mobile e gaps de fonte ampliada permanecem separados.
 
 ## 2026-10-17 — participantes e ações de posição: encerramento produtivo

@@ -1,5 +1,5 @@
 {% extends "admin_base.html" %}
-{% load l10n %}
+{% load l10n i18n %}
 {% block title %}GoTrendLabs Admin | Contratos{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
@@ -67,8 +67,9 @@
         <span><i class="legend-dot marker-time-future"></i> marco futuro</span>
         <span><i class="legend-today"></i> hoje</span>
         <span>Marcos planejados não indicam conclusão; o avanço do tempo não mede progresso.</span>
-        <span><i class="phase-dot legend-active"></i> agora</span>
-        <span><i class="phase-dot legend-pending"></i> futuro</span>
+        <span><i class="phase-dot legend-done"></i> {% trans "ação registrada ou estado confirmado" %}</span>
+        <span><i class="phase-dot legend-pending"></i> {% trans "etapa sem conclusão confirmada (pode estar vencida)" %}</span>
+        <span>{% trans "Previsões históricas não representam obrigações futuras." %}</span>
       </div>
 
       <div class="contracts-board" aria-label="Fases dos contratos administrativos">
@@ -92,7 +93,7 @@
             </div>
 
             <div class="contract-flow" aria-label="Fases do mercado">
-              <div class="contract-date-rail" aria-label="Linha compacta de datas">
+              <div class="contract-date-rail" style="height: {{ row.rail_height|unlocalize }}px;" aria-label="Linha compacta de datas">
                 {% if timeline.has_today %}
                   <span class="contracts-today-line row-line" style="left: {{ timeline.today_position|unlocalize }}%;" aria-label="Hoje"></span>
                 {% endif %}
@@ -126,13 +127,13 @@
                 </div>
                 {% if row.close_at_label %}
                   <div>
-                    <dt>Fechamento</dt>
+                    <dt>{% trans "Fechamento programado" %}</dt>
                     <dd>{{ row.close_at_label }}</dd>
                   </div>
                 {% endif %}
                 <div>
                   <dt>Resolução</dt>
-                  <dd>{{ row.resolved_at_label|default:"pendente" }}</dd>
+                  <dd>{{ row.resolved_at_label|default:row.effective_resolution_label }}</dd>
                 </div>
               </dl>
             </div>

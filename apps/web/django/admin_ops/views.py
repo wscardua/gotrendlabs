@@ -532,20 +532,18 @@ def _contract_timeline_position(value, starts_at, span_seconds):
     return round(max(0, min(100, (offset / span_seconds) * 100)), 1)
 
 
-def _contract_timeline_marker_context(label, value, today):
+def _contract_timeline_marker_context(label, value, today, zone_name=None):
     if not value:
         return {"label": label, "time_label": "", "time_class": "future"}
-    if timezone.localtime(value).date() == timezone.localtime(today).date():
-        time_label = "Agora"
-        time_class = "now"
+    zone = ZoneInfo(zone_name or timezone.get_current_timezone_name())
+    if timezone.localtime(value, zone).date() == timezone.localtime(today, zone).date():
+        time_label, time_class = _("Hoje"), "now"
     elif value < today:
-        time_label = "Passado"
-        time_class = "past"
+        time_label, time_class = _("Passado"), "past"
     else:
-        time_label = "Futuro"
-        time_class = "future"
+        time_label, time_class = _("Futuro"), "future"
     return {
-        "label": f"{label}: {time_label.lower()}",
+        "label": f"{label}: {time_label} — {_contract_timeline_label(value, zone.key)}",
         "time_label": time_label,
         "time_class": time_class,
     }
@@ -553,21 +551,55 @@ def _contract_timeline_marker_context(label, value, today):
 
 def _contract_timeline_phase_context(row, today):
     market = row["market"]
+    status = market.get("status")
     schedule = market.get("resolution_schedule") or {}
-    terminal = market.get("status") in {"resolved", "sealed", "canceled"}
-    steps = [{"label": "Criação", "state": "done", "date_label": _contract_timeline_label(row["starts_at"]), "note":"Registro efetivo", "time_label":"Registrado"}]
-    published_at = _parse_contract_timeline_datetime(market.get("published_at"))
-    if published_at:
-        steps.append({"label":"Publicação", "state":"done", "date_label":_contract_timeline_label(published_at), "note":"Registro efetivo", "time_label":"Registrada"})
-    for field, label in (("close_at", "Fechamento"), ("expected_resolution_at", "Resolução prevista"), ("resolved_at", "Resolução efetiva")):
+    terminal = status in {"resolved", "sealed", "canceled"}
+
+    def step(label, field, state, time_label, note, zone=None, urgency=None):
         stamp = _parse_contract_timeline_datetime(market.get(field))
-        actual = field == "resolved_at" and bool(stamp)
-        steps.append({"label":label, "state":"done" if actual else "pending" if terminal else "active" if field == "expected_resolution_at" else "pending",
-            "date_label":_contract_timeline_label(stamp, market.get("close_timezone") if field == "close_at" else market.get("resolution_timezone") if field == "resolved_at" else market.get("schedule_timezone")) or "Não informada", "note":market.get("schedule_timezone") if field != "close_at" else market.get("close_timezone"),
-            "time_label":"Registrada" if actual else "Planejada" if stamp else "Pendente"})
-    return {"current_phase_label":schedule.get("label", "Agenda pendente de revisão"),
-            "current_phase_note":"Previsão operacional; a decisão segue os critérios do mercado.",
-            "current_phase_class":schedule.get("code", "schedule_pending"), "phase_steps":steps}
+        return {"label": label, "state": state, "time_label": time_label,
+                "date_label": _contract_timeline_label(stamp, zone) or (_("Não informada") if field in {"close_at", "expected_resolution_at"} else _("Data não registrada")),
+                "note": note, "urgency": urgency}
+
+    steps = [step(_("Criação"), "created_at", "done", _("Registrado"), _("Registro efetivo"))]
+    if market.get("published_at"):
+        steps.append(step(_("Publicação"), "published_at", "done", _("Registrada"), _("Registro efetivo")))
+
+    closed = status in {"locked", "resolved", "sealed"}
+    inconsistent = schedule.get("code") == "closure_inconsistent"
+    steps.append(step(_("Fechamento"), "close_at",
+        "done" if closed else "historical" if status == "canceled" else "pending",
+        _("Fechado") if closed else _("Cancelado") if status == "canceled" else _("Fechamento pendente de operação") if inconsistent else _("Planejado") if market.get("close_at") else _("Não informado"),
+        _("Horário programado; instante efetivo de fechamento não informado."),
+        market.get("close_timezone"), "overdue" if inconsistent else None))
+
+    overdue = not terminal and schedule.get("code") == "resolution_overdue"
+    steps.append(step(_("Resolução prevista"), "expected_resolution_at",
+        "historical" if terminal else "pending",
+        _("Histórica") if terminal else _("Previsão vencida") if overdue else _("Planejada") if market.get("expected_resolution_at") else _("Não informada"),
+        _("Previsão operacional histórica; sem etapa futura pendente.") if terminal else _("Previsão operacional; não indica início ou conclusão da apuração."),
+        market.get("schedule_timezone"), "overdue" if overdue else None))
+
+    resolved = bool(market.get("resolved_at"))
+    effective = step(_("Resolução efetiva"), "resolved_at",
+        "done" if resolved else "historical" if terminal else "pending",
+        _("Registrada") if resolved else _("Não se aplica") if status == "canceled" else _("Resolvido — data não registrada") if status in {"resolved", "sealed"} else _("Pendente"),
+        _("Registro efetivo") if resolved else _("Mercado cancelado.") if status == "canceled" else _("Nenhuma data efetiva informada pela API."),
+        market.get("resolution_timezone"))
+    steps.append(effective)
+
+    sealed = bool(market.get("sealed_at"))
+    seal = step(_("Selagem"), "sealed_at", "done" if sealed else "historical" if status in {"sealed", "canceled"} else "pending",
+        _("Selada") if sealed else _("Selado — data não registrada") if status == "sealed" else _("Não se aplica") if status == "canceled" else _("Pendente") if status == "resolved" else _("Aguarda resolução"),
+        _("Registro efetivo") if sealed else _("Mercado cancelado.") if status == "canceled" else _("Somente o registro efetivo confirma a selagem."))
+    due = _parse_contract_timeline_datetime(market.get("seal_due_at"))
+    if due and status in {"resolved", "sealed"}:
+        seal["note"] += _(" Prazo previsto de selagem: ") + _contract_timeline_label(due) + "."
+    steps.append(seal)
+    return {"current_phase_label": schedule.get("label", _("Agenda pendente de revisão")),
+            "current_phase_note": _("Previsão operacional; a decisão segue os critérios do mercado."),
+            "current_phase_class": schedule.get("code", "schedule_pending"),
+            "effective_resolution_label": effective["time_label"], "phase_steps": steps}
 
 
 def _build_contract_timeline(markets, *, today=None, include_terminal=False):
@@ -582,7 +614,7 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
             continue
         close_at = _parse_contract_timeline_datetime(market.get("close_at"))
         resolved_at = _parse_contract_timeline_datetime(market.get("resolved_at"))
-        agenda_points = [_parse_contract_timeline_datetime(market.get(k)) for k in ("expected_resolution_at",)]
+        agenda_points = [_parse_contract_timeline_datetime(market.get(k)) for k in ("expected_resolution_at", "published_at", "sealed_at", "seal_due_at")]
         ends_at = max([stamp for stamp in [resolved_at, close_at, starts_at, *agenda_points] if stamp])
         parsed_rows.append(
             {
@@ -630,15 +662,24 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
         market = row["market"]
         starts_at_position = _contract_timeline_position(row["starts_at"], starts_at, span_seconds)
         ends_at_position = _contract_timeline_position(row["ends_at"], starts_at, span_seconds)
-        close_at_position = _contract_timeline_position(row["close_at"], starts_at, span_seconds) if row["close_at"] else None
-        resolved_at_position = _contract_timeline_position(row["resolved_at"], starts_at, span_seconds) if row["resolved_at"] else None
         phase_context = _contract_timeline_phase_context(row, today)
-        if today <= row["starts_at"]:
-            progress_end_position = starts_at_position
-        elif today >= row["ends_at"]:
-            progress_end_position = ends_at_position
-        else:
-            progress_end_position = _contract_timeline_position(today, starts_at, span_seconds)
+        markers = []
+        marker_fields = [
+            ("created_at", _("Criação registrada"), "start", None),
+            ("published_at", _("Publicação registrada"), "published", None),
+            ("close_at", _("Fechamento programado"), "close", market.get("close_timezone")),
+            ("expected_resolution_at", _("Previsão histórica") if market.get("status") in {"resolved", "sealed", "canceled"} else _("Resolução prevista"), "planned", market.get("schedule_timezone")),
+            ("resolved_at", _("Resolução efetiva"), "resolved", market.get("resolution_timezone")),
+            ("sealed_at", _("Selagem efetiva"), "sealed", None),
+        ]
+        if market.get("status") in {"resolved", "sealed"}:
+            marker_fields.append(("seal_due_at", _("Prazo previsto de selagem"), "planned", None))
+        for field, label, marker_class, zone in marker_fields:
+            stamp = _parse_contract_timeline_datetime(market.get(field))
+            if stamp:
+                markers.append({**_contract_timeline_marker_context(label, stamp, today, zone),
+                                "position": _contract_timeline_position(stamp, starts_at, span_seconds),
+                                "class": marker_class})
         rows.append(
             {
                 "market": market,
@@ -650,39 +691,7 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
                 "bar_left": starts_at_position,
                 "bar_width": max(1.4, ends_at_position - starts_at_position),
                 "bar_progress_width": 0,
-                "markers": [
-                    *([{"label":"Publicação: "+_contract_timeline_label(_parse_contract_timeline_datetime(market['published_at'])), "position":_contract_timeline_position(_parse_contract_timeline_datetime(market['published_at']),starts_at,span_seconds), "class":"published", "time_class":"past"}] if market.get('published_at') else []),
-                    *[{"label": label + ": " + _contract_timeline_label(_parse_contract_timeline_datetime(market.get(key)), market.get("schedule_timezone")) + " " + (market.get("schedule_timezone") or ""),
-                       "position": _contract_timeline_position(_parse_contract_timeline_datetime(market.get(key)), starts_at, span_seconds), "class":"planned", "time_class":_contract_timeline_marker_context(label,_parse_contract_timeline_datetime(market.get(key)),today)["time_class"]}
-                      for key,label in (("expected_resolution_at","Resolução prevista"),) if market.get(key)],
-                    {
-                        **_contract_timeline_marker_context("Criação", row["starts_at"], today),
-                        "position": starts_at_position,
-                        "class": "start",
-                    },
-                    *(
-                        [
-                            {
-                                **_contract_timeline_marker_context("Fechamento", row["close_at"], today),
-                                "position": close_at_position,
-                                "class": "close",
-                            }
-                        ]
-                        if close_at_position is not None
-                        else []
-                    ),
-                    *(
-                        [
-                            {
-                                **_contract_timeline_marker_context("Resolução", row["resolved_at"], today),
-                                "position": resolved_at_position,
-                                "class": "resolved",
-                            }
-                        ]
-                        if resolved_at_position is not None
-                        else []
-                    ),
-                ],
+                "markers": markers,
             }
         )
 
@@ -690,9 +699,13 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
     for item in rows:
         previous_position, lane = None, 0
         for marker in sorted(item['markers'],key=lambda m:m['position']):
-            lane = (lane + 1) % 3 if previous_position is not None and marker['position']-previous_position < 3 else 0
-            marker['lane_top'] = 25 + lane * 25
+            lane = lane + 1 if previous_position is not None and marker["position"] - previous_position < 3 else 0
+            marker['lane'] = lane
             previous_position = marker['position']
+        lane_count = max((m['lane'] for m in item['markers']), default=0) + 1
+        item["rail_height"] = max(22, lane_count * 20)
+        for marker in item['markers']:
+            marker['lane_top'] = (marker['lane'] + 1) * 100 / (lane_count + 1)
     return {
         "rows": rows,
         "axis_ticks": axis_ticks,

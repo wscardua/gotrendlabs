@@ -10079,7 +10079,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         timeline = response.context["timeline"]
         self.assertEqual(timeline["total"], 4)
         self.assertEqual(timeline["rows"][2]["bar_progress_width"], 0)
-        self.assertEqual(timeline["rows"][3]["phase_steps"][2]["state"], "active")
+        self.assertEqual(timeline["rows"][3]["phase_steps"][2]["state"], "pending")
 
         paginated_market_data = {
             "markets": [

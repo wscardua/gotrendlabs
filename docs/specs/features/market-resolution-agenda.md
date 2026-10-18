@@ -3,10 +3,10 @@ id: FEAT-RESOLUTION-AGENDA-001
 titulo: Agenda estruturada de apuração
 status_spec: aprovada_para_implementacao
 status_impl: validado_localmente
-ultima_atualizacao: 2026-10-17
+ultima_atualizacao: 2026-10-18
 aprovacao: escopo_autorizado_pelo_usuario
 dependencias: [FEAT-RES-001, FEAT-INTEGRITY-001]
-versao: 1.1
+versao: 1.2
 origem: spec_prediction_social_market_pt.md
 impacta: [backend-api, database, admin-ops, frontend-web, mobile, mcp]
 contratos_afetados: [market-lifecycle.md, integrity-ledger.md, agent-integrations.md, domain-events.md]
@@ -35,3 +35,7 @@ Fora do escopo: notificações, emails, resolução automática, parser editoria
 ## Fechamento e estado de implantação
 
 Produto final e evidências consolidados em [fechamento 17/10/2026](../testing/resolution-agenda-closeout-20261017.md). Implementação local validada; PR/CI/merge/deploy ainda pendentes da aprovação prévia solicitada pelo usuário. Inventário não aprovado não autoriza complemento de dados. Distribuição Flutter é distinta do deploy web/API.
+
+## Apresentação das etapas — correção de 18/10/2026
+
+O painel apresenta fechamento como Fechado em locked/resolved/sealed pelo estado autoritativo. A data exibida é explicitamente o horário programado; não existe timestamp efetivo de fechamento no contrato atual. Open/scheduled com `closure_inconsistent` exibem alerta, sem conclusão local. A previsão usa `resolution_overdue` para vencimento e permanece neutra, sem sugerir apuração iniciada; em terminais é histórica. Cancelamento não deixa obrigação futura de resolução/selagem. Resolução e selagem usam seus registros efetivos; estado terminal sem timestamp informa data não registrada. `seal_due_at` é prazo de selagem, nunca prova de ação. Marcos no dia local mostram Hoje com horário e fuso. Legenda separa estado da etapa e posição temporal. Histórico/original/provas, filtros, contadores e escala cumulativa permanecem preservados.
