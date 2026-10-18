@@ -1,3 +1,7 @@
+## 2026-10-18 — agenda produtiva regularizada
+
+Implementação/rollout concluídos pelas PRs #170/#171, deploy d4c2348 aprovado. Complementos de dados agora aplicados com autorização explícita: nove públicos versão 1, datas aprovadas às 20h BRT, definições/previsões/finanças preservadas e integridade pública válida incluindo agendas. Na aplicação, drafts 53/55 passaram à revisão 8/preparation, sem publicação pelo executor. Consulta MCP posterior encontrou ambos abertos, revisão 10/approved e agenda versão 1 às 20h BRT; não atribuir essa publicação posterior à operação de backfill. 98 regressões/219.402s OK, dry-run, snapshot dedicado, aplicação transacional/replay e auditoria full/checkpoint 37 confirmados. Sem novo código/deploy/contrato/MCP scope. [Recibo](../../operations/resolution-agenda-application-20261018.md). Este estado substitui as pendências históricas de rollout/backfill abaixo; release mobile e gaps de fonte ampliada permanecem separados.
+
 ## 2026-10-17 — participantes e ações de posição: encerramento produtivo
 
 Fatia web/API de FEAT-MARKET-001/002 e FEAT-AIAGENT-001 implantada e validada tecnicamente pela PR #168/Actions `39061727984`; SHA `1d4003f`, CI PR/main com 518 testes/2 skips, smoke SQL/API/template aprovado e configuração preservada. Código Flutter validado com 114 testes/analyze; distribuição exige próxima release mobile. Demais escopos das features mantêm seus status anteriores. [Evidências e limites](../testing/participants-closeout-20261017.md). Substitui a preparação e as pendências abaixo.

@@ -1,3 +1,13 @@
+## WFLOW-20261018-AGENDA-DOCUMENTAL-PR
+
+- Tipo: reconciliação documental da agenda operacional; estado: preparação local concluída, aguardando aprovação do título/descrição antes de submeter a PR, conforme solicitação explícita do usuário.
+- Base: origin/main d4c23487029b315480906ad6424efa6c4875f241; branch docs/resolution-agenda-production-20261018 em worktree própria. Alterações preexistentes e branch local preservadas.
+- Escopo: recibo da aplicação produtiva, inventário revisado histórico, runbook, feature-changelog, implementation-status, known-gaps e este workflow. Correção das etapas do painel em outro contexto; nenhum código, schema, migração, dado produtivo ou artefato privado incluído.
+- Fonte da verdade: distinguir resultado das 09h34 BRT e consulta MCP posterior de 53/55 já abertos/revisão 10/approved. Inventário aplicado preservado byte a byte; leitura posterior não certifica revisão humana nem autoria da publicação.
+- Arquitetura/segurança/MCP: registro de evidências operacionais; nenhuma mudança de domínio, contrato, ferramentas, schemas, permissões, erros, replays ou orientação editorial exposta. Sem ajustes MCP necessários; sem nova capacidade administrativa para agentes. ADR, integration-map, specs funcionais e testes de implementação mantêm seus contratos existentes.
+- Validação documental: JSON e onze datas às 20h America/Sao_Paulo, identidade do inventário aplicado, links locais dos trechos novos, escopo docs-only e git diff --check. Os 98 testes/219.402s e smokes do recibo pertencem à operação anterior; não foram repetidos nesta PR de documentação.
+- Checklist universal e publicação aplicados. Sete arquivos docs/**; workflow existente exige validação leve e dispensa deploy PRD. Próxima ação: aprovar descrição, enviar branch e abrir PR via GitHub MCP; acompanhar CI. Não alegar PR/merge concluídos antes da execução.
+
 ## WFLOW-20261017-PARTICIPANTS-CLOSEOUT
 
 - Tipo: close-feature; fatia de FEAT-MARKET-001/002, FEAT-AIAGENT-001 e contratos mobile.
@@ -125,6 +135,15 @@
 - Anúncio esperado: linhas salvas no DEV válidas; testes diretos confirmam ISO com offset, Z e não informado. Datas sem fuso, valores inválidos e linhas duplicadas retornam 422. Orientação da página/erro agora tem exemplo completo e exige observações em outra linha. Validador e regra fechamento anterior ao anúncio preservados; não afirmar que o erro específico do usuário foi corrigido sem reproduzir a linha rejeitada.
 
 # Workflow Runs
+
+## WFLOW-20261018-AGENDA-PRODUCTION-BACKFILL
+
+- Tipo: operação de dados; status: concluido. Usuário aprovou explicitamente as onze datas às 20h America/Sao_Paulo e autorizou aplicação produtiva. Inventário revisado: docs/operations/resolution-agenda-inventory-20261018-reviewed.json. Snapshot dedicado gotrendlabs-before-agenda-backfill-20261018 disponível/100%/criptografado antes da aplicação.
+- Desenho: nove complementos assinados pela ferramenta existente apply_inventory; dois drafts pelo serviço save_draft e hooks human_edit_guard/human_edit_done, preservando pareceres históricos e exigindo nova revisão. Transação única com revalidação de estado/hash/revisão/snapshot; comparar definições, compromissos, previsões, finanças, reputação, opções, campos não relacionados, prefixo do ledger e revisões editoriais anteriores antes do commit. Qualquer divergência aborta.
+- Steam/Netflix/Emmy: referência textual às 12h preservada; agenda vigente às 20h é decisão operacional posterior explicitamente autorizada e registrada na proveniência. Nenhum corte ou recuperação alterado.
+- MCP: apenas leitura para reconfirmar os onze mercados visíveis; aplicação pela operação staff autorizada, sem ampliar scopes ou contornar propriedade/gates MCP. Sem alteração de código/contrato/arquitetura, notificações, publicação ou resolução.
+- Aceite: dry-run sem gravação, snapshot disponível, regressões isoladas, nove agendas verificáveis, replay idempotente, dois snapshots de drafts em preparação sem aprovação reaproveitada, smokes API/web/MCP. Resultado e comandos operacionais registrados no recibo após conclusão. Sem novo deploy necessário.
+- Resultado: 98 testes/219.402s OK em PostgreSQL isolado; SSM dry-run 69afe168-3573-48f3-b1f5-9ef224bfc7c7 e aplicação 8b8b2daf-5a62-4cb3-9d0f-fc36e84f6e0e Success/0. Nove complementos assinados, ledger 28→37 e prefixo intacto; nove definições/dezesseis compromissos/dezesseis previsões, saldos/ledger financeiro/reputação/opções e campos não relacionados preservados por comparação transacional integral. Replay idempotente sem evento adicional. Dois drafts revisão 8/preparation, aprovação anterior preservada somente no histórico. Auditoria full/checkpoint 37 via SSM 1c511f5b-5722-4e46-965d-457f7421dd0b; nove verificações públicas integralmente válidas e nove páginas HTTP/HTML 20:00 BRT; MCP confirma onze datas. Sem QA visual/mobile novo. Checklist aplicado; [recibo](../../operations/resolution-agenda-application-20261018.md). Observação posterior somente leitura: 53/55 já abertos, revisão 10/approved e agenda versão 1 às 20h BRT; publicação posterior fora desta operação. Inventário aplicado permanece fotografia histórica imutável, sem reaplicação.
 
 ## WFLOW-20261017-TOTAL-PARTICIPANTS
 
