@@ -1,6 +1,6 @@
-## Painel de contratos — limites e publicação (18/10/2026)
+## Painel de contratos — limites após implantação (18/10/2026)
 
-Implementação validada localmente; PR/CI/merge/deploy e smoke ainda pendentes da aprovação prévia solicitada pelo usuário. O contrato não fornece instante efetivo de fechamento: a UI mostra close_at como programado e Fechado pelo estado. Espaçamento visual usa piso de 136px para legibilidade e parte variável por duração, sem escala linear pura. QA de acessibilidade validou a árvore do Chrome e teclado; VoiceOver nativo e fontes ampliadas não foram executados. QA visual usa fixtures locais; não comprova implantação produtiva. [Fonte vigente e critérios](../testing/contracts-timeline-closeout-20261018.md). Sem pendências de migration/configuração/backfill/MCP/Flutter para esta correção.
+PR #173/merge 2c4ddd9, CI/build/deploy Actions 39136374800 e smoke técnico produtivo aprovados. O contrato não fornece instante efetivo de fechamento; close_at é programado e Fechado depende do estado. Espaçamento visual possui piso de 136px para rótulos, sem escala linear pura. Chrome/teclado/árvore de acessibilidade e template produtivo em memória conferidos; VoiceOver nativo, fontes ampliadas e sessão humana autenticada no navegador produtivo não executados. Sem pendência de migration/configuração/backfill/MCP/Flutter para ativar a interface. [Fonte vigente](../testing/contracts-timeline-closeout-20261018.md).
 
 ## Agenda — estado vigente em 18/10/2026
 

@@ -213,7 +213,7 @@ Criar/editar badge permite gerar um par 1:1 (tema claro e escuro), regenerar e d
 
 No DEV com worktrees, `GOTRENDLABS_MEDIA_ROOT` pode apontar Django para a mídia existente; mantenha `GTL_THUMB_PUBLIC_ROOT` e `GTL_BADGE_PUBLIC_ROOT` alinhados para os produtores de arquivos. Não substitua o diretório `media/` versionado por um symlink.
 
-Agenda estruturada: [spec](docs/specs/features/market-resolution-agenda.md), [runbook](docs/operations/resolution-agenda-runbook.md) e [aplicação produtiva vigente](docs/operations/resolution-agenda-application-20261018.md). O Painel de contratos diferencia estado real, horários previstos e registros efetivos; apresenta Hoje, intervalos, etapas sem data e identificação acessível por mercado. Correção da interface validada localmente, aguardando aprovação da PR e implantação pelo Actions: [fechamento e limites](docs/specs/testing/contracts-timeline-closeout-20261018.md). As notas de preparação/rollout abaixo são históricas e não substituem esses recibos.
+Agenda estruturada: [spec](docs/specs/features/market-resolution-agenda.md), [runbook](docs/operations/resolution-agenda-runbook.md) e [aplicação produtiva vigente](docs/operations/resolution-agenda-application-20261018.md). O Painel de contratos diferencia estado real, horários previstos e registros efetivos; apresenta Hoje, intervalos, etapas sem data e identificação acessível por mercado. Correção da interface implantada pela PR #173, CI/build/deploy Actions 39136374800 e smoke técnico produtivo aprovados: [fechamento e limites](docs/specs/testing/contracts-timeline-closeout-20261018.md). As notas de preparação/rollout abaixo são históricas e não substituem esses recibos.
 
 
 ## 17/10/2026 — Preparação do fechamento da resolução prevista
