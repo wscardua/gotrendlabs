@@ -1,3 +1,7 @@
+## 2026-10-18 — fonte vigente da apresentação de contratos
+
+FEAT-RESOLUTION-AGENDA-001 v1.2 e market-lifecycle explicitam a projeção de fechamento, previsão, resolução/selagem, cancelamento e datas ausentes. Aceites consolidados após QA: timeline com Hoje, intervalos, espaçamento adaptado, Sem data na mesma linha à direita e aria-labelledby por mercado. [Recibo de fechamento](../testing/contracts-timeline-closeout-20261018.md) separa validação local de publicação/CI/deploy ainda pendentes de aprovação. Sem alteração de schema/OpenAPI/MCP/Flutter ou reaplicação do inventário produtivo.
+
 ## 2026-10-17 — evidência produtiva de participantes/posição
 
 Estado, known-gaps, changelog, mapa de integração, README e recibo reconciliados com PR #168/merge `1d4003f`, CI/build/deploy e smoke técnico aprovados. Metadados mobile/frontmatter corrigidos preservados. Código Flutter validado; distribuição mobile e QA físico ampliado seguem separados. WFLOW-20261017-PARTICIPANTS-CLOSEOUT.

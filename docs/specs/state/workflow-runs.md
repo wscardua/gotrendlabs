@@ -3862,6 +3862,8 @@ Atualização do incidente: recuperação MCP SSM 336f1564-4fff-40dc-acb4-a540a4
 
 ## WFLOW-20261018-CONTRACTS-TIMELINE — correção de apresentação
 
+> Histórico da implementação e alternativas visuais. Fonte vigente do resultado final e da publicação: [fechamento](../testing/contracts-timeline-closeout-20261018.md), WFLOW-20261018-CONTRACTS-TIMELINE-CLOSEOUT. Notas de etapa/pendência abaixo são fotografias de cada iteração.
+
 - Tipo: alterar feature; branch `fix/contracts-timeline-states`, worktree isolada, base `origin/main` e914df7. Alterações preexistentes e documentação da agenda preservadas.
 - Objetivo: corrigir etapas sem inferir ações pelo relógio; produção somente leitura, sem backfill, publicação ou deploy.
 - Desenho pré-código: FastAPI conserva estado, classificação e elegibilidade. Django projeta `status`, `resolution_schedule`, `resolved_at`, `seal_due_at`, `sealed_at`; nenhum contrato novo é necessário. `close_at` é horário programado, não instante de ação; locked/resolved/sealed indicam Fechado sem fabricar timestamp efetivo. Canceled indica etapa interrompida. Previsão terminal é histórica; vencida usa classificação autoritativa, nunca conclusão/apuração iniciada. Resolução sem timestamp em estado resolvido informa ausência de registro de data. Selagem distingue prazo e ação efetiva, nunca conclui por tempo. Undo volta a locked com campos efetivos limpos pelo domínio.
@@ -3874,3 +3876,62 @@ Atualização do incidente: recuperação MCP SSM 336f1564-4fff-40dc-acb4-a540a4
 - Consulta MCP atual: 35/36/52 locked, 53/55 open; agendas intactas. Nenhuma gravação produtiva.
 - Checklist aplicado: universal/alterar feature/implementação/testes. Spec/ciclo/changelog/status/testes atualizados; integration map e ADR sem mudança estrutural. MCP/Flutter sem ajuste pelo contrato inalterado; OpenAPI não alterado. Limites: timestamp de fechamento efetivo ausente no contrato; QA visual usa fixtures locais.
 - Próxima ação: obter aprovação do título/descrição da PR em português e somente depois submetê-la.
+
+### Ajuste visual solicitado pelo usuário — faixa temporal
+
+- Escopo autorizado: manter todas as etapas abertas e alterar somente a faixa de marcos. Desenho pré-código: eixo com datas visíveis, Hoje identificado, rótulos com nome/data ligados ao instante real; círculo preenchido para registros efetivos e losango vazado para previsões (incluindo close_at). Distribuir rótulos próximos em faixas, sem mover sua coordenada temporal. No viewport estreito, área temporal com rolagem horizontal acessível, mantendo os cartões existentes.
+- Aceites: rótulos sem colisões em marcos coincidentes/extremos, escala estável antes da paginação, Hoje legível, datas/fusos acessíveis, formato não dependente de cor, todos os cartões preservados. Testes de geometria/renderização e inspeção desktop/390px.
+- Impacto: apresentação Django/CSS/template somente. API/OpenAPI/MCP/Flutter, permissões, erros, replays e orientação editorial permanecem inalterados. Sem mutação produtiva. Etapa: implementação em andamento.
+
+- Validação do ajuste: 20 testes de regras/apresentação/renderização aprovados; diff sem problemas. Chrome 1440×1000/390×844 confirmou eixo/nome/data/Hoje, zero colisões entre rótulos e zero overflow dos rótulos/página. Rolagem horizontal por ArrowRight confirmada (40px) na região focável. Etapas abertas preservadas. Serviços DEV já executam esta worktree com reload; CSS versionado 002. Escopo local concluído para avaliação visual do usuário; PR continua pendente de aprovação. Checklist universal/alteração/implementação/testes reaplicado.
+
+### Simplificação autorizada após avaliação visual
+
+- Desenho pré-código: substituir eixo proporcional e ramificações por sequência cronológica horizontal de espaçamento uniforme, nomes/datas abaixo de cada símbolo. Hoje passa a referência textual no resumo. Todas as etapas abertas continuam preservadas. O usuário autorizou a troca da distância proporcional pela clareza da ordem; paginação não reposiciona os marcos de cada mercado.
+- Aceite: ordem por instante real (inclusive fusos e resolução antecipada), empates estáveis, sem linhas cruzadas, rolagem por teclado em tela estreita e sem overflow da página. Testes locais e inspeção visual desktop/390px. API/MCP/Flutter sem alteração de contratos ou permissões.
+
+Validação concluída: 20 testes aprovados (0.049s), Django check sem problemas; Chrome 1440×1000 e 390×844 com 12 fixtures, sequência horizontal sem ramificações, etapas abertas, página sem overflow (375/375px), ArrowRight rolou 40px. CSS 003 disponível no DEV. Checklist universal/alterar-feature/implementação/testes reaplicado; spec, aceite e estado sincronizados. Sem nova dependência/ADR/contrato/MCP/Flutter. PR permanece pendente de aprovação.
+
+### Recuperar referência temporal e todas as etapas
+- Desenho pré-código: Hoje entra na sequência em seu instante real; intervalos explícitos entre marcos comunicam duração mantendo a linha simples. Sem escala proporcional, explicitamente indicado. Etapas sem timestamp ficam em trecho Sem data, sem posição inventada, com estado autoritativo projetado. Todas as etapas permanecem abertas abaixo.
+- Aceite: Hoje antes/entre/depois, coincidências, intervalos em UTC/fusos, seis etapas mesmo sem publicação/resolução/selagem; cancelamento sem obrigação futura. Testes e QA desktop/390px. Sem impacto API/OpenAPI/MCP/Flutter, permissões ou dados.
+
+18/10/2026 — Revisão temporal: Hoje inserido cronologicamente, intervalos explícitos calculados entre instantes, todas as etapas representadas (ausências no trecho Sem data). Faixa na largura total do mercado, cartões preservados. API/OpenAPI/MCP/Flutter sem ajustes: apresentação somente, sem novas permissões. QA Chrome 1440×1000/390×844, sem overflow da página (375/375), teclado ArrowRight 40px. Evidências privadas time-desktop.png/time-narrow.png em .runtime/contracts-timeline. Checklist universal/alterar-feature/implementação/testes aplicado; PR segue pendente de aprovação.
+
+Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje antes/entre/depois, empates, ausência de datas e cancelamento. Django check e git diff --check aprovados.
+
+### Refinamento estético da faixa
+- Desenho pré-código: uma linha fina, intervalos centrados acima das ligações, nomes e datas alinhados abaixo; Hoje como traço vertical e texto na cor de destaque existente, sem caixa. Etapas sem data em rodapé textual separado, sem simular continuação temporal. Preservar cálculo, todas as etapas e estados. Aceite: ausência de colisão, leitura desktop/estreita, teclado e contraste nos temas. Somente template/CSS, sem impacto API/MCP/Flutter.
+
+18/10/2026 — Refinamento estético: linha fina, intervalos centrados sobre as ligações, nomes/datas alinhados, Hoje com traço verde sem caixa; etapas sem data em rodapé textual com quebra responsiva. Sem alteração de cálculos/estados/API/MCP/Flutter. 21 testes aprovados (0.052s), Django check/diff aprovados; QA Chrome desktop claro/escuro e 390px, sem overflow de página (375/375) e rolagem ArrowRight 40px. Capturas privadas refined-desktop.png/refined-narrow.png. CSS 005. Checklist universal/alterar-feature/implementação/testes aplicado; sem dependências novas. PR continua aguardando aprovação.
+
+### Compactação solicitada: Sem data à direita
+- Desenho pré-código: bloco Sem data no canto direito junto à faixa, removendo rodapé. Em viewport estreito, bloco abaixo para preservar largura legível da sequência. Sem mudanças de domínio/API/MCP/Flutter; aceite visual e teclado desktop/390px.
+
+18/10/2026 — Sem data reposicionado no canto direito ao lado da faixa para reduzir altura, conforme correção do usuário (direita). Abaixo de 600px, fica abaixo e alinhado à direita para preservar legibilidade. 12 testes de apresentação aprovados (0.052s), Django check/diff aprovados; inspeção Chrome 1440×1000/390×844, sem overflow da página, ArrowRight 40px. CSS 006; captura privada right-desktop.png. Checklist aplicado. Nenhuma mudança API/MCP/Flutter/permissões; PR ainda depende de aprovação.
+
+### Correção de alinhamento em tela estreita
+- Pedido: Sem data sempre na mesma linha da timeline, inclusive abaixo de 600px. Desenho: faixa inteira com rolagem horizontal por teclado; bloco à direita sem quebra vertical. CSS/template somente, sem impacto API/MCP/Flutter.
+
+18/10/2026 — Corrigida a quebra responsiva: Sem data permanece à direita na mesma linha em qualquer viewport. Faixa inteira rola horizontalmente por teclado. Chrome 1440/390px validado: diferença vertical 0px, overflow da página 0px, ArrowRight 40px. 12 testes aprovados (0.048s), check/diff aprovados. CSS 007. API/MCP/Flutter inalterados. Checklist reaplicado; PR pendente de aprovação.
+
+### Espaçamento temporal dos marcos
+- Desenho pré-código: substituir distâncias iguais por largura adicional linear à duração do intervalo. Piso de 136px para manter nome/data legíveis; até 180px adicionais por intervalo na janela global consultada, calculada antes do recorte. Portanto escala visual adaptada com piso, não escala linear pura; informar isso na legenda. Mesmo instante mantém espaço de rótulo, explicitamente identificado. Hoje participa dos intervalos; Sem data continua à direita sem escala.
+- Aceite: 1h ocupa menos que 20 dias; intervalos iguais recebem larguras iguais; paginação não altera larguras; fusos/empates/terminais preservados; QA desktop/estreita e teclado. Sem API/OpenAPI/MCP/Flutter ou novas permissões.
+
+18/10/2026 — Espaçamento temporal implementado: piso de 136px para rótulos mais largura linear à duração (180px por janela global da consulta). Legenda informa mínimo; não alegar escala linear pura. Intervalos iguais mantêm largura igual, 1h é menor que 20 dias, paginação conserva geometria. 22 testes aprovados (0.060s), Chrome 1440/390px, intervalos observados 161/257/176/149px para 1d/7d/1d23h/1h; sem overflow da página, ArrowRight 40px. Sem data à direita na mesma linha; CSS 008. Captura privada duration-desktop.png. Checklist aplicado; API/MCP/Flutter/permissões inalterados, PR pendente de aprovação.
+
+### Correção do finding de acessibilidade do review
+- Desenho pré-código: cada região da timeline recebe nome acessível composto por Cronograma e título do próprio mercado via aria-labelledby. Instrução de rolagem compartilhada via aria-describedby; IDs únicos por linha renderizada. Sem alteração de layout, estado ou geometria.
+- Aceite: lista inicial e Carregar mais com 12 mercados, referências existentes/únicas e associação ao título correto, caracteres especiais escapados; verificar árvore de acessibilidade no navegador. Sem impacto API/OpenAPI/MCP/Flutter, scopes, erros ou replays.
+
+18/10/2026 — Finding de acessibilidade corrigido: regiões da timeline nomeadas por Cronograma + título do mercado via aria-labelledby; instrução de rolagem em aria-describedby. 23 testes aprovados (0.094s), incluindo referências únicas/corretas antes e após Carregar mais e títulos escapados. Chrome confirmou nomes distintos na árvore de acessibilidade e foco por teclado. Sem alteração visual, API/MCP/Flutter/permissões; checklist universal/alterar-feature/implementação/testes aplicado. VoiceOver nativo não executado; inspeção foi da árvore exposta pelo Chrome. Evidência privada accessible-market-timeline.png. PR continua pendente de aprovação.
+
+## WFLOW-20261018-CONTRACTS-TIMELINE-CLOSEOUT
+
+- Tipo: fechamento de alterar-feature; status: em_andamento. Pedido autoriza commit/PR/merge/Actions/ativação produtiva, preservando a branch local; submissão da PR condicionada à aprovação prévia do título/descrição.
+- Estado: docs/aceites reconciliados com a implementação final e alternativas preservadas como histórico. Arquitetura/MCP/Flutter revisados, sem alteração de contrato, domínio, persistência, permissões, eventos ou dependências. Sem migration/flag/backfill necessário.
+- Base origin/main e914df7 confirmada por fetch/GitHub MCP; sem PR aberta da branch. ENABLE_PROD_DEPLOY=1, fluxo normal de main acionará deploy após CI.
+- Validação final: 41 testes em PostgreSQL 16 isolado/11.578s, OpenAPI, Django check, JavaScript e Dockerfile check aprovados. QA local e finding de acessibilidade corrigido. [Fonte vigente](../testing/contracts-timeline-closeout-20261018.md).
+- Checklist universal/alterar-feature/implementação/testes aplicado. Spec/ciclo/aceite/README/estado/changelogs/known-gaps e memória reconciliados. Sem nova ADR/integration-map; limites explícitos.
+- Próxima ação: apresentar texto exato da PR em português e aguardar aprovação antes de submeter. Commit local de fechamento preparado, 21 links locais novos sem ausências e diff check aprovado; container de testes exclusivo removido, serviços DEV preservados. Depois acompanhar CI/merge/Actions/deploy e smoke somente leitura; registrar evidências e encerrar docs/memória, preservando branch local e dados produtivos.

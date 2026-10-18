@@ -557,7 +557,7 @@ def _contract_timeline_phase_context(row, today):
 
     def step(label, field, state, time_label, note, zone=None, urgency=None):
         stamp = _parse_contract_timeline_datetime(market.get(field))
-        return {"label": label, "state": state, "time_label": time_label,
+        return {"field": field, "label": label, "state": state, "time_label": time_label,
                 "date_label": _contract_timeline_label(stamp, zone) or (_("Não informada") if field in {"close_at", "expected_resolution_at"} else _("Data não registrada")),
                 "note": note, "urgency": urgency}
 
@@ -629,7 +629,7 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
     if not parsed_rows:
         return {
             "rows": [],
-            "axis_ticks": [],
+            "today_label": _contract_timeline_label(today),
             "today_position": None,
             "has_today": False,
             "starts_at_label": "",
@@ -642,16 +642,6 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
     if ends_at <= starts_at:
         ends_at = starts_at + timedelta(days=1)
     span_seconds = (ends_at - starts_at).total_seconds()
-
-    axis_ticks = []
-    for index in range(5):
-        tick_at = starts_at + timedelta(seconds=span_seconds * index / 4)
-        axis_ticks.append(
-            {
-                "position": _contract_timeline_position(tick_at, starts_at, span_seconds),
-                "label": timezone.localtime(tick_at).strftime("%d/%m"),
-            }
-        )
 
     today_position = None
     if starts_at <= today <= ends_at:
@@ -679,7 +669,14 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
             if stamp:
                 markers.append({**_contract_timeline_marker_context(label, stamp, today, zone),
                                 "position": _contract_timeline_position(stamp, starts_at, span_seconds),
-                                "class": marker_class})
+                                "timestamp": stamp,
+                                "field": field,
+                                "class": marker_class,
+                                "name": {"created_at": _("Criação"), "published_at": _("Publicação"), "seal_due_at": _("Prazo de selagem")}.get(field, label),
+                                "kind": "planned" if field in {"close_at", "expected_resolution_at", "seal_due_at"} else "actual",
+                                "short_date": timezone.localtime(stamp, ZoneInfo(zone or timezone.get_current_timezone_name())).strftime("%d/%m · %H:%M"),
+                                "short_time": timezone.localtime(stamp, ZoneInfo(zone or timezone.get_current_timezone_name())).strftime("%H:%M"),
+                                "today_label": _("Hoje") if _contract_timeline_marker_context(label, stamp, today, zone)["time_class"] == "now" else ""})
         rows.append(
             {
                 "market": market,
@@ -695,20 +692,33 @@ def _build_contract_timeline(markets, *, today=None, include_terminal=False):
             }
         )
 
-    # Stagger nearby/coincident markers without changing their time coordinates.
+    # Durations use absolute instants, independent of each label's display zone.
     for item in rows:
-        previous_position, lane = None, 0
-        for marker in sorted(item['markers'],key=lambda m:m['position']):
-            lane = lane + 1 if previous_position is not None and marker["position"] - previous_position < 3 else 0
-            marker['lane'] = lane
-            previous_position = marker['position']
-        lane_count = max((m['lane'] for m in item['markers']), default=0) + 1
-        item["rail_height"] = max(22, lane_count * 20)
-        for marker in item['markers']:
-            marker['lane_top'] = (marker['lane'] + 1) * 100 / (lane_count + 1)
+        item["markers"].sort(key=lambda marker: marker["timestamp"])
+        sequence = [dict(marker) for marker in item["markers"]]
+        sequence.append({"timestamp": today, "name": _("Hoje"), "kind": "today",
+                         "short_date": timezone.localtime(today).strftime("%d/%m · %H:%M"),
+                         "label": _contract_timeline_label(today)})
+        sequence.sort(key=lambda marker: marker["timestamp"])
+        for index, marker in enumerate(sequence[:-1]):
+            seconds = int((sequence[index + 1]["timestamp"] - marker["timestamp"]).total_seconds())
+            # A fixed label footprint prevents overlap; extra space is linear
+            # in elapsed time using the complete query's window, before slicing.
+            marker["gap_extra_px"] = round(180 * seconds / span_seconds, 3)
+            days, rest = divmod(seconds, 86400)
+            hours, rest = divmod(rest, 3600)
+            minutes = rest // 60
+            marker["gap_label"] = (_("Mesmo instante") if seconds == 0 else
+                                   _("Menos de 1 min") if seconds < 60 else
+                                   " · ".join(part for part in [f"{days} d" if days else "", f"{hours} h" if hours else "", f"{minutes} min" if minutes else ""] if part))
+        sequence[-1]["gap_extra_px"] = 0
+        item["time_sequence"] = sequence
+        item["undated_steps"] = [step for step in item["phase_steps"] if not item["market"].get(step["field"])]
+        if not item["market"].get("published_at"):
+            item["undated_steps"].insert(0, {"label": _("Publicação"), "time_label": _("Data não registrada")})
     return {
         "rows": rows,
-        "axis_ticks": axis_ticks,
+        "today_label": _contract_timeline_label(today),
         "today_position": today_position,
         "has_today": today_position is not None,
         "starts_at_label": _contract_timeline_label(starts_at),

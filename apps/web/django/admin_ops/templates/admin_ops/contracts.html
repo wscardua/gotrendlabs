@@ -53,25 +53,24 @@
       </div>
       <div>
         <span>Hoje</span>
-        <strong>{% if timeline.has_today %}na janela{% else %}fora da janela{% endif %}</strong>
-        <small>Marcador pontilhado quando a data aparece no recorte.</small>
+        <strong>{{ timeline.today_label }}</strong>
+
       </div>
     </div>
 
     {% if timeline.rows %}
       <div class="contracts-reference" aria-label="Legenda do painel">
         <strong>Legenda</strong>
-        <span><i class="legend-bar"></i> janela do contrato</span>
-        <span><i class="legend-dot marker-time-past"></i> marco passado</span>
-        <span><i class="legend-dot marker-time-now"></i> marco hoje</span>
-        <span><i class="legend-dot marker-time-future"></i> marco futuro</span>
-        <span><i class="legend-today"></i> hoje</span>
-        <span>Marcos planejados não indicam conclusão; o avanço do tempo não mede progresso.</span>
+        <span><i class="contract-time-symbol is-actual" aria-hidden="true"></i> {% trans "registro efetivo" %}</span>
+        <span><i class="contract-time-symbol is-planned" aria-hidden="true"></i> {% trans "horário previsto" %}</span>
+        <span>{% trans "Espaçamento por duração, com mínimo para leitura dos rótulos." %}</span>
         <span><i class="phase-dot legend-done"></i> {% trans "ação registrada ou estado confirmado" %}</span>
         <span><i class="phase-dot legend-pending"></i> {% trans "etapa sem conclusão confirmada (pode estar vencida)" %}</span>
         <span>{% trans "Previsões históricas não representam obrigações futuras." %}</span>
       </div>
 
+      <span id="contract-timeline-label" class="sr-only">{% trans "Cronograma" %}</span>
+      <span id="contract-timeline-help" class="sr-only">{% trans "Marcos em ordem de data; use as setas para rolar horizontalmente" %}</span>
       <div class="contracts-board" aria-label="Fases dos contratos administrativos">
         <div class="contracts-board-head">
           <span>Mercado</span>
@@ -81,9 +80,31 @@
 
         {% for row in timeline.rows %}
           <article class="contract-row status-{{ row.status_class }}">
+              <div class="contract-time-scroll" tabindex="0" role="region" aria-labelledby="contract-timeline-label contract-market-title-{{ forloop.counter }}" aria-describedby="contract-timeline-help">
+                <div class="contract-time-track">
+                <ol class="contract-time-sequence">
+                  {% for marker in row.time_sequence %}
+                    <li class="contract-time-item{% if marker.kind == 'today' %} is-today{% endif %}" title="{{ marker.label }}" style="--time-extra: {{ marker.gap_extra_px|unlocalize }}px;">
+                      <span class="contract-time-symbol is-{{ marker.kind }}" aria-hidden="true"></span>
+                      <strong>{{ marker.name }}</strong>
+                      <span class="contract-time-date">{% if marker.today_label %}{{ marker.today_label }} · {{ marker.short_time }}{% else %}{{ marker.short_date }}{% endif %}</span>
+                      <span class="sr-only">{{ marker.label }}</span>
+                      {% if marker.gap_label %}<small class="contract-time-gap">{{ marker.gap_label }}</small>{% endif %}
+                    </li>
+                  {% endfor %}
+                </ol>
+                </div>
+                {% if row.undated_steps %}
+                <div class="contract-time-undated">
+                  <strong>{% trans "Sem data" %}</strong>
+                  <ul>{% for step in row.undated_steps %}<li><b>{{ step.label }}</b><span>{{ step.time_label }}</span></li>{% endfor %}</ul>
+                </div>
+                {% endif %}
+              </div>
+
             <div class="contract-market">
               <div class="contract-title-line">
-                <a href="{% url 'admin-ops-market-edit' row.market.slug %}">{{ row.market.title }}</a>
+                <a id="contract-market-title-{{ forloop.counter }}" href="{% url 'admin-ops-market-edit' row.market.slug %}">{{ row.market.title }}</a>
                 <span class="contract-phase-chip phase-{{ row.current_phase_class }}">{{ row.current_phase_label }}</span>
               </div>
               <p>{{ row.market.category }} / {{ row.market.subcategory }} / {{ row.market.event }}</p>
@@ -93,17 +114,6 @@
             </div>
 
             <div class="contract-flow" aria-label="Fases do mercado">
-              <div class="contract-date-rail" style="height: {{ row.rail_height|unlocalize }}px;" aria-label="Linha compacta de datas">
-                {% if timeline.has_today %}
-                  <span class="contracts-today-line row-line" style="left: {{ timeline.today_position|unlocalize }}%;" aria-label="Hoje"></span>
-                {% endif %}
-                <span class="contracts-bar" style="left: {{ row.bar_left|unlocalize }}%; width: {{ row.bar_width|unlocalize }}%;"></span>
-
-                {% for marker in row.markers %}
-                  <span class="contracts-marker marker-{{ marker.class }} marker-time-{{ marker.time_class }}" style="left: {{ marker.position|unlocalize }}%; top: {{ marker.lane_top|unlocalize }}%;" title="{{ marker.label }}" aria-label="{{ marker.label }}"></span>
-                {% endfor %}
-              </div>
-
               <div class="contract-phases">
                 {% for phase in row.phase_steps %}
                   <div class="contract-phase phase-state-{{ phase.state }}{% if phase.urgency %} phase-urgency-{{ phase.urgency }}{% endif %}">
