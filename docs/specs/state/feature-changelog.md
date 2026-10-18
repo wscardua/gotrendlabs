@@ -1,3 +1,7 @@
+## 2026-10-18 — agenda operacional às 20h aplicada em produção
+
+Nove mercados publicados receberam complementos assinados vinculados às definições originais; dois drafts receberam a previsão e novo snapshot sem aprovação reaproveitada. Horário 20h America/Sao_Paulo aprovado pelo usuário; critérios históricos, inclusive referências a consulta às 12h, preservados com proveniência explícita da decisão posterior. Integridade, carteira, previsões, reputação e opções preservadas por comparação transacional; replay idempotente, auditoria full e smokes públicos/MCP aprovados. [Datas e evidências](../../operations/resolution-agenda-application-20261018.md). Sem alteração funcional de API/clients ou nova release. Consulta MCP posterior encontrou 53/55 abertos, revisão 10/approved; publicação posterior fora da operação de backfill, registrada separadamente no recibo.
+
 ## 2026-10-17 — participantes e ações de posição implantados
 
 PR #168 integrada (merge `1d4003f`), CI PR/main com 518 testes/2 skips por execução e build/deploy Actions `39061727984` aprovados. Smoke técnico confirmou total distinto em 9 mercados (6 com bots), contrato obrigatório, template/subtítulos e configuração preservada. Revisar web sem aviso; Flutter validado no código, distribuição por próxima release própria. Branch local preservada; nenhum dado sintético ou alteração de configuração em produção. [Recibo](../testing/participants-closeout-20261017.md). Este registro substitui as pendências de publicação abaixo.

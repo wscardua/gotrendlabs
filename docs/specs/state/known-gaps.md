@@ -1,3 +1,7 @@
+## Agenda — estado vigente em 18/10/2026
+
+As pendências históricas de rollout/backfill da agenda abaixo foram superadas: PR #171/d4c2348 implantada com sucesso; nove públicos agora possuem complemento assinado versão 1, datas aprovadas às 20h BRT, e verificações públicas integralmente válidas. [Recibo](../../operations/resolution-agenda-application-20261018.md). Não interpretar os inventários ou notas preparatórias de 17/10 como estado atual. Na aplicação, drafts 53/55 receberam agenda/revisão 8 em preparação; consulta MCP posterior encontrou ambos abertos, revisão 10/approved e agenda versão 1. A publicação posterior não foi executada nem homologada por esta operação. Snapshot dedicado disponível; restauração desse snapshot não ensaiada. Distribuição mobile/fonte ampliada permanecem tarefas separadas. Nenhum novo ajuste de permissão/schema MCP necessário para esta operação de dados.
+
 ## Participantes públicos e ações de posição — fechamento 2026-10-17
 
 Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovados em 2026-10-17. App Flutter validado no código, mas a mudança visual da contagem só chega a apps instalados por nova release mobile; APK/AAB e build mínima não alterados. QA físico/fontes ampliadas, carga e sessão humana autenticada completa em produção não executados; APIs e template implantado conferidos sem mutação. Não há migration, mudança de bot/economia ou ajuste MCP pendente. [Recibo](../testing/participants-closeout-20261017.md).
