@@ -12,7 +12,7 @@ Feature: FEAT-RESOLUTION-AGENDA-001 v1.2. Workflows: WFLOW-20261018-CONTRACTS-TI
 | previsão futura/vencida/ausente | Planejada / Previsão vencida pelo código resolution_overdue / Não informada; nunca ativa ou concluída. |
 | resolved/sealed/canceled | Previsão histórica, sem obrigação futura de apuração. |
 | canceled sem resolução/selagem | Não se aplica. |
-| criação/publicação/resolução/selagem com data | Registro efetivo, com data e fuso; circle distingue registros de horários previstos. |
+| criação/publicação/resolução/selagem com data | Registro efetivo, com data e fuso; círculo distingue registros de horários previstos. |
 | terminal sem data efetiva | Resolvido/Selado — data não registrada, sem inventar instante. |
 | selagem ainda ausente | Prazo previsto distinto de sealed_at; prazo vencido não conclui etapa. |
 | resolução desfeita | Retorna a locked conforme backend, sem resolved_at/seal_due_at; agenda e histórico preservados. |
@@ -33,4 +33,4 @@ Feature: FEAT-RESOLUTION-AGENDA-001 v1.2. Workflows: WFLOW-20261018-CONTRACTS-TI
 
 41 testes de agenda, renderização e integração em PostgreSQL 16 dedicado aprovados em 11.578s no fechamento, incluindo a matriz acima e o fluxo real de resolução/undo/cancelamento/assinaturas. Checks e comando reproduzível no recibo. A rodada pura de apresentação/regras tem 23 testes, incluídos nessa execução, sem somar contagens sobrepostas.
 
-QA visual com fixtures locais e assets reais; captura final e árvore de acessibilidade do Chrome verificadas. VoiceOver nativo e fontes ampliadas não executados. Sem mudança API/OpenAPI/MCP/Flutter, migration, flag ou backfill. Produção ainda não recebe esta correção até o CI/merge/deploy aprovado.
+QA visual com fixtures locais e assets reais; captura final e árvore de acessibilidade do Chrome verificadas. VoiceOver nativo e fontes ampliadas não executados. Sem mudança API/OpenAPI/MCP/Flutter, migration, flag ou backfill. Implantado pela PR #173/merge 2c4ddd9; CI da PR/main com 567 testes e 2 skips por execução, builds/deploy e smoke técnico SSM/HTTP/template produtivo aprovados. Sem sessão humana autenticada no navegador produtivo; evidências no recibo.

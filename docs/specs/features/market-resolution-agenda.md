@@ -1,8 +1,8 @@
 ---
 id: FEAT-RESOLUTION-AGENDA-001
 titulo: Agenda estruturada de apuração
-status_spec: aprovada_para_implementacao
-status_impl: validado_localmente
+status_spec: aprovada
+status_impl: implementada_validada
 ultima_atualizacao: 2026-10-18
 aprovacao: escopo_autorizado_pelo_usuario
 dependencias: [FEAT-RES-001, FEAT-INTEGRITY-001]
@@ -34,7 +34,7 @@ Fora do escopo: notificações, emails, resolução automática, parser editoria
 
 ## Fechamento e estado de implantação
 
-A agenda e sua aplicação produtiva são registradas no [recibo de aplicação de 18/10/2026](../../operations/resolution-agenda-application-20261018.md); o [fechamento de 17/10](../testing/resolution-agenda-closeout-20261017.md) preserva o histórico do rollout. A correção v1.2 da apresentação do painel está validada localmente e aguarda PR/CI/merge/deploy: [fonte vigente do fechamento](../testing/contracts-timeline-closeout-20261018.md). Não reaplicar inventário ou assinaturas para corrigir a interface. Distribuição Flutter é distinta do deploy web/API.
+A agenda e sua aplicação produtiva são registradas no [recibo de aplicação de 18/10/2026](../../operations/resolution-agenda-application-20261018.md); o [fechamento de 17/10](../testing/resolution-agenda-closeout-20261017.md) preserva o histórico do rollout. A correção v1.2 da apresentação do painel foi implantada pela PR #173/merge 2c4ddd9, com CI/build/deploy e smoke técnico produtivo aprovados: [fonte vigente do fechamento](../testing/contracts-timeline-closeout-20261018.md). Não reaplicar inventário ou assinaturas para corrigir a interface. Distribuição Flutter é distinta do deploy web/API.
 
 ## Apresentação das etapas — correção de 18/10/2026
 

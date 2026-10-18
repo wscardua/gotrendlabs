@@ -1,3 +1,7 @@
+## 2026-10-18 — evidência produtiva do Painel de contratos
+
+FEAT-RESOLUTION-AGENDA-001 v1.2 marcada implementada_validada após PR #173, merge 2c4ddd9, CI PR/main/build/deploy e smoke técnico produtivo aprovados. README, aceites, estado, known-gaps, workflow e recibo reconciliados com a implantação real; histórico de iterações preservado. Sem alteração adicional de contrato/API/MCP/Flutter ou dados. [Recibo](../testing/contracts-timeline-closeout-20261018.md).
+
 ## 2026-10-18 — fonte vigente da apresentação de contratos
 
 FEAT-RESOLUTION-AGENDA-001 v1.2 e market-lifecycle explicitam a projeção de fechamento, previsão, resolução/selagem, cancelamento e datas ausentes. Aceites consolidados após QA: timeline com Hoje, intervalos, espaçamento adaptado, Sem data na mesma linha à direita e aria-labelledby por mercado. [Recibo de fechamento](../testing/contracts-timeline-closeout-20261018.md) separa validação local de publicação/CI/deploy ainda pendentes de aprovação. Sem alteração de schema/OpenAPI/MCP/Flutter ou reaplicação do inventário produtivo.

@@ -1,10 +1,8 @@
-## 2026-10-18 — Painel de contratos: fechamento local preparado
+## 2026-10-18 — Painel de contratos implantado e validado
 
-FEAT-RESOLUTION-AGENDA-001 v1.2: fechamento confirmado pelo estado da FastAPI; previsão vencida/histórica, cancelamento, resolução efetiva e selagem coerentes com seus registros. Timeline simples com Hoje, intervalos e espaçamento adaptado à duração (piso para rótulos), Sem data à direita na mesma linha e regiões acessíveis nomeadas por mercado. Filtros, contadores, ordenação, histórico e Carregar mais preservados.
+FEAT-RESOLUTION-AGENDA-001 v1.2 implantada pela [PR #173](https://github.com/wscardua/gotrendlabs/pull/173), merge/runtime `2c4ddd9`. CI da PR/main com 567 testes e 2 skips por execução; builds principal/MCP e deploy [Actions 39136374800](https://github.com/wscardua/gotrendlabs/actions/runs/39136374800) aprovados. Smoke SSM/HTTP/template confirmou Fechado nos mercados 35/36/52 locked, Hoje/etapas/acessibilidade, CSS 008 e serviços saudáveis. Agendas/histórico/definições assinadas preservados por hash antes/depois; 53/55 continuam open.
 
-41 testes em PostgreSQL isolado aprovados (11.578s); OpenAPI, Django check, JavaScript e Dockerfile check aprovados. Review concluído e finding de acessibilidade corrigido. Sem nova migration, flag, backfill ou mudança API/MCP/Flutter. Publicação da interface ainda pendente da aprovação prévia do título/descrição da PR, CI/merge/Actions e smoke produtivo. Branch local `fix/contracts-timeline-states` será preservada.
-
-Fonte vigente: [recibo de fechamento](../testing/contracts-timeline-closeout-20261018.md) e [aceites atuais](../testing/contracts-timeline-acceptance-20261018.md). WFLOW-20261018-CONTRACTS-TIMELINE-CLOSEOUT. O histórico de alternativas visuais foi preservado em workflow-runs; o recibo define a implementação final.
+Timeline simples com intervalos e espaçamento adaptado à duração (piso de leitura), Sem data à direita na mesma linha e regiões acessíveis por mercado. FastAPI conserva estado/classificação/eligibilidade; sem API/OpenAPI/MCP/Flutter, migration, flag ou backfill novo. Branch local da implementação preservada. [Recibo vigente e limites](../testing/contracts-timeline-closeout-20261018.md), [aceites](../testing/contracts-timeline-acceptance-20261018.md). WFLOW-20261018-CONTRACTS-TIMELINE-CLOSEOUT concluído; este registro substitui a preparação local anterior.
 
 ## 2026-10-18 — agenda produtiva regularizada
 
