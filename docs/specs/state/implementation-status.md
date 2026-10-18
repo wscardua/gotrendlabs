@@ -248,3 +248,8 @@ Correções da revisão concluídas localmente: 120 testes Python integrados apr
 Contrato final e evidências consolidados em [fechamento da agenda](../testing/resolution-agenda-closeout-20261017.md). Branch feature/structured-resolution-agenda preservada; implementação validada localmente e fechamento GitHub/produção em preparação, condicionado à aprovação prévia da descrição da PR solicitada pelo usuário. Não declarar dados migrados ou release mobile distribuída por deploy web/API. Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT.
 
 Fechamento local preparado: rodada ampla de 552 identificou cinco fixtures/mocks desatualizados; ajustes revalidados com 98 testes aprovados (192.350s), sem relaxar regras da aplicação. Flutter analyze/120 testes, JS/OpenAPI/Django/migrations/links/diff aprovados; build Docker local limitado por espaço. ADR da agenda renumerada para ADR-0016 para preservar ADR-0012 de thumbnails; checklist alinhado à política ativa. Commit/PR/implantação seguem WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT, com aprovação prévia da descrição ainda pendente.
+
+
+### 17/10/2026 — Rollout e correção MCP da agenda
+
+Código da agenda integrado em main pela PR #170; migrations 0033–0036 e grants aplicados. API/web/daemon/executor operacionais. Deploy Actions falhou no MCP isolado; serviço restaurado por imagem com contrato puro verificado. Correção permanente/build MCP CI pendentes de PR própria. Inventário não revisado, nove públicos schedule_pending; release mobile separada. Evidências atuais no [fechamento](../testing/resolution-agenda-closeout-20261017.md), que substitui os estados preparatórios acima.

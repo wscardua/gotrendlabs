@@ -1,5 +1,5 @@
 from uuid import UUID
-from apps.api.backend_api.resolution_schedule import ScheduleFields
+from apps.api.backend_api.resolution_schedule_contract import ScheduleFields
 
 from datetime import date, datetime
 from typing import Any, List, Literal, Optional, Union

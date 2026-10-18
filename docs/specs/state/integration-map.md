@@ -280,3 +280,8 @@ QA físico de WFLOW-20261017-MOBILE-CRITERIA-DEADLINES concluído após desbloqu
 ## 2026-10-17 — Revisão da integração da agenda
 
 MCP preserva códigos schedule_incomplete/schedule_timezone_invalid/schedule_offset_required/schedule_order_invalid/schedule_expired da FastAPI; texto livre/código desconhecido não é exposto e scopes permanecem iguais. Mobile atual usa prévia de três linhas com painel inferior e prazos no rodapé do resumo; substitui a apresentação expansível de quatro linhas descrita no registro histórico acima. Sem nova dependência. Ver WFLOW-20261017-AGENDA-REVIEW-FIXES.
+
+
+### 17/10/2026 — Rollout e correção MCP da agenda
+
+REST e MCP reutilizam resolution_schedule_contract (Pydantic puro); resolution_schedule continua serviço de domínio/HTTP/DB/assinatura. Imagem MCP inclui somente os schemas e contrato puro; build exige importar servidor/schema e CI constrói ambas as imagens. Fronteira confirmada após incidente produtivo; sem novos scopes, API administrativa ou regras locais nos clientes. Recibo no fechamento da agenda.

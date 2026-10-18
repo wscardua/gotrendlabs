@@ -182,3 +182,8 @@ Testes do critério expansível a 2× passaram no componente isolado. O ensaio d
 ## Fechamento da agenda — preparação em 17/10/2026
 
 Descrição da PR ainda depende de aprovação explícita do usuário antes da submissão. Backfill segue inventário atualizado/revisado; horários pendentes não são decisões automatizáveis. CI main pode aplicar schema e reiniciar serviços, mas não distribui Flutter. Build Docker local completo limitado por falta de espaço no Docker durante apt; Dockerfile check passou, sem limpeza de imagens/volumes de outras tarefas. Exigir build Actions aprovado antes do merge. Recibo atual em ../testing/resolution-agenda-closeout-20261017.md.
+
+
+### 17/10/2026 — Rollout e correção MCP da agenda
+
+A pendência de aprovação/merge da feature foi superada pela PR #170. Schema implantado, serviço MCP recuperado após falha de empacotamento; não reexecutar deploy sem a correção permanente da imagem, ainda aguardando PR própria. Backfill editorial continua pendente em todos os itens; fonte ampliada Flutter e distribuição de release permanecem fora do aceite produtivo. Ver [recibo](../testing/resolution-agenda-closeout-20261017.md).
