@@ -60,7 +60,7 @@ class AgendaRulesTests(SimpleTestCase):
         self.assertTrue(timeline['has_today']);self.assertEqual(row['bar_progress_width'],0)
         self.assertEqual(len(row['markers']),3)
         self.assertFalse(any(p['state']=='done' for p in row['phase_steps'] if p['label']=='Resolução prevista'))
-        self.assertNotEqual(row['markers'][1]['position'],row['markers'][-1]['position'])
+        self.assertNotEqual(next(x['position'] for x in row['markers'] if x['class']=='close'), next(x['position'] for x in row['markers'] if x['class']=='planned'))
 
     def test_editor_form_has_only_forecast_and_timezone_for_schedule(self):
         from apps.web.django.admin_ops.forms import AdminMarketForm
@@ -70,6 +70,264 @@ class AgendaRulesTests(SimpleTestCase):
         self.assertNotIn('evidence_cutoff_at',fields)
         self.assertNotIn('evidence_recovery_deadline_at',fields)
 
+
+
+class ContractTimelinePresentationTests(SimpleTestCase):
+    def market(self, status="locked", **changes):
+        value = {**agenda(), "status": status, "slug": "fixture-contract", "title": "Contrato de teste",
+                 "created_at": NOW - timedelta(days=10), "published_at": NOW - timedelta(days=9),
+                 "close_timezone": "America/Sao_Paulo", "resolution_timezone": "America/Sao_Paulo"}
+        value.update(changes)
+        value["resolution_schedule"] = s.classification(value, now=NOW)
+        return value
+
+    def row(self, market, now=NOW):
+        from apps.web.django.admin_ops.views import _build_contract_timeline
+        return _build_contract_timeline([market], today=now, include_terminal=True)["rows"][0]
+
+    def phases(self, market):
+        return {p["label"]: p for p in self.row(market)["phase_steps"]}
+
+    def test_all_states_and_closure_never_completed_by_clock(self):
+        for status in ("draft", "scheduled", "open", "locked", "resolved", "sealed", "canceled"):
+            for close in (NOW - timedelta(days=2), NOW + timedelta(days=2), None):
+                with self.subTest(status=status, close=close):
+                    phases = self.phases(self.market(status, close_at=close))
+                    closed = status in {"locked", "resolved", "sealed"}
+                    self.assertEqual(phases["Fechamento"]["state"] == "done", closed)
+                    if closed:
+                        self.assertEqual(phases["Fechamento"]["time_label"], "Fechado")
+                        self.assertIn("instante efetivo de fechamento não informado", phases["Fechamento"]["note"])
+                    elif status in {"open", "scheduled"} and close and close <= NOW:
+                        self.assertEqual(phases["Fechamento"]["urgency"], "overdue")
+                    self.assertFalse(any(p["state"] == "active" for p in phases.values()))
+
+    def test_forecasts_follow_authoritative_classification_and_are_historical_in_terminals(self):
+        for status in ("draft", "scheduled", "open", "locked", "resolved", "sealed", "canceled"):
+            for expected in (NOW - timedelta(days=1), NOW + timedelta(days=1), None):
+                with self.subTest(status=status, expected=expected):
+                    m = self.market(status, close_at=NOW - timedelta(days=2), expected_resolution_at=expected)
+                    phase = self.phases(m)["Resolução prevista"]
+                    self.assertNotEqual(phase["state"], "done")
+                    if status in s.TERMINAL:
+                        self.assertEqual((phase["state"], phase["time_label"]), ("historical", "Histórica"))
+                    elif m["resolution_schedule"]["code"] == "resolution_overdue":
+                        self.assertEqual(phase["time_label"], "Previsão vencida")
+                        self.assertEqual(phase["urgency"], "overdue")
+                    elif expected is None:
+                        self.assertEqual(phase["time_label"], "Não informada")
+        # Django must not recompute the classification from its own clock.
+        m = self.market(expected_resolution_at=NOW - timedelta(days=1))
+        m["resolution_schedule"] = {"code": "resolution_scheduled", "label": "Apuração prevista"}
+        self.assertEqual(self.phases(m)["Resolução prevista"]["time_label"], "Planejada")
+
+    def test_actual_creation_publication_resolution_and_sealing_and_missing_dates(self):
+        m = self.market("sealed", resolved_at=NOW - timedelta(hours=3), sealed_at=NOW - timedelta(hours=1), seal_due_at=NOW - timedelta(hours=2))
+        phases = self.phases(m)
+        for label in ("Criação", "Publicação", "Resolução efetiva", "Selagem"):
+            self.assertEqual(phases[label]["state"], "done")
+            self.assertNotEqual(phases[label]["date_label"], "Data não registrada")
+        self.assertIn("Prazo previsto de selagem", phases["Selagem"]["note"])
+        self.assertIn("Selagem efetiva", " ".join(x["label"] for x in self.row(m)["markers"]))
+        for status in ("resolved", "sealed"):
+            phases = self.phases(self.market(status, seal_due_at=NOW - timedelta(days=1)))
+            self.assertNotEqual(phases["Resolução efetiva"]["state"], "pending")
+            self.assertIn("data não registrada", phases["Resolução efetiva"]["time_label"])
+            self.assertNotEqual(phases["Selagem"]["state"], "done")
+        for status in ("draft", "scheduled"):
+            self.assertNotIn("Publicação", self.phases(self.market(status, published_at=None)))
+
+    def test_cancellation_and_undo_do_not_fabricate_obligations_or_actual_dates(self):
+        phases = self.phases(self.market("canceled"))
+        for label in ("Resolução efetiva", "Selagem"):
+            self.assertEqual(phases[label]["time_label"], "Não se aplica")
+            self.assertEqual(phases[label]["state"], "historical")
+        # Undo clears resolved_at/seal_due_at in FastAPI, retaining the schedule.
+        m = self.market("locked", resolved_at=None, seal_due_at=None, sealed_at=None)
+        phases = self.phases(m)
+        self.assertEqual(phases["Resolução efetiva"]["time_label"], "Pendente")
+        self.assertEqual(phases["Selagem"]["time_label"], "Aguarda resolução")
+        self.assertFalse(any(x["class"] in {"resolved", "sealed"} for x in self.row(m)["markers"]))
+
+    def test_reschedule_retains_original_and_history_without_mutation(self):
+        m = self.market(original_expected_resolution_at=NOW - timedelta(days=1), schedule_version=2,
+                        schedule_history=[{"reason": "Fonte adiou anúncio", "after": {"expected_resolution_at": "2026-10-18T20:00:00Z"}}])
+        before = copy.deepcopy(m)
+        phases = self.phases(m)
+        self.assertEqual(m, before)
+        self.assertIn("18/10/2026", phases["Resolução prevista"]["date_label"])
+
+    def test_same_day_markers_have_today_time_and_correct_zone_not_now(self):
+        from apps.web.django.admin_ops.views import _contract_timeline_marker_context
+        from django.utils import timezone as tz
+        with tz.override("America/Sao_Paulo"):
+            for offset in (-1, 0, 1):
+                result = _contract_timeline_marker_context("Prazo", NOW + timedelta(hours=offset), NOW)
+                self.assertIn("Hoje", result["label"])
+                self.assertNotIn("Agora", result["label"])
+                self.assertIn("America/Sao_Paulo", result["label"])
+                self.assertIn(f"{17 + offset}:00:00", result["label"])
+            value = datetime(2026, 10, 18, 1, tzinfo=UTC)
+            self.assertEqual(_contract_timeline_marker_context("Prazo", value, NOW, "UTC")["time_class"], "future")
+            self.assertEqual(_contract_timeline_marker_context("Prazo", value, NOW, "America/Sao_Paulo")["time_class"], "now")
+
+    def test_coincident_markers_keep_stable_sequence(self):
+        m = self.market("sealed", created_at=NOW, published_at=NOW, close_at=NOW,
+                        expected_resolution_at=NOW, resolved_at=NOW, sealed_at=NOW, seal_due_at=NOW)
+        row = self.row(m)
+        self.assertEqual(len(row["markers"]), 7)
+        self.assertEqual(len({x["position"] for x in row["markers"]}), 1)
+        self.assertEqual([x["class"] for x in row["markers"]],
+                         ["start", "published", "close", "planned", "resolved", "sealed", "planned"])
+        self.assertEqual(sum(x["kind"] == "planned" for x in row["markers"]), 3)
+        self.assertEqual(row["bar_progress_width"], 0)
+
+    def test_sequence_is_chronological_and_closing_is_always_a_forecast(self):
+        m = self.market("locked", close_at=NOW - timedelta(days=1))
+        row = self.row(m)
+        closing = next(x for x in row["markers"] if x["class"] == "close")
+        self.assertEqual(closing["kind"], "planned")
+        self.assertEqual(closing["name"], "Fechamento programado")
+        self.assertIn("16/10", closing["short_date"])
+        stamps = [marker["timestamp"] for marker in row["markers"]]
+        self.assertEqual(stamps, sorted(stamps))
+        early = self.row(self.market("resolved", resolved_at=NOW - timedelta(days=2)))
+        self.assertEqual([m["timestamp"] for m in early["markers"]],
+                         sorted(m["timestamp"] for m in early["markers"]))
+
+    def test_today_durations_and_undated_stages(self):
+        row = self.row(self.market("locked", published_at=None, resolved_at=None, sealed_at=None))
+        sequence = row["time_sequence"]
+        self.assertEqual(sum(m["kind"] == "today" for m in sequence), 1)
+        self.assertEqual([m["timestamp"] for m in sequence], sorted(m["timestamp"] for m in sequence))
+        self.assertTrue(any(m.get("gap_label") for m in sequence))
+        self.assertFalse(any("· ·" in m.get("gap_label", "") for m in sequence))
+        from apps.web.django.admin_ops.views import _build_contract_timeline
+        market = self.market("locked")
+        for reference, expected_index in [(NOW - timedelta(days=100), 0), (NOW + timedelta(days=100), -1)]:
+            timed = _build_contract_timeline([market], today=reference)["rows"][0]["time_sequence"]
+            self.assertEqual(timed[expected_index]["kind"], "today")
+        self.assertEqual({m["label"] for m in row["undated_steps"]}, {"Publicação", "Resolução efetiva", "Selagem"})
+        canceled = self.row(self.market("canceled", resolved_at=None, sealed_at=None))
+        self.assertTrue(all(m["time_label"] == "Não se aplica" for m in canceled["undated_steps"]))
+        coincident = self.row(self.market("sealed", created_at=NOW, published_at=NOW, close_at=NOW,
+                              expected_resolution_at=NOW, resolved_at=NOW, sealed_at=NOW, seal_due_at=NOW))
+        self.assertTrue(all(m["gap_label"] == "Mesmo instante" for m in coincident["time_sequence"][:-1]))
+
+    def test_duration_controls_extra_spacing_with_stable_query_scale(self):
+        from apps.web.django.admin_ops.views import _build_contract_timeline
+        market = self.market("locked", created_at=NOW - timedelta(days=21),
+                             published_at=NOW - timedelta(days=1),
+                             close_at=NOW - timedelta(days=1) + timedelta(hours=1))
+        row = self.row(market)
+        by_field = {m.get("field"): m for m in row["time_sequence"]}
+        long_gap = by_field["created_at"]["gap_extra_px"]
+        short_gap = by_field["published_at"]["gap_extra_px"]
+        self.assertGreater(long_gap, short_gap)
+        self.assertAlmostEqual(long_gap, 480 * short_gap, delta=0.25)
+        markets = [self.market(slug=f"duration-{i}", expected_resolution_at=NOW + timedelta(days=i + 1)) for i in range(12)]
+        first, _ = self.contract_context(markets)
+        more, _ = self.contract_context(markets, "?limit=20")
+        self.assertEqual(first["timeline"]["rows"][0]["time_sequence"], more["timeline"]["rows"][0]["time_sequence"])
+
+    def test_scale_includes_actual_sealing_and_planned_due(self):
+        from apps.web.django.admin_ops.views import _build_contract_timeline
+        m = self.market("sealed", sealed_at=NOW + timedelta(days=3), seal_due_at=NOW + timedelta(days=5))
+        timeline = _build_contract_timeline([m], today=NOW, include_terminal=True)
+        self.assertIn("22/10/2026", timeline["ends_at_label"])
+        self.assertTrue(all(0 <= x["position"] <= 100 for x in timeline["rows"][0]["markers"]))
+
+    def contract_context(self, markets, query=""):
+        from django.test import RequestFactory
+        from apps.web.django.admin_ops import views
+        request = RequestFactory().get("/admin-ops/contracts/" + query)
+        request.session = {"auth_api_token": "fixture", "auth_api_user": {"is_staff": True}}
+        data = {"markets": markets, "counts": {"locked": len(markets)},
+                "schedule_count_scope": "filtered_query_before_temporal_filter",
+                "schedule_summary": [{"label": "Apuração prevista", "total": len(markets)}]}
+        with patch.object(views, "admin_get_markets", return_value=data) as api, patch.object(views, "render", side_effect=lambda req, template, context: context), patch.object(views.timezone, "now", return_value=NOW):
+            context = views.contracts(request)
+        return context, api
+
+    def test_load_more_preserves_scale_filter_order_counts_and_history(self):
+        markets = [self.market(slug=f"fixture-{i}", expected_resolution_at=NOW + timedelta(days=i + 1)) for i in range(12)]
+        for m in markets:
+            m.update(original_expected_resolution_label="18/10/2026 17:00 America/Sao_Paulo",
+                     schedule_history=[{"reason": "Adiamento <fonte>", "after": {"expected_resolution_at": "2026-11-01T20:00:00Z"}}])
+        before = copy.deepcopy(markets)
+        query = "?status=locked&q=fixture&temporal=resolution_scheduled&order=created_asc"
+        first, api = self.contract_context(markets, query)
+        more, _ = self.contract_context(markets, query + "&limit=20")
+        api.assert_called_once_with("fixture", status="locked", q="fixture", temporal="resolution_scheduled", order="created_asc", active_contracts=False)
+        self.assertEqual(len(first["timeline"]["rows"]), 10)
+        self.assertEqual(len(more["timeline"]["rows"]), 12)
+        self.assertEqual(first["timeline"]["rows"], more["timeline"]["rows"][:10])
+        self.assertEqual(first["timeline"]["ends_at_label"], more["timeline"]["ends_at_label"])
+        self.assertEqual(markets, before)
+        from django.template.loader import render_to_string
+        html = render_to_string("admin_ops/contracts.html", first)
+        for text in ("Fechado", "Fechamento programado", "Previsão original e histórico", "Adiamento &lt;fonte&gt;", "etapa sem conclusão confirmada", "10 de 12", "Carregar mais", "Contadores da consulta antes do filtro temporal", "totais do catálogo completo", "contract-time-sequence", "Espaçamento por duração, com mínimo para leitura dos rótulos.", "Fechamento programado", "horário previsto"):
+            self.assertIn(text, html)
+        self.assertNotIn("phase-state-active", html)
+        self.assertNotIn("Agora", html)
+
+    def test_timeline_regions_are_named_for_their_market_before_and_after_load_more(self):
+        from html.parser import HTMLParser
+        from django.template.loader import render_to_string
+        from django.urls import reverse
+
+        class Elements(HTMLParser):
+            def __init__(self):
+                super().__init__()
+                self.tags = []
+                self.text = {}
+                self.current_id = None
+
+            def handle_starttag(self, tag, attributes):
+                attrs = dict(attributes)
+                self.tags.append((tag, attrs))
+                if attrs.get("id"):
+                    self.current_id = attrs["id"]
+                    self.text[self.current_id] = ""
+
+            def handle_data(self, data):
+                if self.current_id:
+                    self.text[self.current_id] += data
+
+            def handle_endtag(self, tag):
+                self.current_id = None
+
+        markets = [self.market(slug=f"named-{i}", title=f"Evento {i} & <critério>") for i in range(12)]
+        for query, count in (("", 10), ("?limit=20", 12)):
+            with self.subTest(query=query):
+                context, _ = self.contract_context(markets, query)
+                parser = Elements()
+                parser.feed(render_to_string("admin_ops/contracts.html", context))
+                ids = [attrs["id"] for _, attrs in parser.tags if "id" in attrs]
+                self.assertEqual(len(ids), len(set(ids)))
+                by_id = {attrs["id"]: attrs for _, attrs in parser.tags if "id" in attrs}
+                regions = [attrs for _, attrs in parser.tags if attrs.get("class") == "contract-time-scroll"]
+                self.assertEqual(len(regions), count)
+                for region, market in zip(regions, markets):
+                    label_ids = region["aria-labelledby"].split()
+                    self.assertEqual(" ".join(parser.text[identifier] for identifier in label_ids),
+                                     "Cronograma " + market["title"])
+                    self.assertEqual(by_id[label_ids[-1]]["href"], reverse("admin-ops-market-edit", args=[market["slug"]]))
+                    self.assertIn("use as setas", parser.text[region["aria-describedby"]])
+                    self.assertEqual(region["tabindex"], "0")
+
+    def test_terminal_render_has_no_pending_resolution_for_canceled_and_explicit_missing_actual_dates(self):
+        from django.template.loader import render_to_string
+        for status in ("resolved", "sealed", "canceled"):
+            context, api = self.contract_context([self.market(status)], "?status=" + status)
+            html = render_to_string("admin_ops/contracts.html", context)
+            self.assertIn("Histórica", html)
+            if status == "canceled":
+                self.assertNotIn("Pendente", html)
+                self.assertIn("Não se aplica", html)
+            else:
+                self.assertIn("Resolvido — data não registrada", html)
+            self.assertEqual(context["timeline"]["total"], 1)
 
 
 class AgendaPersistenceTests(AppendOnlyTransactionTestCase):

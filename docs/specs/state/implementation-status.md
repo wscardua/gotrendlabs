@@ -1,3 +1,11 @@
+## 2026-10-18 — Painel de contratos: fechamento local preparado
+
+FEAT-RESOLUTION-AGENDA-001 v1.2: fechamento confirmado pelo estado da FastAPI; previsão vencida/histórica, cancelamento, resolução efetiva e selagem coerentes com seus registros. Timeline simples com Hoje, intervalos e espaçamento adaptado à duração (piso para rótulos), Sem data à direita na mesma linha e regiões acessíveis nomeadas por mercado. Filtros, contadores, ordenação, histórico e Carregar mais preservados.
+
+41 testes em PostgreSQL isolado aprovados (11.578s); OpenAPI, Django check, JavaScript e Dockerfile check aprovados. Review concluído e finding de acessibilidade corrigido. Sem nova migration, flag, backfill ou mudança API/MCP/Flutter. Publicação da interface ainda pendente da aprovação prévia do título/descrição da PR, CI/merge/Actions e smoke produtivo. Branch local `fix/contracts-timeline-states` será preservada.
+
+Fonte vigente: [recibo de fechamento](../testing/contracts-timeline-closeout-20261018.md) e [aceites atuais](../testing/contracts-timeline-acceptance-20261018.md). WFLOW-20261018-CONTRACTS-TIMELINE-CLOSEOUT. O histórico de alternativas visuais foi preservado em workflow-runs; o recibo define a implementação final.
+
 ## 2026-10-18 — agenda produtiva regularizada
 
 Implementação/rollout concluídos pelas PRs #170/#171, deploy d4c2348 aprovado. Complementos de dados agora aplicados com autorização explícita: nove públicos versão 1, datas aprovadas às 20h BRT, definições/previsões/finanças preservadas e integridade pública válida incluindo agendas. Na aplicação, drafts 53/55 passaram à revisão 8/preparation, sem publicação pelo executor. Consulta MCP posterior encontrou ambos abertos, revisão 10/approved e agenda versão 1 às 20h BRT; não atribuir essa publicação posterior à operação de backfill. 98 regressões/219.402s OK, dry-run, snapshot dedicado, aplicação transacional/replay e auditoria full/checkpoint 37 confirmados. Sem novo código/deploy/contrato/MCP scope. [Recibo](../../operations/resolution-agenda-application-20261018.md). Este estado substitui as pendências históricas de rollout/backfill abaixo; release mobile e gaps de fonte ampliada permanecem separados.

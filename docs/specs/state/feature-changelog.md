@@ -1,3 +1,11 @@
+## 2026-10-18 — Painel de contratos: fechamento local preparado
+
+FEAT-RESOLUTION-AGENDA-001 v1.2: fechamento confirmado pelo estado da FastAPI; previsão vencida/histórica, cancelamento, resolução efetiva e selagem coerentes com seus registros. Timeline simples com Hoje, intervalos e espaçamento adaptado à duração (piso para rótulos), Sem data à direita na mesma linha e regiões acessíveis nomeadas por mercado. Filtros, contadores, ordenação, histórico e Carregar mais preservados.
+
+41 testes em PostgreSQL isolado aprovados (11.578s); OpenAPI, Django check, JavaScript e Dockerfile check aprovados. Review concluído e finding de acessibilidade corrigido. Sem nova migration, flag, backfill ou mudança API/MCP/Flutter. Publicação da interface ainda pendente da aprovação prévia do título/descrição da PR, CI/merge/Actions e smoke produtivo. Branch local `fix/contracts-timeline-states` será preservada.
+
+Fonte vigente: [recibo de fechamento](../testing/contracts-timeline-closeout-20261018.md) e [aceites atuais](../testing/contracts-timeline-acceptance-20261018.md). WFLOW-20261018-CONTRACTS-TIMELINE-CLOSEOUT. O histórico de alternativas visuais foi preservado em workflow-runs; o recibo define a implementação final.
+
 ## 2026-10-18 — agenda operacional às 20h aplicada em produção
 
 Nove mercados publicados receberam complementos assinados vinculados às definições originais; dois drafts receberam a previsão e novo snapshot sem aprovação reaproveitada. Horário 20h America/Sao_Paulo aprovado pelo usuário; critérios históricos, inclusive referências a consulta às 12h, preservados com proveniência explícita da decisão posterior. Integridade, carteira, previsões, reputação e opções preservadas por comparação transacional; replay idempotente, auditoria full e smokes públicos/MCP aprovados. [Datas e evidências](../../operations/resolution-agenda-application-20261018.md). Sem alteração funcional de API/clients ou nova release. Consulta MCP posterior encontrou 53/55 abertos, revisão 10/approved; publicação posterior fora da operação de backfill, registrada separadamente no recibo.

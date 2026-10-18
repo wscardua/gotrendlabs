@@ -13520,10 +13520,40 @@ body[data-theme="dark"] .market-editor-main .editor-section { background: transp
 }
 
 /* Agenda: every planned marker has a text row; no progress implication. */
-.contract-phases { grid-template-columns: repeat(auto-fit,minmax(110px,1fr)); }
+.contract-phases { grid-template-columns: repeat(auto-fit,minmax(145px,1fr)); }
 .contract-phase { min-width:0; overflow-wrap:anywhere; }
 .contract-market details { margin-top:.75rem; }
 .contracts-marker.marker-planned { border-radius:0; transform:translate(-50%,-50%) rotate(45deg); background:var(--panel,#fff); border:2px solid currentColor; }
 
 .contracts-filter-form select { max-width:100%; }
 @media(max-width:700px) { .contract-phases { grid-template-columns:repeat(2,minmax(0,1fr)); } .contracts-filter-form { flex-wrap:wrap; } }
+
+/* A historical forecast is information, never an active or pending obligation. */
+.contract-phase.phase-state-historical { border-style: dashed; }
+.contract-phase.phase-state-historical .phase-dot { background: transparent; }
+.contracts-marker.marker-sealed { border: 2px solid currentColor; }
+.contract-phase strong,
+.contract-phase small { grid-column: 1 / -1; }
+
+/* A quiet chronological rail: durations above, labels and dates below. */
+.contract-row > .contract-time-scroll { grid-column: 1 / -1; width: 100%; min-width: 0; box-sizing: border-box; padding: 4px 0 16px; display: flex; align-items: flex-start; gap: 20px; overflow-x: auto; }
+.contract-time-scroll:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+.contract-time-track { flex: 1 0 auto; min-width: max-content; padding: 4px 0 10px; }
+.contract-time-sequence { display: flex; min-width: max-content; margin: 0; padding: 0; list-style: none; }
+.contract-time-item { position: relative; flex: 1 0 calc(136px + var(--time-extra)); min-width: 0; display: grid; grid-template-rows: 34px 32px 18px; justify-items: start; align-items: start; text-align: center; padding: 0 12px; box-sizing: border-box; }
+.contract-time-item:not(:last-child)::after { content: ""; position: absolute; top: 22px; left: 76px; width: calc(100% - 16px); border-top: 1px solid var(--line); }
+.contract-time-item strong { color: var(--ink); font-size: 12px; line-height: 16px; font-weight: 600; width: 112px; }
+.contract-time-date { color: var(--muted); font-size: 11px; line-height: 18px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.contract-time-symbol { display: inline-block; flex: 0 0 auto; width: 7px; height: 7px; color: var(--ink); box-sizing: border-box; }
+.contract-time-item > .contract-time-symbol { margin: 19px 0 0 52.5px; }
+.contract-time-item > .contract-time-date { width: 112px; }
+.contract-time-symbol.is-actual { background: currentColor; border-radius: 50%; }
+.contract-time-symbol.is-planned { border: 1.5px solid currentColor; transform: rotate(45deg); }
+.contract-time-item.is-today strong, .contract-time-item.is-today .contract-time-date { color: var(--green); }
+.contract-time-item > .contract-time-symbol.is-today { width: 2px; height: 16px; margin: 15px 0 0 55px; background: var(--green); }
+.contract-time-gap { position: absolute; top: 0; left: 68px; width: 100%; color: var(--muted); font-size: 10px; line-height: 14px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.contract-time-undated { flex: 0 0 164px; padding: 4px 0 4px 16px; border-left: 1px solid var(--line); font-size: 11px; line-height: 16px; color: var(--muted); }
+.contract-time-undated > strong { font-weight: 500; }
+.contract-time-undated ul { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 8px 0 0; padding: 0; }
+.contract-time-undated li { display: flex; flex-direction: column; gap: 1px; }
+.contract-time-undated b { color: var(--ink); font-weight: 500; }
