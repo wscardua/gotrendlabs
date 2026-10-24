@@ -24,11 +24,11 @@ impacta:
 
 # Analytics proprio
 
-## Evolução histórica local v0.8 — 24/10/2026
+## Histórico analítico v0.9 — implantação técnica 24/10/2026
 
-Implementação em branch local, sem migração/backfill produtivo: contadores diários de eventos, presença ator/dia para distintos/coortes exatos, funil consolidado e checkpoint verificável antecedem o expurgo. FastAPI combina consolidados com bruto recente por dia exclusivo. Mercado publicado recebe snapshot de taxonomia; a migração marca classificações anteriores como reconstruídas do registro atual. `market_id` é capturado na ingestão para persistir atribuição depois da remoção de slug. Daemon processa até 30 dias maduros por ciclo; [runbook](../../guides/mcp-analytics-history.md) cobre backfill e recuperação. O resumo Admin Ops de 1/7/30/90 dias permanece com contrato próprio; MCP usa [contrato separado](../contracts/mcp-analytics.md) e scope explícito.
+Implementação implantada pela PR #175, com migration e consolidação produtivas verificadas: contadores diários de eventos, presença ator/dia para distintos/coortes exatos, funil consolidado e checkpoint verificável antecedem o expurgo. FastAPI combina consolidados com bruto recente por dia exclusivo. Mercado publicado recebe snapshot de taxonomia; a migração marca classificações anteriores como reconstruídas do registro atual. `market_id` é capturado na ingestão para persistir atribuição depois da remoção de slug. Daemon processa até 30 dias maduros por ciclo; [runbook](../../guides/mcp-analytics-history.md) cobre backfill e recuperação. O resumo Admin Ops de 1/7/30/90 dias permanece com contrato próprio; MCP usa [contrato separado](../contracts/mcp-analytics.md) e scope explícito.
 
-Classes: eventos e volume novo são aditivos; atores únicos e coortes não são; stake ativo é estoque em referência; CTR/retorno/cancelamento são razões de numeradores e denominadores. Dados de visita já apagados antes da migration não voltam. Estado atual de likes/favoritos/comentários e timestamps de resolução não substitui histórico ausente de alterações. Não declarar validação produtiva desta evolução.
+Classes: eventos e volume novo são aditivos; atores únicos e coortes não são; stake ativo é estoque em referência; CTR/retorno/cancelamento são razões de numeradores e denominadores. Dados de visita já apagados antes da migration não voltam. Estado atual de likes/favoritos/comentários e timestamps de resolução não substitui histórico ausente de alterações. A validação produtiva limitada está documentada no [recibo](../testing/mcp-analytics-production-closeout-20261024.md); não inferir observações históricas anteriores à instrumentação.
 
 ## Objetivo
 

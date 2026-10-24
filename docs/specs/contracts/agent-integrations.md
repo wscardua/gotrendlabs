@@ -1,8 +1,10 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
-## Analytics MCP (implementação local, 24/10/2026)
+## Analytics MCP (implantação técnica, 24/10/2026)
 
 O scope `analytics:read` autoriza somente as oito leituras definidas em [mcp-analytics.md](mcp-analytics.md); `metrics:read` continua para `get_editorial_signals`. Grants antigos não recebem o novo scope implicitamente. Schemas Pydantic são compartilhados pelo REST e MCP, com snapshot OpenAPI versionado. Erros `revision_required`/`snapshot_changed` (409) indicam reinício de paginação; eventos técnicos continuam com IDs/resultados fixos e replay em spool sem resposta analítica, token ou dados sensíveis. Nenhuma permissão de publicação, resolução, wallet, parecer humano ou SQL é criada. Consultar política antes de propor mercados; análise não autoriza ação.
+
+Versão 1.6 — 2026-10-24. Analytics implantado pela PR #175; concessão externa de `analytics:read` e smoke das oito ferramentas dependem do fluxo staff/MFA e novo OAuth. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md).
 
 Versão 1.5 — 2026-10-10. Implantada pela PR #148; Dot/piloto autenticado pendentes. Autoridade: [feature](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md). Rotas abaixo estão na FastAPI produtiva e no snapshot OpenAPI. [Evidência de rollout](../testing/editorial-document-production-20261010.md).
 

@@ -1,5 +1,7 @@
 # Aceite e regressão — FEAT-MCP-001
 
+O [recibo produtivo de analytics](mcp-analytics-production-closeout-20261024.md) confirma CI, migration, consolidação, consultas longas e resumo MCP autenticado após a PR #175. O aceite das oito ferramentas novas para uma integração externa depende de `analytics:read` concedido com MFA, novo OAuth e smoke positivo; não é inferido do resumo `metrics:read`.
+
 ## Revisão 1.5 — documento único
 
 Aceite do catálogo MCP: conferir `tools/list` autenticado real para três entradas `editorial_record` estritas e documentais (1–60.000 caracteres, versão/hash da política), `get_market` e `get_draft_review` com documento único e submissão só por ID/revisão/idempotência. Chamar `validate_market_draft` com documento e pendências declaradas sem criar mercado: retorno deve manter `pending` explícito, origem `agent_reported` e nenhuma alegação de aprovação/publicação. O contrato de política deve manter v1.2 e fornecer `checklist_hash` e `record_template_hash` independentes, iguais ao SHA-256 do conteúdo servido. Se um cliente ainda anunciar campos antigos enquanto o servidor publica o contrato novo, investigar e atualizar o cadastro/cache do cliente antes de mudar o backend.
