@@ -3,16 +3,18 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 const timers = new Map();
 const calls = [];
+const analyticsEvents = [];
 let timerId = 0;
 const targets = new Map();
 function form(id, position = false) {
   const handlers = {};
-  const target = {html: '', text: '', attrs: {}, setAttribute(k, v) {this.attrs[k] = v;}, replaceChildren(node) {this.text = node.textContent; this.html = '';}, set innerHTML(v) {this.html = v; this.text = '';}};
+  const target = {html: '', text: '', attrs: {}, setAttribute(k, v) {this.attrs[k] = v;}, replaceChildren(node) {this.text = node.textContent; this.html = '';}, set innerHTML(v) {this.html = v; this.text = '';}, querySelector: selector => selector === '[data-analytics-prediction-preview]' && target.html.includes('data-analytics-prediction-preview') ? {} : null};
   targets.set(id, target);
   const instance = {
     dataset: {previewTarget: id, previewLoading: 'Loading', previewError: 'Try again', [position ? 'positionPreviewUrl' : 'predictionPreviewUrl']: '/preview/' + id},
     fields: {option_id: '', stake_amount: '80', action: position ? 'reinforcement' : '', choice: 'SIM'},
-    matches: () => true, querySelectorAll: () => [],
+    matches: selector => selector === '[data-prediction-preview-url]' ? !position : true,
+    closest: () => ({dataset: {marketSlug: 'market-a'}}), querySelectorAll: () => [],
     querySelector: () => null,
     addEventListener: (name, handler) => {handlers[name] = handler;},
     emit: () => handlers.input(), target,
@@ -28,7 +30,9 @@ class FormData {
 }
 const context = {
   window: {}, FormData, WeakMap, JSON,
-  document: {querySelectorAll: () => [initial, position], getElementById: id => targets.get(id), createElement: () => ({})},
+  document: {querySelectorAll: () => [initial, position], getElementById: id => targets.get(id), createElement: () => ({}), dispatchEvent: event => analyticsEvents.push(event)},
+  CustomEvent: class {constructor(type, options) {this.type = type; this.detail = options.detail;}},
+  location: {pathname: '/markets/market-a/'},
   setTimeout: callback => {timers.set(++timerId, callback); return timerId;},
   clearTimeout: id => timers.delete(id),
   fetch: (url, options) => new Promise(resolve => calls.push({url, options, resolve})),
@@ -69,13 +73,16 @@ async function respond(index, {ok = true, marker = '1', html = '<div>preview</di
   await respond(3, {marker: null, html: '<html>Login</html>'});
   assert.equal(initial.target.text, 'Try again', 'full HTML page must not enter fragment');
   initial.emit(); tick();
-  await respond(4, {html: 'RECOVERED'});
-  assert.equal(initial.target.html, 'RECOVERED');
+  await respond(4, {html: '<div data-analytics-prediction-preview>RECOVERED</div>'});
+  assert.equal(initial.target.html, '<div data-analytics-prediction-preview>RECOVERED</div>');
+  assert.equal(analyticsEvents.length, 1);
+  assert.equal(analyticsEvents[0].detail.marketSlug, 'market-a');
   position.fields.option_id = '8'; position.emit(); tick();
   assert.equal(calls.length, 6);
   assert.equal(calls[5].url, '/preview/position');
   await respond(5, {html: 'POSITION'});
   assert.equal(position.target.html, 'POSITION');
-  assert.equal(initial.target.html, 'RECOVERED', 'tickets remain independent');
+  assert.equal(initial.target.html, '<div data-analytics-prediction-preview>RECOVERED</div>', 'tickets remain independent');
+  assert.equal(analyticsEvents.length, 1, 'position preview is not an initial prediction preview');
   console.log('prediction preview: burst, serialization, stale responses, errors and recovery OK');
 })().catch(error => {console.error(error); process.exitCode = 1;});

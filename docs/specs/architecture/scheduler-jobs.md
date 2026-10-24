@@ -47,3 +47,6 @@ O executor de thumbnails também processa imagens de badges quando a habilitaç�
 
 
 Auditoria do worker de imagens usa diretamente `backend_api.admin_events`, sem importar a aplicação HTTP `main`. O executor não precisa dos segredos de password pepper/TOTP; validação desses segredos permanece obrigatória na API. Claim e evento continuam na mesma transação antes de qualquer chamada ao provedor. Incidente WFLOW-20261009-IMAGE-WORKER-AUDIT-FIX-001.
+# Consolidação analítica (branch local 2026-10-24)
+
+O daemon chama `consolidate_pending` antes de `prune_analytics_data`. Cada ciclo processa até 30 dias maduros; retomada usa checkpoints por dia, recomputação idempotente e lock transacional. Evento atrasado altera o último recebimento e força recomputação antes de expurgo. [Runbook](../../guides/mcp-analytics-history.md).

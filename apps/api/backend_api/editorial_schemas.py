@@ -2,9 +2,9 @@
 
 from apps.api.backend_api.resolution_schedule_contract import ScheduleFields
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID
-from typing import Literal
+from typing import Any, Literal
 from urllib.parse import urlsplit
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -13,6 +13,7 @@ SCOPES = (
     "editorial:read",
     "catalog:read",
     "metrics:read",
+    "analytics:read",
     "drafts:write",
     "drafts:submit",
 )
@@ -44,10 +45,11 @@ class IntegrationConfig(Strict):
             "editorial:read",
             "catalog:read",
             "metrics:read",
+            "analytics:read",
             "drafts:write",
             "drafts:submit",
         ]
-    ] = Field(default_factory=list, max_length=5)
+    ] = Field(default_factory=list, max_length=6)
     drafts_per_day: int = Field(default=5, ge=0, le=1000)
     calls_per_minute: int = Field(default=60, ge=0, le=10000)
     concurrent_calls: int = Field(default=2, ge=1, le=20)
@@ -188,6 +190,14 @@ class ToolEvent(Strict):
         "search_markets",
         "get_market",
         "get_editorial_signals",
+        "get_analytics_coverage",
+        "get_platform_analytics",
+        "get_analytics_series",
+        "compare_analytics_periods",
+        "get_analytics_retention",
+        "list_market_analytics",
+        "get_market_analytics",
+        "compare_editorial_analytics",
         "validate_market_draft",
         "create_market_draft",
         "update_market_draft",
@@ -290,6 +300,128 @@ class SignalsResponse(BaseModel):
     humans: int | None
     bots: int | None
     analytics: dict
+
+
+class AnalyticsCoverageResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    coverage: dict[str, Any]
+    definitions: dict[str, str]
+    limits: dict[str, Any]
+
+
+class AnalyticsOverviewResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    requested: dict[str, Any]
+    observed_coverage: dict[str, Any]
+    partial_period: bool
+    filters: dict[str, Any]
+    metric_coverage: dict[str, Any]
+    consolidated_at: datetime | None
+    counts: dict[str, int | None]
+    card_ctr: dict[str, Any]
+    actors: dict[str, int | None]
+    new_signups: int
+    participation: dict[str, Any]
+    funnel: dict[str, Any]
+    stake: dict[str, Any]
+    social: dict[str, Any]
+    quality: dict[str, Any]
+    precision: str
+    availability: str
+
+
+class AnalyticsRetentionResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    requested: dict[str, Any]
+    timezone: str
+    observed_first: date | None
+    cohorts: dict[str, Any]
+    precision: str
+    partial_period: bool
+    availability: str
+
+
+class AnalyticsSeriesResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    grain: str
+    requested: dict[str, Any]
+    filters: dict[str, Any]
+    observed_first: date | None
+    metric_coverage: dict[str, Any]
+    items: list[dict[str, Any]]
+    has_more: bool
+    next_cursor: date | None
+    revision: str
+    precision: str
+
+
+class AnalyticsMarketsResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    requested: dict[str, Any]
+    observed_first: date | None
+    consolidated_at: datetime | None
+    items: list[dict[str, Any]]
+    has_more: bool
+    next_cursor: int | None
+    revision: str
+    order: str
+    precision: str
+    partial_period: bool
+
+
+class AnalyticsMarketResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    requested: dict[str, Any]
+    observed_first: date | None
+    consolidated_at: datetime | None
+    market: dict[str, Any]
+    observed: dict[str, int | None]
+    actors: dict[str, int | None]
+    participation: dict[str, Any]
+    funnel: dict[str, Any]
+    stake: dict[str, Any]
+    social: dict[str, Any]
+    card_ctr: dict[str, Any]
+    precision: str
+    partial_period: bool
+
+
+class AnalyticsCompareResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    current: AnalyticsOverviewResponse
+    baseline: AnalyticsOverviewResponse
+    delta: dict[str, Any]
+    periods_equivalent_days: int
+    causal_claim: Literal[False]
+
+
+class EditorialAnalyticsResponse(Strict):
+    contract_version: Literal["analytics-mcp.v1"]
+    generated_at: datetime
+    timezone: str
+    requested: dict[str, Any]
+    dimension: str
+    items: list[dict[str, Any]]
+    has_more: bool
+    next_cursor: str | None
+    revision: str
+    order: str
+    observed_first: date | None
+    taxonomy_basis: str
+    precision: str
 
 
 class ValidationResponse(BaseModel):

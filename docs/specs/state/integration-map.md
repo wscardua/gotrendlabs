@@ -16,6 +16,12 @@ FastAPI `market_public_metrics` → `MarketResponse.participants`/`total_partici
 
 # Integration Map
 
+## MCP analytics histórico — branch local 2026-10-24
+
+Revisão: web (`prediction-preview.js` após fragmento válido) e Flutter (`prediction_ticket.dart` após resposta válida) emitem `prediction_preview_viewed` pelo contrato de ingestão existente. FastAPI preserva a cobertura individual desse evento e ordena a jornada na consolidação/consulta; MCP apenas adapta as respostas. Presença histórica grava HMAC sob segredo estável; exclusão de conta passa pelo serviço FastAPI e reconcilia checkpoint, sem acesso direto do adaptador ao banco. Ferramentas/escopo/replay MCP permanecem; schemas OpenAPI incorporam `metric_coverage` e filtros por bloco. Distribuição Flutter é release separada.
+
+Browser/web/mobile → ingestão FastAPI → eventos PostgreSQL; daemon FastAPI → consolidação diária transacional/checkpoint → expurgo condicionado. Previsões, wallet e mercados são fatos de domínio consultados pela FastAPI. MCP → OAuth/escopo `analytics:read` → endpoints FastAPI `/integrations/editorial/analytics/*` → respostas agregadas versionadas. `metrics:read` conserva sinais resumidos. Admin Ops mantém MFA e não transfere autoridade humana ao MCP. OpenAPI e [contrato](../contracts/mcp-analytics.md) descrevem leitura, cobertura e continuação; nenhum SQL ou acesso PostgreSQL no adaptador. Estado apenas local, sem deploy.
+
 ## PR #156 — fluxo ativo em PRD (2026-10-11)
 
 Admin Ops → FastAPI staff/MFA → função editorial restrita/limpeza/auditoria transacional; migrations 0006/0026 aplicadas. API/web/MCP/daemon/worker implantados no SHA 32a4513. MCP get_editorial_policy serve checklist/modelo atualizados; novas capacidades administrativas não são expostas. Smoke com roles reais e rollback passou. [Recibo](../testing/prepublication-editorial-production-20261011.md).

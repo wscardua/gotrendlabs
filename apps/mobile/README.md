@@ -1,5 +1,7 @@
 # Mobile
 
+Na branch local `feature/mcp-analytics-history`, o ticket inicial envia `prediction_preview_viewed` somente depois de mostrar uma prévia válida da API. A coleta usa o tracker existente e não altera previsão, autorização nem navegação quando falha. O backend informa cobertura por evento ao MCP; a distribuição do app exige release mobile própria.
+
 Atualização 2026-10-17: Cards/painel usam `total_participants` obrigatório, com contagem humana + bot e singular/plural, sem fallback. Flutter mantém o motivo no subtítulo de Trocar escolha. Código validado; distribuição exige próxima release mobile (o workflow GitHub publica web/API). [Fechamento](../../docs/specs/testing/participants-closeout-20261017.md).
 
 Cliente Flutter mobile do GoTrendLabs. O MVP validado hoje e Android; a estrutura iOS existe para preparacao de simulador, mas depende de Xcode completo ativo no Mac.

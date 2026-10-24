@@ -103,3 +103,6 @@ badge_image_service/routes definem contexto, ownership/sessão/editor e versão/
 ## Agenda de resolução — 2026-10-17
 
 Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+# Analytics MCP histórico (branch local 2026-10-24)
+
+FastAPI é a fonte de verdade para agregação, autorização `analytics:read`, limites temporais e erros tipados. `analytics_reports.py` combina checkpoints diários observados com cauda bruta não consolidada e fatos de domínio; `analytics_history.py` consolida por dia sob advisory lock e `analytics_retention.py` só expurga eventos com checkpoint verificável. O adaptador `apps/mcp/server.py` não acessa ORM/SQL. [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md) e [contrato](../contracts/mcp-analytics.md).

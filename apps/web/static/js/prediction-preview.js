@@ -23,7 +23,15 @@
         throw new Error('Invalid preview response');
       }
       const html = await response.text();
-      if (state.pending === request) state.target.innerHTML = html;
+      if (state.pending === request) {
+        state.target.innerHTML = html;
+        if (form.matches('[data-prediction-preview-url]') &&
+            state.target.querySelector('[data-analytics-prediction-preview]')) {
+          document.dispatchEvent(new CustomEvent('gtl:prediction-preview-viewed',
+            {detail: {marketSlug: form.closest('[data-market-slug]')?.dataset.marketSlug ||
+              location.pathname.match(/^\/markets\/([^/]+)\//)?.[1] || ''}}));
+        }
+      }
     } catch (_) {
       if (state.pending === request) message(state, form.dataset.previewError);
     } finally {

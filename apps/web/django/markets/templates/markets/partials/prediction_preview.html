@@ -1,5 +1,5 @@
 {% if preview_error %}<div class="notice danger" role="status">{{ preview_error }}</div>{% else %}
-<div><span>Opção escolhida</span><strong data-selected-choice>{{ choice }}</strong></div>
+<div data-analytics-prediction-preview><span>Opção escolhida</span><strong data-selected-choice>{{ choice }}</strong></div>
 <div><span>Crédito possível se acertar</span><strong data-return-output="open">{{ estimated_return }} GT₵</strong></div>
 <div><span>Crédito reservado</span><strong data-locked-output="open">{{ amount }} GT₵</strong></div>
 {% endif %}

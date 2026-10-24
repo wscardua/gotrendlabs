@@ -46,6 +46,10 @@ Formulário de publicação aprovada alinhado ao contrato de identidade existent
 
 # Status de Implementação
 
+## 2026-10-24 — revisão local do histórico analytics MCP
+
+Branch `feature/mcp-analytics-history`: prévia válida passa a emitir `prediction_preview_viewed` no Flutter e na web; o backend devolve cobertura por evento, filtros efetivos por bloco, funil em ordem temporal e proteção de segmentos pequenos. Histórico de presença usa HMAC estável e rotina de exclusão; `GOTRENDLABS_ANALYTICS_ACTOR_KEY` é requisito de implantação. Contrato MCP/OpenAPI atualizado, sem nova ferramenta ou permissão. Testes locais e análise estática mobile concluídos; instalação/produção não alteradas.
+
 ## 2026-10-11 — exclusão e parecer implantados em PRD
 
 Entrega técnica implantada em PRD pela PR #156, merge 32a45131920af6f1427f484531b26b249cb5ef76. CI final da PR (38149320217) e main/deploy (38150080993) aprovados, 495 testes/2 skips por execução; build/OpenAPI aprovados, SSM c7d84727-16a3-4495-8056-5d20048b350d Success. Migrations editorial_integrations.0006/admin_ops.0026 aplicadas, serviços/worker recriados. Smoke com role real FastAPI, fixtures e auditoria em transação revertida confirmou exclusão preparation/in_review, limpeza de revisões, ID antigo 409, atestação humana e gate de publicação; rollback verificado. Execução da função pela role Django negada com 42501; PUBLIC sem EXECUTE, FastAPI sem DELETE geral de revisões. Site/API/discovery HTTP200, administração anônima 401 e JS atualizado. MCP expõe checklist v1.3/modelo v1.6 com hashes corretos e política v1.2/hash preservada, sem nova ferramenta/permissão. Snapshot pré-migration disponível. Nenhum mercado real excluído/aprovado ou inferência paga iniciada. Branch local/remota preservadas; homologação final do painel por operador staff/MFA permanece pendente, sem impedir conclusão técnica deste escopo. [Evidências](../testing/prepublication-editorial-production-20261011.md).
@@ -263,3 +267,6 @@ Fechamento local preparado: rodada ampla de 552 identificou cinco fixtures/mocks
 ### 17/10/2026 — Rollout e correção MCP da agenda
 
 Código da agenda integrado em main pela PR #170; migrations 0033–0036 e grants aplicados. API/web/daemon/executor operacionais. Deploy Actions falhou no MCP isolado; serviço restaurado por imagem com contrato puro verificado. Correção permanente/build MCP CI pendentes de PR própria. Inventário não revisado, nove públicos schedule_pending; release mobile separada. Evidências atuais no [fechamento](../testing/resolution-agenda-closeout-20261017.md), que substitui os estados preparatórios acima.
+## MCP analytics histórico — implementação local validada (24/10/2026)
+
+Branch isolada `feature/mcp-analytics-history` sobre `origin/main` 1373038c: consolidação observada, expurgo protegido, serviços de consulta FastAPI, oito ferramentas MCP, escopo `analytics:read`, migration 0027 e OpenAPI. Sem merge/deploy; status produtivo inalterado. O MCP conectado observado antes da mudança respondia `get_editorial_signals` com analytics indisponível; não usar como validação desta branch. Cobertura recuperável e limitações em [mcp-analytics](../contracts/mcp-analytics.md); procedimento em [runbook](../../guides/mcp-analytics-history.md).

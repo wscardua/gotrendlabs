@@ -95,3 +95,11 @@ Follow-up DCR ChatGPT: registro com callback HTTPS e scope omitido retorna 201, 
 - Extras desconhecidos não contornam validação de redirect, grant, auth method e response type. Schemas editoriais/admin seguem estritos.
 - Discovery do adaptador anuncia issuer textual idêntico ao AS/iss, usando a mesma canonicalização inicial sem barra final da FastAPI; scopes completos e challenge canonical preservados, /mcp sem token continua 401.
 - Fluxo SDK completo PKCE/code/refresh/tools executado com metadados nativos; CLI real local avança para autorização humana. Produção e login humano do operador precisam de evidência após rollout aprovado.
+## Analytics histórico MCP — aceite local (24/10/2026)
+
+- Contrato: ferramentas MCP e endpoints HTTP usam os mesmos modelos Pydantic/OpenAPI; `analytics:read` autoriza oito consultas e ausência de scope, integração pausada ou revogada recebem 403. `metrics:read` mantém apenas resumo `get_editorial_signals`.
+- Períodos: limites `[start,end)` em dias America/Sao_Paulo, `all_history`, um e dez anos, anterior equivalente, série paginada com `revision`, parcialidade e cobertura antes de conclusões antigas.
+- Histórico: confronto de DISTINCT por período com referência, reprocessamento idempotente, checkpoint antes de prune, eventos atrasados, funil por sessão/mercado e visitante que volta em nova sessão. Dias não consolidados usam eventos brutos; dias consolidados usam derivados uma única vez.
+- Correções de revisão: prévia emitida somente após resposta válida web/mobile; sequência temporal do funil idêntica antes/depois de consolidar; cobertura por evento distingue ausência de observação e zero; filtros efetivos por bloco; mercados/grupos de 1–4 participantes ocultam fatos humanos relacionados; HMAC histórico e exclusão de ator recompõem checkpoint bruto.
+- Segurança: testes integrados com FastAPI e cliente MCP Streamable HTTP local/isolado, sem dados de produção; ausência de PII nas respostas e separação humano/bot/staff.
+- Aceite de implantação adicional: EXPLAIN ANALYZE e carga com volume representativo, revisão de privacidade/retention, backfill verificável, token de integração escolhido por operador com MFA e smoke pós-deploy. [Contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).

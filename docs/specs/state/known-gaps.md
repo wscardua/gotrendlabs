@@ -12,6 +12,10 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 # Known Gaps
 
+## MCP analytics histórico — limitações da branch local 2026-10-24
+
+Histórico observado só começa no primeiro evento ainda recuperável na implantação; impressões, cliques, sessões e funil anteriores ao expurgo anterior são irrecuperáveis. Taxonomia anterior à migration usa estado atual como reconstrução identificada. Não há histórico de estados sociais nem de cada reversão de resolução; stake histórico é reconstrução limitada, não snapshot auditável. A presença histórica agora usa HMAC e possui exclusão/reconsolidação local testada, mas a chave estável precisa ser configurada e a exclusão operacional de visitante precisa ser ensaiada no ambiente de implantação. Teste de plano/carga com volume representativo e homologação com token externo ainda não ocorreram. O código não foi implantado e o serviço MCP conectado não valida esta branch. [Contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).
+
 ## Relevância visual de thumbnails — 2026-10-09
 
 Candidatas Ultra v2 de FURIA/CS2 (c96cea44) e Corinthians feminino (33b275ca) inspecionadas em prévia autenticada: sem relação temática, apesar de snapshots completos. Correção v3 preparada localmente; testes com provedor simulado validam composição do pedido, não imagens reais. Publicação depende de aprovação da PR; avaliação real v3 exige geração autorizada pelo operador. Não assumir que trocar Core por Ultra resolve: exemplos incorretos já usam Ultra.

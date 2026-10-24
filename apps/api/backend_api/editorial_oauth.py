@@ -208,10 +208,16 @@ class Server(AuthorizationServer):
     def generate(
         self, grant_type, client, user, scope, expires_in, include_refresh_token
     ):
+        # The authorization code expires in five minutes; that expiry must not
+        # shorten the access token advertised to the client. Both code and
+        # refresh artifacts carry the absolute grant in ``origin``.
+        origin = user.get("origin", user)
         expiry = min(
             a.now() + timedelta(minutes=10),
-            user["expires_at"],
-            user.get("origin", user)["expires_at"],
+            origin["expires_at"],
+            user["integration"]["expires_at"]
+            if "integration" in user
+            else origin["expires_at"],
         )
         return {
             "access_token": __import__("secrets").token_urlsafe(48),

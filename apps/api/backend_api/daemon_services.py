@@ -5,6 +5,7 @@ import os
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.agent_services import run_ai_agent_cycle
 from apps.api.backend_api.analytics import prune as prune_analytics
+from apps.api.backend_api.analytics_history import consolidate_pending
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
 from apps.api.backend_api.integrity_service import (
@@ -332,13 +333,17 @@ def prune_expired_ai_agent_actions(now=None):
 
 
 def prune_expired_analytics(now=None):
+    # Each day commits independently; a failed day leaves the checkpoint absent
+    # and the guarded purge below keeps its raw events for the next cycle.
+    consolidation = consolidate_pending(limit_days=30)
     with get_connection() as connection:
         with connection.cursor() as cursor:
             try:
                 retention_days = int(os.environ.get("GOTRENDLABS_ANALYTICS_RETENTION_DAYS", "90"))
             except ValueError:
                 retention_days = 90
-            return prune_analytics(cursor, now=now, retention_days=retention_days)
+            result = prune_analytics(cursor, now=now, retention_days=retention_days)
+            return {**result, "consolidation": consolidation}
 
 
 def prune_expired_operational_records(now=None):

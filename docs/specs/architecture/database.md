@@ -64,3 +64,6 @@ ThumbnailJob admite mercado nulo apenas para tentativa de mercado expired/market
 ## Agenda de resolução — 2026-10-17
 
 Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+# Histórico analítico MCP (branch local 2026-10-24)
+
+`admin_ops.0027` adiciona checkpoints por dia local, contagens aditivas por evento/mercado/plataforma/ator, presença diária de atores para DISTINCT entre dias, funil derivado de eventos por sessão/mercado e snapshot de taxonomia na publicação. A role FastAPI recebe acesso; MCP não recebe acesso ao PostgreSQL. Checkpoint e derivados são atualizados na mesma transação com lock por dia; o expurgo só passa após validar contagem e último recebimento. Índices cobrem data e mercado/data em eventos e derivados. Fatos de previsão continuam nas tabelas de domínio. [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md).

@@ -1,15 +1,16 @@
 ---
 id: FEAT-ANALYTICS-001
 titulo: "Analytics proprio web e mobile"
-versao: 0.7
+versao: 0.9
 status_spec: aprovada
 status_impl: implementada_validada
-ultima_atualizacao: 2026-10-12
+ultima_atualizacao: 2026-10-24
 origem:
   - conversa de produto de 2026-09-29
   - comparação Web/App e revisão de usabilidade de 2026-10-12
 contratos_afetados:
   - analytics-events.md
+  - mcp-analytics.md
 dependencias:
   - FEAT-AUTH-001
   - FEAT-MOBILE-001
@@ -22,6 +23,12 @@ impacta:
 ---
 
 # Analytics proprio
+
+## Evolução histórica local v0.8 — 24/10/2026
+
+Implementação em branch local, sem migração/backfill produtivo: contadores diários de eventos, presença ator/dia para distintos/coortes exatos, funil consolidado e checkpoint verificável antecedem o expurgo. FastAPI combina consolidados com bruto recente por dia exclusivo. Mercado publicado recebe snapshot de taxonomia; a migração marca classificações anteriores como reconstruídas do registro atual. `market_id` é capturado na ingestão para persistir atribuição depois da remoção de slug. Daemon processa até 30 dias maduros por ciclo; [runbook](../../guides/mcp-analytics-history.md) cobre backfill e recuperação. O resumo Admin Ops de 1/7/30/90 dias permanece com contrato próprio; MCP usa [contrato separado](../contracts/mcp-analytics.md) e scope explícito.
+
+Classes: eventos e volume novo são aditivos; atores únicos e coortes não são; stake ativo é estoque em referência; CTR/retorno/cancelamento são razões de numeradores e denominadores. Dados de visita já apagados antes da migration não voltam. Estado atual de likes/favoritos/comentários e timestamps de resolução não substitui histórico ausente de alterações. Não declarar validação produtiva desta evolução.
 
 ## Objetivo
 
@@ -72,7 +79,7 @@ A FastAPI calcula coortes D1, D7 e D30 em `America/Sao_Paulo`, independentemente
 
 Contas cadastradas usam `gotrendlabs_users.date_joined` como entrada e `user_id` autenticado em qualquer dispositivo para retorno, excluindo staff e bots. Visitantes usam `visitor_id` e a primeira visita anônima; retorno exige uma nova sessão anônima no mesmo navegador ou instalação. A passagem para conta cadastrada não é contada como retorno anônimo. O identificador de visitante não representa pessoa e pode ser reiniciado no logout. Retenção de uso não deve ser confundida com a política de armazenamento abaixo.
 
-O funil de desistência agrupa eventos de `prediction_started`, `prediction_option_selected`/`prediction_preview_viewed` e `prediction_submit_clicked` por sessao e mercado. Uma jornada so entra na contagem de abandono depois de 30 minutos sem atividade na sessao. O dashboard distingue parada antes da escolha e apos a escolha, sem afirmar o motivo nem confundir clique com previsao persistida. As conclusoes continuam medidas no banco de dominio.
+O funil de desistência agrupa eventos de `prediction_started`, `prediction_option_selected`/`prediction_preview_viewed` e `prediction_submit_clicked` por sessão e mercado. A consulta MCP exige ordem temporal de início, escolha e prévia; confirmação exige escolha e ocorre depois da prévia quando ela foi observada. A prévia web/mobile só é enviada após uma resposta válida da API ser mostrada, portanto não se inventa esse passo no histórico anterior à instrumentação. Uma jornada só entra na contagem de abandono depois de 30 minutos sem atividade na sessão. O dashboard distingue parada antes da escolha e após a escolha, sem afirmar o motivo nem confundir clique com previsão persistida. As conclusões continuam medidas no banco de domínio.
 
 Na web, `prediction_started` ocorre uma vez por visualização quando o ticket inicial entra na área visível. Se houver escolha antes do callback de visibilidade, o clique registra o início antes da escolha; ticket de reforço/revisão não inicia previsão inicial. Abrir um mercado sem ver o ticket não inicia a jornada. No mobile, voltar a um mercado após abrir outro gera nova visualização; rebuild do mesmo detalhe não gera outra.
 
@@ -86,7 +93,7 @@ A atualização da GeoLite ocorre por comando backend explícito `python -m apps
 
 ## Retencao e evolucao
 
-Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. Dados de auditoria, ledger e eventos administrativos nao participam do purge. Agregados, regras de insight, funis adicionais, fila offline mobile e catalogo ampliado seguem iteracoes por contrato; nao se deve afirmar cobertura onde a coleta nao esta instalada.
+Eventos detalhados: 90 dias por padrao; retencao e purge backend configuraveis. Dados de auditoria, ledger e eventos administrativos nao participam do purge. Após a migration v0.8, o expurgo de eventos só alcança dias maduros e verificados no histórico; agregados, presença e funil consolidados permanecem consultáveis. A fila offline mobile e catálogo ampliado seguem iterações por contrato; não se deve afirmar cobertura onde a coleta não está instalada.
 
 ## Evoluções fora do escopo v0.7
 

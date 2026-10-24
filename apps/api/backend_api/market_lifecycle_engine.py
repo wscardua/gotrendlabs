@@ -64,6 +64,19 @@ class MarketLifecycleEngine:
             """,
             (now, PROTOCOL_VERSION, self.staff_id, now, row["id"]),
         )
+        self.cursor.execute("""
+            INSERT INTO gotrendlabs_analytics_market_publication
+                (market_id,published_at,category_id,category_name,subcategory_id,subcategory_name,
+                 event_id,event_name,kind,close_at,provenance)
+            SELECT m.id,m.published_at,m.category_id,c.name,m.subcategory_id,s.name,
+                   m.event_id,e.name,m.kind,m.close_at,'observed_publication'
+            FROM gotrendlabs_markets m
+            JOIN gotrendlabs_market_categories c ON c.id=m.category_id
+            JOIN gotrendlabs_market_subcategories s ON s.id=m.subcategory_id
+            LEFT JOIN gotrendlabs_market_events e ON e.id=m.event_id
+            WHERE m.id=%s
+            ON CONFLICT (market_id) DO NOTHING
+        """, (row["id"],))
         self.record_admin_event(self.cursor, self.staff_id, "market.publish", "market", slug, note)
 
     def cancel_market(self, row, slug, note=""):

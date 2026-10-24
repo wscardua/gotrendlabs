@@ -12,6 +12,7 @@ from datetime import timedelta
 from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.db import connection
+from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from apps.api.backend_api.main import app
 from apps.api.backend_api import editorial_auth as a, editorial_service as domain
@@ -414,6 +415,12 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         r = self.client.post("/oauth/token", data=data)
         self.assertEqual(r.status_code, 200, r.text)
         tokens = r.json()
+        self.assertGreaterEqual(tokens["expires_in"], 500)
+        stored_access = Token.objects.get(token_hash=a.digest(tokens["access_token"]))
+        self.assertLessEqual(
+            abs((stored_access.expires_at - a.now()).total_seconds() - tokens["expires_in"]),
+            2,
+        )
         self.assertEqual(
             self.client.get(
                 "/integrations/editorial/policy",
@@ -433,11 +440,20 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "refresh_token": tokens["refresh_token"],
             "resource": a.resource(),
         }
-        rotated = self.client.post("/oauth/token", data=refresh)
-        self.assertEqual(rotated.status_code, 200, rotated.text)
-        self.assertNotEqual(rotated.json()["refresh_token"], tokens["refresh_token"])
+        for _ in range(3):
+            rotated = self.client.post("/oauth/token", data=refresh)
+            self.assertEqual(rotated.status_code, 200, rotated.text)
+            self.assertGreaterEqual(rotated.json()["expires_in"], 500)
+            self.assertNotEqual(rotated.json()["refresh_token"], refresh["refresh_token"])
+            current = self.client.post(
+                "/internal/agent-integrations/delegate",
+                json={"access_token": rotated.json()["access_token"]},
+                headers={"X-MCP-Workload": os.environ["GTL_MCP_WORKLOAD_SECRET"]},
+            )
+            self.assertEqual(current.status_code, 200, current.text)
+            refresh["refresh_token"] = rotated.json()["refresh_token"]
         self.assertEqual(
-            self.client.post("/oauth/token", data=refresh).status_code, 400
+            self.client.post("/oauth/token", data={**refresh, "refresh_token": tokens["refresh_token"]}).status_code, 400
         )
         r = self.client.post(
             "/internal/agent-integrations/delegate",
@@ -1115,6 +1131,30 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         self.assertEqual(Market.objects.count(), 1)
         self.assertEqual(Quota.objects.get(bucket__startswith="draft:").count, 1)
 
+    def test_analytics_routes_require_explicit_scope_and_validate_windows(self):
+        paths=("coverage", "overview", "retention", "series", "markets", "editorial")
+        for path in paths:
+            response=self.client.get(f"/integrations/editorial/analytics/{path}",
+                                     headers=self.agentheaders)
+            self.assertEqual(response.status_code,200,(path,response.text))
+            self.assertEqual(response.json()["contract_version"],"analytics-mcp.v1")
+        bad=self.client.get("/integrations/editorial/analytics/overview",
+                            params={"start":"2020-01-01"},headers=self.agentheaders)
+        self.assertEqual(bad.status_code,422)
+        Integration.objects.filter(id=self.iid).update(scopes=["metrics:read"])
+        denied=self.client.get("/integrations/editorial/analytics/coverage",
+                               headers=self.agentheaders)
+        self.assertEqual(denied.status_code,403)
+        Integration.objects.filter(id=self.iid).update(scopes=self.config["scopes"])
+        self.assertEqual(self.client.get("/integrations/editorial/analytics/coverage",
+                                         headers=self.agentheaders).status_code,200)
+        revision=Integration.objects.get(id=self.iid).revision
+        paused=self.client.post(f"/admin/agent-integrations/{self.iid}/pause",
+                                json={"expected_revision":revision},headers=self.human)
+        self.assertEqual(paused.status_code,200,paused.text)
+        self.assertEqual(self.client.get("/integrations/editorial/analytics/coverage",
+                                         headers=self.agentheaders).status_code,403)
+
     def test_pagination_metrics_null_filters_and_no_backend_fetch(self):
         r = self.create()
         self.assertEqual(r.status_code, 200, r.text)
@@ -1133,7 +1173,8 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             "/integrations/editorial/signals", headers=self.agentheaders
         )
         self.assertEqual(signals.status_code, 200, signals.text)
-        self.assertIsNone(signals.json()["analytics"]["value"])
+        self.assertEqual(signals.json()["analytics"]["availability"], "not_instrumented")
+        self.assertFalse(signals.json()["analytics"]["value"]["observed_coverage"]["available"])
         logs = self.client.get(
             "/admin/system-logs",
             params={
@@ -1203,6 +1244,14 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                     "search_markets",
                     "get_market",
                     "get_editorial_signals",
+                    "get_analytics_coverage",
+                    "get_platform_analytics",
+                    "get_analytics_series",
+                    "compare_analytics_periods",
+                    "get_analytics_retention",
+                    "list_market_analytics",
+                    "get_market_analytics",
+                    "compare_editorial_analytics",
                     "validate_market_draft",
                     "create_market_draft",
                     "update_market_draft",
@@ -1337,6 +1386,10 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                             self.assertTrue(taxonomy["items"])
                             signals = await invoke("get_editorial_signals", {"days": 7})
                             self.assertIn("availability", signals)
+                            analytics_coverage = await invoke("get_analytics_coverage", {})
+                            self.assertEqual(analytics_coverage["contract_version"], "analytics-mcp.v1")
+                            analytics_overview = await invoke("get_platform_analytics", {})
+                            self.assertIn("observed_coverage", analytics_overview)
                             draft = {
                                 k: v
                                 for k, v in self.payload.items()
@@ -1393,7 +1446,8 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                                 "get_draft_review", {"market_id": mid}
                             )
                             self.assertEqual(review["state"], "in_review")
-                            self.assertEqual(observed, expected_tools)
+                            self.assertTrue(observed.issubset(expected_tools))
+                            self.assertEqual(len(observed), 12)
                             blocked = await session.call_tool(
                                 "update_market_draft",
                                 {
@@ -1575,6 +1629,35 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             r = self.client.post("/oauth/token", data=bad)
         self.assertEqual(r.status_code, 429)
         self.assertIn("retry-after", r.headers)
+        self.assertEqual(r.json()["error"], "temporarily_unavailable")
+        self.assertNotIn("detail", r.json())
+
+    def test_oauth_public_quota_has_oauth_error_on_each_endpoint(self):
+        limited = HTTPException(429, detail={"code": "quota_exceeded"}, headers={"Retry-After": "60"})
+        with patch("apps.api.backend_api.editorial_routes.a.public_attempt", side_effect=limited):
+            for path, payload in (
+                ("/oauth/register", {"client_name": "test", "redirect_uris": ["http://127.0.0.1:33389/callback"]}),
+                ("/oauth/token", {}),
+                ("/oauth/revoke", {}),
+            ):
+                with self.subTest(path=path):
+                    response = self.client.post(path, json=payload if path.endswith("register") else None)
+                    self.assertEqual(response.status_code, 429, response.text)
+                    self.assertEqual(response.json()["error"], "temporarily_unavailable")
+                    self.assertEqual(response.headers["retry-after"], "60")
+                    self.assertEqual(response.headers["cache-control"], "private, no-store")
+
+    def test_delegate_denial_logs_only_fixed_category(self):
+        unknown = "invalid-bearer-" + "x" * 40
+        with self.assertLogs("gotrendlabs.mcp.auth", level="WARNING") as captured:
+            response = self.client.post(
+                "/internal/agent-integrations/delegate",
+                json={"access_token": unknown},
+                headers={"X-MCP-Workload": os.environ["GTL_MCP_WORKLOAD_SECRET"]},
+            )
+        self.assertEqual(response.status_code, 401)
+        self.assertIn("category=unknown_token", captured.output[0])
+        self.assertNotIn(unknown, " ".join(captured.output))
 
     def test_sao_paulo_quota_midnight_and_reduced_limit(self):
         from datetime import datetime, timezone
@@ -2092,7 +2175,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                         async with ClientSession(read, write) as client:
                             await client.initialize()
                             tools = await client.list_tools()
-                            self.assertEqual(len(tools.tools), 10)
+                            self.assertEqual(len(tools.tools), 18)
 
                             def reduce_scopes():
                                 try:

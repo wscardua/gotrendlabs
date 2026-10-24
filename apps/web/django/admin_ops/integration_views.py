@@ -14,6 +14,16 @@ from apps.web.django.accounts.session import admin_api_required, auth_token
 from apps.api.backend_api.editorial_schemas import SCOPES
 
 
+SCOPE_LABELS = {
+    "editorial:read": _("Ler política e parecer editorial"),
+    "catalog:read": _("Consultar catálogo e taxonomia"),
+    "metrics:read": _("Ler sinais editoriais agregados"),
+    "analytics:read": _("Consultar analytics históricos agregados"),
+    "drafts:write": _("Criar e editar drafts próprios"),
+    "drafts:submit": _("Submeter drafts à revisão humana"),
+}
+
+
 class IntegrationExpiryField(forms.DateTimeField):
     """The picker always displays/interprets São Paulo, regardless of browser zone."""
 
@@ -56,18 +66,7 @@ class IntegrationForm(forms.Form):
     )
     scopes = forms.MultipleChoiceField(
         label=_("Permissões"),
-        choices=list(
-            zip(
-                SCOPES,
-                (
-                    _("Ler política e parecer editorial"),
-                    _("Consultar catálogo e taxonomia"),
-                    _("Ler métricas agregadas"),
-                    _("Criar e editar drafts próprios"),
-                    _("Submeter drafts à revisão humana"),
-                ),
-            )
-        ),
+        choices=[(scope, SCOPE_LABELS[scope]) for scope in SCOPES],
         widget=forms.CheckboxSelectMultiple,
         required=False,
     )
@@ -137,6 +136,15 @@ def private(response):
     response["Cache-Control"] = "private, no-store"
     response["Pragma"] = "no-cache"
     return response
+
+
+def mark_scope_eligibility(info):
+    requested = set(info["scopes"])
+    for integration in info["integrations"]:
+        integration["missing_scopes"] = sorted(requested - set(integration["scopes"]))
+        integration["eligible"] = not integration["missing_scopes"]
+    info["has_eligible"] = any(item["eligible"] for item in info["integrations"])
+    return info
 
 
 @admin_api_required
@@ -304,7 +312,9 @@ def consent(request):
         request.session["mcp_oauth_request"] = request.GET.dict()
     parameters = request.session.get("mcp_oauth_request", {})
     try:
-        info = _request("POST", "/oauth/consent-info", parameters, auth_token(request))
+        info = mark_scope_eligibility(
+            _request("POST", "/oauth/consent-info", parameters, auth_token(request))
+        )
         if request.method == "POST":
             if request.POST.get("consent") == "allow":
                 response = _request(

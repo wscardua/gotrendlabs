@@ -159,6 +159,10 @@
     watchTickets(e.target);
   });
   document.addEventListener('htmx:pushedIntoHistory', pageView);
+  document.addEventListener('gtl:prediction-preview-viewed', e => {
+    if (e.detail?.marketSlug) event('prediction_preview_viewed', 'prediction_preview',
+      { market_slug: e.detail.marketSlug });
+  });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flush(); });
   setInterval(flush, 5000);
   pageView();

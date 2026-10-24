@@ -1900,3 +1900,9 @@ Fechamento local preparado: rodada ampla de 552 identificou cinco fixtures/mocks
 ### 17/10/2026 — Rollout e correção MCP da agenda
 
 PR #170 integrada, schema 0033–0036 ativo, integridade dos nove públicos verificada. Correção de empacotamento MCP separa contrato puro e adiciona build/importação ao CI; serviço recuperado sem mutações de dados. Datas existentes aguardam revisão, release Flutter separada. Ver fechamento da agenda.
+## 2026-10-24 — MCP analytics histórico (branch local)
+
+Revisão posterior: corrigida disponibilidade por evento, prévia observada nos clientes, ordem temporal do funil, filtros por bloco, proteção de segmentos pequenos e presença derivada com HMAC/exclusão. O scope `analytics:read` e as oito ferramentas permanecem; OpenAPI/contrato v1 recebem campos de cobertura por métrica. Segredo estável de ator requerido em produção. Sem deploy.
+
+API passa a expor cobertura, visão geral, séries, comparação, retenção, mercados e comparação editorial por escopo `analytics:read`; `get_editorial_signals` passa a agregar resumo observado sob `metrics:read`. Histórico de eventos observados é consolidado diariamente com checkpoint antes do expurgo. Inclui migration `admin_ops.0027`, OpenAPI e contrato v1. Sem rollout produtivo; não presume recuperação de eventos já apagados. [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md).
+Fechamento pré-PR: FEAT-ANALYTICS-001 v0.9 e FEAT-MCP-001 v1.6, contrato `analytics-mcp.v1`, aceites e runbook reconciliados. O deploy verifica a chave estável antes de parar serviços. PR, CI, migration, backfill, grant e smoke de produção ainda pendentes. WFLOW-20261024-MCP-ANALYTICS-HISTORY.
