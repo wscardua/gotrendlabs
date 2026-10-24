@@ -32,9 +32,9 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 
 # MCP editorial e gestão de integrações
 
-## Analytics MCP — evolução local 24/10/2026
+## Analytics MCP — implantação técnica 24/10/2026
 
-O adaptador já existe em `apps/mcp/server.py`; `get_editorial_signals` respondia no serviço conectado, mas o bloco analytics veio `unavailable` na verificação de 24/10/2026. Esta branch evolui o resumo e adiciona oito consultas com `analytics:read`, conforme [contrato](../contracts/mcp-analytics.md) e [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md). FastAPI calcula e autoriza; MCP não acessa PostgreSQL. A integração conectada/produtiva não recebe essas ferramentas antes de merge, migration, backfill, deploy e refresh do catálogo no cliente. Nenhum scope existente é inferido do acesso humano ao Admin Ops. O agente deve consultar cobertura e política editorial antes de propostas, distinguir participação humana/exposição/retorno, indicar incerteza e submeter decisões a humanos.
+O adaptador já existe em `apps/mcp/server.py`; `get_editorial_signals` respondia no serviço conectado, mas o bloco analytics veio `unavailable` na verificação anterior de 24/10/2026. A PR #175 evoluiu o resumo e adicionou oito consultas com `analytics:read`, conforme [contrato](../contracts/mcp-analytics.md) e [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md). FastAPI calcula e autoriza; MCP não acessa PostgreSQL. Código, migration, consolidação e resumo MCP foram implantados; a integração existente só recebe as oito ferramentas após grant `analytics:read` por staff/MFA e novo OAuth. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md). Nenhum scope existente é inferido do acesso humano ao Admin Ops. O agente deve consultar cobertura e política editorial antes de propostas, distinguir participação humana/exposição/retorno, indicar incerteza e submeter decisões a humanos.
 
 ## Revisão 1.5 — documento editorial único (2026-10-10)
 

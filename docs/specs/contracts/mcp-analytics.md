@@ -1,6 +1,6 @@
 # Contrato MCP Analytics — `analytics-mcp.v1`
 
-Status em 24/10/2026: implementação e testes locais validados em branch `feature/mcp-analytics-history`; sem implantação ou backfill produtivo. O serviço MCP conectado nessa data ainda devolveu `analytics.availability=unavailable` em `get_editorial_signals`. Isso descreve o serviço conectado naquele instante, não o código desta branch.
+Status em 24/10/2026: contrato implantado pela [PR #175](https://github.com/wscardua/gotrendlabs/pull/175), migration e consolidação verificadas em produção. `get_editorial_signals` autenticado devolveu `analytics.availability=available`. As oito ferramentas exigem grant humano de `analytics:read`; o operador concedeu o escopo à integração produtiva após a implantação, mas o app cliente ainda não solicitava esse escopo; atualização do catálogo, novo OAuth e smoke autenticado das oito ferramentas permaneciam pendentes. [Evidências e limites](../testing/mcp-analytics-production-closeout-20261024.md).
 
 ## Autoridade e acesso
 

@@ -12,9 +12,9 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 # Known Gaps
 
-## MCP analytics histórico — limitações da branch local 2026-10-24
+## MCP analytics histórico — limites após implantação 2026-10-24
 
-Histórico observado só começa no primeiro evento ainda recuperável na implantação; impressões, cliques, sessões e funil anteriores ao expurgo anterior são irrecuperáveis. Taxonomia anterior à migration usa estado atual como reconstrução identificada. Não há histórico de estados sociais nem de cada reversão de resolução; stake histórico é reconstrução limitada, não snapshot auditável. A presença histórica agora usa HMAC e possui exclusão/reconsolidação local testada, mas a chave estável precisa ser configurada e a exclusão operacional de visitante precisa ser ensaiada no ambiente de implantação. Teste de plano/carga com volume representativo e homologação com token externo ainda não ocorreram. O código não foi implantado e o serviço MCP conectado não valida esta branch. [Contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).
+O código foi implantado pela PR #175 e a chave estável está configurada, com snapshot criptografado. Eventos observados começam em 29/09/2026; impressões, cliques, sessões e funil anteriores ao expurgo antigo são irrecuperáveis. Taxonomia anterior à migration usa estado atual como reconstrução identificada. Não há histórico de estados sociais nem de cada reversão de resolução; stake histórico é reconstrução limitada, não snapshot auditável. Prévia válida e ações de compartilhar não tinham observações até o smoke. A exclusão operacional de visitante ainda exige ensaio produtivo autorizado. EXPLAIN passou com apenas 197 linhas de presença, sem prova de escala futura. O resumo MCP autenticado passou; o operador concedeu `analytics:read` à integração, mas o app cliente ainda precisava solicitar o escopo, atualizar ferramentas e concluir novo OAuth e smoke produtivo das oito ferramentas. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md), [contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).
 
 ## Relevância visual de thumbnails — 2026-10-09
 

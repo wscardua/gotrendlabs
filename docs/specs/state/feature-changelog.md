@@ -1,3 +1,7 @@
+## 2026-10-24 — histórico analítico MCP implantado
+
+PR #175/merge `06c1ef0`, CI da PR (587 testes, 2 skips) e build/deploy da `main` aprovados. Migration 0027, consolidação de 17 dias, cobertura e consultas de 1/10 anos/todo o histórico verificadas; `get_editorial_signals` autenticado retorna analytics disponível. O operador concedeu `analytics:read` à única integração ativa após a implantação; o app cliente ainda precisava solicitar o escopo, atualizar ferramentas e concluir novo OAuth e smoke das oito ferramentas, sem concessão automática. [Recibo e limites](../testing/mcp-analytics-production-closeout-20261024.md). Este registro substitui a pendência de publicação local abaixo.
+
 ## 2026-10-18 — Painel de contratos implantado e validado
 
 FEAT-RESOLUTION-AGENDA-001 v1.2 implantada pela [PR #173](https://github.com/wscardua/gotrendlabs/pull/173), merge/runtime `2c4ddd9`. CI da PR/main com 567 testes e 2 skips por execução; builds principal/MCP e deploy [Actions 39136374800](https://github.com/wscardua/gotrendlabs/actions/runs/39136374800) aprovados. Smoke SSM/HTTP/template confirmou Fechado nos mercados 35/36/52 locked, Hoje/etapas/acessibilidade, CSS 008 e serviços saudáveis. Agendas/histórico/definições assinadas preservados por hash antes/depois; 53/55 continuam open.

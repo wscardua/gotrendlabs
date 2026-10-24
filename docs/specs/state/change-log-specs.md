@@ -1,3 +1,7 @@
+## 2026-10-24 — evidência produtiva do histórico analítico MCP
+
+Contrato `analytics-mcp.v1`, FEAT-ANALYTICS-001 v0.9, FEAT-MCP-001 v1.6, runbook, estado, mapa de integração, workflow e known-gaps reconciliados com PR #175, migration, checkpoints e smoke produtivo. O escopo `analytics:read` continua exigindo grant explícito; não se afirma uso autenticado das oito ferramentas sem ele. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md).
+
 ## 2026-10-18 — evidência produtiva do Painel de contratos
 
 FEAT-RESOLUTION-AGENDA-001 v1.2 marcada implementada_validada após PR #173, merge 2c4ddd9, CI PR/main/build/deploy e smoke técnico produtivo aprovados. README, aceites, estado, known-gaps, workflow e recibo reconciliados com a implantação real; histórico de iterações preservado. Sem alteração adicional de contrato/API/MCP/Flutter ou dados. [Recibo](../testing/contracts-timeline-closeout-20261018.md).
