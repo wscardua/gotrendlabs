@@ -1,15 +1,16 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.5
+versao: 1.6
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-10
+ultima_atualizacao: 2026-10-24
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
   - agent-integrations.md
+  - mcp-analytics.md
   - market-lifecycle.md
 contratos_revisados:
   - market-lifecycle.md
@@ -30,6 +31,10 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 ---
 
 # MCP editorial e gestão de integrações
+
+## Analytics MCP — evolução local 24/10/2026
+
+O adaptador já existe em `apps/mcp/server.py`; `get_editorial_signals` respondia no serviço conectado, mas o bloco analytics veio `unavailable` na verificação de 24/10/2026. Esta branch evolui o resumo e adiciona oito consultas com `analytics:read`, conforme [contrato](../contracts/mcp-analytics.md) e [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md). FastAPI calcula e autoriza; MCP não acessa PostgreSQL. A integração conectada/produtiva não recebe essas ferramentas antes de merge, migration, backfill, deploy e refresh do catálogo no cliente. Nenhum scope existente é inferido do acesso humano ao Admin Ops. O agente deve consultar cobertura e política editorial antes de propostas, distinguir participação humana/exposição/retorno, indicar incerteza e submeter decisões a humanos.
 
 ## Revisão 1.5 — documento editorial único (2026-10-10)
 

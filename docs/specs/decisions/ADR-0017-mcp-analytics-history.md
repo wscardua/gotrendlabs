@@ -1,0 +1,23 @@
+# ADR-0017 — Histórico analítico para leitura MCP
+
+- Data: 2026-10-24.
+- Status: implementação local validada; sem merge/deploy/backfill produtivo.
+- Features: FEAT-ANALYTICS-001, FEAT-MCP-001.
+
+## Decisão
+
+FastAPI permanece como única autoridade de cálculo, autenticação e autorização. O adaptador MCP usa somente HTTP e os schemas compartilhados. `analytics:read` é um scope novo para relatórios amplos; `metrics:read` conserva o resumo `get_editorial_signals`. Staff/MFA administra grants, sem conferir autoridade MCP por analogia. Não há SQL arbitrário, PII ou mutação de domínio nas ferramentas analíticas.
+
+O dia analítico é `[00:00, 00:00 seguinte)` em America/Sao_Paulo. A consolidação fecha dias com pelo menos oito dias completos de atraso, além da janela de aceitação de sete dias de eventos. Cada dia é refeito em uma transação sob advisory lock, com checkpoint, contagem de eventos de origem e verificação da soma dos contadores. O daemon processa até 30 dias por ciclo; comando explícito acelera o backfill. O expurgo somente marca e remove eventos de dias cujo checkpoint ainda corresponde à contagem e ao último recebimento dos eventos brutos. Falha deixa o dia bruto e permite retomada.
+
+Contagens de eventos são aditivas por dia, mercado, plataforma, ator e nome. Presença por ator/dia/mercado/plataforma preserva distintos exatos e retorno de coorte; não se somam únicos diários nem mercados para obter únicos de plataforma. A chave derivada é HMAC-SHA256 de identificador e tipo com segredo estável próprio, exigido em produção; o identificador original não fica na tabela histórica. Jornada observada por sessão/mercado é consolidada em contadores de funil do dia de início, após maturação da inatividade. O registro do visitante preserva primeira sessão e primeiro dia para distinguir retorno de outra sessão após expurgo. Esses registros derivados têm acesso restrito à FastAPI e não são expostos ao agente. Exclusão de conta remove presença derivada e eventos brutos da conta; checkpoints ainda brutos são recomputados na mesma transação. Exclusão operacional de visitante usa a mesma rotina com UUID fornecido sob autorização. Contagens anônimas já consolidadas e expurgadas permanecem.
+
+Fatos de cadastro, previsão, reforço, revisão, likes/favoritos, comentários e ciclo de mercado vêm das tabelas de domínio. `stake_amount` de revisão reaproveita posição e não compõe volume novo. Stake ativo em referência histórica é reconstruído por timestamps de criação, substituição e término disponíveis, com limitação explícita para desfazer resolução; não é apresentado como snapshot medido. Social de likes/favoritos/comentários é estado sobrevivente atual, não série histórica de ações removidas/moderadas. O snapshot de taxonomia é capturado na publicação; mercados publicados antes da mudança recebem rótulo `reconstructed_current`, nunca tratado como classificação observada na época.
+
+## Limites e consequências
+
+Histórico de eventos já expurgado antes desta migration não pode ser reconstruído. Cadastros, previsões e mercados publicados ainda presentes podem ser consultados independentemente da instrumentação; nenhum evento de card, visita ou jornada anterior é inventado. Eventos com slug de mercado apagado antes do backfill não recuperam atribuição. Para eventos futuros, `market_id` é gravado na ingestão e permanece mesmo se o mercado for excluído depois.
+
+Páginas de série contêm no máximo 100 buckets; listagens de mercados, 50; comparação editorial, 100. Os agregados de período e distintos são calculados em PostgreSQL sob timeout/quotas já existentes. Não há fila assíncrona ou cache nesta versão. A primeira página devolve `revision`; páginas seguintes exigem esse valor. Mudança detectada nos dados relevantes retorna `snapshot_changed` (409) para reiniciar, em vez de prosseguir silenciosamente. A revisão cobre timestamps máximos de eventos, consolidação, previsões, mercados, publicações e cadastros; não é uma transação de snapshot mantida entre requisições. Alterações que não mudem esses máximos podem escapar. Não afirmar fotografia estrita sob toda escrita concorrente.
+
+O contrato informa primeira/última observação por métrica e marca como `null` métricas ainda sem evento, janelas anteriores à primeira observação ou posteriores à última observação global. `null` não vira zero. Filtros de plataforma efetivos são identificados por bloco; fatos de domínio e funil permanecem globais. Segmentos com 1–4 participantes ocultam participantes, primeiras entradas e, por mercado, demais fatos humanos sensíveis; concentração abaixo de dez atores é suprimida. Análise não amplia autoridade editorial; agente consulta política e submete propostas para avaliação humana.

@@ -71,7 +71,7 @@ class MCPDeployEnvironmentTests(unittest.TestCase):
 
 
 class MCPDeployWindowTests(unittest.TestCase):
-    def run_deploy(self, fail_migration=False, thumbnails=False):
+    def run_deploy(self, fail_migration=False, thumbnails=False, actor_key=True):
         import json
         import os
         import shutil
@@ -87,7 +87,7 @@ class MCPDeployWindowTests(unittest.TestCase):
             (root / 'ops/deploy/production/docker-compose.yml').touch()
             shutil.copy(repository / 'ops/deploy/mcp/configure_environment.py', root / 'ops/deploy/mcp/configure_environment.py')
             for name, content in {
-                '.env.prod': '',
+                '.env.prod': 'GOTRENDLABS_ANALYTICS_ACTOR_KEY=' + ('a' * 64 if actor_key else '""') + '\n',
                 '.env.auth.prod': 'GOTRENDLABS_TOTP_ENCRYPTION_KEY=fixture\n',
                 '.env.fastapi-db.prod': 'FASTAPI_POSTGRES_USER=fixture\nFASTAPI_POSTGRES_PASSWORD=fixture\n',
                 '.env.migrate.prod': '',
@@ -145,6 +145,12 @@ path.write_text(json.dumps(state))
         self.assertTrue(state['migrated'])
         self.assertTrue(state['restarted'])
         self.assertTrue(state['writers_running'])
+
+    def test_missing_analytics_actor_key_fails_before_stopping_writers(self):
+        code, state = self.run_deploy(actor_key=False)
+        self.assertNotEqual(code, 0)
+        self.assertTrue(state['writers_running'])
+        self.assertFalse(state['migrated'])
 
     def test_migration_failure_keeps_writers_stopped_for_explicit_recovery(self):
         code, state = self.run_deploy(fail_migration=True)

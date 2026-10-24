@@ -1,18 +1,19 @@
 """Human management, OAuth and restricted editorial API. No staff impersonation."""
 
+import logging
 import secrets
 import uuid
 from contextlib import contextmanager
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 from typing import Literal
 from urllib.parse import urlencode, parse_qsl
 from authlib.oauth2.rfc6749 import OAuth2Error
-from fastapi import APIRouter, Header, Request, Response, Query
+from fastapi import APIRouter, Header, Request, Response, Query, HTTPException
 from fastapi.responses import JSONResponse, RedirectResponse
 from psycopg.types.json import Jsonb
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.resolution_schedule import preparation_pending, DATES
-from apps.api.backend_api import editorial_auth as a, editorial_service as domain
+from apps.api.backend_api import editorial_auth as a, editorial_service as domain, analytics_reports
 from apps.api.backend_api.editorial_schemas import (
     HumanEditorialAssessment,
     ResponsibleOptions,
@@ -21,6 +22,14 @@ from apps.api.backend_api.editorial_schemas import (
     SearchResponse,
     MarketProjection,
     SignalsResponse,
+    AnalyticsCoverageResponse,
+    AnalyticsOverviewResponse,
+    AnalyticsRetentionResponse,
+    AnalyticsSeriesResponse,
+    AnalyticsMarketsResponse,
+    AnalyticsMarketResponse,
+    AnalyticsCompareResponse,
+    EditorialAnalyticsResponse,
     ValidationResponse,
     MutationResponse,
     ReviewResponse,
@@ -43,6 +52,24 @@ from apps.api.backend_api.editorial_context import request_context
 from apps.web.django.system_logs.services import log_system_event
 
 router = APIRouter(tags=["editorial-integrations"])
+auth_logger = logging.getLogger("gotrendlabs.mcp.auth")
+
+
+def oauth_public_attempt(request: Request):
+    try:
+        a.public_attempt(request.client.host)
+    except HTTPException as exc:
+        if exc.status_code != 429:
+            raise
+        return JSONResponse(
+            {"error": "temporarily_unavailable", "error_description": "OAuth request quota exceeded"},
+            status_code=429,
+            headers={
+                **(exc.headers or {}),
+                "Cache-Control": "private, no-store",
+            },
+        )
+    return None
 
 
 def staff(cursor, authorization):
@@ -418,7 +445,9 @@ def protected_resource():
 
 @router.post("/oauth/register", status_code=201)
 def register(payload: OAuthRegistration, request: Request):
-    a.public_attempt(request.client.host)
+    limited = oauth_public_attempt(request)
+    if limited is not None:
+        return limited
     identifier = uuid.uuid4()
     with get_connection() as c:
         with c.cursor() as cur:
@@ -514,7 +543,9 @@ async def form_data(request):
 
 @router.post("/oauth/token")
 async def token(request: Request):
-    a.public_attempt(request.client.host)
+    limited = oauth_public_attempt(request)
+    if limited is not None:
+        return limited
     data = await form_data(request)
     with get_connection() as c:
         with c.cursor() as cur:
@@ -599,7 +630,9 @@ async def token(request: Request):
 
 @router.post("/oauth/revoke")
 async def revoke_token(request: Request):
-    a.public_attempt(request.client.host)
+    limited = oauth_public_attempt(request)
+    if limited is not None:
+        return limited
     data = await form_data(request)
     with get_connection() as c:
         with c.cursor() as cur:
@@ -624,7 +657,35 @@ def delegate(
     a.workload(x_mcp_workload)
     with get_connection() as c:
         with c.cursor() as cur:
-            t = a.validate(cur, payload.access_token, a.resource())
+            try:
+                t = a.validate(cur, payload.access_token, a.resource())
+            except HTTPException as exc:
+                if exc.status_code == 401:
+                    # Fixed categories only: never log a bearer token, hash,
+                    # identity, grant ID or request body.
+                    cur.execute(
+                        "SELECT kind,issuer,audience,expires_at,consumed_at "
+                        "FROM gotrendlabs_agent_tokens WHERE token_hash=%s",
+                        (a.digest(payload.access_token),),
+                    )
+                    row = cur.fetchone()
+                    reason = (
+                        "unknown_token"
+                        if row is None
+                        else "wrong_kind"
+                        if row["kind"] != "access"
+                        else "wrong_issuer"
+                        if row["issuer"] != a.issuer()
+                        else "wrong_audience"
+                        if row["audience"] != a.resource()
+                        else "expired"
+                        if row["expires_at"] <= a.now()
+                        else "consumed"
+                        if row["consumed_at"] is not None
+                        else "other"
+                    )
+                    auth_logger.warning("mcp_delegate_unauthenticated category=%s", reason)
+                raise
             expiry = min(t["expires_at"], a.now() + timedelta(seconds=40))
             value, _ = a.insert_token(
                 cur, t, "internal", a.api_audience(), expiry, parent=t["id"]
@@ -740,7 +801,7 @@ def market(
     response_model=SignalsResponse,
 )
 def signals(
-    days: int = Query(7, ge=1, le=90),
+    days: int = Query(7, ge=1, le=365000),
     authorization: str = Header(default=""),
     x_mcp_workload: str = Header(default=""),
 ):
@@ -753,6 +814,9 @@ def signals(
             (start,),
         )
         counts = {x["is_bot"]: x["predictions"] for x in cur.fetchall()}
+        today = a.now().astimezone(analytics_reports.ZONE).date()
+        report = analytics_reports.overview(cur, start=today-timedelta(days=days-1),
+                                            end=today+timedelta(days=1))
         return {
             "period_start": start,
             "period_end": a.now(),
@@ -762,8 +826,88 @@ def signals(
             "availability": "available",
             "humans": counts.get(False, 0),
             "bots": counts.get(True, 0),
-            "analytics": {"availability": "unavailable", "value": None},
+            "analytics": {"availability": report["availability"], "value": {
+                "observed_coverage": report["observed_coverage"],
+                "actors": report["actors"], "counts": report["counts"],
+                "card_ctr": report["card_ctr"], "precision": report["precision"]}},
         }
+
+
+@router.get("/integrations/editorial/analytics/coverage", response_model=AnalyticsCoverageResponse)
+def analytics_coverage(authorization: str = Header(default=""),
+                       x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","get_analytics_coverage") as (cur,t,r):
+        return analytics_reports.coverage(cur)
+
+
+@router.get("/integrations/editorial/analytics/overview", response_model=AnalyticsOverviewResponse)
+def analytics_overview(start: date | None = None, end: date | None = None,
+                       all_history: bool = False, platform: str = "all",
+                       authorization: str = Header(default=""),
+                       x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","get_platform_analytics") as (cur,t,r):
+        return analytics_reports.overview(cur,start=start,end=end,all_history=all_history,platform=platform)
+
+
+@router.get("/integrations/editorial/analytics/series", response_model=AnalyticsSeriesResponse)
+def analytics_series(start: date | None = None, end: date | None = None,
+                     all_history: bool = False, grain: str = "month", after: date | None = None,
+                     limit: int = 50, platform: str = "all", revision: str | None = None,
+                     authorization: str = Header(default=""),
+                     x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","get_analytics_series") as (cur,t,r):
+        return analytics_reports.series(cur,start=start,end=end,all_history=all_history,
+                                        grain=grain,after=after,limit=limit,platform=platform,revision=revision)
+
+
+@router.get("/integrations/editorial/analytics/compare", response_model=AnalyticsCompareResponse)
+def analytics_compare(start: date, end: date, baseline_start: date | None = None,
+                      baseline_end: date | None = None, previous_equivalent: bool = False,
+                      platform: str = "all", authorization: str = Header(default=""),
+                      x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","compare_analytics_periods") as (cur,t,r):
+        return analytics_reports.compare(cur,start=start,end=end,baseline_start=baseline_start,
+                                         baseline_end=baseline_end,previous_equivalent=previous_equivalent,
+                                         platform=platform)
+
+
+@router.get("/integrations/editorial/analytics/retention", response_model=AnalyticsRetentionResponse)
+def analytics_retention(start: date | None = None, end: date | None = None,
+                        all_history: bool = False,
+                        authorization: str = Header(default=""),
+                        x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","get_analytics_retention") as (cur,t,r):
+        return analytics_reports.retention(cur,start=start,end=end,all_history=all_history)
+
+
+@router.get("/integrations/editorial/analytics/markets", response_model=AnalyticsMarketsResponse)
+def analytics_markets(start: date | None = None, end: date | None = None,
+                      all_history: bool = False, after: int = 0, limit: int = 25,
+                      revision: str | None = None,
+                      authorization: str = Header(default=""),
+                      x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","list_market_analytics") as (cur,t,r):
+        return analytics_reports.markets(cur,start=start,end=end,all_history=all_history,
+                                         after=after,limit=limit,revision=revision)
+
+
+@router.get("/integrations/editorial/analytics/markets/{market_id}", response_model=AnalyticsMarketResponse)
+def analytics_market(market_id: int,start: date | None = None, end: date | None = None,
+                     all_history: bool = False,authorization: str = Header(default=""),
+                     x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","get_market_analytics") as (cur,t,r):
+        return analytics_reports.market(cur,market_id,start=start,end=end,all_history=all_history)
+
+
+@router.get("/integrations/editorial/analytics/editorial", response_model=EditorialAnalyticsResponse)
+def analytics_editorial(dimension: str = "category", start: date | None = None,
+                        end: date | None = None, all_history: bool = False,
+                        after: str = "", limit: int = 50, revision: str | None = None,
+                        authorization: str = Header(default=""),
+                        x_mcp_workload: str = Header(default="")):
+    with agent(authorization,x_mcp_workload,"analytics:read","compare_editorial_analytics") as (cur,t,r):
+        return analytics_reports.editorial(cur,dimension=dimension,start=start,end=end,
+                                           all_history=all_history,after=after,limit=limit,revision=revision)
 
 
 @router.post(

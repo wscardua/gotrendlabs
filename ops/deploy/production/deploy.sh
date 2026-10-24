@@ -51,6 +51,10 @@ if [[ ! -f "$MIGRATION_ENV_FILE" ]]; then
   echo "Missing $APP_DIR/$MIGRATION_ENV_FILE. Create it before deploying." >&2
   exit 1
 fi
+if ! grep -Eq '^[[:space:]]*GOTRENDLABS_ANALYTICS_ACTOR_KEY[[:space:]]*=[[:space:]]*[[:xdigit:]]{64}[[:space:]]*$' "$ENV_FILE"; then
+  echo "GOTRENDLABS_ANALYTICS_ACTOR_KEY must be a stable 64-digit hex secret in $APP_DIR/$ENV_FILE before deploying analytics history." >&2
+  exit 1
+fi
 if grep -Eq '^[[:space:]]*(FASTAPI_POSTGRES_|POSTGRES_(USER|PASSWORD))[A-Z_]*[[:space:]]*=' "$ENV_FILE" "$AUTH_ENV_FILE"; then
   echo "Database credentials with password-write authority must not be in shared or pepper env files." >&2
   exit 1

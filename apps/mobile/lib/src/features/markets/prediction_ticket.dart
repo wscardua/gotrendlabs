@@ -400,6 +400,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
         _busy = false;
       });
       if (mounted) {
+        unawaited(ref.read(analyticsTrackerProvider).track('prediction_preview_viewed', properties: {'market_slug': widget.market.slug}));
         await _confirmPrediction();
       }
     } catch (error) {
@@ -719,6 +720,7 @@ class _PredictionTicketState extends ConsumerState<PredictionTicket> {
           _preview = preview;
           _previewBusy = false;
         });
+        unawaited(ref.read(analyticsTrackerProvider).track('prediction_preview_viewed', properties: {'market_slug': widget.market.slug}));
       }
     } catch (error) {
       if (!mounted || requestId != _previewRequestId) {

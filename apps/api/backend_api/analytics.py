@@ -183,6 +183,10 @@ def ingest(cursor, batch, *, request, user):
               (geo or {}).get("country"), (geo or {}).get("region"), (geo or {}).get("city"),
               (geo or {}).get("radius"), (geo or {}).get("version")))
         new_session = cursor.rowcount == 1
+        if new_session:
+            cursor.execute("""UPDATE gotrendlabs_analytics_visitors
+                SET first_session_id=COALESCE(first_session_id,%s) WHERE id=%s""",
+                (batch.session_id,batch.visitor_id))
         cursor.execute("SELECT visitor_id, platform FROM gotrendlabs_analytics_sessions WHERE id=%s", (batch.session_id,))
         session = cursor.fetchone()
     if str(session["visitor_id"]) != str(batch.visitor_id) or session["platform"] != platform:
@@ -201,12 +205,14 @@ def ingest(cursor, batch, *, request, user):
         cursor.execute("""
             INSERT INTO gotrendlabs_analytics_events
               (id, session_id, view_id, user_id, name, platform, actor_type, auth_state,
-               screen_key, target_key, occurred_at, properties)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb)
+               screen_key, target_key, occurred_at, properties, market_id)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s::jsonb,
+                    (SELECT id FROM gotrendlabs_markets WHERE slug=%s))
             ON CONFLICT (id) DO NOTHING
         """, (event.event_id, batch.session_id, event.view_id, user["id"] if user else None,
               event.name, platform, actor, "authenticated" if user else "anonymous",
-              event.screen_key, event.target_key, event.occurred_at, props))
+              event.screen_key, event.target_key, event.occurred_at, props,
+              event.properties.get("market_slug")))
         accepted += cursor.rowcount
     cursor.execute("""
         INSERT INTO gotrendlabs_analytics_ingestion_status
@@ -517,12 +523,46 @@ def summary(cursor, *, days=7, platform="all", audience="all", region="", city="
 
 
 def prune(cursor, *, now=None, retention_days=90):
+    from apps.api.backend_api.analytics_history import prepare_actor_key
+    prepare_actor_key(cursor)
+    cursor.execute("SELECT pg_advisory_xact_lock(7140027)")
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(days=max(30, min(retention_days, 365)))
-    cursor.execute("DELETE FROM gotrendlabs_analytics_events WHERE received_at < %s", (cutoff,))
+    # A day is removable only after the historical counts and actor-day rows
+    # committed together. The marker and deletion share this transaction.
+    cursor.execute("""
+        UPDATE gotrendlabs_analytics_history_days h SET raw_pruned=true
+        WHERE h.day < (%s AT TIME ZONE 'America/Sao_Paulo')::date
+          AND NOT h.raw_pruned
+          AND h.source_events=(SELECT count(*) FROM gotrendlabs_analytics_events e
+               WHERE e.occurred_at >= (h.day::timestamp AT TIME ZONE 'America/Sao_Paulo')
+                 AND e.occurred_at < ((h.day+1)::timestamp AT TIME ZONE 'America/Sao_Paulo'))
+          AND h.source_max_received_at IS NOT DISTINCT FROM
+              (SELECT max(e.received_at) FROM gotrendlabs_analytics_events e
+               WHERE e.occurred_at >= (h.day::timestamp AT TIME ZONE 'America/Sao_Paulo')
+                 AND e.occurred_at < ((h.day+1)::timestamp AT TIME ZONE 'America/Sao_Paulo'))
+    """, (cutoff,))
+    cursor.execute("""
+        DELETE FROM gotrendlabs_analytics_events e
+        WHERE e.occurred_at < %s
+          AND EXISTS (SELECT 1 FROM gotrendlabs_analytics_history_days h
+                      WHERE h.day=(e.occurred_at AT TIME ZONE 'America/Sao_Paulo')::date
+                        AND h.raw_pruned)
+    """, (cutoff,))
     events = cursor.rowcount
-    cursor.execute("DELETE FROM gotrendlabs_analytics_views WHERE session_id IN (SELECT id FROM gotrendlabs_analytics_sessions WHERE last_seen_at < %s)", (cutoff,))
-    cursor.execute("DELETE FROM gotrendlabs_analytics_sessions WHERE last_seen_at < %s", (cutoff,))
+    cursor.execute("""DELETE FROM gotrendlabs_analytics_views v
+        WHERE NOT EXISTS (SELECT 1 FROM gotrendlabs_analytics_events e WHERE e.view_id=v.id)
+          AND EXISTS (SELECT 1 FROM gotrendlabs_analytics_sessions s
+                      WHERE s.id=v.session_id AND s.last_seen_at < %s)""", (cutoff,))
+    cursor.execute("""DELETE FROM gotrendlabs_analytics_sessions s
+        WHERE s.last_seen_at < %s
+          AND NOT EXISTS (SELECT 1 FROM gotrendlabs_analytics_events e WHERE e.session_id=s.id)
+          AND NOT EXISTS (SELECT 1 FROM gotrendlabs_analytics_views v WHERE v.session_id=s.id)""", (cutoff,))
     sessions = cursor.rowcount
-    cursor.execute("DELETE FROM gotrendlabs_analytics_visitors v WHERE NOT EXISTS (SELECT 1 FROM gotrendlabs_analytics_sessions s WHERE s.visitor_id=v.id)")
+    cursor.execute("""DELETE FROM gotrendlabs_analytics_visitors v
+        WHERE NOT EXISTS (SELECT 1 FROM gotrendlabs_analytics_sessions s WHERE s.visitor_id=v.id)
+          AND NOT EXISTS (SELECT 1 FROM gotrendlabs_analytics_history_actors h
+                          WHERE h.actor_kind='visitor' AND h.actor_key=encode(
+                              hmac(('v:'||v.id::text)::bytea,
+                                   current_setting('gotrendlabs.analytics_actor_key')::bytea,'sha256'),'hex'))""")
     return {"events": events, "sessions": sessions}

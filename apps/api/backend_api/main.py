@@ -8636,6 +8636,8 @@ def request_account_deletion(request: Request, authorization: str = Header(defau
                 """,
                 (now, now, user["id"]),
             )
+            from apps.api.backend_api.analytics_history import forget_actor
+            forget_actor(cursor, "registered", user["id"])
             cursor.execute(
                 """
                 UPDATE gotrendlabs_auth_sessions
@@ -8912,7 +8914,7 @@ async def editorial_validation_error(request, exc):
         from apps.api.backend_api.editorial_routes import technical
         from starlette.concurrency import run_in_threadpool
         path = request.url.path
-        scope = "drafts:submit" if path.endswith("/submit") else "editorial:read" if path.endswith(("/policy", "/review")) else "metrics:read" if path.endswith("/signals") else "drafts:write" if "/drafts" in path else "catalog:read"
+        scope = "drafts:submit" if path.endswith("/submit") else "editorial:read" if path.endswith(("/policy", "/review")) else "analytics:read" if "/analytics/" in path else "metrics:read" if path.endswith("/signals") else "drafts:write" if "/drafts" in path else "catalog:read"
         try:
             auth.workload(request.headers.get("x-mcp-workload", ""))
             token, lease = await run_in_threadpool(auth.reserve_call, auth.bearer(request.headers.get("authorization", "")), scope)

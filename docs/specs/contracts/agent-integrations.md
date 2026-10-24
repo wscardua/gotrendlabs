@@ -1,5 +1,9 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
+## Analytics MCP (implementação local, 24/10/2026)
+
+O scope `analytics:read` autoriza somente as oito leituras definidas em [mcp-analytics.md](mcp-analytics.md); `metrics:read` continua para `get_editorial_signals`. Grants antigos não recebem o novo scope implicitamente. Schemas Pydantic são compartilhados pelo REST e MCP, com snapshot OpenAPI versionado. Erros `revision_required`/`snapshot_changed` (409) indicam reinício de paginação; eventos técnicos continuam com IDs/resultados fixos e replay em spool sem resposta analítica, token ou dados sensíveis. Nenhuma permissão de publicação, resolução, wallet, parecer humano ou SQL é criada. Consultar política antes de propor mercados; análise não autoriza ação.
+
 Versão 1.5 — 2026-10-10. Implantada pela PR #148; Dot/piloto autenticado pendentes. Autoridade: [feature](../features/mcp-editorial-agents.md) e [ADR-0011](../decisions/ADR-0011-mcp-editorial-integrations.md). Rotas abaixo estão na FastAPI produtiva e no snapshot OpenAPI. [Evidência de rollout](../testing/editorial-document-production-20261010.md).
 
 ## Revisão 1.5 — documento único (2026-10-10)
@@ -70,6 +74,10 @@ Resposta de mutação: `market_id`, `slug`, `market_status`, `editorial_status`,
 Paginação: `items`, `next_cursor`, `has_more`, `as_of`, `coverage`; limite default 20, máximo 100. Busca truncada informa limite e não comprova deduplicação completa. Métricas incluem unidade, período, timezone e `availability`; `null` representa ausência, não zero.
 
 Erros estáveis: `unauthenticated` (401), `forbidden_scope`/`integration_inactive`/`resource_forbidden` (403 ou 404 para recurso não visível), `not_found` (404), `version_conflict`/`idempotency_conflict`/`draft_not_editable` (409), `validation_failed` e os códigos `schedule_incomplete`, `schedule_timezone_invalid`, `schedule_offset_required`, `schedule_order_invalid`, `schedule_expired` (422), `quota_exceeded` (429 com retry quando aplicável), `dependency_unavailable` (503). OAuth usa erros padronizados próprios. No MCP mapear erros de ferramenta/protocolo corretamente e registrar resultado de negócio mesmo com HTTP 200.
+
+Nas rotas públicas OAuth `/oauth/register`, `/oauth/token` e `/oauth/revoke`, a quota de tentativas continua em 30 por minuto por IP. Quando excedida, a resposta é HTTP 429 com corpo OAuth `{"error":"temporarily_unavailable","error_description":"OAuth request quota exceeded"}`, `Retry-After: 60` e `Cache-Control: private, no-store`. Clientes devem aguardar o prazo e iniciar nova tentativa; o corpo genérico `detail.code=quota_exceeded` não é válido como erro OAuth nessas rotas. Nenhum scope ou grant é concedido por esse tratamento de erro.
+
+Na troca de authorization code por token, `expires_in` descreve a validade real do access token (até 600 segundos, limitada pela validade do grant e da integração). A validade de cinco minutos do código de uso único não reduz a validade anunciada do access token. O refresh mantém rotação e revogação por reutilização; seu novo access token também anuncia a validade efetiva.
 
 ## Modelagem lógica mínima
 
@@ -148,3 +156,8 @@ Schemas REST/MCP compartilham `ScheduleFields`. Drafts podem declarar ausências
 ### Erros de validação da agenda no transporte MCP — 17/10/2026
 
 O MCP preserva os códigos fixos `schedule_incomplete`, `schedule_timezone_invalid`, `schedule_offset_required`, `schedule_order_invalid` e `schedule_expired` retornados pela FastAPI. São pendências corrigíveis do draft, sem tratá-las como indisponibilidade. Mensagens livres e códigos desconhecidos não são propagados; erros técnicos continuam `dependency_unavailable`. Sem novos scopes, ferramentas ou permissões administrativas, nem alteração de replays.
+## Escopo analítico em integrações existentes (correção local 24/10/2026)
+
+`analytics:read` exige concessão explícita na configuração da integração por staff/superuser com MFA e novo consentimento OAuth. Grants e tokens anteriores não ganham o scope pela atualização do código. O formulário Admin Ops mantém correspondência um a um entre os seis scopes e seus rótulos; no consentimento, integrações sem todos os scopes pedidos aparecem como incompatíveis e não podem ser selecionadas. `forbidden_scope` permanece a defesa da FastAPI contra POST direto ou grant insuficiente. Ferramentas e schemas MCP analíticos não mudam nesta correção; permissão, erro de consentimento e orientação de vinculação mudam. Replays de leitura continuam sem mutação.
+
+Quando não há integração elegível, a tela de consentimento apresenta o nome da integração incompatível, os scopes ausentes e um link para sua configuração; não renderiza um seletor vazio.

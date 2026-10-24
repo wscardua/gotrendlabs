@@ -1,8 +1,14 @@
 # Contrato de eventos analytics (`FEAT-ANALYTICS-001`)
 
+## Histórico de leitura MCP v0.8 (local)
+
+O formato de escrita de eventos permanece fechado. A migration `admin_ops.0027_analytics_history` acrescenta `market_id` resolvido na ingestão, primeira sessão do visitante e tabelas derivadas por dia; clientes não enviam nem escolhem esses valores. O expurgo espera checkpoint com contagem e último recebimento correspondentes. A consulta histórica usa [mcp-analytics.md](mcp-analytics.md), independente do resumo administrativo de até 90 dias. Eventos já expurgados antes da migration não são inventados.
+
 ## Escrita
 
 `POST /analytics/events` recebe `AnalyticsBatch` com `visitor_id`, `session_id` e entre 1 e 20 eventos. Cada evento possui `event_id` UUID, `view_id` UUID opcional, `name`, `occurred_at`, `screen_key`, `target_key` e `properties`. A FastAPI escolhe `platform`, `user_id`, `actor_type`, `auth_state` e `received_at`; headers de cliente ou corpo nao podem se passar por conclusao de dominio.
+
+`prediction_preview_viewed` é enviado pela web após o fragmento de prévia válido da API entrar no ticket e pelo Flutter após uma resposta válida ser mostrada. Falha de prévia, resposta obsoleta e prévia de reforço/revisão não geram esse evento de previsão inicial. O evento observa exibição, não previsão persistida. A presença histórica derivada usa HMAC de identidade com segredo estável `GOTRENDLABS_ANALYTICS_ACTOR_KEY`; eventos brutos mantêm a retenção curta e podem ser excluídos pela rotina de privacidade sem expor IDs via MCP.
 
 Eventos permitidos sao definidos em `apps/api/backend_api/analytics.py:EVENT_PROPERTIES`. O conjunto de propriedades e fechado. Texto livre de busca/formulario, email, token, URL com query e IP bruto nao sao aceitos como propriedades. Um `event_id` repetido retorna `accepted: 0`; visualizacao e sessao nao podem pertencer a outro identificador. Clientes devem enviar melhor esforco, sem bloquear o produto.
 

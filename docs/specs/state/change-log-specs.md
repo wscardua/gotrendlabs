@@ -649,3 +649,11 @@ WFLOW-20261017-AGENDA-REVIEW-FIXES: restaurado helper administrativo de datas, p
 Contrato final e evidências consolidados em [fechamento da agenda](../testing/resolution-agenda-closeout-20261017.md). Branch feature/structured-resolution-agenda preservada; implementação validada localmente e fechamento GitHub/produção em preparação, condicionado à aprovação prévia da descrição da PR solicitada pelo usuário. Não declarar dados migrados ou release mobile distribuída por deploy web/API. Workflow WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT.
 
 Fechamento local preparado: rodada ampla de 552 identificou cinco fixtures/mocks desatualizados; ajustes revalidados com 98 testes aprovados (192.350s), sem relaxar regras da aplicação. Flutter analyze/120 testes, JS/OpenAPI/Django/migrations/links/diff aprovados; build Docker local limitado por espaço. ADR da agenda renumerada para ADR-0016 para preservar ADR-0012 de thumbnails; checklist alinhado à política ativa. Commit/PR/implantação seguem WFLOW-20261017-RESOLUTION-AGENDA-CLOSEOUT, com aprovação prévia da descrição ainda pendente.
+## 2026-10-24 — analytics histórico para agentes
+
+Revisão da branch: contrato de cobertura por evento e `metric_coverage`, alcance de filtro por bloco, prévia somente após resposta válida, sequência temporal de funil, supressão de segmentos 1–4 e exclusão de presença derivada por HMAC. ADR-0017, runbook e feature sincronizados. Permissão e ferramentas MCP mantidas; schemas HTTP/OpenAPI ajustados sem compatibilidade legada.
+
+Atualizadas specs `first-party-analytics`, `mcp-editorial-agents`, contratos `analytics-events` e `agent-integrations`; criado `mcp-analytics` v1 e ADR-0017. Cobertura, semântica temporal, classes de métrica, paginação, privacidade e disponibilidade passam a ter definições explícitas. Mudança local, sem inferir estado de produção. Workflow WFLOW-20261024-MCP-ANALYTICS-HISTORY.
+## 2026-10-24 — fechamento documental local do histórico analítico MCP
+
+FEAT-ANALYTICS-001 v0.9 e FEAT-MCP-001 v1.6 referenciam `mcp-analytics.md`; ADR-0017, aceites, estado, workflow, OpenAPI e runbook descrevem consolidação, cobertura, autorização, limitações e ativação. O estado registra validação local, sem atribuir implantação produtiva ou dados anteriores à instrumentação. O preflight de produção exige segredo analítico estável antes de parar writers.

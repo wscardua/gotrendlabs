@@ -97,5 +97,8 @@ const context = {
   assert.deepEqual(batches[2].events.map(event => event.name), [
     'page_viewed', 'market_detail_viewed', 'prediction_started', 'prediction_option_selected',
   ]);
+  listeners.get('gtl:prediction-preview-viewed')({detail: {marketSlug: 'market-a'}});
+  await timers[0]();
+  assert.deepEqual(batches[3].events.map(event => event.name), ['prediction_preview_viewed']);
   console.log('analytics web ticket lifecycle: OK');
 })().catch(error => { console.error(error); process.exitCode = 1; });
