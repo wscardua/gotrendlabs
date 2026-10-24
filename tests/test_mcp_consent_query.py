@@ -20,11 +20,15 @@ class ConsentQueryTests(SimpleTestCase):
             "auth_api_token": "fixture",
             "auth_api_user": {"id": 1, "is_staff": True},
         }
+        consent_info = {
+            "scopes": ["editorial:read", "catalog:read"],
+            "integrations": [{"scopes": ["editorial:read", "catalog:read"]}],
+        }
         request = RequestFactory().get("/admin-ops/integration-consent/", params)
         request.session = session
         with (
             patch(
-                "apps.web.django.admin_ops.integration_views._request", return_value={}
+                "apps.web.django.admin_ops.integration_views._request", return_value=consent_info
             ) as api,
             patch(
                 "apps.web.django.admin_ops.integration_views.render",
@@ -40,7 +44,7 @@ class ConsentQueryTests(SimpleTestCase):
         request.session = session
         with patch(
             "apps.web.django.admin_ops.integration_views._request",
-            side_effect=[{}, {"redirect": "http://127.0.0.1:8765/callback"}],
+            side_effect=[consent_info, {"redirect": "http://127.0.0.1:8765/callback"}],
         ) as api:
             self.assertEqual(consent(request).status_code, 302)
             self.assertEqual(api.call_args.args[2]["parameters"], params)
