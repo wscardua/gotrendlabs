@@ -167,7 +167,11 @@ void main() {
         }),
         ledgerProvider.overrideWith((ref) async {
           ledgerCalls += 1;
-          return {'wallet': _wallet(), 'entries': <dynamic>[]};
+          return {
+            'wallet': _wallet(),
+            'resolution_returns': <dynamic>[],
+            'entries': <dynamic>[],
+          };
         }),
         walletRechargeRequestsProvider.overrideWith((ref) async {
           rechargeCalls += 1;

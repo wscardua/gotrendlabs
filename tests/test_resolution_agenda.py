@@ -1,3 +1,4 @@
+from uuid import uuid4
 import copy
 import json
 from datetime import datetime, timedelta, timezone
@@ -450,7 +451,7 @@ class AgendaPersistenceTests(AppendOnlyTransactionTestCase):
             with conn.cursor() as cur:
                 cur.execute('SELECT * FROM gotrendlabs_markets WHERE id=%s',(self.market.id,))
                 engine=_market_lifecycle_engine(cur,None)
-                engine.resolve_market(cur.fetchone(),self.market.slug,AdminMarketResolvePayload(winning_option_id=self.option.id,note='Fixture evidence',resolution_timezone='UTC'))
+                engine.resolve_market(cur.fetchone(),self.market.slug,AdminMarketResolvePayload(expected_market_id=self.market.id,idempotency_key=uuid4(),winning_option_id=self.option.id,note='Fixture evidence',resolution_timezone='UTC'))
         self.market.refresh_from_db();self.assertEqual(self.market.status,'resolved')
         with get_connection() as conn:
             with conn.cursor() as cur:

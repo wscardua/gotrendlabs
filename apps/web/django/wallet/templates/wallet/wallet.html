@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs | Carteira{% endblock %}
 {% block content %}
 <main class="shell page-grid">
@@ -8,11 +9,25 @@
     <div class="metrics">
       <div class="metric"><strong>{{ wallet.available_gtl }} GT₵</strong><span>crédito disponível</span></div>
       <div class="metric"><strong>{{ wallet.locked_gtl }} GT₵</strong><span>crédito reservado</span></div>
-      <div class="metric"><strong>{{ wallet.total_earned_gtl }} GT₵</strong><span>créditos por acerto</span></div>
+      <div class="metric"><strong>{{ wallet.total_earned_gtl }} GT₵</strong><span>{% trans "créditos ganhos" %}</span></div>
       {% if not can_access_admin_ops %}<div class="metric"><strong>{{ reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação</span></div>{% endif %}
     </div>
     {% if messages %}{% for message in messages %}<div class="tag {% if message.tags == 'error' %}risk{% else %}safe{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
     {% if recharge_error %}<div class="tag risk">{{ recharge_error }}</div>{% endif %}
+    {% if resolution_returns %}
+      <h3>{% trans "Retornos por acerto" %}</h3>
+      <p class="muted">{% trans "O total recebido já está incluído no saldo e nos lançamentos do extrato." %}</p>
+      {% for result in resolution_returns %}
+        <section class="side-card">
+          <h4><a href="{% url 'market-detail' result.market_slug %}">{{ result.market_title }}</a></h4>
+          <div class="metrics">
+            <div class="metric"><strong>{{ result.released_gtl }} GT₵</strong><span>{% trans "Valor liberado" %}</span></div>
+            <div class="metric"><strong>{{ result.net_profit_gtl }} GT₵</strong><span>{% trans "Ganho líquido" %}</span></div>
+            <div class="metric"><strong>{{ result.total_received_gtl }} GT₵</strong><span>{% trans "Total recebido" %}</span></div>
+          </div>
+        </section>
+      {% endfor %}
+    {% endif %}
     <h3>Extrato</h3>
     <table class="table">
       <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>GT₵</th></tr>
@@ -80,7 +95,7 @@
         </div>
       {% endif %}
     </div>
-    <div class="side-card"><h3>Separando conceitos</h3><p>Crédito disponível pode ser usado em novos mercados. Crédito reservado está em previsões abertas. Créditos por acerto vêm de resoluções. Reputação mede histórico.</p></div>
+    <div class="side-card"><h3>Separando conceitos</h3><p>Crédito disponível pode ser usado em novos mercados. Crédito reservado está em previsões abertas. Créditos ganhos incluem ganhos líquidos por acertos e recompensas. Reputação mede histórico.</p></div>
   </aside>
 </main>
 <div class="modal" id="confirm-modal"><div class="modal-card"><h3 data-confirm-title></h3><p data-confirm-desc></p><div class="actions"><button class="btn primary" data-close-modal>Confirmar</button><button class="btn ghost" data-close-modal>Cancelar</button></div></div></div>

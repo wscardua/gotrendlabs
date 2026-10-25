@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-002
 titulo: "Detalhe do mercado"
-versao: 0.7
+versao: 0.8
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-17
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -49,7 +49,7 @@ Usuário entra no mercado, entende o contexto, avalia opções, acompanha coment
 
 - ações web usam os subtítulos `Reforçar — Aumentar sua posição` e `Revisar — Mudar sua escolha`, conforme preferência validada no QA local
 
-- participantes públicos usam o total distinto de humanos + bots com previsões abertas calculado pela FastAPI, sem separação visual
+- participantes públicos usam o total distinto de humanos + bots com previsões resolved em mercados resolved/sealed ou open nos demais estados calculado pela FastAPI, sem separação visual
 - na web, quando `can_revise=false`, a opção Revisar permanece desabilitada, sem aviso adicional explicando o motivo; desativação, janela encerrada e limite atingido continuam decididos pelo backend. Preferência ajustada após QA local em 2026-10-17
 - Flutter mantém a razão visível no subtítulo de `Trocar escolha`, inclusive com `Aumentar posição` disponível
 
@@ -164,3 +164,7 @@ O cartão do ciclo contém título e seis etapas em grade 3×2 legível, com tok
 Em telas estreitas, as informações quebram de linha sem overflow. Estados terminais e regras de resolução permanecem. Somente apresentação web; sem alteração de MCP/API/Flutter.
 
 Rótulos da previsão usam “BRT” para o fuso America/Sao_Paulo, seguindo o fechamento. O cadastro e o contrato estruturado conservam o identificador IANA; o rótulo compacto é produzido pela FastAPI para os consumidores.
+
+## Participação após resolução — 2026-10-25
+
+Em resolved/sealed, a projeção pública de volume/participantes agrega previsões resolved, excluindo revised/canceled; preserva humanos/bots e deduplica contas em reforços. Volume humano permanece a semântica de volume_gtl/human_volume_gtl. Demais estados continuam agregando apenas open. Web/Flutter exibem GT₵ em previsões no resultado, evitando chamar volume liquidado de saldo reservado. Elegibilidade dos agentes segue exclusivamente previsões humanas open em _human_prediction_totals; não usa o histórico público como atividade atual. Analytics MCP preserva seus agregados próprios de domínio.

@@ -1,3 +1,16 @@
+## 2026-10-25 — fechamento da resolução preparado
+
+Fatia implementada e revisão de impacto concluída sem findings. Specs e contratos atuais, OpenAPI, ADR-0018, README mobile e memória operacional reconciliados; o estado global parcial das features maiores não é promovido indevidamente. Publicação aguarda aprovação da descrição da PR, conforme pedido do usuário; CI/merge/deploy e recibo produtivo são etapas seguintes, com branch local preservada. [Roteiro de implantação](../operations/resolution-reliability-rollout.md). Flutter exige release própria; MCP não requer mudança de ferramenta/schema/permissão.
+
+## 2026-10-25 — retorno da wallet e participação final (local)
+
+WFLOW-20261025-RESOLUTION-DISPLAY: wallet web/Flutter distingue liberação, ganho líquido e retorno total da liquidação vigente pelo ledger; undo/re-resolve não soma ciclos passados. API pública preserva volume e participantes distintos em resolved/sealed; elegibilidade dos agentes permanece por previsões humanas abertas. OpenAPI e consumidores atualizados diretamente, sem migration adicional. MCP mantém ferramentas, schemas, permissões e analytics próprios; não acessa wallet nem consome MarketResponse público. Implementação na branch fix/market-resolution-reliability, sem deploy ou distribuição mobile. [Evidências](../testing/resolution-reliability-results.md).
+
+
+## 2026-10-25 — resolução confiável e integridade por etapa
+
+FEAT-RES-001 v0.3 / FEAT-INTEGRITY-001 v1.3: estado relido sob lock, recibo UUID transacional, conflito de replay alterado/superado, recuperação de timeout sem repetir POST e janela pelo relógio do servidor. UI confirma comprovantes/resultado antes do selo quando a auditoria está válida. Migration aditiva, contratos/OpenAPI/ADR-0018 e testes atualizados. Implementação local em fix/market-resolution-reliability; sem deploy. Evidências: [aceite](../testing/resolution-reliability-results.md).
+
 ## 2026-10-24 — histórico analítico MCP implantado
 
 PR #175/merge `06c1ef0`, CI da PR (587 testes, 2 skips) e build/deploy da `main` aprovados. Migration 0027, consolidação de 17 dias, cobertura e consultas de 1/10 anos/todo o histórico verificadas; `get_editorial_signals` autenticado retorna analytics disponível. O operador concedeu `analytics:read` à única integração ativa após a implantação; o app cliente ainda precisava solicitar o escopo, atualizar ferramentas e concluir novo OAuth e smoke das oito ferramentas, sem concessão automática. [Recibo e limites](../testing/mcp-analytics-production-closeout-20261024.md). Este registro substitui a pendência de publicação local abaixo.

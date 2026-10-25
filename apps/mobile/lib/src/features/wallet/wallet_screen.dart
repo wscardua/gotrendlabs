@@ -51,6 +51,8 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                       );
                       final entries =
                           (ledger['entries'] as List<dynamic>?) ?? <dynamic>[];
+                      final returns =
+                          ledger['resolution_returns'] as List<dynamic>;
                       final recharge = ref.watch(
                         walletRechargeRequestsProvider,
                       );
@@ -64,6 +66,53 @@ class _WalletScreenState extends ConsumerState<WalletScreen> {
                               availableGtl: safeInt(wallet['available_gtl']),
                               lockedGtl: safeInt(wallet['locked_gtl']),
                             ),
+                            if (returns.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              const GtlSectionTitle(
+                                title: 'Retornos por acerto',
+                                subtitle:
+                                    'Valores já incluídos no saldo e no extrato',
+                              ),
+                              for (final result in returns)
+                                Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: GtlSurface(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(result['market_title'] as String),
+                                        const SizedBox(height: 12),
+                                        Wrap(
+                                          spacing: 20,
+                                          runSpacing: 12,
+                                          children: [
+                                            _StateMetric(
+                                              label: 'Valor liberado',
+                                              value: formatGtl(
+                                                result['released_gtl'] as int,
+                                              ),
+                                            ),
+                                            _StateMetric(
+                                              label: 'Ganho líquido',
+                                              value: formatGtl(
+                                                result['net_profit_gtl'] as int,
+                                              ),
+                                            ),
+                                            _StateMetric(
+                                              label: 'Total recebido',
+                                              value: formatGtl(
+                                                result['total_received_gtl']
+                                                    as int,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
                             const SizedBox(height: 12),
                             const GtlSectionTitle(
                               title: 'Recarga educativa',

@@ -95,7 +95,7 @@
       </div>
     </div>
     <div class="admin-grid">
-      <div class="metric"><strong>{{ market.volume_gtl }}</strong><span>GT₵ reservadas</span></div>
+      <div class="metric"><strong>{{ market.volume_gtl }}</strong><span>{% if market.status == "resolved" or market.status == "sealed" %}{% trans "GT₵ em previsões" %}{% else %}{% trans "GT₵ reservadas" %}{% endif %}</span></div>
       <div class="metric"><strong>{{ market.participants }}</strong><span>participação</span></div>
       <div class="metric">
         {% if market.status == "open" %}<strong>{{ market.closes_in }}</strong><span>até fechar previsões</span>

@@ -232,9 +232,19 @@ class LedgerEntryResponse(BaseModel):
     created_by: Optional[int] = None
 
 
+class WalletResolutionReturnResponse(BaseModel):
+    market_id: int
+    market_slug: str
+    market_title: str
+    released_gtl: int
+    net_profit_gtl: int
+    total_received_gtl: int
+
+
 class LedgerResponse(BaseModel):
     wallet: WalletResponse
     entries: List[LedgerEntryResponse]
+    resolution_returns: List[WalletResolutionReturnResponse]
 
 
 class ReferralResponse(BaseModel):
@@ -761,8 +771,8 @@ class MarketResponse(BaseModel):
     secondary_probability: int
     secondary_probability_exact: float = 0
     volume_gtl: str
-    participants: str = Field(description="Rótulo do total de contas distintas humanas e bot com previsões abertas.")
-    total_participants: int = Field(description="Total de contas distintas humanas e bot com previsões abertas.", ge=0)
+    participants: str = Field(description="Rótulo do total de contas distintas humanas e bot: previsões resolvidas em mercados resolved/sealed, abertas nos demais estados.")
+    total_participants: int = Field(description="Total de contas distintas humanas e bot: previsões resolvidas em mercados resolved/sealed, abertas nos demais estados.", ge=0)
     human_participants: int = 0
     bot_participants: int = 0
     human_volume_gtl: int = 0
@@ -1004,6 +1014,8 @@ class AdminMarketIntegrityCorrectionPayload(BaseModel):
 
 
 class AdminMarketResolvePayload(BaseModel):
+    expected_market_id: int = Field(ge=1)
+    idempotency_key: UUID
     winning_option_id: int
     source_url: str = Field(default="", max_length=500)
     note: str = Field(default="", max_length=2000)

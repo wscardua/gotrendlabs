@@ -1,10 +1,10 @@
 ---
 id: FEAT-MOBILE-001
 titulo: "MVP mobile Flutter"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-26
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
   - docs/specs/features/market-feed.md
@@ -249,3 +249,7 @@ Mudancas neste MVP podem exigir ajustes em contratos publicos de mercado, auth, 
 ## Critérios longos e prazos no detalhe — 17/10/2026
 
 A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (`expected_resolution_label`) da FastAPI no rodapé do resumo, após divisor discreto e com tipografia secundária. Critério em card próprio antes do ticket: prévia de três linhas e, somente para texto longo, “Ver critério de resolução completo” abre painel inferior com texto integral selecionável, rolagem e Fechar. Não expande dentro da página. Ausência não inventa data. Medição respeita largura/escala de fonte; conferir texto curto, longo, vazio e retorno ao detalhe após fechar.
+
+## Wallet/mercados resolvidos — 2026-10-25
+
+Consumidor Flutter atualizado para LedgerResponse.resolution_returns obrigatório e para apresentação do volume final em resolved/sealed; domínio permanece FastAPI. Contrato, widget tests e análise estática validados; distribuição exige release mobile separada.

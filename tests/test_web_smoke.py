@@ -1,3 +1,4 @@
+from uuid import uuid4
 from datetime import date, datetime, timedelta
 from decimal import Decimal, ROUND_HALF_UP
 from copy import deepcopy
@@ -4179,7 +4180,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         resolved = client.post(
             "/admin/markets/ranking-theme-teste/resolve",
             headers=staff_headers,
-            json={"winning_option_id": ia_option.id, "source_url": "https://example.com/ranking", "note": "resolver"},
+            json={"expected_market_id": Market.objects.get(slug='ranking-theme-teste').id, "idempotency_key": str(uuid4()), "winning_option_id": ia_option.id, "source_url": "https://example.com/ranking", "note": "resolver"},
         )
         self.assertEqual(resolved.status_code, 200)
         theme_badge = BadgeDefinition.objects.create(
@@ -4923,7 +4924,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         resolved = client.post(
             "/admin/markets/openai-gpt6-2026/resolve",
             headers=staff_headers,
-            json={"winning_option_id": nao.id, "source_url": "https://fonte.example/position", "note": "Resultado final."},
+            json={"expected_market_id": Market.objects.get(slug='openai-gpt6-2026').id, "idempotency_key": str(uuid4()), "winning_option_id": nao.id, "source_url": "https://fonte.example/position", "note": "Resultado final."},
         )
         self.assertEqual(resolved.status_code, 200)
         audit = client.get("/admin/markets/openai-gpt6-2026/resolution-audit", headers=staff_headers)
@@ -5168,21 +5169,21 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         non_staff = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
             headers=winner_headers,
-            json={"winning_option_id": winning_option.id, "source_url": "https://fonte.example/resolucao", "note": "Fonte validada."},
+            json={"expected_market_id": Market.objects.get(slug='resolucao-mvp-teste').id, "idempotency_key": str(uuid4()), "winning_option_id": winning_option.id, "source_url": "https://fonte.example/resolucao", "note": "Fonte validada."},
         )
         self.assertEqual(non_staff.status_code, 403)
         invalid_option = MarketOption.objects.get(market__slug="tiktok-ban-eua-2026", label="SIM")
         invalid = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
             headers=staff_headers,
-            json={"winning_option_id": invalid_option.id, "source_url": "https://fonte.example/resolucao", "note": "Fonte validada."},
+            json={"expected_market_id": Market.objects.get(slug='resolucao-mvp-teste').id, "idempotency_key": str(uuid4()), "winning_option_id": invalid_option.id, "source_url": "https://fonte.example/resolucao", "note": "Fonte validada."},
         )
         self.assertEqual(invalid.status_code, 422)
 
         resolved = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
             headers=staff_headers,
-            json={
+            json={"expected_market_id": Market.objects.get(slug='resolucao-mvp-teste').id, "idempotency_key": str(uuid4()),
                 "winning_option_id": winning_option.id,
                 "source_url": "https://fonte.example/resolucao",
                 "note": "Fonte validada.",
@@ -5286,9 +5287,9 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         duplicate = client.post(
             "/admin/markets/resolucao-mvp-teste/resolve",
             headers=staff_headers,
-            json={"winning_option_id": winning_option.id, "source_url": "https://fonte.example/resolucao", "note": "Duplicada."},
+            json={"expected_market_id": Market.objects.get(slug='resolucao-mvp-teste').id, "idempotency_key": str(uuid4()), "winning_option_id": winning_option.id, "source_url": "https://fonte.example/resolucao", "note": "Duplicada."},
         )
-        self.assertEqual(duplicate.status_code, 422)
+        self.assertEqual(duplicate.status_code, 409)
         Market.objects.filter(slug="resolucao-mvp-teste").update(seal_due_at=timezone.now() + timedelta(hours=1))
         cancel_resolved = client.post("/admin/markets/resolucao-mvp-teste/cancel", headers=staff_headers, json={"note": "cancelar resolução e aplicar refund"})
         self.assertEqual(cancel_resolved.status_code, 200)
@@ -5415,7 +5416,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         resolved = client.post(
             "/admin/markets/auditoria-distribuicao-mvp/resolve",
             headers=users["staff"]["headers"],
-            json={"winning_option_id": options["Verde"].id, "source_url": "https://fonte.example/auditoria", "note": "Resultado auditado."},
+            json={"expected_market_id": Market.objects.get(slug='auditoria-distribuicao-mvp').id, "idempotency_key": str(uuid4()), "winning_option_id": options["Verde"].id, "source_url": "https://fonte.example/auditoria", "note": "Resultado auditado."},
         )
         self.assertEqual(resolved.status_code, 200)
         self.assertEqual(resolved.json()["status"], "resolved")
@@ -5834,7 +5835,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         resolved = client.post(
             "/admin/markets/preserva-dados-internos/resolve",
             headers=staff_headers,
-            json={"winning_option_id": sim.id, "source_url": "https://fonte.example/resolucao", "note": "Fonte validada."},
+            json={"expected_market_id": Market.objects.get(slug='preserva-dados-internos').id, "idempotency_key": str(uuid4()), "winning_option_id": sim.id, "source_url": "https://fonte.example/resolucao", "note": "Fonte validada."},
         )
         self.assertEqual(resolved.status_code, 200)
         resolved_payload = resolved.json()
@@ -10701,6 +10702,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             response = self.client.post(
                 reverse("admin-ops-resolution-market-action", args=["locked-api", "resolve"]),
                 {
+                    "expected_market_id": 1,
+                    "idempotency_key": str(uuid4()),
                     "winning_option_id": locked_market["options"][0]["id"],
                     "source_url": "https://fonte.example/resolucao",
                     "note": "Fonte validada.",

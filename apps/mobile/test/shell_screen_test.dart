@@ -84,7 +84,11 @@ void main() {
         }),
         ledgerProvider.overrideWith((ref) async {
           ledgerCalls += 1;
-          return {'wallet': <String, dynamic>{}, 'entries': <dynamic>[]};
+          return {
+            'wallet': <String, dynamic>{},
+            'resolution_returns': <dynamic>[],
+            'entries': <dynamic>[],
+          };
         }),
         walletProvider.overrideWith((ref) async {
           walletCalls += 1;

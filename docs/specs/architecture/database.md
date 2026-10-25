@@ -67,3 +67,7 @@ Contrato e critérios: [market-resolution-agenda](../features/market-resolution-
 # Histórico analítico MCP (branch local 2026-10-24)
 
 `admin_ops.0027` adiciona checkpoints por dia local, contagens aditivas por evento/mercado/plataforma/ator, presença diária de atores para DISTINCT entre dias, funil derivado de eventos por sessão/mercado e snapshot de taxonomia na publicação. A role FastAPI recebe acesso; MCP não recebe acesso ao PostgreSQL. Checkpoint e derivados são atualizados na mesma transação com lock por dia; o expurgo só passa após validar contagem e último recebimento. Índices cobrem data e mercado/data em eventos e derivados. Fatos de previsão continuam nas tabelas de domínio. [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md).
+
+## Recibos administrativos de resolução — 2026-10-25
+
+`gotrendlabs_market_resolution_requests` guarda UUID único global, FK protegida/indexada para mercado, hash canônico do pedido, `seal_due_at` da ocorrência e `created_at`. Não armazena tokens nem cópia do texto editorial. UPDATE/DELETE são bloqueados por trigger; não participa do expurgo operacional. Migration markets.0037 concede SELECT/INSERT e uso da sequência à role FastAPI configurada/padrão, quando existente. Django consulta via API, nunca grava recibos. Inserção única e confirmação dos efeitos compartilham transação; conflito de chave entre mercados reverte a segunda transação inteira. Nenhuma prova ou prazo histórico é migrado.

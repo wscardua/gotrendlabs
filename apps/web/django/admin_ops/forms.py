@@ -917,6 +917,8 @@ class AdminBadgeForm(forms.Form):
 
 
 class MarketResolutionForm(forms.Form):
+    expected_market_id = forms.IntegerField(min_value=1, widget=forms.HiddenInput)
+    idempotency_key = forms.UUIDField(widget=forms.HiddenInput)
     winning_option_id = forms.ChoiceField(label="Resultado")
     resolved_at = MarketLocalDateTimeField(
         label="Data/hora da resolução",
@@ -932,6 +934,9 @@ class MarketResolutionForm(forms.Form):
         from datetime import datetime
         from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+        from uuid import uuid4
+        self.initial.setdefault("expected_market_id", (market or {}).get("market_id"))
+        self.initial.setdefault("idempotency_key", uuid4())
         options = (market or {}).get("options", [])
         timezone_name = (market or {}).get("resolution_timezone") or (market or {}).get("close_timezone") or "UTC"
         try:

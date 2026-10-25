@@ -1,10 +1,10 @@
 ---
 id: FEAT-RES-001
 titulo: "Resolução de mercado"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-20
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -145,3 +145,11 @@ Resolucao inicia janela configuravel de 12 horas. Durante a janela, desfazer exi
 ## Agenda estruturada (2026-10-17)
 
 Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+## Resolução confiável — 2026-10-25
+
+- POST `/admin/markets/{slug}/resolve` exige `expected_market_id` positivo e `idempotency_key` UUID além do payload de resolução. Chave estável por submissão, preservada nos reenvios; mesma chave com conteúdo diferente retorna 409 `resolution_request_conflict`.
+- FastAPI bloqueia e relê o mercado antes de validar o estado. Recibo, liquidação, reputação, notificações e evento assinado confirmam na mesma transação. Repetição confirmada retorna a projeção atual sem reaplicar efeitos; operação desfeita/substituída retorna 409 `resolution_request_superseded`. Outra resolução em mercado já resolvido retorna 409 `resolution_state_conflict`.
+- GET `/admin/markets/{slug}/resolution-requests/{idempotency_key}?expected_market_id=ID` exige staff/MFA e consulta confirmação sem mutação. Retorna MarketResponse quando confirmado e ainda vigente; 404 significa não confirmado/ausente, nunca prova rollback de uma chamada em andamento. ID divergente retorna 409.
+- Admin Ops usa timeout de 15s para resolver. Em falha de transporte, consulta a mesma chave; se indisponível/não confirmada, informa estado indeterminado e preserva chave/payload. Nunca repete POST automaticamente nem recomenda nova operação sem reconciliação. Campos ocultos obrigatórios impedem substituir identidade após erro.
+- `resolved_at` mantém a data declarada da decisão; `market_resolved.occurred_at` registra a publicação pelo servidor. `seal_due_at` usa este último instante + janela configurada. Desfazer e resolver novamente inicia janela completa. Provas/prazos já assinados não são recalculados por migration.

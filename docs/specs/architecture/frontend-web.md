@@ -130,3 +130,7 @@ Geração administrativa de imagens: indicador inline compartilhado com spinner,
 
 
 Correções de review: salvamento pendente cancelado explicitamente quando a seleção manual muda durante carregamento, com nova confirmação pelo operador. Django mantém identidade do editor de badges por sessão autenticada/badge para retomar polling na recarga; consulta não dispara geração. Campos e contratos públicos preservados.
+
+## Resolução administrativa confiável
+
+Admin Ops preserva UUID/ID em campos ocultos do formulário válido ou reapresentado. O cliente espera 15s no POST de resolução; erro de transporte aciona GET de confirmação, nunca POST automático. Resultado indeterminado oferece consulta da mesma operação; erro de conflito/autorização não é tratado como indisponibilidade. A integridade pública apresenta verificações existentes separadas da selagem futura, usando somente resultados autoritativos da FastAPI.

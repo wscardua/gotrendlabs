@@ -1758,6 +1758,16 @@
       },
       "AdminMarketResolvePayload": {
         "properties": {
+          "expected_market_id": {
+            "minimum": 1.0,
+            "title": "Expected Market Id",
+            "type": "integer"
+          },
+          "idempotency_key": {
+            "format": "uuid",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
           "note": {
             "default": "",
             "maxLength": 2000,
@@ -1794,6 +1804,8 @@
           }
         },
         "required": [
+          "expected_market_id",
+          "idempotency_key",
           "winning_option_id"
         ],
         "title": "AdminMarketResolvePayload",
@@ -4321,13 +4333,21 @@
             "title": "Entries",
             "type": "array"
           },
+          "resolution_returns": {
+            "items": {
+              "$ref": "#/components/schemas/WalletResolutionReturnResponse"
+            },
+            "title": "Resolution Returns",
+            "type": "array"
+          },
           "wallet": {
             "$ref": "#/components/schemas/WalletResponse"
           }
         },
         "required": [
           "wallet",
-          "entries"
+          "entries",
+          "resolution_returns"
         ],
         "title": "LedgerResponse",
         "type": "object"
@@ -5033,7 +5053,7 @@
             "type": "string"
           },
           "participants": {
-            "description": "R\u00f3tulo do total de contas distintas humanas e bot com previs\u00f5es abertas.",
+            "description": "R\u00f3tulo do total de contas distintas humanas e bot: previs\u00f5es resolvidas em mercados resolved/sealed, abertas nos demais estados.",
             "title": "Participants",
             "type": "string"
           },
@@ -5213,7 +5233,7 @@
             "type": "string"
           },
           "total_participants": {
-            "description": "Total de contas distintas humanas e bot com previs\u00f5es abertas.",
+            "description": "Total de contas distintas humanas e bot: previs\u00f5es resolvidas em mercados resolved/sealed, abertas nos demais estados.",
             "minimum": 0.0,
             "title": "Total Participants",
             "type": "integer"
@@ -9115,6 +9135,44 @@
         "title": "WalletRechargeRequestResponse",
         "type": "object"
       },
+      "WalletResolutionReturnResponse": {
+        "properties": {
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "market_slug": {
+            "title": "Market Slug",
+            "type": "string"
+          },
+          "market_title": {
+            "title": "Market Title",
+            "type": "string"
+          },
+          "net_profit_gtl": {
+            "title": "Net Profit Gtl",
+            "type": "integer"
+          },
+          "released_gtl": {
+            "title": "Released Gtl",
+            "type": "integer"
+          },
+          "total_received_gtl": {
+            "title": "Total Received Gtl",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "market_id",
+          "market_slug",
+          "market_title",
+          "released_gtl",
+          "net_profit_gtl",
+          "total_received_gtl"
+        ],
+        "title": "WalletResolutionReturnResponse",
+        "type": "object"
+      },
       "WalletResponse": {
         "properties": {
           "available_gtl": {
@@ -12927,6 +12985,75 @@
           }
         },
         "summary": "Admin Get Market Resolution Audit"
+      }
+    },
+    "/admin/markets/{slug}/resolution-requests/{idempotency_key}": {
+      "get": {
+        "operationId": "admin_get_resolution_request_admin_markets__slug__resolution_requests__idempotency_key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "idempotency_key",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Idempotency Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "expected_market_id",
+            "required": true,
+            "schema": {
+              "minimum": 1,
+              "title": "Expected Market Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Admin Get Resolution Request"
       }
     },
     "/admin/markets/{slug}/resolve": {

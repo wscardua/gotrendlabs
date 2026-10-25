@@ -141,8 +141,9 @@ def _prediction_totals(cursor, market_id):
             COALESCE(SUM(p.stake_amount), 0) AS total_volume_gtl
         FROM gotrendlabs_predictions p
         JOIN gotrendlabs_users u ON u.id = p.user_id
+        JOIN gotrendlabs_markets m ON m.id = p.market_id
         WHERE p.market_id = %s
-          AND p.status = 'open'
+          AND p.status = CASE WHEN m.status IN ('resolved', 'sealed') THEN 'resolved' ELSE 'open' END
         """,
         (market_id,),
     )

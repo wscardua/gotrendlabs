@@ -45,7 +45,7 @@
 - `canceled` devolve 100% dos stakes bloqueados por previsões abertas, marca previsões como `canceled` e não altera reputação.
 - O fluxo normal de cancelamento deve validar que nenhuma previsão `open` permaneceu no mercado antes de concluir a transição para `canceled`.
 - Estados históricos inconsistentes, como mercado `canceled` com previsões ainda `open`, devem ser corrigidos por reconciliação operacional idempotente, com refund ausente em `prediction_refund` e evento administrativo `market.cancel_reconcile`.
-- `resolved` define `seal_due_at = resolved_at + market_seal_window_hours`.
+- `resolved` define `seal_due_at = instante_de_publicacao_no_servidor + market_seal_window_hours`.
 - `resolved -> locked` é permitido somente antes de `seal_due_at`; exige motivo, estorna os efeitos atuais, reabre previsoes internas e limpa o prazo.
 - `resolved -> sealed` e executado pelo daemon quando o prazo vence e exige Seal assinado e Merkle root validados na mesma transacao.
 - `sealed` e terminal; correcoes posteriores sao novos eventos append-only.
@@ -127,3 +127,11 @@ Contrato e critérios: [market-resolution-agenda](../features/market-resolution-
 ### Projeção do cronograma administrativo (18/10/2026)
 
 Sem mudança de schema: `status` confirma o fechamento de locked/resolved/sealed; `close_at` representa somente o horário programado e não prova o instante da ação. Django usa a classificação de `resolution_schedule` para alertas de fechamento/previsão vencidos e mantém previsões terminais como histórico. `resolved_at`/`sealed_at` são registros efetivos; `seal_due_at` é prazo previsto, sem conclusão por tempo. Ausência de timestamp efetivo em estado terminal é explicitada; cancelamento não cria obrigação futura. A UI não presume início de apuração nem etapa financeira.
+
+## Resolução confiável — 2026-10-25
+
+- POST `/admin/markets/{slug}/resolve` exige `expected_market_id` positivo e `idempotency_key` UUID além do payload de resolução. Chave estável por submissão, preservada nos reenvios; mesma chave com conteúdo diferente retorna 409 `resolution_request_conflict`.
+- FastAPI bloqueia e relê o mercado antes de validar o estado. Recibo, liquidação, reputação, notificações e evento assinado confirmam na mesma transação. Repetição confirmada retorna a projeção atual sem reaplicar efeitos; operação desfeita/substituída retorna 409 `resolution_request_superseded`. Outra resolução em mercado já resolvido retorna 409 `resolution_state_conflict`.
+- GET `/admin/markets/{slug}/resolution-requests/{idempotency_key}?expected_market_id=ID` exige staff/MFA e consulta confirmação sem mutação. Retorna MarketResponse quando confirmado e ainda vigente; 404 significa não confirmado/ausente, nunca prova rollback de uma chamada em andamento. ID divergente retorna 409.
+- Admin Ops usa timeout de 15s para resolver. Em falha de transporte, consulta a mesma chave; se indisponível/não confirmada, informa estado indeterminado e preserva chave/payload. Nunca repete POST automaticamente nem recomenda nova operação sem reconciliação. Campos ocultos obrigatórios impedem substituir identidade após erro.
+- `resolved_at` mantém a data declarada da decisão; `market_resolved.occurred_at` registra a publicação pelo servidor. `seal_due_at` usa este último instante + janela configurada. Desfazer e resolver novamente inicia janela completa. Provas/prazos já assinados não são recalculados por migration.

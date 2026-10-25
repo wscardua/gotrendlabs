@@ -133,10 +133,12 @@ class MarketLifecycleEngine:
         self._integrity_event("market_canceled", row, f"market:{slug}:canceled", {"note": note, "occurred_at": now}, now)
 
     def resolve_market(self, row, slug, payload):
+        self.cursor.execute("SELECT * FROM gotrendlabs_markets WHERE id=%s FOR UPDATE", (row["id"],))
+        row = self.cursor.fetchone()
         if row["status"] != "locked":
             raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Apenas mercados fechados podem ser resolvidos.",
+                status_code=status.HTTP_409_CONFLICT,
+                detail={"code": "resolution_state_conflict", "message": "O mercado não está mais disponível para resolução. Atualize a página."},
             )
         from .resolution_schedule import require_resolution
         require_resolution(self.cursor, row["id"])
@@ -179,7 +181,7 @@ class MarketLifecycleEngine:
         self.cursor.execute("SELECT market_seal_window_hours FROM gotrendlabs_site_config WHERE singleton_key=1")
         config = self.cursor.fetchone()
         seal_window_hours = max(1, min(int(config["market_seal_window_hours"] or 12) if config else 12, 168))
-        seal_due_at = resolved_at + timedelta(hours=seal_window_hours)
+        seal_due_at = now + timedelta(hours=seal_window_hours)
         self.cursor.execute(
             """
             UPDATE gotrendlabs_markets

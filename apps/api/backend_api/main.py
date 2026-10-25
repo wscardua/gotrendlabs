@@ -1,3 +1,4 @@
+from uuid import UUID
 from apps.api.backend_api import resolution_schedule as schedules
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
@@ -24,6 +25,7 @@ from fastapi import FastAPI, Header, HTTPException, Query, Request, Response, st
 from fastapi.responses import JSONResponse
 from psycopg import sql
 
+from apps.api.backend_api.wallet_returns import resolution_returns
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.analytics import AnalyticsBatch, _source_ip as analytics_source_ip, ingest as ingest_analytics, summary as analytics_summary
 from apps.api.backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
@@ -6919,9 +6921,28 @@ def admin_resolve_market(slug: str, payload: AdminMarketResolvePayload, authoriz
     with get_connection() as connection:
         with connection.cursor() as cursor:
             staff = _current_staff_user(cursor, authorization)
-            row = _admin_market_by_slug(cursor, slug)
-            _market_lifecycle_engine(cursor, staff["id"]).resolve_market(row, slug, payload)
-            return _market_response(cursor, _admin_market_by_slug(cursor, slug), filter_public_image=False)
+            from apps.api.backend_api.resolution_requests import confirmed_request, record_request, request_hash
+            row = _admin_market_target(cursor, slug, payload.expected_market_id)
+            digest = request_hash(payload)
+            if not confirmed_request(cursor, row, payload.idempotency_key, payload_hash=digest):
+                _market_lifecycle_engine(cursor, staff["id"]).resolve_market(row, slug, payload)
+                row = _admin_market_by_slug(cursor, slug)
+                record_request(cursor, row, payload, digest)
+            return _market_response(cursor, row, filter_public_image=False)
+
+
+@app.get("/admin/markets/{slug}/resolution-requests/{idempotency_key}", response_model=MarketResponse)
+def admin_get_resolution_request(slug: str, idempotency_key: UUID,
+                                 expected_market_id: int = Query(..., ge=1),
+                                 authorization: str = Header(default="")):
+    with get_connection() as connection:
+        with connection.cursor() as cursor:
+            _current_staff_user(cursor, authorization)
+            from apps.api.backend_api.resolution_requests import confirmed_request
+            row = _admin_market_target(cursor, slug, expected_market_id)
+            if not confirmed_request(cursor, row, idempotency_key):
+                raise HTTPException(status_code=404, detail={"code": "resolution_request_unconfirmed", "message": "A confirmação desta operação ainda não está disponível."})
+            return _market_response(cursor, row, filter_public_image=False)
 
 
 @app.get("/admin/markets/{slug}/resolution-audit", response_model=AdminMarketResolutionAuditResponse)
@@ -8762,7 +8783,7 @@ def get_my_ledger(authorization: str = Header(default="")):
                 (user["id"],),
             )
             entries = [_ledger_entry_response(row) for row in cursor.fetchall()]
-            return {"wallet": wallet, "entries": entries}
+            return {"wallet": wallet, "entries": entries, "resolution_returns": resolution_returns(cursor, user["id"])}
 
 
 @app.get("/users/me/referral", response_model=ReferralResponse)

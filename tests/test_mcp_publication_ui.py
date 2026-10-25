@@ -346,7 +346,7 @@ class MarketWallTimezoneTests(SimpleTestCase):
 class ResolutionWallTimezoneTests(SimpleTestCase):
     def test_resolution_uses_selected_zone_and_rejects_dst_gap(self):
         from apps.web.django.admin_ops.forms import MarketResolutionForm
-        base={"winning_option_id":"1", "source_url":"http://localhost:8000/", "note":"Ensaio", "resolved_at":"2026-10-07T20:00", "resolution_timezone":"UTC"}
+        base={"expected_market_id":1,"idempotency_key":"11111111-1111-4111-8111-111111111111","winning_option_id":"1", "source_url":"http://localhost:8000/", "note":"Ensaio", "resolved_at":"2026-10-07T20:00", "resolution_timezone":"UTC"}
         market={"options":[{"id":1,"label":"SIM"}]}
         form=MarketResolutionForm(data=base,market=market)
         self.assertTrue(form.is_valid(),form.errors)

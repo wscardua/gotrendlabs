@@ -294,12 +294,16 @@ def integrity(request, slug):
             "integrity_verification_pending": verification.get("verification_status") in {"pending", "unavailable"},
             "definition_confirmed": verification.get("definition_valid") is True
             and verification.get("definition_matches_current", True) is True,
-            "predictions_confirmed": proof_status == "sealed"
+            "predictions_confirmed": verification.get("overall_valid") is True
             and verification.get("prediction_commitments_valid") is True
-            and verification.get("merkle_root_valid") is True,
-            "result_confirmed": proof_status == "sealed"
+            and (proof_status != "sealed" or verification.get("merkle_root_valid") is True),
+            "predictions_failed": verification.get("prediction_commitments_valid") is False
+            or (proof_status == "sealed" and verification.get("merkle_root_valid") is False),
+            "result_confirmed": verification.get("overall_valid") is True
             and verification.get("result_matches_current") is True
-            and verification.get("seal_valid") is True,
+            and (proof_status != "sealed" or verification.get("seal_valid") is True),
+            "result_failed": verification.get("result_matches_current") is False
+            or (proof_status == "sealed" and verification.get("seal_valid") is False),
             "final_history_confirmed": proof_status == "sealed" and verification.get("overall_valid") is True,
         }
     )

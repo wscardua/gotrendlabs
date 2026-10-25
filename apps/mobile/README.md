@@ -1,5 +1,9 @@
 # Mobile
 
+Wallet agora apresenta `resolution_returns` da FastAPI (valor liberado, ganho líquido e total recebido), e mercados resolved/sealed preservam volume/participação final. 46 testes de regressão e análise estática aprovados na implementação; sem cálculo financeiro local. Distribuir o app somente após implantação do contrato backend.
+
+Fechamento preparado em 2026-10-25: descrição da PR aguarda aprovação; implantação web/API e distribuição Flutter ainda não realizadas. [Estado e roteiro](../../docs/specs/operations/resolution-reliability-rollout.md).
+
 Na branch local `feature/mcp-analytics-history`, o ticket inicial envia `prediction_preview_viewed` somente depois de mostrar uma prévia válida da API. A coleta usa o tracker existente e não altera previsão, autorização nem navegação quando falha. O backend informa cobertura por evento ao MCP; a distribuição do app exige release mobile própria.
 
 Atualização 2026-10-17: Cards/painel usam `total_participants` obrigatório, com contagem humana + bot e singular/plural, sem fallback. Flutter mantém o motivo no subtítulo de Trocar escolha. Código validado; distribuição exige próxima release mobile (o workflow GitHub publica web/API). [Fechamento](../../docs/specs/testing/participants-closeout-20261017.md).
