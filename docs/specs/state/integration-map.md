@@ -1,3 +1,7 @@
+## 2026-10-25 — resolução e recibos publicados
+
+Admin Ops → FastAPI staff/MFA → transação de resolução/recibo → ledger, reputação e prova; timeout → consulta autenticada do recibo. Migration 0037 cria o recibo e 0038 fixa privilégios mínimos sobre a ACL efetiva. Django apresenta a auditoria e o retorno da wallet; web/API publicados e conferidos. Flutter consome a projeção atual mas ainda requer release. MCP preserva ferramentas, schemas, scopes, erros, replay e orientação editorial, sem inferir permissão administrativa. [Recibo produtivo](../testing/resolution-reliability-production-closeout-20261025.md).
+
 ## 2026-10-25 — ACL efetiva dos recibos em produção
 
 PR #177 implantou resolução confiável e apresentação da wallet/mercado. O smoke confirmou o resultado e identificou privilégio UPDATE/DELETE herdado da default ACL na nova tabela de recibos, apesar do trigger append-only ativo. Revogação pontual em produção executada por migration owner e confirmada: FastAPI SELECT/INSERT, sem UPDATE/DELETE; Django apenas SELECT; sequência FastAPI USAGE/SELECT, sem UPDATE. Migration markets.0038 e teste de regressão tornam o estado reproduzível em futuros ambientes. Sem mudança de API, MCP, mobile, saldos ou provas. Acompanhar PR corretiva/CI/deploy antes do recibo final. [Evidências](../testing/resolution-reliability-results.md).

@@ -1,5 +1,7 @@
 # Resolução confiável — validação local de 25/10/2026
 
+Este documento registra a validação local anterior à publicação. O estado final de CI, deploy, migration, ACL e smoke está no [recibo produtivo](resolution-reliability-production-closeout-20261025.md).
+
 ## Escopo e base
 
 WFLOW-20261025-RESOLUTION-RELIABILITY; branch `fix/market-resolution-reliability`, base `origin/main` `9407a8c`. Worktree `/Users/williamsca/Documents/gotrendlabs-resolution-fix`; alterações anteriores na pasta original preservadas.

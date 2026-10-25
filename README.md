@@ -1,6 +1,6 @@
 # GoTrendLabs
 
-Fechamento em 2026-10-25: PR #177/merge `8343b90` e implantação web/API aprovados; ajuste corretivo de ACL está ativo em produção e a migration 0038 aguarda PR. Distribuição Flutter ainda pendente. [Estado e roteiro](docs/specs/operations/resolution-reliability-rollout.md).
+Fechamento em 2026-10-25: PRs #177 e #178 integradas, testes/build/deploy web/API aprovados, migrations 0037/0038 e ACL mínima confirmadas em produção. O mercado 35 mostra 100 GT₵, 1 participante e integridade válida. Distribuição Flutter ainda pendente. [Recibo produtivo](docs/specs/testing/resolution-reliability-production-closeout-20261025.md) e [roteiro](docs/specs/operations/resolution-reliability-rollout.md).
 
 Implementação publicada em web/API em 2026-10-25: wallet web/Flutter explica valor liberado, ganho líquido e total recebido; mercados resolvidos preservam volume/participação final. Branch `fix/market-resolution-reliability`, contratos e testes atualizados. Web/API implantadas; distribuição mobile pendente. [Evidências](docs/specs/testing/resolution-reliability-results.md).
 

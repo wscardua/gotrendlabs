@@ -2,7 +2,7 @@
 
 ## Estado
 
-PR #177 integrada em 2026-10-25 (merge `8343b90`) e Actions de main `40205958120` aprovados, com smoke produtivo do mercado 35. A ACL foi ajustada pontualmente em produção; migration 0038 corretiva ainda aguarda publicação para tornar o estado reproduzível. Fonte operacional: WFLOW-20261025-RESOLUTION-CLOSEOUT e WFLOW-20261025-RESOLUTION-RECEIPT-ACL. O código Flutter integrado ainda requer distribuição do app.
+PRs #177 e #178 integradas em 2026-10-25 (merges `8343b90`/`659e976`); Actions de main `40205958120`/`40208226722`, incluindo deploy, aprovados. Migrations 0037/0038, ACL mínima e smoke do mercado 35 confirmados em produção. [Recibo produtivo](../testing/resolution-reliability-production-closeout-20261025.md). O código Flutter integrado ainda requer distribuição do app.
 
 ## Contratos e pré-requisitos
 
@@ -37,4 +37,4 @@ O workflow atual não distribui binários Flutter. Publicação web/API pode ser
 
 ## Ajuste pós-deploy da ACL
 
-O primeiro deploy pelo Actions 40205958120 funcionou e passou no smoke. A tabela nova recebeu default ACL `arwd` para FastAPI/Django; trigger append-only já impedia UPDATE/DELETE, mas a ACL excedia o contrato. SSM aplicou REVOKE pontual com a role proprietária e confirmou FastAPI (SELECT, INSERT; sem UPDATE/DELETE), Django (SELECT; sem escrita) e sequência FastAPI (USAGE/SELECT; sem UPDATE). A migration 0038 deve manter esse estado após o próximo deploy. O ajuste não tocou a default ACL global, outras tabelas nem os dados resolvidos.
+O primeiro deploy pelo Actions 40205958120 funcionou e passou no smoke. A tabela nova recebeu default ACL `arwd` para FastAPI/Django; trigger append-only já impedia UPDATE/DELETE, mas a ACL excedia o contrato. SSM aplicou REVOKE pontual com a role proprietária e confirmou FastAPI (SELECT, INSERT; sem UPDATE/DELETE), Django (SELECT; sem escrita) e sequência FastAPI (USAGE/SELECT; sem UPDATE). A migration 0038 foi implantada pelo Actions 40208226722; o smoke SSM posterior confirmou migration aplicada e os mesmos privilégios mínimos. O ajuste não tocou a default ACL global, outras tabelas nem os dados resolvidos.
