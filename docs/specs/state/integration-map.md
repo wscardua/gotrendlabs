@@ -1,3 +1,7 @@
+## 2026-10-25 — ACL efetiva dos recibos em produção
+
+PR #177 implantou resolução confiável e apresentação da wallet/mercado. O smoke confirmou o resultado e identificou privilégio UPDATE/DELETE herdado da default ACL na nova tabela de recibos, apesar do trigger append-only ativo. Revogação pontual em produção executada por migration owner e confirmada: FastAPI SELECT/INSERT, sem UPDATE/DELETE; Django apenas SELECT; sequência FastAPI USAGE/SELECT, sem UPDATE. Migration markets.0038 e teste de regressão tornam o estado reproduzível em futuros ambientes. Sem mudança de API, MCP, mobile, saldos ou provas. Acompanhar PR corretiva/CI/deploy antes do recibo final. [Evidências](../testing/resolution-reliability-results.md).
+
 ## 2026-10-25 — retorno da wallet e participação final (local)
 
 WFLOW-20261025-RESOLUTION-DISPLAY: wallet web/Flutter distingue liberação, ganho líquido e retorno total da liquidação vigente pelo ledger; undo/re-resolve não soma ciclos passados. API pública preserva volume e participantes distintos em resolved/sealed; elegibilidade dos agentes permanece por previsões humanas abertas. OpenAPI e consumidores atualizados diretamente, sem migration adicional. MCP mantém ferramentas, schemas, permissões e analytics próprios; não acessa wallet nem consome MarketResponse público. Implementação na branch fix/market-resolution-reliability, sem deploy ou distribuição mobile. [Evidências](../testing/resolution-reliability-results.md).

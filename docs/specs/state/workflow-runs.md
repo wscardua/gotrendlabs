@@ -1,13 +1,21 @@
+## WFLOW-20261025-RESOLUTION-RECEIPT-ACL
+
+- Tipo: correção pós-deploy da mesma feature; estado: ACL produtiva ajustada e teste/migration local aprovados; PR corretiva e deploy reproduzível pendentes.
+- Gatilho: após PR #177/merge 8343b90 e Actions 40205958120 aprovados, smoke SSM do mercado 35 confirmou retorno 100 + 100 = 200, métricas 100 GT₵/1 participante e integridade verified. A role `gotrendlabs_fastapi` tinha `UPDATE`/`DELETE` herdados das permissões padrão de novas tabelas em produção, apesar de 0037 conceder explicitamente apenas SELECT/INSERT. O trigger impede mutação, mas a ACL contradiz o privilégio mínimo pretendido.
+- Correção: migration 0038 revoga UPDATE/DELETE da role FastAPI e INSERT/UPDATE/DELETE da role Django no recibo; preserva SELECT/INSERT para FastAPI, SELECT para Django e USAGE/SELECT da sequência apenas para FastAPI. Default ACL global fica intacta para outras tabelas.
+- Testar cenário com defaults equivalentes a produção, migration 0038, grants finais e contrato do recibo. Ajuste direcionado já aplicado em produção por SSM: FastAPI (SELECT/INSERT, sem UPDATE/DELETE), Django (SELECT apenas) e sequência sem UPDATE; conferir novamente após o workflow. Sem mudança de MCP, API, Flutter ou dados da resolução.
+- Validação: migrations completas aplicadas em PostgreSQL com default ACL equivalente à produção; privilégios verificados, teste automatizado de grants amplo→mínimo aprovado; Django/OpenAPI/diff a validar antes da PR. Próxima ação: PR corretiva, CI/merge/deploy, confirmar ACL e fechar workflow com evidência.
+
 ## WFLOW-20261025-RESOLUTION-CLOSEOUT
 
-- Tipo: fechamento/publicação; estado: preparação local validada, aguardando aprovação da descrição da PR pelo usuário antes de submissão.
+- Tipo: fechamento/publicação; estado: PR #177 integrada e deploy produtivo aprovado; ACL do recibo corrigida em produção, migration 0038 corretiva aguardando PR/CI/deploy.
 - Autorização: usuário pediu consolidar specs/memória, commit, PR em português, merge e acompanhamento/correções de implantação produtiva; preservar branch local. A aprovação da descrição é o próximo gate explícito.
 - Base atualizada: origin/main 9407a8c; branch fix/market-resolution-reliability na worktree gotrendlabs-resolution-fix, separada do trabalho anterior.
 - Escopo: resolução idempotente/concorrente, confirmação após timeout, janela pelo servidor, integridade por etapa, retornos da wallet e volume/participantes finais. Specs/contratos/OpenAPI/ADR-0018 já refletem o comportamento; este fechamento consolida evidência e operação, sem promover escopos não implementados das features.
 - Revisão de impacto: nenhum problema identificável; 8 testes Python e 21 Flutter aprovados na revisão, snapshot OpenAPI/diff válidos. MCP não consome rotas administrativas/wallet nem a projeção pública modificada; ferramentas, schemas, permissões e orientação editorial preservados. Flutter consome o contrato atual e requer distribuição própria.
 - Checklist universal: arquiteturas, segurança/MCP/mobile, testes, changelogs, implementation-status, integration-map, known-gaps, README principal/mobile e runbook de implantação reconciliados. Validação de fechamento: suíte completa `manage.py test --noinput` executou 606 testes em 483,378 s: 603 passaram, 2 skips e 1 falha de expectativa no teste de cancelamento repetido (422 esperado no contrato, asserção havia sido alterada para 409). Restaurado 422 sem mudar runtime; caso reexecutado e aprovado em 1,796 s. Resultado combinado: 604 cenários aprovados e 2 skips. Não houve segunda execução integral após essa correção exclusivamente de teste. OpenAPI, Django check, dois testes JavaScript e diff válidos; Flutter mantém os 46 testes/analyze da implementação e 21 reexecutados na revisão. CI remoto será acompanhado no último SHA da PR e no merge.
 - Publicação: usar GitHub MCP para PR/merge; acompanhar Actions da PR e de main, incluindo build principal/MCP, migrations e deploy. Verificar SHA, saúde, role/grants/trigger, métricas e retorno reais sem reaplicar a resolução existente. Não criar crédito ou nova resolução produtiva apenas para smoke.
-- Próxima ação: apresentar título/descrição exatos e obter a aprovação solicitada; depois push/PR, checks, merge, deploy e recibo de produção. Não remover a branch local. [Runbook](../operations/resolution-reliability-rollout.md).
+- Publicação: usuário aprovou descrição, PR #177 e Actions PR/main aprovados, merge 8343b90 e smoke de produção concluídos. Próxima ação: publicar migration 0038 da ACL, CI/deploy, verificação final e recibo; branch local preservada. [Runbook](../operations/resolution-reliability-rollout.md).
 
 ## WFLOW-20261025-RESOLUTION-DISPLAY
 

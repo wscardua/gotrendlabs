@@ -71,3 +71,7 @@ Contrato e critérios: [market-resolution-agenda](../features/market-resolution-
 ## Recibos administrativos de resolução — 2026-10-25
 
 `gotrendlabs_market_resolution_requests` guarda UUID único global, FK protegida/indexada para mercado, hash canônico do pedido, `seal_due_at` da ocorrência e `created_at`. Não armazena tokens nem cópia do texto editorial. UPDATE/DELETE são bloqueados por trigger; não participa do expurgo operacional. Migration markets.0037 concede SELECT/INSERT e uso da sequência à role FastAPI configurada/padrão, quando existente. Django consulta via API, nunca grava recibos. Inserção única e confirmação dos efeitos compartilham transação; conflito de chave entre mercados reverte a segunda transação inteira. Nenhuma prova ou prazo histórico é migrado.
+
+## ACL efetiva dos recibos — 2026-10-25
+
+Produção concede `arwd` por default ACL a novas tabelas FastAPI/Django. A migration `markets.0038_limit_resolution_request_privileges` retira UPDATE/DELETE do FastAPI e as escritas da role Django apenas em `gotrendlabs_market_resolution_requests`; mantém o trigger append-only como barreira adicional. A sequência fica com USAGE/SELECT para FastAPI, sem UPDATE. Não altera a default ACL global nem outras tabelas.

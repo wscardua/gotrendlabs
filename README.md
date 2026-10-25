@@ -1,8 +1,8 @@
 # GoTrendLabs
 
-Fechamento preparado em 2026-10-25: descrição da PR aguarda aprovação; implantação web/API e distribuição Flutter ainda não realizadas. [Estado e roteiro](docs/specs/operations/resolution-reliability-rollout.md).
+Fechamento em 2026-10-25: PR #177/merge `8343b90` e implantação web/API aprovados; ajuste corretivo de ACL está ativo em produção e a migration 0038 aguarda PR. Distribuição Flutter ainda pendente. [Estado e roteiro](docs/specs/operations/resolution-reliability-rollout.md).
 
-Implementação local 2026-10-25: wallet web/Flutter explica valor liberado, ganho líquido e total recebido; mercados resolvidos preservam volume/participação final. Branch `fix/market-resolution-reliability`, contratos e testes atualizados. Produção e distribuição mobile pendentes. [Evidências](docs/specs/testing/resolution-reliability-results.md).
+Implementação publicada em web/API em 2026-10-25: wallet web/Flutter explica valor liberado, ganho líquido e total recebido; mercados resolvidos preservam volume/participação final. Branch `fix/market-resolution-reliability`, contratos e testes atualizados. Web/API implantadas; distribuição mobile pendente. [Evidências](docs/specs/testing/resolution-reliability-results.md).
 
 Atualização 2026-10-17: participantes públicos humanos + bots distintos e ações de posição web implantados pela [PR #168](https://github.com/wscardua/gotrendlabs/pull/168), com CI/build/deploy e smoke produtivo aprovados. [Evidências e limites](docs/specs/testing/participants-closeout-20261017.md). O código Flutter está validado; distribuição aos apps instalados exige próxima release mobile.
 
@@ -231,4 +231,4 @@ PR #170 integrada; migrations da agenda aplicadas. Serviço MCP restaurado após
 
 ## Confiabilidade da resolução — implementação local de 25/10/2026
 
-Resolução administrativa passa a exigir identidade do mercado e chave UUID, com consulta de confirmação após timeout e proteção de concorrência/replay. A janela de revisão começa no instante registrado pelo servidor; verificações de previsões/resultado são exibidas antes da selagem final. Migration `markets.0037_market_resolution_request` precede o runtime. [Contrato](docs/specs/contracts/market-lifecycle.md), [decisão](docs/specs/decisions/ADR-0018-resolution-reliability.md) e [validação/limites](docs/specs/testing/resolution-reliability-results.md). Ainda não implantado por esta entrega.
+Resolução administrativa passa a exigir identidade do mercado e chave UUID, com consulta de confirmação após timeout e proteção de concorrência/replay. A janela de revisão começa no instante registrado pelo servidor; verificações de previsões/resultado são exibidas antes da selagem final. Migrations `markets.0037_market_resolution_request` e `markets.0038_limit_resolution_request_privileges` criam recibos imutáveis e restringem a ACL efetiva. [Contrato](docs/specs/contracts/market-lifecycle.md), [decisão](docs/specs/decisions/ADR-0018-resolution-reliability.md) e [validação/limites](docs/specs/testing/resolution-reliability-results.md). Ainda não implantado por esta entrega.

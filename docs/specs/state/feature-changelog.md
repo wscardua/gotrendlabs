@@ -1,3 +1,7 @@
+## 2026-10-25 — ACL efetiva dos recibos em produção
+
+PR #177 implantou resolução confiável e apresentação da wallet/mercado. O smoke confirmou o resultado e identificou privilégio UPDATE/DELETE herdado da default ACL na nova tabela de recibos, apesar do trigger append-only ativo. Revogação pontual em produção executada por migration owner e confirmada: FastAPI SELECT/INSERT, sem UPDATE/DELETE; Django apenas SELECT; sequência FastAPI USAGE/SELECT, sem UPDATE. Migration markets.0038 e teste de regressão tornam o estado reproduzível em futuros ambientes. Sem mudança de API, MCP, mobile, saldos ou provas. Acompanhar PR corretiva/CI/deploy antes do recibo final. [Evidências](../testing/resolution-reliability-results.md).
+
 ## 2026-10-25 — fechamento da resolução preparado
 
 Fatia implementada e revisão de impacto concluída sem findings. Specs e contratos atuais, OpenAPI, ADR-0018, README mobile e memória operacional reconciliados; o estado global parcial das features maiores não é promovido indevidamente. Publicação aguarda aprovação da descrição da PR, conforme pedido do usuário; CI/merge/deploy e recibo produtivo são etapas seguintes, com branch local preservada. [Roteiro de implantação](../operations/resolution-reliability-rollout.md). Flutter exige release própria; MCP não requer mudança de ferramenta/schema/permissão.

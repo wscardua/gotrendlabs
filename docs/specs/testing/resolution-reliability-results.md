@@ -75,3 +75,11 @@ Review solicitado via gotrendlabs-review-branch-impact: nenhum problema identifi
 Publicação segue WFLOW-20261025-RESOLUTION-CLOSEOUT e o [runbook](../operations/resolution-reliability-rollout.md). Nenhum sucesso remoto ou produção é antecipado.
 
 Validação de fechamento: suíte completa `manage.py test --noinput` executou 606 testes em 483,378 s: 603 passaram, 2 skips e 1 falha de expectativa no teste de cancelamento repetido (422 esperado no contrato, asserção havia sido alterada para 409). Restaurado 422 sem mudar runtime; caso reexecutado e aprovado em 1,796 s. Resultado combinado: 604 cenários aprovados e 2 skips. Não houve segunda execução integral após essa correção exclusivamente de teste. OpenAPI, Django check, dois testes JavaScript e diff válidos; Flutter mantém os 46 testes/analyze da implementação e 21 reexecutados na revisão. CI remoto será acompanhado no último SHA da PR e no merge.
+
+## ACL de produção após PR #177
+
+Actions da PR #177 (40205168186) e main (40205958120), incluindo deploy, aprovados. Smoke de leitura confirmou SHA `8343b90`, health 200, mercado 35 resolved com 100 GT₵ e 1 participante, integridade verified (sem selo ainda), e wallet 100 liberados + 100 líquidos = 200. Em produção, o trigger append-only está ativo, mas `has_table_privilege(gotrendlabs_fastapi, receipt, UPDATE/DELETE)` retornou true porque a default ACL do proprietário concede `arwd` a novas tabelas. Migration 0038 corrige privilégios específicos; sem alteração de ledger, prova ou recibo existente. Estado final depende do novo deploy e smoke da ACL.
+
+### Correção de ACL — validação local e ação produtiva
+
+Em contêiner PostgreSQL 16 temporário, foram criadas roles FastAPI/Django e defaults `SELECT/INSERT/UPDATE/DELETE` em tabelas e `USAGE/SELECT/UPDATE` em sequências. Migrations até 0038 aplicadas; resultado efetivo: FastAPI `(SELECT, INSERT, sem UPDATE/DELETE, sequência USAGE sem UPDATE)`, Django `(SELECT apenas, sem acesso à sequência)`, trigger append-only ativo. Teste automatizado força grants amplos em recibo e sequência e comprova a revogação (1 teste OK). SSM de produção `d545e9f7-4e5c-4a67-bd68-aac31e4a3385` aplicou REVOKE específico com owner e confirmou os mesmos direitos, sem modificar dados. A migration 0038 ainda precisa CI/merge/deploy para tornar o estado permanente no código.
