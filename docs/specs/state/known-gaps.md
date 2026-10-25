@@ -1,6 +1,6 @@
-## ACL de recibos após o primeiro deploy — 2026-10-25
+## Limites após o fechamento produtivo da resolução — 2026-10-25
 
-Smoke da PR #177 encontrou UPDATE/DELETE concedidos por default ACL em produção à role FastAPI no recibo; trigger append-only ativo mantém UPDATE/DELETE rejeitados. A migration 0038 e a revogação pontual produtiva corrigem o excesso. Acompanhar PR/CI/deploy corretivo e verificar privilégios efetivos antes de declarar o fechamento completo.
+O excesso de ACL encontrado após a PR #177 foi corrigido por revogação pontual e migration 0038 da PR #178; CI/deploy e privilégios efetivos foram verificados após o merge. Permanecem para trilhas próprias a distribuição Flutter, observação da selagem futura do mercado 35, timeout com KMS real e carga extensa da wallet. [Recibo produtivo](../testing/resolution-reliability-production-closeout-20261025.md). Os apontamentos locais abaixo são históricos e não representam pendência de publicação web/API.
 
 ## 2026-10-25 — entrega local de confiabilidade da resolução
 

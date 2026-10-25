@@ -1,35 +1,34 @@
 ## WFLOW-20261025-RESOLUTION-RECEIPT-ACL
 
-- Tipo: correção pós-deploy da mesma feature; estado: ACL produtiva ajustada e teste/migration local aprovados; PR corretiva e deploy reproduzível pendentes.
+- Tipo: correção pós-deploy da mesma feature; estado: concluído em produção pelas PRs #177/#178. [Recibo](../testing/resolution-reliability-production-closeout-20261025.md).
 - Gatilho: após PR #177/merge 8343b90 e Actions 40205958120 aprovados, smoke SSM do mercado 35 confirmou retorno 100 + 100 = 200, métricas 100 GT₵/1 participante e integridade verified. A role `gotrendlabs_fastapi` tinha `UPDATE`/`DELETE` herdados das permissões padrão de novas tabelas em produção, apesar de 0037 conceder explicitamente apenas SELECT/INSERT. O trigger impede mutação, mas a ACL contradiz o privilégio mínimo pretendido.
 - Correção: migration 0038 revoga UPDATE/DELETE da role FastAPI e INSERT/UPDATE/DELETE da role Django no recibo; preserva SELECT/INSERT para FastAPI, SELECT para Django e USAGE/SELECT da sequência apenas para FastAPI. Default ACL global fica intacta para outras tabelas.
 - Testar cenário com defaults equivalentes a produção, migration 0038, grants finais e contrato do recibo. Ajuste direcionado já aplicado em produção por SSM: FastAPI (SELECT/INSERT, sem UPDATE/DELETE), Django (SELECT apenas) e sequência sem UPDATE; conferir novamente após o workflow. Sem mudança de MCP, API, Flutter ou dados da resolução.
-- Validação: migrations completas aplicadas em PostgreSQL com default ACL equivalente à produção; privilégios verificados, teste automatizado de grants amplo→mínimo aprovado; Django/OpenAPI/diff a validar antes da PR. Próxima ação: PR corretiva, CI/merge/deploy, confirmar ACL e fechar workflow com evidência.
+- Validação: migrations completas aplicadas em PostgreSQL com default ACL equivalente à produção; privilégios verificados, teste automatizado de grants amplo→mínimo, Django/OpenAPI/diff e CI da PR #178 aprovados. Merge `659e976`, Actions main `40208226722` e SSM `7e41f9ce-b4cf-4a44-98bf-0e9c7d0fbda8` confirmaram migration 0038, trigger e ACL mínima após deploy.
 
 ## WFLOW-20261025-RESOLUTION-CLOSEOUT
 
-- Tipo: fechamento/publicação; estado: PR #177 integrada e deploy produtivo aprovado; ACL do recibo corrigida em produção, migration 0038 corretiva aguardando PR/CI/deploy.
-- Autorização: usuário pediu consolidar specs/memória, commit, PR em português, merge e acompanhamento/correções de implantação produtiva; preservar branch local. A aprovação da descrição é o próximo gate explícito.
+- Tipo: fechamento/publicação; estado: concluído em produção após PRs #177/#178, CI/deploy e smoke final. [Recibo](../testing/resolution-reliability-production-closeout-20261025.md).
+- Autorização: usuário pediu consolidar specs/memória, commit, PR em português, merge e acompanhamento/correções de implantação produtiva; descrição da PR principal apresentada e aprovada antes da submissão. Branch local preservada.
 - Base atualizada: origin/main 9407a8c; branch fix/market-resolution-reliability na worktree gotrendlabs-resolution-fix, separada do trabalho anterior.
 - Escopo: resolução idempotente/concorrente, confirmação após timeout, janela pelo servidor, integridade por etapa, retornos da wallet e volume/participantes finais. Specs/contratos/OpenAPI/ADR-0018 já refletem o comportamento; este fechamento consolida evidência e operação, sem promover escopos não implementados das features.
 - Revisão de impacto: nenhum problema identificável; 8 testes Python e 21 Flutter aprovados na revisão, snapshot OpenAPI/diff válidos. MCP não consome rotas administrativas/wallet nem a projeção pública modificada; ferramentas, schemas, permissões e orientação editorial preservados. Flutter consome o contrato atual e requer distribuição própria.
-- Checklist universal: arquiteturas, segurança/MCP/mobile, testes, changelogs, implementation-status, integration-map, known-gaps, README principal/mobile e runbook de implantação reconciliados. Validação de fechamento: suíte completa `manage.py test --noinput` executou 606 testes em 483,378 s: 603 passaram, 2 skips e 1 falha de expectativa no teste de cancelamento repetido (422 esperado no contrato, asserção havia sido alterada para 409). Restaurado 422 sem mudar runtime; caso reexecutado e aprovado em 1,796 s. Resultado combinado: 604 cenários aprovados e 2 skips. Não houve segunda execução integral após essa correção exclusivamente de teste. OpenAPI, Django check, dois testes JavaScript e diff válidos; Flutter mantém os 46 testes/analyze da implementação e 21 reexecutados na revisão. CI remoto será acompanhado no último SHA da PR e no merge.
-- Publicação: usar GitHub MCP para PR/merge; acompanhar Actions da PR e de main, incluindo build principal/MCP, migrations e deploy. Verificar SHA, saúde, role/grants/trigger, métricas e retorno reais sem reaplicar a resolução existente. Não criar crédito ou nova resolução produtiva apenas para smoke.
-- Publicação: usuário aprovou descrição, PR #177 e Actions PR/main aprovados, merge 8343b90 e smoke de produção concluídos. Próxima ação: publicar migration 0038 da ACL, CI/deploy, verificação final e recibo; branch local preservada. [Runbook](../operations/resolution-reliability-rollout.md).
+- Checklist universal: arquiteturas, segurança/MCP/mobile, testes, changelogs, implementation-status, integration-map, known-gaps, README principal/mobile e runbook de implantação reconciliados. Validação de fechamento: suíte completa `manage.py test --noinput` executou 606 testes em 483,378 s: 603 passaram, 2 skips e 1 falha de expectativa no teste de cancelamento repetido (422 esperado no contrato, asserção havia sido alterada para 409). Restaurado 422 sem mudar runtime; caso reexecutado e aprovado em 1,796 s. Resultado combinado: 604 cenários aprovados e 2 skips. Não houve segunda execução integral após essa correção exclusivamente de teste. OpenAPI, Django check, dois testes JavaScript e diff válidos; Flutter mantém os 46 testes/analyze da implementação e 21 reexecutados na revisão. CI remoto da PR e do merge aprovado.
+- Publicação: PR #177/merge `8343b90` e PR #178/merge `659e976` integradas; CI e deploy de main `40205958120`/`40208226722` aprovados. Smoke final confirmou SHA, migration 0038, ACL/trigger, saúde, métricas e integridade. Não houve nova resolução/crédito para smoke. Branch local preservada. [Runbook](../operations/resolution-reliability-rollout.md).
 
 ## WFLOW-20261025-RESOLUTION-DISPLAY
 
-- Tipo: change-feature/implementation-cycle; estado: concluído localmente, publicação pendente; continuação autorizada na branch fix/market-resolution-reliability.
+- Tipo: change-feature/implementation-cycle; estado: web/API concluídos e verificados em produção; distribuição Flutter pendente em release própria.
 - Objetivo: explicar retorno bruto/liberação/ganho líquido na wallet e preservar participação/volume final em resolved/sealed.
 - Specs: wallet-and-ledger, market-detail/feed, wallet-ledger, prediction-payloads, mobile-api-contracts/mobile-acceptance; OpenAPI e estado.
 - Arquitetura: FastAPI deriva o resumo da liquidação vigente pelo ledger (após último lock/relock) e calcula métricas públicas por estado. Web/Flutter apenas apresentam; sem alterar saldos/fórmulas ou regra de elegibilidade dos agentes.
 - Segurança/MCP: resumo da wallet restrito ao dono, sem novo endpoint/permissão; MCP editorial/analytics não consome estas projeções públicas nem wallet. Conferir regressões de agentes/analytics; sem novos scopes ou replays.
 - Testes: 50% → 100 liberados + 100 líquidos = 200; zero ganho, perdedor, cancelamento, desfazer/re-resolver sem somar ciclos, isolamento; participantes distintos humanos/bots e reforços sem incluir revised/canceled; UI web/Flutter e OpenAPI.
-- Sem alteração produtiva, reescrita de ledger ou migration adicional para esta fatia. Validação: 14 testes finais backend (wallet, participantes, adaptador MCP e contrato analytics MCP) aprovados; 14 testes de confiabilidade da resolução também passaram durante esta fatia. 46 testes Flutter e flutter analyze aprovados. Evidências no aceite resolution-reliability-results.md. Próxima ação: publicação/release em etapa separada.
+- Sem reescrita de ledger ou migration adicional para esta fatia. Validação: 14 testes finais backend (wallet, participantes, adaptador MCP e contrato analytics MCP) aprovados; 14 testes de confiabilidade da resolução também passaram durante esta fatia. 46 testes Flutter e flutter analyze aprovados. Web/API publicadas e auditadas; próxima ação é distribuição Flutter em etapa separada. [Recibo](../testing/resolution-reliability-production-closeout-20261025.md).
 
 ## WFLOW-20261025-RESOLUTION-RELIABILITY
 
-- Tipo: change-feature/implementation-cycle; estado: concluído localmente, publicação pendente.
+- Tipo: change-feature/implementation-cycle; estado: web/API concluídos e verificados em produção; distribuição Flutter tratada no workflow de release mobile.
 - Base: origin/main 9407a8c; branch fix/market-resolution-reliability em worktree separada. Trabalho local anterior preservado.
 - Autorização: usuário solicitou corrigir timeout, apresentação de integridade, janela e concorrência após auditoria da primeira resolução produtiva.
 - Skills: spec-orchestrator, workflow-governor, software-architect, architecture-guard, spec-editor, fastapi-domain, django-web, test-strategy e test-engineer.
@@ -39,7 +38,7 @@
 - Aceite: reenvio sem duplicação; conflito de chave/payload; simultaneidade com resultados diferentes; timeout confirmado/indeterminado; rollback signer; janela completa apesar de data retroativa; selagem/desfazer; UI verificada antes do selo e tratamento de falha/null.
 - Validação: 110 cenários distintos aprovados em execuções de 84/15/22 testes (11 repetidos), mais replay/imutabilidade repetido; Django, migrations e OpenAPI/diff aprovados. Migration 0037 aplicada/revertida/reaplicada; grants SELECT/INSERT sem UPDATE/DELETE confirmados. [Evidências e limites](../testing/resolution-reliability-results.md).
 - Checklist universal: specs/contratos/arquitetura/ADR-0018, segurança/MCP/mobile, testes, changelogs, implementation-status, integration-map e known-gaps atualizados. Sem mudança de fronteira; ADR registra semântica estável de replay/prazo. Modelagem revisada também com gotrendlabs-postgres-modeling.
-- Próxima ação externa à implementação: publicação pelo fluxo normal, migration antes do runtime e smoke produtivo. Sem commit/push/PR/merge/deploy nesta etapa.
+- Publicação posterior à validação local: PRs #177/#178, migrations 0037/0038, CI/deploy e smoke produtivo concluídos. [Recibo](../testing/resolution-reliability-production-closeout-20261025.md).
 
 ## WFLOW-20261018-AGENDA-DOCUMENTAL-PR
 
