@@ -1,5 +1,9 @@
 # GoTrendLabs
 
+Fechamento preparado em 2026-10-25: descrição da PR aguarda aprovação; implantação web/API e distribuição Flutter ainda não realizadas. [Estado e roteiro](docs/specs/operations/resolution-reliability-rollout.md).
+
+Implementação local 2026-10-25: wallet web/Flutter explica valor liberado, ganho líquido e total recebido; mercados resolvidos preservam volume/participação final. Branch `fix/market-resolution-reliability`, contratos e testes atualizados. Produção e distribuição mobile pendentes. [Evidências](docs/specs/testing/resolution-reliability-results.md).
+
 Atualização 2026-10-17: participantes públicos humanos + bots distintos e ações de posição web implantados pela [PR #168](https://github.com/wscardua/gotrendlabs/pull/168), com CI/build/deploy e smoke produtivo aprovados. [Evidências e limites](docs/specs/testing/participants-closeout-20261017.md). O código Flutter está validado; distribuição aos apps instalados exige próxima release mobile.
 
 GoTrendLabs e uma rede social de previsoes com moeda educativa, reputacao publica e resolucao auditavel de mercados. O produto combina uma interface web server-rendered em Django com uma API de dominio em FastAPI e persistencia em PostgreSQL.
@@ -224,3 +228,7 @@ Contrato final e evidências consolidados em [fechamento da agenda](docs/specs/t
 ### 17/10/2026 — Rollout e correção MCP da agenda
 
 PR #170 integrada; migrations da agenda aplicadas. Serviço MCP restaurado após falha na imagem isolada; correção permanente/CI em preparação. Fonte vigente e recibo: [fechamento da agenda](docs/specs/testing/resolution-agenda-closeout-20261017.md). O backfill das agendas segue revisão explícita; deploy web/API não distribui Flutter.
+
+## Confiabilidade da resolução — implementação local de 25/10/2026
+
+Resolução administrativa passa a exigir identidade do mercado e chave UUID, com consulta de confirmação após timeout e proteção de concorrência/replay. A janela de revisão começa no instante registrado pelo servidor; verificações de previsões/resultado são exibidas antes da selagem final. Migration `markets.0037_market_resolution_request` precede o runtime. [Contrato](docs/specs/contracts/market-lifecycle.md), [decisão](docs/specs/decisions/ADR-0018-resolution-reliability.md) e [validação/limites](docs/specs/testing/resolution-reliability-results.md). Ainda não implantado por esta entrega.

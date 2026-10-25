@@ -80,3 +80,9 @@
 - Usuário pode manter no máximo uma solicitação de recarga educativa `pending`; novas solicitações ficam bloqueadas até aprovação ou rejeição administrativa.
 - O agregado público `distributed_gtl` usado pela home soma apenas lançamentos `direction="credit"` do ledger de usuários comuns, excluindo usuários `staff` e `superuser`, incluindo `grant_initial`, recompensas operacionais, recargas educativas aprovadas, ajustes manuais de crédito e payouts líquidos desses usuários.
 - Agregados públicos derivados do ledger não expõem usuário, saldo individual nem extrato, e não substituem a projeção `gotrendlabs_wallet_balances`.
+
+## Retorno por acerto — 2026-10-25
+
+GET `/users/me/ledger` acrescenta `resolution_returns` obrigatório (lista vazia se não aplicável). Cada item contém market_id, market_slug, market_title, released_gtl, net_profit_gtl, total_received_gtl. A API agrega somente previsões vencedoras atualmente resolved de mercados resolved/sealed, somando prediction_refund/release e prediction_payout/credit posteriores ao último lock/relock de cada previsão e do mesmo usuário. Não estima pagamentos pela probabilidade nem soma ciclos desfeitos. Ganho zero é válido; cancelamentos/perdedores não geram cartão de acerto. Desfazer remove o resumo vigente, preservando o extrato completo.
+
+Web/Flutter mostram Valor liberado, Ganho líquido e Total recebido, explicitando que o total já compõe o saldo/extrato. Nenhum crédito novo é criado. O agregado total_earned_gtl continua incluindo recompensas conforme contrato; rótulo web passa a Créditos ganhos, evitando dizer que todo o agregado vem de acertos.

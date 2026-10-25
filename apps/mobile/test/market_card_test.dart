@@ -8,6 +8,28 @@ import 'package:gotrendlabs_mobile/src/features/markets/sparkline_painter.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
+  testWidgets(
+    'Resolved and sealed metrics retain API volume and use final label',
+    (tester) async {
+      for (final status in ['resolved', 'sealed']) {
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            home: Scaffold(
+              body: MarketMetricPanel(
+                market: _market(status: status, totalParticipants: 1),
+              ),
+            ),
+          ),
+        );
+        expect(find.text('GT₵ EM PREVISÕES'), findsOneWidget);
+        expect(find.text('120 GT₵'), findsOneWidget);
+        expect(find.text('VOLUME GT₵'), findsNothing);
+        expect(tester.takeException(), isNull);
+      }
+    },
+  );
+
   testWidgets('MarketHeroCard renders title and probability', (tester) async {
     final market = _market();
 

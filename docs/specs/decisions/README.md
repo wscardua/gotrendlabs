@@ -32,3 +32,5 @@ Use este diretório para registrar decisões técnicas estáveis e mudanças que
 - [ADR-0014 — interpretação semântica de thumbnails](ADR-0014-semantic-thumbnail-brief.md), conceito visual via modelo textual e imagem com checkpoints separados.
 
 - [ADR-0016 — Agenda assinada por complemento append-only](ADR-0016-resolution-agenda.md).
+
+- [ADR-0018: Resolução transacional, replay e janela operacional](ADR-0018-resolution-reliability.md)

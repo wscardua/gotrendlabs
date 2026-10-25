@@ -1,10 +1,10 @@
 ---
 id: FEAT-INTEGRITY-001
 titulo: "Ledger Criptografico de Integridade para Mercados"
-versao: 1.2
+versao: 1.3
 status_spec: aprovada
 status_impl: implementada_validada
-ultima_atualizacao: 2026-09-07
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -59,7 +59,7 @@ Estado terminal alternativo: `canceled`.
 - `scheduled`: aguarda publicacao/abertura.
 - `open`: exige definicao assinada criada atomicamente e bloqueia alteracao de campos protegidos.
 - `locked`: nao aceita previsoes e aguarda resultado.
-- `resolved`: efeitos atuais de wallet, reputacao, badges e comunicacoes ja ocorreram; `seal_due_at = resolved_at + market_seal_window_hours`.
+- `resolved`: efeitos atuais de wallet, reputacao, badges e comunicacoes ja ocorreram; `seal_due_at = instante_de_publicacao_no_servidor + market_seal_window_hours`.
 - `sealed`: final criptografico; nao admite edicao, reabertura, cancelamento ou desfazer resolucao.
 - `canceled`: preserva regras de refund atuais; `sealed` nunca transita diretamente para cancelado.
 
@@ -230,3 +230,7 @@ No Admin Ops, a acao `Auditar integridade` deve estar disponivel para qualquer m
 6. Liberar web/mobile alinhados ao contrato final; nao ha compatibilidade obrigatoria com builds pre-producao anteriores.
 
 Rollback desabilita novas publicacoes/previsoes se o signer estiver indisponivel, preserva tabelas/provas e retorna daemon para retry. Nunca remover nem reescrever eventos existentes.
+
+## Apresentação das etapas — 2026-10-25
+
+Comprovantes e resultado podem ser verificados antes do Seal. Django usa booleanos autoritativos da API: `prediction_commitments_valid` e `result_matches_current`, com cadeia/eventos válidos, sem exigir `sealed`. Depois de selado exige também Merkle/assinatura aplicáveis. False mostra diferença; null/pending/unavailable nunca produz confirmação positiva. A quarta etapa indica a finalização futura e preserva prazo/retry; revisão operacional não significa resultado ainda não registrado.

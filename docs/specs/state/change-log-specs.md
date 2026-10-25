@@ -1,3 +1,16 @@
+## 2026-10-25 — fechamento da resolução preparado
+
+Fatia implementada e revisão de impacto concluída sem findings. Specs e contratos atuais, OpenAPI, ADR-0018, README mobile e memória operacional reconciliados; o estado global parcial das features maiores não é promovido indevidamente. Publicação aguarda aprovação da descrição da PR, conforme pedido do usuário; CI/merge/deploy e recibo produtivo são etapas seguintes, com branch local preservada. [Roteiro de implantação](../operations/resolution-reliability-rollout.md). Flutter exige release própria; MCP não requer mudança de ferramenta/schema/permissão.
+
+## 2026-10-25 — retorno da wallet e participação final (local)
+
+WFLOW-20261025-RESOLUTION-DISPLAY: wallet web/Flutter distingue liberação, ganho líquido e retorno total da liquidação vigente pelo ledger; undo/re-resolve não soma ciclos passados. API pública preserva volume e participantes distintos em resolved/sealed; elegibilidade dos agentes permanece por previsões humanas abertas. OpenAPI e consumidores atualizados diretamente, sem migration adicional. MCP mantém ferramentas, schemas, permissões e analytics próprios; não acessa wallet nem consome MarketResponse público. Implementação na branch fix/market-resolution-reliability, sem deploy ou distribuição mobile. [Evidências](../testing/resolution-reliability-results.md).
+
+
+## 2026-10-25 — WFLOW-20261025-RESOLUTION-RELIABILITY
+
+Atualizados FEAT-RES-001, FEAT-INTEGRITY-001, lifecycle/integrity, arquiteturas e ADR-0018: UUID e identidade obrigatórios no POST administrativo, GET de confirmação staff, erros 409, distinção de timeout indeterminado e nova origem do prazo de selagem. Preservados histórico assinado, fórmulas financeiras, contrato público/mobile e autoridade MCP. Sem camada de compatibilidade para pedidos antigos.
+
 ## 2026-10-24 — evidência produtiva do histórico analítico MCP
 
 Contrato `analytics-mcp.v1`, FEAT-ANALYTICS-001 v0.9, FEAT-MCP-001 v1.6, runbook, estado, mapa de integração, workflow e known-gaps reconciliados com PR #175, migration, checkpoints e smoke produtivo. O escopo `analytics:read` continua exigindo grant explícito; não se afirma uso autenticado das oito ferramentas sem ele. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md).

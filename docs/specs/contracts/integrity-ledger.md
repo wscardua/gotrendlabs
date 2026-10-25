@@ -55,3 +55,7 @@ Contrato e critérios: [market-resolution-agenda](../features/market-resolution-
 ### Complementos da agenda
 
 Eventos `market_schedule_registered`, `market_schedule_rescheduled` (eventos antigos de recuperação são apenas históricos) contêm snapshot assinado com definition_hash, before/after, actor_id, reason e provenance. After protege campos da agenda, original e versão. A auditoria valida assinatura/metadados, hash de payload, ligação à definição, continuidade de versões e projeção; erro afeta market_valid/overall_valid e impede selagem. `schedule_valid=null` indica ausência histórica sem agenda; true somente para agenda registrada verificada, false para divergência. O pacote público expõe assinaturas, algoritmo e payload_json dos eventos sem reconstruir/reassinar definições antigas.
+
+## Apresentação das etapas — 2026-10-25
+
+Comprovantes e resultado podem ser verificados antes do Seal. Django usa booleanos autoritativos da API: `prediction_commitments_valid` e `result_matches_current`, com cadeia/eventos válidos, sem exigir `sealed`. Depois de selado exige também Merkle/assinatura aplicáveis. False mostra diferença; null/pending/unavailable nunca produz confirmação positiva. A quarta etapa indica a finalização futura e preserva prazo/retry; revisão operacional não significa resultado ainda não registrado.

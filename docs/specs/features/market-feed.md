@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.12
+versao: 0.13
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-17
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -54,7 +54,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 
 ## Comportamento esperado
 
-- participantes públicos incluem contas distintas humanas e bot com previsões abertas, usando `participants` na web e `total_participants` obrigatório no Flutter; reforços/múltiplas entradas não duplicam contas, e métricas humanas internas permanecem separadas
+- participantes públicos incluem contas distintas humanas e bot com previsões resolved em mercados resolved/sealed ou open nos demais estados, usando `participants` na web e `total_participants` obrigatório no Flutter; reforços/múltiplas entradas não duplicam contas, e métricas humanas internas permanecem separadas
 
 - feed exibe mercados coerentes com o status
 - mercados em apuração (`status=locked`) ou resolvidos permanecem legíveis
@@ -252,3 +252,7 @@ O escopo de exclusão pré-publicação e aprovação por responsabilidade human
 ## Agenda estruturada (2026-10-17)
 
 Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+## Participação após resolução — 2026-10-25
+
+Em resolved/sealed, a projeção pública de volume/participantes agrega previsões resolved, excluindo revised/canceled; preserva humanos/bots e deduplica contas em reforços. Volume humano permanece a semântica de volume_gtl/human_volume_gtl. Demais estados continuam agregando apenas open. Web/Flutter exibem GT₵ em previsões no resultado, evitando chamar volume liquidado de saldo reservado. Elegibilidade dos agentes segue exclusivamente previsões humanas open em _human_prediction_totals; não usa o histórico público como atividade atual. Analytics MCP preserva seus agregados próprios de domínio.

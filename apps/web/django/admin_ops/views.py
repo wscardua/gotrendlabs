@@ -66,6 +66,7 @@ from apps.web.django.accounts.api_client import (
     admin_deactivate_user,
     admin_reactivate_user,
     admin_resolve_market,
+    admin_get_resolution_request,
     admin_review_queue_item,
     admin_revoke_user_sessions,
     admin_reward_feedback,
@@ -3009,15 +3010,20 @@ def resolution_action(request, action, slug=None):
         form = MarketResolutionForm(request.POST or None, market=market)
         if request.method == "POST" and form.is_valid():
             try:
-                resolved = admin_resolve_market(
-                    token,
-                    market["slug"],
-                    int(form.cleaned_data["winning_option_id"]),
-                    form.cleaned_data.get("source_url") or "",
-                    form.cleaned_data.get("note") or "",
-                    form.cleaned_data.get("resolved_at"),
-                    form.cleaned_data.get("resolution_timezone") or "",
-                )
+                if request.POST.get("check_resolution") == "1":
+                    resolved = admin_get_resolution_request(token, market["slug"], form.cleaned_data["expected_market_id"], form.cleaned_data["idempotency_key"])
+                else:
+                    resolved = admin_resolve_market(
+                        token,
+                        market["slug"],
+                        int(form.cleaned_data["winning_option_id"]),
+                        form.cleaned_data.get("source_url") or "",
+                        form.cleaned_data.get("note") or "",
+                        form.cleaned_data.get("resolved_at"),
+                        form.cleaned_data.get("resolution_timezone") or "",
+                        expected_market_id=form.cleaned_data["expected_market_id"],
+                        idempotency_key=form.cleaned_data["idempotency_key"],
+                    )
                 messages.success(request, f"Mercado resolvido: {resolved['title']}")
                 return redirect("admin-ops-resolution")
             except AuthAPIError as exc:

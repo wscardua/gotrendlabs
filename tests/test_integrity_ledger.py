@@ -1,3 +1,4 @@
+from uuid import uuid4
 import json
 from io import StringIO
 from pathlib import Path
@@ -315,7 +316,7 @@ class IntegrityLedgerIntegrationTests(AppendOnlyTransactionTestCase):
         resolved = self.client.post(
             f"/admin/markets/{slug}/resolve",
             headers=self.staff_headers,
-            json={"winning_option_id": option.id, "source_url": "https://example.com/evidence", "note": "Evidência conferida"},
+            json={"expected_market_id": Market.objects.get(slug=slug).id, "idempotency_key": str(uuid4()), "winning_option_id": option.id, "source_url": "https://example.com/evidence", "note": "Evidência conferida"},
         )
         self.assertEqual(resolved.status_code, 200, resolved.text)
         market.refresh_from_db()

@@ -7,6 +7,56 @@ import 'package:gotrendlabs_mobile/src/features/wallet/wallet_screen.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
+  testWidgets('Wallet separates release, net gain and total on a narrow screen', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(360, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          ledgerProvider.overrideWith(
+            (ref) async => {
+              ..._ledger(available: 1200, locked: 0),
+              'resolution_returns': [
+                {
+                  'market_id': 35,
+                  'market_slug': 'final',
+                  'market_title':
+                      'Quem avança à final da Libertadores masculina: Fluminense ou Palmeiras?',
+                  'released_gtl': 100,
+                  'net_profit_gtl': 100,
+                  'total_received_gtl': 200,
+                },
+              ],
+            },
+          ),
+          walletRechargeRequestsProvider.overrideWith(
+            (ref) async => {
+              'requests': <dynamic>[],
+              'available_gtl': 1200,
+              'min_balance_gtl': 100,
+              'eligible': false,
+            },
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const WalletScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Retornos por acerto'), findsOneWidget);
+    expect(find.text('Valor liberado'), findsOneWidget);
+    expect(find.text('Ganho líquido'), findsOneWidget);
+    expect(find.text('Total recebido'), findsOneWidget);
+    expect(find.text('100 GT₵'), findsNWidgets(2));
+    expect(find.text('200 GT₵'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets(
     'Wallet prioritizes available and locked balances over recharge',
     (tester) async {
@@ -23,6 +73,7 @@ void main() {
                   'locked_gtl': 300,
                   'total_earned_gtl': 0,
                 },
+                'resolution_returns': <dynamic>[],
                 'entries': <dynamic>[],
               };
             }),
@@ -148,6 +199,7 @@ Map<String, dynamic> _ledger({required int available, required int locked}) {
       'locked_gtl': locked,
       'total_earned_gtl': 0,
     },
+    'resolution_returns': <dynamic>[],
     'entries': <dynamic>[],
   };
 }

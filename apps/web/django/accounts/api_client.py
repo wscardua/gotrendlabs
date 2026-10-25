@@ -23,6 +23,10 @@ def _http_urlopen(request, *, timeout):
     return urllib.request.urlopen(request, timeout=timeout)  # nosec B310
 
 
+class APITransportError(AuthAPIError):
+    """Response was lost; a mutation may still have committed."""
+
+
 def _request(method, path, payload=None, token=None, timeout=5, extra_headers=None):
     body = json.dumps(payload).encode() if payload is not None else None
     headers = {"Content-Type": "application/json"}
@@ -54,9 +58,9 @@ def _request(method, path, payload=None, token=None, timeout=5, extra_headers=No
         fallback = "Serviço da API retornou erro interno." if exc.code >= 500 else "Não foi possível concluir a requisição."
         raise AuthAPIError(message or fallback, exc.code, detail=detail) from exc
     except (TimeoutError, ConnectionError) as exc:
-        raise AuthAPIError(_("O serviço demorou para responder. Tente novamente."), status_code=503) from exc
+        raise APITransportError(_("O serviço demorou para responder. Tente novamente."), status_code=503) from exc
     except urllib.error.URLError as exc:
-        raise AuthAPIError("Serviço de autenticação indisponível.") from exc
+        raise APITransportError("Serviço de autenticação indisponível.", status_code=503) from exc
 
 
 def _currency_label(value):
@@ -381,13 +385,26 @@ def admin_lock_market(token, slug, note="", expected_market_id=None):
     return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/lock", {"note": note, "expected_market_id": expected_market_id}, token=token))
 
 
-def admin_resolve_market(token, slug, winning_option_id, source_url="", note="", resolved_at=None, resolution_timezone=""):
+def admin_resolve_market(token, slug, winning_option_id, source_url="", note="", resolved_at=None, resolution_timezone="", *, expected_market_id, idempotency_key):
     payload = {"winning_option_id": winning_option_id, "source_url": source_url, "note": note}
     if resolved_at:
         payload["resolved_at"] = resolved_at.isoformat() if hasattr(resolved_at, "isoformat") else str(resolved_at)
     if resolution_timezone:
         payload["resolution_timezone"] = resolution_timezone
-    return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/resolve", payload, token=token))
+    payload.update(expected_market_id=expected_market_id, idempotency_key=str(idempotency_key))
+    try:
+        return _normalize_market_payload(_request("POST", f"/admin/markets/{slug}/resolve", payload, token=token, timeout=15))
+    except APITransportError:
+        try:
+            return admin_get_resolution_request(token, slug, expected_market_id, idempotency_key)
+        except AuthAPIError as exc:
+            if exc.status_code in {401, 403, 409}:
+                raise
+            raise AuthAPIError(_("A resposta não chegou e ainda não foi possível confirmar a resolução. Consulte novamente esta operação antes de iniciar outra."), status_code=503) from exc
+
+
+def admin_get_resolution_request(token, slug, expected_market_id, idempotency_key):
+    return _normalize_market_payload(_request("GET", f"/admin/markets/{slug}/resolution-requests/{idempotency_key}?expected_market_id={int(expected_market_id)}", token=token))
 
 
 def admin_get_market_resolution_audit(token, slug, limit=50, offset=0):

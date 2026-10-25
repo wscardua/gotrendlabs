@@ -1,10 +1,10 @@
 ---
 id: ARCH-MOBILE-API-001
 titulo: "Contratos API para mobile"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-17
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/architecture/backend-api.md
   - packages/contracts/openapi/gotrendlabs-api.json
@@ -469,3 +469,14 @@ Mensagens tecnicas devem ficar fora da UI final.
 Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
 
 Detalhe mobile: `close_label` e previsão ficam no rodapé do resumo. O card do critério mantém prévia de três linhas e abre texto integral selecionável em painel inferior rolável com Fechar. Somente o estado de apresentação é local; conteúdo integral, estados e datas são da FastAPI. Sem campos/endpoints novos ou impacto MCP deste ajuste visual. Ver WFLOW-20261017-RESTORE-MOBILE-CRITERIA e WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT.
+
+## Retorno por acerto — 2026-10-25
+
+GET `/users/me/ledger` acrescenta `resolution_returns` obrigatório (lista vazia se não aplicável). Cada item contém market_id, market_slug, market_title, released_gtl, net_profit_gtl, total_received_gtl. A API agrega somente previsões vencedoras atualmente resolved de mercados resolved/sealed, somando prediction_refund/release e prediction_payout/credit posteriores ao último lock/relock de cada previsão e do mesmo usuário. Não estima pagamentos pela probabilidade nem soma ciclos desfeitos. Ganho zero é válido; cancelamentos/perdedores não geram cartão de acerto. Desfazer remove o resumo vigente, preservando o extrato completo.
+
+Web/Flutter mostram Valor liberado, Ganho líquido e Total recebido, explicitando que o total já compõe o saldo/extrato. Nenhum crédito novo é criado. O agregado total_earned_gtl continua incluindo recompensas conforme contrato; rótulo web passa a Créditos ganhos, evitando dizer que todo o agregado vem de acertos.
+
+
+## Participação após resolução — 2026-10-25
+
+Em resolved/sealed, a projeção pública de volume/participantes agrega previsões resolved, excluindo revised/canceled; preserva humanos/bots e deduplica contas em reforços. Volume humano permanece a semântica de volume_gtl/human_volume_gtl. Demais estados continuam agregando apenas open. Web/Flutter exibem GT₵ em previsões no resultado, evitando chamar volume liquidado de saldo reservado. Elegibilidade dos agentes segue exclusivamente previsões humanas open em _human_prediction_totals; não usa o histórico público como atividade atual. Analytics MCP preserva seus agregados próprios de domínio.

@@ -1,3 +1,7 @@
+## 2026-10-25 — entrega local de confiabilidade da resolução
+
+Correções e regressões locais implementadas. Pendência de rollout: publicar branch pelo fluxo normal, aplicar markets.0037 antes do runtime, conferir grants da role FastAPI e executar smoke autenticado controlado. Não reescrever os prazos/provas da primeira resolução já publicada. A selagem daquele mercado em produção não foi antecipada nem certificada por testes locais. Latência KMS por etapa permanece sem instrumentação detalhada; timeout maior é mitigação, recibo/reconciliação são a proteção funcional.
+
 ## Painel de contratos — limites após implantação (18/10/2026)
 
 PR #173/merge 2c4ddd9, CI/build/deploy Actions 39136374800 e smoke técnico produtivo aprovados. O contrato não fornece instante efetivo de fechamento; close_at é programado e Fechado depende do estado. Espaçamento visual possui piso de 136px para rótulos, sem escala linear pura. Chrome/teclado/árvore de acessibilidade e template produtivo em memória conferidos; VoiceOver nativo, fontes ampliadas e sessão humana autenticada no navegador produtivo não executados. Sem pendência de migration/configuração/backfill/MCP/Flutter para ativar a interface. [Fonte vigente](../testing/contracts-timeline-closeout-20261018.md).
@@ -199,3 +203,7 @@ Descrição da PR ainda depende de aprovação explícita do usuário antes da s
 ### 17/10/2026 — Rollout e correção MCP da agenda
 
 A pendência de aprovação/merge da feature foi superada pela PR #170. Schema implantado, serviço MCP recuperado após falha de empacotamento; não reexecutar deploy sem a correção permanente da imagem, ainda aguardando PR própria. Backfill editorial continua pendente em todos os itens; fonte ampliada Flutter e distribuição de release permanecem fora do aceite produtivo. Ver [recibo](../testing/resolution-agenda-closeout-20261017.md).
+
+## Resolução: apresentação pós-liquidação — 2026-10-25
+
+Correção local pronta; produção ainda exibe o comportamento anterior até implantação do backend/web. A wallet produtiva auditada tinha 100 liberados + 100 líquidos = 200 de retorno, sem erro de crédito identificado. Flutter requer nova distribuição; não foi instalado em aparelho nesta etapa. Esta fatia não exige backfill/migration, mas a branch completa inclui a migration 0037 dos recibos administrativos.

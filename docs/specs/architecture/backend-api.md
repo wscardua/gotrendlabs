@@ -106,3 +106,7 @@ Contrato e critérios: [market-resolution-agenda](../features/market-resolution-
 # Analytics MCP histórico (branch local 2026-10-24)
 
 FastAPI é a fonte de verdade para agregação, autorização `analytics:read`, limites temporais e erros tipados. `analytics_reports.py` combina checkpoints diários observados com cauda bruta não consolidada e fatos de domínio; `analytics_history.py` consolida por dia sob advisory lock e `analytics_retention.py` só expurga eventos com checkpoint verificável. O adaptador `apps/mcp/server.py` não acessa ORM/SQL. [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md) e [contrato](../contracts/mcp-analytics.md).
+
+## Confirmação de resolução após perda de resposta
+
+`resolution_requests.py` registra/verifica recibos transacionais; `MarketLifecycleEngine` relê o estado sob lock antes da decisão e usa o relógio do servidor para a janela. POST de resolução exige UUID/identidade e GET de confirmação exige os mesmos controles staff/MFA, serializando a leitura com mutações do mercado. A consulta pode aguardar uma transação em andamento; timeout/404 não provam rollback. Detalhes em [market-lifecycle](../contracts/market-lifecycle.md) e ADR-0018. Nenhuma permissão MCP deriva dessas rotas administrativas.

@@ -1,3 +1,12 @@
+## 2026-10-25 — retorno da wallet e participação final (local)
+
+WFLOW-20261025-RESOLUTION-DISPLAY: wallet web/Flutter distingue liberação, ganho líquido e retorno total da liquidação vigente pelo ledger; undo/re-resolve não soma ciclos passados. API pública preserva volume e participantes distintos em resolved/sealed; elegibilidade dos agentes permanece por previsões humanas abertas. OpenAPI e consumidores atualizados diretamente, sem migration adicional. MCP mantém ferramentas, schemas, permissões e analytics próprios; não acessa wallet nem consome MarketResponse público. Implementação na branch fix/market-resolution-reliability, sem deploy ou distribuição mobile. [Evidências](../testing/resolution-reliability-results.md).
+
+
+## 2026-10-25 — confiabilidade da resolução (local)
+
+Admin Ops → POST FastAPI com ID/UUID → lock do mercado/engine → wallet/reputação/comunicações/ledger e recibo atômicos. Timeout → GET staff/MFA do recibo → confirmação ou estado indeterminado. Daemon usa seal_due_at calculado pelo servidor; interface pública separa comprovantes/resultado verificados da selagem. MCP mantém catálogo e contratos editoriais; sem ferramentas, scopes, permissões, erros ou replays MCP novos. Mobile não consome rotas administrativas; MarketResponse público permanece igual. Migration markets.0037 precede runtime; nenhuma alteração em produção nesta entrega.
+
 ## 2026-10-17 — rollout confirmado de participantes/posição
 
 PR #168/Actions `39061727984` implantados: FastAPI → web com total humano + bot distinto, contrato obrigatório para Flutter e Revisar web sem aviso/subtítulos aprovados. Role `gotrendlabs_fastapi`/READ ONLY, SQL/API e template real conferidos; serviços ativos/MCP healthy, configurações idênticas ao preflight. Sem migration/backfill/grant/flag, nova permissão ou ajuste MCP. Flutter instalado depende de release própria. [Recibo](../testing/participants-closeout-20261017.md). Atualiza as pendências de rollout registradas abaixo.

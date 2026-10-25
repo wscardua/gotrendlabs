@@ -1,10 +1,10 @@
 ---
 id: FEAT-MOBILE-UX-001
 titulo: "UX e design mobile"
-versao: 0.2
+versao: 0.3
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-09-26
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/features/mobile-mvp.md
   - referencias_visuais_fornecidas_pelo_usuario
@@ -386,3 +386,7 @@ Evitar:
 ## Critérios longos e prazos no detalhe — 17/10/2026
 
 A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (`expected_resolution_label`) da FastAPI no rodapé do resumo, após divisor discreto, com tipografia secundária e quebra natural. As datas não integram o card do critério. O critério precede o ticket e mantém a apresentação aprovada em 12/10: prévia de três linhas; textos longos oferecem “Ver critério de resolução completo”, abrindo painel inferior com texto integral selecionável, rolagem e Fechar. Texto curto não recebe ação extra. Sem expansão dentro da página, reescrita do texto ou cálculo local dos prazos. Testar fonte ampliada, fechamento do painel e manutenção do detalhe.
+
+## Apresentação da resolução — 2026-10-25
+
+Wallet mostra os retornos por mercado: valor liberado, ganho líquido e total recebido já incluído no saldo/extrato. API fornece os três valores; o app não recalcula liquidação. Painel de mercado resolved/sealed usa GT₵ em previsões para o volume liquidado; mantém contagem final recebida do backend. Lista vazia não mostra seção de retornos. Aceite automatizado em mobile-acceptance; publicação de binário pendente.

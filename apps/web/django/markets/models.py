@@ -575,3 +575,14 @@ class ProductFeedback(models.Model):
             models.Index(fields=["severity", "status"]),
             models.Index(fields=["author", "-created_at"]),
         ]
+
+
+class MarketResolutionRequest(models.Model):
+    idempotency_key = models.UUIDField(unique=True)
+    market = models.ForeignKey(Market, on_delete=models.PROTECT, related_name="resolution_requests")
+    request_hash = models.CharField(max_length=64)
+    seal_due_at = models.DateTimeField()
+    created_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "gotrendlabs_market_resolution_requests"

@@ -1,4 +1,5 @@
 {% extends "admin_base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs Admin | {{ title }}{% endblock %}
 {% block content %}
 <main class="shell admin-layout">
@@ -23,7 +24,8 @@
       {% if action == "resolve" and form %}
         <form class="form-grid" method="post" style="margin-top:18px">
           {% csrf_token %}
-          {% if market %}<input type="hidden" name="expected_market_id" value="{% firstof request.POST.expected_market_id market.editorial_market_id %}">{% endif %}
+          {{ form.expected_market_id }}{{ form.idempotency_key }}
+          {{ form.non_field_errors }}{{ form.expected_market_id.errors }}{{ form.idempotency_key.errors }}
           <div class="field">
             <label for="{{ form.winning_option_id.id_for_label }}">Resultado <span class="required-marker">Obrigatório</span></label>
             {{ form.winning_option_id }}
@@ -45,6 +47,8 @@
             {{ form.note }}
           </div>
           <button class="btn primary" type="submit" data-confirm="Publicar resolução final?" data-confirm-desc="Esta ação libera stakes, aplica payout/reputação e publica trilha auditável.">Publicar resolução</button>
+          {% if admin_error %}<button class="btn ghost" name="check_resolution" value="1" type="submit">{% trans "Consultar confirmação desta operação" %}</button>{% endif %}
+          <p class="field full">{% trans "A janela de revisão começa quando a resolução é publicada no sistema, independentemente da data informada." %}</p>
           <a class="btn ghost" href="{% url 'admin-ops-resolution' %}">Cancelar</a>
         </form>
       {% elif action == "cancel-refund" %}

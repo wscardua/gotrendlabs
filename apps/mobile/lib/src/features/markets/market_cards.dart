@@ -375,7 +375,9 @@ class MarketMetricPanel extends StatelessWidget {
         null,
       ),
       (
-        'Volume GT₵',
+        market.status == 'resolved' || market.status == 'sealed'
+            ? 'GT₵ em previsões'
+            : 'Volume GT₵',
         market.volumeLabel,
         Icons.savings_outlined,
         GtlColors.accentBlue,

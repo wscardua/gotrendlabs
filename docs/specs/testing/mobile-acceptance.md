@@ -1,10 +1,10 @@
 ---
 id: TEST-MOBILE-001
 titulo: "Criterios de aceite mobile"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-17
+ultima_atualizacao: 2026-10-25
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -338,3 +338,9 @@ O detalhe consome agenda FastAPI (`expected_resolution_at`, original, fuso, vers
 ## Critérios longos e prazos no detalhe — 17/10/2026
 
 A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (`expected_resolution_label`) da FastAPI no rodapé do resumo, após divisor discreto, com tipografia secundária e quebra natural. As datas não integram o card do critério. O critério precede o ticket e mantém a apresentação aprovada em 12/10: prévia de três linhas; textos longos oferecem “Ver critério de resolução completo”, abrindo painel inferior com texto integral selecionável, rolagem e Fechar. Texto curto não recebe ação extra. Sem expansão dentro da página, reescrita do texto ou cálculo local dos prazos. Testar fonte ampliada, fechamento do painel e manutenção do detalhe.
+
+## Resolução/wallet — aceite local 2026-10-25
+
+- Wallet consome resolution_returns obrigatório, com liberação/ganho líquido/total sem somas locais; lista vazia oculta cartões.
+- Widget em 360 px cobre título longo e valores 100/100/200 sem overflow; mercado resolved/sealed mantém volume/participantes da API e usa rótulo de previsões.
+- 46 testes Flutter de wallet/cards/detalhe/shell/ticket aprovados; flutter analyze sem problemas. Instalação/release mobile e QA manual em aparelho não executados nesta fatia.
