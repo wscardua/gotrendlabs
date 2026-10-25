@@ -2,12 +2,12 @@
 
 ## Estado
 
-Preparado em 2026-10-25 na branch `fix/market-resolution-reliability`, base `origin/main` `9407a8c`. Implementação validada localmente; PR/merge/deploy ainda pendentes da aprovação da descrição solicitada pelo usuário. Fonte operacional: WFLOW-20261025-RESOLUTION-CLOSEOUT. Não confundir código Flutter integrado com app distribuído.
+PR #177 integrada em 2026-10-25 (merge `8343b90`) e Actions de main `40205958120` aprovados, com smoke produtivo do mercado 35. A ACL foi ajustada pontualmente em produção; migration 0038 corretiva ainda aguarda publicação para tornar o estado reproduzível. Fonte operacional: WFLOW-20261025-RESOLUTION-CLOSEOUT e WFLOW-20261025-RESOLUTION-RECEIPT-ACL. O código Flutter integrado ainda requer distribuição do app.
 
 ## Contratos e pré-requisitos
 
 - POST administrativo resolve exige `expected_market_id` e UUID `idempotency_key`; GET de confirmação mantém staff/MFA. Recibo e efeitos são transacionais; nenhuma capacidade MCP adicional.
-- Migration `markets.0037_market_resolution_request` cria recibos imutáveis e concede SELECT/INSERT e sequência à role FastAPI existente. Aplicar antes de servir o novo runtime.
+- Migration `markets.0037_market_resolution_request` cria recibos imutáveis. Em produção, defaults amplos exigiram revogação pontual após o primeiro deploy; `markets.0038_limit_resolution_request_privileges` estabelece ACL efetiva mínima para futuros ambientes. Aplicar ambas antes de considerar a configuração final concluída.
 - `/users/me/ledger` inclui `resolution_returns` obrigatório; clientes web/Flutter apresentam liberação, lucro líquido e retorno total. Backend deve estar disponível com esse contrato antes de distribuir o novo app.
 - Sem backfill, novas variáveis, segredos ou flags. Não reescrever provas, prazos ou pagamentos da primeira resolução. O prazo de revisão do servidor vale para novas resoluções.
 
@@ -34,3 +34,7 @@ Preparado em 2026-10-25 na branch `fix/market-resolution-reliability`, base `ori
 Testes de idempotência, concorrência, desfazer/refazer e rollback são feitos em banco isolado. Perda de resposta com KMS real e performance de wallet extensa permanecem verificações específicas; não simular falha destrutiva em produção. A migration é aditiva; eventual rollback de código preserva recibos/provas. Não reverter migrations que removam o histórico produtivo.
 
 O workflow atual não distribui binários Flutter. Publicação web/API pode ser concluída mantendo a release do app explicitamente pendente.
+
+## Ajuste pós-deploy da ACL
+
+O primeiro deploy pelo Actions 40205958120 funcionou e passou no smoke. A tabela nova recebeu default ACL `arwd` para FastAPI/Django; trigger append-only já impedia UPDATE/DELETE, mas a ACL excedia o contrato. SSM aplicou REVOKE pontual com a role proprietária e confirmou FastAPI (SELECT, INSERT; sem UPDATE/DELETE), Django (SELECT; sem escrita) e sequência FastAPI (USAGE/SELECT; sem UPDATE). A migration 0038 deve manter esse estado após o próximo deploy. O ajuste não tocou a default ACL global, outras tabelas nem os dados resolvidos.

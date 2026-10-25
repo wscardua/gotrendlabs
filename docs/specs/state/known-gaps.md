@@ -1,3 +1,7 @@
+## ACL de recibos após o primeiro deploy — 2026-10-25
+
+Smoke da PR #177 encontrou UPDATE/DELETE concedidos por default ACL em produção à role FastAPI no recibo; trigger append-only ativo mantém UPDATE/DELETE rejeitados. A migration 0038 e a revogação pontual produtiva corrigem o excesso. Acompanhar PR/CI/deploy corretivo e verificar privilégios efetivos antes de declarar o fechamento completo.
+
 ## 2026-10-25 — entrega local de confiabilidade da resolução
 
 Correções e regressões locais implementadas. Pendência de rollout: publicar branch pelo fluxo normal, aplicar markets.0037 antes do runtime, conferir grants da role FastAPI e executar smoke autenticado controlado. Não reescrever os prazos/provas da primeira resolução já publicada. A selagem daquele mercado em produção não foi antecipada nem certificada por testes locais. Latência KMS por etapa permanece sem instrumentação detalhada; timeout maior é mitigação, recibo/reconciliação são a proteção funcional.
@@ -206,4 +210,4 @@ A pendência de aprovação/merge da feature foi superada pela PR #170. Schema i
 
 ## Resolução: apresentação pós-liquidação — 2026-10-25
 
-Correção local pronta; produção ainda exibe o comportamento anterior até implantação do backend/web. A wallet produtiva auditada tinha 100 liberados + 100 líquidos = 200 de retorno, sem erro de crédito identificado. Flutter requer nova distribuição; não foi instalado em aparelho nesta etapa. Esta fatia não exige backfill/migration, mas a branch completa inclui a migration 0037 dos recibos administrativos.
+Correção implantada em produção pela PR #177; API e página públicas exibem 100 GT₵ e 1 participante no mercado 35. A wallet produtiva auditada tinha 100 liberados + 100 líquidos = 200 de retorno, sem erro de crédito identificado. Flutter requer nova distribuição; não foi instalado em aparelho nesta etapa. Esta fatia não exige backfill/migration, mas a branch completa inclui a migration 0037 dos recibos administrativos.
