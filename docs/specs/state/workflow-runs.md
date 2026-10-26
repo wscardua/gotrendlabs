@@ -1,3 +1,11 @@
+## WFLOW-20261026-WALLET-WEB-SIMPLIFY
+
+- Tipo: alterar feature FEAT-WALLET-001; estado: implementação local concluída, publicação pendente.
+- Objetivo: retirar de `/wallet/` o painel `Retornos por acerto`, que repetia informações já representadas por saldo e extrato e confundia a leitura.
+- Artefatos: template web, expectativa de renderização no teste de wallet, spec da wallet, arquitetura web, changelog e status. API `/users/me/ledger` e `resolution_returns` continuam obrigatórios para o app Flutter; saldos, ledger, fórmulas e recarga não mudam.
+- Arquitetura/segurança/MCP: alteração somente de apresentação Django; sem novo contrato, migration, permissão, ferramenta, schema, erro, replay ou orientação editorial MCP. Nenhuma capacidade Admin Ops foi transferida ao MCP.
+- Aceite: com `resolution_returns` preenchido, página ainda exibe saldos, extrato e lançamentos, mas não exibe título/cartões/valores do painel adicional. Renderização isolada, `manage.py check` e `git diff --check` aprovados; teste de regressão existente ajustado. Suíte PostgreSQL local não iniciou porque o armazenamento Docker ficou sem espaço durante `initdb`; contêiner temporário removido. CI remoto será o gate antes do merge.
+
 ## WFLOW-20261025-RESOLUTION-RECEIPT-ACL
 
 - Tipo: correção pós-deploy da mesma feature; estado: concluído em produção pelas PRs #177/#178. [Recibo](../testing/resolution-reliability-production-closeout-20261025.md).

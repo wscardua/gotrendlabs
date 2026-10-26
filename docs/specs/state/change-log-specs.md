@@ -1,3 +1,7 @@
+## 2026-10-26 — FEAT-WALLET-001 v0.7
+
+A apresentação web de `/wallet/` foi simplificada: saldo e extrato permanecem, e o painel adicional de retornos por mercado deixa de ser exibido. O contrato `resolution_returns` e a apresentação Flutter continuam vigentes. Sem alteração de domínio ou MCP. [Workflow](workflow-runs.md).
+
 ## 2026-10-25 — ACL efetiva dos recibos em produção
 
 PR #177 implantou resolução confiável e apresentação da wallet/mercado. O smoke confirmou o resultado e identificou privilégio UPDATE/DELETE herdado da default ACL na nova tabela de recibos, apesar do trigger append-only ativo. Revogação pontual em produção executada por migration owner e confirmada: FastAPI SELECT/INSERT, sem UPDATE/DELETE; Django apenas SELECT; sequência FastAPI USAGE/SELECT, sem UPDATE. Migration markets.0038 e teste de regressão tornam o estado reproduzível em futuros ambientes. Sem mudança de API, MCP, mobile, saldos ou provas. Acompanhar PR corretiva/CI/deploy antes do recibo final. [Evidências](../testing/resolution-reliability-results.md).

@@ -71,6 +71,7 @@
 - Quando um visitante chega com `?ref=...`, o Django pode preservar o código em sessão e enviá-lo no cadastro; links sociais de mercado/resultado para usuário autenticado podem carregar `ref`, mas a validação e crédito permanecem no backend.
 - O ticket de previsão deve iniciar sem opção marcada, orientar a seleção explícita e usar controle nativo obrigatório para impedir confirmação ambígua.
 - Usuário autenticado sem saldo disponível deve ver o ticket em estado de leitura, com indicação de saldo indisponível e CTA para wallet.
+- A página `/wallet/` prioriza saldos e extrato; não duplica lançamentos em um painel de retornos por mercado. O resumo `resolution_returns` permanece no contrato da API para os consumidores que o apresentam.
 - A página pública de badges renderiza o catálogo vindo da API; quando houver sessão, exibe estado pessoal retornado pelo domínio sem calcular elegibilidade no template.
 - Cards de badge usam `image_url` como imagem padrão/tema claro e trocam para `image_dark_url` quando o tema escuro estiver ativo; se a imagem escura não existir, a imagem padrão permanece como fallback.
 - A ação de compartilhar badge só aparece para usuário autenticado em badge com `status=earned`; a rota `/share/badge/{code}/` valida a conquista via contrato de badges antes de renderizar.

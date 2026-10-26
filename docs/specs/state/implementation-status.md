@@ -1,3 +1,7 @@
+## 2026-10-26 — wallet web sem painel de retornos
+
+Template e teste atualizados localmente na branch `fix/wallet-remove-returns-deadlines`. Saldos/extrato continuam; a seção redundante saiu da web. Contrato API e consumidor Flutter permanecem. Renderização isolada aprovada; publicação pendente. [Workflow](workflow-runs.md).
+
 ## 2026-10-25 — resolução confiável encerrada em produção
 
 PRs #177/#178, migrations 0037/0038, CI/build/deploy e smoke final aprovados. Recibo, ACL mínima, trigger, saúde, mercado 35 (100 GT₵/1 participante), retorno 100 + 100 = 200 e auditoria de integridade confirmados. O selo ainda não estava disponível no smoke. Distribuição Flutter é etapa própria; MCP não exige ferramentas, schemas, scopes ou permissões adicionais. [Recibo produtivo](../testing/resolution-reliability-production-closeout-20261025.md). As entradas locais abaixo preservam o histórico de preparação.

@@ -1,10 +1,10 @@
 ---
 id: FEAT-WALLET-001
 titulo: "Wallet e extrato"
-versao: 0.6
+versao: 0.7
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-25
+ultima_atualizacao: 2026-10-26
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -137,4 +137,4 @@ Mudanças afetam previsão, resolução, recompensas e suporte operacional.
 
 GET `/users/me/ledger` acrescenta `resolution_returns` obrigatório (lista vazia se não aplicável). Cada item contém market_id, market_slug, market_title, released_gtl, net_profit_gtl, total_received_gtl. A API agrega somente previsões vencedoras atualmente resolved de mercados resolved/sealed, somando prediction_refund/release e prediction_payout/credit posteriores ao último lock/relock de cada previsão e do mesmo usuário. Não estima pagamentos pela probabilidade nem soma ciclos desfeitos. Ganho zero é válido; cancelamentos/perdedores não geram cartão de acerto. Desfazer remove o resumo vigente, preservando o extrato completo.
 
-Web/Flutter mostram Valor liberado, Ganho líquido e Total recebido, explicitando que o total já compõe o saldo/extrato. Nenhum crédito novo é criado. O agregado total_earned_gtl continua incluindo recompensas conforme contrato; rótulo web passa a Créditos ganhos, evitando dizer que todo o agregado vem de acertos.
+O app Flutter mostra Valor liberado, Ganho líquido e Total recebido, explicitando que o total já compõe o saldo/extrato. A página web `/wallet/` exibe saldo, créditos ganhos e extrato, sem o bloco adicional de retornos por mercado; os lançamentos continuam sendo a fonte de rastreio visível. Nenhum crédito novo é criado. O agregado total_earned_gtl continua incluindo recompensas conforme contrato; o rótulo web é Créditos ganhos, evitando dizer que todo o agregado vem de acertos.

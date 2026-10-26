@@ -1,3 +1,7 @@
+## 2026-10-26 — wallet web simplificada
+
+O painel `Retornos por acerto` foi removido de `/wallet/` para manter saldos e extrato como leitura principal. API e app Flutter continuam com `resolution_returns`; nenhum lançamento, crédito ou cálculo mudou. [Workflow](workflow-runs.md).
+
 ## 2026-10-25 — resolução confiável publicada e ACL corrigida
 
 PR #177 publicou resolução idempotente, confirmação após timeout, janela de revisão pelo servidor, integridade por etapa, resumo de retorno da wallet e métricas finais. PR #178 publicou a migration 0038 de privilégios mínimos dos recibos. CI/deploy e smoke produtivo aprovados; mercado 35 preserva 100 GT₵, 1 participante e auditoria válida. Flutter requer distribuição própria; MCP sem alteração de capacidades. [Recibo](../testing/resolution-reliability-production-closeout-20261025.md). As entradas locais abaixo mantêm a sequência histórica.

@@ -14,20 +14,6 @@
     </div>
     {% if messages %}{% for message in messages %}<div class="tag {% if message.tags == 'error' %}risk{% else %}safe{% endif %}">{{ message }}</div>{% endfor %}{% endif %}
     {% if recharge_error %}<div class="tag risk">{{ recharge_error }}</div>{% endif %}
-    {% if resolution_returns %}
-      <h3>{% trans "Retornos por acerto" %}</h3>
-      <p class="muted">{% trans "O total recebido já está incluído no saldo e nos lançamentos do extrato." %}</p>
-      {% for result in resolution_returns %}
-        <section class="side-card">
-          <h4><a href="{% url 'market-detail' result.market_slug %}">{{ result.market_title }}</a></h4>
-          <div class="metrics">
-            <div class="metric"><strong>{{ result.released_gtl }} GT₵</strong><span>{% trans "Valor liberado" %}</span></div>
-            <div class="metric"><strong>{{ result.net_profit_gtl }} GT₵</strong><span>{% trans "Ganho líquido" %}</span></div>
-            <div class="metric"><strong>{{ result.total_received_gtl }} GT₵</strong><span>{% trans "Total recebido" %}</span></div>
-          </div>
-        </section>
-      {% endfor %}
-    {% endif %}
     <h3>Extrato</h3>
     <table class="table">
       <tr><th>Data</th><th>Descrição</th><th>Tipo</th><th>GT₵</th></tr>
