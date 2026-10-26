@@ -8,7 +8,7 @@ PRs #177 e #178 integradas em 2026-10-25 (merges `8343b90`/`659e976`); Actions d
 
 - POST administrativo resolve exige `expected_market_id` e UUID `idempotency_key`; GET de confirmação mantém staff/MFA. Recibo e efeitos são transacionais; nenhuma capacidade MCP adicional.
 - Migration `markets.0037_market_resolution_request` cria recibos imutáveis. Em produção, defaults amplos exigiram revogação pontual após o primeiro deploy; `markets.0038_limit_resolution_request_privileges` estabelece ACL efetiva mínima para futuros ambientes. Aplicar ambas antes de considerar a configuração final concluída.
-- `/users/me/ledger` inclui `resolution_returns` obrigatório; o app Flutter apresenta liberação, lucro líquido e retorno total. A web prioriza saldo e extrato sem painel adicional por mercado. Backend deve estar disponível com esse contrato antes de distribuir o novo app.
+- `/users/me/ledger` inclui `resolution_returns` obrigatório; o código Flutter apresenta liberação, lucro líquido e retorno total. O deploy original de 25/10 também exibia esse detalhamento na web; a simplificação de `/wallet/` nesta branch retira o painel por mercado quando publicada. Backend deve estar disponível com esse contrato antes de distribuir o novo app.
 - Sem backfill, novas variáveis, segredos ou flags. Não reescrever provas, prazos ou pagamentos da primeira resolução. O prazo de revisão do servidor vale para novas resoluções.
 
 ## Publicação

@@ -2,7 +2,7 @@
 
 Fechamento em 2026-10-25: PRs #177 e #178 integradas, testes/build/deploy web/API aprovados, migrations 0037/0038 e ACL mínima confirmadas em produção. O mercado 35 mostra 100 GT₵, 1 participante e integridade válida. Distribuição Flutter ainda pendente. [Recibo produtivo](docs/specs/testing/resolution-reliability-production-closeout-20261025.md) e [roteiro](docs/specs/operations/resolution-reliability-rollout.md).
 
-Implementação publicada em web/API em 2026-10-25: o ledger informa valor liberado, ganho líquido e total recebido; a web prioriza saldo e extrato, enquanto o app Flutter apresenta o detalhamento do retorno. Mercados resolvidos preservam volume/participação final. Distribuição mobile pendente. [Evidências](docs/specs/testing/resolution-reliability-results.md).
+Implementação publicada em web/API em 2026-10-25: o ledger informa valor liberado, ganho líquido e total recebido; mercados resolvidos preservam volume/participação final. A versão desta branch simplifica `/wallet/` para priorizar saldo e extrato, enquanto o código Flutter mantém o detalhamento do retorno. Distribuição mobile pendente. [Evidências](docs/specs/testing/resolution-reliability-results.md).
 
 Atualização 2026-10-17: participantes públicos humanos + bots distintos e ações de posição web implantados pela [PR #168](https://github.com/wscardua/gotrendlabs/pull/168), com CI/build/deploy e smoke produtivo aprovados. [Evidências e limites](docs/specs/testing/participants-closeout-20261017.md). O código Flutter está validado; distribuição aos apps instalados exige próxima release mobile.
 
