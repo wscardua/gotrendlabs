@@ -1,10 +1,10 @@
 ## WFLOW-20261026-WALLET-WEB-SIMPLIFY
 
-- Tipo: alterar feature FEAT-WALLET-001; estado: implementação local concluída, publicação pendente.
+- Tipo: alterar feature FEAT-WALLET-001; estado: concluído em produção. [Recibo](../testing/wallet-web-production-closeout-20261026.md).
 - Objetivo: retirar de `/wallet/` o painel `Retornos por acerto`, que repetia informações já representadas por saldo e extrato e confundia a leitura.
 - Artefatos: template web, expectativa de renderização no teste de wallet, spec da wallet, arquitetura web, changelog e status. API `/users/me/ledger` e `resolution_returns` continuam obrigatórios para o app Flutter; saldos, ledger, fórmulas e recarga não mudam.
 - Arquitetura/segurança/MCP: alteração somente de apresentação Django; sem novo contrato, migration, permissão, ferramenta, schema, erro, replay ou orientação editorial MCP. Nenhuma capacidade Admin Ops foi transferida ao MCP.
-- Aceite: com `resolution_returns` preenchido, página ainda exibe saldos, extrato e lançamentos, mas não exibe título/cartões/valores do painel adicional. Renderização isolada, `manage.py check` e `git diff --check` aprovados; teste de regressão existente ajustado. Suíte PostgreSQL local não iniciou porque o armazenamento Docker ficou sem espaço durante `initdb`; contêiner temporário removido. CI remoto será o gate antes do merge.
+- Aceite: com `resolution_returns` preenchido, página ainda exibe saldos, extrato e lançamentos, mas não exibe título/cartões/valores do painel adicional. Renderização isolada, `manage.py check` e `git diff --check` aprovados; suíte PostgreSQL local indisponível por falta de espaço Docker, contêiner removido. PR #180: CI `40316330605` aprovado, merge `33bbd40`, Actions main `40317433044` com testes/build/deploy aprovados. Smoke SSM `2fa64a13-b7ec-48d5-b946-37d3b98622a1` confirmou SHA e template no Django produtivo; API 200 e wallet anônima 302. Fluxo autenticado em navegador produtivo permanece não ensaiado.
 
 ## WFLOW-20261025-RESOLUTION-RECEIPT-ACL
 

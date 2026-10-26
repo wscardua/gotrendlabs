@@ -1,6 +1,6 @@
 ## 2026-10-26 — wallet web sem painel de retornos
 
-Template e teste atualizados localmente na branch `fix/wallet-remove-returns-deadlines`. Saldos/extrato continuam; a seção redundante saiu da web. Contrato API e consumidor Flutter permanecem. Renderização isolada aprovada; publicação pendente. [Workflow](workflow-runs.md).
+PR #180 integrada, CI e deploy aprovados em 26/10/2026. Saldos/extrato continuam; o painel redundante saiu da web e o smoke do Django produtivo confirmou a renderização. Contrato API e consumidor Flutter permanecem. [Recibo](../testing/wallet-web-production-closeout-20261026.md) e [workflow](workflow-runs.md).
 
 ## 2026-10-25 — resolução confiável encerrada em produção
 
