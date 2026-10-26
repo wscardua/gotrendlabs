@@ -30,8 +30,9 @@ class WalletReturnTests(AppendOnlyTransactionTestCase):
         self.assertEqual((result['released_gtl'], result['net_profit_gtl'], result['total_received_gtl']), (100,100,200))
         self.assertEqual(self.client.get('/users/me/ledger',headers=self.staff_headers).json()['resolution_returns'], [])
         html = render_to_string('wallet/wallet.html', {**data, 'viewer': {'reputation': 0}})
-        for label in ('Valor liberado', 'Ganho líquido', 'Total recebido', '200 GT₵'):
-            self.assertIn(label, html)
+        self.assertIn('Extrato', html)
+        for label in ('Retornos por acerto', 'Valor liberado', 'Ganho líquido', 'Total recebido'):
+            self.assertNotIn(label, html)
         undone = self.client.post(f'/admin/markets/{self.market.slug}/cancel',headers=self.staff_headers,
                                   json={'expected_market_id':self.market.id,'note':'Revisar resultado'})
         self.assertEqual(undone.status_code, 200, undone.text)
