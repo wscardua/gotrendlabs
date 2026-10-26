@@ -1,6 +1,6 @@
 ## 2026-10-26 — wallet web simplificada
 
-O painel `Retornos por acerto` foi removido de `/wallet/` para manter saldos e extrato como leitura principal. API e app Flutter continuam com `resolution_returns`; nenhum lançamento, crédito ou cálculo mudou. [Workflow](workflow-runs.md).
+O painel `Retornos por acerto` foi removido de `/wallet/` para manter saldos e extrato como leitura principal. PR #180 integrada, CI/deploy e smoke produtivo aprovados. API e app Flutter continuam com `resolution_returns`; nenhum lançamento, crédito ou cálculo mudou. [Recibo](../testing/wallet-web-production-closeout-20261026.md).
 
 ## 2026-10-25 — resolução confiável publicada e ACL corrigida
 
