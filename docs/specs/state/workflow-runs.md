@@ -4011,7 +4011,7 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 
 ## WFLOW-20261102-MCP-RESOLVE-CANCEL
 
-- Tipo: alterar feature existente; estado vigente: implementação e validação locais concluídas em 02/11/2026; homologação/implantação pendentes. Planejamento aprovado pelo usuário ao solicitar prosseguimento.
+- Tipo: alterar feature existente; estado vigente: concluído em produção pela PR #182; evidências locais seguintes são históricas. Planejamento aprovado pelo usuário ao solicitar prosseguimento.
 - Objetivo: acrescentar resolve_market e cancel_market ao MCP, com autorização explícita e execução centralizada no MarketLifecycleEngine pela FastAPI.
 - Base: origin/main b6a0649, após git fetch; branch feature/mcp-resolve-cancel-markets em worktree isolada. Checkout original preservado.
 - Proposta: scopes markets:resolve e markets:cancel sem concessão automática; resolução de locked com opção por ID, evidência, justificativa e data/fuso explícitos; cancelamento de estados não terminais com motivo, sem desfazer resolução implicitamente. Alcance proposto: mercados publicados elegíveis, independentemente da integração autora; drafts continuam sob restrição de autoria.
@@ -4028,7 +4028,7 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 
 ## WFLOW-20261102-MCP-DELETE-DRAFT
 
-- Tipo: ampliar feature MCP na mesma branch; estado vigente: implementação e validação locais concluídas, autorizadas pelo usuário.
+- Tipo: ampliar feature MCP na mesma branch; estado vigente: concluído em produção pela PR #182, autorizado pelo usuário.
 - Objetivo: delete_market_draft com scope drafts:delete, somente draft da própria integração em preparation/in_review, antes de publicação e sem previsões/provas; reutilizar serviço de exclusão física e função PostgreSQL restrita.
 - Contratos: entrada estrita por ID/revisão/updated_at, motivo e UUID; resultado mínimo de exclusão; recibo idempotente sem FK para o recurso excluído, pela infraestrutura já existente de idempotência. Revalidar autorização antes de replay; exclusão/revisões/auditoria/recibo na mesma transação.
 - Impacto MCP: catálogo 21, novo scope explícito em gestão/OAuth/serviço, schemas REST/MCP/OpenAPI, erro draft_not_deletable, replay de exclusão confirmado sem recriar recursos e orientação de exclusão permanente. Sem concessão automática ou poderes sobre mercados alheios/publicados. Etapas de implementação, regressões e documentação concluídas conforme recibo abaixo.
@@ -4040,14 +4040,14 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 
 ## WFLOW-20261102-MCP-CONSENT-STALE-SESSION
 
-- Tipo: correção de fluxo web de autorização; estado: implementação e validação locais concluídas. Usuário recebeu Sessão inválida ao autorizar pelo LM Studio após reset de senha. A API rejeita sessões revogadas, enquanto o decorator web aceita usuário staff em cache; consentimento exibia 401 como erro terminal.
+- Tipo: correção de fluxo web de autorização; estado vigente: concluído em produção pela PR #182. Usuário recebeu Sessão inválida ao autorizar pelo LM Studio após reset de senha. A API rejeita sessões revogadas, enquanto o decorator web aceita usuário staff em cache; consentimento exibia 401 como erro terminal.
 - Correção: tratar 401 na view consent, limpar autenticação em cache e redirecionar ao login local com next contendo os parâmetros originais. Retorno requer login/MFA e nova ação humana de consentimento; POST não é reaplicado automaticamente. 403/422/503 preservam sessão e erro.
 - Validação: 3 testes em test_mcp_consent_query aprovados (GET/POST, estado/scopes/callback preservados, sessão nova, negações não-401); smoke HTTP com sessão temporária inválida e cached staff redirecionou 302 ao login com OAuth preservado. Sessão de smoke removida. Django check, Ruff F e diff check aprovados. Web local atualizada por reload; nenhum usuário real foi logado automaticamente.
 - Impacto MCP: recuperação de sessão humana no consentimento; catálogo, ferramentas, schemas, scopes/grants, erros de domínio e replays não mudam; MFA e CSRF continuam obrigatórios. Sem migration, novo ADR ou mudança de fronteira. Auth spec, contrato, aceite e estado atualizados. Sem alteração produtiva; usuário precisa iniciar conexão nova no LM Studio e autenticar no navegador.
 
 ## WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT
 
-- Tipo: fechamento da fatia MCP lifecycle/exclusão e correção de sessão do consentimento; estado: preparação de publicação, sem PR/merge/deploy nesta etapa. Usuário autorizou commit, PR em português, merge/Actions/ajustes produtivos, preservando branch local, mas exige aprovação da descrição antes de submeter a PR.
+- Tipo: fechamento da fatia MCP lifecycle/exclusão e correção de sessão do consentimento; estado vigente: concluído em produção pela PR #182 / merge 0ffa4a0 / Actions 41464155882, com smoke Success/0. Usuário aprovou a descrição e autorizou o prosseguimento antes da PR. Registros seguintes preservam o histórico de preparação e evidências.
 - Branch feature/mcp-resolve-cancel-markets, base origin/main b6a0649 após fetch. Incluir todos os arquivos de implementação e testes novos no commit; referências locais de ambiente/runtime permanecem ignoradas. Reset de senha local não integra código, configuração ou dados de produção.
 - Escopo final: resolve_market, cancel_market, delete_market_draft, scopes explícitos, autoria técnica, idempotência/concorrência, recibos append-only e ACL mínima, IDs/versão operacional separados de snapshots editoriais, recuperação de sessão web no OAuth; sem alteração de fórmulas de domínio ou poder de publicação/undo.
 - Próximas ações: suíte completa isolada e checks, reconciliar specs/aceites/rollout/memória, commit local e revisão versionada, mostrar título/descrição concretos e aguardar aprovação antes de PR. Após aprovação, publicar branch via git, PR/merge via GitHub MCP, acompanhar CI e deploy Actions, conferir migration/ACL/saúde/contratos produtivos, documentar evidências posteriores. Não conceder scopes reais por inferência.
@@ -4055,6 +4055,11 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 - Fechamento local validado: suíte completa 637 testes em 490,121s, 635 aprovados e dois skips de roles nomeadas ausentes no cluster temporário. JS analytics/preview, Django, migrations pendentes, OpenAPI, Ruff F e diff check aprovados; catálogo normativo igual ao runtime (21 tools/nove scopes). [Recibo completo](../testing/mcp-market-lifecycle-results.md).
 - Readiness remoto: GitHub MCP autenticado e sem PR aberta para esta head; ENABLE_PROD_DEPLOY=1 e última execução main b6a0649/Actions 40319310275 success. Nenhuma alteração produtiva feita. [Rollout](../operations/mcp-market-lifecycle-rollout.md) registra sequência/recuperação e revisão de privilégios pós-migration.
 - Triagem mobile: nenhuma alteração Flutter; nenhum consumidor de /integrations/editorial ou /oauth em apps/mobile/lib. Contratos públicos/auth do app não mudam. Arquitetura/MCP/integridade revisados no escopo: fonte da verdade FastAPI, OAuth/MFA/CSRF preservados, autoria técnica e transações, sem DB no adaptador.
-- Estado vigente: aguardando aprovação do título/descrição antes de submeter a PR, conforme instrução do usuário. Não fechar como implantado antes de Actions/deploy/smoke reais; preservar a branch local.
+- Estado histórico pré-aprovação: a descrição aguardava confirmação; essa etapa foi superada pela aprovação do usuário, PR #182, merge e deploy verificados abaixo.
 
 - Commit local de implementação: c778b88 (37 arquivos). Review versionado b6a0649..c778b88 sem findings identificáveis; risco geral médio pelas novas mutações e ACL, com gates de CI/produtivo explícitos. [Review](../testing/mcp-market-lifecycle-review.md). Atualização documental de fechamento registra este resultado sem nova mudança funcional ou repetição de testes.
+
+- Publicação autorizada: PR #182 criada via GitHub MCP com o texto aprovado, CI 41462209156 success, 637 testes/551,246s OK (skipped=2); merge 0ffa4a0 via GitHub MCP. Actions main 41464155882: build principal/MCP, testes 637/683,282s e deploy success; SSM e6402bf9-1fdb-4a6a-b8c3-da5eb8b202a2 Success/0.
+- Smoke produtivo 7dce1c8c-aded-41d8-83b3-5d2e5db914c1 Success/0: SHA e hashes nas imagens iguais ao merge, serviços running/MCP healthy, HTTP público 200, Admin Ops anônimo 302, migration 0007/constraints/trigger e ACL mínima conferidos, catálogo 21/nove scopes e três mutações sem delegação negadas 401. [Recibo vigente](../testing/mcp-market-lifecycle-production-closeout-20261102.md).
+- Uma integração ativa conserva os seis scopes anteriores; não foram concedidos os três novos automaticamente nem emitidos grants privilegiados. Nenhum mercado produtivo foi resolvido/cancelado/excluído para smoke, nenhum reset de senha/MFA produtivo, nenhuma nova variável/flag ou release mobile. Ativação por integração exige concessão explícita/novo OAuth ou token; código já ativo e saudável.
+- Checklist universal/implementação/testes/publicação aplicado. Specs, OpenAPI/contratos, ADRs, aceites, rollout, README, changelogs, status, integration-map e known-gaps reconciliados. Encerramento técnico desta fatia concluído; homologação humana LM Studio/Dot/carga KMS são limites próprios. Branch local preservada. Atualização final de evidências segue PR documental, sem nova mudança de runtime ou deploy.

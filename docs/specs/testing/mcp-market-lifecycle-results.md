@@ -1,3 +1,9 @@
+# Estado produtivo vigente
+
+PR #182 implantada e conferida após CI/build/deploy aprovados. [Recibo produtivo de 02/11/2026](mcp-market-lifecycle-production-closeout-20261102.md). As seções seguintes registram evidências locais históricas; suas pendências de PR/merge/deploy foram superadas pelo recibo. Homologação de clientes externos e concessão de scopes são distintas da implantação.
+
+---
+
 # Fechamento local — suíte completa em 02/11/2026
 
 WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT, base origin/main b6a0649, branch feature/mcp-resolve-cancel-markets. Estado: preparado para PR após aprovação do título/descrição; nenhuma submissão/merge/deploy desta fatia nesta etapa.

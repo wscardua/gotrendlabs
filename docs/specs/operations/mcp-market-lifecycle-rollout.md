@@ -2,9 +2,13 @@
 
 ## Estado e escopo
 
-Preparação de publicação em 02/11/2026, branch feature/mcp-resolve-cancel-markets. Base origin/main b6a0649. WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT. Implementação no commit local c778b88, revisão versionada sem findings identificáveis e suíte completa aprovada. A descrição da PR deve ser aprovada pelo usuário antes da submissão. Preservar a branch/worktree local após merge.
+Implantação concluída em 02/11/2026, branch feature/mcp-resolve-cancel-markets. Base origin/main b6a0649. WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT. Implementação no commit local c778b88, revisão versionada sem findings identificáveis e suíte completa aprovada. A descrição foi aprovada pelo usuário antes da PR #182; publicação, merge, Actions e smoke foram concluídos. Preservar a branch/worktree local após merge.
 
 Três novas tools: resolve_market, cancel_market e delete_market_draft. Novos scopes markets:resolve, markets:cancel e drafts:delete. Catálogo 21; metadata nove scopes. Recuperação de sessão web revogada no consentimento preserva OAuth e exige login/MFA novamente. Sem release mobile, nova variável, segredo ou flag. Não distribuir a senha temporária DEV nem transportar sua alteração para produção.
+
+## Fechamento produtivo verificado
+
+PR #182 integrada; Actions main 41464155882 e SSM deploy/smoke Success/0. Runtime 0ffa4a0 com código/hashes e catálogo 21/nove scopes conferidos. Migration 0007 e ACL mínima corretas. Não houve concessão automática, mutação privilegiada de mercado, nova flag/segredo ou release Flutter. [Recibo vigente](../testing/mcp-market-lifecycle-production-closeout-20261102.md). As instruções abaixo registram o roteiro executado e servem a futuras operações; não representam etapas de deploy ainda pendentes desta fatia.
 
 ## Antes do merge
 

@@ -1,3 +1,7 @@
+## MCP lifecycle — limites após implantação de 02/11/2026
+
+Implantação e smoke concluídos pela PR #182 / Actions 41464155882; migration, ACLs, rotas e catálogo 21 conferidos. Implantação não é pendência. Permanecem a concessão explícita de markets:resolve/markets:cancel/drafts:delete e novo consentimento/token pela integração que desejar utilizá-los, a homologação humana LM Studio/Dot em produção e carga/latência com KMS real. Uma integração ativa mantém seis scopes anteriores; isso é controle de autorização, não falha de rollout. Nenhum efeito privilegiado foi executado em mercados reais para smoke. [Recibo vigente](../testing/mcp-market-lifecycle-production-closeout-20261102.md). Os registros locais anteriores abaixo são históricos e não representam o estado de implantação atual.
+
 ## MCP lifecycle — fechamento em preparação, 02/11/2026
 
 Implementação e suíte completa locais concluídas: 637 testes sem falhas (635 aprovados, dois skips de roles nomeadas ausentes; consultas read-only no DEV já confirmaram as ACLs existentes). PR/CI remoto/merge/deploy e recibo produtivo aguardam a aprovação da descrição solicitada pelo usuário. Build das imagens em Python 3.12 e smoke com roles produtivas serão comprovados pelo Actions e verificação pós-deploy; não inferir dessa validação local. Scopes novos não são concedidos automaticamente; cliente externo precisa de concessão explícita e novo consentimento. Limites residuais: carga/KMS reais e fluxo humano LM Studio/Dot em produção. [Roteiro](../operations/mcp-market-lifecycle-rollout.md).

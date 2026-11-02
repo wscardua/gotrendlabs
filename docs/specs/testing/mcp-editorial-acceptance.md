@@ -118,3 +118,8 @@ Exigir tools/list 21 e scope drafts:delete independente, sem ampliação de toke
 
 
 Consentimento com sessão revogada: tests/test_mcp_consent_query.py verifica 401 no GET e nas duas etapas POST, remoção de cache de autenticação, next com parâmetros OAuth exatos (incluindo caracteres especiais), retorno autenticado à mesma solicitação e no-store; 403/422/503 não forçam logout. Três testes aprovados. Smoke HTTP local com sessão temporária/dummy confirmou redirect 302 para login preservando OAuth; sessão temporária removida. Não concede scopes nem altera MFA.
+
+
+## Fechamento produtivo desta fatia — 02/11/2026
+
+PR #182 / Actions 41464155882 aprovados, 637 testes sem falhas (dois skips de roles no PostgreSQL de CI). Smoke produtivo conferiu roles efetivas, migration/trigger/constraints, catálogo 21/nove scopes, hashes nas imagens, saúde e recusa anônima das três mutações. Novos grants e efeitos reais em mercados não foram executados por inferência. Homologação humana de cliente externo/carga KMS preservadas como limites próprios. [Recibo vigente](mcp-market-lifecycle-production-closeout-20261102.md).
