@@ -2,7 +2,7 @@
 
 ## Estado vigente — revisão 1.8, 02/11/2026
 
-Catálogo de 21 ferramentas e nove scopes explícitos. Resolve/cancel/delete e a recuperação de sessão humana do consentimento estão implementados e validados localmente; publicação produtiva acompanha WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT. Não interpretar os recibos históricos de analytics/documento único como deploy desta revisão. As seções históricas abaixo não ampliam privilégios atuais. [Rollout desta fatia](../operations/mcp-market-lifecycle-rollout.md).
+Catálogo de 21 ferramentas e nove scopes explícitos. Resolve/cancel/delete e recuperação de sessão humana do consentimento implantados pela PR #182 / merge 0ffa4a0, com CI/build/deploy e smoke produtivo aprovados. [Recibo desta revisão](../testing/mcp-market-lifecycle-production-closeout-20261102.md). Novos scopes exigem concessão explícita e novo consentimento/token; a implantação não amplia grants existentes. As seções históricas abaixo não ampliam privilégios atuais. [Rollout](../operations/mcp-market-lifecycle-rollout.md).
 
 ## Analytics MCP (implantação técnica, 24/10/2026)
 

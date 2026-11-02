@@ -28,3 +28,8 @@ Revisados grants explícitos e ausência de ampliação automática, autorizaç�
 - Fluxo humano LM Studio/Dot após novo consentimento precisa de validação no cliente/conta concretos. SDK real por serviço/OAuth e redirect HTTP local cobrem servidor, não toda combinação de modelo/browser.
 - Dois testes de roles nomeadas foram ignorados no cluster temporário por ausência delas. Teste da migration nova com roles próprias passou; ACL produtiva continua um gate do smoke.
 - Habilitar capacidades de integração exige concessão explícita dos scopes desejados e novo consentimento/token; deploy não concede esses privilégios.
+
+
+## Verificação dos gates produtivos — 02/11/2026
+
+Build principal/MCP, suíte Python 3.12 no Actions e deploy aprovados pela PR #182. Migration/ACLs efetivas, hashes, saúde, catálogo e negação de chamadas anônimas conferidos por smoke read-only. [Recibo](mcp-market-lifecycle-production-closeout-20261102.md). Os riscos residuais de carga/KMS e cliente humano não são promovidos por esse smoke.

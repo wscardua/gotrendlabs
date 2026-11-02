@@ -315,3 +315,8 @@ FEAT-MCP-001 v1.7 → Admin Ops (concessão explícita) → OAuth/serviço (scop
 
 
 Exclusão MCP própria (02/11/2026): editorial_routes.agent(drafts:delete) → editorial_market_actions.delete_draft → market_deletion.delete_market → função delete_prepublication_editorial. Identidade técnica/revisão/updated_at são revalidadas sob lock; recibo mínimo reaproveita agent_idempotency e sobrevive ao DELETE, sem nova migration. Workload ou drafts:write não concedem exclusão.
+
+
+## MCP lifecycle — produção em 02/11/2026
+
+PR #182 / merge 0ffa4a0 / Actions 41464155882 implantaram backend, Admin Ops e adaptador com migration 0007. Smoke confirmou fronteiras FastAPI → engine/recibos/ledger e MCP HTTP, ACL mínima e nove scopes anunciados; novas concessões continuam staff/MFA + novo grant/token. Nenhuma release Flutter ou nova configuração foi necessária. [Recibo](../testing/mcp-market-lifecycle-production-closeout-20261102.md).

@@ -14,3 +14,5 @@ O DELETE exige expected_market_id junto de expected_revision para distinguir mer
 ## Ampliação autorizada em 02/11/2026 — exclusão MCP própria
 
 O mesmo serviço e a mesma função restrita atendem delete_market_draft. FastAPI exige drafts:delete explícito e valida a integração autora sob locks mercado/ficha; aplicação não assume conta staff. Auditoria recebe contexto técnico e motivo. Recibo em agent_idempotency, operação delete/chave por integração, guarda somente hash/ID/resultado/correlação, sem FK ao mercado removido. Replay autorizado confirma exclusão; operações anteriores sobre o recurso removido continuam not_found. Sem nova migration ou ampliação de ACL. A proibição MCP anterior foi substituída apenas para esta operação restrita; não altera elegibilidade humana ou protege novos estados por fallback. Workflow WFLOW-20261102-MCP-DELETE-DRAFT.
+
+A ampliação MCP própria foi implantada pela PR #182, preservando função/ACL restritas e negação de mutações anônimas: [recibo](../testing/mcp-market-lifecycle-production-closeout-20261102.md).

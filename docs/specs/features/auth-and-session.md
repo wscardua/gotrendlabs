@@ -256,3 +256,6 @@ Mudanças nesta feature costumam afetar todas as experiências autenticadas e pa
 ## Sessão expirada no consentimento MCP — 02/11/2026
 
 Se FastAPI retorna 401 em consent-info ou consent, Django remove apenas o token/usuário de autenticação em cache e redireciona ao login do mesmo origin. Preserva parâmetros OAuth originais no next (inclusive POST), para retornar após login e MFA. Não reaplica automaticamente consentimento POST. Erros 403/422/503 permanecem na tela e não apagam sessão. Sem concessão de scopes, bypass de MFA ou mudança nas ferramentas, schemas, permissões, erros de domínio ou replays MCP.
+
+
+A recuperação de sessão do consentimento descrita acima foi implantada pela PR #182 / merge 0ffa4a0 / Actions 41464155882. [Recibo produtivo](../testing/mcp-market-lifecycle-production-closeout-20261102.md). Não houve reset de senha ou MFA em produção nesta entrega; mudanças de senha DEV não integram o deploy.

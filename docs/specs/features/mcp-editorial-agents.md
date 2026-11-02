@@ -34,7 +34,7 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 
 ## Estado vigente da revisão 1.8 — fechamento de 02/11/2026
 
-Implementação local concluída: catálogo 21, scopes markets:resolve/markets:cancel/drafts:delete explícitos, recibos transacionais, auditoria técnica e recuperação de sessão revogada no consentimento. A publicação desta fatia ainda depende da aprovação da PR, CI/merge/deploy e smoke. O status global parcial preserva os limites das integrações externas já registrados; testes SDK não homologam automaticamente LM Studio/Dot em produção. [Roteiro](../operations/mcp-market-lifecycle-rollout.md), [evidências locais](../testing/mcp-market-lifecycle-results.md).
+Implantação desta fatia concluída pela PR #182 / merge 0ffa4a0 / Actions 41464155882 e smoke produtivo Success/0: catálogo 21, scopes markets:resolve/markets:cancel/drafts:delete explícitos, recibos transacionais, ACL mínima, auditoria técnica e recuperação de sessão revogada no consentimento. Novos scopes não foram concedidos automaticamente. O status global parcial preserva a homologação de clientes externos já registrada; esta fatia de lifecycle está concluída em produção. [Recibo vigente](../testing/mcp-market-lifecycle-production-closeout-20261102.md), [roteiro](../operations/mcp-market-lifecycle-rollout.md).
 
 ## Analytics MCP — implantação técnica 24/10/2026
 

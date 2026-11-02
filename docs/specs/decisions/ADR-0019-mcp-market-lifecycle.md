@@ -1,6 +1,6 @@
 # ADR-0019 — Resolução e cancelamento por integração MCP
 
-Data: 02/11/2026. Estado: aceito; implementação/validação locais concluídas e publicação em preparação. Workflow WFLOW-20261102-MCP-RESOLVE-CANCEL.
+Data: 02/11/2026. Estado: aceito; implantado pela PR #182 / merge 0ffa4a0, com CI/deploy/smoke produtivos aprovados. Workflow WFLOW-20261102-MCP-RESOLVE-CANCEL.
 
 ## Decisão
 
@@ -18,3 +18,6 @@ Nova migration de recibos, ACL FastAPI SELECT/INSERT e sequência USAGE/SELECT, 
 
 
 Fechamento de 02/11/2026: a fatia inclui também exclusão MCP própria pelo serviço/recibo existentes, conforme ADR-0015, e reautenticação web no consentimento após sessão revogada. Essas extensões não alteram a decisão de transação/autoria. [Rollout](../operations/mcp-market-lifecycle-rollout.md).
+
+
+Implantação e ACLs efetivas conferidas em 02/11/2026: [recibo produtivo](../testing/mcp-market-lifecycle-production-closeout-20261102.md). Homologação humana de clientes externos não é inferida do smoke técnico.
