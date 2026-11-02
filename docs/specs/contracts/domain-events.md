@@ -76,3 +76,11 @@ Imagens de badges persistem auditoria administrativa badge_image.request/apply/s
 Contrato e critérios: [market-resolution-agenda](../features/market-resolution-agenda.md); integridade: [ADR-0016](../decisions/ADR-0016-resolution-agenda.md). `expected_resolution_at` consolida `resolution_date`; sem duplicação ou fallback. Implementação e validação local acompanhadas em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
 
 Eventos de integridade da agenda: `market_schedule_registered`, `market_schedule_rescheduled` (eventos antigos de recuperação são apenas históricos). São emitidos na transação autoritativa com snapshot/proveniência/ator; não disparam comunicações, jobs ou liquidação automática nesta entrega.
+
+
+## Atores MCP no lifecycle — 02/11/2026
+
+Resolução/cancelamento delegados reutilizam `market.resolve`/`market.cancel`, efeitos e comunicações existentes. Evento administrativo inclui integration_id, responsible_id, request_id e execution_id; actor_id permanece nulo para ação técnica. Falha de auditoria/recibo aborta efeitos. Replay não emite evento, notificação ou lançamento duplicado. Não são criados jobs ou eventos paralelos.
+
+
+Exclusão MCP própria registra market.delete com ator humano nulo, integração/responsável/correlação e motivo; replay de exclusão não gera novo evento. Falha na auditoria reverte exclusão e marcações de idempotência anteriores. Publicados, posições e provas não são excluídos.

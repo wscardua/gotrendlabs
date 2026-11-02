@@ -19,3 +19,15 @@ O adapter troca token destinado ao MCP por delegação API de até 40 segundos. 
 Spool: arquivos privados JSON somente com IDs, ferramenta e resultado, máximo 128 arquivos/512 KiB, TTL 24h. Reenvio na próxima chamada autenticada da mesma integração, deduplicado na API pelo event ID. Não há promessa de captura perfeita: saturação produz `mcp_log_spool_capacity_exhausted`; integração revogada não pode reenviar, e entrada expira. Sem pesquisa/agenda/LLM/controle Dot no processo.
 
 Deploy produtivo usa override MCP com rede/env exclusivos; configurador gera arquivos 0600 desligados na primeira instalação e preserva workload em redeploy. Ver [preparação e limites](../../docs/specs/testing/mcp-closeout-20261007.md); HTTPS produtivo/Dot somente após evidência real.
+
+
+## Resolução e cancelamento delegados
+
+Catálogo: 21 ferramentas, filtradas por scope. `resolve_market(resolution)` exige markets:resolve e mercado locked. `cancel_market(cancellation)` exige markets:cancel, aceita draft próprio ou scheduled/open/locked e nunca desfaz resolução. Leia get_market para obter options[].id e updated_at; envie market_id, expected_updated_at, note e idempotency_key UUID. Resolução também exige winning_option_id, source_url HTTP(S), resolved_at com offset e resolution_timezone IANA; cancelamento exige expected_status. Fonte é relato do executor, sem atestado humano fictício.
+
+Concessão: staff/MFA edita Integrações e agentes, marca individualmente os scopes desejados e salva; reconectar OAuth com consentimento desses scopes. Serviço deve obter novo access token. Grants/tokens anteriores não herdam privilégios. Publicação, fechamento manual e undo não são expostos.
+
+Timeout retorna operation_indeterminate; mantenha exatamente payload/chave e repita o pedido para confirmar sem duplicar efeitos. Novo payload com a mesma chave conflita. Resolução desfeita/substituída retorna resolution_request_superseded. [Contrato](../../docs/specs/contracts/agent-integrations.md), [runbook](../../docs/guides/mcp-market-lifecycle.md).
+
+
+`delete_market_draft(deletion)` exige drafts:delete explícito e exclui permanentemente apenas draft próprio preparation/in_review, sem publicação, previsões ou provas. Entrada: market_id, expected_revision, expected_updated_at, note e idempotency_key UUID. Reutiliza remoção humana/auditoria; replay confirma exclusão sem recriar recurso. Timeout mantém resultado indeterminado: repetir mesma chave/payload. Sem nova migration ou concessão automática.

@@ -1,10 +1,10 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.7
+versao: 0.8
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-07
+ultima_atualizacao: 2026-11-02
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -251,3 +251,8 @@ Durante o modo de manutenção web, as rotas de login e MFA (`/mfa/enroll/` e `/
 ## Impacto de mudança
 
 Mudanças nesta feature costumam afetar todas as experiências autenticadas e parte das comunicações.
+
+
+## Sessão expirada no consentimento MCP — 02/11/2026
+
+Se FastAPI retorna 401 em consent-info ou consent, Django remove apenas o token/usuário de autenticação em cache e redireciona ao login do mesmo origin. Preserva parâmetros OAuth originais no next (inclusive POST), para retornar após login e MFA. Não reaplica automaticamente consentimento POST. Erros 403/422/503 permanecem na tela e não apagam sessão. Sem concessão de scopes, bypass de MFA ou mudança nas ferramentas, schemas, permissões, erros de domínio ou replays MCP.

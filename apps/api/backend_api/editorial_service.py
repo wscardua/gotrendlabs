@@ -135,6 +135,20 @@ def get_market(cursor, market_id, integration_id):
     return m
 
 
+def market_projection(cursor, market_id, integration_id):
+    # IDs/version belong to the operational read contract. Keep the editorial
+    # snapshot shape unchanged: existing approvals and signed hashes stay valid.
+    cursor.execute("SELECT id FROM gotrendlabs_markets WHERE id=%s FOR SHARE", (market_id,))
+    if not cursor.fetchone():
+        a.fail("not_found", 404)
+    market = get_market(cursor, market_id, integration_id)
+    cursor.execute("SELECT id,label,hint FROM gotrendlabs_market_options WHERE market_id=%s ORDER BY display_order,id", (market_id,))
+    market["options"] = cursor.fetchall()
+    cursor.execute("SELECT updated_at FROM gotrendlabs_markets WHERE id=%s", (market_id,))
+    market["updated_at"] = cursor.fetchone()["updated_at"]
+    return market
+
+
 def validated(cursor, payload):
     from apps.api.backend_api import main
 

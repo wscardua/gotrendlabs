@@ -197,6 +197,118 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             headers=headers or self.agentheaders,
         )
 
+    def deletion_payload(self, created):
+        market = Market.objects.get(pk=created["market_id"])
+        return {"market_id": market.id, "expected_revision": created["revision"],
+                "expected_updated_at": market.updated_at.isoformat(),
+                "idempotency_key": str(uuid.uuid4()), "note": "Draft duplicado descartado"}
+
+    def delete_draft(self, payload, headers=None):
+        return self.client.post("/integrations/editorial/drafts/delete", json=payload,
+                                headers=headers or self.agentheaders)
+
+    def test_mcp_delete_draft_is_physical_audited_and_replayed_without_recreation(self):
+        created = self.create().json()
+        payload = self.deletion_payload(created)
+        result = self.delete_draft(payload)
+        self.assertEqual(result.status_code, 200, result.text)
+        self.assertEqual(set(result.json()), {"market_id", "deleted", "request_id", "replayed"})
+        self.assertTrue(result.json()["deleted"])
+        self.assertFalse(result.json()["replayed"])
+        self.assertFalse(Market.objects.filter(pk=payload["market_id"]).exists())
+        self.assertFalse(EditorialDraft.objects.filter(pk=payload["market_id"]).exists())
+        self.assertFalse(EditorialRevision.objects.filter(draft_id=payload["market_id"]).exists())
+        event = AdminEvent.objects.get(action="market.delete")
+        self.assertIsNone(event.actor_id)
+        self.assertEqual(str(event.integration_id), self.iid)
+        self.assertEqual(event.responsible_id, self.staff.id)
+        self.assertIn(payload["note"], event.note)
+        again = self.delete_draft(payload)
+        self.assertEqual(again.status_code, 200, again.text)
+        self.assertTrue(again.json()["replayed"])
+        self.assertEqual(again.json()["request_id"], result.json()["request_id"])
+        self.assertEqual(AdminEvent.objects.filter(action="market.delete").count(), 1)
+        self.assertEqual(self.create().status_code, 404)
+        self.assertEqual(self.delete_draft({**payload, "note": "Outro motivo"}).json()["detail"]["code"], "idempotency_conflict")
+        # Reused slug is a new ID; replay cannot delete the replacement.
+        replacement = self.create({**self.payload, "idempotency_key": "replacement-draft-key"}).json()
+        self.assertNotEqual(replacement["market_id"], payload["market_id"])
+        self.assertTrue(self.delete_draft(payload).json()["replayed"])
+        self.assertTrue(Market.objects.filter(pk=replacement["market_id"]).exists())
+        Integration.objects.filter(pk=self.iid).update(state="paused")
+        self.assertEqual(self.delete_draft(payload).status_code, 403)
+
+    def test_mcp_delete_draft_requires_scope_and_technical_ownership(self):
+        created = self.create().json()
+        payload = self.deletion_payload(created)
+        Integration.objects.filter(pk=self.iid).update(scopes=["drafts:write", "catalog:read"])
+        self.assertEqual(self.delete_draft(payload).json()["detail"]["code"], "forbidden_scope")
+        Integration.objects.filter(pk=self.iid).update(scopes=self.config["scopes"])
+        EditorialDraft.objects.filter(pk=payload["market_id"]).update(integration_id=None)
+        self.assertEqual(self.delete_draft(payload).json()["detail"]["code"], "resource_forbidden")
+        self.assertEqual(self.delete_draft(payload, self.human).status_code, 401)
+        self.assertTrue(Market.objects.filter(pk=payload["market_id"]).exists())
+        EditorialDraft.objects.filter(pk=payload["market_id"]).update(integration_id=self.iid)
+        Token.objects.filter(integration_id=self.iid).update(scopes=["drafts:write", "catalog:read"])
+        self.assertEqual(self.delete_draft(payload).status_code, 403)
+
+    def test_mcp_delete_draft_rejects_stale_versions_and_noneditable_states(self):
+        payload = self.deletion_payload(self.create().json())
+        self.assertEqual(self.delete_draft({**payload, "expected_revision": 99}).json()["detail"]["code"], "version_conflict")
+        self.assertEqual(self.delete_draft({**payload, "expected_updated_at": (a.now()-timedelta(days=1)).isoformat()}).status_code, 409)
+        for state in ("approved", "returned", "rejected"):
+            EditorialDraft.objects.filter(pk=payload["market_id"]).update(state=state)
+            response = self.delete_draft(payload)
+            self.assertEqual(response.json()["detail"]["code"], "draft_not_deletable")
+        EditorialDraft.objects.filter(pk=payload["market_id"]).update(state="preparation")
+        for status in ("scheduled", "open", "locked", "resolved", "sealed", "canceled"):
+            Market.objects.filter(pk=payload["market_id"]).update(status=status)
+            self.assertEqual(self.delete_draft(payload).status_code, 409)
+        Market.objects.filter(pk=payload["market_id"]).update(status="draft", published_at=a.now())
+        self.assertEqual(self.delete_draft(payload).status_code, 409)
+        self.assertFalse(AdminEvent.objects.filter(action="market.delete").exists())
+
+    def test_mcp_delete_in_review_allowed_but_predictions_are_protected(self):
+        from apps.web.django.markets.models import Prediction
+        payload = self.deletion_payload(self.create().json())
+        market = Market.objects.get(pk=payload["market_id"])
+        prediction = Prediction.objects.create(user=self.member, market=market,
+            market_option=market.options.first(), stake_amount=10,
+            probability_at_entry=50, weight_at_entry=20, potential_payout=20)
+        self.assertEqual(self.delete_draft(payload).json()["detail"]["code"], "draft_not_deletable")
+        self.assertTrue(Prediction.objects.filter(pk=prediction.pk).exists())
+        # Separate draft for review-state deletion; never remove the protected position.
+        second = self.create({**self.payload, "idempotency_key": "delete-review-draft-key"}).json()
+        EditorialDraft.objects.filter(pk=second["market_id"]).update(state="in_review")
+        self.assertEqual(self.delete_draft(self.deletion_payload(second)).status_code, 200)
+        self.assertTrue(Market.objects.filter(pk=market.pk).exists())
+
+    def test_mcp_delete_audit_failure_rolls_back_everything(self):
+        payload = self.deletion_payload(self.create().json())
+        with patch("apps.api.backend_api.market_deletion.record_admin_event", side_effect=RuntimeError("audit unavailable")):
+            with self.assertRaises(RuntimeError):
+                self.delete_draft(payload)
+        self.assertTrue(Market.objects.filter(pk=payload["market_id"]).exists())
+        self.assertTrue(EditorialRevision.objects.filter(draft_id=payload["market_id"]).exists())
+        from apps.web.django.editorial_integrations.models import Idempotency
+        self.assertFalse(Idempotency.objects.filter(integration_id=self.iid, operation="delete").exists())
+        self.assertEqual(self.create().status_code, 200)
+        self.assertEqual(self.delete_draft(payload).status_code, 200)
+
+    def test_mcp_delete_concurrent_identical_requests_only_delete_once(self):
+        payload = self.deletion_payload(self.create().json())
+        barrier = threading.Barrier(2)
+        def send():
+            with TestClient(app) as client:
+                barrier.wait(timeout=10)
+                return client.post("/integrations/editorial/drafts/delete", json=payload, headers=self.agentheaders)
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            pending = [pool.submit(send) for _ in range(2)]
+            responses = [future.result(timeout=30) for future in pending]
+        self.assertEqual([r.status_code for r in responses], [200,200], [r.text for r in responses])
+        self.assertEqual(sorted(r.json()["replayed"] for r in responses), [False,True])
+        self.assertEqual(AdminEvent.objects.filter(action="market.delete").count(), 1)
+
     def approved_record(self):
         return {
             **self.payload["editorial_record"],
@@ -1257,6 +1369,9 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                     "update_market_draft",
                     "submit_draft_for_review",
                     "get_draft_review",
+                    "resolve_market",
+                    "cancel_market",
+                    "delete_market_draft",
                 }
                 for mode, access in [
                     ("service", self.external),
@@ -1472,6 +1587,49 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                                 f"MCP-PILOT {mode} missing_market: DENIED_EXPECTED",
                                 flush=True,
                             )
+                            current = await invoke("get_market", {"market_id": mid})
+                            rejected_resolution = await session.call_tool(
+                                "resolve_market",
+                                {"resolution": {
+                                    "market_id": mid,
+                                    "expected_updated_at": current["updated_at"],
+                                    "idempotency_key": str(uuid.uuid4()),
+                                    "winning_option_id": current["options"][0]["id"],
+                                    "source_url": "https://example.org/result",
+                                    "note": "Relato do executor",
+                                    "resolved_at": a.now().isoformat(),
+                                    "resolution_timezone": "UTC",
+                                }},
+                            )
+                            self.assertTrue(rejected_resolution.isError)
+                            self.assertIn("resolution_state_conflict", rejected_resolution.content[0].text)
+                            cancellation = {
+                                "market_id": mid,
+                                "expected_updated_at": current["updated_at"],
+                                "expected_status": "draft",
+                                "idempotency_key": str(uuid.uuid4()),
+                                "note": "Pesquisa cancelada pelo executor",
+                            }
+                            canceled = await invoke("cancel_market", {"cancellation": cancellation})
+                            self.assertEqual(canceled["status"], "canceled")
+                            confirmed = await invoke("cancel_market", {"cancellation": cancellation})
+                            self.assertTrue(confirmed["replayed"])
+                            temporary = await invoke("create_market_draft", {"draft": {**create_payload, "idempotency_key": f"real-client-{mode}-delete-create"}})
+                            temporary_market = await invoke("get_market", {"market_id": temporary["market_id"]})
+                            deletion = {
+                                "market_id": temporary["market_id"],
+                                "expected_revision": temporary["revision"],
+                                "expected_updated_at": temporary_market["updated_at"],
+                                "idempotency_key": str(uuid.uuid4()),
+                                "note": "Descartar draft de teste",
+                            }
+                            deleted = await invoke("delete_market_draft", {"deletion": deletion})
+                            self.assertTrue(deleted["deleted"])
+                            self.assertFalse(deleted["replayed"])
+                            deleted_again = await invoke("delete_market_draft", {"deletion": deletion})
+                            self.assertTrue(deleted_again["replayed"])
+                            removed = await session.call_tool("get_market", {"market_id": temporary["market_id"]})
+                            self.assertTrue(removed.isError)
 
             try:
                 asyncio.run(exercise())
@@ -2175,7 +2333,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                         async with ClientSession(read, write) as client:
                             await client.initialize()
                             tools = await client.list_tools()
-                            self.assertEqual(len(tools.tools), 18)
+                            self.assertEqual(len(tools.tools), 21)
 
                             def reduce_scopes():
                                 try:

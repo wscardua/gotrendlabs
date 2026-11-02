@@ -1,5 +1,9 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
+## Estado vigente — revisão 1.8, 02/11/2026
+
+Catálogo de 21 ferramentas e nove scopes explícitos. Resolve/cancel/delete e a recuperação de sessão humana do consentimento estão implementados e validados localmente; publicação produtiva acompanha WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT. Não interpretar os recibos históricos de analytics/documento único como deploy desta revisão. As seções históricas abaixo não ampliam privilégios atuais. [Rollout desta fatia](../operations/mcp-market-lifecycle-rollout.md).
+
 ## Analytics MCP (implantação técnica, 24/10/2026)
 
 O scope `analytics:read` autoriza somente as oito leituras definidas em [mcp-analytics.md](mcp-analytics.md); `metrics:read` continua para `get_editorial_signals`. Grants antigos não recebem o novo scope implicitamente. Schemas Pydantic são compartilhados pelo REST e MCP, com snapshot OpenAPI versionado. Erros `revision_required`/`snapshot_changed` (409) indicam reinício de paginação; eventos técnicos continuam com IDs/resultados fixos e replay em spool sem resposta analítica, token ou dados sensíveis. Nenhuma permissão de publicação, resolução, wallet, parecer humano ou SQL é criada. Consultar política antes de propor mercados; análise não autoriza ação.
@@ -40,6 +44,17 @@ REST interno de domínio e ferramentas MCP possuem schemas versionados e mapeame
 | `update_market_draft` | `drafts:write` | Somente draft próprio editável; exige revisão esperada e idempotência |
 | `submit_draft_for_review` | `drafts:submit` | Snapshot e estado editorial em revisão; nunca publica |
 | `get_draft_review` | `editorial:read` | Retorna parecer/pedidos de ajustes do próprio draft |
+| `get_analytics_coverage` | `analytics:read` | Definições e cobertura das métricas |
+| `get_platform_analytics` | `analytics:read` | Agregados da plataforma no período |
+| `get_analytics_series` | `analytics:read` | Séries temporais paginadas |
+| `compare_analytics_periods` | `analytics:read` | Comparação de períodos equivalentes |
+| `get_analytics_retention` | `analytics:read` | Retenção por coortes D1/D7/D30 |
+| `list_market_analytics` | `analytics:read` | Métricas paginadas dos mercados publicados |
+| `get_market_analytics` | `analytics:read` | Métricas de um mercado |
+| `compare_editorial_analytics` | `analytics:read` | Comparação por tema/formato/duração |
+| `resolve_market` | `markets:resolve` | Resolve locked com fonte, justificativa, IDs, versão e idempotência |
+| `cancel_market` | `markets:cancel` | Cancela draft próprio ou published elegível e devolve stakes, sem undo |
+| `delete_market_draft` | `drafts:delete` | Exclui permanentemente draft próprio preparation/in_review elegível |
 
 `tools/list` e `tools/call` respeitam grants; ocultar ferramenta não substitui check de execução. Rotular leituras e escritas corretamente. Não expor método para simular clique staff ou chamar rota arbitrária. Documentos editoriais podem ser resources adicionais; manter ferramenta equivalente para clientes que não usam resources.
 
@@ -163,3 +178,45 @@ O MCP preserva os códigos fixos `schedule_incomplete`, `schedule_timezone_inval
 `analytics:read` exige concessão explícita na configuração da integração por staff/superuser com MFA e novo consentimento OAuth. Grants e tokens anteriores não ganham o scope pela atualização do código. O formulário Admin Ops mantém correspondência um a um entre os seis scopes e seus rótulos; no consentimento, integrações sem todos os scopes pedidos aparecem como incompatíveis e não podem ser selecionadas. `forbidden_scope` permanece a defesa da FastAPI contra POST direto ou grant insuficiente. Ferramentas e schemas MCP analíticos não mudam nesta correção; permissão, erro de consentimento e orientação de vinculação mudam. Replays de leitura continuam sem mutação.
 
 Quando não há integração elegível, a tela de consentimento apresenta o nome da integração incompatível, os scopes ausentes e um link para sua configuração; não renderiza um seletor vazio.
+
+
+## Resolução e cancelamento delegados — 02/11/2026
+
+Esta revisão substitui as proibições anteriores de resolução/cancelamento pelo MCP. Não autoriza publicação, fechamento manual, desfazer resolução, parecer humano ou wallet arbitrária.
+
+| Ferramenta | Scope explícito | Contrato |
+| --- | --- | --- |
+| `resolve_market` | `markets:resolve` | POST `/integrations/editorial/markets/resolve`, argumento MCP `resolution` |
+| `cancel_market` | `markets:cancel` | POST `/integrations/editorial/markets/cancel`, argumento MCP `cancellation` |
+
+Ambas recebem `market_id` positivo, `expected_updated_at` com offset, `idempotency_key` UUID e `note` obrigatório (1–2000). Resolução recebe ainda `winning_option_id`, `source_url` HTTP(S) (até 500), `resolved_at` não futuro com offset e `resolution_timezone` IANA coerente. Somente locked e agenda íntegra/completa. Cancelamento recebe `expected_status` draft/scheduled/open/locked, rejeita resolved/sealed/canceled novos e nunca desfaz resolução. Mercados publicados de qualquer origem são elegíveis pelo scope; draft só da própria integração. Conteúdo e evidências são relatos do executor.
+
+`get_market` expõe `options[].id` e `updated_at` obtidos sob lock compartilhado do mercado. IDs não entram nos schemas de criação de opções. Metadados operacionais não alteram snapshots/hashes editoriais existentes.
+
+Resposta mínima: market_id, status, updated_at, winning_option_id, resolved_at, resolution_timezone, request_id, replayed. Sem participantes, wallet ou parecer privado alheio. Tools têm destructiveHint=true e idempotentHint=true.
+
+Scopes não são concedidos por migration: operador staff/MFA configura explicitamente e novo OAuth consente os scopes; tokens anteriores não os herdam. Serviço precisa novo token com concessão vigente. Delegação e FastAPI revalidam integração, origem, scopes e expiração inclusive no replay, mantendo lock da integração até commit.
+
+Recibos append-only por integração/operação/chave persistem enquanto o mercado existir, sem expurgo de 30 dias; hash inclui mercado e precondições. Mesmo pedido confirma uma única aplicação; chave com outro payload retorna idempotency_conflict. Resolução reutiliza recibo de domínio com UUID derivado por namespace da integração. Replay após seal confirma; após undo/substituição retorna resolution_request_superseded. Cancelamento não repete refunds. Autorização, mercado, efeitos, eventos e recibos são transacionais. Identidade técnica nos eventos administrativos, actor_id humano nulo; assinatura existente de integridade preservada.
+
+Erros fixos adicionais: market_state_conflict, resolution_state_conflict, resolution_request_conflict, resolution_request_superseded, invalid_winning_option. version_conflict protege contexto alterado; esquema/data inválidos retornam 422. Timeout/transporte no adaptador retorna operation_indeterminate: preservar payload e chave e reenviar exatamente o mesmo pedido para reconciliar; nunca gerar chave nova automaticamente. Erros técnicos não expõem texto livre upstream.
+
+
+## Exclusão permanente de drafts próprios pelo MCP — 02/11/2026
+
+`delete_market_draft(deletion)` exige `drafts:delete`, concedido individualmente por staff/MFA e novo consentimento OAuth/token de serviço. Grants/tokens existentes não recebem o scope por atualização. Catálogo completo passa a 21 tools. Não inferir a permissão de drafts:write ou da capacidade humana de excluir.
+
+POST `/integrations/editorial/drafts/delete`: schema compartilhado estrito `DeleteMarketDraft` com market_id positivo, expected_revision >=1, expected_updated_at com offset, note obrigatório (1–2000) e idempotency_key UUID. Obter versão/revisão via get_market. Não recebe slug nem identidade do ator.
+
+Somente draft da própria integração, nunca publicado, com ficha em preparation/in_review e nenhuma previsão ou prova de integridade. Draft humano/alheio retorna resource_forbidden (404); inexistente retorna not_found; versão obsoleta retorna version_conflict (409); estado/publicação/vínculos protegidos retornam draft_not_deletable (409). Approved/returned/rejected também são rejeitados, conforme regra humana vigente.
+
+FastAPI mantém lock da autorização/integração, mercado e ficha até commit. Reutiliza market_deletion.delete_market e a função PostgreSQL restrita já existentes; remove fisicamente mercado/ficha/revisões/dependências elegíveis e mantém auditoria técnica (actor_id humano nulo, integration_id/responsible_id/request_id/execution_id e motivo). Não remove previsões, ledger, proofs ou arquivos compartilhados. Sem migration ou grant geral adicional de banco.
+
+Resposta mínima: market_id, deleted=true, request_id, replayed. Recibo mínimo usa gotrendlabs_agent_idempotency, operação delete, chave por integração e hash do payload; sem FK para mercado removido ou conteúdo editorial. Recibo, exclusão e auditoria confirmam na mesma transação. Mesmo pedido confirma exclusão, inclusive após reutilização do slug por outro ID; conteúdo diferente com mesma chave conflita. Pausa/revogação/scope ausente bloqueiam replay. Chave nova para ID ausente retorna not_found. Recibos de criação/edição/submissão do draft removido continuam como marcadores mínimos e seus replays retornam not_found.
+
+Tool marcada destructiveHint=true e idempotentHint=true. Timeout de transporte retorna operation_indeterminate: preservar payload/chave e repetir o mesmo pedido para confirmar, sem gerar chave automaticamente. Exclusão física é permanente.
+
+
+## Sessão expirada no consentimento MCP — 02/11/2026
+
+Se FastAPI retorna 401 em consent-info ou consent, Django remove apenas o token/usuário de autenticação em cache e redireciona ao login do mesmo origin. Preserva parâmetros OAuth originais no next (inclusive POST), para retornar após login e MFA. Não reaplica automaticamente consentimento POST. Erros 403/422/503 permanecem na tela e não apagam sessão. Sem concessão de scopes, bypass de MFA ou mudança nas ferramentas, schemas, permissões, erros de domínio ou replays MCP.

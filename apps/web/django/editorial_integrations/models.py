@@ -169,3 +169,21 @@ class IngestedEvent(models.Model):
 
     class Meta:
         db_table = "gotrendlabs_agent_ingested_events"
+
+
+class MarketActionRequest(models.Model):
+    integration = models.ForeignKey(Integration, on_delete=models.PROTECT)
+    operation = models.CharField(max_length=10, choices=[("resolve", "resolve"), ("cancel", "cancel")])
+    key = models.UUIDField()
+    market = models.ForeignKey("markets.Market", on_delete=models.PROTECT)
+    payload_hash = models.CharField(max_length=64)
+    resolution_key = models.UUIDField(null=True)
+    request_id = models.CharField(max_length=100)
+    created_at = models.DateTimeField()
+
+    class Meta:
+        db_table = "gotrendlabs_agent_market_requests"
+        constraints = [
+            models.UniqueConstraint(fields=["integration", "operation", "key"], name="agent_market_request_unique"),
+            models.CheckConstraint(check=models.Q(operation="resolve", resolution_key__isnull=False) | models.Q(operation="cancel", resolution_key__isnull=True), name="agent_market_request_operation"),
+        ]

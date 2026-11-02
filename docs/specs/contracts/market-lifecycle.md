@@ -102,7 +102,7 @@ Admin Ops oferece Excluir mercado na lista, editor e revisão, seguido de confir
 
 A função PostgreSQL restrita `delete_prepublication_editorial` permite apenas esta exceção ao histórico editorial protegido; não concede DELETE geral sobre revisões. Provas criptográficas continuam intocáveis. Jobs de thumbnail são desvinculados, expirados e têm snapshot/usage apagados; conserva-se somente o registro técnico necessário às cotas. Resultados atrasados do worker são ignorados; mídia gerada órfã segue o prune existente, sem apagar arquivos manuais/compartilhados na transação.
 
-MCP omite o mercado removido naturalmente. Consulta, edição, submissão e replay de pedidos anteriores retornam not_found; chaves/hash idempotentes ficam como recibo mínimo de exclusão para evitar recriação pelo mesmo pedido, sem conservar parecer ou snapshot. Nova chave cria novo ID. Não há ferramenta de exclusão MCP.
+MCP omite o mercado removido naturalmente. Consulta, edição, submissão e replay de pedidos anteriores retornam not_found; chaves/hash idempotentes ficam como recibo mínimo de exclusão para evitar recriação pelo mesmo pedido, sem conservar parecer ou snapshot. Nova chave cria novo ID. MCP permite exclusão somente pelo contrato explícito delete_market_draft/drafts:delete descrito em agent-integrations.
 
 `DELETE /admin/markets/{slug}?expected_revision=N&expected_market_id=ID`: ID e revisão positivos obrigatórios, 204 sem corpo; ausente/excluído 404; sem sessão 401; sem staff/MFA 403; estado/revisão/vínculos protegidos 409. ID confirmado impede excluir outro mercado recriado no mesmo slug. Operação e evento market.delete são atômicos. MarketResponse.can_delete é apenas indicação para UI e false na projeção pública.
 
@@ -135,3 +135,13 @@ Sem mudança de schema: `status` confirma o fechamento de locked/resolved/sealed
 - GET `/admin/markets/{slug}/resolution-requests/{idempotency_key}?expected_market_id=ID` exige staff/MFA e consulta confirmação sem mutação. Retorna MarketResponse quando confirmado e ainda vigente; 404 significa não confirmado/ausente, nunca prova rollback de uma chamada em andamento. ID divergente retorna 409.
 - Admin Ops usa timeout de 15s para resolver. Em falha de transporte, consulta a mesma chave; se indisponível/não confirmada, informa estado indeterminado e preserva chave/payload. Nunca repete POST automaticamente nem recomenda nova operação sem reconciliação. Campos ocultos obrigatórios impedem substituir identidade após erro.
 - `resolved_at` mantém a data declarada da decisão; `market_resolved.occurred_at` registra a publicação pelo servidor. `seal_due_at` usa este último instante + janela configurada. Desfazer e resolver novamente inicia janela completa. Provas/prazos já assinados não são recalculados por migration.
+
+
+## MCP delegado — 02/11/2026
+
+`markets:resolve` autoriza resolução de locked pela FastAPI/MarketLifecycleEngine; `markets:cancel` autoriza cancelamento draft próprio ou scheduled/open/locked de qualquer origem. Ambas exigem ID, versão updated_at observada, justificativa e chave UUID; resolução exige ainda fonte, opção por ID e instante/fuso explícitos. Cancelar nunca desfaz resolução nem aceita resolved/sealed. O undo humano existente permanece separado. Regras de liquidação, reputação, refunds, agenda e provas são as mesmas; autoria técnica não é usuário staff. Recibos MCP duráveis e recibo de resolução confirmam na mesma transação. [Contrato completo](agent-integrations.md), [ADR-0019](../decisions/ADR-0019-mcp-market-lifecycle.md).
+
+
+## Exclusão MCP própria — 02/11/2026
+
+Scope drafts:delete autoriza exclusivamente a integração autora a excluir draft preparation/in_review nunca publicado e sem previsões/provas. Não equivale a cancelar. Elegibilidade, locks, remoção física e auditoria usam o serviço humano já existente. Replays do mesmo pedido de exclusão retornam confirmação mínima; replays de criação/edição/submissão do mercado excluído continuam not_found. [Contrato](agent-integrations.md).

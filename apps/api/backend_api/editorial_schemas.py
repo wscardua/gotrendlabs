@@ -16,6 +16,9 @@ SCOPES = (
     "analytics:read",
     "drafts:write",
     "drafts:submit",
+    "markets:resolve",
+    "markets:cancel",
+    "drafts:delete",
 )
 
 
@@ -48,8 +51,11 @@ class IntegrationConfig(Strict):
             "analytics:read",
             "drafts:write",
             "drafts:submit",
+            "markets:resolve",
+            "markets:cancel",
+            "drafts:delete",
         ]
-    ] = Field(default_factory=list, max_length=6)
+    ] = Field(default_factory=list, max_length=9)
     drafts_per_day: int = Field(default=5, ge=0, le=1000)
     calls_per_minute: int = Field(default=60, ge=0, le=10000)
     concurrent_calls: int = Field(default=2, ge=1, le=20)
@@ -203,6 +209,9 @@ class ToolEvent(Strict):
         "update_market_draft",
         "submit_draft_for_review",
         "get_draft_review",
+        "resolve_market",
+        "cancel_market",
+        "delete_market_draft",
     ]
     execution_id: str = Field(pattern=r"^[A-Za-z0-9_.:-]{1,100}$")
     result: Literal["started", "completed", "failed", "denied"]
@@ -283,10 +292,15 @@ class PrivateEditorial(BaseModel):
     decision: dict
 
 
+class MarketOption(Option):
+    id: int
+
+
 class MarketProjection(SearchItem):
     source: str
     resolution_criteria: str
-    options: list[Option]
+    options: list[MarketOption]
+    updated_at: datetime
     editorial: PrivateEditorial | None = None
 
 
@@ -447,3 +461,70 @@ class MutationResponse(BaseModel):
 class ReviewResponse(PrivateEditorial):
     market_id: int
     integration_id: UUID
+
+
+class MarketAction(Strict):
+    market_id: int = Field(gt=0)
+    expected_updated_at: datetime
+    idempotency_key: UUID
+    note: str = Field(min_length=1, max_length=2000)
+
+    @field_validator("expected_updated_at")
+    @classmethod
+    def aware_version(cls, value):
+        if value.tzinfo is None or value.utcoffset() is None:
+            raise ValueError("offset required")
+        return value
+
+
+class ResolveMarket(MarketAction):
+    winning_option_id: int = Field(gt=0)
+    source_url: str = Field(min_length=1, max_length=500)
+    resolved_at: datetime
+    resolution_timezone: str = Field(min_length=1, max_length=64)
+
+    @field_validator("source_url")
+    @classmethod
+    def public_source(cls, value):
+        url = urlsplit(value)
+        if url.scheme not in {"http", "https"} or not url.hostname or url.username or url.password:
+            raise ValueError("HTTP(S) source required")
+        return value
+
+    @model_validator(mode="after")
+    def resolution_time(self):
+        if self.resolved_at.tzinfo is None or self.resolved_at.utcoffset() is None:
+            raise ValueError("resolution offset required")
+        try:
+            zone = ZoneInfo(self.resolution_timezone)
+        except (ZoneInfoNotFoundError, ValueError):
+            raise ValueError("invalid resolution timezone")
+        if self.resolved_at.utcoffset() != self.resolved_at.astimezone(zone).utcoffset():
+            raise ValueError("offset inconsistent with timezone")
+        return self
+
+
+class CancelMarket(MarketAction):
+    expected_status: Literal["draft", "scheduled", "open", "locked"]
+
+
+class MarketActionResponse(Strict):
+    market_id: int
+    status: str
+    updated_at: datetime
+    winning_option_id: int | None
+    resolved_at: datetime | None
+    resolution_timezone: str
+    request_id: str
+    replayed: bool
+
+
+class DeleteMarketDraft(MarketAction):
+    expected_revision: int = Field(ge=1)
+
+
+class DeleteMarketDraftResponse(Strict):
+    market_id: int
+    deleted: Literal[True]
+    request_id: str
+    replayed: bool

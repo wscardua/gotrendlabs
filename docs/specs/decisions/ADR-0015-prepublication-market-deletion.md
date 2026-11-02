@@ -9,3 +9,8 @@ FastAPI mantém autorização/locks/validação/auditoria e transação. Postgre
 Recibos idempotentes MCP viram marcador mínimo com ID/deleted, mantendo chave/hash para recusar replays com not_found sem recriar o mercado; não retêm conteúdo editorial. Replays também verificam existência sob lock compartilhado. Uma nova chave pode criar outro mercado; slug fica livre. Jobs são desvinculados/expirados e perdem snapshot/usage, preservando cotas por operador/global; worker ignora retorno tardio; prune existente limpa candidatas/arquivos gerados órfãos. Uploads manuais ou compartilhados não são apagados indiscriminadamente.
 
 O DELETE exige expected_market_id junto de expected_revision para distinguir mercado novo em slug reutilizado. Migrations editorial_integrations.0006 e admin_ops.0026 devem anteceder o runtime.
+
+
+## Ampliação autorizada em 02/11/2026 — exclusão MCP própria
+
+O mesmo serviço e a mesma função restrita atendem delete_market_draft. FastAPI exige drafts:delete explícito e valida a integração autora sob locks mercado/ficha; aplicação não assume conta staff. Auditoria recebe contexto técnico e motivo. Recibo em agent_idempotency, operação delete/chave por integração, guarda somente hash/ID/resultado/correlação, sem FK ao mercado removido. Replay autorizado confirma exclusão; operações anteriores sobre o recurso removido continuam not_found. Sem nova migration ou ampliação de ACL. A proibição MCP anterior foi substituída apenas para esta operação restrita; não altera elegibilidade humana ou protege novos estados por fallback. Workflow WFLOW-20261102-MCP-DELETE-DRAFT.

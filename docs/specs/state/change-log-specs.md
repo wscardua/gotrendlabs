@@ -1,3 +1,15 @@
+## 2026-11-02 — fechamento MCP preparado para aprovação da PR
+
+WFLOW-20261102-MCP-LIFECYCLE-CLOSEOUT reúne resolução/cancelamento, exclusão própria e recuperação de sessão do consentimento. Catálogo normativo reconciliado com o adaptador: 21 tools e nove scopes, sem concessão automática. Suíte completa em PostgreSQL 16 isolado: 637 testes em 490,121s, OK (635 aprovados, dois skips por roles nomeadas ausentes); testes JavaScript, Django, migrations, OpenAPI, Ruff F e diff check aprovados. [Rollout](../operations/mcp-market-lifecycle-rollout.md), [evidências](../testing/mcp-market-lifecycle-results.md). Commit local/publicação em preparação; abertura de PR depende da aprovação de título/descrição pelo usuário. ENABLE_PROD_DEPLOY=1 confirmado e Actions da main b6a0649 aprovado; isso não comprova o deploy desta branch. Branch local deve ser preservada.
+
+## 2026-11-02 — MCP: exclusão permanente de draft próprio (local)
+
+WFLOW-20261102-MCP-DELETE-DRAFT / FEAT-MCP-001 v1.8: delete_market_draft com drafts:delete explícito, total de 21 tools. Reutiliza serviço humano de exclusão física, restringe autoria técnica/estado/revisão/updated_at e protege publicação/previsões/provas. Recibo mínimo confirma replay autorizado após DELETE sem recriar ou atingir slug reutilizado; auditoria técnica e motivo transacionais. Sem nova migration/grant automático. 117 testes executados sem falhas (115 passaram, 2 skips por roles dedicadas ausentes no cluster de teste); SDK real serviço/OAuth validou exclusão/replay. [Contrato](../contracts/agent-integrations.md), [evidências](../testing/mcp-market-lifecycle-results.md). Runtime DEV atualizado e saudável; produção não alterada.
+
+## 2026-11-02 — MCP: resolução e cancelamento delegados (local)
+
+WFLOW-20261102-MCP-RESOLVE-CANCEL / FEAT-MCP-001 v1.7: catálogo com resolve_market e cancel_market (20 ferramentas), scopes markets:resolve/markets:cancel explícitos, schemas REST/MCP e OpenAPI, IDs de opções/updated_at na leitura, precondições, recibos duráveis append-only e auditoria técnica. FastAPI/MarketLifecycleEngine preservam liquidação/refunds/undo humano e integridade. Migration editorial_integrations.0007; sem concessão automática ou mutação produtiva. [Contrato](../contracts/agent-integrations.md), [ADR-0019](../decisions/ADR-0019-mcp-market-lifecycle.md), [evidências locais](../testing/mcp-market-lifecycle-results.md). Implementação local; rollout/homologação produtiva separados. O estado global parcial do MCP não é promovido por esta fatia.
+
 ## 2026-10-26 — FEAT-WALLET-001 v0.7
 
 A apresentação web de `/wallet/` foi simplificada: saldo e extrato permanecem, e o painel adicional de retornos por mercado deixa de ser exibido. O contrato `resolution_returns` e a apresentação Flutter continuam vigentes. Sem alteração de domínio ou MCP. [Workflow](workflow-runs.md).

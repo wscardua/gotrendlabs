@@ -1,3 +1,15 @@
+## MCP lifecycle — fechamento em preparação, 02/11/2026
+
+Implementação e suíte completa locais concluídas: 637 testes sem falhas (635 aprovados, dois skips de roles nomeadas ausentes; consultas read-only no DEV já confirmaram as ACLs existentes). PR/CI remoto/merge/deploy e recibo produtivo aguardam a aprovação da descrição solicitada pelo usuário. Build das imagens em Python 3.12 e smoke com roles produtivas serão comprovados pelo Actions e verificação pós-deploy; não inferir dessa validação local. Scopes novos não são concedidos automaticamente; cliente externo precisa de concessão explícita e novo consentimento. Limites residuais: carga/KMS reais e fluxo humano LM Studio/Dot em produção. [Roteiro](../operations/mcp-market-lifecycle-rollout.md).
+
+## MCP delete draft — 02/11/2026
+
+Implementação e validação locais concluídas na branch feature/mcp-resolve-cancel-markets; ferramenta disponível no DEV por reload. Habilitar exige concessão explícita drafts:delete e reconexão/novo token; nenhum scope foi concedido automaticamente. Sem migration adicional. Dois testes de ACL de roles nomeadas foram ignorados no PostgreSQL temporário por ausência dessas roles; consulta read-only no DEV confirmou função de exclusão executável somente pela FastAPI e sem DELETE geral das revisões. CI/rollout/homologação externa produtivos seguem pendentes. [Evidências](../testing/mcp-market-lifecycle-results.md).
+
+## MCP lifecycle — entrega local de 02/11/2026
+
+Resolver/cancelar estão implementados na branch feature/mcp-resolve-cancel-markets, sem rollout. Pendentes: CI/implantação coordenada backend+MCP, migration 0007, conferência ACL com roles produtivas e smoke controlado após concessão explícita/novo OAuth. Nenhum scope foi concedido em produção. Carga/latência com KMS real e UX de reconexão do cliente externo não são comprovadas pelos testes locais. [Runbook](../../guides/mcp-market-lifecycle.md), [evidências](../testing/mcp-market-lifecycle-results.md).
+
 ## Limites após o fechamento produtivo da resolução — 2026-10-25
 
 O excesso de ACL encontrado após a PR #177 foi corrigido por revogação pontual e migration 0038 da PR #178; CI/deploy e privilégios efetivos foram verificados após o merge. Permanecem para trilhas próprias a distribuição Flutter, observação da selagem futura do mercado 35, timeout com KMS real e carga extensa da wallet. [Recibo produtivo](../testing/resolution-reliability-production-closeout-20261025.md). Os apontamentos locais abaixo são históricos e não representam pendência de publicação web/API.
