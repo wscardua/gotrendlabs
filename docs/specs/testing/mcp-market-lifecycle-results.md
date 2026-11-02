@@ -58,3 +58,6 @@ O cliente SDK real usa autenticação de serviço e OAuth: lista 20 tools, chama
 ## Limites e ativação
 
 Migration editorial_integrations.0007 cria recibos imutáveis sem conceder scopes. Deploy API+MCP, CI produtivo, latência KMS real, ACLs produtivas e smoke controlado com cliente externo permanecem pendentes. Admin staff/MFA deve conceder markets:resolve/markets:cancel e obter novo consentimento OAuth ou novo token de serviço. A fatia local foi concluída; não representa promoção global do MCP nem implantação. [Runbook](../../guides/mcp-market-lifecycle.md).
+
+
+Review de fechamento: intervalo versionado b6a0649..c778b88, 37 arquivos, nenhum finding identificável. [Escopo, triagem mobile e limites](mcp-market-lifecycle-review.md). Commit e branch locais preservados; PR ainda aguardando aprovação da descrição.
