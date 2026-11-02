@@ -3221,6 +3221,51 @@
         "title": "BadgeResponse",
         "type": "object"
       },
+      "CancelMarket": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_status": {
+            "enum": [
+              "draft",
+              "scheduled",
+              "open",
+              "locked"
+            ],
+            "title": "Expected Status",
+            "type": "string"
+          },
+          "expected_updated_at": {
+            "format": "date-time",
+            "title": "Expected Updated At",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "format": "uuid",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "market_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_id",
+          "expected_updated_at",
+          "idempotency_key",
+          "note",
+          "expected_status"
+        ],
+        "title": "CancelMarket",
+        "type": "object"
+      },
       "CommentCreatePayload": {
         "properties": {
           "body": {
@@ -3576,6 +3621,76 @@
           "access_token"
         ],
         "title": "Delegation",
+        "type": "object"
+      },
+      "DeleteMarketDraft": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_revision": {
+            "minimum": 1.0,
+            "title": "Expected Revision",
+            "type": "integer"
+          },
+          "expected_updated_at": {
+            "format": "date-time",
+            "title": "Expected Updated At",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "format": "uuid",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "market_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_id",
+          "expected_updated_at",
+          "idempotency_key",
+          "note",
+          "expected_revision"
+        ],
+        "title": "DeleteMarketDraft",
+        "type": "object"
+      },
+      "DeleteMarketDraftResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "deleted": {
+            "const": true,
+            "title": "Deleted",
+            "type": "boolean"
+          },
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "market_id",
+          "deleted",
+          "request_id",
+          "replayed"
+        ],
+        "title": "DeleteMarketDraftResponse",
         "type": "object"
       },
       "Draft": {
@@ -4081,11 +4196,14 @@
                 "metrics:read",
                 "analytics:read",
                 "drafts:write",
-                "drafts:submit"
+                "drafts:submit",
+                "markets:resolve",
+                "markets:cancel",
+                "drafts:delete"
               ],
               "type": "string"
             },
-            "maxItems": 6,
+            "maxItems": 9,
             "title": "Scopes",
             "type": "array"
           }
@@ -4374,6 +4492,71 @@
         "title": "LoginPayload",
         "type": "object"
       },
+      "MarketActionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "market_id": {
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "replayed": {
+            "title": "Replayed",
+            "type": "boolean"
+          },
+          "request_id": {
+            "title": "Request Id",
+            "type": "string"
+          },
+          "resolution_timezone": {
+            "title": "Resolution Timezone",
+            "type": "string"
+          },
+          "resolved_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resolved At"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "winning_option_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Winning Option Id"
+          }
+        },
+        "required": [
+          "market_id",
+          "status",
+          "updated_at",
+          "winning_option_id",
+          "resolved_at",
+          "resolution_timezone",
+          "request_id",
+          "replayed"
+        ],
+        "title": "MarketActionResponse",
+        "type": "object"
+      },
       "MarketIntegrityResponse": {
         "properties": {
           "definition": {
@@ -4658,6 +4841,33 @@
         "title": "MarketListResponse",
         "type": "object"
       },
+      "MarketOption": {
+        "additionalProperties": false,
+        "properties": {
+          "hint": {
+            "default": "",
+            "maxLength": 160,
+            "title": "Hint",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "label": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "id"
+        ],
+        "title": "MarketOption",
+        "type": "object"
+      },
       "MarketOptionResponse": {
         "properties": {
           "hint": {
@@ -4761,7 +4971,7 @@
           },
           "options": {
             "items": {
-              "$ref": "#/components/schemas/Option"
+              "$ref": "#/components/schemas/MarketOption"
             },
             "title": "Options",
             "type": "array"
@@ -4815,6 +5025,11 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
           }
         },
         "required": [
@@ -4831,7 +5046,8 @@
           "close_timezone",
           "source",
           "resolution_criteria",
-          "options"
+          "options",
+          "updated_at"
         ],
         "title": "MarketProjection",
         "type": "object"
@@ -7334,6 +7550,66 @@
         "title": "ResolutionScheduleResponse",
         "type": "object"
       },
+      "ResolveMarket": {
+        "additionalProperties": false,
+        "properties": {
+          "expected_updated_at": {
+            "format": "date-time",
+            "title": "Expected Updated At",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "format": "uuid",
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "market_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Market Id",
+            "type": "integer"
+          },
+          "note": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "title": "Note",
+            "type": "string"
+          },
+          "resolution_timezone": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Resolution Timezone",
+            "type": "string"
+          },
+          "resolved_at": {
+            "format": "date-time",
+            "title": "Resolved At",
+            "type": "string"
+          },
+          "source_url": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Source Url",
+            "type": "string"
+          },
+          "winning_option_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Winning Option Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "market_id",
+          "expected_updated_at",
+          "idempotency_key",
+          "note",
+          "winning_option_id",
+          "source_url",
+          "resolved_at",
+          "resolution_timezone"
+        ],
+        "title": "ResolveMarket",
+        "type": "object"
+      },
       "ResponsibleOption": {
         "additionalProperties": false,
         "properties": {
@@ -8349,7 +8625,10 @@
               "create_market_draft",
               "update_market_draft",
               "submit_draft_for_review",
-              "get_draft_review"
+              "get_draft_review",
+              "resolve_market",
+              "cancel_market",
+              "delete_market_draft"
             ],
             "title": "Tool",
             "type": "string"
@@ -16808,6 +17087,69 @@
         ]
       }
     },
+    "/integrations/editorial/drafts/delete": {
+      "post": {
+        "operationId": "delete_market_draft_integrations_editorial_drafts_delete_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteMarketDraft"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeleteMarketDraftResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Market Draft",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
     "/integrations/editorial/drafts/validate": {
       "post": {
         "operationId": "validate_draft_integrations_editorial_drafts_validate_post",
@@ -17220,6 +17562,132 @@
           }
         },
         "summary": "Markets",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/markets/cancel": {
+      "post": {
+        "operationId": "cancel_market_integrations_editorial_markets_cancel_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelMarket"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cancel Market",
+        "tags": [
+          "editorial-integrations"
+        ]
+      }
+    },
+    "/integrations/editorial/markets/resolve": {
+      "post": {
+        "operationId": "resolve_market_integrations_editorial_markets_resolve_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "Authorization",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-mcp-workload",
+            "required": false,
+            "schema": {
+              "default": "",
+              "title": "X-Mcp-Workload",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolveMarket"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketActionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolve Market",
         "tags": [
           "editorial-integrations"
         ]

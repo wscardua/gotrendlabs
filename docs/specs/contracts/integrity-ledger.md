@@ -59,3 +59,8 @@ Eventos `market_schedule_registered`, `market_schedule_rescheduled` (eventos ant
 ## Apresentação das etapas — 2026-10-25
 
 Comprovantes e resultado podem ser verificados antes do Seal. Django usa booleanos autoritativos da API: `prediction_commitments_valid` e `result_matches_current`, com cadeia/eventos válidos, sem exigir `sealed`. Depois de selado exige também Merkle/assinatura aplicáveis. False mostra diferença; null/pending/unavailable nunca produz confirmação positiva. A quarta etapa indica a finalização futura e preserva prazo/retry; revisão operacional não significa resultado ainda não registrado.
+
+
+## Resolução/cancelamento MCP — 02/11/2026
+
+MarketLifecycleEngine mantém assinatura/formato de market_resolved/market_canceled e suas verificações. Metadados de autoria da integração são registrados na auditoria administrativa correlacionada; não reescrever provas existentes. Recibo MCP append-only é confirmado junto com evento assinado, efeitos e recibo de resolução. IDs/versionamento da projeção operacional get_market não entram no snapshot editorial, preservando hashes de aprovações. Falha de assinatura reverte tudo. [ADR-0019](../decisions/ADR-0019-mcp-market-lifecycle.md).

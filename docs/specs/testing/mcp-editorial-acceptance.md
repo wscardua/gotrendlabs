@@ -105,3 +105,16 @@ Follow-up DCR ChatGPT: registro com callback HTTPS e scope omitido retorna 201, 
 - Correções de revisão: prévia emitida somente após resposta válida web/mobile; sequência temporal do funil idêntica antes/depois de consolidar; cobertura por evento distingue ausência de observação e zero; filtros efetivos por bloco; mercados/grupos de 1–4 participantes ocultam fatos humanos relacionados; HMAC histórico e exclusão de ator recompõem checkpoint bruto.
 - Segurança: testes integrados com FastAPI e cliente MCP Streamable HTTP local/isolado, sem dados de produção; ausência de PII nas respostas e separação humano/bot/staff.
 - Aceite de implantação adicional: EXPLAIN ANALYZE e carga com volume representativo, revisão de privacidade/retention, backfill verificável, token de integração escolhido por operador com MFA e smoke pós-deploy. [Contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).
+
+
+## MCP lifecycle — revisão 1.7 (02/11/2026)
+
+Aceites executáveis em tests/test_mcp_market_actions.py: catálogo 20/filtragem por scope e annotations de mutação destrutiva idempotente; schemas compartilhados estritos; fonte/nota/data/fuso/IDs obrigatórios; metadados operacionais fora dos snapshots; scopes explícitos, token anterior, pausa/revogação inclusive após admissão; published cross-integration e draft próprio; locked → resolved; cancelamento com refund sem reputação; resolved/sealed rejeitados; undo humano preservado; replay após seal e superseded após undo/re-resolve; conflitos de estado/versão/chave; resolução/cancelamento concorrentes, mesma chave e competição humana; rollback de assinatura/recibo; auditoria técnica; projeção mínima; triggers/ACLs. Testes MCP anteriores e resolução confiável/agenda são regressões obrigatórias. Homologação produtiva fica separada dos testes locais.
+
+
+## MCP delete draft — revisão 1.8 (02/11/2026)
+
+Exigir tools/list 21 e scope drafts:delete independente, sem ampliação de tokens. Testar own preparation/in_review, negar humano/alheio/publicados/terminais/aprovado/devolvido/rejeitado/previsões/provas, revisão e updated_at obsoletos; remoção física/ficha/revisões; auditoria técnica e motivo; resposta mínima; idempotência/slug reutilizado; falha de auditoria com rollback completo; chamadas concorrentes; pause/revoke antes de replay e schema sem poderes extras. Cliente SDK real deve executar exclusão e replay tanto por OAuth quanto por serviço. Regressão humana de exclusão física permanece obrigatória.
+
+
+Consentimento com sessão revogada: tests/test_mcp_consent_query.py verifica 401 no GET e nas duas etapas POST, remoção de cache de autenticação, next com parâmetros OAuth exatos (incluindo caracteres especiais), retorno autenticado à mesma solicitação e no-store; 403/422/503 não forçam logout. Três testes aprovados. Smoke HTTP local com sessão temporária/dummy confirmou redirect 302 para login preservando OAuth; sessão temporária removida. Não concede scopes nem altera MFA.

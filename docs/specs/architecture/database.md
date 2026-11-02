@@ -75,3 +75,11 @@ Contrato e critérios: [market-resolution-agenda](../features/market-resolution-
 ## ACL efetiva dos recibos — 2026-10-25
 
 Produção concede `arwd` por default ACL a novas tabelas FastAPI/Django. A migration `markets.0038_limit_resolution_request_privileges` retira UPDATE/DELETE do FastAPI e as escritas da role Django apenas em `gotrendlabs_market_resolution_requests`; mantém o trigger append-only como barreira adicional. A sequência fica com USAGE/SELECT para FastAPI, sem UPDATE. Não altera a default ACL global nem outras tabelas.
+
+
+## Recibos MCP de lifecycle — 02/11/2026
+
+`editorial_integrations.0007` cria gotrendlabs_agent_market_requests: FKs protegidas de integração/mercado, operação, UUID, hash do payload, resolução derivada, request_id e created_at. Unique integração/operação/chave; check limita operação e presença de resolution_key. Trigger bloqueia UPDATE/DELETE; retenção acompanha mercado. ACLs explícitas retiram privilégios herdados/PUBLIC: FastAPI SELECT/INSERT, sequência USAGE/SELECT; Django somente SELECT. Recibos não contêm fonte, justificativa ou tokens. Não migra mercados/provas nem concede scopes.
+
+
+Exclusão MCP de draft próprio (02/11/2026) reutiliza gotrendlabs_agent_idempotency com operação delete e UUID textual. Não há FK para o recurso removido. Hash, ID, deleted=true, request_id e replayed são o recibo mínimo; exclusão/auditoria/recibo compartilham commit. Nenhuma migration, role ou grant geral de revisões adicional.

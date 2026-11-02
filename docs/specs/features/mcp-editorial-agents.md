@@ -1,10 +1,10 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.6
+versao: 1.8
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-10-24
+ultima_atualizacao: 2026-11-02
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
@@ -31,6 +31,10 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 ---
 
 # MCP editorial e gestão de integrações
+
+## Estado vigente da revisão 1.8 — fechamento de 02/11/2026
+
+Implementação local concluída: catálogo 21, scopes markets:resolve/markets:cancel/drafts:delete explícitos, recibos transacionais, auditoria técnica e recuperação de sessão revogada no consentimento. A publicação desta fatia ainda depende da aprovação da PR, CI/merge/deploy e smoke. O status global parcial preserva os limites das integrações externas já registrados; testes SDK não homologam automaticamente LM Studio/Dot em produção. [Roteiro](../operations/mcp-market-lifecycle-rollout.md), [evidências locais](../testing/mcp-market-lifecycle-results.md).
 
 ## Analytics MCP — implantação técnica 24/10/2026
 
@@ -63,7 +67,7 @@ Dot da OpenAI é o primeiro executor-alvo; outros executores devem poder reutili
 - MCP só acessa FastAPI por contratos autenticados. Não importar ORM, conexão SQL ou gravador de logs que abre banco no processo MCP.
 - Reutilizar logs centralizados e eventos administrativos; não criar um sistema paralelo de logs.
 - Pesquisa, agenda e consumo LLM pertencem ao executor externo. Não executar pesquisa longa dentro do daemon operacional.
-- Publicação, resolução, cancelamento, wallet, usuários, previsões, comentários, destaque e criação/alteração de taxonomia não são ferramentas do agente.
+- Publicação, fechamento manual, desfazer resolução, wallet arbitrária, usuários, previsões, comentários, destaque e criação/alteração de taxonomia não são ferramentas do agente. Resolução/cancelamento são delegáveis somente pelos novos scopes explícitos da revisão 1.7.
 - A revisão humana permanece necessária operacionalmente. Esta feature não autoriza publicação automática. Desde a revisão 1.4 solicitada pelo usuário, todos os mercados exigem parecer humano aprovado para a versão atual antes de publicar.
 
 ## 3. Base existente e adaptação necessária
@@ -231,3 +235,13 @@ WFLOW-20261007-MCP-CODEX-OAUTH-001: registro dinâmico deve ignorar metadados de
 ## Agenda estruturada (2026-10-17)
 
 Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): previsão original/vigente e fuso são separados de fechamento, decisão e selagem; condições documentais permanecem no critério integral. MCP usa os schemas editoriais compartilhados, preservando parecer humano e scopes; não há segundo servidor. Consumidores não inferem elegibilidade/atraso. Estado e evidências em WFLOW-20261017-STRUCTURED-RESOLUTION-AGENDA.
+
+
+## Ampliação aprovada: resolver/cancelar pelo MCP — 02/11/2026
+
+WFLOW-20261102-MCP-RESOLVE-CANCEL amplia o catálogo para 20 ferramentas. Substitui a exclusão anterior apenas para resolução/cancelamento explicitamente delegados por markets:resolve/markets:cancel. Regras e erros no contrato agent-integrations; decisão ADR-0019. Atores técnicos operam FastAPI → MarketLifecycleEngine sem impersonar staff. Resolução só locked; cancelamento nunca desfaz resolução. Publicação, fechamento manual e demais poderes administrativos seguem excluídos. Grants/tokens existentes não são ampliados automaticamente. Evidências continuam relatos do executor. Esta seção não comprova implantação produtiva.
+
+
+## Exclusão de draft próprio — revisão 1.8, 02/11/2026
+
+Pedido adicional do usuário autoriza delete_market_draft com drafts:delete explícito, totalizando 21 ferramentas. Não amplia grants existentes. Reutiliza o serviço humano de exclusão permanente, limitado à autoria técnica própria e eligibility draft/preparation ou in_review sem publicação/previsões/provas. A API exige ID estável, revisão, updated_at e chave idempotente; recibo sem FK sobrevive à exclusão para confirmar replay autorizado sem recriar recurso. Ver contrato agent-integrations e ADR-0015 atualizado. Nenhuma nova migration/role ou poder sobre publicados.

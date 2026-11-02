@@ -308,3 +308,10 @@ MCP preserva códigos schedule_incomplete/schedule_timezone_invalid/schedule_off
 ### 17/10/2026 — Rollout e correção MCP da agenda
 
 REST e MCP reutilizam resolution_schedule_contract (Pydantic puro); resolution_schedule continua serviço de domínio/HTTP/DB/assinatura. Imagem MCP inclui somente os schemas e contrato puro; build exige importar servidor/schema e CI constrói ambas as imagens. Fronteira confirmada após incidente produtivo; sem novos scopes, API administrativa ou regras locais nos clientes. Recibo no fechamento da agenda.
+
+## MCP lifecycle delegado — 02/11/2026
+
+FEAT-MCP-001 v1.7 → Admin Ops (concessão explícita) → OAuth/serviço (scopes markets:resolve/markets:cancel) → MCP HTTP → editorial_routes.agent → editorial_market_actions → MarketLifecycleEngine/resolution_requests → ledger, reputação, refunds, comunicações e auditoria existentes. PostgreSQL recebe editorial_integrations.0007 com recibos protegidos e ACL mínima. Leitura operacional get_market oferece IDs/versionamento sem modificar snapshots editoriais. Web/mobile não recebem novas regras ou contratos públicos. Publicação/fechamento/undo não são delegados. [ADR-0019](../decisions/ADR-0019-mcp-market-lifecycle.md).
+
+
+Exclusão MCP própria (02/11/2026): editorial_routes.agent(drafts:delete) → editorial_market_actions.delete_draft → market_deletion.delete_market → função delete_prepublication_editorial. Identidade técnica/revisão/updated_at são revalidadas sob lock; recibo mínimo reaproveita agent_idempotency e sobrevive ao DELETE, sem nova migration. Workload ou drafts:write não concedem exclusão.

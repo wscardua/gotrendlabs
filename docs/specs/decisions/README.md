@@ -34,3 +34,5 @@ Use este diretório para registrar decisões técnicas estáveis e mudanças que
 - [ADR-0016 — Agenda assinada por complemento append-only](ADR-0016-resolution-agenda.md).
 
 - [ADR-0018: Resolução transacional, replay e janela operacional](ADR-0018-resolution-reliability.md)
+
+- [ADR-0019 — Resolução e cancelamento MCP](ADR-0019-mcp-market-lifecycle.md): scopes explícitos, autoria técnica e recibos transacionais duráveis.

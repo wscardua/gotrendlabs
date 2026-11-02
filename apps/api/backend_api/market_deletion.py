@@ -5,7 +5,8 @@ from fastapi import HTTPException
 from apps.api.backend_api.admin_events import record_admin_event
 
 
-def delete_market(cursor, slug, expected_revision, actor_id, expected_market_id):
+def delete_market(cursor, slug, expected_revision, actor_id, expected_market_id, *,
+                  integration_id=None, responsible_id=None, request_id="", execution_id="", deletion_note=""):
     cursor.execute(
         "SELECT id,title,status,published_at FROM gotrendlabs_markets "
         "WHERE slug=%s FOR UPDATE", (slug,),
@@ -76,5 +77,6 @@ def delete_market(cursor, slug, expected_revision, actor_id, expected_market_id)
     cursor.execute("DELETE FROM gotrendlabs_markets WHERE id=%s", (market_id,))
     record_admin_event(cursor, actor_id, "market.delete", "market", slug, json.dumps({
         "market_id": market["id"], "title": market["title"], "editorial_state": draft["state"],
-        "revision": draft["revision"], "deletion": "physical",
-    }, ensure_ascii=False))
+        "revision": draft["revision"], "deletion": "physical", "reason": deletion_note,
+    }, ensure_ascii=False), integration_id=integration_id, responsible_id=responsible_id,
+        request_id=request_id, execution_id=execution_id)

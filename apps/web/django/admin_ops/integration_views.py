@@ -1,16 +1,20 @@
 """Admin Ops surfaces consume FastAPI only; Django never writes integration ORM."""
 
 from zoneinfo import ZoneInfo
+from urllib.parse import urlencode
 
 from django import forms
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect
+from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from django.utils.dateparse import parse_datetime
 from django.views.decorators.http import require_http_methods
 from apps.web.django.accounts.api_client import _request, AuthAPIError
-from apps.web.django.accounts.session import admin_api_required, auth_token
+from apps.web.django.accounts.session import (
+    admin_api_required, auth_token, clear_auth_session, login_url_with_next,
+)
 from apps.api.backend_api.editorial_schemas import SCOPES
 
 
@@ -20,6 +24,9 @@ SCOPE_LABELS = {
     "metrics:read": _("Ler sinais editoriais agregados"),
     "analytics:read": _("Consultar analytics históricos agregados"),
     "drafts:write": _("Criar e editar drafts próprios"),
+    "markets:resolve": _("Resolver mercados fechados"),
+    "drafts:delete": _("Excluir permanentemente drafts próprios"),
+    "markets:cancel": _("Cancelar mercados e devolver stakes"),
     "drafts:submit": _("Submeter drafts à revisão humana"),
 }
 
@@ -331,6 +338,15 @@ def consent(request):
             request.session.pop("mcp_oauth_request", None)
             return private(redirect("admin-ops-integrations"))
     except (AuthAPIError, KeyError) as exc:
+        if isinstance(exc, AuthAPIError) and exc.status_code == 401:
+            # Password resets/expiry can revoke the API session while Django
+            # still has a cached staff user. Reauthenticate on this origin and
+            # resume the original OAuth request after login + MFA, even on POST.
+            clear_auth_session(request)
+            target = reverse("admin-ops-integration-consent")
+            if parameters:
+                target += "?" + urlencode(parameters)
+            return private(redirect(login_url_with_next(request, target)))
         error = str(exc)
     return private(
         render(

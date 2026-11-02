@@ -45,6 +45,11 @@ from apps.api.backend_api.editorial_schemas import (
     CreateDraft,
     UpdateDraft,
     SubmitDraft,
+    ResolveMarket,
+    CancelMarket,
+    MarketActionResponse,
+    DeleteMarketDraft,
+    DeleteMarketDraftResponse,
 )
 from apps.api.backend_api.editorial_oauth import Server
 from apps.api.backend_api.admin_events import record_admin_event
@@ -793,7 +798,7 @@ def market(
         t,
         r,
     ):
-        return domain.get_market(cur, market_id, t["integration_id"])
+        return domain.market_projection(cur, market_id, t["integration_id"])
 
 
 @router.get(
@@ -1066,3 +1071,27 @@ def activity(
                 "has_more": len(rows) > 100,
                 "next_cursor": str(rows[99]["id"]) if len(rows) > 100 else None,
             }
+
+
+@router.post("/integrations/editorial/markets/resolve", response_model=MarketActionResponse)
+def resolve_market(payload: ResolveMarket, authorization: str = Header(default=""),
+                   x_mcp_workload: str = Header(default="")):
+    from .editorial_market_actions import mutate
+    with agent(authorization, x_mcp_workload, "markets:resolve", "resolve_market") as (cur, t, r):
+        return mutate(cur, t, "resolve", payload, r)
+
+
+@router.post("/integrations/editorial/markets/cancel", response_model=MarketActionResponse)
+def cancel_market(payload: CancelMarket, authorization: str = Header(default=""),
+                  x_mcp_workload: str = Header(default="")):
+    from .editorial_market_actions import mutate
+    with agent(authorization, x_mcp_workload, "markets:cancel", "cancel_market") as (cur, t, r):
+        return mutate(cur, t, "cancel", payload, r)
+
+
+@router.post("/integrations/editorial/drafts/delete", response_model=DeleteMarketDraftResponse)
+def delete_market_draft(payload: DeleteMarketDraft, authorization: str = Header(default=""),
+                        x_mcp_workload: str = Header(default="")):
+    from .editorial_market_actions import delete_draft
+    with agent(authorization, x_mcp_workload, "drafts:delete", "delete_market_draft") as (cur, t, r):
+        return delete_draft(cur, t, payload, r)

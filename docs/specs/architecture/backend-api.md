@@ -110,3 +110,11 @@ FastAPI é a fonte de verdade para agregação, autorização `analytics:read`, 
 ## Confirmação de resolução após perda de resposta
 
 `resolution_requests.py` registra/verifica recibos transacionais; `MarketLifecycleEngine` relê o estado sob lock antes da decisão e usa o relógio do servidor para a janela. POST de resolução exige UUID/identidade e GET de confirmação exige os mesmos controles staff/MFA, serializando a leitura com mutações do mercado. A consulta pode aguardar uma transação em andamento; timeout/404 não provam rollback. Detalhes em [market-lifecycle](../contracts/market-lifecycle.md) e ADR-0018. Nenhuma permissão MCP deriva dessas rotas administrativas.
+
+
+## Lifecycle delegado MCP — 02/11/2026
+
+`editorial_market_actions` recebe contexto já autenticado pelo agent(), que mantém integração/origem bloqueadas até commit. Ordem: integração → mercado → recibos/ledger. Rotas resolve/cancel usam schemas estritos compartilhados e MarketLifecycleEngine com ator humano nulo/callback de auditoria técnica. Resolução reutiliza resolution_requests; cancelamento rejeita resolved antes do engine. Sem chamadas de rede na transação, sem ORM no MCP, sem nova regra no Django/mobile. [ADR-0019](../decisions/ADR-0019-mcp-market-lifecycle.md).
+
+
+Exclusão MCP própria (02/11/2026): editorial_routes.agent(drafts:delete) → editorial_market_actions.delete_draft → market_deletion.delete_market → função delete_prepublication_editorial. Identidade técnica/revisão/updated_at são revalidadas sob lock; recibo mínimo reaproveita agent_idempotency e sobrevive ao DELETE, sem nova migration. Workload ou drafts:write não concedem exclusão.
