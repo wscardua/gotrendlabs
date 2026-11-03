@@ -339,6 +339,8 @@ async def search_markets(
 async def get_market(market_id: int) -> MarketProjection:
     """Consultar um mercado específico pelo market_id: pergunta, critérios e opções.
 
+    winning_option_id informa a vencedora persistida pelo backend, correspondente
+    a options[].id; null significa que não há vencedora registrada.
     Inclui ficha privada somente da integração autenticada. Para regras editoriais
     gerais do GoTrendLabs, consulte get_editorial_policy.
     """

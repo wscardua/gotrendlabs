@@ -136,7 +136,7 @@ def get_market(cursor, market_id, integration_id):
 
 
 def market_projection(cursor, market_id, integration_id):
-    # IDs/version belong to the operational read contract. Keep the editorial
+    # IDs/version/result belong to the operational read contract. Keep the editorial
     # snapshot shape unchanged: existing approvals and signed hashes stay valid.
     cursor.execute("SELECT id FROM gotrendlabs_markets WHERE id=%s FOR SHARE", (market_id,))
     if not cursor.fetchone():
@@ -144,8 +144,8 @@ def market_projection(cursor, market_id, integration_id):
     market = get_market(cursor, market_id, integration_id)
     cursor.execute("SELECT id,label,hint FROM gotrendlabs_market_options WHERE market_id=%s ORDER BY display_order,id", (market_id,))
     market["options"] = cursor.fetchall()
-    cursor.execute("SELECT updated_at FROM gotrendlabs_markets WHERE id=%s", (market_id,))
-    market["updated_at"] = cursor.fetchone()["updated_at"]
+    cursor.execute("SELECT updated_at,winning_option_id FROM gotrendlabs_markets WHERE id=%s", (market_id,))
+    market.update(cursor.fetchone())
     return market
 
 

@@ -1,3 +1,7 @@
+## 2026-11-03 — FEAT-MCP-001 v1.9: contrato de vencedora
+
+Contrato de `get_market`/GET editorial acrescenta `winning_option_id` obrigatório nullable da persistência, preservado em resolved/sealed e fora dos snapshots editoriais. Feature, contrato, aceites, descrição MCP e OpenAPI alinhados. Sem novas permissões, erros de negócio, replays ou mudança da política editorial; ADR-0019 continua aplicável. WFLOW-20261103-MCP-WINNING-OPTION, somente implementação local nesta entrega.
+
 ## 2026-11-02 — MCP lifecycle implantado e conferido em produção
 
 PR #182 integrada, merge 0ffa4a0. [Actions main 41464155882](https://github.com/wscardua/gotrendlabs/actions/runs/41464155882) com build/test/deploy aprovados; 637 testes sem falhas (dois skips). SSM deploy e smoke Success/0 confirmaram migration 0007, trigger/constraints, ACL mínima efetiva, hashes de código nos containers, saúde HTTP, catálogo 21/nove scopes e recusa das três mutações anônimas. Fonte vigente: [recibo produtivo](../testing/mcp-market-lifecycle-production-closeout-20261102.md). Esta fatia está concluída; os apontamentos locais abaixo são históricos. Novos scopes exigem concessão explícita e novo OAuth/token; uma integração ativa conserva os seis anteriores. Não houve mutação privilegiada de mercados produtivos, concessão automática ou release mobile. Branch local preservada.
