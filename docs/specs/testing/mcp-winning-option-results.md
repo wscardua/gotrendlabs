@@ -41,3 +41,5 @@ Deploy não executado. Disponibilização requer publicar backend/API e imagem M
 Usuário autorizou preparar commit e fluxo GitHub/produção, condicionando a submissão da PR à aprovação prévia do título e descrição. Novo fetch confirmou origin/main ca67e9f. ENABLE_PROD_DEPLOY=1 confirmado por leitura da variável do repositório. Sem template de PR no checkout. O [roteiro](../operations/mcp-winning-option-rollout.md) define implantação coordenada e smoke de leitura; sucesso produtivo só será registrado após Actions e verificações reais.
 
 Mobile não impactado: `apps/mobile/lib/src/features/markets/markets_repository.dart` lê `/markets/{slug}`, não `/integrations/editorial/markets/{market_id}` nem `MarketProjection`. Web/Admin Ops também não consomem esta projeção alterada; o contrato público `MarketResponse` mantém o shape anterior. A triagem não exige release Flutter.
+
+Commit de implementação/preparação: e01c9ac. [Review de impacto versionado](mcp-winning-option-review.md): sem findings, risco baixo; checagens finais de OpenAPI/Ruff/diff aprovadas. PR ainda não submetida; aguardando aprovação do título e descrição pelo usuário.

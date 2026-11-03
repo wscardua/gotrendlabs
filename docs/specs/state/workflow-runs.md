@@ -11,7 +11,8 @@
 - Checklist universal: feature/contrato/aceites, arquitetura, changelogs, status e integration map reconciliados; sem mudança estrutural para novo ADR. Venv Python 3.11 existente e PostgreSQL temporário isolado, removido após os testes. Sem nova lacuna funcional.
 - Continuação em 03/11/2026: usuário solicitou commit, PR em português, merge, acompanhamento de Actions/deploy e ativação técnica, preservando a branch local. Antes de submeter a PR, apresentar título/descrição e aguardar autorização explícita. Nenhuma PR submetida nesta etapa.
 - Pré-flight GitHub: origin/main continua ca67e9f após novo fetch; ENABLE_PROD_DEPLOY=1 confirmado por leitura. Deploy padrão inclui API e imagem MCP, sem migration/flag/grant novo. [Roteiro de publicação e smoke](../operations/mcp-winning-option-rollout.md).
-- Próxima ação: commit/review versionado local; aprovação do texto da PR; publicação, CI, merge, deploy e smoke autenticado somente após essa aprovação. O fechamento produtivo será registrado com evidências reais, sem antecipar sucesso.
+- Commit local e review: implementação/preparação e01c9ac, 19 arquivos revisados contra ca67e9f, sem findings; risco baixo e mobile não impactado. [Review versionado](../testing/mcp-winning-option-review.md).
+- Próxima ação: aprovação do título/descrição preparados; push e PR via MCP GitHub, CI, merge, deploy e smoke autenticado somente após essa aprovação. O fechamento produtivo será registrado com evidências reais, sem antecipar sucesso.
 
 ## WFLOW-20261026-WALLET-WEB-SIMPLIFY
 
