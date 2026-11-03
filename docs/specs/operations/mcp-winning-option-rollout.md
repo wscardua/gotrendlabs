@@ -1,6 +1,6 @@
 # Publicação — winning_option_id no get_market
 
-Data: 03/11/2026. FEAT-MCP-001 v1.9 / WFLOW-20261103-MCP-WINNING-OPTION. Estado: preparação local, PR aguardando aprovação do usuário. [Contrato](../contracts/agent-integrations.md), [evidências locais](../testing/mcp-winning-option-results.md).
+Data: 03/11/2026. FEAT-MCP-001 v1.9 / WFLOW-20261103-MCP-WINNING-OPTION. Estado: implantação técnica concluída pela PR #184/merge 9d8933b; [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). Etapas abaixo preservam o roteiro utilizado. [Contrato](../contracts/agent-integrations.md), [evidências locais](../testing/mcp-winning-option-results.md).
 
 ## Pré-condições e fluxo GitHub
 

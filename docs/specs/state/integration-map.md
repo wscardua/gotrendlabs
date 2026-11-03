@@ -1,3 +1,7 @@
+## 2026-11-03 — vencedora disponível no MCP produtivo
+
+PostgreSQL → projeção FastAPI → schema compartilhado → MCP get_market implantados no mesmo merge 9d8933b/PR #184. Payload autenticado e persistência conferidos para sealed/locked; schema, hashes e saúde confirmados. Sem migration, grant ou dependência nova; web/Flutter públicos não impactados. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). Substitui a pendência de implantação local abaixo.
+
 ## 2026-11-03 — resultado persistido na leitura MCP (local)
 
 `gotrendlabs_markets.winning_option_id` → `editorial_service.market_projection` sob lock compartilhado → `MarketProjection`/REST → adapter MCP `get_market`. Campo obrigatório nullable; mesma fonte autoritativa usada pela API pública. Sem nova dependência, migration ou consumidor web/Flutter afetado. `get_market` interno de snapshot editorial conserva seu shape; aprovações/hashes preservados. Mesmo `catalog:read`, visibilidade de drafts e ficha privada; erros/replays/grants/política não mudam. API e MCP devem publicar o schema compartilhado coordenadamente; implantação pendente. WFLOW-20261103-MCP-WINNING-OPTION.

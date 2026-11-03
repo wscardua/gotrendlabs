@@ -1,6 +1,6 @@
 ## WFLOW-20261103-MCP-WINNING-OPTION
 
-- Tipo: correção de contrato FEAT-MCP-001; estado: implementação local concluída; fechamento GitHub/produção em preparação, aguardando aprovação da PR.
+- Tipo: correção de contrato FEAT-MCP-001; estado: concluído em produção; recibo documental preparado para publicação.
 - Objetivo: `get_market` retornar `winning_option_id` obrigatório e nullable, diretamente do resultado persistido, inclusive em resolved/sealed.
 - Base: origin/main ca67e9f, obtida por fetch; branch fix/mcp-get-market-winning-option em worktree separado, preservando alterações do checkout original.
 - Artefatos: projeção de leitura do serviço editorial, schema compartilhado REST/MCP, descrição da ferramenta, OpenAPI, testes de contrato/integração/SDK, feature/contrato/aceites e memória operacional.
@@ -12,7 +12,9 @@
 - Continuação em 03/11/2026: usuário solicitou commit, PR em português, merge, acompanhamento de Actions/deploy e ativação técnica, preservando a branch local. Antes de submeter a PR, apresentar título/descrição e aguardar autorização explícita. Nenhuma PR submetida nesta etapa.
 - Pré-flight GitHub: origin/main continua ca67e9f após novo fetch; ENABLE_PROD_DEPLOY=1 confirmado por leitura. Deploy padrão inclui API e imagem MCP, sem migration/flag/grant novo. [Roteiro de publicação e smoke](../operations/mcp-winning-option-rollout.md).
 - Commit local e review: implementação/preparação e01c9ac, 19 arquivos revisados contra ca67e9f, sem findings; risco baixo e mobile não impactado. [Review versionado](../testing/mcp-winning-option-review.md).
-- Próxima ação: aprovação do título/descrição preparados; push e PR via MCP GitHub, CI, merge, deploy e smoke autenticado somente após essa aprovação. O fechamento produtivo será registrado com evidências reais, sem antecipar sucesso.
+- Fechamento: usuário aprovou continuidade; PR #184 criada/merge via GitHub MCP, merge 9d8933b. Actions PR 41712412435 e main 41714398208 aprovados; 637 testes/2 skips em cada execução, deploy SSM e06772bd-48ec-43a5-a2e6-45ae627a8991 Success/0. Smoke 364e0cdb-bb87-4bc8-9a26-da2a1d6fffd9 Success/0; MCP real confirmou mercado 35 sealed/winner82 e 36 locked/null explícito, hashes preservados. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md).
+- Ativação: automática pelo deploy, sem migration/flag/grant/ajuste de dados. Mobile não impactado; branch local preservada. Checklist de fechamento reconciliado, sem pendência funcional produtiva desta fatia.
+- Próxima ação documental: publicar recibo/estado por CI docs-only, sem novo deploy; manter registros locais anteriores como histórico.
 
 ## WFLOW-20261026-WALLET-WEB-SIMPLIFY
 

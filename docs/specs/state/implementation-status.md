@@ -1,3 +1,7 @@
+## 2026-11-03 — MCP get_market: revisão 1.9 concluída em produção
+
+PR #184 integrada, merge 9d8933b; CI da PR/main, builds e deploy aprovados, 637 testes/2 skips em cada execução. Smoke SSM e MCP autenticado confirmaram winning_option_id=82 em sealed (35) e null explícito em locked (36), com schema obrigatório e hashes da ficha/selo preservados. Sem migration, novo grant ou ajuste manual; mobile não impactado, branch local preservada. Esta entrada substitui a pendência produtiva abaixo; status global parcial de outras fatias permanece. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md).
+
 ## 2026-11-03 — MCP get_market com winning_option_id (local)
 
 Implementada a revisão 1.9 de FEAT-MCP-001: `winning_option_id` obrigatório `integer | null` na projeção de leitura FastAPI e schema compartilhado MCP. Valor persistido sob lock, sem impacto nos snapshots editoriais ou permissões. Branch fix/mcp-get-market-winning-option, baseada em origin/main ca67e9f; checkout anterior preservado. Validação local concluída: 141 cenários aprovados e um skip por roles dedicadas ausentes, considerando reexecução do cenário SDK após ajuste de fixture. Django/migrations/OpenAPI/Ruff/diff aprovados; publicação/deploy e smoke no MCP implantado pendentes. Não promove o status global parcial. [Evidências](../testing/mcp-winning-option-results.md).
