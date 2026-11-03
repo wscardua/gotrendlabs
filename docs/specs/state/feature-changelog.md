@@ -1,3 +1,7 @@
+## 2026-11-03 — FEAT-MCP-001 v1.9 implantada e validada
+
+get_market retorna vencedora persistida ou null explícito, mantendo status, permissões e snapshots. PR #184/merge 9d8933b, CI/build/deploy e smoke produtivo aprovados; sem configuração ou migration adicional. Branch local preservada. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). Preparação local abaixo permanece histórica.
+
 ## 2026-11-03 — FEAT-MCP-001 v1.9: vencedora na leitura (local)
 
 `get_market` passa a expor `winning_option_id` obrigatório nullable, diretamente da persistência e relacionado a `options[].id`, inclusive após resolução/selagem. Schema REST/MCP/OpenAPI e descrição da ferramenta atualizados; snapshots/hashes e controles existentes preservados. Sem nova ferramenta/scope, migration, permissão automática ou alteração de mutações/replays. WFLOW-20261103-MCP-WINNING-OPTION; validação local e implantação acompanhadas em [evidências](../testing/mcp-winning-option-results.md).

@@ -1,3 +1,7 @@
+# Estado vigente — implantação concluída em 03/11/2026
+
+PR #184/merge 9d8933b, CI/build/deploy e smoke produtivo aprovados. [Recibo produtivo](mcp-winning-option-production-closeout-20261103.md) substitui as pendências de publicação registradas abaixo; o restante deste arquivo preserva as evidências locais históricas.
+
 # Evidências locais — winning_option_id no get_market
 
 Data: 03/11/2026. Workflow WFLOW-20261103-MCP-WINNING-OPTION. Branch `fix/mcp-get-market-winning-option`, base `origin/main` ca67e9f após fetch. Worktree `/Users/williamsca/Documents/gotrendlabs-mcp-winning-option`; alterações locais do checkout original preservadas.

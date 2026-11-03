@@ -34,7 +34,7 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 
 ## Revisão 1.9 — resultado na leitura do mercado (03/11/2026)
 
-`get_market` e GET `/integrations/editorial/markets/{market_id}` passam a retornar `winning_option_id` obrigatório (`integer | null`), copiado do resultado persistido no backend. Havendo vencedora, o ID corresponde a `options[].id`; sem vencedora registrada, retorna `null`. Mercados resolved/sealed preservam o resultado. Não inferir por probabilidade, ordem, critérios ou ficha editorial. Metadado operacional fora dos snapshots/hashes editoriais; mesmos scopes, visibilidade e privacidade atuais. Implementação/validação local acompanhadas em WFLOW-20261103-MCP-WINNING-OPTION; implantação pendente.
+`get_market` e GET `/integrations/editorial/markets/{market_id}` passam a retornar `winning_option_id` obrigatório (`integer | null`), copiado do resultado persistido no backend. Havendo vencedora, o ID corresponde a `options[].id`; sem vencedora registrada, retorna `null`. Mercados resolved/sealed preservam o resultado. Não inferir por probabilidade, ordem, critérios ou ficha editorial. Metadado operacional fora dos snapshots/hashes editoriais; mesmos scopes, visibilidade e privacidade atuais. Implantada e validada pela PR #184/merge 9d8933b, Actions 41714398208 e smoke autenticado, sem ajuste manual. WFLOW-20261103-MCP-WINNING-OPTION; [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md).
 
 ## Estado vigente da revisão 1.8 — fechamento de 02/11/2026
 

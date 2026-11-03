@@ -49,3 +49,7 @@ A projeção sempre insere winning_option_id, inclusive None, e o schema sem def
 Testes locais da implementação: 142 cenários na regressão, 140 aprovados/um skip/uma expectativa de contagem de fixtures corrigida; reexecução do cenário SDK aprovada. Resultado combinado 141 aprovados/um skip. A role dedicada ausente no cluster impede somente o check de grants nomeados; ACL com roles temporárias passou. Cobertura inclui null/campo ausente, resolved/sealed por lifecycle, correspondência às opções, SDK serviço/OAuth, scopes, ficha alheia e snapshots. [Evidências completas](mcp-winning-option-results.md).
 
 Nesta revisão: diff completo, consumidores e diff --check conferidos; na preparação também OpenAPI --check e Ruff F aprovados. Não houve mudança de código após os testes e nenhuma repetição ampla foi necessária. CI completo da PR/main e smoke produtivo ainda pendentes; sem lacuna funcional específica identificada. Não houve teste de carga ou injeção de falha em produção para este campo de leitura.
+
+## Validação posterior — 03/11/2026
+
+Pontos produtivos do review conferidos após PR #184: imagens/schema/payload autenticado e integridade aprovados; [recibo](mcp-winning-option-production-closeout-20261103.md). Código de implementação não mudou após este review.

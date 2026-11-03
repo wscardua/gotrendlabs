@@ -1,3 +1,7 @@
+## 2026-11-03 — fonte vigente da revisão MCP 1.9
+
+Feature, contrato, README, arquitetura, aceites e memória reconciliados com a implantação real da PR #184 e leitura autenticada. winning_option_id obrigatório nullable confirmado no servidor; sem novas permissões, erros, replays ou política editorial. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). As entradas locais abaixo registram preparação anterior.
+
 ## 2026-11-03 — FEAT-MCP-001 v1.9: contrato de vencedora
 
 Contrato de `get_market`/GET editorial acrescenta `winning_option_id` obrigatório nullable da persistência, preservado em resolved/sealed e fora dos snapshots editoriais. Feature, contrato, aceites, descrição MCP e OpenAPI alinhados. Sem novas permissões, erros de negócio, replays ou mudança da política editorial; ADR-0019 continua aplicável. WFLOW-20261103-MCP-WINNING-OPTION, somente implementação local nesta entrega.

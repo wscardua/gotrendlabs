@@ -1,10 +1,10 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
-## Revisão 1.9 — resultado de get_market (03/11/2026, local)
+## Revisão 1.9 — resultado de get_market (03/11/2026, implantada)
 
 `get_market` / GET `/integrations/editorial/markets/{market_id}` expõem `winning_option_id` como campo obrigatório `integer | null`, sem default no schema compartilhado `MarketProjection`. O backend lê o valor persistido sob o lock compartilhado existente. Havendo vencedora registrada, o ID corresponde a `options[].id`; caso contrário, retorna `null`, sem omitir o campo. O resultado permanece em resolved/sealed. Não inferir resultado por probabilidade, ordem de opções ou texto editorial.
 
-Campo somente da projeção operacional, fora dos snapshots/aprovações/hashes. Mesmo scope `catalog:read`, sem nova ferramenta, permissão, mutação ou grant. Acesso a drafts e ficha privada segue o contrato existente; erros, idempotência/replays e política editorial permanecem. Disponibilidade no servidor implantado depende de publicação desta revisão.
+Campo somente da projeção operacional, fora dos snapshots/aprovações/hashes. Mesmo scope `catalog:read`, sem nova ferramenta, permissão, mutação ou grant. Acesso a drafts e ficha privada segue o contrato existente; erros, idempotência/replays e política editorial permanecem. Disponível em produção pela PR #184/merge 9d8933b, com schema e leituras autenticadas conferidos; [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md).
 
 ## Estado implantado — revisão 1.8, 02/11/2026
 

@@ -130,3 +130,5 @@ PR #182 / Actions 41464155882 aprovados, 637 testes sem falhas (dois skips de ro
 - Sem vencedora persistida (incluindo draft/locked/canceled), retornar null. Após resolução real e selagem, GET retorna o mesmo ID persistido e existente em `options[].id`.
 - SDK Streamable HTTP por serviço e OAuth verifica schema e payload efetivo. Contrato de leitura usa somente `catalog:read`; nega scope ausente e preserva visibilidade atual de drafts e omissão da ficha privada alheia.
 - Campo operacional não entra em snapshots/hashes editoriais. Regressões de lifecycle/replay, integridade e autorização continuam aprovadas.
+
+Fechamento produtivo v1.9: PR #184/Actions 41714398208 e smoke SSM/MCP autenticado aprovados; schema obrigatório, ID 82 no mercado 35 sealed e null explícito no 36 locked, hashes preservados. [Recibo vigente](mcp-winning-option-production-closeout-20261103.md).
