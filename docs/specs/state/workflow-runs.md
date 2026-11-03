@@ -1,3 +1,19 @@
+## WFLOW-20261103-MCP-WINNING-OPTION
+
+- Tipo: correção de contrato FEAT-MCP-001; estado: implementação local concluída; fechamento GitHub/produção em preparação, aguardando aprovação da PR.
+- Objetivo: `get_market` retornar `winning_option_id` obrigatório e nullable, diretamente do resultado persistido, inclusive em resolved/sealed.
+- Base: origin/main ca67e9f, obtida por fetch; branch fix/mcp-get-market-winning-option em worktree separado, preservando alterações do checkout original.
+- Artefatos: projeção de leitura do serviço editorial, schema compartilhado REST/MCP, descrição da ferramenta, OpenAPI, testes de contrato/integração/SDK, feature/contrato/aceites e memória operacional.
+- Arquitetura e segurança (software-architect/architecture-guard): PostgreSQL conserva o resultado; FastAPI projeta sob o lock compartilhado existente; adapter somente transporta/serializa o schema compartilhado. Campo operacional fica fora de `get_market` interno usado nos snapshots editoriais. Sem alteração de fronteira ou decisão estrutural que exija ADR.
+- Estratégia de testes: null obrigatório; rejeição de campo ausente; leitura resolved/sealed após lifecycle real; correspondência às opções; schema REST/MCP e SDK por serviço/OAuth; scopes e privacidade da ficha/drafts conforme contrato atual; snapshots sem metadados operacionais.
+- Impacto MCP: mesma ferramenta/scopes/annotations de leitura, com novo campo de saída obrigatório; sem ampliar permissões Admin Ops. Erros e replays de mutação preservados, pois não há mudança de ações/precondições/recibos. Orientação da ferramenta explicará leitura do resultado; política/ficha editorial não muda.
+- Validação: 142 cenários de regressão; 140 aprovados, um skip por roles dedicadas ausentes e uma expectativa final de contagem de fixtures corrigida. Reexecução completa do cenário SDK aprovada: resultado combinado 141 aprovados/um skip, sem falha pendente. Django, migrations, OpenAPI, Ruff F e diff check aprovados. [Evidências e comandos](../testing/mcp-winning-option-results.md).
+- Checklist universal: feature/contrato/aceites, arquitetura, changelogs, status e integration map reconciliados; sem mudança estrutural para novo ADR. Venv Python 3.11 existente e PostgreSQL temporário isolado, removido após os testes. Sem nova lacuna funcional.
+- Continuação em 03/11/2026: usuário solicitou commit, PR em português, merge, acompanhamento de Actions/deploy e ativação técnica, preservando a branch local. Antes de submeter a PR, apresentar título/descrição e aguardar autorização explícita. Nenhuma PR submetida nesta etapa.
+- Pré-flight GitHub: origin/main continua ca67e9f após novo fetch; ENABLE_PROD_DEPLOY=1 confirmado por leitura. Deploy padrão inclui API e imagem MCP, sem migration/flag/grant novo. [Roteiro de publicação e smoke](../operations/mcp-winning-option-rollout.md).
+- Commit local e review: implementação/preparação e01c9ac, 19 arquivos revisados contra ca67e9f, sem findings; risco baixo e mobile não impactado. [Review versionado](../testing/mcp-winning-option-review.md).
+- Próxima ação: aprovação do título/descrição preparados; push e PR via MCP GitHub, CI, merge, deploy e smoke autenticado somente após essa aprovação. O fechamento produtivo será registrado com evidências reais, sem antecipar sucesso.
+
 ## WFLOW-20261026-WALLET-WEB-SIMPLIFY
 
 - Tipo: alterar feature FEAT-WALLET-001; estado: concluído em produção. [Recibo](../testing/wallet-web-production-closeout-20261026.md).

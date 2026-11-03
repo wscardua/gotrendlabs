@@ -1,6 +1,12 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
-## Estado vigente — revisão 1.8, 02/11/2026
+## Revisão 1.9 — resultado de get_market (03/11/2026, local)
+
+`get_market` / GET `/integrations/editorial/markets/{market_id}` expõem `winning_option_id` como campo obrigatório `integer | null`, sem default no schema compartilhado `MarketProjection`. O backend lê o valor persistido sob o lock compartilhado existente. Havendo vencedora registrada, o ID corresponde a `options[].id`; caso contrário, retorna `null`, sem omitir o campo. O resultado permanece em resolved/sealed. Não inferir resultado por probabilidade, ordem de opções ou texto editorial.
+
+Campo somente da projeção operacional, fora dos snapshots/aprovações/hashes. Mesmo scope `catalog:read`, sem nova ferramenta, permissão, mutação ou grant. Acesso a drafts e ficha privada segue o contrato existente; erros, idempotência/replays e política editorial permanecem. Disponibilidade no servidor implantado depende de publicação desta revisão.
+
+## Estado implantado — revisão 1.8, 02/11/2026
 
 Catálogo de 21 ferramentas e nove scopes explícitos. Resolve/cancel/delete e recuperação de sessão humana do consentimento implantados pela PR #182 / merge 0ffa4a0, com CI/build/deploy e smoke produtivo aprovados. [Recibo desta revisão](../testing/mcp-market-lifecycle-production-closeout-20261102.md). Novos scopes exigem concessão explícita e novo consentimento/token; a implantação não amplia grants existentes. As seções históricas abaixo não ampliam privilégios atuais. [Rollout](../operations/mcp-market-lifecycle-rollout.md).
 
@@ -191,7 +197,7 @@ Esta revisão substitui as proibições anteriores de resolução/cancelamento p
 
 Ambas recebem `market_id` positivo, `expected_updated_at` com offset, `idempotency_key` UUID e `note` obrigatório (1–2000). Resolução recebe ainda `winning_option_id`, `source_url` HTTP(S) (até 500), `resolved_at` não futuro com offset e `resolution_timezone` IANA coerente. Somente locked e agenda íntegra/completa. Cancelamento recebe `expected_status` draft/scheduled/open/locked, rejeita resolved/sealed/canceled novos e nunca desfaz resolução. Mercados publicados de qualquer origem são elegíveis pelo scope; draft só da própria integração. Conteúdo e evidências são relatos do executor.
 
-`get_market` expõe `options[].id` e `updated_at` obtidos sob lock compartilhado do mercado. IDs não entram nos schemas de criação de opções. Metadados operacionais não alteram snapshots/hashes editoriais existentes.
+`get_market` expõe `options[].id`, `updated_at` e `winning_option_id` obrigatório nullable obtidos sob lock compartilhado do mercado. IDs não entram nos schemas de criação de opções. Metadados operacionais não alteram snapshots/hashes editoriais existentes.
 
 Resposta mínima: market_id, status, updated_at, winning_option_id, resolved_at, resolution_timezone, request_id, replayed. Sem participantes, wallet ou parecer privado alheio. Tools têm destructiveHint=true e idempotentHint=true.
 

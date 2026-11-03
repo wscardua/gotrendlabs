@@ -139,8 +139,22 @@ class McpMarketActionTests(AppendOnlyTransactionTestCase):
     def test_resolve_replay_settles_once_with_technical_actor_and_minimal_projection(
         self,
     ):
+        def assert_read_winner(status, winning_option_id):
+            response = self.client.get(
+                f"/integrations/editorial/markets/{self.market.id}",
+                headers=self.agentheaders,
+            )
+            self.assertEqual(response.status_code, 200, response.text)
+            payload = response.json()
+            self.assertEqual(payload["status"], status)
+            self.assertEqual(payload["winning_option_id"], winning_option_id)
+            if winning_option_id is not None:
+                self.assertIn(winning_option_id, [o["id"] for o in payload["options"]])
+
+        assert_read_winner("locked", None)
         first = self.action("resolve")
         self.assertEqual(first.status_code, 200, first.text)
+        assert_read_winner("resolved", self.option.id)
         again = self.action("resolve")
         self.assertEqual(again.status_code, 200, again.text)
         self.assertFalse(first.json()["replayed"])
@@ -198,6 +212,7 @@ class McpMarketActionTests(AppendOnlyTransactionTestCase):
         from apps.api.backend_api.daemon_services import seal_due_markets
 
         seal_due_markets(now=self.market.seal_due_at + timedelta(seconds=1))
+        assert_read_winner("sealed", self.option.id)
         self.assertEqual(self.action("resolve").json()["status"], "sealed")
         self.assertEqual(
             self.action(
@@ -218,6 +233,12 @@ class McpMarketActionTests(AppendOnlyTransactionTestCase):
         first = self.action("cancel")
         self.assertEqual(first.status_code, 200, first.text)
         self.assertEqual(first.json()["status"], "canceled")
+        read = self.client.get(
+            f"/integrations/editorial/markets/{self.market.id}",
+            headers=self.agentheaders,
+        )
+        self.assertEqual(read.status_code, 200, read.text)
+        self.assertIsNone(read.json()["winning_option_id"])
         self.assertTrue(self.action("cancel").json()["replayed"])
         self.assertEqual(Prediction.objects.get(market=self.market).status, "canceled")
         user.refresh_from_db()
@@ -402,6 +423,7 @@ class McpMarketActionTests(AppendOnlyTransactionTestCase):
             snapshot = get_market(cursor, self.market.id, None)
             self.assertNotIn("id", snapshot["options"][0])
             self.assertNotIn("updated_at", snapshot)
+            self.assertNotIn("winning_option_id", snapshot)
 
     def test_drafts_are_only_cancelable_by_their_creator_and_public_markets_are_global(
         self,

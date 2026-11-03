@@ -807,6 +807,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
 
     def test_market_projection_preserves_required_nulls(self):
         from apps.api.backend_api.editorial_schemas import MarketProjection
+        from pydantic import ValidationError
 
         mid = self.create().json()["market_id"]
         Market.objects.filter(id=mid).update(close_at=None, event_id=None)
@@ -816,9 +817,16 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         self.assertEqual(result.status_code, 200)
         self.assertIn("close_at", result.json())
         self.assertIn("event_id", result.json())
+        self.assertIn("winning_option_id", result.json())
         projection = MarketProjection.model_validate(result.json())
         self.assertIsNone(projection.close_at)
         self.assertIsNone(projection.event_id)
+        self.assertIsNone(projection.winning_option_id)
+        without_winner = result.json()
+        del without_winner["winning_option_id"]
+        with self.assertRaises(ValidationError) as missing:
+            MarketProjection.model_validate(without_winner)
+        self.assertEqual(missing.exception.errors()[0]["loc"], ("winning_option_id",))
 
     def approve_for_publication(self, created):
         mid = created["market_id"]
@@ -1173,6 +1181,17 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         result = self.client.get(f"/integrations/editorial/markets/{mid}", headers=h)
         self.assertEqual(result.status_code, 200)
         self.assertNotIn("editorial", result.json())
+        self.assertIsNone(result.json()["winning_option_id"])
+        own = self.client.get(
+            f"/integrations/editorial/markets/{mid}", headers=self.agentheaders
+        )
+        self.assertIn("editorial", own.json())
+        self.assertIsNone(own.json()["winning_option_id"])
+        Token.objects.filter(integration_id=other.id).update(scopes=["drafts:write"])
+        denied = self.client.get(f"/integrations/editorial/markets/{mid}", headers=h)
+        self.assertEqual(denied.status_code, 403, denied.text)
+        self.assertEqual(denied.json()["detail"]["code"], "forbidden_scope")
+        Token.objects.filter(integration_id=other.id).update(scopes=["catalog:read", "drafts:write"])
         self.assertEqual(
             self.client.patch(
                 f"/integrations/editorial/drafts/{mid}",
@@ -1322,6 +1341,21 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         from mcp.client.streamable_http import streamablehttp_client
         from apps.mcp import server as adapter
 
+        # Include two terminal fixtures in addition to drafts created by both clients.
+        Integration.objects.filter(pk=self.iid).update(drafts_per_day=10)
+        terminal_markets = []
+        for status in ("resolved", "sealed"):
+            created = self.create({
+                **self.payload,
+                "title": f"SDK winner {status}",
+                "idempotency_key": f"sdk-winner-{status}",
+            }).json()
+            mid = created["market_id"]
+            # Terminal read fixtures; actual resolve/seal is covered by lifecycle tests.
+            winner = Market.objects.get(pk=mid).options.order_by("display_order", "id").last()
+            Market.objects.filter(pk=mid).update(status=status, winning_option_id=winner.id)
+            terminal_markets.append((mid, status, winner.id))
+
         servers = []
         threads = []
 
@@ -1429,6 +1463,16 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                                     {"policy_version", "policy_hash", "document"},
                                 )
                             market_output = tool_schemas["get_market"]["outputSchema"]
+                            rest_output = app.openapi()["components"]["schemas"]["MarketProjection"]
+                            self.assertIn("winning_option_id", market_output["required"])
+                            self.assertEqual(
+                                market_output["properties"]["winning_option_id"],
+                                rest_output["properties"]["winning_option_id"],
+                            )
+                            self.assertEqual(
+                                market_output["properties"]["winning_option_id"]["anyOf"],
+                                [{"type": "integer"}, {"type": "null"}],
+                            )
                             self.assertIn(
                                 {"$ref": "#/$defs/PrivateEditorial"},
                                 market_output["properties"]["editorial"]["anyOf"],
@@ -1529,6 +1573,12 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                             mid = created["market_id"]
                             market = await invoke("get_market", {"market_id": mid})
                             self.assertEqual(market["title"], draft["title"])
+                            self.assertIsNone(market["winning_option_id"])
+                            for terminal_id, status, winner_id in terminal_markets:
+                                terminal = await invoke("get_market", {"market_id": terminal_id})
+                                self.assertEqual(terminal["status"], status)
+                                self.assertEqual(terminal["winning_option_id"], winner_id)
+                                self.assertIn(winner_id, [o["id"] for o in terminal["options"]])
                             found = await invoke(
                                 "search_markets", {"q": draft["title"], "limit": 20}
                             )
@@ -1638,7 +1688,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                     s.should_exit = True
                 for t in threads:
                     t.join(5)
-        self.assertEqual(Market.objects.count(), 2)
+        self.assertEqual(Market.objects.count(), 2 + len(terminal_markets))
 
     def oauth_access(self):
         cid, params, data = self.oauth()

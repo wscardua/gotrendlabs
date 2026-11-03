@@ -123,3 +123,10 @@ Consentimento com sessão revogada: tests/test_mcp_consent_query.py verifica 401
 ## Fechamento produtivo desta fatia — 02/11/2026
 
 PR #182 / Actions 41464155882 aprovados, 637 testes sem falhas (dois skips de roles no PostgreSQL de CI). Smoke produtivo conferiu roles efetivas, migration/trigger/constraints, catálogo 21/nove scopes, hashes nas imagens, saúde e recusa anônima das três mutações. Novos grants e efeitos reais em mercados não foram executados por inferência. Homologação humana de cliente externo/carga KMS preservadas como limites próprios. [Recibo vigente](mcp-market-lifecycle-production-closeout-20261102.md).
+
+## Resultado na leitura — revisão 1.9 (03/11/2026)
+
+- `winning_option_id` obrigatório no schema REST/MCP (`integer | null`); campo ausente falha validação, null é serializado explicitamente.
+- Sem vencedora persistida (incluindo draft/locked/canceled), retornar null. Após resolução real e selagem, GET retorna o mesmo ID persistido e existente em `options[].id`.
+- SDK Streamable HTTP por serviço e OAuth verifica schema e payload efetivo. Contrato de leitura usa somente `catalog:read`; nega scope ausente e preserva visibilidade atual de drafts e omissão da ficha privada alheia.
+- Campo operacional não entra em snapshots/hashes editoriais. Regressões de lifecycle/replay, integridade e autorização continuam aprovadas.

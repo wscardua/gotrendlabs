@@ -301,6 +301,9 @@ class MarketProjection(SearchItem):
     resolution_criteria: str
     options: list[MarketOption]
     updated_at: datetime
+    winning_option_id: int | None = Field(
+        description="ID da opção vencedora persistida, correspondente a options[].id; null sem vencedora registrada."
+    )
     editorial: PrivateEditorial | None = None
 
 

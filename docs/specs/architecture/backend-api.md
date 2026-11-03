@@ -118,3 +118,7 @@ FastAPI é a fonte de verdade para agregação, autorização `analytics:read`, 
 
 
 Exclusão MCP própria (02/11/2026): editorial_routes.agent(drafts:delete) → editorial_market_actions.delete_draft → market_deletion.delete_market → função delete_prepublication_editorial. Identidade técnica/revisão/updated_at são revalidadas sob lock; recibo mínimo reaproveita agent_idempotency e sobrevive ao DELETE, sem nova migration. Workload ou drafts:write não concedem exclusão.
+
+## Resultado na leitura editorial/MCP — 03/11/2026
+
+`editorial_service.market_projection` lê `winning_option_id` junto de `updated_at`, sob o lock compartilhado já mantido na transação. `MarketProjection` exige esse campo nullable no REST/MCP; adapter somente transporta o resultado persistido. A função interna usada para snapshots não recebe o campo, preservando hashes e aprovações. Mesmo `catalog:read`, visibilidade de drafts/ficha e regras de lifecycle; nenhuma nova fronteira, migration ou autorização. WFLOW-20261103-MCP-WINNING-OPTION, revisão local 1.9.

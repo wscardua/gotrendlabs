@@ -1,10 +1,10 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.8
+versao: 1.9
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-11-02
+ultima_atualizacao: 2026-11-03
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
@@ -31,6 +31,10 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 ---
 
 # MCP editorial e gestão de integrações
+
+## Revisão 1.9 — resultado na leitura do mercado (03/11/2026)
+
+`get_market` e GET `/integrations/editorial/markets/{market_id}` passam a retornar `winning_option_id` obrigatório (`integer | null`), copiado do resultado persistido no backend. Havendo vencedora, o ID corresponde a `options[].id`; sem vencedora registrada, retorna `null`. Mercados resolved/sealed preservam o resultado. Não inferir por probabilidade, ordem, critérios ou ficha editorial. Metadado operacional fora dos snapshots/hashes editoriais; mesmos scopes, visibilidade e privacidade atuais. Implementação/validação local acompanhadas em WFLOW-20261103-MCP-WINNING-OPTION; implantação pendente.
 
 ## Estado vigente da revisão 1.8 — fechamento de 02/11/2026
 

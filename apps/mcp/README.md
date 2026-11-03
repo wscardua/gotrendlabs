@@ -25,6 +25,8 @@ Deploy produtivo usa override MCP com rede/env exclusivos; configurador gera arq
 
 Catálogo: 21 ferramentas, filtradas por scope. `resolve_market(resolution)` exige markets:resolve e mercado locked. `cancel_market(cancellation)` exige markets:cancel, aceita draft próprio ou scheduled/open/locked e nunca desfaz resolução. Leia get_market para obter options[].id e updated_at; envie market_id, expected_updated_at, note e idempotency_key UUID. Resolução também exige winning_option_id, source_url HTTP(S), resolved_at com offset e resolution_timezone IANA; cancelamento exige expected_status. Fonte é relato do executor, sem atestado humano fictício.
 
+`get_market` retorna `winning_option_id` obrigatório (`integer | null`): ID persistido da vencedora, correspondente a `options[].id`, ou `null` sem vencedora registrada. O resultado permanece em resolved/sealed; não inferir pelo texto editorial ou ordem das opções. Mesmo scope `catalog:read` e mesmas regras de visibilidade; o campo operacional não altera snapshots editoriais.
+
 Concessão: staff/MFA edita Integrações e agentes, marca individualmente os scopes desejados e salva; reconectar OAuth com consentimento desses scopes. Serviço deve obter novo access token. Grants/tokens anteriores não herdam privilégios. Publicação, fechamento manual e undo não são expostos.
 
 Timeout retorna operation_indeterminate; mantenha exatamente payload/chave e repita o pedido para confirmar sem duplicar efeitos. Novo payload com a mesma chave conflita. Resolução desfeita/substituída retorna resolution_request_superseded. [Contrato](../../docs/specs/contracts/agent-integrations.md), [runbook](../../docs/guides/mcp-market-lifecycle.md).

@@ -1,3 +1,7 @@
+## 2026-11-03 — resultado persistido na leitura MCP (local)
+
+`gotrendlabs_markets.winning_option_id` → `editorial_service.market_projection` sob lock compartilhado → `MarketProjection`/REST → adapter MCP `get_market`. Campo obrigatório nullable; mesma fonte autoritativa usada pela API pública. Sem nova dependência, migration ou consumidor web/Flutter afetado. `get_market` interno de snapshot editorial conserva seu shape; aprovações/hashes preservados. Mesmo `catalog:read`, visibilidade de drafts e ficha privada; erros/replays/grants/política não mudam. API e MCP devem publicar o schema compartilhado coordenadamente; implantação pendente. WFLOW-20261103-MCP-WINNING-OPTION.
+
 ## 2026-10-25 — resolução e recibos publicados
 
 Admin Ops → FastAPI staff/MFA → transação de resolução/recibo → ledger, reputação e prova; timeout → consulta autenticada do recibo. Migration 0037 cria o recibo e 0038 fixa privilégios mínimos sobre a ACL efetiva. Django apresenta a auditoria e o retorno da wallet; web/API publicados e conferidos. Flutter consome a projeção atual mas ainda requer release. MCP preserva ferramentas, schemas, scopes, erros, replay e orientação editorial, sem inferir permissão administrativa. [Recibo produtivo](../testing/resolution-reliability-production-closeout-20261025.md).
