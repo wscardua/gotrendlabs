@@ -226,3 +226,12 @@ Tool marcada destructiveHint=true e idempotentHint=true. Timeout de transporte r
 ## Sessão expirada no consentimento MCP — 02/11/2026
 
 Se FastAPI retorna 401 em consent-info ou consent, Django remove apenas o token/usuário de autenticação em cache e redireciona ao login do mesmo origin. Preserva parâmetros OAuth originais no next (inclusive POST), para retornar após login e MFA. Não reaplica automaticamente consentimento POST. Erros 403/422/503 permanecem na tela e não apagam sessão. Sem concessão de scopes, bypass de MFA ou mudança nas ferramentas, schemas, permissões, erros de domínio ou replays MCP.
+
+
+## Diagnóstico de pendências — 05/11/2026
+
+`validate_market_draft`/POST `/integrations/editorial/drafts/validate` mantém entrada, `structurally_valid`, `pending`, `evidence_origin` e `similar`. Acrescenta `pending_details` obrigatório (lista, vazia quando não há avisos) e `assessment_scope: structural_and_explicit_declarations_only`. Cada detalhe: `code`, `reason`, `description`, `excerpt: string|null`, `criterion_ids: string[]`, `declared_kind: human_task|research_or_rule_gap|unspecified`, `resolve_by: before_submission|before_human_approval` e `impact` com `creation`, `submission`, `approval`, `publication`. Critérios textuais somente se explicitamente citados; formato sem critério retorna [].
+
+Impactos são do aviso, não autorização global: creation=allowed; submission=allowed ou blocked (política/agenda); approval=human_resolution_required; publication=requires_current_human_approval ou blocked (agenda). Pendências editoriais, inclusive lacunas essenciais relatadas, não ganham bloqueio automático de criação/submissão. O humano precisa resolvê-las antes de confirmar aprovação. Diagnóstico não substitui atestação, não certifica fontes nem detecta toda contradição. A ausência de avisos não significa aprovação.
+
+Código `unresolved_editorial_gaps` é preservado e detalha pendências declaradas, ausência/repetição da seção/declaração, declaração vazia ou fora da primeira linha e contradição explícita de ausência com pendências. Cabeçalho Markdown do modelo aceito. Não exigir frase “nenhuma” diante de pendências reais. Política/checklist/modelo e hashes não mudam. Schema de saída compartilhado mantém detalhes no SDK MCP; implantar API e MCP na mesma revisão. [Causas, limites e aceites](../testing/editorial-pending-details.md).

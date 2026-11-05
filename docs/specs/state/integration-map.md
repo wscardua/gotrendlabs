@@ -1,3 +1,7 @@
+## 05/11/2026 — diagnóstico de pendências editoriais
+
+WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. Validado localmente: 89 testes aprovados/um skip; produção ainda não implantada. [Evidência e limites](../testing/editorial-pending-details.md).
+
 ## 2026-11-03 — vencedora disponível no MCP produtivo
 
 PostgreSQL → projeção FastAPI → schema compartilhado → MCP get_market implantados no mesmo merge 9d8933b/PR #184. Payload autenticado e persistência conferidos para sealed/locked; schema, hashes e saúde confirmados. Sem migration, grant ou dependência nova; web/Flutter públicos não impactados. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). Substitui a pendência de implantação local abaixo.

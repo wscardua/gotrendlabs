@@ -1,3 +1,7 @@
+## 05/11/2026 — diagnóstico de pendências editoriais
+
+WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. Validado localmente: 89 testes aprovados/um skip; produção ainda não implantada. [Evidência e limites](../testing/editorial-pending-details.md).
+
 ## 2026-11-03 — fonte vigente da revisão MCP 1.9
 
 Feature, contrato, README, arquitetura, aceites e memória reconciliados com a implantação real da PR #184 e leitura autenticada. winning_option_id obrigatório nullable confirmado no servidor; sem novas permissões, erros, replays ou política editorial. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). As entradas locais abaixo registram preparação anterior.

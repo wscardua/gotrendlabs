@@ -1,3 +1,18 @@
+## WFLOW-20261105-EDITORIAL-PENDING-DETAILS
+
+- Tipo: correção diagnóstica FEAT-MCP-001/FEAT-EDITORIAL-001; estado: concluído localmente; não implantado.
+- Objetivo: explicar unresolved_editorial_gaps sem ocultar pendências ou transferir atestação humana ao agente.
+- Base: origin/main bf11a0c; branch fix/editorial-pending-details-20261105 em worktree separado; trabalho original preservado.
+- Evidência, divergências, arquitetura, aceites e limites: [investigação](../testing/editorial-pending-details.md).
+- Skills: software-architect, architecture-guard, fastapi-domain, test-strategy/test-engineer, spec-editor e workflow-governor.
+- Arquitetura: diagnóstico no backend; schema REST/MCP compartilhado; sem mudança de banco, snapshot, autorização ou fronteira que exija ADR.
+- Impacto MCP: detalhes aditivos de saída e orientação da ferramenta; códigos gerais e entrada preservados conforme pedido explícito de compatibilidade. Mesmos scopes, erros e replays; nenhuma permissão inferida do Admin Ops. Sem logs de conteúdo editorial.
+- Política 1.4/modelo 1.8 consultados em produção; mercado 62 somente lido como referência histórica. Nenhum mercado modificado.
+- Artefatos: serviço/diagnóstico/schema/rota FastAPI, adaptador, OpenAPI, testes, feature/contrato e memória operacional. Mobile não consome esta rota; sem release mobile necessária.
+- Validação nesta branch: 90 testes/89 aprovados/um skip por roles dedicadas ausentes; REST e SDK MCP real com serviço/OAuth aprovados. OpenAPI, Django check, Ruff F e diff check aprovados.
+- Checklist universal: feature/contrato/aceites e estado sincronizados; sem novo ADR estrutural, migration ou impacto mobile. Parser limitado a declarações explícitas, conforme relatório; não certifica completude semântica.
+- Próxima ação de disponibilização: implantação conjunta API/MCP, seguida de smoke de leitura e atualização de catálogo dos clientes. Deploy não executado nesta solicitação.
+
 ## WFLOW-20261103-MCP-WINNING-OPTION
 
 - Tipo: correção de contrato FEAT-MCP-001; estado: concluído em produção; recibo documental preparado para publicação.

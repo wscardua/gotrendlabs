@@ -441,9 +441,30 @@ class EditorialAnalyticsResponse(Strict):
     precision: str
 
 
+class PendingImpact(BaseModel):
+    # These are effects of this warning, not authorization for an operation.
+    creation: Literal["allowed"]
+    submission: Literal["allowed", "blocked"]
+    approval: Literal["human_resolution_required"]
+    publication: Literal["requires_current_human_approval", "blocked"]
+
+
+class PendingDetail(BaseModel):
+    declared_kind: Literal["human_task", "research_or_rule_gap", "unspecified"]
+    code: str
+    reason: str
+    description: str
+    criterion_ids: list[str]
+    resolve_by: Literal["before_submission", "before_human_approval"]
+    excerpt: str | None
+    impact: PendingImpact
+
+
 class ValidationResponse(BaseModel):
     structurally_valid: bool
     pending: list[str]
+    pending_details: list[PendingDetail]
+    assessment_scope: Literal["structural_and_explicit_declarations_only"]
     evidence_origin: Literal["agent_reported"]
     similar: SearchResponse
 

@@ -927,9 +927,18 @@ def validate_draft(
         authorization, x_mcp_workload, "drafts:write", "validate_market_draft"
     ) as (cur, t, r):
         domain.validated(cur, payload)
+        from .editorial_pending import validation_details
+
+        details = validation_details(
+            payload.editorial_record.model_dump(mode="json"),
+            domain.policy(),
+            preparation_pending(payload.model_dump()),
+        )
         return {
             "structurally_valid": True,
-            "pending": domain.pending(payload.editorial_record.model_dump(mode="json")) + preparation_pending(payload.model_dump()),
+            "pending": list(dict.fromkeys(item["code"] for item in details)),
+            "pending_details": details,
+            "assessment_scope": "structural_and_explicit_declarations_only",
             "evidence_origin": "agent_reported",
             "similar": domain.search(cur, payload.title[:80]),
         }

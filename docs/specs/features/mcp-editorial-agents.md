@@ -1,10 +1,10 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.9
+versao: 1.10
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-11-03
+ultima_atualizacao: 2026-11-05
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
@@ -31,6 +31,10 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 ---
 
 # MCP editorial e gestão de integrações
+
+## Revisão 1.10 — diagnóstico de pendências (05/11/2026)
+
+Validação retorna detalhes aditivos mantendo códigos gerais e entrada; [contrato](../contracts/agent-integrations.md#diagnóstico-de-pendências--05112026) e [investigação/limites](../testing/editorial-pending-details.md). Diagnóstico estrutural e de declarações explícitas, sem certificação semântica. Preparação/submissão mantêm gates existentes; pendências humanas e lacunas editoriais precisam ser resolvidas pelo humano antes da aprovação, sem novo gate textual. A orientação de aprovação com frase obrigatória na revisão 1.5 abaixo é histórica e foi substituída pela [atestação humana](../testing/human-editorial-attestation-acceptance.md), coerente com política 1.4/modelo 1.8 vigentes. Esta correção não altera política, modelo, hashes ou permissões. Implementação local; implantação pendente.
 
 ## Revisão 1.9 — resultado na leitura do mercado (03/11/2026)
 
