@@ -132,3 +132,8 @@ PR #182 / Actions 41464155882 aprovados, 637 testes sem falhas (dois skips de ro
 - Campo operacional não entra em snapshots/hashes editoriais. Regressões de lifecycle/replay, integridade e autorização continuam aprovadas.
 
 Fechamento produtivo v1.9: PR #184/Actions 41714398208 e smoke SSM/MCP autenticado aprovados; schema obrigatório, ID 82 no mercado 35 sealed e null explícito no 36 locked, hashes preservados. [Recibo vigente](mcp-winning-option-production-closeout-20261103.md).
+
+
+## Diagnóstico de pendências — revisão 1.10 (05/11/2026)
+
+Validar `pending` e `pending_details` no mesmo retorno REST/MCP, com `assessment_scope` explícito: ficha com tarefas humanas futuras E06/E09/E10/E11; lacuna essencial de fonte/regra; ausência real de pendências com título Markdown do modelo; declaração contraditória. Separar `approval=human_attestation_required` do prazo editorial `resolve_by`. Listas informativas não devem criar pendência; lista rotulada deve produzir itens e natureza declarada. Documento dentro do limite de 60 mil caracteres com milhares de itens deve devolver no máximo 50 detalhes de pendência e `details_truncated`, preservando o código geral. Confirme que criação/submissão/parecer mantêm os gates atuais, sem exigir frase de ausência quando existirem pendências. Executar SDK MCP de serviço/OAuth, OpenAPI e fluxo REST em banco isolado. [Evidências locais](editorial-pending-details.md); [rollout](../operations/editorial-pending-details-rollout.md).

@@ -1,6 +1,6 @@
 ## WFLOW-20261105-EDITORIAL-PENDING-DETAILS
 
-- Tipo: correção diagnóstica FEAT-MCP-001/FEAT-EDITORIAL-001; estado: concluído localmente; não implantado.
+- Tipo: correção diagnóstica FEAT-MCP-001/FEAT-EDITORIAL-001; estado: implementação concluída localmente, fechamento produtivo em preparação.
 - Objetivo: explicar unresolved_editorial_gaps sem ocultar pendências ou transferir atestação humana ao agente.
 - Base: origin/main bf11a0c; branch fix/editorial-pending-details-20261105 em worktree separado; trabalho original preservado.
 - Evidência, divergências, arquitetura, aceites e limites: [investigação](../testing/editorial-pending-details.md).
@@ -12,7 +12,9 @@
 - Validação nesta branch: 90 testes/89 aprovados/um skip por roles dedicadas ausentes; REST e SDK MCP real com serviço/OAuth aprovados. OpenAPI, Django check, Ruff F e diff check aprovados.
 - Revisão de impacto e correção em 05/11: corrigidas classificação indevida de listas informativas, amplificação da resposta e descrição inexata do gate de aprovação. Limite de 50 itens declarados com `details_truncated`; `approval=human_attestation_required` e `resolve_by` editorial preservado. [Aceites e validação incremental](../testing/editorial-pending-details.md). Sem mudança de permissão, erro, replay ou política.
 - Checklist universal: feature/contrato/aceites e estado sincronizados; sem novo ADR estrutural, migration ou impacto mobile. Parser limitado a declarações explícitas, conforme relatório; não certifica completude semântica.
-- Próxima ação de disponibilização: implantação conjunta API/MCP, seguida de smoke de leitura e atualização de catálogo dos clientes. Deploy não executado nesta solicitação.
+- Fechamento solicitado pelo usuário em 05/11: reconciliar specs/memória, preparar commit/PR em português, pedir aprovação explícita do título/descrição antes de criar a PR, acompanhar CI/merge/deploy e smoke produtivo. [Roteiro](../operations/editorial-pending-details-rollout.md).
+- Pré-flight: origin/main bf11a0c após fetch; ENABLE_PROD_DEPLOY=1, DEPLOY_BRANCH=main e AWS_REGION=us-east-1 por leitura de variáveis GitHub. Mudança não é docs-only; pipeline padrão recompila API/MCP via SSM. Sem migration, novo scope, grant, consentimento ou ajuste de mercado. Branch local preservada.
+- Próxima ação: concluir revisão documental e da branch, preparar/push da branch e apresentar a descrição da PR para autorização; só então criar a PR. Após merge, verificar produção e registrar recibo.
 
 ## WFLOW-20261103-MCP-WINNING-OPTION
 
