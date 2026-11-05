@@ -1,3 +1,7 @@
+## 05/11/2026 — resiliência de conexões implantada
+
+PR #188/merge `595a8ac`; CI da PR/main, builds e deploy Actions 42082043411 aprovados. API/web com pool/admissão limitados, 503 seguro, detalhe/integridade sem fallback ORM após falha e logger técnico fora da resposta estão ativos. Smoke somente leitura confirmou saúde, serviços e rotas públicas; MCP saudável sem novo schema/scope/replay. Flutter validado no código, distribuição pendente. [Recibo](../testing/db-resilience-production-closeout-20261105.md).
+
 ## 05/11/2026 — follow-up local de resiliência
 
 CI da PR #188 revelou uma conexão do pool remanescente apenas no teardown do banco de testes, após 674 asserções aprovadas. Runner final fecha pools; reprodução local do CI passou 674 testes (3 skips) e destruiu o banco. Novo CI e deploy pendentes.

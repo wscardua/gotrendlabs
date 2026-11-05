@@ -105,6 +105,10 @@ Formulário de publicação aprovada alinhado ao contrato de identidade existent
 
 # Status de Implementação
 
+## 05/11/2026 — resiliência de conexões ativa em produção
+
+WFLOW-20261105-PRD-DB-RESILIENCE: PR #188 integrada (`595a8ac`), CI da PR e de `main` aprovadas, deploy Actions 42082043411 concluído. Smoke somente leitura confirmou SHA no host, seis serviços ativos/MCP saudável, API/DB `ok`, páginas públicas e integridade 200, mercado inexistente 404, cinco conexões SQL no instante consultado e nenhuma linha ERROR/5xx nos cinco minutos de logs consultados. [Recibo produtivo](../testing/db-resilience-production-closeout-20261105.md). Backend/web ativos; distribuição do novo tratamento Flutter exige release própria. O teto de 59 conexões é estimativa de configuração, não prova de capacidade PRD; observação ampliada de memória/5xx segue pendente. As entradas locais abaixo são histórico de preparação.
+
 ## 05/11/2026 — resiliência de conexões (branch local)
 
 PR #188 aberta. O primeiro CI construiu as imagens e passou as asserções, mas falhou ao destruir o banco de teste por uma conexão restante; o runner agora fecha pools no teardown final. Reprodução local equivalente ao CI: 674 testes, 3 skips, zero falhas, banco removido. Novo CI pendente; nenhum merge/deploy realizado neste ponto.

@@ -2,6 +2,8 @@
 
 WFLOW-20261105-PRD-DB-RESILIENCE. A investigação de PRD é [separada](../operations/prd-error-investigation-20261105.md).
 
+Estado vigente: PR #188 implantada em API/web com CI e smoke somente leitura aprovados. [Recibo produtivo](db-resilience-production-closeout-20261105.md). As evidências locais e os estados preparatórios abaixo permanecem históricos; a distribuição Flutter e a observação prolongada de capacidade seguem separadas.
+
 ## Cenários
 
 - Follow-up de revisão: 404 de compartilhamento para mercado inexistente/draft, 503 de indisponibilidade e 4xx preservados; `IntegrityError` não é mascarado como capacidade. Rajada de 20 health checks com admissão saturada deve retornar 503 degradado sem consulta ao banco, enquanto request comum continua 200.

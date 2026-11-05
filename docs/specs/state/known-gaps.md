@@ -40,6 +40,10 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 # Known Gaps
 
+## 05/11/2026 — limites após implantação da resiliência
+
+Backend/web estão ativos pela PR #188; CI, deploy e smoke técnico passaram. A release Android/iOS da UX nova de 503 permanece separada. O teto de 59 conexões é estimativa de configuração; não houve carga produtiva nem observação prolongada. RDS registrou média de memória livre perto de 131 MB na janela do deploy, com mínimo de 122 MB, e requer acompanhamento. `DatabaseConnections` no CloudWatch não refletiu consistentemente a contagem SQL pontual de cinco sessões. Retenção de um dia, TLS, alertas/pipeline externo, capacidade RDS, atribuição da rajada original, timeout de leitura API em socket já bloqueado e última projeção pessoal ORM pós-resposta API bem-sucedida seguem em ciclos próprios. [Recibo](../testing/db-resilience-production-closeout-20261105.md). A seção local abaixo permanece histórico.
+
 ## 05/11/2026 — resiliência de PRD
 
 - O merge/deploy GitHub atual publica backend e web, mas não distribui binário Flutter. O cliente mobile já instalado conserva o tratamento anterior de 503 até uma release Android/iOS própria; a melhoria de mensagem/retry explícito desta branch só chega ao usuário após essa distribuição. Não marcar o mobile como implantado pelo deploy web/API.
