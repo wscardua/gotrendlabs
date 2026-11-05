@@ -111,7 +111,7 @@ WFLOW-20261105-MOBILE-PLAY-RESILIENCE: `1.2.2+16` compilado em AAB release assin
 
 ## 05/11/2026 — resiliência de conexões ativa em produção
 
-WFLOW-20261105-PRD-DB-RESILIENCE: PR #188 integrada (`595a8ac`), CI da PR e de `main` aprovadas, deploy Actions 42082043411 concluído. Smoke somente leitura confirmou SHA no host, seis serviços ativos/MCP saudável, API/DB `ok`, páginas públicas e integridade 200, mercado inexistente 404, cinco conexões SQL no instante consultado e nenhuma linha ERROR/5xx nos cinco minutos de logs consultados. [Recibo produtivo](../testing/db-resilience-production-closeout-20261105.md). Backend/web ativos; distribuição do novo tratamento Flutter exige release própria. O teto de 59 conexões é estimativa de configuração, não prova de capacidade PRD; observação ampliada de memória/5xx segue pendente. As entradas locais abaixo são histórico de preparação.
+WFLOW-20261105-PRD-DB-RESILIENCE: PR #188 integrada (`595a8ac`), CI da PR e de `main` aprovadas, deploy Actions 42082043411 concluído. Smoke somente leitura confirmou SHA no host, seis serviços ativos/MCP saudável, API/DB `ok`, páginas públicas e integridade 200, mercado inexistente 404, cinco conexões SQL no instante consultado e nenhuma linha ERROR/5xx nos cinco minutos de logs consultados. [Recibo produtivo](../testing/db-resilience-production-closeout-20261105.md). Backend/web ativos; o novo tratamento Flutter foi distribuído depois no teste fechado pela release `1.2.2+16`. O teto de 59 conexões é estimativa de configuração, não prova de capacidade PRD; observação ampliada de memória/5xx segue pendente. As entradas locais abaixo são histórico de preparação.
 
 ## 05/11/2026 — resiliência de conexões (branch local)
 

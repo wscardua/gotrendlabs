@@ -148,7 +148,7 @@ flutter build appbundle --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao alvo atual do AAB: `1.2.2+16` (tratamento de indisponibilidade temporaria da PR #188). Captura da Play Console fornecida pelo operador em 05/11/2026 mostra `15 (1.2.1)` ativo em `Closed testing - Alpha`, atualizado em 12/10/2026. Confira que o `versionCode` 16 ainda não foi usado em outro track antes de enviar.
+Versao atual do AAB no teste fechado: `1.2.2+16` (tratamento de indisponibilidade temporaria da PR #188).
 
 Release name no Play Console: `16 (1.2.2)` (nome automático).
 
