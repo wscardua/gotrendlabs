@@ -107,7 +107,7 @@ Formulário de publicação aprovada alinhado ao contrato de identidade existent
 
 ## 05/11/2026 — AAB Android de resiliência preparado para teste fechado
 
-WFLOW-20261105-MOBILE-PLAY-RESILIENCE: `1.2.2+16` compilado em AAB release assinado a partir da `main` integrada, com API/web produtivas, pacote preservado, target API 36 e alinhamento 16 KB. Flutter analyze e 124 testes passaram; APK release de verificação instalou e abriu em AVD descartável offline, exibindo indisponibilidade recuperável sem crash observado. A captura do operador confirmou release 15 ativo no teste fechado; o pacote inicial 15 foi descartado. O upload na Play Console não foi feito; conferir versionCode 16 globalmente e revisar o track. [Workflow](workflow-runs.md). Código Flutter de indisponibilidade veio da PR #188; esta preparação só avança versão/documentação.
+WFLOW-20261105-MOBILE-PLAY-RESILIENCE: `1.2.2+16` compilado em AAB release assinado a partir da `main` integrada, com API/web produtivas, pacote preservado, target API 36 e alinhamento 16 KB. Flutter analyze e 124 testes passaram; APK release de verificação instalou e abriu em AVD descartável offline, exibindo indisponibilidade recuperável sem crash observado. Play Console aceitou o AAB 16, confirmou suporte a 16 KB e recebeu a release Alpha de 100% junto da declaração app-level de comerciante autorizada pelo titular. Estado observado: mudanças em análise, verificações rápidas pendentes; ainda não disponível aos testadores. [Workflow](workflow-runs.md). Código Flutter de indisponibilidade veio da PR #188; esta preparação só avança versão/documentação.
 
 ## 05/11/2026 — resiliência de conexões ativa em produção
 
