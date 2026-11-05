@@ -1,5 +1,7 @@
 ## 05/11/2026 — follow-up local de resiliência
 
+CI da PR #188 revelou uma conexão do pool remanescente apenas no teardown do banco de testes, após 674 asserções aprovadas. Runner final fecha pools; reprodução local do CI passou 674 testes (3 skips) e destruiu o banco. Novo CI e deploy pendentes.
+
 Aceite final local: 677 testes Python 3.12 em PostgreSQL isolado (2 skips, zero falhas), 10 testes Flutter/análise, OpenAPI, Django, Node e Compose válidos. Teardown de testes drena logs técnicos e fecha pools; role temporária do teste é removida com segurança. PR, CI e implantação ainda pendentes.
 
 WFLOW-20261105-PRD-DB-RESILIENCE: limite independente de `/health`, preservação de 404/4xx no tracking de compartilhamento e tratamento específico de erro de conexão Django. Sem mudança de schema, permissões MCP, regra de domínio ou código Flutter. Testes direcionados e rajada simulada de health aprovados; sem deploy.

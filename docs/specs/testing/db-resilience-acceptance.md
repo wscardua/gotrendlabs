@@ -16,6 +16,8 @@ WFLOW-20261105-PRD-DB-RESILIENCE. A investigação de PRD é [separada](../opera
 
 ## Evidências locais
 
+- Reprodução do CI da PR #188 após falha de teardown do run 42077291104: o runner fecha pools antes de destruir o banco de testes. Execução local com a mesma seleção do CI (sem `GTL_RESILIENCE_TEST_DB`) em Python 3.12/PostgreSQL 16 isolado: **674 testes, 3 skips, zero falhas**, destruição do banco concluída. O run inicial do CI não foi aprovado, embora as asserções tenham passado; novo CI é obrigatório antes do merge.
+
 - Fechamento local em Python 3.12.13 e PostgreSQL 16 temporário isolado em `127.0.0.1:15436`, com `GTL_RESILIENCE_TEST_DB=1`: suíte integral `manage.py test --noinput` executou **677 testes, 2 skips, nenhuma falha** em 286,506 s; banco de testes encerrado sem conexões remanescentes. A primeira execução no PostgreSQL DEV revelou permissão `CREATEROLE` ausente e corrida entre logger técnico e `flush`; o isolamento de testes foi corrigido. Uma execução isolada intermediária usou `FASTAPI_POSTGRES_DB` fixo incorretamente, fora do banco `test_gotrendlabs`; após remover esse override, o teste de health e a suíte integral passaram. Nenhuma dessas execuções com falha foi marcada como aprovada.
 
 - Follow-up de revisão 05/11: `tests.test_db_resilience` executou 23 testes em Python 3.11, com 22 aprovados e um skip previsto de PostgreSQL isolado não configurado nesta rodada. O teste concorrente disparou 20 chamadas de `/health` saturadas, todas 503 degradadas sem conexão, e `GET /` continuou 200. Este ensaio não substitui a rajada anterior com endpoints reais nem comprova latência produtiva.

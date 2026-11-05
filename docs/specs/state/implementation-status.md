@@ -107,6 +107,8 @@ Formulário de publicação aprovada alinhado ao contrato de identidade existent
 
 ## 05/11/2026 — resiliência de conexões (branch local)
 
+PR #188 aberta. O primeiro CI construiu as imagens e passou as asserções, mas falhou ao destruir o banco de teste por uma conexão restante; o runner agora fecha pools no teardown final. Reprodução local equivalente ao CI: 674 testes, 3 skips, zero falhas, banco removido. Novo CI pendente; nenhum merge/deploy realizado neste ponto.
+
 Fechamento local: Python 3.12.13, PostgreSQL 16 temporário isolado, suíte integral `manage.py test` com **677 testes, 2 skips e zero falhas**; Flutter 10/10 e análise sem issues; OpenAPI, Django check, Node e validações de Compose/Dockerfile aprovados. O teardown dos testes aguarda o logger técnico e fecha os pools antes do `flush`; o teste de isolamento de roles limpa a role temporária. Implementação pronta para PR, mantendo CI/build, distribuição mobile própria, rollout e smoke produtivo pendentes. Não promover o estado produtivo até as evidências externas.
 
 Follow-up da revisão de impacto: `/health` limitado separadamente a duas requisições simultâneas por processo, com 503 degradado sem DB sob saturação; compartilhamento web preserva 4xx da API; middleware Django não mascara `IntegrityError`. Testes direcionados desta rodada: 22 aprovados e um skip do PostgreSQL isolado não configurado (23 executados), incluindo vinte health checks concorrentes saturados e request comum 200. CI Python 3.12, ensaio equivalente a PRD e rollout continuam pendentes; orçamento de conexões inalterado.

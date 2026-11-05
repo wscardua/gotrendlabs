@@ -101,6 +101,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "config.wsgi.application"
+TEST_RUNNER = "tests.runner.ResilienceTestRunner"
 
 if os.environ.get("GOTRENDLABS_USE_SQLITE") == "1":
     DATABASES = {
