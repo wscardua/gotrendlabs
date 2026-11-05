@@ -1,3 +1,7 @@
+## 05/11/2026 — resiliência implantada
+
+PR #188/Actions 42082043411: PostgreSQL → pool FastAPI por PID/role com admissão limitada → API 503 `dependency_unavailable`/`operation_indeterminate` conforme o ponto da falha → Django 503 controlado sem nova consulta ORM no detalhe/integridade após indisponibilidade. Logger técnico limitado não altera auditoria transacional. MCP reutiliza contratos atuais sem novo scope/schema/permissão/replay; runtime saudável no smoke. Flutter consome o contrato, mas a UX nova requer distribuição própria. [Recibo](../testing/db-resilience-production-closeout-20261105.md).
+
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
 WFLOW-20261105-EDITORIAL-PENDING-DETAILS: documento → diagnóstico FastAPI → schema REST/OpenAPI compartilhado → MCP `validate_market_draft` implantado em produção no merge `2c799f6`. Retorno detalhado observado no cliente MCP; schema exigido no runtime e saúde API/MCP confirmados. Mesmos códigos, scopes, erros e replays; sem mudança de política, banco ou consumidores mobile. [Recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).
