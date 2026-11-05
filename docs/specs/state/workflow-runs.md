@@ -14,7 +14,8 @@
 - Checklist universal: feature/contrato/aceites e estado sincronizados; sem novo ADR estrutural, migration ou impacto mobile. Parser limitado a declarações explícitas, conforme relatório; não certifica completude semântica.
 - Fechamento solicitado pelo usuário em 05/11: reconciliar specs/memória, preparar commit/PR em português, pedir aprovação explícita do título/descrição antes de criar a PR, acompanhar CI/merge/deploy e smoke produtivo. [Roteiro](../operations/editorial-pending-details-rollout.md).
 - Pré-flight: origin/main bf11a0c após fetch; ENABLE_PROD_DEPLOY=1, DEPLOY_BRANCH=main e AWS_REGION=us-east-1 por leitura de variáveis GitHub. Mudança não é docs-only; pipeline padrão recompila API/MCP via SSM. Sem migration, novo scope, grant, consentimento ou ajuste de mercado. Branch local preservada.
-- Próxima ação: concluir revisão documental e da branch, preparar/push da branch e apresentar a descrição da PR para autorização; só então criar a PR. Após merge, verificar produção e registrar recibo.
+- Pré-flight AWS: EC2 de produção running e SSM Online por leitura oficial, sem executar comando remoto. [Review final](../testing/editorial-pending-branch-review.md) sem finding pendente; check Django/migrations, OpenAPI, Ruff F e diff aprovados.
+- Branch remota `fix/editorial-pending-details-20261105` enviada; PR ainda não criada. Próxima ação: apresentar título/descrição da PR e obter autorização explícita do usuário; só então criar a PR. Após merge, verificar produção e registrar recibo.
 
 ## WFLOW-20261103-MCP-WINNING-OPTION
 

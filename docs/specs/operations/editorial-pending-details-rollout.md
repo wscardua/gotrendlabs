@@ -8,6 +8,7 @@ Data: 05/11/2026. FEAT-MCP-001 revisão 1.10 / WFLOW-20261105-EDITORIAL-PENDING-
 - Base `origin/main` bf11a0c. Preparar commit de fechamento documental, push da branch e apresentar ao usuário título/descrição da PR antes de criá-la, conforme solicitação explícita.
 - Após aprovação, criar PR em português para main via GitHub MCP. Acompanhar checks do SHA final; corrigir falhas antes do merge. Não excluir a branch local.
 - `ENABLE_PROD_DEPLOY=1`, `DEPLOY_BRANCH=main` e `AWS_REGION=us-east-1` confirmados por leitura de variáveis do repositório em 05/11. Alterações incluem `apps/` e `packages/`, portanto o workflow `.github/workflows/deploy.yml` executará CI completo e, após merge em main, o job de deploy por SSM. Confirmar novamente se o job for omitido.
+- Pré-flight AWS em 05/11: instância produtiva `i-0fc304f1acb85daea` em estado `running` e agente SSM `Online` (DescribeInstances/DescribeInstanceInformation). Disponibilidade no momento do merge ainda deve ser confirmada pelo job de deploy.
 - O deploy padrão recompila API e MCP com o schema compartilhado; nenhuma migration, flag, grant, novo scope, consentimento ou ajuste de dados é exigido por esta correção.
 
 ## Smoke pós-deploy
