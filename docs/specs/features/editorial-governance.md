@@ -28,7 +28,7 @@ aprovacao: criterios_1_2_aprovados_em_2026-09-26_e_revisao_universal_solicitada_
 
 ## Alertas na preparação — 05/11/2026
 
-A validação REST/MCP explica `unresolved_editorial_gaps` por meio de detalhes de declarações explícitas, formatação e conflitos de declaração. Aceita o cabeçalho Markdown da ficha vigente; não exige declarar ausência quando há pendências reais. Os detalhes não atestam suficiência da pesquisa nem substituem a responsabilidade humana. Lacunas essenciais e tarefas humanas futuras continuam possíveis na preparação/submissão; devem estar resolvidas antes de confirmar aprovação. Nenhum novo gate de aprovação/publicação, política ou permissão. [Contrato e limites](../testing/editorial-pending-details.md).
+A validação REST/MCP explica `unresolved_editorial_gaps` por meio de detalhes de declarações explícitas, formatação e conflitos de declaração. Aceita o cabeçalho Markdown da ficha vigente; não exige declarar ausência quando há pendências reais. Os detalhes não atestam suficiência da pesquisa nem substituem a responsabilidade humana. Lacunas essenciais e tarefas humanas futuras continuam possíveis na preparação/submissão; devem estar resolvidas antes de confirmar aprovação. Nenhum novo gate de aprovação/publicação, política ou permissão. [Contrato e limites](../testing/editorial-pending-details.md); [implantação verificada](../testing/editorial-pending-production-closeout-20261105.md).
 
 ## Escopo vigente — documento único 1.5
 

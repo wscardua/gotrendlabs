@@ -1,6 +1,6 @@
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
-WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. Validado localmente: 89 testes aprovados/um skip; produção ainda não implantada. [Evidência e limites](../testing/editorial-pending-details.md).
+WFLOW-20261105-EDITORIAL-PENDING-DETAILS: documento → diagnóstico FastAPI → schema REST/OpenAPI compartilhado → MCP `validate_market_draft` implantado em produção no merge `2c799f6`. Retorno detalhado observado no cliente MCP; schema exigido no runtime e saúde API/MCP confirmados. Mesmos códigos, scopes, erros e replays; sem mudança de política, banco ou consumidores mobile. [Recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).
 
 ## 2026-11-03 — vencedora disponível no MCP produtivo
 

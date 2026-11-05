@@ -1,6 +1,6 @@
 # Publicação — detalhes de pendências editoriais
 
-Data: 05/11/2026. FEAT-MCP-001 revisão 1.10 / WFLOW-20261105-EDITORIAL-PENDING-DETAILS. Estado: implementação local validada; PR e implantação pendentes. [Contrato](../contracts/agent-integrations.md#diagnóstico-de-pendências--05112026), [aceites](../testing/editorial-pending-details.md).
+Data: 05/11/2026. FEAT-MCP-001 revisão 1.10 / WFLOW-20261105-EDITORIAL-PENDING-DETAILS. Estado: implantada e verificada em produção pela PR #186; os passos abaixo registram o roteiro executado. [Contrato](../contracts/agent-integrations.md#diagnóstico-de-pendências--05112026), [aceites](../testing/editorial-pending-details.md), [recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).
 
 ## Pré-flight e GitHub
 

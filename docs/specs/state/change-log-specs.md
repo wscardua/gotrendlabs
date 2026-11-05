@@ -1,6 +1,6 @@
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
-WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. Validado localmente: 89 testes aprovados/um skip; produção ainda não implantada. [Evidência e limites](../testing/editorial-pending-details.md).
+WFLOW-20261105-EDITORIAL-PENDING-DETAILS: contrato REST/MCP com motivos/trechos/critérios explícitos/etapa/impacto implantado pela PR #186; código geral, gates humanos e política preservados. CI da PR/main e smoke produtivo confirmaram schema e resposta real do MCP. [Recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).
 
 Pós-review: o contrato esclarece `approval=human_attestation_required`, mantém a orientação editorial em `resolve_by` e limita os itens declarados com aviso `details_truncated`; listas informativas deixam de ser tratadas como pendências.
 
