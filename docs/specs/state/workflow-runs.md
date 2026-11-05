@@ -1,6 +1,6 @@
 ## WFLOW-20261105-EDITORIAL-PENDING-DETAILS
 
-- Tipo: correção diagnóstica FEAT-MCP-001/FEAT-EDITORIAL-001; estado: implementação concluída localmente, fechamento produtivo em preparação.
+- Tipo: correção diagnóstica FEAT-MCP-001/FEAT-EDITORIAL-001; estado: concluída em produção em 05/11/2026. [Recibo](../testing/editorial-pending-production-closeout-20261105.md).
 - Objetivo: explicar unresolved_editorial_gaps sem ocultar pendências ou transferir atestação humana ao agente.
 - Base: origin/main bf11a0c; branch fix/editorial-pending-details-20261105 em worktree separado; trabalho original preservado.
 - Evidência, divergências, arquitetura, aceites e limites: [investigação](../testing/editorial-pending-details.md).
@@ -15,7 +15,7 @@
 - Fechamento solicitado pelo usuário em 05/11: reconciliar specs/memória, preparar commit/PR em português, pedir aprovação explícita do título/descrição antes de criar a PR, acompanhar CI/merge/deploy e smoke produtivo. [Roteiro](../operations/editorial-pending-details-rollout.md).
 - Pré-flight: origin/main bf11a0c após fetch; ENABLE_PROD_DEPLOY=1, DEPLOY_BRANCH=main e AWS_REGION=us-east-1 por leitura de variáveis GitHub. Mudança não é docs-only; pipeline padrão recompila API/MCP via SSM. Sem migration, novo scope, grant, consentimento ou ajuste de mercado. Branch local preservada.
 - Pré-flight AWS: EC2 de produção running e SSM Online por leitura oficial, sem executar comando remoto. [Review final](../testing/editorial-pending-branch-review.md) sem finding pendente; check Django/migrations, OpenAPI, Ruff F e diff aprovados.
-- Branch remota `fix/editorial-pending-details-20261105` enviada; PR ainda não criada. Próxima ação: apresentar título/descrição da PR e obter autorização explícita do usuário; só então criar a PR. Após merge, verificar produção e registrar recibo.
+- Fechamento: título e descrição em português apresentados e aprovados pelo usuário; [PR #186](https://github.com/wscardua/gotrendlabs/pull/186) integrada no SHA `2c799f6`. Actions PR `42021443053` e main `42023150193` passaram com 650 testes/dois skips cada; deploy SSM `feccba4e-0c60-4270-a6bc-0d108d0eb0d0` Success/0. Smoke SSM `fbe57b35-59fd-4dca-95a9-e216279153c6` Success/0 confirmou SHA, serviços, scope e schema MCP; API e metadata HTTP 200. Cliente MCP retornou os detalhes em cinco validações sintéticas, sem mutação de mercados. Política 1.4/hash vigente. Branch local preservada; sem migration, flag, grant ou ajuste produtivo adicional. A ficha global FEAT-MCP-001 permanece parcial por homologações externas, não por esta fatia.
 
 ## WFLOW-20261103-MCP-WINNING-OPTION
 

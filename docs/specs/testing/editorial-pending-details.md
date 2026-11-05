@@ -1,6 +1,6 @@
 # Investigação e aceite — detalhes de pendências editoriais
 
-05/11/2026. Base `origin/main` bf11a0c; worktree `gotrendlabs-editorial-pending-20261105`, branch `fix/editorial-pending-details-20261105`. Checkout original com alterações locais preservado. Nenhuma mutação remota de mercados, publicação ou resolução executada.
+05/11/2026. Base `origin/main` bf11a0c; worktree `gotrendlabs-editorial-pending-20261105`, branch `fix/editorial-pending-details-20261105`. Checkout original com alterações locais preservado. Nenhuma mutação remota de mercados, publicação ou resolução executada. Os resultados locais abaixo são históricos; a [implantação e o smoke em produção](editorial-pending-production-closeout-20261105.md) foram concluídos.
 
 ## Causa e divergências verificadas
 
