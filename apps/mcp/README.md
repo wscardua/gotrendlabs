@@ -5,7 +5,7 @@ Na revisão editorial 1.5, `create_market_draft` e `update_market_draft` recebem
 único reúne pesquisa, regras, fontes com data de consulta, contingências e
 pendências; o agente não envia aprovação nem confirmação humana. O formato
 estruturado E01–E11 anterior não é aceito pelo contrato atual.
-Se houver anúncio conhecido, o documento deve trazer `Anúncio esperado:` com data/hora e offset posteriores ao fechamento. A pendência `unresolved_editorial_gaps` permanece até o revisor humano resolver e atualizar a conclusão; ela não impede o agente de submeter o draft para revisão.
+Se houver anúncio conhecido, o documento deve trazer `Anúncio esperado:` com data/hora e offset posteriores ao fechamento. `validate_market_draft` preserva `unresolved_editorial_gaps` em `pending` e explica causas, trechos, critérios explícitos, etapa e impacto em `pending_details`. Após 50 pendências declaradas, `details_truncated` sinaliza que o documento contém outras. `approval=human_attestation_required` descreve o gate técnico; `resolve_by` indica a etapa editorial. Alertas orientam a preparação; o revisor humano confirma a resolução das pendências antes de aprovar, sem frase obrigatória no parecer. O aviso não impede o agente de submeter o draft para revisão.
 
 Runtime separado, SDK oficial `mcp==1.30.0`, Streamable HTTP stateless em `/mcp`, protocolo testado `2025-11-25`. Nenhum banco/ORM no adaptador. Não execute `django.setup()` neste processo.
 

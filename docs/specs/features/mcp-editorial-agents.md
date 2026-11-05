@@ -1,10 +1,10 @@
 ---
 id: FEAT-MCP-001
 titulo: "MCP editorial e gestão de integrações de agentes"
-versao: 1.9
+versao: 1.10
 status_spec: aprovada
 status_impl: parcial
-ultima_atualizacao: 2026-11-03
+ultima_atualizacao: 2026-11-05
 origem:
   - decisões do usuário na conversa de 2026-10-02 a 2026-10-07
   - docs/specs/spec_prediction_social_market_pt.md
@@ -32,6 +32,12 @@ aprovacao: escopo e recomendações aceitos pelo usuário; consolidação solici
 
 # MCP editorial e gestão de integrações
 
+## Revisão 1.10 — diagnóstico de pendências (05/11/2026)
+
+Validação retorna detalhes aditivos mantendo códigos gerais e entrada; [contrato](../contracts/agent-integrations.md#diagnóstico-de-pendências--05112026) e [investigação/limites](../testing/editorial-pending-details.md). Diagnóstico estrutural e de declarações explícitas, sem certificação semântica. Preparação/submissão mantêm gates existentes; pendências humanas e lacunas editoriais precisam ser resolvidas pelo humano antes da aprovação, sem novo gate textual. A orientação de aprovação com frase obrigatória na revisão 1.5 abaixo é histórica e foi substituída pela [atestação humana](../testing/human-editorial-attestation-acceptance.md), coerente com política 1.4/modelo 1.8 vigentes. Esta correção não altera política, modelo, hashes ou permissões. Implementação validada localmente; implantação pendente. [Roteiro de publicação](../operations/editorial-pending-details-rollout.md).
+
+Revisão de impacto: listas só entram como pendências quando seguem rótulo explícito; o retorno limita a 50 itens declarados e sinaliza truncamento. `approval=human_attestation_required` representa a exigência técnica de confirmação humana; `resolve_by` indica a etapa editorial de resolução. Política antiga bloqueia submissão pelo agente, mas não cria um gate textual novo para o parecer humano.
+
 ## Revisão 1.9 — resultado na leitura do mercado (03/11/2026)
 
 `get_market` e GET `/integrations/editorial/markets/{market_id}` passam a retornar `winning_option_id` obrigatório (`integer | null`), copiado do resultado persistido no backend. Havendo vencedora, o ID corresponde a `options[].id`; sem vencedora registrada, retorna `null`. Mercados resolved/sealed preservam o resultado. Não inferir por probabilidade, ordem, critérios ou ficha editorial. Metadado operacional fora dos snapshots/hashes editoriais; mesmos scopes, visibilidade e privacidade atuais. Implantada e validada pela PR #184/merge 9d8933b, Actions 41714398208 e smoke autenticado, sem ajuste manual. WFLOW-20261103-MCP-WINNING-OPTION; [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md).
@@ -44,7 +50,7 @@ Implantação desta fatia concluída pela PR #182 / merge 0ffa4a0 / Actions 4146
 
 O adaptador já existe em `apps/mcp/server.py`; `get_editorial_signals` respondia no serviço conectado, mas o bloco analytics veio `unavailable` na verificação anterior de 24/10/2026. A PR #175 evoluiu o resumo e adicionou oito consultas com `analytics:read`, conforme [contrato](../contracts/mcp-analytics.md) e [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md). FastAPI calcula e autoriza; MCP não acessa PostgreSQL. Código, migration, consolidação e resumo MCP foram implantados; a integração existente só recebe as oito ferramentas após grant `analytics:read` por staff/MFA e novo OAuth. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md). Nenhum scope existente é inferido do acesso humano ao Admin Ops. O agente deve consultar cobertura e política editorial antes de propostas, distinguir participação humana/exposição/retorno, indicar incerteza e submeter decisões a humanos.
 
-## Revisão 1.5 — documento editorial único (2026-10-10)
+## Revisão 1.5 — documento editorial único (histórica, 2026-10-10)
 
 Todos os drafts MCP e pareceres humanos usam exclusivamente `editorial_record` com `policy_version`, `policy_hash` e `document` não vazio (até 60.000 caracteres). O documento reúne contexto e busca de duplicidade; pergunta, regras e prazos; URLs, datas de consulta, extratos e origem dos relatos; contingências e responsável; pendências e conclusão. O agente relata pesquisa e limitações, sem declarar conferência humana. Campos estruturados E01–E11, fontes separadas e atestações por critério não fazem parte do contrato atual; payloads com esses campos recebem `422`.
 

@@ -734,6 +734,50 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
         self.assertFalse(Market.objects.exists())
         self.assertFalse(Quota.objects.filter(bucket__startswith="draft:").exists())
 
+    def test_validation_details_match_actual_creation_and_submission_gates(self):
+        for index, declaration in enumerate((
+            "Pendências humanas: thumbnail (E09); responsável (E10)",
+            "Lacuna de fonte: fonte essencial ainda por verificar (E06)",
+        )):
+            self.payload["idempotency_key"] = f"pending-details-{index}"
+            self.payload["title"] = f"Pending details example {index}?"
+            self.payload["editorial_record"]["document"] = "## PENDÊNCIAS E CONCLUSÃO\n" + declaration
+            draft = {k: v for k, v in self.payload.items() if k != "idempotency_key"}
+            response = self.client.post("/integrations/editorial/drafts/validate", json=draft, headers=self.agentheaders)
+            self.assertEqual(response.status_code, 200, response.text)
+            result = response.json()
+            self.assertTrue(result["structurally_valid"])
+            self.assertEqual(result["pending"], ["unresolved_editorial_gaps"])
+            self.assertEqual(result["assessment_scope"], "structural_and_explicit_declarations_only")
+            self.assertTrue(result["pending_details"])
+            for item in result["pending_details"]:
+                self.assertEqual(item["impact"]["creation"], "allowed")
+                self.assertEqual(item["impact"]["submission"], "allowed")
+                self.assertEqual(item["impact"]["approval"], "human_attestation_required")
+            created = self.create()
+            self.assertEqual(created.status_code, 200, created.text)
+            mid = created.json()["market_id"]
+            submitted = self.client.post(
+                f"/integrations/editorial/drafts/{mid}/submit",
+                json={"expected_revision": 1, "idempotency_key": f"pending-submit-{index}"},
+                headers=self.agentheaders,
+            )
+            self.assertEqual(submitted.status_code, 200, submitted.text)
+            self.assertEqual(submitted.json()["editorial_status"], "in_review")
+            self.assertEqual(EditorialDraft.objects.get(market_id=mid).record["document"], draft["editorial_record"]["document"])
+
+        draft["editorial_record"]["document"] = (
+            "## PENDÊNCIAS E CONCLUSÃO\nPendências: " + "a;" * 29000
+        )
+        response = self.client.post(
+            "/integrations/editorial/drafts/validate", json=draft, headers=self.agentheaders
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        result = response.json()
+        self.assertEqual(result["pending"], ["unresolved_editorial_gaps"])
+        self.assertEqual(len(result["pending_details"]), 51)
+        self.assertEqual(result["pending_details"][-1]["reason"], "details_truncated")
+
     def test_submission_return_approval_human_edit_and_stale_versions(self):
         r = self.create()
         self.assertEqual(r.status_code, 200, r.text)
@@ -1558,6 +1602,9 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
                                 "validate_market_draft", {"draft": draft}
                             )
                             self.assertTrue(valid["structurally_valid"])
+                            self.assertEqual(valid["pending"], ["unresolved_editorial_gaps"])
+                            self.assertTrue(valid["pending_details"])
+                            self.assertEqual(valid["assessment_scope"], "structural_and_explicit_declarations_only")
                             create_payload = {
                                 **draft,
                                 "idempotency_key": f"real-client-{mode}-create",

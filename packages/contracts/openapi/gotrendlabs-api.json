@@ -6038,6 +6038,110 @@
         "title": "PasswordResetRequestResponse",
         "type": "object"
       },
+      "PendingDetail": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "criterion_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Criterion Ids",
+            "type": "array"
+          },
+          "declared_kind": {
+            "enum": [
+              "human_task",
+              "research_or_rule_gap",
+              "unspecified"
+            ],
+            "title": "Declared Kind",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Excerpt"
+          },
+          "impact": {
+            "$ref": "#/components/schemas/PendingImpact"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          },
+          "resolve_by": {
+            "enum": [
+              "before_submission",
+              "before_human_approval"
+            ],
+            "title": "Resolve By",
+            "type": "string"
+          }
+        },
+        "required": [
+          "declared_kind",
+          "code",
+          "reason",
+          "description",
+          "criterion_ids",
+          "resolve_by",
+          "excerpt",
+          "impact"
+        ],
+        "title": "PendingDetail",
+        "type": "object"
+      },
+      "PendingImpact": {
+        "properties": {
+          "approval": {
+            "const": "human_attestation_required",
+            "title": "Approval",
+            "type": "string"
+          },
+          "creation": {
+            "const": "allowed",
+            "title": "Creation",
+            "type": "string"
+          },
+          "publication": {
+            "enum": [
+              "requires_current_human_approval",
+              "blocked"
+            ],
+            "title": "Publication",
+            "type": "string"
+          },
+          "submission": {
+            "enum": [
+              "allowed",
+              "blocked"
+            ],
+            "title": "Submission",
+            "type": "string"
+          }
+        },
+        "required": [
+          "creation",
+          "submission",
+          "approval",
+          "publication"
+        ],
+        "title": "PendingImpact",
+        "type": "object"
+      },
       "PolicyResponse": {
         "properties": {
           "approved_on": {
@@ -9132,6 +9236,11 @@
       },
       "ValidationResponse": {
         "properties": {
+          "assessment_scope": {
+            "const": "structural_and_explicit_declarations_only",
+            "title": "Assessment Scope",
+            "type": "string"
+          },
           "evidence_origin": {
             "const": "agent_reported",
             "title": "Evidence Origin",
@@ -9142,6 +9251,13 @@
               "type": "string"
             },
             "title": "Pending",
+            "type": "array"
+          },
+          "pending_details": {
+            "items": {
+              "$ref": "#/components/schemas/PendingDetail"
+            },
+            "title": "Pending Details",
             "type": "array"
           },
           "similar": {
@@ -9155,6 +9271,8 @@
         "required": [
           "structurally_valid",
           "pending",
+          "pending_details",
+          "assessment_scope",
           "evidence_origin",
           "similar"
         ],

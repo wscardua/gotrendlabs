@@ -1,3 +1,9 @@
+## 05/11/2026 — diagnóstico de pendências editoriais
+
+WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. Validado localmente: 89 testes aprovados/um skip; produção ainda não implantada. [Evidência e limites](../testing/editorial-pending-details.md).
+
+Revisão de impacto corrigida: listas informativas não criam pendências, 50 itens declarados no máximo com `details_truncated`, e `approval` expressa a atestação humana efetiva. Testes incrementais REST/MCP/atestação e OpenAPI aprovados; implantação ainda pendente.
+
 ## 2026-11-03 — FEAT-MCP-001 v1.9 implantada e validada
 
 get_market retorna vencedora persistida ou null explícito, mantendo status, permissões e snapshots. PR #184/merge 9d8933b, CI/build/deploy e smoke produtivo aprovados; sem configuração ou migration adicional. Branch local preservada. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md). Preparação local abaixo permanece histórica.

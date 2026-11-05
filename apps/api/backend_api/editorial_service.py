@@ -225,24 +225,9 @@ def validate_document_timing(document, close_at):
 
 
 def approval_document_pending(document):
-    document = _document_validation_text(document)
-    section = re.search(r"(?im)^[ \t]*PENDÊNCIAS E CONCLUSÃO[ \t]*$", document)
-    if section is None:
-        return ["unresolved_editorial_gaps"]
-    final_section = document[section.end():]
-    declarations = re.findall(
-        r"(?im)^[ \t]*Pendências para aprovação[ \t]*:[ \t]*(.*?)[ \t]*$", final_section
-    )
-    lines = [line.strip() for line in final_section.splitlines() if line.strip()]
-    if (
-        len(declarations) != 1
-        or not lines
-        or not re.fullmatch(
-            r"Pendências para aprovação[ \t]*:[ \t]*nenhuma\.?", lines[0], re.I
-        )
-    ):
-        return ["unresolved_editorial_gaps"]
-    return []
+    from .editorial_pending import document_details
+
+    return ["unresolved_editorial_gaps"] if document_details(document) else []
 
 
 def lock_draft(cursor, market_id, integration_id=None):

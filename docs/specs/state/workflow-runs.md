@@ -1,3 +1,22 @@
+## WFLOW-20261105-EDITORIAL-PENDING-DETAILS
+
+- Tipo: correção diagnóstica FEAT-MCP-001/FEAT-EDITORIAL-001; estado: implementação concluída localmente, fechamento produtivo em preparação.
+- Objetivo: explicar unresolved_editorial_gaps sem ocultar pendências ou transferir atestação humana ao agente.
+- Base: origin/main bf11a0c; branch fix/editorial-pending-details-20261105 em worktree separado; trabalho original preservado.
+- Evidência, divergências, arquitetura, aceites e limites: [investigação](../testing/editorial-pending-details.md).
+- Skills: software-architect, architecture-guard, fastapi-domain, test-strategy/test-engineer, spec-editor e workflow-governor.
+- Arquitetura: diagnóstico no backend; schema REST/MCP compartilhado; sem mudança de banco, snapshot, autorização ou fronteira que exija ADR.
+- Impacto MCP: detalhes aditivos de saída e orientação da ferramenta; códigos gerais e entrada preservados conforme pedido explícito de compatibilidade. Mesmos scopes, erros e replays; nenhuma permissão inferida do Admin Ops. Sem logs de conteúdo editorial.
+- Política 1.4/modelo 1.8 consultados em produção; mercado 62 somente lido como referência histórica. Nenhum mercado modificado.
+- Artefatos: serviço/diagnóstico/schema/rota FastAPI, adaptador, OpenAPI, testes, feature/contrato e memória operacional. Mobile não consome esta rota; sem release mobile necessária.
+- Validação nesta branch: 90 testes/89 aprovados/um skip por roles dedicadas ausentes; REST e SDK MCP real com serviço/OAuth aprovados. OpenAPI, Django check, Ruff F e diff check aprovados.
+- Revisão de impacto e correção em 05/11: corrigidas classificação indevida de listas informativas, amplificação da resposta e descrição inexata do gate de aprovação. Limite de 50 itens declarados com `details_truncated`; `approval=human_attestation_required` e `resolve_by` editorial preservado. [Aceites e validação incremental](../testing/editorial-pending-details.md). Sem mudança de permissão, erro, replay ou política.
+- Checklist universal: feature/contrato/aceites e estado sincronizados; sem novo ADR estrutural, migration ou impacto mobile. Parser limitado a declarações explícitas, conforme relatório; não certifica completude semântica.
+- Fechamento solicitado pelo usuário em 05/11: reconciliar specs/memória, preparar commit/PR em português, pedir aprovação explícita do título/descrição antes de criar a PR, acompanhar CI/merge/deploy e smoke produtivo. [Roteiro](../operations/editorial-pending-details-rollout.md).
+- Pré-flight: origin/main bf11a0c após fetch; ENABLE_PROD_DEPLOY=1, DEPLOY_BRANCH=main e AWS_REGION=us-east-1 por leitura de variáveis GitHub. Mudança não é docs-only; pipeline padrão recompila API/MCP via SSM. Sem migration, novo scope, grant, consentimento ou ajuste de mercado. Branch local preservada.
+- Pré-flight AWS: EC2 de produção running e SSM Online por leitura oficial, sem executar comando remoto. [Review final](../testing/editorial-pending-branch-review.md) sem finding pendente; check Django/migrations, OpenAPI, Ruff F e diff aprovados.
+- Branch remota `fix/editorial-pending-details-20261105` enviada; PR ainda não criada. Próxima ação: apresentar título/descrição da PR e obter autorização explícita do usuário; só então criar a PR. Após merge, verificar produção e registrar recibo.
+
 ## WFLOW-20261103-MCP-WINNING-OPTION
 
 - Tipo: correção de contrato FEAT-MCP-001; estado: concluído em produção; recibo documental preparado para publicação.

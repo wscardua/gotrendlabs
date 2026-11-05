@@ -1,3 +1,9 @@
+## 05/11/2026 — diagnóstico de pendências editoriais
+
+WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. Validado localmente: 89 testes aprovados/um skip; produção ainda não implantada. [Evidência e limites](../testing/editorial-pending-details.md).
+
+Correções após revisão de impacto implementadas e validadas localmente: lista exige rótulo, saída detalhada limitada com aviso de truncamento e impacto de aprovação alinhado ao gate humano. Sem deploy produtivo.
+
 ## 2026-11-03 — MCP get_market: revisão 1.9 concluída em produção
 
 PR #184 integrada, merge 9d8933b; CI da PR/main, builds e deploy aprovados, 637 testes/2 skips em cada execução. Smoke SSM e MCP autenticado confirmaram winning_option_id=82 em sealed (35) e null explícito em locked (36), com schema obrigatório e hashes da ficha/selo preservados. Sem migration, novo grant ou ajuste manual; mobile não impactado, branch local preservada. Esta entrada substitui a pendência produtiva abaixo; status global parcial de outras fatias permanece. [recibo produtivo](../testing/mcp-winning-option-production-closeout-20261103.md).
