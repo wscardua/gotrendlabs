@@ -40,6 +40,17 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 # Known Gaps
 
+## 05/11/2026 — resiliência de PRD
+
+- O merge/deploy GitHub atual publica backend e web, mas não distribui binário Flutter. O cliente mobile já instalado conserva o tratamento anterior de 503 até uma release Android/iOS própria; a melhoria de mensagem/retry explícito desta branch só chega ao usuário após essa distribuição. Não marcar o mobile como implantado pelo deploy web/API.
+
+- O follow-up de revisão limitou `/health` a duas consultas simultâneas por processo; rajada local read-only de 40 probes confirmou 2 respostas 200/38 respostas 503 controladas e recuperação. A frequência real dos probes e a taxa aceitável de 503 de health precisam ser conferidas no rollout. O limite não é prova de experiência equivalente a PRD.
+
+- O orçamento de 59 conexões sob sobreposição é um teto estimado; ensaios concorrentes isolados validaram limite, fila, 503 e recuperação, mas topologia e latência equivalentes a PRD, build CI Python 3.12 e smoke pós-deploy permanecem pendentes. Docker local não tem espaço para build. Mudança de workers/réplicas requer recálculo.
+- Sob uma conexão já estabelecida com PostgreSQL que deixa de responder sem fechar o socket, uma leitura direta da API atingiu timeout do cliente no ensaio de pausa isolada. Web mostrou 503 sem timeout após tirar o logger técnico do caminho HTTP. Timeout direto da API continua contrato de falha de transporte para mobile/MCP, com resultado de escrita potencialmente indeterminado; não declarar 503 universal nem repetir mutação automaticamente.
+- Resultado pessoal terminal no detalhe web ainda usa uma consulta ORM após resposta API bem-sucedida; a chamada é protegida de `DatabaseError`. Migrar essa projeção para contrato FastAPI em ciclo próprio para remover a última leitura de domínio web.
+- Retenção técnica PRD de um dia, TLS explícito, alertas de conexões/memória, pipeline externo e investigação da origem da rajada permanecem fora deste ciclo. Logs técnicos não garantem completude sob indisponibilidade PostgreSQL.
+
 ## MCP analytics histórico — limites após implantação 2026-10-24
 
 O código foi implantado pela PR #175 e a chave estável está configurada, com snapshot criptografado. Eventos observados começam em 29/09/2026; impressões, cliques, sessões e funil anteriores ao expurgo antigo são irrecuperáveis. Taxonomia anterior à migration usa estado atual como reconstrução identificada. Não há histórico de estados sociais nem de cada reversão de resolução; stake histórico é reconstrução limitada, não snapshot auditável. Prévia válida e ações de compartilhar não tinham observações até o smoke. A exclusão operacional de visitante ainda exige ensaio produtivo autorizado. EXPLAIN passou com apenas 197 linhas de presença, sem prova de escala futura. O resumo MCP autenticado passou; o operador concedeu `analytics:read` à integração, mas o app cliente ainda precisava solicitar o escopo, atualizar ferramentas e concluir novo OAuth e smoke produtivo das oito ferramentas. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md), [contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).

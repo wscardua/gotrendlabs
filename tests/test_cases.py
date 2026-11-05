@@ -1,6 +1,18 @@
 from django.db import connection
 from django.test import TransactionTestCase
 
+from apps.api.backend_api.db import close_pools
+from apps.web.django.system_logs import services as log_services
+
+
+def drain_technical_logs():
+    """Keep best-effort request logs out of the next test's database flush."""
+    for slot in (log_services._submit_slot, log_services._log_slot):
+        if not slot.acquire(timeout=3):
+            raise AssertionError("Technical log did not finish before test database teardown")
+        slot.release()
+    close_pools()
+
 
 class AppendOnlyTransactionTestCase(TransactionTestCase):
     """Let Django flush its isolated database without weakening production guards."""
@@ -8,6 +20,7 @@ class AppendOnlyTransactionTestCase(TransactionTestCase):
     checkpoint_truncate_trigger = "integrity_ledger_checkpoints_no_truncate"
 
     def _fixture_teardown(self):
+        drain_technical_logs()
         trigger_disabled = False
         if connection.vendor == "postgresql":
             with connection.cursor() as cursor:

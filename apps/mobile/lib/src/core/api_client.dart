@@ -266,6 +266,29 @@ class ApiFailure implements Exception {
           detail ?? 'Atualize o app para continuar usando o GoTrendLabs.',
         );
       }
+      if (statusCode == 503) {
+        final payload = error.response?.data;
+        final code = payload is Map
+            ? payload['code'] ??
+                  (payload['detail'] is Map ? payload['detail']['code'] : null)
+            : null;
+        if (code == 'mobile_maintenance') {
+          return ApiFailure(
+            'maintenance',
+            detail ?? 'O app está em manutenção.',
+          );
+        }
+        if (code == 'operation_indeterminate') {
+          return ApiFailure(
+            'server',
+            'Não foi possível confirmar a operação. Confira o estado antes de tentar novamente.',
+          );
+        }
+        return ApiFailure(
+          'server',
+          'Serviço temporariamente indisponível. Tente novamente em alguns instantes.',
+        );
+      }
       if (statusCode == 409 || statusCode == 422) {
         final lower = (detail ?? '').toLowerCase();
         final validationMessage = _validationMessage(lower);

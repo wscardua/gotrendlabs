@@ -22,6 +22,10 @@ aprovacao: pendente
 
 # Contratos API para mobile
 
+## Indisponibilidade por capacidade — implementação local 05/11/2026
+
+503 `detail.code=dependency_unavailable` em leitura indica falha temporária, sem logout; tela pode oferecer nova tentativa explícita. 503 `detail.code=operation_indeterminate` em escrita significa que a confirmação não chegou: mostrar incerteza, consultar estado/recibo quando disponível e preservar chave/payload antes de qualquer repetição. Esses códigos não são `mobile_maintenance` (503 `code` raiz), nem `app_update_required` (426). O cliente Flutter não repete writes automaticamente. [Aceite](../testing/db-resilience-acceptance.md).
+
 O app exibe `MarketResponse.total_participants` em cards e painel de métricas, incluindo humanos e bots. A contagem é inteiro obrigatório, sem fallback, e vem pronta da FastAPI; `human_participants` mantém o recorte explícito para usos humanos.
 
 ## Integridade verificável
@@ -58,6 +62,8 @@ Para o emulador renderizar imagens em `/media/...`, o Django local precisa escut
 No iOS Simulator, `127.0.0.1` aponta para o Mac host, portanto o app pode usar os mesmos hosts locais de Django/FastAPI usados pelo navegador durante smoke tests.
 
 ## Saude e manutencao mobile
+
+Com a admissão de `/health` saturada, a API responde HTTP 503 com `status=degraded`, `checks.database=not_checked` e o mesmo shape de `maintenance`/`mobile`, sem consulta ao banco. Os campos de compatibilidade nessa resposta de falha são neutros; o Flutter trata o HTTP 503 como indisponibilidade e oferece nova tentativa, preservando a sessão.
 
 Endpoint esperado:
 

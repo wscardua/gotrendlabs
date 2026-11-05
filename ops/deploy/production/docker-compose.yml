@@ -28,6 +28,10 @@ services:
     env_file:
       - ../../../.env.prod
     environment:
+      GOTRENDLABS_DB_POOL_MAX: "2"
+      GOTRENDLABS_DB_POOL_WAITING: "5"
+      GOTRENDLABS_WEB_CONCURRENCY: "5"
+      GOTRENDLABS_WEB_WAITING: "20"
       # Django não assina registros. Evita descoberta acidental da role da EC2
       # por SDKs dentro deste processo; FastAPI e daemon mantêm acesso ao KMS.
       AWS_EC2_METADATA_DISABLED: "true"
@@ -49,6 +53,10 @@ services:
       - ../../../.env.fastapi-db.prod
       - ../../../.env.auth.prod
     environment:
+      GOTRENDLABS_DB_POOL_MAX: "8"
+      GOTRENDLABS_DB_POOL_WAITING: "8"
+      GOTRENDLABS_API_CONCURRENCY: "12"
+      GOTRENDLABS_HEALTH_CONCURRENCY: "2"
       GTL_THUMB_PRIVATE_ROOT: /app/thumbnail_private
       GTL_THUMB_PUBLIC_ROOT: /app/media/market_thumbnails
       GTL_BADGE_PUBLIC_ROOT: /app/media/badge_images
@@ -79,6 +87,8 @@ services:
       - ../../../.env.fastapi-db.prod
       - ../../../.env.thumbnails.prod
     environment:
+      GOTRENDLABS_DB_POOL_MAX: "2"
+      GOTRENDLABS_DB_POOL_WAITING: "2"
       GTL_THUMB_PRIVATE_ROOT: /app/thumbnail_private
       GTL_THUMB_PUBLIC_ROOT: /app/media/market_thumbnails
       GTL_BADGE_PUBLIC_ROOT: /app/media/badge_images
@@ -117,6 +127,9 @@ services:
     command: python manage.py run_gotrendlabs_daemon --interval-seconds 300
     env_file:
       - ../../../.env.prod
+    environment:
+      GOTRENDLABS_DB_POOL_MAX: "2"
+      GOTRENDLABS_DB_POOL_WAITING: "2"
     volumes:
       - runtime:/app/.runtime
     depends_on:

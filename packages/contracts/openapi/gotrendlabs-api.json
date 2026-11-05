@@ -9756,6 +9756,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Root"
@@ -9772,6 +9785,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Discovery",
@@ -9791,6 +9817,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Protected Resource",
@@ -9810,6 +9849,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Protected Resource",
@@ -9862,6 +9914,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Reviews",
@@ -9912,6 +9977,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Review Detail",
@@ -9972,6 +10050,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Assessment",
@@ -10026,6 +10117,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Integration Responsibles",
@@ -10078,6 +10182,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "List Integrations",
@@ -10127,6 +10244,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Integration",
@@ -10178,6 +10308,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Integration Detail",
@@ -10237,6 +10380,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Edit Integration",
@@ -10299,6 +10455,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Activity",
@@ -10350,6 +10519,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Connections",
@@ -10401,6 +10583,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Issue Credential",
@@ -10462,6 +10657,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Transfer",
@@ -10537,6 +10745,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Transition",
@@ -10611,6 +10832,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Revoke Origin",
@@ -10710,6 +10944,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List Ai Agent Actions"
@@ -10759,6 +11006,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Ai Agent Action"
@@ -10799,6 +11059,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List Ai Agents"
@@ -10847,6 +11120,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Ai Agent"
@@ -10896,6 +11182,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Ai Agent"
@@ -10953,6 +11252,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update Ai Agent"
@@ -11041,6 +11353,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Analytics Summary"
@@ -11081,6 +11406,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Settings"
@@ -11129,6 +11467,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Update Settings"
@@ -11187,6 +11538,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Latest"
@@ -11245,6 +11609,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create"
@@ -11305,6 +11682,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Status"
@@ -11378,6 +11768,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Preview"
@@ -11418,6 +11821,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Badges"
@@ -11466,6 +11882,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Badge"
@@ -11525,6 +11954,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update Badge"
@@ -11584,6 +12026,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Deactivate Badge"
@@ -11634,6 +12089,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Category"
@@ -11693,6 +12161,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update Category"
@@ -11752,6 +12233,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Block Category"
@@ -11811,6 +12305,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Subcategory"
@@ -11879,6 +12386,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update Subcategory"
@@ -11947,6 +12467,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Block Subcategory"
@@ -12015,6 +12548,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Event"
@@ -12082,6 +12628,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Delete Event"
@@ -12157,6 +12716,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update Event"
@@ -12234,6 +12806,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Block Event"
@@ -12311,6 +12896,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Unblock Event"
@@ -12379,6 +12977,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Unblock Subcategory"
@@ -12438,6 +13049,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Unblock Category"
@@ -12510,6 +13134,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List Comments"
@@ -12569,6 +13206,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Moderate Comment"
@@ -12609,6 +13259,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Dashboard Summary"
@@ -12715,6 +13378,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List Markets"
@@ -12763,6 +13439,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Market"
@@ -12825,6 +13514,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Delete Market"
@@ -12872,6 +13574,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Market"
@@ -12929,6 +13644,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update Market"
@@ -12988,6 +13716,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Cancel Market"
@@ -13045,6 +13786,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Create Integrity Correction"
@@ -13094,6 +13848,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Verify Market Integrity"
@@ -13153,6 +13920,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Lock Market"
@@ -13202,6 +13982,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Market Participants"
@@ -13261,6 +14054,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Publish Market"
@@ -13320,6 +14126,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Reschedule Market"
@@ -13392,6 +14211,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Market Resolution Audit"
@@ -13461,6 +14293,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Resolution Request"
@@ -13520,6 +14365,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Resolve Market"
@@ -13577,6 +14435,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Latest"
@@ -13634,6 +14505,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create"
@@ -13693,6 +14577,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Status"
@@ -13751,6 +14648,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Preview"
@@ -13849,6 +14759,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List Queues"
@@ -13908,6 +14831,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Reward Feedback"
@@ -13967,6 +14903,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Convert Suggestion To Draft"
@@ -14026,6 +14975,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Reward Suggestion"
@@ -14085,6 +15047,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Approve Wallet Recharge"
@@ -14144,6 +15119,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Reject Wallet Recharge"
@@ -14212,6 +15200,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Review Queue Item"
@@ -14485,6 +15486,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List System Logs"
@@ -14534,6 +15548,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get System Log"
@@ -14574,6 +15601,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get Taxonomy"
@@ -14614,6 +15654,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Settings"
@@ -14662,6 +15715,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Update Settings"
@@ -14752,6 +15818,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin List Users"
@@ -14801,6 +15880,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Get User"
@@ -14860,6 +15952,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update User Bot"
@@ -14919,6 +16024,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Deactivate User"
@@ -14979,6 +16097,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Recover User Mfa"
@@ -15038,6 +16169,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Request User Password Reset"
@@ -15097,6 +16241,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Reactivate User"
@@ -15156,6 +16313,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Update User Roles"
@@ -15215,6 +16385,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Revoke User Sessions"
@@ -15274,6 +16457,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Admin Adjust User Wallet"
@@ -15322,6 +16518,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Collect Analytics"
@@ -15340,6 +16549,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Anti Abuse Challenge"
@@ -15373,6 +16595,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Request Account Deletion"
@@ -15411,6 +16646,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Confirm Email"
@@ -15451,6 +16699,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Resend Email Confirmation"
@@ -15497,6 +16758,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Login"
@@ -15530,6 +16804,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Logout"
@@ -15569,6 +16856,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Mfa Enroll"
@@ -15607,6 +16907,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Mfa Verify"
@@ -15645,6 +16958,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Confirm Password Reset"
@@ -15683,6 +17009,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Request Password Reset"
@@ -15721,6 +17060,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Register"
@@ -15761,6 +17113,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Session Context"
@@ -15818,6 +17183,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Social Login Callback"
@@ -15875,6 +17253,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Social Login Complete Email"
@@ -15924,6 +17315,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Social Login Start"
@@ -15964,6 +17368,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "List Badges"
@@ -16013,6 +17430,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Undislike Comment"
@@ -16060,6 +17490,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Dislike Comment"
@@ -16109,6 +17552,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Unlike Comment"
@@ -16156,6 +17612,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Like Comment"
@@ -16206,6 +17675,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Feedback"
@@ -16224,6 +17706,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Health"
@@ -16348,6 +17843,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Compare",
@@ -16401,6 +17909,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Coverage",
@@ -16544,6 +18065,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Editorial",
@@ -16677,6 +18211,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Markets",
@@ -16783,6 +18330,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Market",
@@ -16890,6 +18450,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Overview",
@@ -16987,6 +18560,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Retention",
@@ -17147,6 +18733,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Analytics Series",
@@ -17210,6 +18809,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Draft",
@@ -17273,6 +18885,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Delete Market Draft",
@@ -17336,6 +18961,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Validate Draft",
@@ -17408,6 +19046,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Update Draft",
@@ -17470,6 +19121,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Draft Review",
@@ -17542,6 +19206,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Submit Draft",
@@ -17690,6 +19367,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Markets",
@@ -17753,6 +19443,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Cancel Market",
@@ -17816,6 +19519,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Resolve Market",
@@ -17878,6 +19594,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Market",
@@ -17931,6 +19660,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Policy",
@@ -17996,6 +19738,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Signals",
@@ -18072,6 +19827,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Taxonomy",
@@ -18121,6 +19889,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Integrity Public Key"
@@ -18139,6 +19920,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Integrity Ledger Status"
@@ -18187,6 +19981,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Delegate",
@@ -18248,6 +20055,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Ingest Event",
@@ -18339,6 +20159,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "List Markets"
@@ -18388,6 +20221,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Market"
@@ -18437,6 +20283,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "List Market Comments"
@@ -18494,6 +20353,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Comment"
@@ -18543,6 +20415,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Unfavorite Market"
@@ -18590,6 +20475,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Favorite Market"
@@ -18629,6 +20527,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Market Integrity"
@@ -18668,6 +20579,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Download Market Integrity Package"
@@ -18707,6 +20631,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Verify Market Integrity"
@@ -18756,6 +20693,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Unlike Market"
@@ -18803,6 +20753,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Like Market"
@@ -18862,6 +20825,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Position Action"
@@ -18921,6 +20897,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Preview Position Action"
@@ -18980,6 +20969,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Prediction"
@@ -19029,6 +21031,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Preview Prediction"
@@ -19087,6 +21102,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Prediction Merkle Proof"
@@ -19145,6 +21173,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Prediction Integrity Receipt"
@@ -19182,6 +21223,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Track Market Share"
@@ -19219,6 +21273,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Track Market View"
@@ -19235,6 +21302,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Authorize",
@@ -19286,6 +21366,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Consent",
@@ -19341,6 +21434,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Consent Info",
@@ -19380,6 +21486,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Register",
@@ -19399,6 +21518,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Revoke Token",
@@ -19418,6 +21550,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Token",
@@ -19499,6 +21644,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Rankings"
@@ -19515,6 +21673,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Public Stats"
@@ -19565,6 +21736,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create Suggestion"
@@ -19583,6 +21767,19 @@
               }
             },
             "description": "Successful Response"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Public Taxonomy"
@@ -19623,6 +21820,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Me"
@@ -19671,6 +21881,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Update Me"
@@ -19709,6 +21932,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Activity"
@@ -19753,6 +21989,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Badges"
@@ -19793,6 +22042,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Ledger"
@@ -19833,6 +22095,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Notifications"
@@ -19873,6 +22148,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Mark My Notifications Read"
@@ -19913,6 +22201,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Performance"
@@ -19953,6 +22254,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "List My Push Devices"
@@ -20001,6 +22315,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Register My Push Device"
@@ -20050,6 +22377,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Revoke My Push Device"
@@ -20090,6 +22430,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Push Preferences"
@@ -20138,6 +22491,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Update My Push Preferences"
@@ -20178,6 +22544,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Referral"
@@ -20216,6 +22595,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Wallet"
@@ -20256,6 +22648,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get My Wallet Recharge Requests"
@@ -20294,6 +22699,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Create My Wallet Recharge Request"
@@ -20333,6 +22751,19 @@
               }
             },
             "description": "Validation Error"
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "detail": {
+                    "code": "dependency_unavailable",
+                    "message": "Servi\u00e7o temporariamente indispon\u00edvel. Tente novamente mais tarde."
+                  }
+                }
+              }
+            },
+            "description": "Depend\u00eancia ou capacidade temporariamente indispon\u00edvel. Em opera\u00e7\u00f5es de escrita, o resultado pode ser indeterminado."
           }
         },
         "summary": "Get Public Profile"

@@ -23,6 +23,10 @@ aprovacao: pendente
 
 # Detalhe do mercado
 
+## Indisponibilidade — implementação local 05/11/2026
+
+`GET /markets/{slug}` é a fonte da página. Timeout/503 retorna página web 503 independente de banco, template-base e context processors; 404 permanece 404. Detalhe/integridade/compartilhamento não recorrem ao ORM quando a API falha. A página não conta visualização quando não foi entregue. Opções sem ID no payload são contrato inválido e não são hidratadas pelo Django. A posição aberta vem de `viewer_position` da API. A apresentação do resultado pessoal terminal ainda usa consulta ORM protegida contra erro de banco; evolução do contrato backend está registrada como lacuna. [Decisão](../decisions/ADR-0020-database-capacity.md).
+
 ## Objetivo
 
 Exibir a pergunta do mercado, opções disponíveis, contexto, probabilidade agregada, comentários e ações de previsão.

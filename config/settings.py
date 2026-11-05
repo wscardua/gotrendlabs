@@ -66,6 +66,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "apps.web.django.core.capacity.RequestCapacityMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "apps.web.django.core.middleware.ReferralCaptureMiddleware",
@@ -117,6 +118,7 @@ else:
             "PASSWORD": os.environ.get("DJANGO_POSTGRES_PASSWORD") or os.environ.get("POSTGRES_PASSWORD", "gotrendlabs_dev_password"),
             "HOST": os.environ.get("DJANGO_POSTGRES_HOST") or os.environ.get("POSTGRES_HOST", "127.0.0.1"),
             "PORT": os.environ.get("DJANGO_POSTGRES_PORT") or os.environ.get("POSTGRES_PORT", "5432"),
+            "OPTIONS": {"connect_timeout": 2},
         }
     }
 

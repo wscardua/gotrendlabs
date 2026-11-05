@@ -45,6 +45,12 @@ FastAPI `market_public_metrics` → `MarketResponse.participants`/`total_partici
 
 # Integration Map
 
+## 05/11/2026 — capacidade de banco e indisponibilidade
+
+Follow-up de revisão: `GET /health` → limite próprio de duas chamadas por processo → PostgreSQL apenas quando admitido; excedente → 503 degradado com `checks.database=not_checked` → gate Flutter mantém sessão e oferece nova tentativa. Tracking web de compartilhamento preserva 4xx da FastAPI; falha de conexão Django vira página 503, mas falha de integridade segue o tratamento da operação. O MCP não consome `/health` para executar ferramentas e não recebe permissões novas.
+
+FastAPI/worker → `get_connection()` → pool por PID/role → PostgreSQL. Django request → admissão por worker → sessão/ORM e cliente FastAPI; erros de leitura no detalhe/integridade/compartilhamento → HTML 503 sem ORM alternativo. FastAPI request → admissão → handler de `DatabaseCapacityError`/`OperationalError` → JSON 503; Flutter e MCP consomem códigos estáveis, preservando sessão, scopes e replay. Logger técnico usa pool com retenção em cache e worker thread; auditoria transacional permanece no fluxo de domínio. [ADR-0020](../decisions/ADR-0020-database-capacity.md).
+
 ## MCP analytics histórico — implantado 2026-10-24
 
 Revisão: web (`prediction-preview.js` após fragmento válido) e Flutter (`prediction_ticket.dart` após resposta válida) emitem `prediction_preview_viewed` pelo contrato de ingestão existente. FastAPI preserva a cobertura individual desse evento e ordena a jornada na consolidação/consulta; MCP apenas adapta as respostas. Presença histórica grava HMAC sob segredo estável; exclusão de conta passa pelo serviço FastAPI e reconcilia checkpoint, sem acesso direto do adaptador ao banco. Ferramentas/escopo/replay MCP permanecem; schemas OpenAPI incorporam `metric_coverage` e filtros por bloco. Distribuição Flutter é release separada.

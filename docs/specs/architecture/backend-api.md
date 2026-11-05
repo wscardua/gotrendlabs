@@ -1,5 +1,11 @@
 # Backend API
 
+## Capacidade de conexões — implementação local 05/11/2026
+
+Follow-up de revisão: `/health` possui admissão independente de duas requisições simultâneas por processo, sem espera. Excedente recebe 503 degradado com o shape de health e sem consultar PostgreSQL; o bloco mobile usa valores neutros somente nessa resposta de falha. O limite compartilha o mesmo pool FastAPI e não aumenta o teto de conexões.
+
+`get_connection()` possui pool lazy por PID/credencial com tamanho, fila e espera limitados. FastAPI limita admissão antes das rotinas que consultam banco; `/health` continua com payload próprio. Rejeição antes de iniciar operação responde 503 `dependency_unavailable`; falha de conexão durante escrita responde 503 `operation_indeterminate`. O último código não prova commit nem rollback; recibos e chaves existentes governam confirmação. Logs técnicos rodam fora do event loop e continuam best effort; auditoria transacional não. [ADR-0020](../decisions/ADR-0020-database-capacity.md).
+
 ## Responsabilidades
 
 - Ser a fonte principal da verdade do domínio.

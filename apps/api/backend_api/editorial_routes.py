@@ -54,7 +54,7 @@ from apps.api.backend_api.editorial_schemas import (
 from apps.api.backend_api.editorial_oauth import Server
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.editorial_context import request_context
-from apps.web.django.system_logs.services import log_system_event
+from apps.web.django.system_logs.services import submit_system_event
 
 router = APIRouter(tags=["editorial-integrations"])
 auth_logger = logging.getLogger("gotrendlabs.mcp.auth")
@@ -112,7 +112,7 @@ def technical(t, tool, result, request_id, execution_id="api", stage="api"):
         execution_id = request_context.get().get("execution_id", "")
     # Messages are fixed; never copy model text, HTTP payloads or exception text.
     try:
-        log_system_event(
+        submit_system_event(
             source="fastapi",
             logger_name="editorial",
             event_type="mcp.tool." + result,

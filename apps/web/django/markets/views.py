@@ -1,9 +1,8 @@
 from django.http import HttpResponse, JsonResponse
+from django.db import DatabaseError
 from django.shortcuts import redirect, render
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
-from django.db import DatabaseError
-from django.db.models import F
 from django.urls import reverse
 from django.views.decorators.http import require_POST
 from datetime import datetime
@@ -30,8 +29,8 @@ from apps.web.django.accounts.api_client import (
     unlike_market,
 )
 from apps.web.django.accounts.session import auth_token, auth_user, is_authenticated, login_url_with_next, safe_redirect_url
-from apps.web.django.core.domain_client import local_market
-from apps.web.django.markets.models import CommentReaction, Market, MarketComment, MarketFavorite, MarketLike, MarketOption, Prediction
+from apps.web.django.core.unavailable import unavailable_response
+from apps.web.django.markets.models import Prediction
 
 
 def _display_handle(value):
@@ -65,121 +64,6 @@ def _datetime_label(value, timezone_name):
     return f"{parsed.astimezone(target_timezone).strftime('%d/%m/%Y %H:%M')} {timezone_name}"
 
 
-def _existing_prediction(user_id, slug):
-    if not user_id:
-        return None
-    predictions = []
-    for prediction_status in ("open", "resolved", "canceled"):
-        predictions = list(
-            Prediction.objects.select_related("market_option", "market")
-            .filter(user_id=user_id, market__slug=slug, status=prediction_status)
-            .order_by("created_at", "id")
-        )
-        if predictions:
-            break
-    if not predictions:
-        return None
-    prediction = predictions[-1]
-    active_stake = sum(item.stake_amount for item in predictions)
-    potential_payout = sum(item.potential_payout for item in predictions)
-    return {
-        "id": prediction.id,
-        "option_id": prediction.market_option_id,
-        "option_label": prediction.market_option.label,
-        "stake_amount": active_stake,
-        "active_stake_amount": active_stake,
-        "potential_payout_total": potential_payout,
-        "position_count": len(predictions),
-        "probability_at_entry": prediction.probability_at_entry,
-        "potential_payout": potential_payout,
-        "status": prediction.status,
-        "won": prediction.won,
-        "created_at": prediction.created_at,
-    }
-
-
-def _with_option_ids(slug, market):
-    needs_ids = not all(option.get("id") for option in market.get("options", []))
-    needs_exact = not all("probability_exact" in option for option in market.get("options", []))
-    needs_sparkline = not market.get("sparkline_path") or not market.get("sparkline_series")
-    needs_notices = not all(key in market for key in ("category_notice", "subcategory_notice", "event_notice"))
-    if not needs_ids and not needs_exact and not needs_sparkline and not needs_notices:
-        return market
-    local_payload = local_market(slug)
-    if needs_sparkline and not needs_ids and not needs_exact:
-        hydrated = {**market}
-        hydrated["sparkline_path"] = local_payload.get("sparkline_path", "")
-        hydrated["sparkline_area_path"] = local_payload.get("sparkline_area_path", "")
-        hydrated["sparkline_series"] = local_payload.get("sparkline_series", [])
-        hydrated["category_notice"] = hydrated.get("category_notice", local_payload.get("category_notice", ""))
-        hydrated["subcategory_notice"] = hydrated.get("subcategory_notice", local_payload.get("subcategory_notice", ""))
-        hydrated["event_notice"] = hydrated.get("event_notice", local_payload.get("event_notice", ""))
-        return hydrated
-    option_ids = {
-        option.label: option.id
-        for option in MarketOption.objects.filter(market__slug=slug).order_by("display_order", "id")
-    }
-    hydrated = {**market}
-    hydrated["sparkline_path"] = local_payload.get("sparkline_path", "")
-    hydrated["sparkline_area_path"] = local_payload.get("sparkline_area_path", "")
-    hydrated["sparkline_series"] = local_payload.get("sparkline_series", [])
-    hydrated["category_notice"] = hydrated.get("category_notice", local_payload.get("category_notice", ""))
-    hydrated["subcategory_notice"] = hydrated.get("subcategory_notice", local_payload.get("subcategory_notice", ""))
-    hydrated["event_notice"] = hydrated.get("event_notice", local_payload.get("event_notice", ""))
-    local_options = {option.get("label"): option for option in local_payload.get("options", [])}
-    hydrated["options"] = []
-    for option in market.get("options", []):
-        local_option = local_options.get(option.get("label"), {})
-        hydrated["options"].append(
-            {
-                **option,
-                "id": option.get("id") or option_ids.get(option.get("label")),
-                "probability_exact": option.get("probability_exact", local_option.get("probability_exact", 0)),
-            }
-        )
-    return hydrated
-
-
-def _local_comments(slug, user_id=None):
-    try:
-        comments = (
-            MarketComment.objects.select_related("author", "market")
-            .filter(market__slug=slug, status="visible")
-            .order_by("-created_at", "-id")
-        )
-        comments = list(comments)
-    except DatabaseError:
-        return []
-    payload = []
-    viewer_reactions = {}
-    if user_id:
-        viewer_reactions = {
-            reaction.comment_id: reaction.reaction
-            for reaction in CommentReaction.objects.filter(user_id=user_id, comment__market__slug=slug)
-        }
-    for comment in comments:
-        like_count = comment.reactions.filter(reaction="like").count()
-        dislike_count = comment.reactions.filter(reaction="dislike").count()
-        payload.append(
-            {
-                "id": comment.id,
-                "market_slug": comment.market.slug,
-                "author_id": comment.author_id,
-                "author_handle": _display_handle(comment.author.username),
-                "author_display_name": comment.author.first_name or _display_handle(comment.author.username),
-                "author_is_bot": bool(getattr(comment.author, "is_bot", False)),
-                "author_badge_label": "IA oficial" if getattr(comment.author, "is_bot", False) else "",
-                "body": comment.body,
-                "status": comment.status,
-                "like_count": like_count,
-                "dislike_count": dislike_count,
-                "viewer_reaction": viewer_reactions.get(comment.id),
-                "created_at": comment.created_at,
-            }
-        )
-    return payload
-
-
 def _normalized_comments(comments):
     normalized = []
     for comment in comments or []:
@@ -196,8 +80,34 @@ def _normalized_comments(comments):
     return normalized
 
 
+def _settled_prediction(user_id, slug):
+    if not user_id:
+        return None
+    try:
+        predictions = list(
+            Prediction.objects.select_related("market_option")
+            .filter(user_id=user_id, market__slug=slug, status__in=("resolved", "canceled"))
+            .order_by("created_at", "id")
+        )
+    except DatabaseError:
+        return None
+    if not predictions:
+        return None
+    latest = predictions[-1]
+    stake = sum(item.stake_amount for item in predictions)
+    return {
+        "option_id": latest.market_option_id,
+        "option_label": latest.market_option.label,
+        "active_stake_amount": stake,
+        "stake_amount": stake,
+        "position_count": len(predictions),
+        "probability_at_entry": latest.probability_at_entry,
+        "status": latest.status,
+        "won": latest.won,
+    }
+
+
 def _detail_context(request, slug, market, **extra):
-    market = _with_option_ids(slug, market)
     resolution_timezone = market.get("resolution_timezone") or market.get("close_timezone") or "UTC"
     market = {
         **market,
@@ -210,35 +120,17 @@ def _detail_context(request, slug, market, **extra):
         "seal_due_at_label": _datetime_label(market.get("seal_due_at"), resolution_timezone),
     }
     user = auth_user(request) or {}
-    if is_authenticated(request) and not market.get("viewer_has_favorite") and user.get("id"):
-        try:
-            market = {
-                **market,
-                "viewer_has_favorite": MarketFavorite.objects.filter(user_id=user["id"], market__slug=slug).exists(),
-            }
-        except DatabaseError:
-            market = {**market, "viewer_has_favorite": bool(market.get("viewer_has_favorite"))}
-    if is_authenticated(request) and not market.get("viewer_has_like") and user.get("id"):
-        try:
-            market = {
-                **market,
-                "viewer_has_like": MarketLike.objects.filter(user_id=user["id"], market__slug=slug).exists(),
-            }
-        except DatabaseError:
-            market = {**market, "viewer_has_like": bool(market.get("viewer_has_like"))}
-    if "comments" not in market:
-        market = {**market, "comments": _local_comments(slug, user.get("id"))}
-    else:
-        comments = _normalized_comments(market.get("comments", []))
-        if not comments:
-            comments = _local_comments(slug, user.get("id"))
-        market = {**market, "comments": comments}
+    market = {**market, "comments": _normalized_comments(market.get("comments", []))}
     if "comment_count" not in market or market.get("comment_count") is None:
         market = {**market, "comment_count": len(market.get("comments", []))}
+    position = market.get("viewer_position") or {}
+    existing = ({**position, "stake_amount": position.get("active_stake_amount"), "status": "open"} if position.get("has_position") else None)
+    if market.get("status") in {"resolved", "sealed", "canceled"}:
+        existing = _settled_prediction(user.get("id"), slug)
     context = {
         "market": market,
         "is_guest": not is_authenticated(request),
-        "existing_prediction": _existing_prediction(user.get("id"), slug),
+        "existing_prediction": existing,
     }
     context.update(extra)
     return context
@@ -250,18 +142,15 @@ def _track_market_view(slug):
         return
     except AuthAPIError:
         pass
-    try:
-        Market.objects.filter(slug=slug).exclude(status="draft").update(view_count=F("view_count") + 1)
-    except DatabaseError:
-        pass
 
 
 def detail(request, slug):
     try:
         market = get_market(slug, auth_token(request) if is_authenticated(request) else None)
-    except AuthAPIError:
-        market = local_market(slug)
-        market["comments"] = _local_comments(slug, (auth_user(request) or {}).get("id")) or market.get("comments", [])
+    except AuthAPIError as exc:
+        return unavailable_response(request, exc, login_url=login_url_with_next(request, request.path))
+    if not all(option.get("id") for option in market.get("options", [])):
+        return unavailable_response(request, AuthAPIError("Contrato de mercado inválido.", 503))
     response = render(request, "markets/detail.html", _detail_context(request, slug, market))
     _track_market_view(slug)
     return response
@@ -274,10 +163,7 @@ def integrity(request, slug):
         verification = verify_market_integrity(slug)
         error = ""
     except AuthAPIError as exc:
-        market = local_market(slug)
-        proof = {}
-        verification = {}
-        error = str(exc)
+        return unavailable_response(request, exc, login_url=login_url_with_next(request, request.path))
     timezone_name = market.get("resolution_timezone") or market.get("close_timezone") or "America/Sao_Paulo"
     labels = {
         "verified_at_label": _datetime_label(verification.get("ledger_verified_at"), timezone_name),
@@ -332,8 +218,8 @@ def prediction_receipt(request, slug, prediction_id):
         error = str(exc)
     try:
         market = get_market(slug, auth_token(request))
-    except AuthAPIError:
-        market = local_market(slug)
+    except AuthAPIError as exc:
+        return unavailable_response(request, exc, login_url=login_url_with_next(request, request.path))
     payload = (receipt.get("receipt") or {}).get("payload") or {}
     action_label = {
         "reinforcement": "Reforço da posição",
@@ -433,8 +319,8 @@ def confirm_prediction(request, slug):
     except AuthAPIError as exc:
         try:
             market = get_market(slug, auth_token(request))
-        except AuthAPIError:
-            market = local_market(slug)
+        except AuthAPIError as read_error:
+            return unavailable_response(request, read_error, login_url=login_url_with_next(request, request.path))
         return render(
             request,
             "markets/detail.html",
@@ -466,8 +352,8 @@ def confirm_position_action(request, slug):
     except AuthAPIError as exc:
         try:
             market = get_market(slug, auth_token(request))
-        except AuthAPIError:
-            market = local_market(slug)
+        except AuthAPIError as read_error:
+            return unavailable_response(request, read_error, login_url=login_url_with_next(request, request.path))
         return render(
             request,
             "markets/detail.html",
@@ -497,9 +383,8 @@ def submit_comment(request, slug):
     except AuthAPIError as exc:
         try:
             market = get_market(slug, auth_token(request))
-        except AuthAPIError:
-            market = local_market(slug)
-            market["comments"] = _local_comments(slug, (auth_user(request) or {}).get("id")) or market.get("comments", [])
+        except AuthAPIError as read_error:
+            return unavailable_response(request, read_error, login_url=login_url_with_next(request, request.path))
         return render(
             request,
             "markets/detail.html",

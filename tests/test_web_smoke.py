@@ -8,6 +8,7 @@ from io import StringIO
 import importlib
 import json
 import logging
+import time
 import os
 from pathlib import Path
 import re
@@ -49,7 +50,7 @@ from apps.api.backend_api.main import _clear_rate_limits
 from apps.api.backend_api.integrity_service import PROTOCOL_VERSION, register_market_definition
 from apps.api.backend_api.security import hash_token, issue_token, make_password
 from apps.api.backend_api.social_oauth import SocialProfile
-from tests.test_cases import AppendOnlyTransactionTestCase
+from tests.test_cases import AppendOnlyTransactionTestCase, drain_technical_logs
 from config.recaptcha import RecaptchaError
 from apps.web.django.communications.models import EmailConfirmationToken, EmailDelivery, EmailTemplate, PushDelivery, PushDevice, PushPreference
 from apps.web.django.communications.push_services import create_test_push_delivery, enqueue_push_for_notification, process_due_push_deliveries
@@ -2141,6 +2142,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(forbidden.status_code, 403)
 
         request_id = "req-system-log-test"
+        drain_technical_logs()
         log_id = log_system_event(
             level="ERROR",
             source="fastapi",
@@ -3211,11 +3213,19 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         response = client.get("/markets", headers={"X-Request-ID": request_id, "Authorization": "Bearer should-not-leak"})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["x-request-id"], request_id)
+        for _ in range(100):
+            if SystemLog.objects.filter(request_id=request_id, source="fastapi", event_type="request").exists():
+                break
+            time.sleep(0.01)
         self.assertTrue(SystemLog.objects.filter(request_id=request_id, source="fastapi", event_type="request").exists())
         captured = SystemLog.objects.filter(request_id=request_id).latest("id")
         self.assertEqual(captured.context["headers"]["authorization"], "[REDACTED]")
 
         logging.getLogger("gotrendlabs_tests.system_logs").warning("handler persistence smoke", extra={"api_token": "secret"})
+        for _ in range(100):
+            if SystemLog.objects.filter(logger_name="gotrendlabs_tests.system_logs", event_type="logging", message__icontains="handler persistence smoke").exists():
+                break
+            time.sleep(0.01)
         self.assertTrue(SystemLog.objects.filter(logger_name="gotrendlabs_tests.system_logs", event_type="logging", message__icontains="handler persistence smoke").exists())
 
     def test_register_handle_collision_keeps_at_prefix(self):
@@ -6747,6 +6757,13 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             reverse("share-result", args=["tiktok-resolvido-2026"]),
         ]
 
+        # The page contract now requires the API payload. Keep these rendering
+        # fixtures explicit instead of relying on a production ORM fallback.
+        for target in ("apps.web.django.markets.views.get_market", "apps.web.django.core.views.get_market"):
+            mocked_api = patch(target, side_effect=lambda slug, *_args, **_kwargs: local_market(slug))
+            mocked_api.start()
+            self.addCleanup(mocked_api.stop)
+
         for route in public_routes:
             with self.subTest(route=route):
                 response = self.client.get(route)
@@ -6875,6 +6892,9 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertNotIn("social_email_state", session)
 
     def test_prediction_ticket_starts_without_selected_option_for_authenticated_user(self):
+        mocked_api = patch("apps.web.django.markets.views.get_market", side_effect=lambda slug, *_args, **_kwargs: local_market(slug))
+        mocked_api.start()
+        self.addCleanup(mocked_api.stop)
         session = self.client.session
         session[TOKEN_KEY] = "api-token"
         session[USER_KEY] = {
@@ -6899,6 +6919,9 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertNotIn("disabled data-requires-choice", ticket)
 
     def test_prediction_ticket_shows_no_balance_state(self):
+        mocked_api = patch("apps.web.django.markets.views.get_market", side_effect=lambda slug, *_args, **_kwargs: local_market(slug))
+        mocked_api.start()
+        self.addCleanup(mocked_api.stop)
         User = get_user_model()
         user = User.objects.create_user(username="emptywallet", email="empty-wallet@example.com", password="testpass123", first_name="Empty Wallet")
         WalletBalance.objects.update_or_create(user=user, defaults={"available_gtl": 0, "locked_gtl": 0, "total_earned_gtl": 0})
@@ -6935,7 +6958,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         }
         session.save()
 
-        with patch("apps.web.django.system_logs.middleware.log_system_event") as log_mock:
+        with patch("apps.web.django.system_logs.middleware.submit_system_event") as log_mock:
             response = self.client.get(reverse("rankings"), HTTP_X_REQUEST_ID="django-session-user-log")
 
         self.assertEqual(response.status_code, 200)
@@ -7186,7 +7209,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertEqual(balance.available_gtl, 2000)
         self.assertEqual(balance.locked_gtl, 0)
 
-    def test_market_detail_hydrates_option_ids_from_local_db_when_api_payload_is_stale(self):
+    def test_market_detail_rejects_payload_without_option_ids_without_local_fallback(self):
         User = get_user_model()
         user = User.objects.create_user(username="hydratecase", email="hydratecase@example.com", password="testpass123")
         session = self.client.session
@@ -7204,12 +7227,10 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         api_market["options"] = [{key: value for key, value in option.items() if key != "id"} for option in api_market["options"]]
         self.assertNotIn("id", api_market["options"][0])
 
-        with patch("apps.web.django.markets.views.get_market", return_value=api_market):
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market), patch("apps.web.django.core.domain_client.local_market") as fallback:
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
-
-        option = MarketOption.objects.get(market__slug="openai-gpt6-2026", label=api_market["options"][0]["label"])
-        self.assertContains(response, f'data-option-id="{option.id}"')
-        self.assertContains(response, f'data-selected-option-id type="radio" name="option_id" value="{option.id}" required')
+        self.assertEqual(response.status_code, 503)
+        fallback.assert_not_called()
 
     def test_market_detail_position_actions_use_compact_tabs(self):
         User = get_user_model()
@@ -7469,6 +7490,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
                 ],
             },
         }
+        api_market["options"] = [{**row, "id": index} for index, row in enumerate(api_market["options"], start=1)]
 
         with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
@@ -8578,23 +8600,25 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertEqual(response["Content-Type"], "image/png")
             self.assertGreater(len(response.content), 1000)
 
-    def test_market_detail_and_share_tracking_increment_local_counters(self):
+    def test_market_detail_and_share_tracking_do_not_mutate_local_counters_on_api_failure(self):
         market = Market.objects.get(slug="openai-gpt6-2026")
         market.view_count = 0
         market.share_count = 0
         market.save(update_fields=["view_count", "share_count"])
 
-        with patch("apps.web.django.markets.views.track_market_view", side_effect=AuthAPIError("offline")):
+        api_market = get_domain_client().market("openai-gpt6-2026")
+        api_market["options"] = [{**row, "id": index} for index, row in enumerate(api_market["options"], start=1)]
+        with patch("apps.web.django.markets.views.get_market", return_value=api_market), patch("apps.web.django.markets.views.track_market_view", side_effect=AuthAPIError("offline")):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
         self.assertEqual(response.status_code, 200)
         market.refresh_from_db()
-        self.assertEqual(market.view_count, 1)
+        self.assertEqual(market.view_count, 0)
 
         with patch("apps.web.django.core.views.track_market_share", side_effect=AuthAPIError("offline")):
             response = self.client.post(reverse("share-market-track", args=["openai-gpt6-2026"]))
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 503)
         market.refresh_from_db()
-        self.assertEqual(market.share_count, 1)
+        self.assertEqual(market.share_count, 0)
 
     def test_android_download_surfaces_handle_missing_active_release_without_public_page(self):
         response = self.client.get(reverse("login"))
@@ -12249,10 +12273,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
 
         with patch("apps.web.django.markets.views.get_market", side_effect=AuthAPIError("api off")):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))
-        self.assertContains(response, "Mercado em apuração")
-        self.assertContains(response, "As previsões foram encerradas. Agora aguardamos a publicação do resultado.")
-        self.assertContains(response, "Em apuração")
-        self.assertNotContains(response, "Registrar previsão")
+        self.assertEqual(response.status_code, 503)
+        self.assertContains(response, "temporariamente indisponível", status_code=503)
 
     def test_register_login_and_logout_flow(self):
         auth_response = {
