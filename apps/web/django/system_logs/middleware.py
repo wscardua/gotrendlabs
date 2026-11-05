@@ -1,7 +1,7 @@
 import time
 
 from apps.web.django.accounts.session import auth_user
-from apps.web.django.system_logs.services import exception_payload, log_system_event, new_request_id, normalize_ip, request_headers
+from apps.web.django.system_logs.services import exception_payload, submit_system_event, new_request_id, normalize_ip, request_headers
 
 
 class SystemLogMiddleware:
@@ -25,7 +25,7 @@ class SystemLogMiddleware:
         except Exception as exc:
             duration_ms = int((time.perf_counter() - started_at) * 1000)
             exception_type, stack_trace = (type(exc).__name__, "") if integration_private else exception_payload(exc)
-            log_system_event(
+            submit_system_event(
                 level="ERROR",
                 source="django",
                 logger_name="django.request",
@@ -48,7 +48,7 @@ class SystemLogMiddleware:
         response["X-Request-ID"] = request_id
         status_code = getattr(response, "status_code", None)
         level = "ERROR" if status_code and status_code >= 500 else "WARNING" if status_code and status_code >= 400 else "INFO"
-        log_system_event(
+        submit_system_event(
             level=level,
             source="django",
             logger_name="django.request",

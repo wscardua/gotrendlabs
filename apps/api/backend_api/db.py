@@ -1,8 +1,56 @@
 import os
+import atexit
+import threading
 from contextlib import contextmanager
 
-import psycopg
 from psycopg.rows import dict_row
+from psycopg_pool import ConnectionPool, PoolTimeout, TooManyRequests
+
+
+class DatabaseCapacityError(Exception):
+    """A database connection could not be acquired before any SQL was run."""
+
+
+_pools = {}
+_pools_lock = threading.Lock()
+
+
+def _positive_int(name, default):
+    value = int(os.environ.get(name, default))
+    if value < 1:
+        raise ValueError(f"{name} must be positive")
+    return value
+
+
+def _pool_for_current_process():
+    config = database_config()
+    # Lazy creation occurs after uvicorn forks. Never reuse a pool for another PID/role.
+    key = (os.getpid(), tuple(sorted(config.items())))
+    with _pools_lock:
+        pool = _pools.get(key)
+        if pool is None:
+            pool = ConnectionPool(
+                kwargs={**config, "row_factory": dict_row, "connect_timeout": 2},
+                min_size=0,
+                max_size=_positive_int("GOTRENDLABS_DB_POOL_MAX", 4),
+                max_waiting=_positive_int("GOTRENDLABS_DB_POOL_WAITING", 8),
+                timeout=1,
+                open=False,
+            )
+            pool.open()
+            _pools[key] = pool
+        return pool
+
+
+def close_pools():
+    with _pools_lock:
+        pools = list(_pools.values())
+        _pools.clear()
+    for pool in pools:
+        pool.close()
+
+
+atexit.register(close_pools)
 
 
 def database_config():
@@ -48,5 +96,8 @@ def database_config():
 
 @contextmanager
 def get_connection():
-    with psycopg.connect(**database_config(), row_factory=dict_row) as connection:
-        yield connection
+    try:
+        with _pool_for_current_process().connection() as connection:
+            yield connection
+    except (PoolTimeout, TooManyRequests) as exc:
+        raise DatabaseCapacityError("database connection capacity exhausted") from exc

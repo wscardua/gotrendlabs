@@ -24,6 +24,10 @@ impacta:
 
 # Analytics proprio
 
+## Indisponibilidade da coleta — implementação local 05/11/2026
+
+O proxy Django preserva 503 da FastAPI quando a coleta não foi confirmada; não retorna sucesso fictício. Um eventual reenvio pelo cliente mantém `event_id` e o limite de lote/idempotência, sem repetir indefinidamente. Esta fatia não modifica catálogo, métricas ou retenção analítica.
+
 ## Histórico analítico v0.9 — implantação técnica 24/10/2026
 
 Implementação implantada pela PR #175, com migration e consolidação produtivas verificadas: contadores diários de eventos, presença ator/dia para distintos/coortes exatos, funil consolidado e checkpoint verificável antecedem o expurgo. FastAPI combina consolidados com bruto recente por dia exclusivo. Mercado publicado recebe snapshot de taxonomia; a migração marca classificações anteriores como reconstruídas do registro atual. `market_id` é capturado na ingestão para persistir atribuição depois da remoção de slug. Daemon processa até 30 dias maduros por ciclo; [runbook](../../guides/mcp-analytics-history.md) cobre backfill e recuperação. O resumo Admin Ops de 1/7/30/90 dias permanece com contrato próprio; MCP usa [contrato separado](../contracts/mcp-analytics.md) e scope explícito.

@@ -4,6 +4,8 @@
 - `ADR-0011-mcp-editorial-integrations.md`: MCP editorial sem banco, OAuth/serviço, gestão administrativa equivalente e reutilização de auditoria; implantação/habilitação produtiva pela PR #136, com HTTPS/grants/isolamento conferidos; Dot/piloto autenticado pendentes.
 # Decisions
 
+- [ADR-0020 — Orçamento de conexões e degradação controlada](ADR-0020-database-capacity.md).
+
 
 Use este diretório para registrar decisões técnicas estáveis e mudanças que alterem fronteiras, contratos ou fórmulas relevantes.
 

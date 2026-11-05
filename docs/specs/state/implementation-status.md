@@ -105,6 +105,16 @@ Formulário de publicação aprovada alinhado ao contrato de identidade existent
 
 # Status de Implementação
 
+## 05/11/2026 — resiliência de conexões (branch local)
+
+PR #188 aberta. O primeiro CI construiu as imagens e passou as asserções, mas falhou ao destruir o banco de teste por uma conexão restante; o runner agora fecha pools no teardown final. Reprodução local equivalente ao CI: 674 testes, 3 skips, zero falhas, banco removido. Novo CI pendente; nenhum merge/deploy realizado neste ponto.
+
+Fechamento local: Python 3.12.13, PostgreSQL 16 temporário isolado, suíte integral `manage.py test` com **677 testes, 2 skips e zero falhas**; Flutter 10/10 e análise sem issues; OpenAPI, Django check, Node e validações de Compose/Dockerfile aprovados. O teardown dos testes aguarda o logger técnico e fecha os pools antes do `flush`; o teste de isolamento de roles limpa a role temporária. Implementação pronta para PR, mantendo CI/build, distribuição mobile própria, rollout e smoke produtivo pendentes. Não promover o estado produtivo até as evidências externas.
+
+Follow-up da revisão de impacto: `/health` limitado separadamente a duas requisições simultâneas por processo, com 503 degradado sem DB sob saturação; compartilhamento web preserva 4xx da API; middleware Django não mascara `IntegrityError`. Testes direcionados desta rodada: 22 aprovados e um skip do PostgreSQL isolado não configurado (23 executados), incluindo vinte health checks concorrentes saturados e request comum 200. CI Python 3.12, ensaio equivalente a PRD e rollout continuam pendentes; orçamento de conexões inalterado.
+
+WFLOW-20261105-PRD-DB-RESILIENCE, base `origin/main` 4bc7093: pool psycopg limitado por PID/credencial, admissão web/API com espera web de 750 ms e fila de vinte por worker, 503 seguro, remoção do fallback ORM após indisponibilidade no detalhe/integridade/compartilhamento, logger técnico fora do caminho de resposta e mobile com 503 distinto de manutenção. OpenAPI atualizado; implementação local concluída, 107 testes web, 34 direcionados e 10 Flutter aprovados, sem deploy. [Rajadas isoladas](../testing/db-resilience-burst-20261105.md) passaram; build CI, ensaio equivalente a PRD e smoke produtivo pendentes; Python 3.12 validado localmente na rodada final. [ADR-0020](../decisions/ADR-0020-database-capacity.md), [aceite](../testing/db-resilience-acceptance.md). Status globais das features não promovidos antes de CI e rollout.
+
 ## 2026-10-24 — revisão local do histórico analytics MCP
 
 Branch `feature/mcp-analytics-history`: prévia válida passa a emitir `prediction_preview_viewed` no Flutter e na web; o backend devolve cobertura por evento, filtros efetivos por bloco, funil em ordem temporal e proteção de segmentos pequenos. Histórico de presença usa HMAC estável e rotina de exclusão; `GOTRENDLABS_ANALYTICS_ACTOR_KEY` é requisito de implantação. Contrato MCP/OpenAPI atualizado, sem nova ferramenta ou permissão. Testes locais e análise estática mobile concluídos; instalação/produção não alteradas.

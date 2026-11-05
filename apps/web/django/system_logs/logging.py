@@ -1,10 +1,19 @@
 import logging
+import asyncio
 
-from apps.web.django.system_logs.services import exception_payload, log_system_event, sanitize_context
+from apps.web.django.system_logs.services import exception_payload, submit_system_event, sanitize_context
 
 
 class DatabaseLogHandler(logging.Handler):
     def emit(self, record):
+        # Request middleware persists its record in a worker thread. A root
+        # logging callback may run inside FastAPI's event loop after django.setup().
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            pass
+        else:
+            return
         try:
             exception_type = ""
             stack_trace = ""
@@ -37,7 +46,7 @@ class DatabaseLogHandler(logging.Handler):
                 }:
                     continue
                 extra[key] = value
-            log_system_event(
+            submit_system_event(
                 level=record.levelname,
                 source="python",
                 logger_name=record.name,

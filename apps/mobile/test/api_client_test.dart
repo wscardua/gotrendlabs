@@ -185,6 +185,90 @@ void main() {
     expect(failure.category, 'app_update_required');
     expect(failure.message, 'Atualize.');
   });
+
+  test(
+    '503 capacity preserves session and remains distinct from maintenance',
+    () async {
+      final store = MemoryTokenStore()..token = 'session-token';
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+      dio.httpClientAdapter = _StatusAdapter(
+        statusCode: 503,
+        body: {
+          'detail': {'code': 'dependency_unavailable', 'message': 'internal'},
+        },
+      );
+      final api = ApiClient(
+        dio: dio,
+        tokenStore: store,
+        appVersion: '1',
+        appBuild: '1',
+      );
+      await api.restoreToken();
+      late Object failure;
+      try {
+        await api.getMap('/markets/example');
+      } catch (error) {
+        failure = error;
+      }
+      final mapped = ApiFailure.fromObject(failure);
+      expect(mapped.category, 'server');
+      expect(mapped.message, contains('temporariamente indisponível'));
+      expect(await store.readToken(), 'session-token');
+      final maintenance = ApiFailure.fromObject(
+        DioException(
+          requestOptions: RequestOptions(path: '/markets'),
+          response: Response<Object?>(
+            requestOptions: RequestOptions(path: '/markets'),
+            statusCode: 503,
+            data: {'code': 'mobile_maintenance', 'detail': 'Manutenção.'},
+          ),
+        ),
+      );
+      expect(maintenance.category, 'maintenance');
+    },
+  );
+
+  test(
+    '503 after a write has no automatic replay and warns of uncertain result',
+    () async {
+      var calls = 0;
+      final dio = Dio(BaseOptions(baseUrl: 'http://api.test'));
+      dio.httpClientAdapter = _StatusAdapter(
+        statusCode: 503,
+        body: {
+          'detail': {'code': 'operation_indeterminate'},
+        },
+      );
+      dio.interceptors.add(
+        InterceptorsWrapper(
+          onRequest: (options, handler) {
+            calls++;
+            handler.next(options);
+          },
+        ),
+      );
+      final api = ApiClient(
+        dio: dio,
+        tokenStore: MemoryTokenStore(),
+        appVersion: '1',
+        appBuild: '1',
+      );
+      late Object failure;
+      try {
+        await api.postMap(
+          '/markets/example/predict',
+          data: {'stake_amount': 1},
+        );
+      } catch (error) {
+        failure = error;
+      }
+      expect(calls, 1);
+      expect(
+        ApiFailure.fromObject(failure).message,
+        contains('Confira o estado'),
+      );
+    },
+  );
 }
 
 class _Adapter implements HttpClientAdapter {

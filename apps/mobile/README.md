@@ -1,5 +1,11 @@
 # Mobile
 
+## Indisponibilidade transitória (branch local 05/11/2026)
+
+O `/health` da FastAPI agora limita duas verificações simultâneas por processo e pode responder 503 degradado sob rajada, sem consultar o banco. O gate do app conserva a sessão, bloqueia a entrada e oferece nova tentativa. A publicação dessa UX depende de release mobile separada do deploy GitHub web/API.
+
+503 por capacidade da FastAPI mantém a sessão e mostra indisponibilidade com nova tentativa explícita no detalhe. `mobile_maintenance` segue separado. Em escrita com resultado `operation_indeterminate`, o app orienta conferir o estado antes de nova tentativa e não faz replay automático. Contrato e aceite: `docs/specs/architecture/mobile-api-contracts.md` e `docs/specs/testing/db-resilience-acceptance.md`. Requer distribuição própria do Flutter; deploy web/API não atualiza instalações existentes.
+
 Wallet agora apresenta `resolution_returns` da FastAPI (valor liberado, ganho líquido e total recebido), e mercados resolved/sealed preservam volume/participação final. 46 testes de regressão e análise estática aprovados na implementação; sem cálculo financeiro local. Distribuir o app somente após implantação do contrato backend.
 
 Web/API implantadas pelas PRs #177/#178 em 2026-10-25; distribuição Flutter ainda pendente. O ajuste corretivo de ACL não muda o contrato mobile. [Recibo produtivo](../../docs/specs/testing/resolution-reliability-production-closeout-20261025.md) e [roteiro](../../docs/specs/operations/resolution-reliability-rollout.md).

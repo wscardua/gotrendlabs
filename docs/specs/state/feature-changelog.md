@@ -1,3 +1,11 @@
+## 05/11/2026 — follow-up local de resiliência
+
+CI da PR #188 revelou uma conexão do pool remanescente apenas no teardown do banco de testes, após 674 asserções aprovadas. Runner final fecha pools; reprodução local do CI passou 674 testes (3 skips) e destruiu o banco. Novo CI e deploy pendentes.
+
+Aceite final local: 677 testes Python 3.12 em PostgreSQL isolado (2 skips, zero falhas), 10 testes Flutter/análise, OpenAPI, Django, Node e Compose válidos. Teardown de testes drena logs técnicos e fecha pools; role temporária do teste é removida com segurança. PR, CI e implantação ainda pendentes.
+
+WFLOW-20261105-PRD-DB-RESILIENCE: limite independente de `/health`, preservação de 404/4xx no tracking de compartilhamento e tratamento específico de erro de conexão Django. Sem mudança de schema, permissões MCP, regra de domínio ou código Flutter. Testes direcionados e rajada simulada de health aprovados; sem deploy.
+
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
 WFLOW-20261105-EDITORIAL-PENDING-DETAILS: retorno REST/MCP aditivo com motivos/trechos/critérios explícitos/etapa/impacto; correção do cabeçalho Markdown e alerta de contradição explícita. Código geral e gates humanos preservados. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. PR #186 integrada; CI da PR e de main com 650 testes/dois skips cada, deploy SSM e smoke MCP aprovados. [Recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).
@@ -110,6 +118,10 @@ Comparação Web/App mobile e usabilidade administrativa reconciliadas com specs
 - FEAT-EDITORIAL-001/FEAT-MARKET-001: formulário separado de publicação passa a enviar expected_market_id da página original e preserva o valor submetido após erro. Corrige 409 indevido após reutilização de slug, sem relaxar validação backend ou conceder permissões MCP. Implantada pela PR #158, com CI/deploy e verificação produtiva aprovados; evidências em WFLOW-20261011-PUBLISH-FORM-IDENTITY.
 
 # Feature Changelog
+
+## 05/11/2026 — resiliência de conexões (local)
+
+FEAT-OPSLOG-001, FEAT-MARKET-002 e contratos API/mobile/MCP: pool/concurrency limitados, espera web de até vinte requests por 750 ms sem conexão adicional, 503 seguro, fim do fallback ORM após timeout nos fluxos públicos afetados e logger técnico fora do caminho de resposta. Flutter distingue capacidade de manutenção, preserva sessão e não repete escrita incerta; MCP conserva ferramentas/scopes/replay e auditoria obrigatória. [WFLOW](workflow-runs.md), [ADR](../decisions/ADR-0020-database-capacity.md), [rajadas](../testing/db-resilience-burst-20261105.md). Sem publicação produtiva.
 
 ## 2026-10-12 — FEAT-ANALYTICS-001 usabilidade v0.7
 

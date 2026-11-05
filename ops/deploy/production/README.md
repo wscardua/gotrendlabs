@@ -1,5 +1,11 @@
 # Deploy de producao
 
+## Orçamento de conexões proposto (branch local 05/11/2026)
+
+`/health` admite separadamente duas requisições simultâneas por processo (`GOTRENDLABS_HEALTH_CONCURRENCY`, default 2) e rejeita excedente imediatamente com health 503 degradado sem acessar PostgreSQL. O limite usa o mesmo pool FastAPI e não aumenta o teto global de conexões; dimensionar probes e acompanhar 503 de health antes do rollout.
+
+O Compose define `GOTRENDLABS_DB_POOL_MAX` 8 FastAPI e 2 por worker Django/daemon/thumbnail; Django admite 5 requests por worker, com até 20 em espera por 750 ms, e FastAPI 12 por processo. `GOTRENDLABS_DB_POOL_WAITING` limita espera no pool; `GOTRENDLABS_WEB_WAITING` limita a fila web sem abrir conexão. Com a topologia documentada, são até 27 conexões por geração e cerca de 59 incluindo duas gerações mais migração. É teto inicial, não carga validada em PRD. Confira [ADR-0020](../../../docs/specs/decisions/ADR-0020-database-capacity.md) e [rollout](../../../docs/specs/operations/db-resilience-rollout.md) antes de publicar; aumentar workers exige recalcular orçamento.
+
 Este deploy usa uma EC2 publica com Docker Compose para `proxy`, `django`, `fastapi`, `daemon` e o adaptador `mcp` isolado, conectando ao PostgreSQL gerenciado no RDS. O Postgres nao roda em container na producao.
 
 ## Analytics proprio

@@ -1,4 +1,5 @@
 from uuid import UUID
+import asyncio
 from apps.api.backend_api import resolution_schedule as schedules
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_DOWN, ROUND_HALF_UP
@@ -14,6 +15,7 @@ import json
 import re
 import secrets
 import string
+import threading
 import sys
 import time
 from types import SimpleNamespace
@@ -23,14 +25,14 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import FastAPI, Header, HTTPException, Query, Request, Response, status
 from fastapi.responses import JSONResponse
-from psycopg import sql
+from psycopg import OperationalError, sql
 
 from apps.api.backend_api.wallet_returns import resolution_returns
 from apps.api.backend_api.admin_events import record_admin_event
 from apps.api.backend_api.analytics import AnalyticsBatch, _source_ip as analytics_source_ip, ingest as ingest_analytics, summary as analytics_summary
 from apps.api.backend_api.agent_services import ai_health_summary, market_public_metrics, refresh_market_public_metrics
 from apps.api.backend_api.badge_engine import BadgeAwardEngine
-from apps.api.backend_api.db import get_connection
+from apps.api.backend_api.db import DatabaseCapacityError, get_connection
 from apps.api.backend_api.daemon_services import daemon_dashboard_status
 from apps.api.backend_api.email_outbox import enqueue_password_reset_email, enqueue_user_email, enqueue_welcome_email, issue_email_confirmation, public_url
 from apps.api.backend_api.market_lifecycle_engine import MarketLifecycleEngine
@@ -159,7 +161,7 @@ from packages.security.passwords import require_password_pepper
 from apps.api.backend_api.social_oauth import SocialOAuthError, build_social_authorization, fetch_social_profile
 from apps.api.backend_api.social_oauth import SocialProfile
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
-from apps.web.django.system_logs.services import exception_payload, log_system_event, new_request_id, request_headers
+from apps.web.django.system_logs.services import exception_payload, submit_system_event, new_request_id, request_headers
 
 SESSION_TTL = timedelta(days=14)
 MFA_CHALLENGE_TTL = timedelta(minutes=5)
@@ -193,7 +195,36 @@ if os.environ.get("GOTRENDLABS_ENV", "").strip().lower() in {"prod", "production
     require_password_pepper()
     require_totp_encryption_key()
 
-app = FastAPI(title="GoTrendLabs Backend API", version="0.1.0")
+app = FastAPI(
+    title="GoTrendLabs Backend API",
+    version="0.1.0",
+    responses={
+        503: {
+            "description": "Dependência ou capacidade temporariamente indisponível. Em operações de escrita, o resultado pode ser indeterminado.",
+            "content": {"application/json": {"example": {"detail": {"code": "dependency_unavailable", "message": "Serviço temporariamente indisponível. Tente novamente mais tarde."}}}},
+        }
+    },
+)
+
+
+def _database_unavailable_response(method, *, before_operation=False):
+    # Pool admission fails before SQL; an OperationalError in a write may follow commit.
+    code = "dependency_unavailable" if before_operation or method in {"GET", "HEAD", "OPTIONS"} else "operation_indeterminate"
+    return JSONResponse(
+        status_code=503,
+        content={"detail": {"code": code, "message": "Serviço temporariamente indisponível. Tente novamente mais tarde."}},
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.exception_handler(DatabaseCapacityError)
+async def database_capacity_handler(request: Request, _exc: DatabaseCapacityError):
+    return _database_unavailable_response(request.method, before_operation=True)
+
+
+@app.exception_handler(OperationalError)
+async def database_connection_handler(request: Request, _exc: OperationalError):
+    return _database_unavailable_response(request.method)
 
 
 @app.exception_handler(IntegritySigningError)
@@ -424,14 +455,7 @@ def _mobile_release_download_url(apk_path):
 
 
 def _mobile_compatibility_policy(*, log_errors=True):
-    policy = {
-        "min_supported_android_build": 0,
-        "recommended_android_build": 0,
-        "mobile_update_required_message": MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT,
-        "latest_android_build": 0,
-        "latest_android_version": "",
-        "download_url": "",
-    }
+    policy = _default_mobile_compatibility_policy()
     try:
         with get_connection() as connection:
             with connection.cursor() as cursor:
@@ -470,8 +494,19 @@ def _mobile_compatibility_policy(*, log_errors=True):
     return policy
 
 
-def _mobile_compatibility_payload(request: Request, *, log_errors=True):
-    policy = _mobile_compatibility_policy(log_errors=log_errors)
+def _default_mobile_compatibility_policy():
+    return {
+        "min_supported_android_build": 0,
+        "recommended_android_build": 0,
+        "mobile_update_required_message": MOBILE_UPDATE_REQUIRED_MESSAGE_DEFAULT,
+        "latest_android_build": 0,
+        "latest_android_version": "",
+        "download_url": "",
+    }
+
+
+def _mobile_compatibility_payload(request: Request, *, log_errors=True, policy=None):
+    policy = _mobile_compatibility_policy(log_errors=log_errors) if policy is None else policy
     is_mobile = _is_mobile_client(request)
     current_build = _mobile_app_build(request) if is_mobile else None
     current_version = _mobile_app_version(request) if is_mobile else ""
@@ -553,10 +588,28 @@ async def system_log_middleware(request: Request, call_next):
     user_id = _request_user_id(request.headers.get("authorization", ""))
     try:
         response = await call_next(request)
+    except (DatabaseCapacityError, OperationalError) as exc:
+        response = _database_unavailable_response(request.method, before_operation=isinstance(exc, DatabaseCapacityError))
+        response.headers["X-Request-ID"] = request_id
+        submit_system_event(
+            level="ERROR",
+            source="fastapi",
+            logger_name="fastapi.request",
+            event_type="request_exception",
+            message=f"{request.method} {request.url.path} -> 503",
+            request_id=request_id,
+            method=request.method,
+            path=str(request.url.path),
+            status_code=503,
+            duration_ms=int((time.perf_counter() - started_at) * 1000),
+            exception_type=type(exc).__name__,
+            context={},
+        )
+        return response
     except Exception as exc:
         duration_ms = int((time.perf_counter() - started_at) * 1000)
         exception_type, stack_trace = (type(exc).__name__, "") if editorial_private else exception_payload(exc)
-        log_system_event(
+        submit_system_event(
             level="ERROR",
             source="fastapi",
             logger_name="fastapi.request",
@@ -582,7 +635,7 @@ async def system_log_middleware(request: Request, call_next):
         response.headers["Pragma"] = "no-cache"
     status_code = response.status_code
     level = "ERROR" if status_code >= 500 else "WARNING" if status_code >= 400 else "INFO"
-    log_system_event(
+    submit_system_event(
         level=level,
         source="fastapi",
         logger_name="fastapi.request",
@@ -599,6 +652,56 @@ async def system_log_middleware(request: Request, call_next):
         context={} if editorial_private else {"headers": request_headers(request.headers), "query": dict(request.query_params)},
     )
     return response
+
+
+# Registered last, so admission happens before database-backed middlewares.
+_api_capacity_limit = int(os.environ.get("GOTRENDLABS_API_CONCURRENCY", "12"))
+if _api_capacity_limit < 1:
+    raise ValueError("GOTRENDLABS_API_CONCURRENCY must be positive")
+_api_capacity = asyncio.Semaphore(_api_capacity_limit)
+_health_capacity_limit = int(os.environ.get("GOTRENDLABS_HEALTH_CONCURRENCY", "2"))
+if _health_capacity_limit < 1:
+    raise ValueError("GOTRENDLABS_HEALTH_CONCURRENCY must be positive")
+_health_capacity = threading.BoundedSemaphore(_health_capacity_limit)
+
+
+def _health_capacity_response(request: Request):
+    maintenance = _mobile_maintenance_mode()
+    return JSONResponse(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        content={
+            "status": "degraded",
+            "maintenance": {
+                "web_enabled": _maintenance_mode_active(),
+                "mobile_enabled": maintenance["enabled"],
+                "mobile_message": maintenance["message"],
+            },
+            "checks": {"api": "ok", "database": "not_checked"},
+            "mobile": _mobile_compatibility_payload(request, policy=_default_mobile_compatibility_policy()),
+        },
+        headers={"Cache-Control": "no-store"},
+    )
+
+
+@app.middleware("http")
+async def admission_middleware(request: Request, call_next):
+    if request.url.path == "/health":
+        if not _health_capacity.acquire(blocking=False):
+            return _health_capacity_response(request)
+        try:
+            return await call_next(request)
+        finally:
+            _health_capacity.release()
+    try:
+        await asyncio.wait_for(_api_capacity.acquire(), timeout=0.2)
+    except asyncio.TimeoutError:
+        return _database_unavailable_response(request.method, before_operation=True)
+    try:
+        return await call_next(request)
+    except (DatabaseCapacityError, OperationalError) as exc:
+        return _database_unavailable_response(request.method, before_operation=isinstance(exc, DatabaseCapacityError))
+    finally:
+        _api_capacity.release()
 
 
 def _row_value(row, key, index):

@@ -3,7 +3,6 @@ from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.http import HttpResponse, JsonResponse
 from django.db import DatabaseError
-from django.db.models import F
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.crypto import constant_time_compare
@@ -16,11 +15,12 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from apps.web.django.accounts.api_client import AuthAPIError, create_feedback, create_suggestion, get_badge_catalog, get_badges, get_market, get_markets, get_me, get_referral, get_taxonomy, mark_notifications_read, track_market_share
 from apps.web.django.accounts.session import api_login_required
 from apps.web.django.accounts.session import auth_token, auth_user, is_authenticated, login_url_with_next, safe_redirect_url
+from apps.web.django.core.unavailable import unavailable_response
 from config.recaptcha import RecaptchaError, verify_recaptcha_response
-from apps.web.django.core.domain_client import get_domain_client, local_market, local_markets
+from apps.web.django.core.domain_client import get_domain_client, local_markets
 from apps.web.django.core.platform_config import load_platform_config
 from apps.web.django.core.social_share import badge_share_context, market_share_context, png_response_bytes, public_badge_share_token, render_badge_card, render_market_card, render_result_card, result_share_context
-from apps.web.django.markets.models import Market, MarketCategory, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
+from apps.web.django.markets.models import MarketCategory, MarketFavorite, MarketLike, MarketSuggestion, Prediction, ProductFeedback, UserNotification
 from apps.web.django.accounts.models import UserBadgeAward, UserProfile, UserReputation
 from apps.web.django.admin_ops.models import MobileAppRelease
 
@@ -249,24 +249,16 @@ def _share_viewer(request):
 
 
 def _load_share_market(slug):
-    try:
-        market = get_market(slug)
-    except AuthAPIError:
-        market = local_market(slug)
+    market = get_market(slug)
     return {**market, "thumb": _market_thumb_fallback(market), "thumb_color": market.get("thumb_color") or "#d8ece2"}
 
 
 def _track_market_share(slug):
     try:
         track_market_share(slug)
-        return True
-    except AuthAPIError:
-        pass
-    try:
-        updated = Market.objects.filter(slug=slug).exclude(status="draft").update(share_count=F("share_count") + 1)
-        return bool(updated)
-    except DatabaseError:
-        return False
+        return 200
+    except AuthAPIError as exc:
+        return exc.status_code if exc.status_code and 400 <= exc.status_code < 500 else 503
 
 
 def _share_referral_query(request):
@@ -565,20 +557,29 @@ def feedback(request):
 
 
 def share_market(request, slug):
-    market = _load_share_market(slug)
+    try:
+        market = _load_share_market(slug)
+    except AuthAPIError as exc:
+        return unavailable_response(request, exc)
     share = market_share_context(request, market, query=_share_referral_query(request))
     share["track_url"] = reverse("share-market-track", args=[slug])
     return render(request, "core/share_market.html", {"market": market, "share": share})
 
 
 def share_market_image(request, slug):
-    market = _load_share_market(slug)
+    try:
+        market = _load_share_market(slug)
+    except AuthAPIError as exc:
+        return unavailable_response(request, exc)
     share = market_share_context(request, market)
     return _image_response(render_market_card(market, share))
 
 
 def share_result(request, slug):
-    market = _load_share_market(slug)
+    try:
+        market = _load_share_market(slug)
+    except AuthAPIError as exc:
+        return unavailable_response(request, exc)
     viewer = _share_viewer(request)
     share = result_share_context(request, market, viewer, query=_share_referral_query(request))
     share["track_url"] = reverse("share-market-track", args=[slug])
@@ -586,7 +587,10 @@ def share_result(request, slug):
 
 
 def share_result_image(request, slug):
-    market = _load_share_market(slug)
+    try:
+        market = _load_share_market(slug)
+    except AuthAPIError as exc:
+        return unavailable_response(request, exc)
     viewer = _share_viewer(request)
     share = result_share_context(request, market, viewer)
     return _image_response(render_result_card(market, viewer, share))
@@ -595,6 +599,5 @@ def share_result_image(request, slug):
 @csrf_exempt
 @require_POST
 def share_market_track(request, slug):
-    tracked = _track_market_share(slug)
-    status_code = 200 if tracked else 404
-    return JsonResponse({"tracked": tracked}, status=status_code)
+    status_code = _track_market_share(slug)
+    return JsonResponse({"tracked": status_code == 200}, status=status_code)

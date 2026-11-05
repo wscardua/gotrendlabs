@@ -1,5 +1,11 @@
 # Frontend Web
 
+## Indisponibilidade e admissão — implementação local 05/11/2026
+
+Follow-up de revisão: o contador de compartilhamento preserva respostas 4xx da API, incluindo 404 de mercado inexistente ou draft. O middleware converte somente `OperationalError` e `InterfaceError` do Django em 503; `IntegrityError` segue o tratamento próprio da operação.
+
+Cada worker Django admite até cinco requests antes de sessão/ORM; outros vinte podem esperar por até 750 ms sem abrir conexão. Excedente recebe HTML 503 estático. Detalhe, integridade e compartilhamento de mercado não acessam ORM após timeout/503 da FastAPI; 404 de mercado segue distinto. O erro 503 não renderiza base nem context processors, que podem acessar banco/API. [ADR-0020](../decisions/ADR-0020-database-capacity.md).
+
 ## Responsabilidades
 
 - Renderizar páginas públicas e autenticadas.

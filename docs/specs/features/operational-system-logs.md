@@ -25,6 +25,10 @@ aprovacao: usuario em 2026-09-19
 
 # Logs técnicos de troubleshooting
 
+## Resiliência de capacidade — implementação local 05/11/2026
+
+WFLOW-20261105-PRD-DB-RESILIENCE limita conexões por processo/role e a admissão web/API. O logger técnico usa o mesmo pool limitado, cache de retenção de 60 s (5 s sob falha) e uma vaga não bloqueante por processo. Middleware web/API e handler raiz enviam o log a uma thread daemon sem reter a resposta; o handler raiz ignora callbacks no event loop. Falha de gravação continua tolerada sem nova tempestade de conexões; logs técnicos excedentes são descartados sem fila. Logs técnicos podem faltar durante indisponibilidade, mas auditoria de domínio, recibos e ledger continuam transacionais. Retenção efetiva de um dia em PRD permanece pendência operacional fora do ciclo. [Decisão](../decisions/ADR-0020-database-capacity.md) e [aceite](../testing/db-resilience-acceptance.md).
+
 ## Objetivo
 
 Persistir logs técnicos detalhados do sistema para diagnóstico operacional por staff, sem misturar esse histórico com eventos administrativos de domínio.

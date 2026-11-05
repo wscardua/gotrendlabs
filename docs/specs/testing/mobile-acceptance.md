@@ -73,6 +73,7 @@ Deve passar:
 - app nao trava quando a API local esta indisponivel
 - app exibe erro recuperavel quando `http://10.0.2.2:8001` nao responde
 - app consulta `GET /health` ao abrir e mostra tela de manutencao quando a API falha, fica degradada ou retorna `maintenance.mobile_enabled=true`
+- rajada que satura a admissão de `/health` retorna HTTP 503 degradado com `checks.database=not_checked`; o gate mantém o shell bloqueado, oferece nova tentativa e não apaga token/sessão nem interpreta a resposta como `mobile_maintenance` ou atualização obrigatória
 - app envia headers de cliente, versão e build em todas as chamadas: `X-GoTrendLabs-Client`, `X-GoTrendLabs-App-Version` e `X-GoTrendLabs-App-Build`
 - app mostra tela obrigatória de atualização quando `GET /health` retorna `mobile.update_required=true`, exibindo mensagem da API, versão/build instalada, versão/build disponível quando houver, botão de atualização por `download_url` e `Tentar novamente`
 - app promove qualquer resposta `426 code=app_update_required` recebida pelo `ApiClient` para a tela obrigatória de atualização, independentemente da superfície que disparou a chamada

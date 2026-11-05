@@ -12,6 +12,47 @@ from apps.mcp import server
 
 
 class AdapterBoundaryTests(SimpleTestCase):
+    def test_capacity_503_preserves_read_and_indeterminate_write_contracts(self):
+        original_client = httpx.AsyncClient
+        auth = AccessToken(
+            token="local-test-token",
+            client_id="integration-id",
+            scopes=["editorial:read", server.TOOL_SCOPES["resolve_market"]],
+            resource=server.RESOURCE,
+        )
+        calls = []
+
+        def unavailable(request):
+            if request.url.path.endswith("/internal/agent-integrations/events"):
+                return httpx.Response(200, json={"accepted": True})
+            calls.append((request.method, request.url.path, request.content))
+            code = (
+                "dependency_unavailable"
+                if request.method == "GET"
+                else "operation_indeterminate"
+            )
+            return httpx.Response(503, json={"detail": {"code": code}})
+
+        with tempfile.TemporaryDirectory() as tmp:
+            with (
+                patch.object(server, "SPOOL", Path(tmp)),
+                patch.object(server, "get_access_token", return_value=auth),
+                patch.object(
+                    server.httpx,
+                    "AsyncClient",
+                    side_effect=lambda **kwargs: original_client(
+                        transport=httpx.MockTransport(unavailable), **kwargs
+                    ),
+                ),
+            ):
+                with self.assertRaisesRegex(ValueError, "dependency_unavailable"):
+                    asyncio.run(server.call("get_editorial_policy", "GET", "/integrations/editorial/policy"))
+                payload = {"idempotency_key": "same-key", "winning_option_id": 7}
+                with self.assertRaisesRegex(ValueError, "operation_indeterminate"):
+                    asyncio.run(server.call("resolve_market", "POST", "/integrations/markets/7/resolve", payload))
+        self.assertEqual(len(calls), 2)
+        self.assertEqual(json.loads(calls[1][2]), payload)
+
     def test_discovery_preserves_exact_issuer_and_authentication_challenge(self):
         from fastapi.testclient import TestClient
 

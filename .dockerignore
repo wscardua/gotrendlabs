@@ -10,6 +10,8 @@
 .pytest_cache
 .runtime
 .venv
+apps/mobile/.dart_tool/
+apps/mobile/build/
 __pycache__/
 *.py[cod]
 db.sqlite3

@@ -110,6 +110,11 @@ class _MarketDetailScreenState extends ConsumerState<MarketDetailScreen> {
             icon: Icons.cloud_off,
             title: 'Detalhe indisponível',
             body: ApiFailure.fromObject(error).message,
+            action: OutlinedButton(
+              onPressed: () =>
+                  ref.invalidate(marketDetailProvider(widget.slug)),
+              child: const Text('Tentar novamente'),
+            ),
             color: GtlColors.accentYellow,
           ),
         ),

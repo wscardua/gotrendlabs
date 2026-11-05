@@ -1,5 +1,9 @@
 # Contrato: integrações de agentes — FEAT-MCP-001
 
+## Capacidade de dependência — implementação local 05/11/2026
+
+Falhas de conexão/admissão FastAPI respondem 503 `dependency_unavailable` em leitura e `operation_indeterminate` em escrita. O adaptador MCP já conserva esses códigos fixos; timeout de transporte de mutações críticas mantém resultado indeterminado. Ferramentas, schemas de entrada/saída, scopes, identidade, auditoria transacional, idempotência e replays não mudam. 503 não autoriza nova chave nem repetição automática; ações humanas do Admin Ops não concedem permissões MCP. [ADR-0020](../decisions/ADR-0020-database-capacity.md).
+
 ## Revisão 1.9 — resultado de get_market (03/11/2026, implantada)
 
 `get_market` / GET `/integrations/editorial/markets/{market_id}` expõem `winning_option_id` como campo obrigatório `integer | null`, sem default no schema compartilhado `MarketProjection`. O backend lê o valor persistido sob o lock compartilhado existente. Havendo vencedora registrada, o ID corresponde a `options[].id`; caso contrário, retorna `null`, sem omitir o campo. O resultado permanece em resolved/sealed. Não inferir resultado por probabilidade, ordem de opções ou texto editorial.

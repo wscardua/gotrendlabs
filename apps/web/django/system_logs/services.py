@@ -2,6 +2,7 @@ import json
 import os
 import re
 import threading
+import time
 import traceback
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -20,6 +21,10 @@ SENSITIVE_KEY_RE = re.compile(
     re.IGNORECASE,
 )
 _state = threading.local()
+_retention_lock = threading.Lock()
+_retention_cache = {"days": None, "until": 0.0}
+_log_slot = threading.BoundedSemaphore(1)
+_submit_slot = threading.BoundedSemaphore(1)
 
 
 def _coerce_retention_days(value, default=DEFAULT_RETENTION_DAYS):
@@ -42,18 +47,29 @@ def _fallback_system_log_retention_days():
 
 
 def get_system_log_retention_days():
-    try:
-        with get_connection() as connection:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT system_log_retention_days FROM gotrendlabs_site_config WHERE singleton_key = 1")
-                row = cursor.fetchone()
-                if row:
-                    return _coerce_retention_days(row["system_log_retention_days"], _fallback_system_log_retention_days())
-    except (errors.UndefinedTable, errors.UndefinedColumn):
-        return _fallback_system_log_retention_days()
-    except Exception:
-        return _fallback_system_log_retention_days()
-    return _fallback_system_log_retention_days()
+    now = time.monotonic()
+    if _retention_cache["until"] > now:
+        return _retention_cache["days"]
+    with _retention_lock:
+        now = time.monotonic()
+        if _retention_cache["until"] > now:
+            return _retention_cache["days"]
+        days = _fallback_system_log_retention_days()
+        ttl = 5  # Avoid a connection storm if PostgreSQL is unavailable.
+        try:
+            with get_connection() as connection:
+                with connection.cursor() as cursor:
+                    cursor.execute("SELECT system_log_retention_days FROM gotrendlabs_site_config WHERE singleton_key = 1")
+                    row = cursor.fetchone()
+                    if row:
+                        days = _coerce_retention_days(row["system_log_retention_days"], days)
+                        ttl = 60
+        except (errors.UndefinedTable, errors.UndefinedColumn):
+            pass
+        except Exception:
+            pass
+        _retention_cache.update(days=days, until=time.monotonic() + ttl)
+        return days
 
 
 def new_request_id():
@@ -150,6 +166,43 @@ def log_system_event(
 ):
     if getattr(_state, "writing", False):
         return None
+    if not _log_slot.acquire(blocking=False):
+        return None
+    try:
+        return _write_system_event(
+            level=level, source=source, logger_name=logger_name, event_type=event_type,
+            message=message, request_id=request_id, method=method, path=path,
+            status_code=status_code, duration_ms=duration_ms, user_id=user_id,
+            ip_address=ip_address, user_agent=user_agent, exception_type=exception_type,
+            stack_trace=stack_trace, context=context, created_at=created_at,
+        )
+    finally:
+        _log_slot.release()
+
+
+def submit_system_event(**kwargs):
+    """Best-effort technical logging without holding an HTTP response open."""
+    if not _submit_slot.acquire(blocking=False):
+        return None
+
+    def write():
+        try:
+            log_system_event(**kwargs)
+        finally:
+            _submit_slot.release()
+
+    try:
+        threading.Thread(target=write, name="system-log", daemon=True).start()
+    except RuntimeError:
+        _submit_slot.release()
+    return None
+
+
+def _write_system_event(
+    *, level, source, logger_name, event_type, message, request_id, method, path,
+    status_code, duration_ms, user_id, ip_address, user_agent, exception_type,
+    stack_trace, context, created_at,
+):
     now = created_at or datetime.now(timezone.utc)
     expires_at = now + timedelta(days=get_system_log_retention_days())
     payload = (

@@ -1292,7 +1292,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
 
     def test_audit_failure_aborts_technical_failure_does_not(self):
         with patch(
-            "apps.api.backend_api.editorial_routes.log_system_event",
+            "apps.api.backend_api.editorial_routes.submit_system_event",
             side_effect=RuntimeError("sensitive text"),
         ):
             r = self.create()
