@@ -105,6 +105,10 @@ Formulário de publicação aprovada alinhado ao contrato de identidade existent
 
 # Status de Implementação
 
+## 05/11/2026 — AAB Android de resiliência preparado para teste fechado
+
+WFLOW-20261105-MOBILE-PLAY-RESILIENCE: `1.2.2+16` compilado em AAB release assinado a partir da `main` integrada, com API/web produtivas, pacote preservado, target API 36 e alinhamento 16 KB. Flutter analyze e 124 testes passaram; APK release de verificação instalou e abriu em AVD descartável offline, exibindo indisponibilidade recuperável sem crash observado. A captura do operador confirmou release 15 ativo no teste fechado; o pacote inicial 15 foi descartado. O upload na Play Console não foi feito; conferir versionCode 16 globalmente e revisar o track. [Workflow](workflow-runs.md). Código Flutter de indisponibilidade veio da PR #188; esta preparação só avança versão/documentação.
+
 ## 05/11/2026 — resiliência de conexões ativa em produção
 
 WFLOW-20261105-PRD-DB-RESILIENCE: PR #188 integrada (`595a8ac`), CI da PR e de `main` aprovadas, deploy Actions 42082043411 concluído. Smoke somente leitura confirmou SHA no host, seis serviços ativos/MCP saudável, API/DB `ok`, páginas públicas e integridade 200, mercado inexistente 404, cinco conexões SQL no instante consultado e nenhuma linha ERROR/5xx nos cinco minutos de logs consultados. [Recibo produtivo](../testing/db-resilience-production-closeout-20261105.md). Backend/web ativos; distribuição do novo tratamento Flutter exige release própria. O teto de 59 conexões é estimativa de configuração, não prova de capacidade PRD; observação ampliada de memória/5xx segue pendente. As entradas locais abaixo são histórico de preparação.

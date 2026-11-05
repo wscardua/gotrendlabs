@@ -148,21 +148,23 @@ flutter build appbundle --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao alvo atual do AAB: `1.2.0+14`.
+Versao alvo atual do AAB: `1.2.2+16` (tratamento de indisponibilidade temporaria da PR #188). Captura da Play Console fornecida pelo operador em 05/11/2026 mostra `15 (1.2.1)` ativo em `Closed testing - Alpha`, atualizado em 12/10/2026. Confira que o `versionCode` 16 ainda não foi usado em outro track antes de enviar.
 
-Release name no Play Console: `14 (1.2.0)` (nome automático).
+Release name no Play Console: `16 (1.2.2)` (nome automático).
 
 Release notes em `pt-BR`:
 
 ```text
 <pt-BR>
-Conheça o GoTrendLabs, uma plataforma social de previsões sobre temas e acontecimentos relevantes. Explore mercados, registre suas previsões com créditos educativos, acompanhe seu desempenho, construa reputação e participe da comunidade. Tudo com resultados transparentes e verificáveis — sem envolver dinheiro real.
+Melhoramos a estabilidade quando o serviço fica temporariamente indisponível. O app agora mostra uma mensagem clara e permite tentar novamente ao consultar o detalhe de um mercado, sem encerrar sua sessão. Operações sem confirmação não são repetidas automaticamente.
 </pt-BR>
 ```
 
-Estado no Play Console em 2026-09-26: bundle `14 (1.2.0)` ativo no track `Closed testing - Alpha`, com status `Available to testers on Google Play`, rollout de 100% para o grupo configurado e disponibilidade em 177 países/regiões. As notas gerais acima estão publicadas como idioma padrão `pt-BR`.
+Estado observado no Play Console em 05/11/2026 pela captura do operador: release `15 (1.2.1)` ativo no track `Closed testing - Alpha`, atualizado em 12/10/2026. A versão `16 (1.2.2)` está preparada localmente para envio ao mesmo track; nenhum upload foi realizado por este workflow.
 
 O AAB esperado fica em `build/app/outputs/bundle/release/app-release.aab`. O arquivo `.aab`, APKs, keystores, `android/key.properties` e `google-services.json` permanecem fora do Git.
+
+Pacote local preparado para o teste fechado em 05/11/2026: `build/app/outputs/bundle/release/gotrendlabs-1.2.2+16.aab`, 57.608.430 bytes, SHA-256 `3714e1f3f98d1e65f8d2e3908bbed70f0fcece46e2785d054915b6b65ba945a6`. A Google Play deve confirmar a assinatura de upload e que o build 16 ainda não foi usado. Este preparo não altera o APK ativo do site.
 
 Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.
 

@@ -40,6 +40,10 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 # Known Gaps
 
+## 05/11/2026 — envio do AAB Android 1.2.2+16
+
+O AAB release foi compilado e validado localmente para teste fechado. Captura do operador confirmou release 15 ativo em `Closed testing - Alpha`; o envio do build 16, a confirmação de que esse código não foi usado em outro track e a análise da loja permanecem externos. O smoke offline em AVD descartável não substitui teste de sessão/autenticação em dispositivo físico nem a revisão do pre-launch report; alinhamento ELF/empacotamento 16 KB foi conferido, execução em dispositivo com páginas de 16 KB não. O Flutter 3.44.1 avisou que `package_info_plus` e `share_plus` ainda aplicam Kotlin Gradle Plugin e poderão exigir atualização antes de uma versão futura do Flutter; o build atual passou. Licenças Android locais pendentes no `flutter doctor` não impediram o build. [Workflow](workflow-runs.md).
+
 ## 05/11/2026 — limites após implantação da resiliência
 
 Backend/web estão ativos pela PR #188; CI, deploy e smoke técnico passaram. A release Android/iOS da UX nova de 503 permanece separada. O teto de 59 conexões é estimativa de configuração; não houve carga produtiva nem observação prolongada. RDS registrou média de memória livre perto de 131 MB na janela do deploy, com mínimo de 122 MB, e requer acompanhamento. `DatabaseConnections` no CloudWatch não refletiu consistentemente a contagem SQL pontual de cinco sessões. Retenção de um dia, TLS, alertas/pipeline externo, capacidade RDS, atribuição da rajada original, timeout de leitura API em socket já bloqueado e última projeção pessoal ORM pós-resposta API bem-sucedida seguem em ciclos próprios. [Recibo](../testing/db-resilience-production-closeout-20261105.md). A seção local abaixo permanece histórico.

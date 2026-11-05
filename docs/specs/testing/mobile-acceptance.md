@@ -83,6 +83,7 @@ Deve passar:
 - chamadas mobile não isentas com build abaixo do mínimo recebem `426 code=app_update_required`, enquanto `GET /health` continua acessível para orientar o gate
 - APK beta de producao usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`; FCM depende de `google-services.json` local no build e backend com provider `fcm`
 - AAB de Google Play Closed testing usa `https://gotrendlabs.com.br/api` e `https://gotrendlabs.com.br`, versionCode maior que o ultimo build publicado e signing release local sem commitar artefatos
+- Para o envio de 2026-11-05: target API 36, package name preservado, certificado de upload igual ao bundle 14 e alinhamento de bibliotecas nativas de 16 KB conferidos no AAB; instalação release isolada deve abrir sem crash e exibir indisponibilidade recuperável quando offline.
 
 ## Validacao de distribuicao beta
 
