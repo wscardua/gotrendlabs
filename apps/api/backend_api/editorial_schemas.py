@@ -445,7 +445,7 @@ class PendingImpact(BaseModel):
     # These are effects of this warning, not authorization for an operation.
     creation: Literal["allowed"]
     submission: Literal["allowed", "blocked"]
-    approval: Literal["human_resolution_required"]
+    approval: Literal["human_attestation_required"]
     publication: Literal["requires_current_human_approval", "blocked"]
 
 

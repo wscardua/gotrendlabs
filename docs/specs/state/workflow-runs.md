@@ -10,6 +10,7 @@
 - Política 1.4/modelo 1.8 consultados em produção; mercado 62 somente lido como referência histórica. Nenhum mercado modificado.
 - Artefatos: serviço/diagnóstico/schema/rota FastAPI, adaptador, OpenAPI, testes, feature/contrato e memória operacional. Mobile não consome esta rota; sem release mobile necessária.
 - Validação nesta branch: 90 testes/89 aprovados/um skip por roles dedicadas ausentes; REST e SDK MCP real com serviço/OAuth aprovados. OpenAPI, Django check, Ruff F e diff check aprovados.
+- Revisão de impacto e correção em 05/11: corrigidas classificação indevida de listas informativas, amplificação da resposta e descrição inexata do gate de aprovação. Limite de 50 itens declarados com `details_truncated`; `approval=human_attestation_required` e `resolve_by` editorial preservado. [Aceites e validação incremental](../testing/editorial-pending-details.md). Sem mudança de permissão, erro, replay ou política.
 - Checklist universal: feature/contrato/aceites e estado sincronizados; sem novo ADR estrutural, migration ou impacto mobile. Parser limitado a declarações explícitas, conforme relatório; não certifica completude semântica.
 - Próxima ação de disponibilização: implantação conjunta API/MCP, seguida de smoke de leitura e atualização de catálogo dos clientes. Deploy não executado nesta solicitação.
 

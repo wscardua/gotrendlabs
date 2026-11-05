@@ -25,7 +25,7 @@ Conclusão: encaminhar à revisão humana."""
             self.assertEqual(row["resolve_by"], "before_human_approval")
             self.assertEqual(row["impact"]["creation"], "allowed")
             self.assertEqual(row["impact"]["submission"], "allowed")
-            self.assertEqual(row["impact"]["approval"], "human_resolution_required")
+            self.assertEqual(row["impact"]["approval"], "human_attestation_required")
         self.assertEqual(
             domain.approval_document_pending(document), ["unresolved_editorial_gaps"]
         )
@@ -106,6 +106,7 @@ Conclusão: recomenda revisão."""
     def test_markdown_pending_list_is_detailed_and_conflicts_with_none(self):
         doc = """## PENDÊNCIAS E CONCLUSÃO
 Pendências para aprovação: nenhuma
+Pendências:
 - Abrir a fonte de resolução (E06)
 - Definir a regra de empate
 Conclusão: devolver para pesquisa.
@@ -119,6 +120,36 @@ Conclusão: devolver para pesquisa.
         self.assertEqual([r["criterion_ids"] for r in declared], [["E06"], []])
         self.assertIn("contradictory_pending_declarations", [r["reason"] for r in rows])
 
+    def test_informational_bullets_do_not_create_pending(self):
+        doc = """## PENDÊNCIAS E CONCLUSÃO
+Pendências para aprovação: nenhuma
+- Fonte oficial conferida em 05/11
+- Recomendação favorável
+Conclusão: encaminhar à aprovação humana.
+"""
+        self.assertEqual(document_details(doc), [])
+
+    def test_pending_list_inherits_explicit_human_label(self):
+        rows = document_details("""## PENDÊNCIAS E CONCLUSÃO
+Pendências humanas:
+- Definir apurador (E10)
+Conclusão: revisar.
+""")
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["declared_kind"], "human_task")
+        self.assertEqual(rows[0]["criterion_ids"], ["E10"])
+
+    def test_details_are_bounded_and_report_truncation(self):
+        from apps.api.backend_api.editorial_pending import MAX_DECLARED_DETAILS
+
+        document = "## PENDÊNCIAS E CONCLUSÃO\nPendências: " + "a;" * 29000
+        self.assertLess(len(document), 60000)
+        rows = document_details(document)
+        self.assertEqual(len(rows), MAX_DECLARED_DETAILS + 1)
+        self.assertEqual(rows[-1]["reason"], "details_truncated")
+        self.assertEqual(rows[-1]["code"], "unresolved_editorial_gaps")
+        self.assertLess(len(str(rows)), 30000)
+
     def test_policy_schedule_and_empty_document_details(self):
         rows = validation_details(
             {"document": "", "policy_version": "old", "policy_hash": "old"},
@@ -130,6 +161,7 @@ Conclusão: devolver para pesquisa.
             ["policy_outdated", "empty_document", "schedule_incomplete"],
         )
         self.assertEqual(rows[0]["impact"]["submission"], "blocked")
+        self.assertEqual(rows[0]["impact"]["approval"], "human_attestation_required")
         self.assertEqual(rows[2]["impact"]["submission"], "blocked")
         self.assertEqual(rows[2]["criterion_ids"], ["E05", "E07"])
 

@@ -6107,7 +6107,7 @@
       "PendingImpact": {
         "properties": {
           "approval": {
-            "const": "human_resolution_required",
+            "const": "human_attestation_required",
             "title": "Approval",
             "type": "string"
           },

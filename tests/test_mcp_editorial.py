@@ -753,6 +753,7 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             for item in result["pending_details"]:
                 self.assertEqual(item["impact"]["creation"], "allowed")
                 self.assertEqual(item["impact"]["submission"], "allowed")
+                self.assertEqual(item["impact"]["approval"], "human_attestation_required")
             created = self.create()
             self.assertEqual(created.status_code, 200, created.text)
             mid = created.json()["market_id"]
@@ -764,6 +765,18 @@ class McpEditorialTests(AppendOnlyTransactionTestCase):
             self.assertEqual(submitted.status_code, 200, submitted.text)
             self.assertEqual(submitted.json()["editorial_status"], "in_review")
             self.assertEqual(EditorialDraft.objects.get(market_id=mid).record["document"], draft["editorial_record"]["document"])
+
+        draft["editorial_record"]["document"] = (
+            "## PENDÊNCIAS E CONCLUSÃO\nPendências: " + "a;" * 29000
+        )
+        response = self.client.post(
+            "/integrations/editorial/drafts/validate", json=draft, headers=self.agentheaders
+        )
+        self.assertEqual(response.status_code, 200, response.text)
+        result = response.json()
+        self.assertEqual(result["pending"], ["unresolved_editorial_gaps"])
+        self.assertEqual(len(result["pending_details"]), 51)
+        self.assertEqual(result["pending_details"][-1]["reason"], "details_truncated")
 
     def test_submission_return_approval_human_edit_and_stale_versions(self):
         r = self.create()

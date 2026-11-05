@@ -7,6 +7,7 @@ reviewer; keyword matches never introduce lifecycle gates or certify sufficiency
 import re
 
 GAPS = "unresolved_editorial_gaps"
+MAX_DECLARED_DETAILS = 50
 SECTION = re.compile(
     r"(?im)^[ \t]*(?:#{1,6}[ \t]+)?PENDÊNCIAS E CONCLUSÃO[ \t]*#*[ \t]*$"
 )
@@ -16,6 +17,15 @@ NONE = re.compile(r"(?i)^nenhuma\.?$")
 PENDING_LABEL = re.compile(
     r"(?i)^(?:[-*]\s*)?(?:pendências?(?: humanas?| essenciais?| de pesquisa| de regra| para aprovação)?|lacunas?(?: essenciais?| de fonte| de regra)?|conferências técnicas ainda não executadas)\s*:"
 )
+
+
+def _declared_kind(label):
+    label = label.casefold()
+    if "humana" in label:
+        return "human_task"
+    if any(word in label for word in ("essencia", "pesquisa", "regra", "fonte")):
+        return "research_or_rule_gap"
+    return "unspecified"
 
 
 def detail(
@@ -40,7 +50,7 @@ def detail(
         "impact": {
             "creation": "allowed",
             "submission": submission,
-            "approval": "human_resolution_required",
+            "approval": "human_attestation_required",
             "publication": "requires_current_human_approval",
         },
     }
@@ -71,58 +81,63 @@ def document_details(document):
     declarations = [DECLARATION.fullmatch(line) for line in lines]
     declarations = [m for m in declarations if m]
     declared = []
+    truncated = False
+
+    def add_pending(item, *, kind="unspecified", prefix="Pendência declarada: "):
+        nonlocal truncated
+        if len(declared) >= MAX_DECLARED_DETAILS:
+            truncated = True
+            return
+        declared.append(
+            detail(
+                "declared_pending",
+                prefix + item,
+                excerpt=item,
+                kind=kind,
+                criteria=sorted(set(re.findall(r"\bE(?:0[1-9]|1[01])\b", item))),
+            )
+        )
+
     for line in text.splitlines():
+        if truncated:
+            break
         line = line.strip()
         match = PENDING_LABEL.match(line)
         if not match:
             continue
-        label = match[0].casefold()
-        kind = (
-            "human_task"
-            if "humana" in label
-            else "research_or_rule_gap"
-            if any(word in label for word in ("essencia", "pesquisa", "regra", "fonte"))
-            else "unspecified"
-        )
+        kind = _declared_kind(match[0])
         value = line[match.end() :].strip()
         if NONE.fullmatch(value):
             continue
-        # Keep each explicitly listed item, preserving its exact wording and only
-        # criterion IDs actually supplied by the author (never inferred).
         for item in value.split(";"):
             item = item.strip()
             if item:
-                declared.append(
-                    detail(
-                        "declared_pending",
-                        "Pendência declarada: " + item,
-                        excerpt=item,
-                        kind=kind,
-                        criteria=sorted(
-                            set(re.findall(r"\bE(?:0[1-9]|1[01])\b", item))
-                        ),
-                    )
-                )
-    # The template also permits a Markdown list instead of a labelled sentence.
-    # Read list items only in the conclusion section and before its conclusion;
-    # conditional fallback rules elsewhere are not outstanding tasks.
+                add_pending(item, kind=kind)
+                if truncated:
+                    break
+    # A bullet belongs to pending only after an explicit, empty pending label.
+    pending_list = False
+    pending_list_kind = "unspecified"
     for line in lines:
         if re.match(r"(?i)^conclusão\s*:", line):
             break
+        label = PENDING_LABEL.match(line)
+        if label:
+            pending_list = not line[label.end() :].strip()
+            pending_list_kind = _declared_kind(label[0])
+            continue
         bullet = re.match(r"^[-*]\s+(.+)$", line)
-        if not bullet or PENDING_LABEL.match(line):
+        if not bullet:
+            pending_list = False
+            continue
+        if not pending_list:
             continue
         item = bullet[1].strip()
         if not item or NONE.fullmatch(item):
             continue
-        declared.append(
-            detail(
-                "declared_pending",
-                "Pendência listada: " + item,
-                excerpt=item,
-                criteria=sorted(set(re.findall(r"\bE(?:0[1-9]|1[01])\b", item))),
-            )
-        )
+        add_pending(item, kind=pending_list_kind, prefix="Pendência listada: ")
+        if truncated:
+            break
     result.extend(declared)
     if sections:
         if len(declarations) > 1:
@@ -162,6 +177,13 @@ def document_details(document):
                         "A declaração de ausência não é a primeira linha de conteúdo da seção, como orienta o modelo de preparação.",
                     )
                 )
+    if truncated:
+        result.append(
+            detail(
+                "details_truncated",
+                f"Há mais de {MAX_DECLARED_DETAILS} pendências explícitas; somente as primeiras foram detalhadas. Consulte o documento completo.",
+            )
+        )
     return result
 
 
