@@ -160,7 +160,7 @@ Melhoramos a estabilidade quando o serviço fica temporariamente indisponível. 
 </pt-BR>
 ```
 
-Estado observado no Play Console em 05/11/2026: release `15 (1.2.1)` ativo no track `Closed testing - Alpha`, atualizado em 12/10/2026. O AAB `16 (1.2.2)` foi aceito pela Console e a release, com rollout de 100% no mesmo track, foi enviada à análise. A disponibilização aos testadores depende da aprovação do Google; não a inferir do upload.
+Estado observado no Play Console em 05/11/2026: release `16 (1.2.2)` em `Active tracks` de `Closed testing - Alpha`, atualizada em 05/11/2026. O titular confirmou que ela aparece disponível aos testadores. O rollout foi configurado para 100% do grupo do teste fechado; instalação em dispositivo de um testador ainda não foi verificada neste workflow.
 
 O AAB esperado fica em `build/app/outputs/bundle/release/app-release.aab`. O arquivo `.aab`, APKs, keystores, `android/key.properties` e `google-services.json` permanecem fora do Git.
 

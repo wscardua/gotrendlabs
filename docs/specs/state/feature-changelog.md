@@ -1,6 +1,6 @@
-## 05/11/2026 — bundle Android 1.2.2+16 preparado
+## 05/11/2026 — bundle Android 1.2.2+16 no teste fechado
 
-AAB release assinado para Google Play Closed testing com a UX de indisponibilidade da PR #188; target API 36, alinhamento 16 KB, certificado igual ao bundle 15 local e 124 testes Flutter aprovados. A Console mostrou 15 ativo no track Alpha; o primeiro pacote 15 foi descartado e a versão avançou para 16. Build 16 e declaração app-level de comerciante enviados à análise Google; disponibilidade aos testadores ainda pendente. WFLOW-20261105-MOBILE-PLAY-RESILIENCE.
+AAB release assinado para Google Play Closed testing com a UX de indisponibilidade da PR #188; target API 36, alinhamento 16 KB, certificado igual ao bundle 15 local e 124 testes Flutter aprovados. A Console mostrou 15 ativo no track Alpha; o primeiro pacote 15 foi descartado e a versão avançou para 16. Após envio do build 16 e da declaração app-level de comerciante, a Console passou a mostrar `16 (1.2.2)` em `Active tracks` e o titular confirmou disponibilidade aos testadores. WFLOW-20261105-MOBILE-PLAY-RESILIENCE.
 
 ## 05/11/2026 — resiliência de conexões implantada
 
