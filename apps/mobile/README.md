@@ -148,21 +148,23 @@ flutter build appbundle --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao alvo atual do AAB: `1.2.0+14`.
+Versao atual do AAB no teste fechado: `1.2.2+16` (tratamento de indisponibilidade temporaria da PR #188).
 
-Release name no Play Console: `14 (1.2.0)` (nome automático).
+Release name no Play Console: `16 (1.2.2)` (nome automático).
 
 Release notes em `pt-BR`:
 
 ```text
 <pt-BR>
-Conheça o GoTrendLabs, uma plataforma social de previsões sobre temas e acontecimentos relevantes. Explore mercados, registre suas previsões com créditos educativos, acompanhe seu desempenho, construa reputação e participe da comunidade. Tudo com resultados transparentes e verificáveis — sem envolver dinheiro real.
+Melhoramos a estabilidade quando o serviço fica temporariamente indisponível. O app agora mostra uma mensagem clara e permite tentar novamente ao consultar o detalhe de um mercado, sem encerrar sua sessão. Operações sem confirmação não são repetidas automaticamente.
 </pt-BR>
 ```
 
-Estado no Play Console em 2026-09-26: bundle `14 (1.2.0)` ativo no track `Closed testing - Alpha`, com status `Available to testers on Google Play`, rollout de 100% para o grupo configurado e disponibilidade em 177 países/regiões. As notas gerais acima estão publicadas como idioma padrão `pt-BR`.
+Estado observado no Play Console em 05/11/2026: release `16 (1.2.2)` em `Active tracks` de `Closed testing - Alpha`, atualizada em 05/11/2026. O titular confirmou que ela aparece disponível aos testadores. O rollout foi configurado para 100% do grupo do teste fechado; instalação em dispositivo de um testador ainda não foi verificada neste workflow.
 
 O AAB esperado fica em `build/app/outputs/bundle/release/app-release.aab`. O arquivo `.aab`, APKs, keystores, `android/key.properties` e `google-services.json` permanecem fora do Git.
+
+Pacote enviado ao teste fechado em 05/11/2026: `build/app/outputs/bundle/release/gotrendlabs-1.2.2+16.aab`, 57.608.430 bytes, SHA-256 `3714e1f3f98d1e65f8d2e3908bbed70f0fcece46e2785d054915b6b65ba945a6`. A Console aceitou o código 16 e confirmou target SDK 36 e suporte a 16 KB. Este envio não altera o APK ativo do site.
 
 Para simular iOS, tambem deve passar `flutter doctor -v` com Xcode completo e CocoaPods disponiveis.
 

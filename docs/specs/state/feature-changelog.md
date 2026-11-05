@@ -1,6 +1,10 @@
+## 05/11/2026 — bundle Android 1.2.2+16 no teste fechado
+
+AAB release assinado para Google Play Closed testing com a UX de indisponibilidade da PR #188; target API 36, alinhamento 16 KB, certificado igual ao bundle 15 local e 124 testes Flutter aprovados. A Console mostrou 15 ativo no track Alpha; o primeiro pacote 15 foi descartado e a versão avançou para 16. Após envio do build 16 e da declaração app-level de comerciante, a Console passou a mostrar `16 (1.2.2)` em `Active tracks` e o titular confirmou disponibilidade aos testadores. WFLOW-20261105-MOBILE-PLAY-RESILIENCE.
+
 ## 05/11/2026 — resiliência de conexões implantada
 
-PR #188/merge `595a8ac`; CI da PR/main, builds e deploy Actions 42082043411 aprovados. API/web com pool/admissão limitados, 503 seguro, detalhe/integridade sem fallback ORM após falha e logger técnico fora da resposta estão ativos. Smoke somente leitura confirmou saúde, serviços e rotas públicas; MCP saudável sem novo schema/scope/replay. Flutter validado no código, distribuição pendente. [Recibo](../testing/db-resilience-production-closeout-20261105.md).
+PR #188/merge `595a8ac`; CI da PR/main, builds e deploy Actions 42082043411 aprovados. API/web com pool/admissão limitados, 503 seguro, detalhe/integridade sem fallback ORM após falha e logger técnico fora da resposta estão ativos. Smoke somente leitura confirmou saúde, serviços e rotas públicas; MCP saudável sem novo schema/scope/replay. O Flutter foi distribuído posteriormente no teste fechado pela release `1.2.2+16`, registrada acima. [Recibo](../testing/db-resilience-production-closeout-20261105.md).
 
 ## 05/11/2026 — follow-up local de resiliência
 
