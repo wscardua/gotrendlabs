@@ -347,3 +347,11 @@ Código da agenda integrado em main pela PR #170; migrations 0033–0036 e grant
 ## MCP analytics histórico — implantação técnica validada (24/10/2026)
 
 PR #175 integrada em `main` (`06c1ef0`); CI, build e deploy Actions `40135480756` aprovados. Migration 0027, chave estável privada, `pgcrypto`, 17 checkpoints e serviços verificados; backfill explícito concluiu sem dias restantes. FastAPI respondeu a todo o histórico, um ano e dez anos com cobertura parcial identificada; `get_editorial_signals` autenticado retornou analytics disponível. As oito ferramentas estão implantadas sob `analytics:read`, e o operador já concedeu o escopo à integração existente; o app cliente ainda precisa solicitá-lo, atualizar ferramentas e passar por novo OAuth e smoke positivo. A feature analítica está implantada; FEAT-MCP-001 geral permanece parcial por homologação externa. [Recibo](../testing/mcp-analytics-production-closeout-20261024.md), [contrato](../contracts/mcp-analytics.md) e [runbook](../../guides/mcp-analytics-history.md).
+
+## Atualização 2026-11-06 — MFA mobile
+
+FEAT-AUTH-001/FEAT-MOBILE-001: cliente MFA administrativo implementado na branch `fix/mobile-admin-mfa-20261106` a partir da main remota `8990df4`. Flutter reutiliza enrollment/verify; sem backend novo. Feature ampla permanece parcial. Evidências e pendências em WFLOW-20261106-MOBILE-MFA.
+
+## Atualização 2026-11-06 — Origem de releases Android
+
+Gate de build release exige fetch e checkout limpo do HEAD atual de origin/main. Regressão 1.2.1→1.2.2 rastreada a mudanças locais não integradas; MFA recuperado, critério compacto pendente. Nenhuma nova distribuição liberada por este workflow. Ver WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.

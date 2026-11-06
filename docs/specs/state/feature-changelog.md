@@ -1989,3 +1989,11 @@ Revisão posterior: corrigida disponibilidade por evento, prévia observada nos 
 
 API passa a expor cobertura, visão geral, séries, comparação, retenção, mercados e comparação editorial por escopo `analytics:read`; `get_editorial_signals` passa a agregar resumo observado sob `metrics:read`. Histórico de eventos observados é consolidado diariamente com checkpoint antes do expurgo. Inclui migration `admin_ops.0027`, OpenAPI e contrato v1. Sem rollout produtivo; não presume recuperação de eventos já apagados. [ADR-0017](../decisions/ADR-0017-mcp-analytics-history.md).
 Fechamento pré-PR: FEAT-ANALYTICS-001 v0.9 e FEAT-MCP-001 v1.6, contrato `analytics-mcp.v1`, aceites e runbook reconciliados. O deploy verifica a chave estável antes de parar serviços. PR, CI, migration, backfill, grant e smoke de produção ainda pendentes. WFLOW-20261024-MCP-ANALYTICS-HISTORY.
+
+## 2026-11-06 — MFA no login administrativo mobile
+
+FEAT-AUTH-001 v0.9 / FEAT-MOBILE-001: Flutter diferencia sessão de desafio no login, consome enrollment/verify existentes, permite TOTP/recuperação e confirmação de guarda dos recovery codes. Fechamento/cancelamento limpa desafio e descarta resposta pendente. Regras, contratos FastAPI/OpenAPI e permissões MCP preservados. Entrega em `fix/mobile-admin-mfa-20261106`; distribuição pendente.
+
+## 2026-11-06 — Integridade da origem de releases
+
+Gate Android para APK/AAB release exige checkout limpo do commit atual da main remota após fetch; debug preservado. AGENTS/checklist passam a exigir commit/integração antes de distribuir e recibo SHA-versão-canal-checksum, com reconciliação funcional da release anterior. Pendência do critério compacto identificada e registrada. Sem impacto MCP/runtime.

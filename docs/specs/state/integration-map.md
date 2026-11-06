@@ -342,3 +342,7 @@ Exclusão MCP própria (02/11/2026): editorial_routes.agent(drafts:delete) → e
 ## MCP lifecycle — produção em 02/11/2026
 
 PR #182 / merge 0ffa4a0 / Actions 41464155882 implantaram backend, Admin Ops e adaptador com migration 0007. Smoke confirmou fronteiras FastAPI → engine/recibos/ledger e MCP HTTP, ACL mínima e nove scopes anunciados; novas concessões continuam staff/MFA + novo grant/token. Nenhuma release Flutter ou nova configuração foi necessária. [Recibo](../testing/mcp-market-lifecycle-production-closeout-20261102.md).
+
+## Mobile → autenticação MFA (2026-11-06)
+
+AuthRepository Flutter consome `/auth/mfa/enroll` e `/auth/mfa/verify` após `MfaChallengeResponse` de `/auth/login`. FastAPI mantém autoridade sobre fator, tentativas, expiração, replays e sessão. Sem nova fronteira, permissão ou alteração MCP/OpenAPI.

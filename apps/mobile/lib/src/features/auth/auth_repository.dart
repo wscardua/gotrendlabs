@@ -6,13 +6,43 @@ class AuthRepository {
 
   final ApiClient _api;
 
-  Future<AuthResult> login({
+  Future<AuthOutcome> login({
     required String email,
     required String password,
   }) async {
     final json = await _api.postMap(
       '/auth/login',
       data: {'email': email, 'password': password},
+    );
+    if (json['mfa_required'] == true) {
+      return MfaChallenge(
+        token: json['challenge_token'] as String,
+        enrollmentRequired: json['enrollment_required'] as bool,
+      );
+    }
+    return AuthResult.fromJson(json);
+  }
+
+  Future<String> enrollMfa(String token) async {
+    final json = await _api.postMap(
+      '/auth/mfa/enroll',
+      data: {'challenge_token': token},
+    );
+    return json['manual_key'] as String;
+  }
+
+  Future<AuthResult> verifyMfa(
+    String token,
+    String code, {
+    required bool recovery,
+  }) async {
+    final json = await _api.postMap(
+      '/auth/mfa/verify',
+      data: {
+        'challenge_token': token,
+        'code': recovery ? '' : code,
+        'recovery_code': recovery ? code : '',
+      },
     );
     return AuthResult.fromJson(json);
   }

@@ -486,3 +486,7 @@ Web/Flutter mostram Valor liberado, Ganho líquido e Total recebido, explicitand
 ## Participação após resolução — 2026-10-25
 
 Em resolved/sealed, a projeção pública de volume/participantes agrega previsões resolved, excluindo revised/canceled; preserva humanos/bots e deduplica contas em reforços. Volume humano permanece a semântica de volume_gtl/human_volume_gtl. Demais estados continuam agregando apenas open. Web/Flutter exibem GT₵ em previsões no resultado, evitando chamar volume liquidado de saldo reservado. Elegibilidade dos agentes segue exclusivamente previsões humanas open em _human_prediction_totals; não usa o histórico público como atividade atual. Analytics MCP preserva seus agregados próprios de domínio.
+
+### MFA administrativo no mobile
+
+`POST /auth/login` retorna `AuthResponse` ou `MfaChallengeResponse`. Quando `mfa_required=true`, o app mantém o desafio somente em memória e não tenta ler `user/session`. Consome `/auth/mfa/enroll` para configuração por chave manual e `/auth/mfa/verify` com exatamente um código TOTP ou de recuperação. Apenas a resposta de verificação cria/persiste sessão, respeitando Lembrar login e biometria. Recovery codes do enrollment são exibidos até confirmação de guarda, sem persistência. Erros preservam a etapa MFA e permitem voltar ao login para renovar desafio expirado. Fechar/cancelar elimina o desafio local e descarta respostas MFA pendentes.

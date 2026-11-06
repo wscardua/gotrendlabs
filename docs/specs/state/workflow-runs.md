@@ -238,6 +238,32 @@
 
 # Workflow Runs
 
+## WFLOW-20261106-RELEASE-SOURCE-INTEGRITY
+
+- Tipo: correção de processo/build após regressão real de distribuição Android; concluído localmente na branch fix/mobile-admin-mfa-20261106, pendente de integração.
+- Causa confirmada: WFLOW-20261012-MOBILE-AUTH-CRITERIA-001 no worktree gotrendlabs-mobile-login-fix gerou release 1.2.1+15 com MFA e critério compacto, com homologação do usuário, mas explicitamente sem commit/push/PR. A release 1.2.2+16 partiu de main, onde essas alterações nunca foram integradas. Não houve remoção do código em commit: houve perda entre a origem do artefato anterior e a base versionada.
+- Auditoria do worktree anterior: AuthController/AuthRepository/AuthModels/LoginSheet e mfa_login_panel.dart; market_detail_screen.dart e resolution_criteria_card.dart; testes de auth/critério, pubspec 1.2.1+15 e documentação. Código original preservado. MFA reconciliado pelo commit 06f7c6e na branch atual. Critério compacto permanece pendente de reconciliação, com bloqueio operacional da próxima distribuição até decidir/integrar esse escopo.
+- Regra: entrega local, commit, integração e distribuição são estados distintos; nenhum artefato distribuível deve incluir código sem commit/integração. Recibo deve ligar versão/build/canal/checksum ao SHA e à comparação funcional com a versão anterior.
+- Implementação: AGENTS.md e checklist de publicação; gate Gradle para APK/AAB release executa script Python stdlib, faz fetch origin main e exige HEAD igual a origin/main e checkout limpo (incluindo arquivos não rastreados). Falha de fetch bloqueia. Debug permanece disponível. Python existente reutilizado, sem ambiente novo.
+- Limite: checkout limpo da main não prova que todas as funcionalidades de releases antigas estão nela; comparação de recibos/worktrees e testes de regressão continuam obrigatórios. Configurações ignoradas de assinatura/FCM permanecem fora do Git e não são registradas com segredos.
+- MCP: nenhum ajuste necessário em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Alteração de governança/build não modifica runtime nem concede permissões humanas a clientes MCP.
+- Validação: sete testes stdlib com repositórios Git temporários passaram (main limpa/HEAD destacado atual aceitos; arquivo modificado/staged/não rastreado, commit não integrado, main remota avançada e fetch falho rejeitados). Task Gradle validateReleaseSource executada e rejeitou checkout sujo conforme esperado; dry-run assembleRelease contém o gate, assembleDebug não contém. git diff --check aprovado. `.venv` existente reutilizada.
+- Encerramento local: regras e gate implementados; integração na main permanece necessária para vigorar nos próximos builds. Não houve nova distribuição. Próxima ação: reconciliar critério compacto/testes da 1.2.1, integrar correções e esta governança, então gerar artefato com recibo de origem e smoke dos fluxos anteriormente distribuídos.
+
+## WFLOW-20261106-MOBILE-MFA
+
+- Tipo: correção FEAT-AUTH-001/FEAT-MOBILE-001; workflow change-feature e implementation-cycle.
+- Status: concluído localmente na branch `fix/mobile-admin-mfa-20261106`, criada após fetch de `origin/main` `8990df4`; distribuição/smoke real pendentes.
+- Objetivo: permitir login administrativo mobile por MFA, eliminando erro de parsing de MfaChallengeResponse como AuthResponse.
+- Arquitetura/segurança: Flutter coleta código e apresenta estado; FastAPI mantém autoridade sobre fator, expiração, tentativas, replay e sessão. Desafio/chave/códigos de recuperação apenas em memória; token persistido somente após verificação, respeitando Lembrar login. Sem nova fronteira, permissão, migração, endpoint ou mudança OpenAPI; ADR não necessário.
+- Escopo/spec: incluir cliente MFA em FEAT-AUTH-001 e contratos mobile; nenhuma superfície administrativa adicionada ao app.
+- Artefatos: auth Flutter, testes de regressão, feature de auth, arquitetura mobile, aceite, README e estado/changelog.
+- MCP: ferramentas, schemas, contratos, permissões, erros, replays e orientação editorial preservados; nenhuma permissão derivada de ações humanas Admin Ops. Sem ajuste necessário porque a mudança consome autenticação humana existente no Flutter.
+- Skills: workflow governor, software/mobile architect, architecture guard, spec editor, Flutter implementer, API contract guard, mobile UX, test strategy/test engineer e mobile docs governor.
+- Validação: suíte completa Flutter com 129 testes aprovada; flutter analyze sem problemas; APK debug compilado; git diff --check aprovado. Testes novos cobrem TOTP inválido, recuperação, enrollment/recovery codes, persistência ligada/desligada, campo vazio, expiração, fechamento e descarte de verificação pendente. QA por renderização de widgets em 390×844 e fonte ampliada 1.4× para verificação, enrollment e recovery codes, com dados fictícios e fonte Roboto carregada no harness; sem overflow observado. Flutter/SDK existentes e `.venv` original reutilizados, sem criar ambiente Python.
+- Checklist universal revisado: feature, contrato, arquitetura/segurança, testes e memória sincronizados; nenhuma nova dependência ou compatibilidade legada. Feature ampla continua parcial. Próxima ação: revisar/mesclar e executar ciclo de release Android com build monotônico, distribuição e smoke com conta administrativa real. Nenhum aparelho Android conectado durante a validação; sem autenticação em produção ou publicação nesta etapa.
+- Alterações locais anteriores preservadas no worktree original.
+
 ## WFLOW-20261105-PRD-DB-RESILIENCE
 
 - Fechamento produtivo de API/web: PR #188 integrada em `595a8ac`; CI corrigida da PR 42080024568 e Actions `main` 42082043411 passaram com build/teste/deploy. Smoke somente leitura: SHA no host, seis serviços em execução/MCP saudável, health API/DB 200, home/lista/detalhe API/integridade 200, 404 preservado, cinco sessões SQL no instante e nenhuma linha ERROR/5xx em cinco minutos de logs consultados. [Recibo](../testing/db-resilience-production-closeout-20261105.md). Status desta fatia: **concluída para backend/web em PRD**; release Flutter e observação prolongada de capacidade/memória são pendências separadas. Nenhuma mutação MCP, novo scope ou grant; replay/resultado indeterminado permanecem como testados localmente. Branch local original preservada. Este registro substitui os estados de CI/merge/deploy pendentes abaixo, mantidos como histórico.

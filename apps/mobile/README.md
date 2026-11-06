@@ -122,6 +122,12 @@ keyAlias=gotrendlabs-release
 storeFile=/absolute/path/to/gotrendlabs-release.jks
 ```
 
+Antes de gerar artefato para distribuição, todas as alterações (incluindo versão/build) devem estar commitadas e integradas à main. Use checkout limpo da main remota atualizada. O Gradle executa `ops/scripts/check_android_release_source.py` com Python 3: faz fetch de origin/main e bloqueia release se houver alterações locais/arquivos não rastreados ou se HEAD divergir da main remota. Falha de fetch também bloqueia; debug permanece disponível.
+
+Compare também o recibo e as funcionalidades da versão anterior: main limpa não comprova conter código que antes foi empacotado sem commit. Pendências sem reconciliação impedem distribuição. Registre SHA completo, versão/build, canal, checksum e testes no recibo e confira-o antes do upload.
+
+**Pendência identificada em 06/11/2026:** a versão 1.2.1+15 continha MFA e critério compacto a partir de alterações não commitadas do worktree `gotrendlabs-mobile-login-fix`. A versão 1.2.2+16 partiu de main sem essas alterações. MFA reconciliado na branch `fix/mobile-admin-mfa-20261106`; critério compacto requer reconciliação antes da próxima distribuição. Consulte WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.
+
 Build padrao do beta:
 
 ```bash
@@ -183,3 +189,7 @@ Restaurado ResolutionCriteriaText aprovado em 12/10: prévia de três linhas e l
 ### Prazos no resumo mobile — 17/10/2026
 
 Fechamento e resolução prevista passam ao rodapé do resumo com divisor e tipografia secundária. Card de critérios mantém apenas a regra e acesso ao painel completo. Labels da FastAPI preservados; sem alteração de API/MCP. Evidências em WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT.
+
+### MFA administrativo (2026-11-06)
+
+Login de contas staff/superuser trata o desafio MFA da API e oferece configuração por chave manual, TOTP e código de recuperação. Sessão só é ativada após verificação; recovery codes são mostrados até confirmação de guarda. Nenhuma operação administrativa foi adicionada ao app. Ver workflow `WFLOW-20261106-MOBILE-MFA`; publicação e smoke com conta real pendentes.

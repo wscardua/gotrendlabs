@@ -346,3 +346,12 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 - Wallet consome resolution_returns obrigatório, com liberação/ganho líquido/total sem somas locais; lista vazia oculta cartões.
 - Widget em 360 px cobre título longo e valores 100/100/200 sem overflow; mercado resolved/sealed mantém volume/participantes da API e usa rótulo de previsões.
 - 46 testes Flutter de wallet/cards/detalhe/shell/ticket aprovados; flutter analyze sem problemas. Instalação/release mobile e QA manual em aparelho não executados nesta fatia.
+
+## Regressão MFA administrativo — 2026-11-06
+
+- Resposta de desafio abre verificação sem erro de parsing e sem ativar/persistir sessão.
+- Enrollment mostra chave manual e, após confirmação, recovery codes até confirmação de guarda.
+- TOTP/código de recuperação usam o contrato existente; campo vazio recebe validação visível. Erro de código ou desafio expirado mantém usuário não autenticado e permite reiniciar pelo login.
+- Sessão verificada respeita Lembrar login e proteção biométrica.
+- Cancelar ou fechar limpa o desafio e ignora resposta de verificação pendente.
+- Testes de widgets/repository/controller em `apps/mobile/test/auth_mfa_test.dart`; smoke com conta real de produção e distribuição continuam pendentes.

@@ -40,6 +40,10 @@ final rememberedSessionProvider = FutureProvider<bool>((ref) async {
 });
 
 class AuthController extends Notifier<AuthState> {
+  int _authAttempt = 0;
+  bool _rememberMfa = true;
+  bool _protectMfa = false;
+
   @override
   AuthState build() {
     Future.microtask(restore);
@@ -55,6 +59,11 @@ class AuthController extends Notifier<AuthState> {
     final repo = ref.read(authRepositoryProvider);
     final storedToken = await api.readStoredToken();
     if (!ref.mounted) {
+      return;
+    }
+    if ((!forceLocalAuth && state.busy) ||
+        state.challenge != null ||
+        state.isAuthenticated) {
       return;
     }
     if (storedToken == null || storedToken.isEmpty) {
@@ -96,14 +105,15 @@ class AuthController extends Notifier<AuthState> {
     }
     final currentStoredToken = await api.readStoredToken();
     if (!ref.mounted ||
-        (!forceLocalAuth && state.busy) ||
+        (!forceLocalAuth && (state.busy || state.challenge != null)) ||
         currentStoredToken != storedToken) {
       return;
     }
     api.activateToken(storedToken);
     try {
       final user = await repo.session();
-      if (!ref.mounted || (!forceLocalAuth && state.busy)) {
+      if (!ref.mounted ||
+          (!forceLocalAuth && (state.busy || state.challenge != null))) {
         return;
       }
       state = AuthState(user: user);
@@ -262,25 +272,78 @@ class AuthController extends Notifier<AuthState> {
   }
 
   Future<void> _authenticate(
-    Future<AuthResult> Function() call, {
+    Future<AuthOutcome> Function() call, {
     bool rememberSession = true,
     bool protectWithBiometrics = false,
   }) async {
     state = state.copyWith(busy: true, clearError: true);
     final api = ref.read(apiClientProvider);
+    final attempt = ++_authAttempt;
     try {
       final result = await call();
+      if (!ref.mounted || attempt != _authAttempt) return;
+      if (result is MfaChallenge) {
+        _rememberMfa = rememberSession;
+        _protectMfa = protectWithBiometrics;
+        state = AuthState(challenge: result);
+        if (result.enrollmentRequired) await enrollMfa();
+        return;
+      }
+      result as AuthResult;
       await api.setToken(result.session.token, persist: rememberSession);
       await _setBiometricPreference(rememberSession && protectWithBiometrics);
-      state = AuthState(user: result.user);
+      state = AuthState(user: result.user, recoveryCodes: result.recoveryCodes);
       await ref.read(pushControllerProvider.notifier).syncAfterAuth();
       _scheduleUserScopedDataInvalidation();
     } catch (error) {
+      if (!ref.mounted || attempt != _authAttempt) return;
       state = state.copyWith(
         busy: false,
         error: ApiFailure.fromObject(error).message,
       );
     }
+  }
+
+  Future<void> enrollMfa() async {
+    final challenge = state.challenge;
+    if (challenge == null || state.busy) return;
+    state = state.copyWith(busy: true, clearError: true);
+    final attempt = _authAttempt;
+    try {
+      final key = await ref
+          .read(authRepositoryProvider)
+          .enrollMfa(challenge.token);
+      if (!ref.mounted || attempt != _authAttempt) return;
+      state = AuthState(challenge: challenge, manualKey: key);
+    } catch (error) {
+      if (!ref.mounted || attempt != _authAttempt) return;
+      state = state.copyWith(
+        busy: false,
+        error: ApiFailure.fromObject(error).message,
+      );
+    }
+  }
+
+  Future<void> verifyMfa(String code, {bool recovery = false}) async {
+    final challenge = state.challenge;
+    if (challenge == null || state.busy) return;
+    await _authenticate(
+      () => ref
+          .read(authRepositoryProvider)
+          .verifyMfa(challenge.token, code, recovery: recovery),
+      rememberSession: _rememberMfa,
+      protectWithBiometrics: _protectMfa,
+    );
+  }
+
+  void cancelMfa() {
+    if (!ref.mounted || state.isAuthenticated) return;
+    _authAttempt++;
+    state = const AuthState();
+  }
+
+  void acknowledgeRecoveryCodes() {
+    state = AuthState(user: state.user);
   }
 
   Future<void> _setBiometricPreference(bool enabled) async {
