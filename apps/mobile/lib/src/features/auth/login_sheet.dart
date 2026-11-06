@@ -10,8 +10,13 @@ import '../../core/analytics_tracker.dart';
 import '../anti_abuse/anti_abuse_challenge_field.dart';
 import '../anti_abuse/anti_abuse_repository.dart';
 import 'auth_controller.dart';
+import 'mfa_form.dart';
 
 Future<void> showLoginSheet(BuildContext context) {
+  final controller = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(authControllerProvider.notifier);
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -20,7 +25,7 @@ Future<void> showLoginSheet(BuildContext context) {
       borderRadius: BorderRadius.vertical(top: Radius.circular(GtlRadii.large)),
     ),
     builder: (context) => const LoginSheet(),
-  );
+  ).whenComplete(controller.cancelMfa);
 }
 
 class LoginSheet extends ConsumerStatefulWidget {
@@ -68,10 +73,17 @@ class _LoginSheetState extends ConsumerState<LoginSheet> {
         biometricEnabled &&
         biometricSupported;
     ref.listen(authControllerProvider, (previous, next) {
-      if (next.isAuthenticated && ModalRoute.of(context)?.isCurrent == true) {
+      if (next.isAuthenticated &&
+          next.recoveryCodes.isEmpty &&
+          ModalRoute.of(context)?.isCurrent == true) {
         Navigator.of(context).pop();
       }
     });
+
+    if (auth.challenge != null || auth.recoveryCodes.isNotEmpty) {
+      _password.clear();
+      return const MfaForm();
+    }
 
     return Padding(
       padding: EdgeInsets.only(

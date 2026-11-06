@@ -183,3 +183,7 @@ Restaurado ResolutionCriteriaText aprovado em 12/10: prévia de três linhas e l
 ### Prazos no resumo mobile — 17/10/2026
 
 Fechamento e resolução prevista passam ao rodapé do resumo com divisor e tipografia secundária. Card de critérios mantém apenas a regra e acesso ao painel completo. Labels da FastAPI preservados; sem alteração de API/MCP. Evidências em WFLOW-20261017-MOBILE-DEADLINE-PLACEMENT.
+
+### MFA administrativo (2026-11-06)
+
+Login de contas staff/superuser trata o desafio MFA da API e oferece configuração por chave manual, TOTP e código de recuperação. Sessão só é ativada após verificação; recovery codes são mostrados até confirmação de guarda. Nenhuma operação administrativa foi adicionada ao app. Ver workflow `WFLOW-20261106-MOBILE-MFA`; publicação e smoke com conta real pendentes.

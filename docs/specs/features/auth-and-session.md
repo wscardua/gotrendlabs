@@ -1,10 +1,10 @@
 ---
 id: FEAT-AUTH-001
 titulo: "Autenticação e sessão"
-versao: 0.8
+versao: 0.9
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-11-02
+ultima_atualizacao: 2026-11-06
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -17,6 +17,7 @@ impacta:
   - backend-api
   - database
   - communications
+  - future-mobile
 aprovacao: pendente
 ---
 
@@ -53,13 +54,14 @@ Permitir cadastro, login, login social, manutenção de sessão e preferência d
 - marcação administrativa de contas controladas por robôs internos
 - geração administrativa auditada de link de recuperação de senha
 - MFA TOTP obrigatório, compatível com Google Authenticator, para `is_staff=true` ou `is_superuser=true`
+- cliente mobile de MFA para login de contas administrativas: enrollment por chave manual, TOTP, código de recuperação e exibição única dos recovery codes
 
 ## Escopo excluído
 
 - SSO corporativo
 - gestão avançada de dispositivos
 - ajuste manual de reputação
-- cliente mobile para MFA administrativo, pois o app não possui superfície administrativa nesta etapa
+- superfície de operações administrativas dentro do app mobile
 
 ## Fluxo do usuário
 
@@ -68,6 +70,8 @@ Usuário chega à interface pública, cria conta ou faz login, escolhe ou herda 
 Contas `is_staff` ou `is_superuser` validam TOTP depois da primeira credencial e antes de receber qualquer sessão. Sem fator confirmado, recebem apenas desafio curto para enrollment; Admin Ops e endpoints `/admin/...` exigem evidência MFA na sessão emitida pela FastAPI.
 
 Durante o modo de manutenção web, as rotas de login e MFA (`/mfa/enroll/` e `/mfa/verify/`) permanecem acessíveis para que operadores concluam a autenticação antes de entrar no Admin Ops. O acesso público às demais páginas continua bloqueado.
+
+O mobile interpreta o desafio retornado por `/auth/login` antes de tentar ler `user/session`, consome `/auth/mfa/enroll` e `/auth/mfa/verify` existentes e só ativa/persiste token após verificação. A chave de configuração, o desafio e os códigos de recuperação ficam apenas em memória. Cancelar/fechar limpa o desafio; código inválido não cria sessão, e desafio expirado permite reiniciar pelo login. A confirmação de guarda dos recovery codes precede o fechamento automático do formulário.
 
 ## Comportamento esperado
 

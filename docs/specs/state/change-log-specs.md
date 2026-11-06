@@ -712,3 +712,7 @@ Atualizadas specs `first-party-analytics`, `mcp-editorial-agents`, contratos `an
 ## 2026-10-24 — fechamento documental local do histórico analítico MCP
 
 FEAT-ANALYTICS-001 v0.9 e FEAT-MCP-001 v1.6 referenciam `mcp-analytics.md`; ADR-0017, aceites, estado, workflow, OpenAPI e runbook descrevem consolidação, cobertura, autorização, limitações e ativação. O estado registra validação local, sem atribuir implantação produtiva ou dados anteriores à instrumentação. O preflight de produção exige segredo analítico estável antes de parar writers.
+
+## 2026-11-06 — Escopo MFA mobile (WFLOW-20261106-MOBILE-MFA)
+
+FEAT-AUTH-001 v0.9 passa a incluir cliente mobile de MFA para login administrativo, substituindo a exclusão anterior; operações administrativas dentro do app seguem fora do escopo. Contratos mobile e aceite descrevem enrollment/TOTP/recuperação, sessão após verificação, guarda dos recovery codes e cancelamento. Sem alteração de contrato backend, domínio ou permissões MCP.

@@ -238,6 +238,20 @@
 
 # Workflow Runs
 
+## WFLOW-20261106-MOBILE-MFA
+
+- Tipo: correção FEAT-AUTH-001/FEAT-MOBILE-001; workflow change-feature e implementation-cycle.
+- Status: concluído localmente na branch `fix/mobile-admin-mfa-20261106`, criada após fetch de `origin/main` `8990df4`; distribuição/smoke real pendentes.
+- Objetivo: permitir login administrativo mobile por MFA, eliminando erro de parsing de MfaChallengeResponse como AuthResponse.
+- Arquitetura/segurança: Flutter coleta código e apresenta estado; FastAPI mantém autoridade sobre fator, expiração, tentativas, replay e sessão. Desafio/chave/códigos de recuperação apenas em memória; token persistido somente após verificação, respeitando Lembrar login. Sem nova fronteira, permissão, migração, endpoint ou mudança OpenAPI; ADR não necessário.
+- Escopo/spec: incluir cliente MFA em FEAT-AUTH-001 e contratos mobile; nenhuma superfície administrativa adicionada ao app.
+- Artefatos: auth Flutter, testes de regressão, feature de auth, arquitetura mobile, aceite, README e estado/changelog.
+- MCP: ferramentas, schemas, contratos, permissões, erros, replays e orientação editorial preservados; nenhuma permissão derivada de ações humanas Admin Ops. Sem ajuste necessário porque a mudança consome autenticação humana existente no Flutter.
+- Skills: workflow governor, software/mobile architect, architecture guard, spec editor, Flutter implementer, API contract guard, mobile UX, test strategy/test engineer e mobile docs governor.
+- Validação: suíte completa Flutter com 129 testes aprovada; flutter analyze sem problemas; APK debug compilado; git diff --check aprovado. Testes novos cobrem TOTP inválido, recuperação, enrollment/recovery codes, persistência ligada/desligada, campo vazio, expiração, fechamento e descarte de verificação pendente. QA por renderização de widgets em 390×844 e fonte ampliada 1.4× para verificação, enrollment e recovery codes, com dados fictícios e fonte Roboto carregada no harness; sem overflow observado. Flutter/SDK existentes e `.venv` original reutilizados, sem criar ambiente Python.
+- Checklist universal revisado: feature, contrato, arquitetura/segurança, testes e memória sincronizados; nenhuma nova dependência ou compatibilidade legada. Feature ampla continua parcial. Próxima ação: revisar/mesclar e executar ciclo de release Android com build monotônico, distribuição e smoke com conta administrativa real. Nenhum aparelho Android conectado durante a validação; sem autenticação em produção ou publicação nesta etapa.
+- Alterações locais anteriores preservadas no worktree original.
+
 ## WFLOW-20261105-PRD-DB-RESILIENCE
 
 - Fechamento produtivo de API/web: PR #188 integrada em `595a8ac`; CI corrigida da PR 42080024568 e Actions `main` 42082043411 passaram com build/teste/deploy. Smoke somente leitura: SHA no host, seis serviços em execução/MCP saudável, health API/DB 200, home/lista/detalhe API/integridade 200, 404 preservado, cinco sessões SQL no instante e nenhuma linha ERROR/5xx em cinco minutos de logs consultados. [Recibo](../testing/db-resilience-production-closeout-20261105.md). Status desta fatia: **concluída para backend/web em PRD**; release Flutter e observação prolongada de capacidade/memória são pendências separadas. Nenhuma mutação MCP, novo scope ou grant; replay/resultado indeterminado permanecem como testados localmente. Branch local original preservada. Este registro substitui os estados de CI/merge/deploy pendentes abaixo, mantidos como histórico.
