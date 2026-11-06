@@ -1,6 +1,6 @@
 # Integração remota — MFA mobile e origem de releases
 
-Integração solicitada pelo usuário em 06/11/2026. Este recibo atesta código integrado à main remota; publicação de app e conclusão de deploy produtivo são estados separados.
+Integração solicitada pelo usuário em 06/11/2026. Este recibo atesta código integrado à main remota; publicação de app e conclusão de deploy produtivo são estados separados. O acompanhamento pós-merge foi concluído conforme evidências abaixo.
 
 - PR: [#191](https://github.com/wscardua/gotrendlabs/pull/191).
 - Merge remoto: `ed018f837c13d35a3a77e9741f5490abe1c28703`.
@@ -8,7 +8,10 @@ Integração solicitada pelo usuário em 06/11/2026. Este recibo atesta código 
 - Confirmação: fetch origin main seguido de merge-base confirmou ambos os commits como ancestrais de origin/main.
 - [CI do PR](https://github.com/wscardua/gotrendlabs/actions/runs/42238971291): aprovado; 681 testes em 386,220 s, 3 skips; builds Docker, snapshot OpenAPI e testes JS aprovados.
 - Validação local: 129 testes Flutter, análise estática limpa, APK debug compilado, sete testes Python do gate e integração Gradle verificada. Ambiente virtual existente reutilizado.
-- [Pipeline pós-merge](https://github.com/wscardua/gotrendlabs/actions/runs/42240420306): iniciado no fechamento da integração. Consultar o run para o resultado; este documento não atesta deploy produtivo.
+- [Pipeline pós-merge](https://github.com/wscardua/gotrendlabs/actions/runs/42240420306): concluído com sucesso; 681 testes em 449,559 s, 3 skips, builds/contratos/JS aprovados e deploy via SSM com status Success.
+- [Execução documental #192](https://github.com/wscardua/gotrendlabs/actions/runs/42240762634): concluída com sucesso; deploy corretamente ignorado por docs-only.
+- Smoke pós-deploy: `GET https://gotrendlabs.com.br/api/health` respondeu HTTP 200, `status=ok`, `checks.api=ok` e `checks.database=ok`. Isso não equivale a homologação do login no APK distribuído.
+- Gate de origem testado também contra checkout temporário limpo da main remota `ade0032119ec8bb7e5d9d42bcf0ddd48c8a35bd0`: aceito após fetch. Checkout temporário removido; worktree original preservado.
 
 ## Comportamento integrado
 
