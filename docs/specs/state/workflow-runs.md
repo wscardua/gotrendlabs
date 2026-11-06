@@ -4179,3 +4179,13 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 - MCP: sem ajustes, ferramentas/permissões/contratos/runtime preservados.
 - Validação documental: diff/checklist; este fechamento não exige novo deploy de runtime.
 - Recibo: [integração MFA e origem de releases](../testing/mobile-mfa-integration-20261106.md).
+
+## WFLOW-20261106-MOBILE-MFA-PIPELINE-CLOSEOUT
+
+- Tipo: acompanhamento pós-merge e fechamento documental; concluído acompanhamento das execuções #191/#192 e smoke público.
+- PR #191/main: https://github.com/wscardua/gotrendlabs/actions/runs/42240420306 concluído com sucesso; 681 testes/3 skips, deploy SSM Success. PR #192/main: https://github.com/wscardua/gotrendlabs/actions/runs/42240762634 concluído com sucesso, deploy skipped (docs-only).
+- Smoke: GET /api/health produtivo HTTP200, status/api/database ok. Sem autenticação humana ou mutação de dados. Gate de release também aceitou checkout temporário limpo de origin/main ade0032 após fetch.
+- Artefatos: recibo de integração, este workflow e status; validação docs-only por git diff --check. Registros anteriores de pipeline iniciado são históricos; este fechamento registra o resultado final.
+- MCP: sem alteração de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Nenhum novo acesso derivado de Admin Ops.
+- Limites: nenhum novo APK/AAB distribuído; critério compacto anterior e smoke de login administrativo no novo artefato continuam pendentes antes de distribuição. O deploy de backend não atualiza apps já instalados.
+- Recibo: [integração, CI/deploy e smoke](../testing/mobile-mfa-integration-20261106.md).

@@ -359,3 +359,7 @@ Gate de build release exige fetch e checkout limpo do HEAD atual de origin/main.
 ## Integração remota 2026-11-06 — MFA mobile e origem de releases
 
 PR #191 integrada à main remota (`ed018f837c13d35a3a77e9741f5490abe1c28703`). CI do PR aprovado: 681 testes/3 skips; Flutter local 129 testes e gate Python 7 testes. Pipeline main iniciado, sem atestação produtiva neste recibo. Distribuição Android, smoke com conta real e reconciliação do critério compacto permanecem pendentes. [Recibo](../testing/mobile-mfa-integration-20261106.md).
+
+## Resultado pós-merge 2026-11-06 — MFA mobile
+
+Acompanhamento concluído: pipeline main da PR #191 e deploy SSM aprovados; 681 testes/3 skips, health produtivo HTTP200 com API/banco ok. Pipeline documental #192 aprovado, sem novo deploy. Isso não publica novo app; distribuição Android/critério compacto e smoke de login real permanecem pendentes. [Recibo](../testing/mobile-mfa-integration-20261106.md).
