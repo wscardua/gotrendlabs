@@ -126,7 +126,7 @@ Antes de gerar artefato para distribuição, todas as alterações (incluindo ve
 
 Compare também o recibo e as funcionalidades da versão anterior: main limpa não comprova conter código que antes foi empacotado sem commit. Pendências sem reconciliação impedem distribuição. Registre SHA completo, versão/build, canal, checksum e testes no recibo e confira-o antes do upload.
 
-**Pendência identificada em 06/11/2026:** a versão 1.2.1+15 continha MFA e critério compacto a partir de alterações não commitadas do worktree `gotrendlabs-mobile-login-fix`. A versão 1.2.2+16 partiu de main sem essas alterações. MFA reconciliado na branch `fix/mobile-admin-mfa-20261106`; critério compacto requer reconciliação antes da próxima distribuição. Consulte WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.
+**Reconciliação de 06/11/2026:** MFA integrado pela PR #191. O critério compacto e os quatro testes do worktree antigo já estavam integrados à main pelo commit caee7aa de 17/10; comparação byte a byte confirmou igualdade. A pendência anterior sobre esse componente foi registrada incorretamente e está resolvida. Release 1.2.3+17 em preparação, preservando critério compacto, resiliência e MFA. Consulte WFLOW-20261106-MOBILE-MFA-RELEASE-17.
 
 Build padrao do beta:
 
@@ -193,3 +193,7 @@ Fechamento e resolução prevista passam ao rodapé do resumo com divisor e tipo
 ### MFA administrativo (2026-11-06)
 
 Login de contas staff/superuser trata o desafio MFA da API e oferece configuração por chave manual, TOTP e código de recuperação. Sessão só é ativada após verificação; recovery codes são mostrados até confirmação de guarda. Nenhuma operação administrativa foi adicionada ao app. Ver workflow `WFLOW-20261106-MOBILE-MFA`; publicação e smoke com conta real pendentes.
+
+## Preparação Google Play 1.2.3+17 — 06/11/2026
+
+Próxima release destinada ao Closed testing - Alpha já existente. Build 16/versão 1.2.2 confirmado como ativo na Console. Versão/build 1.2.3+17 integrados antes de gerar o AAB, conforme gate de origem. URLs produtivas, assinatura e Firebase da release anterior reutilizados via arquivos locais ignorados. Notas: corrigido login administrativo com verificação em duas etapas, preservando melhorias de estabilidade e leitura dos critérios. Envio/resultado e hashes serão registrados em docs/specs/testing/mobile-mfa-release-17-20261106.md após build.

@@ -24,3 +24,7 @@ Release Android exige fetch, checkout limpo e HEAD igual à main remota atualiza
 Não houve upload/publicação de novo APK/AAB. Antes da próxima distribuição: reconciliar o critério compacto de resolução preservado no worktree gotrendlabs-mobile-login-fix, integrar essa alteração, preparar versão/build e validar login administrativo com conta real no artefato novo. O código anterior permanece preservado. Nenhuma credencial/TOTP foi solicitada ou registrada.
 
 MCP sem ajustes necessários em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Nenhuma permissão inferida de ações humanas de Admin Ops.
+
+## Reconciliação corrigida antes da release 17
+
+Em 06/11, a comparação byte a byte mostrou que ResolutionCriteriaText e seus quatro testes do worktree anterior já estavam na main desde caee7aa (17/10). Portanto, a pendência de critério registrada acima estava incorreta e foi resolvida por evidência, sem mudar a UI. MFA integrado pela #191 é o ajuste a empacotar na 1.2.3+17.

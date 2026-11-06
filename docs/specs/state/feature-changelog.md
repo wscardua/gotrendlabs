@@ -2001,3 +2001,7 @@ Gate Android para APK/AAB release exige checkout limpo do commit atual da main r
 ## 2026-11-06 — Integração remota da correção MFA e gate de release
 
 PR #191 integrada à main remota no merge ed018f8, incluindo 06f7c6e e 05f8053. CI do PR aprovado; nova distribuição Android não realizada. [Recibo e pendências](../testing/mobile-mfa-integration-20261106.md).
+
+## 2026-11-06 — Preparação da release Android 1.2.3+17
+
+Versão/build para distribuir MFA administrativo no canal Alpha existente. Critério compacto antigo e testes confirmados idênticos à main desde caee7aa; corrigido diagnóstico de ausência. Preservada resiliência da 1.2.2. Sem alteração funcional web/backend ou MCP.
