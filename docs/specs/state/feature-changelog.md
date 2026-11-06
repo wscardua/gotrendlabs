@@ -2005,3 +2005,7 @@ PR #191 integrada à main remota no merge ed018f8, incluindo 06f7c6e e 05f8053. 
 ## 2026-11-06 — Preparação da release Android 1.2.3+17
 
 Versão/build para distribuir MFA administrativo no canal Alpha existente. Critério compacto antigo e testes confirmados idênticos à main desde caee7aa; corrigido diagnóstico de ausência. Preservada resiliência da 1.2.2. Sem alteração funcional web/backend ou MCP.
+
+## 2026-11-06 — Google Play 1.2.3+17 enviada
+
+AAB assinado gerado da main limpa78bb81e, incluindo MFA e preservando estabilidade/critério compacto. Console aceitou build17 e confirmou Changes in review no Alpha existente, rollout100% do grupo. CI PR/main e deploy aprovados, health API/banco ok. Aprovação/disponibilidade Google ainda não atestadas. [Recibo](../testing/mobile-mfa-release-17-20261106.md).
