@@ -1997,3 +1997,7 @@ FEAT-AUTH-001 v0.9 / FEAT-MOBILE-001: Flutter diferencia sessão de desafio no l
 ## 2026-11-06 — Integridade da origem de releases
 
 Gate Android para APK/AAB release exige checkout limpo do commit atual da main remota após fetch; debug preservado. AGENTS/checklist passam a exigir commit/integração antes de distribuir e recibo SHA-versão-canal-checksum, com reconciliação funcional da release anterior. Pendência do critério compacto identificada e registrada. Sem impacto MCP/runtime.
+
+## 2026-11-06 — Integração remota da correção MFA e gate de release
+
+PR #191 integrada à main remota no merge ed018f8, incluindo 06f7c6e e 05f8053. CI do PR aprovado; nova distribuição Android não realizada. [Recibo e pendências](../testing/mobile-mfa-integration-20261106.md).

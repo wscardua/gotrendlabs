@@ -355,3 +355,7 @@ FEAT-AUTH-001/FEAT-MOBILE-001: cliente MFA administrativo implementado na branch
 ## Atualização 2026-11-06 — Origem de releases Android
 
 Gate de build release exige fetch e checkout limpo do HEAD atual de origin/main. Regressão 1.2.1→1.2.2 rastreada a mudanças locais não integradas; MFA recuperado, critério compacto pendente. Nenhuma nova distribuição liberada por este workflow. Ver WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.
+
+## Integração remota 2026-11-06 — MFA mobile e origem de releases
+
+PR #191 integrada à main remota (`ed018f837c13d35a3a77e9741f5490abe1c28703`). CI do PR aprovado: 681 testes/3 skips; Flutter local 129 testes e gate Python 7 testes. Pipeline main iniciado, sem atestação produtiva neste recibo. Distribuição Android, smoke com conta real e reconciliação do critério compacto permanecem pendentes. [Recibo](../testing/mobile-mfa-integration-20261106.md).

@@ -253,4 +253,4 @@ Correção implantada em produção pela PR #177; API e página públicas exibem
 
 ## 2026-11-06 — Reconciliação da release mobile 1.2.1+15
 
-Bloqueio de distribuição: critério compacto de resolução, implementado/homologado no worktree gotrendlabs-mobile-login-fix, não foi integrado à main e não entrou na 1.2.2+16. Preservar implementação/testes originais e reconciliar antes de próxima release. MFA recuperado na branch fix/mobile-admin-mfa-20261106 (06f7c6e), ainda pendente de integração/distribuição. Ver WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.
+Bloqueio de distribuição: critério compacto de resolução, implementado/homologado no worktree gotrendlabs-mobile-login-fix, não foi integrado à main e não entrou na 1.2.2+16. Preservar implementação/testes originais e reconciliar antes de próxima release. MFA integrado à main remota pela PR #191 (merge ed018f8, implementação 06f7c6e); distribuição/smoke real pendentes. Ver WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.

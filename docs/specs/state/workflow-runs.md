@@ -240,7 +240,7 @@
 
 ## WFLOW-20261106-RELEASE-SOURCE-INTEGRITY
 
-- Tipo: correção de processo/build após regressão real de distribuição Android; concluído localmente na branch fix/mobile-admin-mfa-20261106, pendente de integração.
+- Tipo: correção de processo/build após regressão real de distribuição Android; integrado à main remota pela PR #191 (`ed018f837c13d35a3a77e9741f5490abe1c28703`).
 - Causa confirmada: WFLOW-20261012-MOBILE-AUTH-CRITERIA-001 no worktree gotrendlabs-mobile-login-fix gerou release 1.2.1+15 com MFA e critério compacto, com homologação do usuário, mas explicitamente sem commit/push/PR. A release 1.2.2+16 partiu de main, onde essas alterações nunca foram integradas. Não houve remoção do código em commit: houve perda entre a origem do artefato anterior e a base versionada.
 - Auditoria do worktree anterior: AuthController/AuthRepository/AuthModels/LoginSheet e mfa_login_panel.dart; market_detail_screen.dart e resolution_criteria_card.dart; testes de auth/critério, pubspec 1.2.1+15 e documentação. Código original preservado. MFA reconciliado pelo commit 06f7c6e na branch atual. Critério compacto permanece pendente de reconciliação, com bloqueio operacional da próxima distribuição até decidir/integrar esse escopo.
 - Regra: entrega local, commit, integração e distribuição são estados distintos; nenhum artefato distribuível deve incluir código sem commit/integração. Recibo deve ligar versão/build/canal/checksum ao SHA e à comparação funcional com a versão anterior.
@@ -248,12 +248,12 @@
 - Limite: checkout limpo da main não prova que todas as funcionalidades de releases antigas estão nela; comparação de recibos/worktrees e testes de regressão continuam obrigatórios. Configurações ignoradas de assinatura/FCM permanecem fora do Git e não são registradas com segredos.
 - MCP: nenhum ajuste necessário em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Alteração de governança/build não modifica runtime nem concede permissões humanas a clientes MCP.
 - Validação: sete testes stdlib com repositórios Git temporários passaram (main limpa/HEAD destacado atual aceitos; arquivo modificado/staged/não rastreado, commit não integrado, main remota avançada e fetch falho rejeitados). Task Gradle validateReleaseSource executada e rejeitou checkout sujo conforme esperado; dry-run assembleRelease contém o gate, assembleDebug não contém. git diff --check aprovado. `.venv` existente reutilizada.
-- Encerramento local: regras e gate implementados; integração na main permanece necessária para vigorar nos próximos builds. Não houve nova distribuição. Próxima ação: reconciliar critério compacto/testes da 1.2.1, integrar correções e esta governança, então gerar artefato com recibo de origem e smoke dos fluxos anteriormente distribuídos.
+- Encerramento da integração: regras e gate na main remota; CI do PR #191 aprovado com 681 testes/3 skips. Não houve nova distribuição. Pipeline pós-merge registrado em https://github.com/wscardua/gotrendlabs/actions/runs/42240420306; resultado produtivo não atestado neste fechamento. Próxima ação: reconciliar critério compacto/testes da 1.2.1, integrar correções e esta governança, então gerar artefato com recibo de origem e smoke dos fluxos anteriormente distribuídos.
 
 ## WFLOW-20261106-MOBILE-MFA
 
 - Tipo: correção FEAT-AUTH-001/FEAT-MOBILE-001; workflow change-feature e implementation-cycle.
-- Status: concluído localmente na branch `fix/mobile-admin-mfa-20261106`, criada após fetch de `origin/main` `8990df4`; distribuição/smoke real pendentes.
+- Status: integrado à main remota pela PR #191, merge `ed018f837c13d35a3a77e9741f5490abe1c28703`; distribuição/smoke real pendentes. Branch de origem criada após fetch de origin/main `8990df4`.
 - Objetivo: permitir login administrativo mobile por MFA, eliminando erro de parsing de MfaChallengeResponse como AuthResponse.
 - Arquitetura/segurança: Flutter coleta código e apresenta estado; FastAPI mantém autoridade sobre fator, expiração, tentativas, replay e sessão. Desafio/chave/códigos de recuperação apenas em memória; token persistido somente após verificação, respeitando Lembrar login. Sem nova fronteira, permissão, migração, endpoint ou mudança OpenAPI; ADR não necessário.
 - Escopo/spec: incluir cliente MFA em FEAT-AUTH-001 e contratos mobile; nenhuma superfície administrativa adicionada ao app.
@@ -4168,3 +4168,14 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 - Smoke produtivo 7dce1c8c-aded-41d8-83b3-5d2e5db914c1 Success/0: SHA e hashes nas imagens iguais ao merge, serviços running/MCP healthy, HTTP público 200, Admin Ops anônimo 302, migration 0007/constraints/trigger e ACL mínima conferidos, catálogo 21/nove scopes e três mutações sem delegação negadas 401. [Recibo vigente](../testing/mcp-market-lifecycle-production-closeout-20261102.md).
 - Uma integração ativa conserva os seis scopes anteriores; não foram concedidos os três novos automaticamente nem emitidos grants privilegiados. Nenhum mercado produtivo foi resolvido/cancelado/excluído para smoke, nenhum reset de senha/MFA produtivo, nenhuma nova variável/flag ou release mobile. Ativação por integração exige concessão explícita/novo OAuth ou token; código já ativo e saudável.
 - Checklist universal/implementação/testes/publicação aplicado. Specs, OpenAPI/contratos, ADRs, aceites, rollout, README, changelogs, status, integration-map e known-gaps reconciliados. Encerramento técnico desta fatia concluído; homologação humana LM Studio/Dot/carga KMS são limites próprios. Branch local preservada. Atualização final de evidências segue PR documental, sem nova mudança de runtime ou deploy.
+
+## WFLOW-20261106-MOBILE-MFA-INTEGRATION-CLOSEOUT
+
+- Tipo: fechamento documental da integração solicitada pelo usuário; docs-only.
+- Resultado: PR #191 integrada à main remota no merge ed018f837c13d35a3a77e9741f5490abe1c28703, contendo os commits 06f7c6e (MFA) e 05f8053 (origem de release). Ancestralidade confirmada por fetch e merge-base.
+- CI do PR: https://github.com/wscardua/gotrendlabs/actions/runs/42238971291 aprovado; 681 testes backend/3 skips, Docker/OpenAPI/JS aprovados, além da validação Flutter/Python local já registrada.
+- Pipeline pós-merge: https://github.com/wscardua/gotrendlabs/actions/runs/42240420306 iniciado; este recibo atesta integração remota, sem afirmar conclusão de deploy.
+- Limites: nenhum novo APK/AAB distribuído; login real e critério compacto anterior ainda pendentes antes da próxima distribuição.
+- MCP: sem ajustes, ferramentas/permissões/contratos/runtime preservados.
+- Validação documental: diff/checklist; este fechamento não exige novo deploy de runtime.
+- Recibo: [integração MFA e origem de releases](../testing/mobile-mfa-integration-20261106.md).
