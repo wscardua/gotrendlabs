@@ -258,3 +258,7 @@ Bloqueio de distribuição: critério compacto de resolução, implementado/homo
 ## Correção de diagnóstico 2026-11-06 — Critério compacto
 
 A pendência de reconciliação da seção “Reconciliação da release mobile 1.2.1+15” acima está resolvida: ResolutionCriteriaText e os quatro testes já foram integrados por caee7aa em 17/10. Comparação byte a byte com o worktree mobile-login-fix confirmou igualdade. Nenhuma restauração de código necessária. MFA integrado pela PR #191; nova distribuição/smoke real seguem o workflow de release 17. O registro anterior de ausência do critério na 1.2.2 não deve ser usado como diagnóstico atual.
+
+## Distribuição Android17 — 2026-11-06
+
+Pendência de gerar/enviar artefato com MFA resolvida: AAB1.2.3+17 enviado ao Alpha existente, Console confirmou Changes in review. Aprovação Google e instalação/smoke de login administrativo por testador no artefato liberado ainda não observados. Critério compacto preservado e já integrado; sem bloqueio restante de reconciliação de código. [Recibo](../testing/mobile-mfa-release-17-20261106.md).

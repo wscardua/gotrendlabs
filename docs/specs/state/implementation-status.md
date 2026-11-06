@@ -367,3 +367,7 @@ Acompanhamento concluído: pipeline main da PR #191 e deploy SSM aprovados; 681 
 ## Release Android 1.2.3+17 em preparação — 2026-11-06
 
 Empacotamento do MFA integrado (#191) para Closed testing - Alpha. Critério compacto conferido já integrado (caee7aa), sem código novo necessário; pendência anterior corrigida. Integração da versão/build antes de compilar, validações e recibo conforme WFLOW-20261106-MOBILE-MFA-RELEASE-17. Sem alteração web/backend/MCP.
+
+## Entrega Android 1.2.3+17 — 2026-11-06
+
+Compilação assinada e envio Google Play concluídos; Changes in review confirmado no Alpha existente. Origem78bb81e/PR194, CI PR e main681 testes/3 skips, deploy e health ok. Critério compacto confirmado já integrado desde caee7aa; antiga pendência de reconciliação resolvida. Aprovação Google e smoke humano MFA no artefato novo permanecem externos/não atestados. [Recibo](../testing/mobile-mfa-release-17-20261106.md).
