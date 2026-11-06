@@ -351,3 +351,7 @@ PR #175 integrada em `main` (`06c1ef0`); CI, build e deploy Actions `40135480756
 ## Atualização 2026-11-06 — MFA mobile
 
 FEAT-AUTH-001/FEAT-MOBILE-001: cliente MFA administrativo implementado na branch `fix/mobile-admin-mfa-20261106` a partir da main remota `8990df4`. Flutter reutiliza enrollment/verify; sem backend novo. Feature ampla permanece parcial. Evidências e pendências em WFLOW-20261106-MOBILE-MFA.
+
+## Atualização 2026-11-06 — Origem de releases Android
+
+Gate de build release exige fetch e checkout limpo do HEAD atual de origin/main. Regressão 1.2.1→1.2.2 rastreada a mudanças locais não integradas; MFA recuperado, critério compacto pendente. Nenhuma nova distribuição liberada por este workflow. Ver WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.

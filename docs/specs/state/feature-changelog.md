@@ -1993,3 +1993,7 @@ Fechamento pré-PR: FEAT-ANALYTICS-001 v0.9 e FEAT-MCP-001 v1.6, contrato `analy
 ## 2026-11-06 — MFA no login administrativo mobile
 
 FEAT-AUTH-001 v0.9 / FEAT-MOBILE-001: Flutter diferencia sessão de desafio no login, consome enrollment/verify existentes, permite TOTP/recuperação e confirmação de guarda dos recovery codes. Fechamento/cancelamento limpa desafio e descarta resposta pendente. Regras, contratos FastAPI/OpenAPI e permissões MCP preservados. Entrega em `fix/mobile-admin-mfa-20261106`; distribuição pendente.
+
+## 2026-11-06 — Integridade da origem de releases
+
+Gate Android para APK/AAB release exige checkout limpo do commit atual da main remota após fetch; debug preservado. AGENTS/checklist passam a exigir commit/integração antes de distribuir e recibo SHA-versão-canal-checksum, com reconciliação funcional da release anterior. Pendência do critério compacto identificada e registrada. Sem impacto MCP/runtime.

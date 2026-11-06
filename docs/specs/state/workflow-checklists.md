@@ -18,6 +18,13 @@ Use este arquivo como checklist rápido antes de encerrar processos.
 
 ## Publicação e deploy
 
+- implementações/correções da entrega estão commitadas e integradas à main; distinguir validação local de integração/distribuição
+- comparar funcionalidades e origem da versão distribuída anterior com a nova base; inspecionar recibos e worktrees pendentes para não perder alterações locais já empacotadas
+- divergência funcional ou alteração distribuída sem reconciliação bloqueia a próxima distribuição; registrar pendência sem apagar histórico
+- artefato distribuível parte de checkout limpo do commit atual de origin/main após fetch; mudança de versão/build também precisa estar integrada antes do build
+- recibo registra commit completo, versão/build, canal, checksum e regressões verificadas; conferir o artefato selecionado no upload contra o recibo
+- Android: gate validateReleaseSource obrigatório em preReleaseBuild/assembleRelease/bundleRelease/packageRelease; falha de fetch, HEAD divergente e alterações locais bloqueiam release; debug permanece permitido
+
 - mudanças docs-only continuam usando branch, PR e merge em `main`, mas devem rodar apenas validação leve no `GoTrendLabs CI and Deploy` e não devem acionar deploy PRD
 - docs-only é restrito a `docs/**` e arquivos Markdown na raiz, como `README.md` e `notes.md`
 - mudanças em `.github/**`, `ops/**`, `apps/**`, `packages/**`, migrations, fixtures, contratos, configs, exemplos de env e workflows nunca contam como docs-only, mesmo quando forem texto

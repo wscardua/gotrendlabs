@@ -238,6 +238,18 @@
 
 # Workflow Runs
 
+## WFLOW-20261106-RELEASE-SOURCE-INTEGRITY
+
+- Tipo: correção de processo/build após regressão real de distribuição Android; concluído localmente na branch fix/mobile-admin-mfa-20261106, pendente de integração.
+- Causa confirmada: WFLOW-20261012-MOBILE-AUTH-CRITERIA-001 no worktree gotrendlabs-mobile-login-fix gerou release 1.2.1+15 com MFA e critério compacto, com homologação do usuário, mas explicitamente sem commit/push/PR. A release 1.2.2+16 partiu de main, onde essas alterações nunca foram integradas. Não houve remoção do código em commit: houve perda entre a origem do artefato anterior e a base versionada.
+- Auditoria do worktree anterior: AuthController/AuthRepository/AuthModels/LoginSheet e mfa_login_panel.dart; market_detail_screen.dart e resolution_criteria_card.dart; testes de auth/critério, pubspec 1.2.1+15 e documentação. Código original preservado. MFA reconciliado pelo commit 06f7c6e na branch atual. Critério compacto permanece pendente de reconciliação, com bloqueio operacional da próxima distribuição até decidir/integrar esse escopo.
+- Regra: entrega local, commit, integração e distribuição são estados distintos; nenhum artefato distribuível deve incluir código sem commit/integração. Recibo deve ligar versão/build/canal/checksum ao SHA e à comparação funcional com a versão anterior.
+- Implementação: AGENTS.md e checklist de publicação; gate Gradle para APK/AAB release executa script Python stdlib, faz fetch origin main e exige HEAD igual a origin/main e checkout limpo (incluindo arquivos não rastreados). Falha de fetch bloqueia. Debug permanece disponível. Python existente reutilizado, sem ambiente novo.
+- Limite: checkout limpo da main não prova que todas as funcionalidades de releases antigas estão nela; comparação de recibos/worktrees e testes de regressão continuam obrigatórios. Configurações ignoradas de assinatura/FCM permanecem fora do Git e não são registradas com segredos.
+- MCP: nenhum ajuste necessário em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Alteração de governança/build não modifica runtime nem concede permissões humanas a clientes MCP.
+- Validação: sete testes stdlib com repositórios Git temporários passaram (main limpa/HEAD destacado atual aceitos; arquivo modificado/staged/não rastreado, commit não integrado, main remota avançada e fetch falho rejeitados). Task Gradle validateReleaseSource executada e rejeitou checkout sujo conforme esperado; dry-run assembleRelease contém o gate, assembleDebug não contém. git diff --check aprovado. `.venv` existente reutilizada.
+- Encerramento local: regras e gate implementados; integração na main permanece necessária para vigorar nos próximos builds. Não houve nova distribuição. Próxima ação: reconciliar critério compacto/testes da 1.2.1, integrar correções e esta governança, então gerar artefato com recibo de origem e smoke dos fluxos anteriormente distribuídos.
+
 ## WFLOW-20261106-MOBILE-MFA
 
 - Tipo: correção FEAT-AUTH-001/FEAT-MOBILE-001; workflow change-feature e implementation-cycle.

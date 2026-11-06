@@ -72,6 +72,12 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.7.1")
 }
 
+val validateReleaseSource by tasks.registering(Exec::class) {
+    description = "Blocks distribution from uncommitted or unmerged source."
+    workingDir(rootProject.projectDir.resolve("../../.."))
+    commandLine("python3", "ops/scripts/check_android_release_source.py")
+}
+
 val validateReleaseSigning by tasks.registering {
     doLast {
         if (!hasReleaseSigning) {
@@ -83,7 +89,10 @@ val validateReleaseSigning by tasks.registering {
 }
 
 tasks.configureEach {
+    if (name == "preReleaseBuild") {
+        dependsOn(validateReleaseSource)
+    }
     if (name in setOf("assembleRelease", "bundleRelease", "packageRelease")) {
-        dependsOn(validateReleaseSigning)
+        dependsOn(validateReleaseSigning, validateReleaseSource)
     }
 }

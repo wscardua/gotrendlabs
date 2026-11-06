@@ -122,6 +122,12 @@ keyAlias=gotrendlabs-release
 storeFile=/absolute/path/to/gotrendlabs-release.jks
 ```
 
+Antes de gerar artefato para distribuição, todas as alterações (incluindo versão/build) devem estar commitadas e integradas à main. Use checkout limpo da main remota atualizada. O Gradle executa `ops/scripts/check_android_release_source.py` com Python 3: faz fetch de origin/main e bloqueia release se houver alterações locais/arquivos não rastreados ou se HEAD divergir da main remota. Falha de fetch também bloqueia; debug permanece disponível.
+
+Compare também o recibo e as funcionalidades da versão anterior: main limpa não comprova conter código que antes foi empacotado sem commit. Pendências sem reconciliação impedem distribuição. Registre SHA completo, versão/build, canal, checksum e testes no recibo e confira-o antes do upload.
+
+**Pendência identificada em 06/11/2026:** a versão 1.2.1+15 continha MFA e critério compacto a partir de alterações não commitadas do worktree `gotrendlabs-mobile-login-fix`. A versão 1.2.2+16 partiu de main sem essas alterações. MFA reconciliado na branch `fix/mobile-admin-mfa-20261106`; critério compacto requer reconciliação antes da próxima distribuição. Consulte WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.
+
 Build padrao do beta:
 
 ```bash
