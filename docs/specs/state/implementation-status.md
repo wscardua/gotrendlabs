@@ -363,3 +363,7 @@ PR #191 integrada à main remota (`ed018f837c13d35a3a77e9741f5490abe1c28703`). C
 ## Resultado pós-merge 2026-11-06 — MFA mobile
 
 Acompanhamento concluído: pipeline main da PR #191 e deploy SSM aprovados; 681 testes/3 skips, health produtivo HTTP200 com API/banco ok. Pipeline documental #192 aprovado, sem novo deploy. Isso não publica novo app; distribuição Android/critério compacto e smoke de login real permanecem pendentes. [Recibo](../testing/mobile-mfa-integration-20261106.md).
+
+## Release Android 1.2.3+17 em preparação — 2026-11-06
+
+Empacotamento do MFA integrado (#191) para Closed testing - Alpha. Critério compacto conferido já integrado (caee7aa), sem código novo necessário; pendência anterior corrigida. Integração da versão/build antes de compilar, validações e recibo conforme WFLOW-20261106-MOBILE-MFA-RELEASE-17. Sem alteração web/backend/MCP.

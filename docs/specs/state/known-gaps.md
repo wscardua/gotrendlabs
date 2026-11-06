@@ -254,3 +254,7 @@ Correção implantada em produção pela PR #177; API e página públicas exibem
 ## 2026-11-06 — Reconciliação da release mobile 1.2.1+15
 
 Bloqueio de distribuição: critério compacto de resolução, implementado/homologado no worktree gotrendlabs-mobile-login-fix, não foi integrado à main e não entrou na 1.2.2+16. Preservar implementação/testes originais e reconciliar antes de próxima release. MFA integrado à main remota pela PR #191 (merge ed018f8, implementação 06f7c6e); distribuição/smoke real pendentes. Ver WFLOW-20261106-RELEASE-SOURCE-INTEGRITY.
+
+## Correção de diagnóstico 2026-11-06 — Critério compacto
+
+A pendência de reconciliação da seção “Reconciliação da release mobile 1.2.1+15” acima está resolvida: ResolutionCriteriaText e os quatro testes já foram integrados por caee7aa em 17/10. Comparação byte a byte com o worktree mobile-login-fix confirmou igualdade. Nenhuma restauração de código necessária. MFA integrado pela PR #191; nova distribuição/smoke real seguem o workflow de release 17. O registro anterior de ausência do critério na 1.2.2 não deve ser usado como diagnóstico atual.

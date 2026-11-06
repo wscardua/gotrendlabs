@@ -4189,3 +4189,14 @@ Validação final desta revisão: 21 testes aprovados em 0.051s, incluindo Hoje 
 - MCP: sem alteração de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Nenhum novo acesso derivado de Admin Ops.
 - Limites: nenhum novo APK/AAB distribuído; critério compacto anterior e smoke de login administrativo no novo artefato continuam pendentes antes de distribuição. O deploy de backend não atualiza apps já instalados.
 - Recibo: [integração, CI/deploy e smoke](../testing/mobile-mfa-integration-20261106.md).
+
+## WFLOW-20261106-MOBILE-MFA-RELEASE-17
+
+- Tipo: release Android autorizada pelo usuário para envio à Google Play Console aberta/logada; em preparação. Canal existente Closed testing - Alpha; nenhum rollout público de produção.
+- Base: origin/main 30c6bec, branch release/mobile-mfa-1.2.3-build17. Play Console confirmou build 16 (1.2.2) ativo, sem bundle superior; próxima versão 1.2.3+17.
+- Reconciliação corrigida: critério compacto e testes antigos são byte a byte idênticos aos arquivos já integrados à main por caee7aa (17/10). A pendência de reconciliação criada em WFLOW-20261106-RELEASE-SOURCE-INTEGRITY estava incorreta; resolvida sem alteração de UI. MFA novo integrado pela PR #191; resiliência da #188 e demais mudanças da main preservadas.
+- Escopo: somente versão/build e documentação; sem alterações de API, domínio, web, backend ou política mínima de build. Skills mobile implementer/docs governor/test strategy e contratos/arquitetura consultados; sem nova fronteira/ADR.
+- Origem: integrar primeiro, gerar AAB assinado de checkout limpo do HEAD remoto atualizado; manter recibo commit-versão-canal-checksum-certificado. Configurações de assinatura/Firebase da release anterior reutilizadas sem imprimir segredos.
+- Validação local: flutter analyze --no-pub sem problemas; suíte completa flutter test --no-pub com 129 testes aprovados (incluindo MFA e critério compacto). Console confirmou build16 ativo. Assinatura/metadados/URLs do AAB serão verificados após compilar do commit integrado. Smoke humano MFA no artefato novo não alegado sem execução.
+- MCP: sem ajustes em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial; apenas empacotamento de consumidor existente.
+- Resultado do envio: pendente; registrar recibo no arquivo mobile-mfa-release-17-20261106.md após geração do artefato.
