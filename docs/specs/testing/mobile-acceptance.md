@@ -22,10 +22,10 @@ aprovacao: pendente
 ## Aceite de descoberta e histórico — 2026-11-07
 
 - `Hoje` continua com apenas `open` e pontuação de engajamento existente.
-- `Mercados` inicia em `open`, preservando a ordem da API; `locked`, `resolved` e `sealed` não aparecem na descoberta inicial.
-- `Em apuração` mostra apenas `locked`; `Resolvidos` mostra `resolved` e `sealed` com rótulos próprios.
-- `Favoritos` e `Histórico` preservam selados; `Histórico` usa `viewer_has_prediction` em mercados encerrados, enquanto `Posições` permanece vinculada a `viewer_position.has_position`.
-- Alternar recortes pessoais limpa filtro de status anterior; retornar a `Todos` restaura `open`. Ausência de abertos apresenta estado vazio claro.
+- Mercados inicia em Em andamento: open na ordem da API; locked expandido por padrão abaixo, contagem total e expansão acessível; resolved/sealed fora desta aba.
+- Apuração mostra apenas locked em close_at decrescente e origem, ausentes no fim; Resolvidos mostra resolved/sealed com rótulos próprios.
+- Favoritos e Minhas previsões preservam selados; Minhas previsões usa viewer_has_prediction em todos os estados públicos relevantes, enquanto Posições ativas permanece vinculada a viewer_position.has_position.
+- Alternar recortes pessoais limpa filtro de status anterior; retornar a `Em andamento` restaura os abertos e a apuração expandida. Ausência de abertos apresenta estado vazio claro.
 - Teste de widget `markets_screen_test.dart` cobre esses recortes; distribuição Android exige release própria após integração na main.
 
 ## Aceite local — 2026-10-17
@@ -123,7 +123,7 @@ Com backend local ativo:
 7. Voltar para lista.
 8. Abrir aba `Mercados`.
 9. Aplicar filtro de categoria.
-10. Alternar recortes `Todos`, `Favoritos` e `Posições`.
+10. Alternar `Em andamento` e `Resolvidos`; autenticado, conferir `Favoritos`, `Minhas previsões` e o acesso secundário `Posições ativas`.
 11. Abrir uma acao autenticada como visitante e ver CTA de login.
 
 ## Fluxo autenticado
@@ -317,7 +317,7 @@ Antes de considerar a UI pronta:
 - testar erro de rede
 - testar tema dark como padrao
 - confirmar que tema, app shell, cards, detalhe, ticket, wallet, ranking, alertas, busca, perfil, badges e bottom sheets usam o mesmo design system dark-first/editorial, sem cards genéricos ou estados soltos
-- confirmar que `Mercados` permite alternar `Todos`, `Favoritos` e `Posições`, com estados vazios claros quando não houver itens
+- confirmar que `Mercados` permite alternar `Em andamento`, `Resolvidos`, `Favoritos` e `Minhas previsões`, além do acesso secundário `Posições ativas`, com estados vazios claros quando não houver itens
 - confirmar que `Hoje` exibe `Sua mesa` para usuário autenticado com favoritos/posições ativas e abre `Mercados` no recorte escolhido
 - confirmar que `Sua mesa` e o recorte `Posições` usam `viewer_position.has_position`, sem contar mercados onde o usuário tem apenas participação histórica
 - confirmar que cada item de `Sua mesa` usa duas linhas visuais, com rotulo na primeira e icone + total na segunda, sem overflow ou truncamento em viewport compacto ou fonte ampliada
@@ -364,3 +364,11 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 - Sessão verificada respeita Lembrar login e proteção biométrica.
 - Cancelar ou fechar limpa o desafio e ignora resposta de verificação pendente.
 - Testes de widgets/repository/controller em `apps/mobile/test/auth_mfa_test.dart`; smoke com conta real de produção e distribuição continuam pendentes.
+
+## Simplificação Em andamento — 2026-11-07
+
+- Quatro recortes principais, posições ativas secundárias; categorias explícitas preservadas.
+- Apuração inicia expandida e retorna expandida após trocar de recorte; filhos recolhidos não entram na árvore de semântica.
+- Novo apenas em open, de created_at inclusive até 48h exclusivo, sem timestamp futuro nem influência na ordenação; relógio controlável em teste.
+- Sem open, mensagem específica e acesso a locked; sem ambos, acesso a Resolvidos; sem locked, sem expansor vazio.
+- Validar viewport estreita, texto ampliado, erro/loading/refresh e histórico após alternar recortes.

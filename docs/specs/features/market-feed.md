@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.14
+versao: 0.15
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-11-06
+ultima_atualizacao: 2026-11-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -35,7 +35,7 @@ Exibir mercados relevantes com filtros e informações suficientes para descober
 - recorte autenticado de mercados nos quais o usuário já fez previsão
 - recorte autenticado de mercados favoritados pelo usuário
 - curtida autenticada de mercado limitada a uma por usuário
-- ordenações rápidas no feed web por tendência, abertura, fechamento, volume, curtidas, novidade e recorte de resolvidos
+- navegação Em andamento, Resolvidos e recortes pessoais; apuração expandida por padrão e selo temporal Novo
 - carregamento incremental client-side dos cards renderizados em blocos de 18 itens
 - destaque de probabilidade derivada das opções
 - mini gráfico de evolução do consenso por opção
@@ -73,18 +73,22 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - mini gráficos refletem histórico real de previsões persistidas, sem SVG estático de tendência
 - mini gráficos devem continuar refletindo histórico após resolução; previsões `resolved` permanecem na série visual e previsões `canceled` ficam fora
 - labels de consenso usam a opção líder por `probability_exact`, enquanto barras, opções e mini gráficos usam `options[].probability_exact`
-- `Em alta` é a descoberta inicial: apenas mercados com status efetivo `open`, ordenados por `view_count` decrescente, `created_at` mais recente e ordem original no empate final
-- `Novos`, `Mais volume` e `Mais curtidas` também mostram apenas mercados `open`, preservando ordenação própria e desempate atual; `Abertos` restringe a `open`; os filtros atuam sem recarregar a página
-- botão `Abertos` mostra apenas cards com `status=open`, usando os cards já renderizados e sem recarregar a página
-- botão `Em apuração` mostra apenas cards com `status=locked`, usando os cards já renderizados e sem recarregar a página
-- botão `Resolvidos` no feed público mostra `resolved` e `sealed`, mantendo rótulos distintos de finalização e histórico verificável
-- feed mostra inicialmente até 18 cards após filtrar/ordenar cada recorte e revela mais 18 a cada acionamento de `Carregar mais`; recortes vazios exibem mensagem específica
+- navegação principal: `Em andamento` (inicial), `Resolvidos`, `Favoritos` e `Minhas previsões`; os dois últimos são autenticados
+- `Em andamento` apresenta somente `open` na seção principal; `locked` fica em seção secundária expandida por padrão, com contagem total e controle acessível `Em apuração — N mercados`
+- abertos web são ordenados por visualizações decrescentes, criação mais recente e ordem original; apuração usa `close_at` decrescente e ordem original, valores ausentes no fim
+- `close_at` é prazo programado, não instante efetivo da transição de status
+- `Novo` aparece somente em `open` com `created_at <= agora < created_at + 48h`, sem alterar ordenação; datas futuras não recebem selo. A indicação é uma faixa diagonal NOVO no canto superior direito do card, com nome acessível Novo, sem cobrir título, probabilidade ou selo de integridade; substitui a pill na linha de tags
+- A faixa Novo é inicializada também em Categorias, independentemente dos filtros. Web e Flutter agendam atualização no limite temporal, sem interação; voltar à aba web visível revalida o relógio. O temporizador Flutter é descartado com o card; nenhum timer altera status de domínio.
+- `Resolvidos` inclui `resolved` e `sealed`, mantendo distinção visual de finalização e histórico verificável
+- cada lista web revela blocos de 18 após filtro/ordem; apuração e lista principal têm limites independentes, e novos abertos são inseridos antes da apuração
+- ao sair e voltar a Em andamento, apuração volta expandida; não persiste entre sessões
+- sem abertos, exibe `Nenhum mercado aberto no momento`; mantém apuração quando existir; sem ambos, oferece acesso a Resolvidos; sem locked não há controle vazio
 - `Favoritos` é um recorte pessoal autenticado de mercados salvos pelo usuário, incluindo estados encerrados e selados
 - usuário autenticado pode acionar `Minhas previsões` para ver cards de mercados onde já registrou previsão, incluindo encerrados e selados
 - usuário autenticado pode favoritar/desfavoritar mercados públicos diretamente no card
 - visitante não vê o filtro `Favoritos`, mas vê a ação de favoritar em estado apagado/readonly e recebe aviso de login ao tentar usar
 - visitante não vê o filtro `Minhas previsões`
-- a home atual não usa card principal separado: exibe lista de mercados com `Em alta` inicial e descoberta restrita a `open`
+- a home atual não usa card principal separado: exibe lista de mercados com `Em andamento` inicial, abertos primeiro e apuração expandida por padrão
 - métricas públicas da economia educativa seguem disponíveis em `/stats`; a home atual prioriza a lista de mercados
 - a métrica `GT₵ distribuídas` exclui créditos destinados a `staff` e `superuser`, evitando inflar economia pública com saldos operacionais internos
 - métricas públicas de moeda devem usar o símbolo de apresentação `GT₵`; campos e identificadores técnicos permanecem com sufixo `_gtl`
@@ -131,8 +135,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - Django renderiza atributos `data-*` nos cards para ordenar e filtrar sem reload: destaque, favoritos pessoais, curtidas, visualizações, volume, datas e status
 - cards consomem `sparkline_series` quando disponível e hidratam pelo Postgres local quando a API entrega payload antigo
 - cadastro renderiza um ticket de onboarding com o mercado publicado não cancelado mais visualizado, excluindo `draft` e `canceled`, incluindo mini gráfico por `sparkline_series`, opções e retorno estimado meramente ilustrativo
-- filtros rápidos do feed são implementados em JavaScript leve sobre a lista já renderizada; `Resolvidos` inclui `resolved` e `sealed`, e a descoberta mostra somente `open`
-- o modo `Mais curtidas` ordena por `market_like_count`, com mercado mais recente como desempate
+- recortes são implementados em JavaScript leve sobre HTML existente; domínio fornece status efetivo e flags pessoais; apuração é secundária e expandida por padrão
 - o modo `Favoritos` usa `viewer_has_favorite` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - o modo `Minhas previsões` usa `viewer_has_prediction` já serializado, sem nova mutação nem recálculo de domínio no navegador
 - controle `Carregar mais` do feed atua sobre a lista filtrada/ordenada no cliente, sem chamada adicional ao backend
@@ -151,10 +154,11 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 ## Comportamento mobile de descoberta e acompanhamento
 
 - `Hoje` seleciona apenas mercados `open` e usa a pontuação de engajamento existente, inclusive destaque editorial; esta ordenação não é igual à ordenação web por visualizações.
-- `Mercados` inicia no recorte `Abertos` e preserva a ordem do `GET /markets` (`display_order`, depois ID) dentro de cada recorte.
-- `Em apuração` contém `locked`; `Resolvidos` contém `resolved` e `sealed`, com identificação própria em cada card.
-- `Favoritos` exibe estados públicos salvos sem restrição inicial a abertos. `Posições` usa `viewer_position.has_position`; `Histórico` usa `viewer_has_prediction` em mercados encerrados. Ao trocar de recorte pessoal, o status anterior é limpo; ao voltar a `Todos`, volta a `Abertos`.
-- O Flutter usa status efetivo e flags serializadas pela FastAPI, sem inferir fechamento ou participação por relógio ou dados locais.
+- `Mercados` inicia em `Em andamento`: abertos preservam a ordem da API; apuração expandida por padrão usa `close_at` decrescente e ordem original. `Hoje` mantém sua pontuação de engajamento.
+- `Resolvidos` contém `resolved` e `sealed`; Favoritos mantém todos os estados públicos relevantes; Minhas previsões usa `viewer_has_prediction` em todos esses estados.
+- Posições ativas continua acessível por controle secundário e usa `viewer_position.has_position`; não representa histórico.
+- categorias são filtros explícitos independentes; trocar recorte não mantém filtro implícito de status.
+- Novo usa created_at e relógio controlável nos testes; sem campo persistido ou alteração de contrato.
 
 ## Dados e persistência
 
@@ -194,7 +198,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 
 - integração para filtros por status/categoria
 - renderização dos modos de ordenação rápida e do recorte `Resolvidos` no feed web
-- regressão para o modo `Mais curtidas` ordenando por curtidas reais do mercado
+- regressão para remoção dos filtros redundantes, ordenação de apuração por prazo programado e selo Novo sem efeito no ranking
 - regressão para métrica de previsões totais baseada em previsões persistidas reais
 - regressão para métricas públicas de `GT₵ distribuídas` e `GT₵ movimentadas` na home e no contrato `/stats`, garantindo exclusão de créditos de operadores na distribuição
 - renderização de `data-*` de ordenação e contador de curtidas no card
@@ -202,9 +206,9 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - regressão para título do card como link para o detalhe do mercado
 - regressão para contadores operacionais de visualizações/compartilhamentos expostos no contrato e ocultos do feed público
 - regressão para ordenação administrativa por mercados mais visualizados e mais compartilhados
-- seleção da descoberta inicial `Em alta` apenas entre `open`, por `view_count`, com desempate por mercado mais recente
+- seleção dos abertos de Em andamento por view_count e desempates, apuração expandida por padrão independente, selo Novo em janela de 48h
 - seleção do ticket de onboarding do cadastro por `view_count`, excluindo `draft` e `canceled`, com desempate por mercado mais recente
-- regressão para `draft`/`canceled` fora da listagem pública e para `locked`/`resolved`/`sealed` fora da descoberta inicial
+- regressão para `draft`/`canceled` fora da listagem pública e para `locked`/`resolved`/`sealed` fora da seção principal de abertos
 - regressão para `viewer_has_prediction` autenticado no contrato de listagem
 - regressão para favoritos pessoais autenticados no contrato de listagem e endpoints idempotentes
 - regressão para curtidas reais autenticadas no contrato de listagem e endpoints idempotentes, garantindo uma curtida por usuário/mercado
@@ -235,7 +239,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - cards exibem informações mínimas coerentes, com tags e prazo relativo sem os metadados secundários removidos
 - título e CTA principal levam ao detalhe do mercado
 - cards exibem curtidas em singular/plural correto e com contraste em light/dark mode
-- descoberta inicial exibe apenas `open`; recorte `Resolvidos` inclui `resolved` e `sealed`; favoritos e previsões pessoais mantêm acesso aos encerrados
+- seção principal de Em andamento exibe apenas `open`, com `locked` expandido por padrão abaixo; recorte `Resolvidos` inclui `resolved` e `sealed`; favoritos e previsões pessoais mantêm acesso aos encerrados
 - home exibe métricas públicas de economia educativa com `GT₵ distribuídas` e `GT₵ movimentadas em previsões`, sem sugerir dinheiro real
 - créditos de `staff`/`superuser` não entram no número público de `GT₵ distribuídas`
 

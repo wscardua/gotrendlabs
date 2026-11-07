@@ -1,10 +1,10 @@
 ---
 id: FEAT-MOBILE-001
 titulo: "MVP mobile Flutter"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-25
+ultima_atualizacao: 2026-11-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
   - docs/specs/features/market-feed.md
@@ -92,7 +92,7 @@ Primeira tela util do app. Deve mostrar:
 Browse completo com:
 
 - categorias em chips horizontais
-- filtros por status: descoberta inicial em `open`, apuração em `locked` e resolvidos em `resolved`/`sealed`; favoritos e histórico pessoal mantêm encerrados
+- recortes Em andamento (open primeiro e locked em seção expandida por padrão), Resolvidos (resolved/sealed), Favoritos e Minhas previsões; posições ativas em acesso secundário
 - lista/card grid responsivo para celular
 - ordenacoes locais sobre dados carregados quando suficiente
 - paginacao ou carregar mais quando contrato permitir

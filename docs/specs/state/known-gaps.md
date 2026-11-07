@@ -1,3 +1,11 @@
+## 07/11/2026 — gate de fechamento Em andamento
+
+139 testes Flutter e oito Django aprovados, análise/JS/OpenAPI/checks aprovados; build debug em emulador Android 16 executado e tela Hoje com fixtures/faixa NOVO confirmada. Dois findings do review corrigidos e cobertos (Categorias e expiração automática). Aguardando aprovação de PR antes de integração/deploy web. Distribuição Android e QA em aparelho físico permanecem etapas próprias. WFLOW-20261107-MARKETS-IN-PROGRESS.
+
+## 07/11/2026 — Em andamento: limites da implementação local
+
+Navegação nova está na branch feature/markets-in-progress, sem PR/deploy ou distribuição nesta execução. A produção mantém a navegação das PRs #196–#198 até novo rollout. Apps instalados precisam de release própria após integração da main; QA de instalação/sessão em Android físico não foi executado neste ajuste. Testes de tela estreita/texto ampliado, suites Flutter/Django e navegador local têm evidências no [aceite](../testing/markets-in-progress-acceptance-20261107.md). Nenhuma migration, configuração de domínio ou ajuste MCP é necessária para ativar a apresentação.
+
 ## 07/11/2026 — distribuição da descoberta mobile
 
 WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST: a implementação Flutter local foi validada, mas o app instalado no canal Google Play ainda não contém os novos recortes. Após merge web/API, preparar nova versão/build Android a partir da main limpa, validar artefato e distribuir pelo fluxo mobile próprio. O deploy do GitHub Actions atualiza a web, não instala o app nos aparelhos.

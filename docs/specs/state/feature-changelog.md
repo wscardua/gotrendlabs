@@ -1,3 +1,17 @@
+## 07/11/2026 — fechamento preparado: Em andamento
+
+Specs/aceites alinhados ao comportamento final, incluindo apuração expandida, recortes pessoais e faixa Novo com expiração automática/Categorias. Review corrigido; 139 testes Flutter, oito Django, analyze, JS e contratos aprovados. Commit/PR em preparação; aprovação do texto é gate para abertura, seguida de CI/merge/deploy e recibo produtivo. Sem mudança de domínio/API/MCP. Android exige distribuição própria. WFLOW-20261107-MARKETS-IN-PROGRESS.
+
+## 07/11/2026 — correções do review da faixa Novo (local)
+
+Categorias passa a inicializar a faixa independentemente dos filtros; web/mobile atualizam a indicação automaticamente no limite de 48h. Timers apenas de apresentação, sem mudança API/domínio/MCP. 40 testes Flutter selecionados, analyze e testes JS aprovados; WFLOW-20261107-MARKETS-IN-PROGRESS. Sem publicação.
+
+## 07/11/2026 — FEAT-MARKET-001: navegação Em andamento (local)
+
+A indicação Novo passa a faixa diagonal NOVO no canto superior direito, conforme referência do usuário, no web e nos cards hero/compacto Flutter. Critério temporal e ordenação preservados; contraste, semântica e toque cobertos por validação local.
+
+Substitui filtros Em alta/Novos/Abertos/Em apuração/volume/curtidas por Em andamento, Resolvidos e recortes pessoais. Apuração fica expandida por padrão abaixo dos abertos, com prazo programado decrescente e paginação própria; Novo sinaliza open com menos de 48h sem influenciar ranking. Flutter mantém Posições ativas em ação secundária e passa de Histórico encerrado para Minhas previsões em todos os estados públicos relevantes. Contratos e MCP preservados; publicação e distribuição Android separadas. WFLOW-20261107-MARKETS-IN-PROGRESS.
+
 ## 07/11/2026 — FEAT-MARKET-001: integração e correção de cache
 
 PR #196 integrou a descoberta web/mobile. A validação em navegador encontrou cache antigo dos assets estáticos, que ocultava mercados selados em `Resolvidos` até recarga forçada; PR #197 atualizou os URLs versionados de JS/CSS. CI, deploy e smoke produtivo posteriores passaram, inclusive navegação comum por `Em alta`, `Resolvidos` e `Minhas previsões`. O código Flutter integrado ainda não foi distribuído em release Android; WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE registra a etapa separada. Sem alteração de API, lifecycle ou MCP. [Recibo](../testing/market-discovery-production-closeout-20261107.md).

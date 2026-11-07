@@ -4,11 +4,234 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_controller.dart';
 import 'package:gotrendlabs_mobile/src/features/auth/auth_models.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/market_models.dart';
+import 'package:gotrendlabs_mobile/src/features/markets/market_presentation.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/markets_providers.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/markets_screen.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
+  test('Novo uses API creation and the exact 48 hour boundary', () {
+    final now = DateTime.utc(2026, 11, 7, 12);
+    for (final entry in [
+      ('open', '2026-11-05T12:00:00.001Z', true),
+      ('open', '2026-11-05T12:00:00Z', false),
+      ('open', '2026-11-05T11:59:59Z', false),
+      ('open', '2026-11-07T12:00:00Z', true),
+      ('open', '2026-11-07T12:00:00.001Z', false),
+      ('locked', '2026-11-07T10:00:00Z', false),
+      ('resolved', '2026-11-07T10:00:00Z', false),
+      ('sealed', '2026-11-07T10:00:00Z', false),
+    ]) {
+      expect(
+        _market(
+          slug: 'badge',
+          title: 'Selo',
+          status: entry.$1,
+          createdAt: entry.$2,
+        ).isNewAt(now),
+        entry.$3,
+      );
+    }
+  });
+
+  testWidgets('ongoing keeps API open order and expands pending on return', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          marketClockProvider.overrideWithValue(
+            () => DateTime.utc(2026, 11, 7, 12),
+          ),
+          marketsProvider.overrideWith(
+            (ref) async => [
+              _market(
+                slug: 'locked-old',
+                title: 'Apuração antiga',
+                status: 'locked',
+                closeAt: '2026-11-01T12:00:00Z',
+              ),
+              _market(slug: 'open-first', title: 'Aberto primeiro na API'),
+              _market(
+                slug: 'locked-new',
+                title: 'Apuração recente',
+                status: 'locked',
+                closeAt: '2026-11-06T12:00:00Z',
+              ),
+              _market(
+                slug: 'open-new',
+                title: 'Aberto novo na API',
+                createdAt: '2026-11-07T10:00:00Z',
+              ),
+            ],
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: MarketsScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('NOVO'), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text('Aberto primeiro na API')).dy,
+      lessThan(tester.getTopLeft(find.text('Aberto novo na API')).dy),
+    );
+    final toggle = find.byKey(const ValueKey('pending-markets-toggle'));
+    await tester.ensureVisible(toggle);
+    await tester.scrollUntilVisible(
+      find.text('Apuração antiga'),
+      100,
+      scrollable: find.byType(Scrollable).last,
+    );
+    expect(
+      tester.getTopLeft(find.text('Apuração recente')).dy,
+      lessThan(tester.getTopLeft(find.text('Apuração antiga')).dy),
+    );
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(find.text('Apuração recente'), findsNothing);
+    await tester.tap(find.text('Resolvidos'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Em andamento'));
+    await tester.tap(find.text('Em andamento'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(toggle);
+    expect(find.text('Apuração recente'), findsOneWidget);
+  });
+
+  testWidgets(
+    'no opens keeps pending accessible and no active links to results',
+    (tester) async {
+      final items = [
+        _market(slug: 'locked-only', status: 'locked', title: 'Só apuração'),
+      ];
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              _UnauthenticatedAuthController.new,
+            ),
+            marketsProvider.overrideWith((ref) async => items),
+          ],
+          child: MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            home: const Scaffold(body: MarketsScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Nenhum mercado aberto no momento.'), findsOneWidget);
+      expect(find.text('Em apuração — 1 mercado'), findsOneWidget);
+      expect(find.text('Só apuração'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('pending-markets-toggle')));
+      await tester.pumpAndSettle();
+      expect(find.text('Só apuração'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'narrow layout and enlarged text retain controls without overflow',
+    (tester) async {
+      tester.view.physicalSize = const Size(390, 844);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              _AuthenticatedAuthController.new,
+            ),
+            marketClockProvider.overrideWithValue(
+              () => DateTime.utc(2026, 11, 7, 12),
+            ),
+            marketsProvider.overrideWith(
+              (ref) async => [
+                _market(
+                  slug: 'long-open',
+                  title:
+                      'Uma pergunta longa para conferir leitura com fonte ampliada no app',
+                  createdAt: '2026-11-07T10:00:00Z',
+                ),
+                _market(
+                  slug: 'pending-long',
+                  title: 'Acompanhamento em apuração',
+                  status: 'locked',
+                ),
+              ],
+            ),
+          ],
+          child: MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(1.4)),
+              child: child!,
+            ),
+            home: const Scaffold(body: MarketsScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('NOVO'), findsOneWidget);
+      final toggle = find.byKey(const ValueKey('pending-markets-toggle'));
+      await tester.ensureVisible(toggle);
+      expect(find.text('Acompanhamento em apuração'), findsOneWidget);
+      await tester.tap(toggle);
+      await tester.pumpAndSettle();
+      expect(find.text('Acompanhamento em apuração'), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.text('Minhas previsões'));
+      await tester.tap(find.text('Minhas previsões'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'no active markets offers resolved history without an empty expander',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              _UnauthenticatedAuthController.new,
+            ),
+            marketsProvider.overrideWith(
+              (ref) async => [
+                _market(
+                  slug: 'sealed',
+                  title: 'Resultado verificável',
+                  status: 'sealed',
+                  statusLabel: 'Selado',
+                ),
+              ],
+            ),
+          ],
+          child: MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            home: const Scaffold(body: MarketsScreen()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('pending-markets-toggle')),
+        findsNothing,
+      );
+      expect(find.text('Favoritos'), findsNothing);
+      await tester.tap(find.text('Ver resolvidos'));
+      await tester.pumpAndSettle();
+      expect(find.text('Resultado verificável'), findsOneWidget);
+    },
+  );
+
   testWidgets('TodayScreen shows only open markets ordered by engagement', (
     tester,
   ) async {
@@ -102,7 +325,7 @@ void main() {
     expect(find.text('Mercado com participação histórica'), findsNothing);
     expect(find.text('Mercado geral'), findsNothing);
 
-    await tester.tap(find.text('Posições'));
+    await tester.tap(find.text('Posições ativas'));
     await tester.pumpAndSettle();
 
     expect(find.text('Mercado salvo pelo usuário'), findsNothing);
@@ -110,11 +333,11 @@ void main() {
     expect(find.text('Mercado com participação histórica'), findsNothing);
     expect(find.text('Mercado geral'), findsNothing);
 
-    await tester.ensureVisible(find.text('Histórico'));
-    await tester.tap(find.text('Histórico'));
+    await tester.ensureVisible(find.text('Minhas previsões'));
+    await tester.tap(find.text('Minhas previsões'));
     await tester.pumpAndSettle();
     expect(find.text('Mercado com participação histórica'), findsOneWidget);
-    expect(find.text('Mercado com posição ativa'), findsNothing);
+    expect(find.text('Mercado com posição ativa'), findsOneWidget);
   });
 
   testWidgets('MarketsScreen separates open discovery and resolved history', (
@@ -159,7 +382,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Mercado aberto'), findsOneWidget);
     expect(find.text('Histórico selado'), findsNothing);
-    expect(find.text('Mercado em apuração'), findsNothing);
+    expect(find.text('Mercado em apuração'), findsOneWidget);
     await tester.tap(find.text('Resolvidos'));
     await tester.pumpAndSettle();
     expect(find.text('Histórico selado'), findsOneWidget);
@@ -168,18 +391,16 @@ void main() {
     await tester.tap(find.text('Favoritos'));
     await tester.pumpAndSettle();
     expect(find.text('Histórico selado'), findsOneWidget);
-    await tester.ensureVisible(find.text('Histórico'));
-    await tester.tap(find.text('Histórico'));
+    await tester.ensureVisible(find.text('Minhas previsões'));
+    await tester.tap(find.text('Minhas previsões'));
     await tester.pumpAndSettle();
     expect(find.text('Histórico selado'), findsOneWidget);
-    await tester.tap(find.text('Todos').first);
+    await tester.ensureVisible(find.text('Em andamento'));
+    await tester.tap(find.text('Em andamento'));
     await tester.pumpAndSettle();
     expect(find.text('Mercado aberto'), findsOneWidget);
     expect(find.text('Histórico selado'), findsNothing);
-    await tester.tap(find.text('Em apuração'));
-    await tester.pumpAndSettle();
     expect(find.text('Mercado em apuração'), findsOneWidget);
-    expect(find.text('Mercado aberto'), findsNothing);
   });
 
   testWidgets('TodayScreen desk counts active positions, not history', (
@@ -386,10 +607,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls, 1);
-    expect(
-      find.text('Nenhum mercado aberto disponível agora.'),
-      findsOneWidget,
-    );
+    expect(find.text('Nenhum mercado aberto no momento.'), findsOneWidget);
 
     await tester.drag(find.byType(ListView).last, const Offset(0, 360));
     await tester.pump();
@@ -428,6 +646,8 @@ Market _market({
   required String title,
   String status = 'open',
   String statusLabel = 'Aberto',
+  String createdAt = '2026-01-01T00:00:00Z',
+  String closeAt = '2026-11-06T00:00:00Z',
   int participants = 8,
   int volume = 120,
   bool favorite = false,
@@ -443,6 +663,8 @@ Market _market({
     'kind': 'binary',
     'status': status,
     'status_label': statusLabel,
+    'created_at': createdAt,
+    'close_at': closeAt,
     'primary_outcome': 'SIM',
     'primary_probability': 64,
     'primary_probability_exact': 64.0,

@@ -153,15 +153,10 @@ function parseDateScore(value, fallback = 0) {
 
 function marketSortValue(card) {
   return {
-    closeAt: parseDateScore(card.dataset.marketCloseAt, Number.POSITIVE_INFINITY),
+    closeAt: parseDateScore(card.dataset.marketCloseAt, Number.NEGATIVE_INFINITY),
     createdAt: parseDateScore(card.dataset.marketCreatedAt),
-    featured: card.dataset.marketFeatured === "true" ? 1 : 0,
-    favorited: card.dataset.marketFavorited === "true" ? 1 : 0,
-    likes: parseNumber(card.dataset.marketLikes),
     originalOrder: parseNumber(card.dataset.originalOrder),
-    status: card.dataset.marketStatus || "",
     views: parseNumber(card.dataset.marketViews),
-    volume: parseNumber(card.dataset.marketVolume),
   };
 }
 
@@ -169,26 +164,17 @@ function compareMarkets(mode, a, b) {
   const left = marketSortValue(a);
   const right = marketSortValue(b);
   const tieBreak = right.createdAt - left.createdAt || left.originalOrder - right.originalOrder;
-  if (mode === "volume") {
-    return right.volume - left.volume || tieBreak;
-  }
-  if (mode === "likes") {
-    return right.likes - left.likes || tieBreak;
-  }
-  if (mode === "new") {
-    return right.createdAt - left.createdAt || left.originalOrder - right.originalOrder;
-  }
-  if (mode === "featured") {
-    return right.featured - left.featured || right.likes - left.likes || tieBreak;
+  if (mode === "closing") {
+    return (left.closeAt === right.closeAt ? 0 : right.closeAt - left.closeAt) || left.originalOrder - right.originalOrder;
   }
   return right.views - left.views || tieBreak;
 }
 
 function marketMatchesMode(card, mode) {
+  if (["draft", "canceled"].includes(card.dataset.marketStatus)) return false;
   return !(
     (mode === "resolved" && !["resolved", "sealed"].includes(card.dataset.marketStatus)) ||
-    (["trending", "new", "volume", "likes"].includes(mode) && card.dataset.marketStatus !== "open") ||
-    (mode === "open" && card.dataset.marketStatus !== "open") ||
+    (mode === "ongoing" && card.dataset.marketStatus !== "open") ||
     (mode === "closing" && card.dataset.marketStatus !== "locked") ||
     (mode === "favorited" && card.dataset.marketFavorited !== "true") ||
     (mode === "predicted" && card.dataset.marketPredicted !== "true")
@@ -211,19 +197,9 @@ function renderMarketChunk(list, mode, requestedVisibleCount) {
 
   const empty = list.parentElement?.querySelector("[data-market-empty]");
   if (empty) {
-    const emptyMessages = {
-      trending: "Nenhum mercado aberto disponível agora.",
-      new: "Nenhum mercado aberto disponível agora.",
-      open: "Nenhum mercado aberto disponível agora.",
-      volume: "Nenhum mercado aberto disponível agora.",
-      likes: "Nenhum mercado aberto disponível agora.",
-      closing: "Nenhum mercado em apuração agora.",
-      resolved: "Nenhum mercado resolvido ainda.",
-      favorited: "Nenhum mercado favorito ainda.",
-      predicted: "Nenhum mercado com previsão sua ainda.",
-    };
-    empty.textContent = emptyMessages[mode] || "";
-    empty.hidden = !(emptyMessages[mode] && matchingCards.length === 0);
+    const message = empty.dataset[mode] || "";
+    empty.textContent = message;
+    empty.hidden = !(message && matchingCards.length === 0);
   }
 
   const loadMore = list.parentElement?.querySelector("[data-market-load-more]");
@@ -239,16 +215,60 @@ function renderMarketChunk(list, mode, requestedVisibleCount) {
   list.dataset.marketVisibleCount = String(visibleCount);
 }
 
-function sortMarketList(group, mode, visibleCount) {
-  const target = group.dataset.filterTarget;
-  const list = target ? $(target) : null;
-  if (!list) return;
-  list.dataset.marketFilterMode = mode;
-  const cards = $$("[data-market-card]", list);
-  cards.sort((a, b) => compareMarkets(mode, a, b));
-  cards.forEach((card) => list.appendChild(card));
-  renderMarketChunk(list, mode, visibleCount);
+function isNewMarket(card, now = Date.now()) {
+  const createdAt = parseDateScore(card.dataset.marketCreatedAt, Number.NaN);
+  return card.dataset.marketStatus === "open" && createdAt <= now && now < createdAt + 48 * 60 * 60 * 1000;
 }
+
+function sortMarketList(group, mode, visibleCount) {
+  const list = $(group.dataset.filterTarget);
+  if (!list) return;
+  const board = list.closest("[data-market-board]");
+  const pending = $("[data-market-pending]", board);
+  const pendingList = $("[data-market-pending-list]", board);
+  const previousMode = list.dataset.marketFilterMode;
+  const cards = $$("[data-market-card]", board);
+  cards.sort((a, b) => compareMarkets(mode, a, b));
+  cards.forEach((card) => {
+    (mode === "ongoing" && card.dataset.marketStatus === "locked" ? pendingList : list).appendChild(card);
+  });
+  list.dataset.marketFilterMode = mode;
+  renderMarketChunk(list, mode, visibleCount);
+  const lockedCards = $$("[data-market-card]", pendingList);
+  lockedCards.sort((a, b) => compareMarkets("closing", a, b));
+  lockedCards.forEach((card) => pendingList.appendChild(card));
+  if (previousMode !== mode) pending.open = true;
+  pending.hidden = mode !== "ongoing" || lockedCards.length === 0;
+  const count = $("[data-market-pending-count]", pending);
+  count.textContent = `${lockedCards.length} ${lockedCards.length === 1 ? count.dataset.singular : count.dataset.plural}`;
+  renderMarketChunk(pendingList, "closing", previousMode === mode ? pendingList.dataset.marketVisibleCount : undefined);
+  $("[data-market-no-active]", board).hidden = mode !== "ongoing" || cards.some(card => ["open", "locked"].includes(card.dataset.marketStatus));
+}
+
+// Freshness is independent of feed filters, including cards on Categories.
+let marketFreshnessTimer;
+function hydrateMarketFreshness() {
+  window.clearTimeout(marketFreshnessTimer);
+  const now = Date.now();
+  let nextChange = Number.POSITIVE_INFINITY;
+  $$("[data-market-card]").forEach((card) => {
+    const badge = $("[data-market-new]", card);
+    if (!badge) return;
+    badge.hidden = !isNewMarket(card, now);
+    if (card.dataset.marketStatus !== "open") return;
+    const createdAt = parseDateScore(card.dataset.marketCreatedAt, Number.NaN);
+    const expiresAt = createdAt + 48 * 60 * 60 * 1000;
+    if (createdAt > now) nextChange = Math.min(nextChange, createdAt);
+    else if (expiresAt > now) nextChange = Math.min(nextChange, expiresAt);
+  });
+  if (Number.isFinite(nextChange)) {
+    marketFreshnessTimer = window.setTimeout(hydrateMarketFreshness, Math.min(nextChange - now, 2147483647));
+  }
+}
+hydrateMarketFreshness();
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) hydrateMarketFreshness();
+});
 
 $$("[data-market-card]").forEach((card, index) => {
   card.dataset.originalOrder = String(index);
@@ -315,24 +335,34 @@ $$("[data-filter]").forEach((button) => {
   button.addEventListener("click", () => {
     const group = button.closest("[data-filter-group]");
     syncFilterPressedState(group, button);
-    sortMarketList(group, button.dataset.filter || "trending");
+    sortMarketList(group, button.dataset.filter || "ongoing");
   });
 });
 
 $$("[data-filter-group][data-filter-target]").forEach((group) => {
   const active = $(".filter.active[data-filter]", group) || $("[data-filter]", group);
-  if (active) sortMarketList(group, active.dataset.filter || "trending");
+  if (active) sortMarketList(group, active.dataset.filter || "ongoing");
 });
 
 $$("[data-market-load-more-button]").forEach((button) => {
   button.addEventListener("click", () => {
-    const section = button.closest("section");
-    const list = section ? $("[data-market-list]", section) : null;
-    const group = section ? $("[data-filter-group][data-filter-target]", section) : null;
-    if (!list || !group) return;
-    const pageSize = Math.max(1, Number(list.dataset.marketPageSize || 18));
-    const nextVisibleCount = Number(list.dataset.marketVisibleCount || pageSize) + pageSize;
-    sortMarketList(group, list.dataset.marketFilterMode || "trending", nextVisibleCount);
+    const section = button.closest(".market-feed-section");
+    const list = $("[data-market-list], [data-market-pending-list]", section);
+    const pageSize = Number(list.dataset.marketPageSize || 18);
+    const next = Number(list.dataset.marketVisibleCount || pageSize) + pageSize;
+    if (list.hasAttribute("data-market-pending-list")) {
+      renderMarketChunk(list, "closing", next);
+    } else {
+      sortMarketList($("[data-filter-group]", section.closest("[data-market-board]")), list.dataset.marketFilterMode, next);
+    }
+  });
+});
+
+$$("[data-market-show-results]").forEach((button) => {
+  button.addEventListener("click", () => {
+    const resolved = $("[data-filter='resolved']", button.closest("[data-market-board]"));
+    resolved.click();
+    resolved.focus();
   });
 });
 

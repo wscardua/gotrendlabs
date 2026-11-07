@@ -80,7 +80,7 @@ Specs principais:
 - mesa de posicao no detalhe: quando `viewer_position.has_position=true`, o ticket mostra escolha atual, movimentos ativos, total ativo, historico resumido e dois frames de acao fechados por padrao, `Aumentar posição` na mesma opcao e `Trocar escolha` para opcao diferente, sempre exigindo preview valido de `/position-preview` antes de confirmar em `/position-actions`
 - comprovantes assinados no detalhe autenticado: previsao inicial, cada reforco e cada revisao aparecem separadamente em todos os estados posteriores; cada item abre modal leigo/tecnico carregado por `/predictions/{id}/receipt`, sem calcular ou assinar no aparelho
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
-- `Mercados` inicia em `Abertos`; recortes `Em apuração` (`locked`) e `Resolvidos` (`resolved`/`sealed`) preservam a ordem da API; `Favoritos` inclui encerrados e `Histórico` mostra previsões encerradas separadas de `Posições` ativas, usando status e flags autenticados da API
+- `Mercados` inicia em `Em andamento`: abertos na ordem da API e apuração expandida por padrão (locked, close_at decrescente/origem); demais recortes são Resolvidos (resolved/sealed), Favoritos e Minhas previsões; Posições ativas é acesso secundário; a faixa diagonal NOVO sinaliza open criado há menos de 48h sem alterar ordenação
 - cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards
 - cards com selo de integridade circular apenas em icone no canto superior direito da imagem, preservando thumbnail, tooltip/semantics e cores distintas para registro, finalizacao, falha e historico selado
 - detalhe de mercado com hero visual nao navegavel, evitando empilhar a mesma rota ao tocar na imagem
@@ -201,3 +201,12 @@ Login de contas staff/superuser trata o desafio MFA da API e oferece configuraç
 ## Preparação histórica Google Play 1.2.3+17 — 06/11/2026
 
 Build 16/versão 1.2.2 era o ativo na Console durante a preparação. Versão/build 1.2.3+17 foram integrados antes do AAB, conforme gate de origem. URLs produtivas, assinatura e Firebase da release anterior foram reutilizados via arquivos locais ignorados. As notas trataram do login administrativo com verificação em duas etapas, preservando melhorias de estabilidade e leitura dos critérios. O build 17 foi observado ativo no teste fechado Alpha em 07/11/2026; esta seção registra a preparação anterior. Consulte WFLOW-20261106-MOBILE-MFA-RELEASE-17 e `docs/specs/testing/mobile-mfa-release-17-20261106.md` para o recibo específico.
+
+## Em andamento — implementação local em 07/11/2026
+
+Simplificação de navegação implementada na branch feature/markets-in-progress, com código web/mobile, 135 testes Flutter e análise sem issues; validações descritas em WFLOW-20261107-MARKETS-IN-PROGRESS. Sem distribuição binária ou deploy nesta execução. Apps instalados exigem release própria da main integrada; o Play Alpha 1.2.3+17 e o APK direto 1.0.7 continuam sendo referências da última consulta, não evidência de publicação deste ajuste.
+
+
+### Correção da faixa Novo após review — 2026-11-07
+
+Correção do review: a faixa Novo expira automaticamente no limite de 48h em cards montados; timer de apresentação cancelado no descarte. Validação: 40 testes de cards/telas/repository e analyze aprovados. Sem nova release binária.

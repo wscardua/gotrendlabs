@@ -1,3 +1,15 @@
+## 07/11/2026 — fechamento preparado: Em andamento
+
+Specs/aceites alinhados ao comportamento final, incluindo apuração expandida, recortes pessoais e faixa Novo com expiração automática/Categorias. Review corrigido; 139 testes Flutter, oito Django, analyze, JS e contratos aprovados. Commit/PR em preparação; aprovação do texto é gate para abertura, seguida de CI/merge/deploy e recibo produtivo. Sem mudança de domínio/API/MCP. Android exige distribuição própria. WFLOW-20261107-MARKETS-IN-PROGRESS.
+
+## 07/11/2026 — correções do review da faixa Novo (local)
+
+Categorias passa a inicializar a faixa independentemente dos filtros; web/mobile atualizam a indicação automaticamente no limite de 48h. Timers apenas de apresentação, sem mudança API/domínio/MCP. 40 testes Flutter selecionados, analyze e testes JS aprovados; WFLOW-20261107-MARKETS-IN-PROGRESS. Sem publicação.
+
+## 07/11/2026 — FEAT-MARKET-001 v0.15: simplificação de navegação
+
+Spec aprovada pelo usuário nesta execução: Em andamento reúne descoberta open e acompanhamento locked expandido por padrão; Resolvidos inclui resolved/sealed; recortes pessoais não herdam status. Selo Novo de 48h e paginação web independente definidos. Specs mobile, arquitetura de apresentação/contratos, aceites e README alinhados, sem alteração OpenAPI/lifecycle/MCP. Código local, rollout web e binário mobile ainda separados.
+
 ## 2026-11-07 — FEAT-MARKET-001 v0.14: descoberta de abertos (integração)
 
 A spec do feed e as specs mobile registram descoberta inicial somente em `open`, apuração em `locked`, resultados com `resolved`/`sealed`, preservação de favoritos e histórico pessoal. O contrato `GET /markets` e o lifecycle permanecem vigentes sem mudança; web ordena por visualizações e mobile preserva a ordem da API no browse. Testes JS integram o CI. PR #196 integrou o código, e PR #197 corrigiu cache de assets; CI/deploy e smoke produtivo web passaram. O app Flutter exige release separada em WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST concluiu a implantação web; FEAT-MARKET-001 ampla segue parcial por lacunas independentes. [Recibo](../testing/market-discovery-production-closeout-20261107.md).
