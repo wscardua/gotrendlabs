@@ -380,3 +380,7 @@ Usuário confirmou sucesso do teste local em aparelho físico. AAB oficial gerad
 ### Ordem de Hoje — ajuste de 07/11/2026
 
 Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.
+
+## Fechamento de Hoje — 07/11/2026
+
+140 testes Flutter/analyze aprovados; aceite local confirmado pelo usuário. PR203 e Actions produtivo aprovados; AAB19 validado/enviado ao Alpha, com disponibilidade Google e instalação via Play ainda pendentes. [Recibo19](mobile-today-release-19-20261107.md).

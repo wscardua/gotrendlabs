@@ -1,5 +1,8 @@
 ## WFLOW-20261107-MOBILE-TODAY-PENDING
 
+- Fechamento vigente: implementação/integracão/deploy e envio Alpha concluídos. PR203 merge f7d6480645f84d5cbcffa3a67a2d1f206ba00b6e; CI PR42407114320 e main42407705220 aprovados. SSM7214ca49-1f1c-411a-af9a-a489b0d87f06 Success; health ok. AAB1.2.5+19 validado/assinado/enviado; Console Changes in review/quick checks, disponibilidade Google pendente. [Recibo19](../testing/mobile-today-release-19-20261107.md). Branches preservadas. Registros de preparação abaixo são históricos.
+
+
 - Estado vigente: implementação e aceite local concluídos; fechamento/integracão e distribuição em preparação. Não afirmar feature disponível em apps instalados antes da nova release.
 - Objetivo/decisão final: incentivar participação. Ordem Para prever → Tendências → Mais mercados → Em apuração, com todos os locked diretamente ao final. Sem botão Ver todos, limite de três ou novo recorte em Mercados.
 - Aberto: engagementScore e desempate por título preservados; um hero, até dois outros destaques e até oito em Mais mercados. Locked: close_at programado decrescente, empate pela ordem original, ausentes por último; helper compartilhado com Mercados.
