@@ -268,3 +268,7 @@ Aplica-se o contrato de [agenda de apuração](market-resolution-agenda.md): pre
 ## Participação após resolução — 2026-10-25
 
 Em resolved/sealed, a projeção pública de volume/participantes agrega previsões resolved, excluindo revised/canceled; preserva humanos/bots e deduplica contas em reforços. Volume humano permanece a semântica de volume_gtl/human_volume_gtl. Demais estados continuam agregando apenas open. Web/Flutter exibem GT₵ em previsões no resultado, evitando chamar volume liquidado de saldo reservado. Elegibilidade dos agentes segue exclusivamente previsões humanas open em _human_prediction_totals; não usa o histórico público como atividade atual. Analytics MCP preserva seus agregados próprios de domínio.
+
+## Integração e implantação da navegação v0.15
+
+PR #199 integrada e implantada no site em 07/11/2026 (merge ca0cab9, Actions 42394768559), com smoke de descoberta, apuração expandida, resultados e histórico/provas de selados aprovado. Esta fatia está concluída para web; status_impl parcial da feature ampla preserva lacunas independentes. Flutter integrado/validado em emulador, com distribuição Android própria pendente. [Recibo](../testing/markets-in-progress-production-closeout-20261107.md).
