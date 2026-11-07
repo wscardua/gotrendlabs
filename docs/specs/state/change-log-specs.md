@@ -1,3 +1,7 @@
+## 2026-11-07 — fonte da verdade do fechamento do convite web
+
+Acrescentados recibo de fechamento, review versionado e mapa de navegação web; estado distingue implementação commitada/testada da integração/deploy ainda pendentes. FEAT-MARKET-001 v0.17 mantém escopo exclusivamente web e status amplo parcial. Sem mudança de contratos ou documentação mobile. WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT.
+
 ## 2026-11-07 — FEAT-MARKET-001 v0.17 / convite web
 
 Especificados ocupação de espaços restantes, cinco conteúdos aprovados/destinos reais, sorteio/estado frontend, acessibilidade e aceite do convite na grade principal web. Escopo exclui Flutter, sua documentação/contratos e novos contratos de domínio/API/MCP. [Evidências e limites](../testing/web-grid-invite-acceptance-20261107.md). WFLOW-20261107-WEB-GRID-INVITE.

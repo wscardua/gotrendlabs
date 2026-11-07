@@ -1,3 +1,7 @@
+## 07/11/2026 — convite contextual web preparado para integração
+
+Implementação commitada em 1fd83a0/68b60c4, review final sem findings abertos após corrigir aria-pressed de Categorias. Testes locais aprovados e sorteio integrado ao CI. Título/descrição da PR aguardam aprovação do usuário; main/CI remoto/deploy ainda pendentes. [Recibo vigente](../testing/web-grid-invite-closeout-20261107.md), WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT. MCP e mobile sem impacto. Este estado prevalece sobre a conclusão local registrada abaixo; não representa disponibilidade em produção.
+
 ## 07/11/2026 — convite contextual da grade web (local)
 
 FEAT-MARKET-001 v0.17 / WFLOW-20261107-WEB-GRID-INVITE: convite único nas sobras da grade principal, cinco opções e assets SVG próprios; sorteio estável com histórico opcional protegido, responsividade, HTMX e destinos existentes. 54 cenários de layout/tema, 20 capturas, testes Node/Django/checks aprovados. Cards/apuração, Flutter e documentação/contratos mobile intactos. MCP sem ajustes por ser apresentação/navegação web sem novos contratos ou permissões. [Aceite/evidências](../testing/web-grid-invite-acceptance-20261107.md). Implementação local concluída na branch feature/web-market-grid-invite; sem PR/publicação/deploy. Status amplo da feature permanece parcial por lacunas independentes.

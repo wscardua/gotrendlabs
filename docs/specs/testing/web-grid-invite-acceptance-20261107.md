@@ -57,8 +57,12 @@ node tests/test_analytics_web_events.js
 
 ## Arquitetura, MCP e limites
 
-Revisão pelas skills software-architect/architecture-guard: apresentação exclusivamente web, sem nova fronteira, regra crítica, migração ou ADR. Não houve alteração de API, modelo, autenticação, contrato mobile, app Flutter ou documentação mobile. Sem mudança de dependências, `integration-map.md` não requer alteração.
+Revisão pelas skills software-architect/architecture-guard: apresentação exclusivamente web, sem nova fronteira, regra crítica, migração ou ADR. Não houve alteração de API, modelo, autenticação, contrato mobile, app Flutter ou documentação mobile. Sem mudança de dependências de serviços; no fechamento, `integration-map.md` registra somente os destinos da navegação web.
 
 MCP não precisa de ajustes: tools, schemas, contratos, permissões, erros, replays e orientação editorial permanecem iguais. O convite só navega para fluxos web já autorizados, não publica sugestões automaticamente e não infere permissões de ações humanas no Admin Ops.
 
 Limites da validação: navegador Chromium/Chrome desktop com viewport móvel, sem ensaio em aparelhos físicos ou Safari/Firefox; UI exercitada com fixtures locais e templates reais, sem revalidar serviços/autenticação dos destinos existentes. Sem storage, o sorteio continua funcionando em memória, mas não pode prevenir repetição entre recarregamentos. Internacionalização segue os marcadores Django existentes; catálogos completos de tradução continuam na iniciativa FEAT-I18N-001. Escopo local concluído, sem pendência de implementação desta fatia.
+
+## Fechamento posterior à validação local
+
+[Recibo vigente](web-grid-invite-closeout-20261107.md) distingue commits, aprovação da PR, integração e produção. Review versionado identificou perda de aria-pressed inicial em filtros genéricos de Categorias, corrigida em 68b60c4 com regressões Node/navegador aprovadas. Teste de sorteio acrescentado ao CI. A suite de navegador foi reexecutada com as 54 combinações, limites, cinco opções/20 capturas, HTMX/storage/teclado e Categorias aprovados.

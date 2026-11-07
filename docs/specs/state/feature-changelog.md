@@ -1,3 +1,7 @@
+## 2026-11-07 — convite web: fechamento preparado
+
+Código commitado, review final concluído sem findings abertos e regressão de aria-pressed em Categorias corrigida. Teste do sorteio incluído no CI. [Recibo de fechamento](../testing/web-grid-invite-closeout-20261107.md) registra aceite, review, simulação DEV isolada e passos de PR/CI/deploy pendentes da aprovação do usuário. Nenhuma mudança de API/MCP/mobile.
+
 ## 2026-11-07 — FEAT-MARKET-001 v0.17: convite contextual web
 
 Implementado convite para sugestão, ranking, badges, resultados ou conceitos na sobra da última linha principal, conforme cards efetivamente exibidos. Sorteio por visita com prevenção de repetição quando storage disponível; mantém conteúdo durante filtros, páginas, HTMX, largura e tema. Assets SVG próprios/textos HTML i18n, foco e contenção de altura; destinos nomeados e instrumentação genérica existentes. 54 combinações de layout/tema e 20 capturas, seleção/HTMX/teclado/storage/testes Django e regressões JS aprovados. Sem mudança mobile, domínio/API/banco/permissões/MCP. [Aceite local](../testing/web-grid-invite-acceptance-20261107.md); WFLOW-20261107-WEB-GRID-INVITE, sem publicação/deploy.

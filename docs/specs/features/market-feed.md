@@ -307,3 +307,5 @@ Aprovado pelo pedido funcional de 2026-11-07, WFLOW-20261107-WEB-GRID-INVITE. Es
 Ilustrações: pergunta/lápis/envio sem promessa de publicação; pódio anônimo; emblemas; card com check e rótulo HTML “Resolvido”; sequência com rótulos HTML “Escolha → Preveja → Acompanhe”. Tokens dos dois temas, foco/teclado e contraste. Sem AdSense, publicidade, probabilidades, gráficos ou nova chamada Prever. Instrumentação genérica navigation_clicked existente basta, sem novos eventos ou permissões MCP.
 
 Aceite e evidências: `docs/specs/testing/web-grid-invite-acceptance-20261107.md`. MCP sem impacto: apresentação e navegação em fluxos existentes, sem alteração de contratos, autenticação ou regras editoriais.
+
+Estado de fechamento da fatia web: implementação commitada e validada localmente; PR/integração/deploy acompanhados separadamente no [recibo vigente](../testing/web-grid-invite-closeout-20261107.md). O status parcial da feature ampla não é promovido pelas entregas desta fatia. O CI executa a regressão de sorteio; filtros genéricos de Categorias preservam aria-pressed inicial.
