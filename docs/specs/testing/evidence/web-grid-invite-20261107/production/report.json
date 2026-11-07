@@ -1,0 +1,288 @@
+{
+  "origin": "https://gotrendlabs.com.br",
+  "verifiedAt": "2026-11-07T22:08:34.803Z",
+  "assets": [
+    {
+      "file": "js/gotrendlabs.js",
+      "sha256": "c390c4c44278ef4a79b4fecd8023e2cb2d1dae89a4d485007b887d9563909702",
+      "status": 200
+    },
+    {
+      "file": "js/market-grid-invite.js",
+      "sha256": "5ae90a074c3846219056ac630aa9170d17898838fdd9ba6a806da788fb519311",
+      "status": 200
+    },
+    {
+      "file": "js/analytics.js",
+      "sha256": "1210f2bb6d394b43bfb194dfa430778c6fa67f0b00010d7d4beeb0de3f94c3aa",
+      "status": 200
+    },
+    {
+      "file": "css/gotrendlabs.css",
+      "sha256": "ec0822eb48a66a4ff7ddb428b4aefe4fae2578084a2d34e4123e5e038e9d2fd6",
+      "status": 200
+    },
+    {
+      "file": "illustrations/grid-invite/suggestion.svg",
+      "sha256": "9c52d62061c16109af46e9d8ce020d14b7d74a6d66bbd2ad9e66921bcd982cd0",
+      "status": 200
+    },
+    {
+      "file": "illustrations/grid-invite/ranking.svg",
+      "sha256": "4e07fbdf80e828a3d2b302a3bb524b30a677e9628ec3663fa7084fe6421af0a9",
+      "status": 200
+    },
+    {
+      "file": "illustrations/grid-invite/badges.svg",
+      "sha256": "7ada7ca8800535ebfbe7cce89fd0f6491d11702b8b50a5f81e727466b76f2013",
+      "status": 200
+    },
+    {
+      "file": "illustrations/grid-invite/results.svg",
+      "sha256": "02a634588a6964ba461d2398b3d4bdc71a7c5e9b5c8eda3f11bccb86c0ad68e6",
+      "status": 200
+    },
+    {
+      "file": "illustrations/grid-invite/concepts.svg",
+      "sha256": "593aef03c7a79f768ffa0578f0ce73061f50da1b454220a2174bccc15db49972",
+      "status": 200
+    }
+  ],
+  "variants": [
+    {
+      "option": "suggestion",
+      "theme": "light",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "suggestion",
+      "theme": "dark",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "ranking",
+      "theme": "light",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "ranking",
+      "theme": "dark",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "badges",
+      "theme": "light",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "badges",
+      "theme": "dark",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "results",
+      "theme": "light",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "results",
+      "theme": "dark",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "concepts",
+      "theme": "light",
+      "count": 4,
+      "span": "2"
+    },
+    {
+      "option": "concepts",
+      "theme": "dark",
+      "count": 4,
+      "span": "2"
+    }
+  ],
+  "layouts": [
+    {
+      "option": "suggestion",
+      "width": 1000,
+      "columns": 2,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "suggestion",
+      "width": 390,
+      "columns": 1,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "suggestion",
+      "width": 1366,
+      "columns": 3,
+      "count": 4,
+      "hidden": false,
+      "span": "2",
+      "overflow": false
+    },
+    {
+      "option": "ranking",
+      "width": 1000,
+      "columns": 2,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "ranking",
+      "width": 390,
+      "columns": 1,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "ranking",
+      "width": 1366,
+      "columns": 3,
+      "count": 4,
+      "hidden": false,
+      "span": "2",
+      "overflow": false
+    },
+    {
+      "option": "badges",
+      "width": 1000,
+      "columns": 2,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "badges",
+      "width": 390,
+      "columns": 1,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "badges",
+      "width": 1366,
+      "columns": 3,
+      "count": 4,
+      "hidden": false,
+      "span": "2",
+      "overflow": false
+    },
+    {
+      "option": "results",
+      "width": 1000,
+      "columns": 2,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "results",
+      "width": 390,
+      "columns": 1,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "results",
+      "width": 1366,
+      "columns": 3,
+      "count": 4,
+      "hidden": false,
+      "span": "2",
+      "overflow": false
+    },
+    {
+      "option": "concepts",
+      "width": 1000,
+      "columns": 2,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "concepts",
+      "width": 390,
+      "columns": 1,
+      "count": 4,
+      "hidden": true,
+      "span": "0",
+      "overflow": false
+    },
+    {
+      "option": "concepts",
+      "width": 1366,
+      "columns": 3,
+      "count": 4,
+      "hidden": false,
+      "span": "2",
+      "overflow": false
+    }
+  ],
+  "destinations": [
+    {
+      "pathname": "/suggestion/",
+      "status": 200
+    },
+    {
+      "pathname": "/rankings/",
+      "status": 200
+    },
+    {
+      "pathname": "/badges/",
+      "status": 200
+    },
+    {
+      "pathname": "/concepts/",
+      "status": 200
+    },
+    {
+      "pathname": "/#resolvidos",
+      "status": 200
+    }
+  ],
+  "errors": [],
+  "health": {
+    "status": 200,
+    "checks": {
+      "api": "ok",
+      "database": "ok"
+    }
+  },
+  "publicMarkets": {
+    "sealed": 6,
+    "locked": 5,
+    "open": 4
+  },
+  "resultFilter": {
+    "visible": 6
+  }
+}

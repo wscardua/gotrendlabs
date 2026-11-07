@@ -308,4 +308,4 @@ Ilustrações: pergunta/lápis/envio sem promessa de publicação; pódio anôni
 
 Aceite e evidências: `docs/specs/testing/web-grid-invite-acceptance-20261107.md`. MCP sem impacto: apresentação e navegação em fluxos existentes, sem alteração de contratos, autenticação ou regras editoriais.
 
-Estado de fechamento da fatia web: implementação commitada e validada localmente; PR/integração/deploy acompanhados separadamente no [recibo vigente](../testing/web-grid-invite-closeout-20261107.md). O status parcial da feature ampla não é promovido pelas entregas desta fatia. O CI executa a regressão de sorteio; filtros genéricos de Categorias preservam aria-pressed inicial.
+Estado de fechamento da fatia web: integrada à main pela PR205 (4b9b8a5), implantada via Actions42418237208 e validada em produção; evidências no [recibo vigente](../testing/web-grid-invite-closeout-20261107.md). O status parcial da feature ampla não é promovido pelas entregas desta fatia. O CI executa a regressão de sorteio; filtros genéricos de Categorias preservam aria-pressed inicial.

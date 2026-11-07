@@ -1,6 +1,6 @@
 # GoTrendLabs
 
-Convite contextual da grade web (07/11/2026): implementado/testado e commitado na branch `feature/web-market-grid-invite`; PR/integração/deploy pendentes de aprovação e acompanhamento. Preenche apenas espaços restantes, com cinco recursos da plataforma e estado estável por visita. [Fonte da verdade e evidências](docs/specs/testing/web-grid-invite-closeout-20261107.md).
+Convite contextual da grade web (07/11/2026): integrado pela PR #205, implantado e validado em produção; CI/main/deploy e smoke aprovados. Preenche apenas espaços restantes, com cinco recursos da plataforma e estado estável por visita. Branch local `feature/web-market-grid-invite` preservada. [Fonte da verdade e evidências](docs/specs/testing/web-grid-invite-closeout-20261107.md).
 
 Fechamento em 2026-10-25: PRs #177 e #178 integradas, testes/build/deploy web/API aprovados, migrations 0037/0038 e ACL mínima confirmadas em produção. O mercado 35 mostra 100 GT₵, 1 participante e integridade válida. Distribuição Flutter ainda pendente. [Recibo produtivo](docs/specs/testing/resolution-reliability-production-closeout-20261025.md) e [roteiro](docs/specs/operations/resolution-reliability-rollout.md).
 

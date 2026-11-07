@@ -42,3 +42,7 @@ Nenhum arquivo de código foi alterado durante a passagem final de review; a cor
 ## Adendo após primeiro CI remoto
 
 O CI 42416671503 da PR205 identificou dois testes existentes que localizavam a grade por tag HTML literal. O novo atributo do convite invalidou o split e gerou dois IndexError, sem falha de domínio. Corrigidos os dois cenários em tests/test_web_smoke.py para assertNotContains sobre a resposta inteira, mantendo e reforçando a checagem de cancelados. Quatro cenários Django selecionados aprovados em PostgreSQL 16 isolado; nova execução completa do CI exigida antes de merge. Esse adendo encerra a lacuna de regressão detectada remotamente; não altera o risco do runtime ou os contratos MCP/mobile.
+
+## Confirmação de fechamento
+
+Correção dos smoke tests integrada no merge4b9b8a5/PR205. CI PR42417621167 e main/deploy42418237208 concluídos com sucesso, 683 testes/três skips em ambos. Smoke produtivo, checksums e verificação read-only do commit/serviços aprovados; [recibo final](web-grid-invite-closeout-20261107.md). Sem findings pendentes desta entrega. Pontos de navegadores físicos/Safari/Firefox e limites da amostra produtiva permanecem explicitados como cobertura residual.

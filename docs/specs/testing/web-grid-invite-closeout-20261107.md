@@ -1,6 +1,38 @@
 # Fechamento — convite contextual da grade web
 
-## Estado vigente
+## Estado final — integrado e implantado
+
+Feature concluída em produção em 07/11/2026. PR [#205](https://github.com/wscardua/gotrendlabs/pull/205), com título/descrição aprovados pelo usuário antes da abertura, integrada à main em `4b9b8a5dd7197b22a00f2954e452b85899e065c2`. Código do convite, correção acessível de Categorias e atualização dos smoke tests fazem parte desse merge.
+
+- CI da PR: [42417621167](https://github.com/wscardua/gotrendlabs/actions/runs/42417621167), sucesso; 683 testes Python/três skips em 323,518s. Builds de produção/MCP, OpenAPI, seleção do convite e demais regressões JS aprovados.
+- CI/main e deploy: [42418237208](https://github.com/wscardua/gotrendlabs/actions/runs/42418237208), sucesso; 683 testes/três skips em 435,269s. Todos os jobs concluídos, incluindo build e deploy.
+- Implantação SSM `8cba2537-c7b2-4825-bd76-046b5d1d80a8`: Success/código 0, encerrada em 07/11 às 22:07:52 UTC (19:07:52 em Brasília).
+- Verificação read-only SSM `55bf9d14-2b3b-4347-a42d-68440aa76675`: Success/código 0; HEAD produtivo igual ao merge, sem alterações em arquivos versionados. Django, FastAPI, daemon, proxy e thumbnail-worker em execução; MCP em execução/healthy.
+- Publicação feita pelo fluxo existente e collectstatic. Sem migração da feature, flag, configuração adicional ou ajuste de dados em produção. Banco/fixtures DEV não foram transportados.
+- Branch local `feature/web-market-grid-invite` e checkout original preservados. Esta conclusão substitui os estados de preparação mantidos abaixo como histórico.
+
+## Smoke produtivo
+
+Verificação em https://gotrendlabs.com.br em 07/11/2026 às 22:08 UTC (19:08 em Brasília), Chrome desktop com viewports 1366/1000/390. Sessões de inspeção desativaram analytics no próprio navegador; não houve mutação de domínio, criação de mercados, previsões ou permissões.
+
+- `/api/health`: 200; API/database ok.
+- Nove assets públicos (CSS, três scripts e cinco SVGs): 200, SHA256 idêntico aos arquivos integrados. [Relatório com checksums](evidence/web-grid-invite-20261107/production/report.json).
+- Catálogo público real: quatro open, cinco locked e seis sealed; nenhuma fixture qa-visual presente.
+- Grade principal com quatro open: convite visível em duas colunas no desktop. Apuração conserva seus cinco mercados e não recebe convite.
+- As cinco opções conferidas nos dois temas, total de dez capturas; conteúdo/destinos corretos. A escolha foi forçada somente na memória das sessões de QA para cobrir todos os intervalos, sem override ou parâmetro novo no produto.
+- Quinze cenários de largura (cinco opções × 1366/1000/390): ocupação correta pelas colunas reais, seleção preservada e sem overflow horizontal; com quatro mercados, convite oculto nos layouts de duas/uma coluna.
+- Clique em Ver resultados aciona o filtro existente e mostra os seis sealed; a grade completa não recebe convite. As cinco rotas de destino respondem 200. Sem erros JavaScript.
+- [Captura produtiva clara](evidence/web-grid-invite-20261107/production/light.png) e [escura](evidence/web-grid-invite-20261107/production/dark.png) revisadas visualmente, com as thumbnails reais carregadas. Demais capturas ficam em `.runtime/closeout/production-evidence/`.
+
+Limites: a amostra produtiva observada não tem cinco abertos, resolved ou mais de 18 itens por seção; cenários de 0–8, paginação, resolved e HTMX seguem cobertos pelo aceite local e CI aplicável, sem modificar dados PRD para reproduzi-los. Safari/Firefox/aparelhos físicos não exercitados. Sem storage, impedir repetição entre documentos continua best effort. Nenhuma pendência funcional desta fatia; FEAT-MARKET-001 ampla permanece parcial por lacunas independentes.
+
+MCP confirmado sem ajuste: tools, schemas, contratos, permissões, erros, replays e orientação editorial preservados. Flutter, seus contratos e documentação não foram alterados; esta implantação não distribui novo APK/AAB/iOS.
+
+## Histórico da preparação
+
+Os registros abaixo preservam os estados anteriores. Para disponibilidade e fechamento, prevalecem o estado final e as evidências produtivas acima.
+
+## Estado registrado antes da reexecução do CI
 
 07/11/2026: implementação e correção de review **commitadas/testadas localmente** na branch `feature/web-market-grid-invite`, baseada na main remota `d93d5b918cba0b9802dfc2900b5882700b3d9030`. Commits de código: `1fd83a0` e `68b60c4e5a0e72e015ff60ed92462b77783759ec`.
 

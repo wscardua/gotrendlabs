@@ -1,3 +1,7 @@
+## 07/11/2026 — convite contextual web implantado e validado
+
+PR205 integrada em 4b9b8a5dd7197b22a00f2954e452b85899e065c2; CI PR42417621167 e main/deploy42418237208 aprovados (683 testes/três skips em ambos). SSM Success/0 e smoke HTTPS/Chrome confirmam nove assets exatos, cinco opções, temas e responsividade; quatro open exibem convite em duas colunas, apuração e histórico preservados. Sem migration/configuração extra ou alteração MCP/mobile. Branch local preservada. [Recibo final](../testing/web-grid-invite-closeout-20261107.md). Esta entrada prevalece sobre preparações abaixo; FEAT-MARKET-001 ampla segue parcial por lacunas independentes.
+
 ## 07/11/2026 — convite web: PR205 autorizada e correção de testes do CI
 
 PR205 aberta após aprovação do usuário. Primeiro CI executou 683 testes/três skips e falhou em dois smoke tests por split literal da tag da grade. Testes corrigidos para verificar ausência de cancelados na resposta inteira; quatro testes Django selecionados aprovados em PostgreSQL 16 isolado. Nova execução completa/merge/deploy pendentes; [recibo vigente](../testing/web-grid-invite-closeout-20261107.md). Nenhuma nova alteração de runtime/API/MCP/mobile.

@@ -66,3 +66,7 @@ Limites da validação: navegador Chromium/Chrome desktop com viewport móvel, s
 ## Fechamento posterior à validação local
 
 [Recibo vigente](web-grid-invite-closeout-20261107.md) distingue commits, aprovação da PR, integração e produção. Review versionado identificou perda de aria-pressed inicial em filtros genéricos de Categorias, corrigida em 68b60c4 com regressões Node/navegador aprovadas. Teste de sorteio acrescentado ao CI. A suite de navegador foi reexecutada com as 54 combinações, limites, cinco opções/20 capturas, HTMX/storage/teclado e Categorias aprovados.
+
+## Implantação confirmada
+
+Fatia integrada pela PR205/merge4b9b8a5 e implantada pelo Actions42418237208, com 683 testes/três skips em PR/main e smoke produtivo aprovados. O [recibo final](web-grid-invite-closeout-20261107.md#estado-final--integrado-e-implantado) prevalece sobre os estados de preparação acima e inclui capturas/checksums de produção. Não houve transporte de fixtures DEV ou mudança MCP/mobile.
