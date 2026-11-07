@@ -150,3 +150,17 @@ A navegação usa Em andamento, Resolvidos e recortes pessoais. JS move os mesmo
 ### Correção da faixa Novo após review — 2026-11-07
 
 A hidratação de Novo é independente da ordenação e cobre também Categorias. Um timer compartilhado agenda a próxima transição temporal; visibilitychange revalida a faixa ao retornar à aba. Nenhuma consulta adicional ou mutação de lifecycle.
+
+## Desempenho autenticado web
+
+`/desempenho/` consome `GET /users/me/performance` pelo cliente autenticado Django, a cada GET, com `private, no-store` e sem fallback ORM. A sessão define o usuário; query strings não selecionam identidade. 401 limpa as credenciais locais e retorna ao login com `next` seguro, 403 apresenta restrição, demais falhas exibem erro e retry sem placar zerado.
+
+O menu inclui Desempenho imediatamente após Perfil e badges; perfil aponta para a página e expõe `#badges`. Placar respeita a ocultação administrativa existente; posição ausente é texto, inclusive para bots excluídos do ranking. Histórico usa labels/deltas da API e links por slug; conquistas usam o componente compartilhado de imagem e tokens de tema. Não há filtros, paginação, chamadas por linha, cálculo crítico ou contrato alternativo.
+
+### Apresentação incremental web (07/11/2026)
+
+Por pedido posterior do usuário, Desempenho limita a exibição inicial a cinco resoluções. Carregar mais revela cinco itens adicionais da resposta já recebida e desaparece ao esgotá-los; contador anuncia quantos itens do recorte estão visíveis. O contrato continua limitado a até dez resoluções recentes, sem nova paginação ou chamadas adicionais. Esta decisão substitui a exclusão anterior do controle visual nesta tela. Sem JS, todas as linhas permanecem acessíveis.
+
+### Gráfico de impactos recentes
+
+Pedido posterior do usuário autoriza gráfico compacto dos deltas individuais de `history`, substituindo a exclusão visual anterior somente para esse recorte. Não é gráfico de evolução do score acumulado: não há contrato histórico suficiente para ele. Ordenação da API é invertida apenas para leitura cronológica, e altura é proporcional ao maior delta absoluto recebido, sem modificar valores. Rótulos e sinais numéricos complementam as cores; cada barra oferece link acessível ao mercado. Oculto em vazio/erro e para os papéis cujo placar já é oculto. Nenhum ajuste MCP.

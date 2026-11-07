@@ -1,0 +1,6 @@
+{% if badge.image_url %}
+  <img class="badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="" loading="lazy">
+  {% if badge.image_dark_url %}<img class="badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="" loading="lazy">{% endif %}
+{% else %}
+  <span class="badge-icon" aria-hidden="true">{% if badge.status == 'earned' %}✓{% else %}–{% endif %}</span>
+{% endif %}

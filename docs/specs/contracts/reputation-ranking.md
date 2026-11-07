@@ -56,7 +56,7 @@ Campos mínimos de cada item em `badges`:
 
 `GET /users/me/performance`
 
-Exige sessão válida e retorna um agregado de leitura para o app mobile mostrar evolução preditiva sem calcular regra crítica localmente.
+Exige sessão válida e retorna um agregado de leitura para web e app mobile mostrarem evolução preditiva sem calcular regra crítica localmente.
 
 Resposta mínima:
 
@@ -89,6 +89,8 @@ Regras do endpoint:
 - `gtc_result` vem do ledger associado à previsão resolvida, somando resultado educativo líquido disponível no contrato.
 - `result_label` deve usar copy de produto, hoje `Acertou` ou `Não acertou`, sem termos técnicos ou ambíguos como `Resultado diferente`.
 - `progression.next_milestones` fica vazio enquanto não houver progresso confiável exposto pelo backend.
+- A web `/desempenho/` reconsulta a cada requisição autenticada, sem cache compartilhado; usa até dez itens de `history`, `earned_badges_count` e `latest_awards` (até cinco) já retornados. `ranking_position=0` indica ausência de posição; `strong_category` vazia indica categoria ainda não definida. Nenhuma mudança de schema ou semântica nesta integração.
+- A revelação web de cinco para até dez itens e o gráfico de deltas usam exclusivamente a resposta recebida; não constituem paginação, nova série histórica ou mudança do contrato.
 - O cliente mobile deve reconsultar esse endpoint ao abrir a tela, voltar do background e usar pull-to-refresh.
 
 ## Regras

@@ -1,3 +1,47 @@
+## 07/11/2026 — Fechamento de Desempenho web em preparação
+
+WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT consolida a página final: seis indicadores, gráfico de deltas reais, cinco resoluções iniciais/revelação até dez, conquistas com imagens, links e tipografia da Carteira. Specs de reputação/contrato/arquitetura alinhadas; FEAT-REP-001 ampla continua parcial/draft. Validação final aprovada: 698 testes Python/três skips, 15 específicos, 30 combinações de QA e dez autenticadas, checks/JS/OpenAPI/collectstatic/Dockerfile/build MCP; commit em preparação; PR, main e produção pendentes de aprovação prévia da descrição e do fluxo CI/deploy. Build Docker principal local segue impedido por espaço; CI deve aprová-lo antes do merge. Sem migration/flag/dados adicionais; MCP/mobile/API preservados. [Recibo vigente](../testing/web-performance-closeout-20261107.md). Esta entrada prevalece sobre as prévias históricas abaixo.
+
+## 07/11/2026 — Tipografia alinhada à Carteira educativa
+
+Comparação no navegador confirmou IBM Plex Sans em ambas as páginas, com diferenças locais de escala/peso/espaçamento em Desempenho. Removido override do título para reutilizar `.large-title`; métricas passaram a 22 px/-0.04em e labels a 12 px, seções a 18 px, texto da tabela a 16 px e cabeçalhos a 12 px/700/uppercase/0.08em, conforme Carteira. Preservados layout/gráfico/dados e anotações compactas. CSS versionado; web reiniciado. Sem mudança API/MCP ou deploy.
+
+## 07/11/2026 — Encaixe do gráfico no cabeçalho
+
+Refinamento pedido pelo usuário: retorno/eyebrow, título e subtítulo agora formam a coluna esquerda inteira, alinhada ao gráfico à direita. Reduzidas a altura gráfica (88 px) e a distância até o placar, com legenda compacta. Isso remove o vazio acima do título criado pelo retorno em linha separada. Mantidos dados, valores, links e comportamento móvel. Check Django/diff e QA local em cinco larguras/dois temas; CSS versionado e web reiniciado. Sem impacto API/MCP ou deploy.
+
+## 07/11/2026 — Gráfico de impactos recentes no cabeçalho
+
+Após rejeitar o bloco de identidade, o usuário pediu uma representação gráfica do desempenho. Incluída prévia com barras divergentes dos deltas de reputação retornados por `history`, em ordem cronológica, valores explícitos e links aos mercados. Não representa série histórica de score acumulado. Sem inventar dados ou recalcular regra crítica; a única transformação é escala visual das barras. API/MCP preservados; sem deploy.
+
+## 07/11/2026 — Identidade do cabeçalho revertida
+
+Por solicitação do usuário, removido o bloco de avatar/nome/@handle e restaurado título/subtítulo anteriores. Demais ajustes preservados. Gráfico de impactos reputacionais recentes sugerido para avaliação, ainda não implementado. Sem mudança de domínio/API/MCP; sem deploy.
+
+## 07/11/2026 — Identidade no cabeçalho de Desempenho
+
+Incluídos avatar com iniciais, nome e @handle da própria conta à direita do título; no celular o bloco fica abaixo do subtítulo. Usa `viewer` autenticado existente, sem foto inventada, novas chamadas ou dados privados. Preservados layout, badges e Carregar mais. Sem impacto em API/domínio/MCP ou deploy.
+
+## 07/11/2026 — Atalhos do cabeçalho revertidos
+
+Por solicitação do usuário, removidos apenas Explorar mercados e Ver ranking do cabeçalho e restaurada a disposição anterior de título/subtítulo. Preservados placar, imagens das badges, layout e Carregar mais. Reversão exclusivamente visual, sem impacto MCP/API/permissões. Sem deploy.
+
+## 07/11/2026 — Atalhos no cabeçalho de Desempenho
+
+A pedido do usuário, Explorar mercados (primário) e Ver ranking (secundário) aparecem à direita do título no desktop e abaixo do subtítulo em telas pequenas. Links nomeados existentes, tokens e i18n preservados; CSS versionado e web local reiniciado. Mudança de apresentação/navegação, sem alteração de domínio, contrato, permissões ou MCP. Sem deploy.
+
+## 07/11/2026 — Desempenho: cinco resoluções e Carregar mais
+
+Por solicitação posterior do usuário, a tela mostra cinco resoluções inicialmente e revela mais cinco ao acionar Carregar mais. O botão desaparece ao esgotar os itens recebidos, com contador acessível e foco no primeiro mercado revelado. Não há paginação API nem promessa de histórico além das até dez resoluções do contrato. Sem JavaScript, todas as linhas ficam acessíveis e o controle não aparece. Sem alterações de regras/API/MCP ou permissões.
+
+## 07/11/2026 — Refinamento do layout de Desempenho (local)
+
+WFLOW-20261107-WEB-PERFORMANCE-LAYOUT: cabeçalho/placar unificados, hierarquia menor, tabela com títulos mais largos e valores alinhados, lateral compacta e resultados móveis lado a lado. CSS isolado/versionado; ambiente web reiniciado para invalidar template em cache. API/domínio/MCP preservados; dados locais existentes mantidos. [Evidências](../testing/web-performance-acceptance-20261107.md). Sem publicação.
+
+## 07/11/2026 — Desempenho web implementado localmente
+
+FEAT-REP-001 v0.8 / WFLOW-20261107-WEB-PERFORMANCE: `/desempenho/`, menu após Perfil e badges, atalho no perfil, agregado autenticado da API, placar, histórico e conquistas, temas e layout móvel. Suíte completa aprovada (693 testes no resumo, três skips), doze testes específicos finais e 30 cenários de navegador aprovados, checks Django/OpenAPI/JS/collectstatic e build MCP aprovados. Build principal bloqueado por espaço no Docker; sem alteração de API/mobile/MCP e sem publicação. Feature ampla permanece parcial. [Aceite e resultados completos](../testing/web-performance-acceptance-20261107.md).
+
 ## 07/11/2026 — convite contextual web implantado e validado
 
 PR205 integrada em 4b9b8a5dd7197b22a00f2954e452b85899e065c2; CI PR42417621167 e main/deploy42418237208 aprovados (683 testes/três skips em ambos). SSM Success/0 e smoke HTTPS/Chrome confirmam nove assets exatos, cinco opções, temas e responsividade; quatro open exibem convite em duas colunas, apuração e histórico preservados. Sem migration/configuração extra ou alteração MCP/mobile. Branch local preservada. [Recibo final](../testing/web-grid-invite-closeout-20261107.md). Esta entrada prevalece sobre preparações abaixo; FEAT-MARKET-001 ampla segue parcial por lacunas independentes.

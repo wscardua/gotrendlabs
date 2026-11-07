@@ -1,3 +1,11 @@
+## 07/11/2026 — Desempenho web: contrato e ativação final
+
+Menu/perfil → `/desempenho/` → cliente Django autenticado → `GET /users/me/performance` atual; nenhuma nova API. Histórico/gráfico ligam aos mercados reais, conquistas ao perfil#badges e ranking à rota existente. Revelação 5→10 exclusivamente local. Deploy web existente publica templates/collectstatic; nenhuma migration, flag, fila, serviço ou dado a carregar. MCP e Flutter mantêm contratos/consumidores. [Fechamento e gates](../testing/web-performance-closeout-20261107.md).
+
+## 07/11/2026 — Desempenho web (local)
+
+Menu/perfil → `/desempenho/` → cliente Django com token pessoal → `GET /users/me/performance` existente. Links para mercado por slug, `/profile/#badges` e `/rankings/`; imagem de badge compartilhada com perfil. Sem mudança de API, domínio, persistência, mobile ou MCP. [Aceite](../testing/web-performance-acceptance-20261107.md).
+
 ## 07/11/2026 — navegação do convite contextual web
 
 FEAT-MARKET-001 v0.17: a grade principal web liga às rotas existentes suggestion, rankings, badges, concepts e home#resolvidos. Estado efêmero no navegador com histórico opcional; sem chamada nova à FastAPI, novo contrato, serviço, banco, job ou permissão MCP. Cards e apuração não dependem do convite. Sem impacto em Flutter ou seus contratos/documentação. [Fechamento](../testing/web-grid-invite-closeout-20261107.md).

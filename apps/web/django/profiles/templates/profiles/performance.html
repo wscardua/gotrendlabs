@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load i18n static %}
+{% block title %}GoTrendLabs | {% translate "Desempenho" %}{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'css/performance.css' %}?v=20261107-wallet-type"><script src="{% static 'js/performance.js' %}?v=20261107-load-more" defer></script>{% endblock %}
+{% block content %}
+<main class="shell performance-page">
+  <header class="panel performance-heading">
+    <div class="performance-title-row">
+      <div class="performance-title-copy">
+        <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">{% translate "Evolução preditiva" %}</span></div>
+        <h1 class="large-title">{% translate "Desempenho" %}</h1>
+        <p class="muted">{% translate "Acompanhe suas previsões, reputação e conquistas." %}</p>
+      </div>
+      {% if reputation_chart and show_performance_scorecard %}
+        <figure class="performance-impact-chart" aria-labelledby="impact-chart-title">
+          <figcaption id="impact-chart-title">{% translate "Impacto na reputação" %}<span>{% translate "Últimas resoluções" %}</span></figcaption>
+          <ol class="performance-impact-bars">
+            {% for item in reputation_chart %}
+              <li>
+                <a href="{% url 'market-detail' item.market_slug %}" class="performance-impact-bar {% if item.reputation_delta < 0 %}negative{% elif item.reputation_delta == 0 %}neutral{% endif %}" style="--bar-height: {{ item.bar_height }}px" title="{{ item.market_title }} · {{ item.result_label }} · {% if item.reputation_delta > 0 %}+{% endif %}{{ item.reputation_delta }}" aria-label="{{ item.market_title }}: {{ item.result_label }}, {% translate 'impacto na reputação' %} {% if item.reputation_delta > 0 %}+{% endif %}{{ item.reputation_delta }}">
+                  <span class="performance-impact-fill" aria-hidden="true"></span>
+                  <span class="performance-impact-value" aria-hidden="true">{% if item.reputation_delta > 0 %}+{% endif %}{{ item.reputation_delta }}</span>
+                </a>
+              </li>
+            {% endfor %}
+          </ol>
+          <div class="performance-impact-axis" aria-hidden="true"><span>{% translate "Mais antigas" %}</span><span>{% translate "Mais recentes" %} →</span></div>
+        </figure>
+      {% endif %}
+    </div>
+    {% if not performance_error %}
+    {% if show_performance_scorecard %}
+      <section class="performance-scorecard" aria-labelledby="scorecard-title">
+        <h2 id="scorecard-title">{% translate "Placar atual" %}</h2>
+        <dl class="performance-metrics">
+          <div><dt>{% translate "Reputação" %}</dt><dd>{{ performance.scorecard.reputation_score }}</dd></div>
+          <div><dt>{% translate "Posição global" %}</dt><dd>{% if performance.scorecard.ranking_position %}#{{ performance.scorecard.ranking_position }}{% else %}<span class="performance-unranked">{% translate "Sem posição" %}</span>{% endif %}</dd></div>
+          <div><dt>{% translate "Previsões resolvidas" %}</dt><dd>{{ performance.scorecard.resolved_predictions_count }}</dd></div>
+          <div><dt>{% translate "Precisão" %}</dt><dd>{{ performance.scorecard.accuracy_indicator }}</dd></div>
+          <div><dt>{% translate "Sequência" %}</dt><dd>{{ performance.scorecard.streak }}</dd></div>
+          <div><dt>{% translate "Categoria forte" %}</dt><dd class="performance-category">{% if performance.scorecard.strong_category %}{{ performance.scorecard.strong_category }}{% else %}{% translate "Ainda não definida" %}{% endif %}</dd></div>
+        </dl>
+      </section>
+    {% else %}
+      <p class="muted">{% translate "Contas administrativas não participam do placar público." %}</p>
+    {% endif %}
+    {% endif %}
+  </header>
+  {% if performance_error %}
+    <section class="panel" role="alert">
+      {% if performance_forbidden %}
+        <h2>{% translate "Acesso não permitido" %}</h2>
+        <p>{% translate "Esta sessão não tem acesso aos dados de desempenho." %}</p>
+      {% else %}
+        <h2>{% translate "Não foi possível carregar seu desempenho" %}</h2>
+        <p>{% translate "Os dados estão temporariamente indisponíveis. Tente novamente em alguns instantes." %}</p>
+      {% endif %}
+      <a class="btn primary" href="{% url 'performance' %}">{% translate "Tentar novamente" %}</a>
+    </section>
+  {% else %}
+    <div class="performance-layout">
+      <section class="panel performance-history" aria-labelledby="history-title">
+        <h2 id="history-title">{% translate "Resoluções recentes" %}</h2>
+        <p class="muted">{% translate "Seus resultados e impactos após a resolução dos mercados." %}</p>
+        {% if performance.history %}
+          <table class="performance-table" role="table">
+            <caption class="performance-sr-only">{% translate "Últimas resoluções e impactos pessoais" %}</caption>
+            <thead role="rowgroup"><tr role="row"><th scope="col">{% translate "Mercado" %}</th><th scope="col">{% translate "Resultado" %}</th><th scope="col"><span title="{% translate 'Impacto na reputação' %}">{% translate "Reputação" %}</span></th><th scope="col">{% translate "GT₵ educativo" %}</th></tr></thead>
+            <tbody role="rowgroup" id="performance-history-rows">
+              {% for item in performance.history %}
+                <tr role="row">
+                  <th scope="row" role="rowheader">
+                    <a class="performance-market" href="{% url 'market-detail' item.market_slug %}">{{ item.market_title }}</a>
+                    {% if item.option_label %}<small>{% translate "Sua escolha:" %} {{ item.option_label }}</small>{% endif %}
+                    {% if item.resolved_at_label %}<small>{% if item.resolved_at %}<time datetime="{{ item.resolved_at }}">{{ item.resolved_at_label }}</time>{% else %}{{ item.resolved_at_label }}{% endif %}</small>{% endif %}
+                  </th>
+                  <td role="cell"><span class="performance-mobile-label" aria-hidden="true">{% translate "Resultado" %}</span><span class="tag{% if item.won == True %} safe{% elif item.won == False %} risk{% endif %}">{{ item.result_label }}</span></td>
+                  <td role="cell"><span class="performance-mobile-label" aria-hidden="true">{% translate "Reputação" %}</span><strong>{% if item.reputation_delta > 0 %}+{% endif %}{{ item.reputation_delta }}</strong></td>
+                  <td role="cell"><span class="performance-mobile-label" aria-hidden="true">{% translate "GT₵ educativo" %}</span><strong>{{ item.educational_result_label }}</strong></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% if performance.history|length > 5 %}
+            <div class="performance-load-more" data-performance-more hidden>
+              <p class="muted" role="status" aria-live="polite" data-performance-count data-message="{% translate 'Mostrando {visible} de {total} resoluções recentes.' %}"></p>
+              <button type="button" class="btn small ghost" data-performance-more-button aria-controls="performance-history-rows">{% translate "Carregar mais" %}</button>
+            </div>
+          {% endif %}
+        {% else %}
+          <div class="performance-empty"><h3>{% translate "Suas resoluções aparecerão aqui" %}</h3><p class="muted">{% translate "Quando um mercado com sua previsão for resolvido, você poderá acompanhar o resultado e seus impactos." %}</p><a class="btn primary" href="{% url 'home' %}">{% translate "Explorar mercados" %}</a></div>
+        {% endif %}
+      </section>
+      <aside class="side-stack performance-sidebar">
+        <section class="side-card" aria-labelledby="awards-title">
+          <h2 id="awards-title">{% translate "Conquistas recentes" %}</h2>
+          <p class="muted">{% blocktranslate count total=performance.progression.earned_badges_count %}{{ total }} badge conquistada{% plural %}{{ total }} badges conquistadas{% endblocktranslate %}</p>
+          <div class="performance-awards">
+            {% for badge in performance.progression.latest_awards %}
+              <article class="badge-card earned">
+                {% include "components/badge_image.html" %}
+                <div class="badge-copy"><strong>{{ badge.name }}</strong><span>{{ badge.description }}</span></div>
+              </article>
+            {% empty %}
+              <p>{% translate "Você ainda não tem conquistas. Conheça as badges e continue participando da comunidade." %}</p>
+            {% endfor %}
+          </div>
+          <a class="btn small ghost" href="{% url 'profile' %}#badges">{% translate "Ver perfil e badges" %}</a>
+        </section>
+        <section class="side-card"><h2>{% translate "Ranking" %}</h2><p class="muted">{% translate "Conheça o placar da comunidade e os destaques por categoria." %}</p><a class="btn small ghost" href="{% url 'rankings' %}">{% translate "Ver ranking" %}</a></section>
+      </aside>
+    </div>
+  {% endif %}
+</main>
+{% endblock %}

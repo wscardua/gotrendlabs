@@ -1,3 +1,23 @@
+## 2026-11-07 — Fonte da verdade de Desempenho web
+
+Reconciliados escopo e critérios finais de FEAT-REP-001 v0.8, arquitetura web e contrato descritivo: web/mobile compartilham agregado existente; Carregar mais é revelação local e gráfico usa deltas individuais, sem série acumulada. Removida duplicação de apresentação no contrato. Recibo de fechamento e estado operacional distinguem preparação, commit, integração e implantação; nenhuma promoção do status global da feature ampla. MCP explicitamente sem ajuste; sem ADR/OpenAPI/migration.
+
+## 07/11/2026 — Gráfico de impactos recentes no cabeçalho
+
+Após rejeitar o bloco de identidade, o usuário pediu uma representação gráfica do desempenho. Incluída prévia com barras divergentes dos deltas de reputação retornados por `history`, em ordem cronológica, valores explícitos e links aos mercados. Não representa série histórica de score acumulado. Sem inventar dados ou recalcular regra crítica; a única transformação é escala visual das barras. API/MCP preservados; sem deploy.
+
+## 07/11/2026 — Desempenho: cinco resoluções e Carregar mais
+
+Por solicitação posterior do usuário, a tela mostra cinco resoluções inicialmente e revela mais cinco ao acionar Carregar mais. O botão desaparece ao esgotar os itens recebidos, com contador acessível e foco no primeiro mercado revelado. Não há paginação API nem promessa de histórico além das até dez resoluções do contrato. Sem JavaScript, todas as linhas ficam acessíveis e o controle não aparece. Sem alterações de regras/API/MCP ou permissões.
+
+## 07/11/2026 — Refinamento do layout de Desempenho (local)
+
+WFLOW-20261107-WEB-PERFORMANCE-LAYOUT: cabeçalho/placar unificados, hierarquia menor, tabela com títulos mais largos e valores alinhados, lateral compacta e resultados móveis lado a lado. CSS isolado/versionado; ambiente web reiniciado para invalidar template em cache. API/domínio/MCP preservados; dados locais existentes mantidos. [Evidências](../testing/web-performance-acceptance-20261107.md). Sem publicação.
+
+## 07/11/2026 — Desempenho web
+
+FEAT-REP-001 v0.8 documenta escopo web aprovado pelo pedido, sem promover a aprovação/status amplo da feature. Arquitetura frontend-web e contrato reputation-ranking passam a registrar o consumidor Django do agregado já existente. Critérios de aceite, integração e workflow atualizados; sem mudança de schema, ADR, regra de domínio, app mobile ou MCP.
+
 ## 2026-11-07 — fechamento produtivo do convite web
 
 Recibo, spec do feed, estado e changelog alinhados à integração PR205/merge4b9b8a5 e ao sucesso de CI/main/deploy/smoke. Checksums e capturas produtivas versionados; preparação anterior preservada como histórico, sem declarar pendência já encerrada. MCP/mobile sem alteração. [Fonte da verdade](../testing/web-grid-invite-closeout-20261107.md).

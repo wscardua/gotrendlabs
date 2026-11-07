@@ -1,3 +1,11 @@
+## 07/11/2026 — Gates de integração de Desempenho web
+
+Fechamento solicitado pelo usuário, ainda sem PR/merge/deploy. O build Docker principal foi tentado novamente e permanece limitado por espaço local; nenhuma limpeza destrutiva realizada. Build completo obrigatório no CI antes do merge; acompanhar Actions da main/SSM e smoke para comprovar ativação. Sem migration, flag ou carga produtiva necessária. Fixture DEV/credenciais não serão publicadas. QA local limitado a Chrome com viewports móveis, sem Safari/Firefox/aparelho físico. [Recibo de fechamento](../testing/web-performance-closeout-20261107.md), WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT. Não confundir prévias locais concluídas com implantação.
+
+## 07/11/2026 — Validação da imagem principal: Desempenho web
+
+WFLOW-20261107-WEB-PERFORMANCE: implementação e testes específicos/QA aprovados; build principal Docker falha em apt-get por falta de espaço em `/var/cache/apt/archives/`. Necessário disponibilizar espaço e reexecutar `docker build --tag gotrendlabs:performance-ci .` antes de publicação. Nenhum volume/imagem do usuário foi apagado. Build MCP e Dockerfile check passaram. QA limitado a Chrome com viewports móveis e fixtures; sem mockup anexado disponível, aparelho físico ou Safari/Firefox. [Aceite](../testing/web-performance-acceptance-20261107.md).
+
 ## 07/11/2026 — Hoje integrada e release19 enviada ao Alpha
 
 PR #203 integrada em f7d6480; CI PR42407114320 e main/deploy42407705220 aprovados, 681 testes Python/três skips em ambos. 140 testes Flutter/analyze locais aprovados. AAB1.2.5+19 validado, assinado e enviado ao Alpha (100% do grupo existente, sem perda de compatibilidade). Console confirmou Changes in review/quick checks em andamento; aprovação/disponibilidade Google ainda não observadas. Health produtivo ok, APK site preservado, sem configuração extra ou alteração MCP. [Recibo19](../testing/mobile-today-release-19-20261107.md). Este estado prevalece sobre as preparações históricas abaixo.

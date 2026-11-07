@@ -245,3 +245,7 @@ Migration editorial_integrations.0007 e ACL mínima confirmadas. Novos scopes n�
 ### MCP: opção vencedora na consulta do mercado
 
 `get_market` retorna `winning_option_id` obrigatório (`integer | null`), com o ID persistido da vencedora relacionado a `options[].id`, inclusive em resolved/sealed. `status` continua indicando o estado do mercado; sem vencedora registrada, o novo campo retorna `null`. Mesmo scope `catalog:read`, sem migration, novas permissões ou mudança dos snapshots editoriais. Implantado pela [PR #184](https://github.com/wscardua/gotrendlabs/pull/184), com CI/build/deploy e [smoke produtivo aprovados](docs/specs/testing/mcp-winning-option-production-closeout-20261103.md): [contrato](docs/specs/contracts/agent-integrations.md), [evidências](docs/specs/testing/mcp-winning-option-results.md) e [roteiro de implantação](docs/specs/operations/mcp-winning-option-rollout.md).
+
+### Desempenho web
+
+Página autenticada `/desempenho/`, acessível pelo menu após Perfil e badges: placar atual, impactos recentes, conquistas com imagens e atalhos de perfil/ranking. Reutiliza o contrato existente da FastAPI. [Spec](docs/specs/features/reputation-and-ranking.md#página-web-desempenho-2026-11-07) e [estado de integração/implantação](docs/specs/testing/web-performance-closeout-20261107.md); conclusão local não equivale a disponibilidade produtiva.
