@@ -1,3 +1,7 @@
+## 07/11/2026 — Em andamento implantado e validado
+
+PR #199 integrada em `ca0cab9de589fb4df74b8fac38d0704aa6f73588`; Actions main 42394768559 e deploy SSM concluídos com sucesso. Web produtiva usa Em andamento/open primeiro e locked expandido, Resolvidos e recortes pessoais; assets novos confirmados por SHA256, histórico selado e provas acessíveis/validadas. 681 testes Python (três skips) no CI produtivo, 139 Flutter locais e build debug em emulador. Sem migration/configuração adicional ou mudança MCP/API/domínio. Distribuição Android e QA físico permanecem no workflow próprio; não são ativados pelo deploy web. Evidências no [recibo](../testing/markets-in-progress-production-closeout-20261107.md). Os registros locais anteriores abaixo são históricos; esta entrada prevalece para o estado de implantação.
+
 ## 07/11/2026 — fechamento preparado: Em andamento
 
 Specs/aceites alinhados ao comportamento final, incluindo apuração expandida, recortes pessoais e faixa Novo com expiração automática/Categorias. Review corrigido; 139 testes Flutter, oito Django, analyze, JS e contratos aprovados. Commit/PR em preparação; aprovação do texto é gate para abertura, seguida de CI/merge/deploy e recibo produtivo. Sem mudança de domínio/API/MCP. Android exige distribuição própria. WFLOW-20261107-MARKETS-IN-PROGRESS.

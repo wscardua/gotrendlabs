@@ -54,3 +54,7 @@ Correções do review: inicialização da faixa em cards sem grupo de filtros (C
 Reexecução final: 139 testes Flutter aprovados, analyze sem issues; oito testes Django de home, filtros, paginação, cancelados, API/fallback, card/detalhe selado e pacote de integridade aprovados em PostgreSQL 16 isolado (4,605s). JS funcional/sintaxe, check Django, snapshot OpenAPI e diff aprovados. Build debug executado em Android 16/API 36 no emulador; tela Hoje e faixa NOVO confirmadas com fixtures locais. Android físico não validado.
 
 Publicação: aguardando aprovação da descrição antes de abrir a PR. Deploy produtivo usa Actions após merge, sem migration/configuração adicional; smoke deve confirmar assets `20261107-ribbon-expiry`, recortes, apuração expandida, detalhe/provas dos selados existentes e health. Nunca transferir fixtures QA para produção. Binário Android segue distribuição própria a partir da main integrada e limpa.
+
+## Estado posterior: publicação concluída
+
+Os gates de PR/deploy descritos acima foram atendidos pela PR #199 e Actions 42394768559. Consulte o [recibo produtivo](markets-in-progress-production-closeout-20261107.md), que prevalece para implantação. Android binário continua separado.
