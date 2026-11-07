@@ -1,3 +1,7 @@
+## 2026-11-07 — FEAT-MARKET-001 v0.17: convite contextual web
+
+Implementado convite para sugestão, ranking, badges, resultados ou conceitos na sobra da última linha principal, conforme cards efetivamente exibidos. Sorteio por visita com prevenção de repetição quando storage disponível; mantém conteúdo durante filtros, páginas, HTMX, largura e tema. Assets SVG próprios/textos HTML i18n, foco e contenção de altura; destinos nomeados e instrumentação genérica existentes. 54 combinações de layout/tema e 20 capturas, seleção/HTMX/teclado/storage/testes Django e regressões JS aprovados. Sem mudança mobile, domínio/API/banco/permissões/MCP. [Aceite local](../testing/web-grid-invite-acceptance-20261107.md); WFLOW-20261107-WEB-GRID-INVITE, sem publicação/deploy.
+
 ## 07/11/2026 — Hoje integrada e release19 enviada ao Alpha
 
 PR #203 integrada em f7d6480; CI PR42407114320 e main/deploy42407705220 aprovados, 681 testes Python/três skips em ambos. 140 testes Flutter/analyze locais aprovados. AAB1.2.5+19 validado, assinado e enviado ao Alpha (100% do grupo existente, sem perda de compatibilidade). Console confirmou Changes in review/quick checks em andamento; aprovação/disponibilidade Google ainda não observadas. Health produtivo ok, APK site preservado, sem configuração extra ou alteração MCP. [Recibo19](../testing/mobile-today-release-19-20261107.md). Este estado prevalece sobre as preparações históricas abaixo.

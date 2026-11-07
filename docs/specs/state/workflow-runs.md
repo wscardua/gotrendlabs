@@ -1,3 +1,38 @@
+## WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT
+
+- Tipo: `implementation-cycle` / fechamento e publicação
+- Status: `em_andamento`
+- Feature alvo: FEAT-MARKET-001 v0.17, convite contextual exclusivamente web.
+- Objetivo: reconciliar fontes da verdade, commitar a implementação, revisar o intervalo e preparar PR em português. Pedido do usuário amplia o escopo anterior para integração/deploy.
+- Etapa atual: preparação local e review; título/descrição serão apresentados antes da criação da PR, conforme autorização exigida pelo usuário.
+- Base: origin/main d93d5b918cba0b9802dfc2900b5882700b3d9030; branch feature/web-market-grid-invite preservada.
+- Artefatos: feature/spec, templates/assets/JS/CSS web, testes, CI e memória operacional; app e documentação/contratos mobile excluídos.
+- Publicação: aguardando aprovação explícita do texto da PR; depois acompanhar CI, merge, Actions de main/deploy e smoke produtivo. Não declarar implantação antes das evidências.
+- Produção: sem migração/configuração nova prevista; deploy normal deve publicar templates e assets. Dados sintéticos e ajustes feitos no banco local não pertencem à entrega.
+- MCP: sem mudança de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial; apresentação/navegação nos fluxos web existentes.
+- Testes/review: serão consolidados no recibo de fechamento desta fatia antes da PR.
+- Iniciado/atualizado em: 2026-11-07
+- Retomada: concluir preparo/review/testes; apresentar título/descrição e solicitar autorização antes de abrir PR.
+
+## WFLOW-20261107-WEB-GRID-INVITE
+
+- Tipo: `change-feature` / `implementation-cycle`
+- Status: `concluido`
+- Feature alvo: FEAT-MARKET-001, convite contextual exclusivamente web
+- Objetivo: preencher somente a sobra da última linha principal, preservando cards, apuração e mobile.
+- Base: `origin/main` d93d5b9; branch `feature/web-market-grid-invite`, worktree separado; alterações locais originais preservadas.
+- Etapa atual: implementação e validação local concluídas; 54 combinações de layout/tema, 20 capturas, testes Django/Node e checks aprovados. [Aceite/evidências](../testing/web-grid-invite-acceptance-20261107.md).
+- Artefatos: spec market-feed, template home/componente, JS/CSS/assets web, testes e memória operacional web.
+- Arquitetura/segurança: apresentação Django e estado frontend efêmero; sem domínio, banco, API, autenticação, permissões ou dependência nova. Sem ADR, pois fronteiras/contratos permanecem iguais.
+- MCP: sem ajustes de tools, schemas, contratos, permissões, erros, replays ou orientação editorial; apenas links para fluxos web existentes, sem mutação nova ou concessão inferida.
+- Testes previstos: 0–8 cards × 3/2/1 colunas; cinco opções/destinos; temas; filtros/paginação/HTMX; histórico, armazenamento indisponível, teclado, textos longos e overflow. QA visual local com 4/5 cards nos dois temas.
+- Escopo excluído: apps/mobile e sua documentação/contratos, publicação e deploy.
+- Iniciado/atualizado em: 2026-11-07
+- Retomada: nenhuma pendência no escopo local. Publicação/deploy fora do pedido; não executados.
+- Encerrado em: 2026-11-07
+- Checklist universal: spec, arquitetura/segurança, aceite, testes e memória operacional atualizados; sem ADR ou integração nova, sem alteração de integration-map; limitações reais registradas no aceite.
+- Reversão lógica: retirar componente/script/CSS/assets da grade e reverter os ajustes de hidratação, preservando histórico documental.
+
 ## WFLOW-20261107-MOBILE-TODAY-PENDING
 
 - Fechamento vigente: implementação/integracão/deploy e envio Alpha concluídos. PR203 merge f7d6480645f84d5cbcffa3a67a2d1f206ba00b6e; CI PR42407114320 e main42407705220 aprovados. SSM7214ca49-1f1c-411a-af9a-a489b0d87f06 Success; health ok. AAB1.2.5+19 validado/assinado/enviado; Console Changes in review/quick checks, disponibilidade Google pendente. [Recibo19](../testing/mobile-today-release-19-20261107.md). Branches preservadas. Registros de preparação abaixo são históricos.

@@ -1,7 +1,7 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.16
+versao: 0.17
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-11-07
@@ -284,3 +284,26 @@ Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos),
 ## Distribuição de Hoje — 07/11/2026
 
 Comportamento integrado pela PR203 e empacotado na1.2.5+19, enviada ao Alpha. Console confirmou Changes in review; disponibilidade final ainda depende da Google. [Recibo19](../testing/mobile-today-release-19-20261107.md).
+
+## Convite contextual na grade web (v0.17)
+
+Aprovado pelo pedido funcional de 2026-11-07, WFLOW-20261107-WEB-GRID-INVITE. Esta seção é exclusivamente web, inclusive navegador móvel; não altera app, contratos ou documentação Flutter.
+
+- No máximo um convite após todos os cards da lista principal. Não pertence ao catálogo nem à apuração secundária, não interfere em seleção/ordenação ou paginação.
+- Contar somente cards efetivamente exibidos após filtros/páginas: em três colunas, resto 1 ocupa duas, resto 2 ocupa uma e resto 0 oculta; em duas colunas, somente quantidade ímpar ocupa uma; zero ou uma coluna não exibe.
+- Preservar tamanho, estrutura, destaque e comportamento dos cards. Convite acompanha a altura da linha, com texto à esquerda/arte à direita quando ocupa duas colunas e composição vertical compacta quando ocupa uma.
+- Cinco opções equiprováveis na primeira visita; quando há histórico válido, excluir somente a opção anterior e sortear uniformemente entre as quatro restantes. Seleção em memória durante todo o documento; histórico leve localStorage protegido contra falhas, sem banco. Recarregar é nova visita.
+- Manter seleção com filtros, paginação, HTMX, tema e redimensionamento, mesmo ao desaparecer/reaparecer. Sem carrossel/timer.
+- Rótulo comum: “Explore o GoTrendLabs”. Títulos, descrições e botões em HTML com i18n; assets próprios SVG decorativos sem texto embutido, sem montagens ou dados fictícios.
+
+| Opção | Título | Descrição | Botão | Destino nomeado |
+| --- | --- | --- | --- | --- |
+| Sugestão | Qual pergunta está faltando aqui? | Sugira um tema que você gostaria de acompanhar. | Sugerir mercado | suggestion |
+| Ranking | Quem está acertando as previsões? | Conheça o ranking da comunidade. | Ver ranking | rankings |
+| Badges | Suas previsões fazem parte da sua trajetória. | Conheça as conquistas da plataforma. | Explorar badges | badges |
+| Resultados | O futuro virou resultado. | Veja quais previsões se confirmaram. | Ver resultados | home, acionando filtro resolved existente |
+| Conceitos | Sua primeira previsão começa aqui. | Entenda o consenso e os créditos educativos, sem dinheiro real. | Entender como funciona | concepts |
+
+Ilustrações: pergunta/lápis/envio sem promessa de publicação; pódio anônimo; emblemas; card com check e rótulo HTML “Resolvido”; sequência com rótulos HTML “Escolha → Preveja → Acompanhe”. Tokens dos dois temas, foco/teclado e contraste. Sem AdSense, publicidade, probabilidades, gráficos ou nova chamada Prever. Instrumentação genérica navigation_clicked existente basta, sem novos eventos ou permissões MCP.
+
+Aceite e evidências: `docs/specs/testing/web-grid-invite-acceptance-20261107.md`. MCP sem impacto: apresentação e navegação em fluxos existentes, sem alteração de contratos, autenticação ou regras editoriais.

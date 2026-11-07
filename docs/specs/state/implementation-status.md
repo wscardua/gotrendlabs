@@ -1,3 +1,7 @@
+## 07/11/2026 — convite contextual da grade web (local)
+
+FEAT-MARKET-001 v0.17 / WFLOW-20261107-WEB-GRID-INVITE: convite único nas sobras da grade principal, cinco opções e assets SVG próprios; sorteio estável com histórico opcional protegido, responsividade, HTMX e destinos existentes. 54 cenários de layout/tema, 20 capturas, testes Node/Django/checks aprovados. Cards/apuração, Flutter e documentação/contratos mobile intactos. MCP sem ajustes por ser apresentação/navegação web sem novos contratos ou permissões. [Aceite/evidências](../testing/web-grid-invite-acceptance-20261107.md). Implementação local concluída na branch feature/web-market-grid-invite; sem PR/publicação/deploy. Status amplo da feature permanece parcial por lacunas independentes.
+
 ## 07/11/2026 — Hoje integrada e release19 enviada ao Alpha
 
 PR #203 integrada em f7d6480; CI PR42407114320 e main/deploy42407705220 aprovados, 681 testes Python/três skips em ambos. 140 testes Flutter/analyze locais aprovados. AAB1.2.5+19 validado, assinado e enviado ao Alpha (100% do grupo existente, sem perda de compatibilidade). Console confirmou Changes in review/quick checks em andamento; aprovação/disponibilidade Google ainda não observadas. Health produtivo ok, APK site preservado, sem configuração extra ou alteração MCP. [Recibo19](../testing/mobile-today-release-19-20261107.md). Este estado prevalece sobre as preparações históricas abaixo.
