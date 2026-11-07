@@ -1,5 +1,9 @@
 # Mobile
 
+## Hoje — fechamento 1.2.5+19
+
+Ordem aprovada: Para prever → Tendências → Mais mercados → Em apuração. Abertos mantêm engajamento; todos os locked aparecem ao final, sem limite/CTA. Specs e evidências: docs/specs/testing/mobile-today-release-19-20261107.md. Versão preparada para integração e Alpha; ainda não distribuída.
+
 ## Descoberta de mercados (branch local 06/11/2026)
 
 `Hoje` mantém somente abertos e pontuação de engajamento. `Mercados` abre em `Abertos`; `Resolvidos` inclui resolved/sealed, `Favoritos` preserva encerrados e `Histórico` exibe previsões encerradas sem confundir com `Posições` ativas. Os recortes usam status e flags da FastAPI, sem novo contrato. Esta mudança local exige próxima distribuição mobile.
@@ -214,3 +218,7 @@ Correção do review: a faixa Novo expira automaticamente no limite de 48h em ca
 ## Preparação Google Play 1.2.4+18 — 07/11/2026
 
 Usuário confirmou testes físicos locais e autorizou distribuição da navegação Em andamento, recortes pessoais e faixa Novo. Canal Alpha17(1.2.3) observado ativo; nova versão/build1.2.4+18 deve integrar main antes do AAB assinado, com URLs produtivas e Firebase original. A customização.localtest do QA não integra a release. AAB/env/chaves permanecem ignorados; APK do site preservado. Evidências em docs/specs/testing/mobile-markets-release-18-20261107.md e WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE; envio/disponibilidade ainda não confirmados nesta preparação.
+
+### Ordem de Hoje — ajuste de 07/11/2026
+
+Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.

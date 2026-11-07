@@ -28,14 +28,7 @@ class TodayScreen extends ConsumerWidget {
       ),
       data: (items) {
         final openMarkets = _successfulOpenMarkets(items);
-        if (openMarkets.isEmpty) {
-          return GtlScreen(
-            child: _RefreshableEmptyState(
-              message: 'Nenhum mercado aberto disponível agora.',
-              onRefresh: () => refreshMarkets(ref),
-            ),
-          );
-        }
+        final pending = _pendingMarkets(items);
         final featured = openMarkets.take(3).toList();
         return GtlScreen(
           child: RefreshIndicator(
@@ -52,39 +45,63 @@ class TodayScreen extends ConsumerWidget {
                   body: 'Mercados sociais, reputação pública e GT₵ educativo.',
                 ),
                 const SizedBox(height: 18),
-                MarketHeroCard(
-                  market: featured.first,
-                  api: api,
-                  showStatus: false,
-                ),
+                const GtlSectionTitle(title: 'Para prever'),
+                const SizedBox(height: 12),
+                if (featured.isEmpty)
+                  const _EmptyState(
+                    message: 'Nenhum mercado aberto disponível agora.',
+                  ),
+                if (featured.isNotEmpty)
+                  MarketHeroCard(
+                    market: featured.first,
+                    api: api,
+                    showStatus: false,
+                  ),
                 if (auth.isAuthenticated) ...[
                   const SizedBox(height: 16),
                   _DeskSnapshot(markets: items, onOpenDesk: onOpenDesk),
                 ],
+                if (featured.length > 1) ...[
+                  const SizedBox(height: 20),
+                  GtlSectionTitle(
+                    title: 'Tendências',
+                    subtitle: '${featured.length} leituras em destaque',
+                  ),
+                  const SizedBox(height: 12),
+                  for (final market in featured.skip(1))
+                    MarketCompactCard(
+                      market: market,
+                      api: api,
+                      showStatus: false,
+                    ),
+                ],
+                if (openMarkets.length > 3) ...[
+                  const SizedBox(height: 8),
+                  const GtlSectionTitle(
+                    title: 'Mais mercados',
+                    subtitle: 'Explore outros consensos em formação',
+                  ),
+                  const SizedBox(height: 12),
+                  for (final market in openMarkets.skip(3).take(8))
+                    MarketCompactCard(
+                      market: market,
+                      api: api,
+                      showStatus: false,
+                    ),
+                ],
                 const SizedBox(height: 20),
-                GtlSectionTitle(
-                  title: 'Tendências',
-                  subtitle: '${featured.length} leituras em destaque',
-                ),
-                const SizedBox(height: 12),
-                for (final market in featured.skip(1))
-                  MarketCompactCard(
-                    market: market,
-                    api: api,
-                    showStatus: false,
-                  ),
-                const SizedBox(height: 8),
                 const GtlSectionTitle(
-                  title: 'Mais mercados',
-                  subtitle: 'Explore outros consensos em formação',
+                  title: 'Em apuração',
+                  subtitle:
+                      'Previsões encerradas. Toque para acompanhar o resultado.',
                 ),
                 const SizedBox(height: 12),
-                for (final market in openMarkets.skip(3).take(8))
-                  MarketCompactCard(
-                    market: market,
-                    api: api,
-                    showStatus: false,
+                if (pending.isEmpty)
+                  const _EmptyState(
+                    message: 'Nenhum mercado em apuração no momento.',
                   ),
+                for (final market in pending)
+                  MarketCompactCard(market: market, api: api),
               ],
             ),
           ),
@@ -172,21 +189,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
               },
             )
             .toList();
-        final pendingEntries =
-            publicItems
-                .asMap()
-                .entries
-                .where((entry) => entry.value.status == 'locked')
-                .toList()
-              ..sort((a, b) {
-                final left = DateTime.tryParse(a.value.closeAt);
-                final right = DateTime.tryParse(b.value.closeAt);
-                if (left == null && right != null) return 1;
-                if (right == null && left != null) return -1;
-                final byDate = left == null ? 0 : right!.compareTo(left);
-                return byDate != 0 ? byDate : a.key.compareTo(b.key);
-              });
-        final pending = pendingEntries.map((entry) => entry.value).toList();
+        final pending = _pendingMarkets(publicItems);
         return GtlScreen(
           child: Column(
             children: [
@@ -313,6 +316,24 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
       },
     );
   }
+}
+
+List<Market> _pendingMarkets(List<Market> items) {
+  final pendingEntries =
+      items
+          .asMap()
+          .entries
+          .where((entry) => entry.value.status == 'locked')
+          .toList()
+        ..sort((a, b) {
+          final left = DateTime.tryParse(a.value.closeAt);
+          final right = DateTime.tryParse(b.value.closeAt);
+          if (left == null && right != null) return 1;
+          if (right == null && left != null) return -1;
+          final byDate = left == null ? 0 : right!.compareTo(left);
+          return byDate != 0 ? byDate : a.key.compareTo(b.key);
+        });
+  return pendingEntries.map((entry) => entry.value).toList();
 }
 
 List<Market> _successfulOpenMarkets(List<Market> items) {
@@ -552,40 +573,6 @@ class _EmptyState extends StatelessWidget {
     body: message,
     color: GtlColors.accentYellow,
   );
-}
-
-class _RefreshableEmptyState extends StatelessWidget {
-  const _RefreshableEmptyState({
-    required this.message,
-    required this.onRefresh,
-  });
-
-  final String message;
-  final RefreshCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final minHeight = constraints.hasBoundedHeight
-              ? (constraints.maxHeight - 48).clamp(240.0, double.infinity)
-              : 360.0;
-          return ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 24, 16, 24),
-            children: [
-              ConstrainedBox(
-                constraints: BoxConstraints(minHeight: minHeight),
-                child: Center(child: _EmptyState(message: message)),
-              ),
-            ],
-          );
-        },
-      ),
-    );
-  }
 }
 
 class _ErrorState extends StatelessWidget {

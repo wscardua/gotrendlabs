@@ -1,3 +1,7 @@
+## 07/11/2026 — Hoje prioriza participação e inclui apuração completa
+
+Estado final aprovado no emulador: Para prever → Tendências → Mais mercados → Em apuração. Abertos preservam engagementScore e desempate por título; apuração lista todos os locked por close_at decrescente, empate pela ordem original e datas ausentes no fim. Sem recolhimento, limite de três ou CTA Ver todos. Estados vazios independentes; histórico e recortes pessoais preservados. API/domínio/MCP inalterados. Preparação de 1.2.5+19 para Alpha; integração/distribuição ainda pendentes. WFLOW-20261107-MOBILE-TODAY-PENDING; [recibo](../testing/mobile-today-release-19-20261107.md).
+
 ## 07/11/2026 — Google Play 1.2.4+18 enviada
 
 AAB da main f854f53, versão integrada pela PR #201, validado/assinado e enviado ao Closed testing - Alpha. Console confirmou Changes in review e quick checks em andamento; rollout de 100% do grupo existente e zero perda de compatibilidade. Navegação de Mercados / faixa Novo integradas e empacotadas; disponibilidade / aprovação da Google ainda pendentes. Teste físico local confirmado pelo usuário não equivale a instalação pela Play. APK do site e MCP preservados. Actions main 42399910630 e deploy SSM aprovados (681 testes/três skips); health produtivo ok. [Recibo18](../testing/mobile-markets-release-18-20261107.md). Esta entrada prevalece sobre os registros de preparação anteriores.
