@@ -240,7 +240,9 @@ Deve priorizar:
 - cards escaneaveis
 - ordenacao clara
 - estados de lista vazia
-- recorte `Posições` baseado em `viewer_position.has_position=true`, sem incluir mercados onde o usuario apenas participou historicamente
+- descoberta inicial em `Abertos`; `Em apuração` mostra `locked` e `Resolvidos` inclui `resolved`/`sealed`
+- `Favoritos` mantém mercados encerrados; `Posições` usa `viewer_position.has_position=true` e `Histórico` usa `viewer_has_prediction` em mercados encerrados, inclusive selados
+- a troca de recorte pessoal limpa status anterior e `Todos` retorna à descoberta de abertos
 
 ### Detalhe
 

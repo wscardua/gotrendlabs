@@ -73,6 +73,8 @@ void main() {
               _market(
                 slug: 'historico',
                 title: 'Mercado com participação histórica',
+                status: 'sealed',
+                statusLabel: 'Selado',
                 prediction: true,
               ),
               _market(slug: 'geral', title: 'Mercado geral'),
@@ -90,7 +92,7 @@ void main() {
 
     expect(find.text('Mercado salvo pelo usuário'), findsOneWidget);
     expect(find.text('Mercado com posição ativa'), findsOneWidget);
-    expect(find.text('Mercado com participação histórica'), findsOneWidget);
+    expect(find.text('Mercado com participação histórica'), findsNothing);
 
     await tester.tap(find.text('Favoritos'));
     await tester.pumpAndSettle();
@@ -107,6 +109,77 @@ void main() {
     expect(find.text('Mercado com posição ativa'), findsOneWidget);
     expect(find.text('Mercado com participação histórica'), findsNothing);
     expect(find.text('Mercado geral'), findsNothing);
+
+    await tester.ensureVisible(find.text('Histórico'));
+    await tester.tap(find.text('Histórico'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mercado com participação histórica'), findsOneWidget);
+    expect(find.text('Mercado com posição ativa'), findsNothing);
+  });
+
+  testWidgets('MarketsScreen separates open discovery and resolved history', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          authControllerProvider.overrideWith(_AuthenticatedAuthController.new),
+          marketsProvider.overrideWith(
+            (ref) async => [
+              _market(
+                slug: 'sealed',
+                title: 'Histórico selado',
+                status: 'sealed',
+                statusLabel: 'Selado',
+                favorite: true,
+                prediction: true,
+              ),
+              _market(
+                slug: 'locked',
+                title: 'Mercado em apuração',
+                status: 'locked',
+                statusLabel: 'Em apuração',
+              ),
+              _market(
+                slug: 'resolved',
+                title: 'Resultado em finalização',
+                status: 'resolved',
+                statusLabel: 'Resolvido',
+              ),
+              _market(slug: 'open', title: 'Mercado aberto'),
+            ],
+          ),
+        ],
+        child: MaterialApp(
+          theme: buildGoTrendLabsTheme(),
+          home: const Scaffold(body: MarketsScreen()),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Mercado aberto'), findsOneWidget);
+    expect(find.text('Histórico selado'), findsNothing);
+    expect(find.text('Mercado em apuração'), findsNothing);
+    await tester.tap(find.text('Resolvidos'));
+    await tester.pumpAndSettle();
+    expect(find.text('Histórico selado'), findsOneWidget);
+    expect(find.text('Resultado em finalização'), findsOneWidget);
+    expect(find.text('Mercado aberto'), findsNothing);
+    await tester.tap(find.text('Favoritos'));
+    await tester.pumpAndSettle();
+    expect(find.text('Histórico selado'), findsOneWidget);
+    await tester.ensureVisible(find.text('Histórico'));
+    await tester.tap(find.text('Histórico'));
+    await tester.pumpAndSettle();
+    expect(find.text('Histórico selado'), findsOneWidget);
+    await tester.tap(find.text('Todos').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Mercado aberto'), findsOneWidget);
+    expect(find.text('Histórico selado'), findsNothing);
+    await tester.tap(find.text('Em apuração'));
+    await tester.pumpAndSettle();
+    expect(find.text('Mercado em apuração'), findsOneWidget);
+    expect(find.text('Mercado aberto'), findsNothing);
   });
 
   testWidgets('TodayScreen desk counts active positions, not history', (
@@ -313,7 +386,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(calls, 1);
-    expect(find.text('Nenhum mercado neste recorte.'), findsOneWidget);
+    expect(
+      find.text('Nenhum mercado aberto disponível agora.'),
+      findsOneWidget,
+    );
 
     await tester.drag(find.byType(ListView).last, const Offset(0, 360));
     await tester.pump();

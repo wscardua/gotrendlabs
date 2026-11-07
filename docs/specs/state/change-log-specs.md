@@ -1,3 +1,7 @@
+## 2026-11-07 — FEAT-MARKET-001 v0.14: descoberta de abertos (preparação)
+
+A spec do feed e as specs mobile registram descoberta inicial somente em `open`, apuração em `locked`, resultados com `resolved`/`sealed`, preservação de favoritos e histórico pessoal. O contrato `GET /markets` e o lifecycle permanecem vigentes sem mudança; web ordena por visualizações e mobile preserva a ordem da API no browse. Testes JS passam a integrar o CI. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST aguarda PR, integração e validação produtiva; o estado amplo de FEAT-MARKET-001 permanece parcial por lacunas independentes.
+
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
 WFLOW-20261105-EDITORIAL-PENDING-DETAILS: contrato REST/MCP com motivos/trechos/critérios explícitos/etapa/impacto implantado pela PR #186; código geral, gates humanos e política preservados. CI da PR/main e smoke produtivo confirmaram schema e resposta real do MCP. [Recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).

@@ -186,7 +186,8 @@ function compareMarkets(mode, a, b) {
 
 function marketMatchesMode(card, mode) {
   return !(
-    (mode === "resolved" && card.dataset.marketStatus !== "resolved") ||
+    (mode === "resolved" && !["resolved", "sealed"].includes(card.dataset.marketStatus)) ||
+    (["trending", "new", "volume", "likes"].includes(mode) && card.dataset.marketStatus !== "open") ||
     (mode === "open" && card.dataset.marketStatus !== "open") ||
     (mode === "closing" && card.dataset.marketStatus !== "locked") ||
     (mode === "favorited" && card.dataset.marketFavorited !== "true") ||
@@ -211,6 +212,13 @@ function renderMarketChunk(list, mode, requestedVisibleCount) {
   const empty = list.parentElement?.querySelector("[data-market-empty]");
   if (empty) {
     const emptyMessages = {
+      trending: "Nenhum mercado aberto disponível agora.",
+      new: "Nenhum mercado aberto disponível agora.",
+      open: "Nenhum mercado aberto disponível agora.",
+      volume: "Nenhum mercado aberto disponível agora.",
+      likes: "Nenhum mercado aberto disponível agora.",
+      closing: "Nenhum mercado em apuração agora.",
+      resolved: "Nenhum mercado resolvido ainda.",
       favorited: "Nenhum mercado favorito ainda.",
       predicted: "Nenhum mercado com previsão sua ainda.",
     };

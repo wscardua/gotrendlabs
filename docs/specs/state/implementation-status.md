@@ -1,3 +1,11 @@
+## 07/11/2026 — fechamento da fatia de descoberta preparado
+
+A mudança web/mobile de WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST tem specs, aceite, testes e CI alinhados. Web e API continuam dependendo de merge e deploy da main; Flutter requer release Android separada a partir da main integrada. O workflow da fatia será fechado após validação produtiva, mantendo FEAT-MARKET-001 ampla como parcial por outras lacunas já registradas em `known-gaps.md`.
+
+## 06/11/2026 — descoberta de mercados abertos (local)
+
+FEAT-MARKET-001: web inicia em abertos ordenados por visualizações; mobile Hoje mantém engajamento e Mercados preserva ordem da API no recorte inicial de abertos. Resolvidos inclui selados em ambas as interfaces; Favoritos e histórico pessoal preservam encerrados. Código local validado com 130 testes Flutter, análise estática, testes web selecionados e teste funcional JS. Release mobile/deploy não realizados. MCP sem mudança de contrato ou permissão. [Workflow](workflow-runs.md#WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST).
+
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
 WFLOW-20261105-EDITORIAL-PENDING-DETAILS: concluído em produção pela PR #186/merge `2c799f6`; CI da PR/main, deploy SSM e smoke MCP aprovados. Retorno REST/MCP detalha pendências e contradições explícitas, preservando código geral e gates humanos. Sem alteração de política, permissões, banco, snapshots, replays ou mobile. FEAT-MCP-001 global permanece parcial por homologações externas separadas. [Recibo produtivo](../testing/editorial-pending-production-closeout-20261105.md).

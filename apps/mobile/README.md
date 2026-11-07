@@ -1,5 +1,9 @@
 # Mobile
 
+## Descoberta de mercados (branch local 06/11/2026)
+
+`Hoje` mantém somente abertos e pontuação de engajamento. `Mercados` abre em `Abertos`; `Resolvidos` inclui resolved/sealed, `Favoritos` preserva encerrados e `Histórico` exibe previsões encerradas sem confundir com `Posições` ativas. Os recortes usam status e flags da FastAPI, sem novo contrato. Esta mudança local exige próxima distribuição mobile.
+
 ## Indisponibilidade transitória (branch local 05/11/2026)
 
 O `/health` da FastAPI agora limita duas verificações simultâneas por processo e pode responder 503 degradado sob rajada, sem consultar o banco. O gate do app conserva a sessão, bloqueia a entrada e oferece nova tentativa. A publicação dessa UX depende de release mobile separada do deploy GitHub web/API.

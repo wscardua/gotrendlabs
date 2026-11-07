@@ -35,7 +35,7 @@
       </div>
       <div class="market-list" data-market-list data-market-page-size="18">
         {% for market in markets %}
-          {% if forloop.counter > 18 %}
+          {% if forloop.counter > 18 or market.status != "open" %}
             {% include "components/market_card.html" with market=market initial_hidden=True %}
           {% else %}
             {% include "components/market_card.html" with market=market %}

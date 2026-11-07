@@ -1006,11 +1006,15 @@ h3 {
   color: var(--panel);
 }
 
+[data-market-list][data-market-filter-mode="trending"] [data-market-card]:not([data-market-status="open"]),
+[data-market-list][data-market-filter-mode="new"] [data-market-card]:not([data-market-status="open"]),
+[data-market-list][data-market-filter-mode="volume"] [data-market-card]:not([data-market-status="open"]),
+[data-market-list][data-market-filter-mode="likes"] [data-market-card]:not([data-market-status="open"]),
 [data-market-list][data-market-filter-mode="predicted"] [data-market-card][data-market-predicted="false"],
 [data-market-list][data-market-filter-mode="favorited"] [data-market-card][data-market-favorited="false"],
 [data-market-list][data-market-filter-mode="open"] [data-market-card]:not([data-market-status="open"]),
 [data-market-list][data-market-filter-mode="closing"] [data-market-card]:not([data-market-status="locked"]),
-[data-market-list][data-market-filter-mode="resolved"] [data-market-card]:not([data-market-status="resolved"]) {
+[data-market-list][data-market-filter-mode="resolved"] [data-market-card]:not([data-market-status="resolved"]):not([data-market-status="sealed"]) {
   display: none !important;
 }
 

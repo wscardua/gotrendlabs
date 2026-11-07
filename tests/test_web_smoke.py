@@ -7691,6 +7691,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
 
     def test_sealed_market_detail_prioritizes_completion_and_explains_integrity(self):
         market = deepcopy(get_domain_client().market("openai-gpt6-2026"))
+        for index, option in enumerate(market["options"], start=1):
+            option["id"] = index
         market["status"] = "sealed"
         market["status_label"] = "Selado"
         market["close_label"] = "Fecha em uma data antiga"

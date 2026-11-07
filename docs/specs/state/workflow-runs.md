@@ -1,3 +1,13 @@
+## WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST
+
+- Tipo: ajuste de descoberta web/mobile; estado: implementação local validada, distribuição pendente. Branch `feature/market-discovery-open-first` criada de `origin/main` bff144c após fetch, em worktree isolada; checkout principal com alterações preexistentes preservado.
+- FEAT-MARKET-001: feed web inicia em `Em alta` somente com `open`; Novos/volume/curtidas também restringem a abertos; apuração mostra `locked`; resultados incluem `resolved`/`sealed`; favoritos e previsões pessoais preservam encerrados. Paginação permanece em 18 após filtro/ordem e vazios recebem mensagem específica.
+- Flutter: `Hoje` segue apenas abertos e pontuação de engajamento; `Mercados` abre em abertos e preserva ordem da API; Favoritos limpa status anterior; `Histórico` mostra `viewer_has_prediction` em mercados encerrados, separado de `Posições` ativas. Contrato FastAPI e acesso ao detalhe/integridade não mudam.
+- Validação: `node tests/test_market_feed_filter.js`, `flutter analyze --no-pub`, `flutter test --no-pub` (130 testes), quatro testes Django de card, filtro, detalhe selado e download da prova, `git diff --check` aprovados. Binário mobile e QA em dispositivo não realizados; exigem ciclo de distribuição próprio.
+- Impacto MCP: ferramentas, schemas, contratos, permissões, erros, replays e orientação editorial exposta foram revisados. Só há filtros de apresentação web/mobile sobre status/flags existentes; API, adaptador e permissões MCP permanecem idênticos. Nenhum ajuste ou teste específico de MCP necessário.
+- Checklist de conclusão revisado em 07/11/2026: specs de feed/mobile, aceite mobile, changelog de specs/feature, README, mapa, status e known-gaps alinhados; frontend e testes são os únicos artefatos de código. Sem migration, alteração de contrato, ADR ou concessão de permissão; fronteira da FastAPI preservada. CI executará o teste JS novo.
+- Estado atual: preparada para PR e aguardando autorização do usuário para abertura da PR. Após merge, validar Actions/deploy e smoke web; distribuição Android é uma etapa separada. Fechar esta fatia apenas com evidência produtiva web e registrar a pendência mobile. FEAT-MARKET-001 ampla permanece parcial por escopos independentes.
+
 ## WFLOW-20261105-MOBILE-PLAY-RESILIENCE
 
 - Tipo: release mobile Android; estado: build 16 ativo no teste fechado Alpha e disponibilidade aos testadores confirmada pelo titular. Objetivo: distribuir por Google Play Closed testing o tratamento de indisponibilidade implantado pela PR #188.
