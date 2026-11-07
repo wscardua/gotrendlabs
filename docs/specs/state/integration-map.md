@@ -1,3 +1,11 @@
+## 07/11/2026 — correções do review da faixa Novo (local)
+
+Categorias passa a inicializar a faixa independentemente dos filtros; web/mobile atualizam a indicação automaticamente no limite de 48h. Timers apenas de apresentação, sem mudança API/domínio/MCP. 40 testes Flutter selecionados, analyze e testes JS aprovados; WFLOW-20261107-MARKETS-IN-PROGRESS. Sem publicação.
+
+## 07/11/2026 — Em andamento (código local)
+
+GET /markets → status efetivo, created_at, close_at e flags pessoais existentes → Django/JS e Flutter. Web move os mesmos cards para lista open e details locked, preservando formulários; Flutter agrupa em estado local. Open usa views/criação/origem no web e ordem API no mobile; locked usa prazo programado decrescente/origem em ambos. Novo usa relógio de apresentação, sem persistência. Minhas previsões usa viewer_has_prediction; Posições ativas usa viewer_position.has_position. Sem nova dependência, endpoint, schema ou permissão MCP. Publicação e release Android pendentes de ciclo próprio.
+
 ## 06/11/2026 — recortes de mercado web/mobile
 
 `GET /markets` continua enviando estados públicos e flags `viewer_has_prediction`, `viewer_has_favorite`, `viewer_position.has_position`. Web aplica filtro de descoberta `open` no cliente; mobile usa o mesmo status efetivo para seus recortes e mantém ordem da API em Mercados. Histórico pessoal Flutter usa `viewer_has_prediction` apenas em encerrados; Posições usa `viewer_position.has_position`. Sem novo endpoint, schema ou relação MCP.

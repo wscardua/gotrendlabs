@@ -1,18 +1,174 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:gotrendlabs_mobile/src/core/api_client.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/market_cards.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/market_models.dart';
+import 'package:gotrendlabs_mobile/src/features/markets/market_presentation.dart';
 import 'package:gotrendlabs_mobile/src/features/markets/sparkline_painter.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
   testWidgets(
+    'Novo expires on mounted hero and compact cards without interaction',
+    (tester) async {
+      var now = DateTime.utc(2026, 11, 7, 12);
+      final market = _market(createdAt: '2026-11-05T12:00:01Z');
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [marketClockProvider.overrideWithValue(() => now)],
+          child: MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            home: Scaffold(
+              body: ListView(
+                children: [
+                  MarketHeroCard(
+                    market: market,
+                    api: ApiClient(tokenStore: MemoryTokenStore()),
+                  ),
+                  MarketCompactCard(
+                    market: market,
+                    api: ApiClient(tokenStore: MemoryTokenStore()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('NOVO'), findsNWidgets(2));
+      now = now.add(const Duration(seconds: 1));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(find.text('NOVO'), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('removing a new card cancels its freshness timer', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          marketClockProvider.overrideWithValue(
+            () => DateTime.utc(2026, 11, 7, 12),
+          ),
+        ],
+        child: MaterialApp(
+          home: Scaffold(
+            body: MarketCompactCard(
+              market: _market(createdAt: '2026-11-07T10:00:00Z'),
+              api: ApiClient(tokenStore: MemoryTokenStore()),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('NOVO'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    expect(tester.takeException(), isNull);
+    // The widget-test harness also rejects timers left pending at teardown.
+  });
+
+  testWidgets(
+    'diagonal Novo ribbons preserve integrity and disappear for locked markets',
+    (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            marketClockProvider.overrideWithValue(
+              () => DateTime.utc(2026, 11, 7, 12),
+            ),
+          ],
+          child: MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            home: Scaffold(
+              body: ListView(
+                children: [
+                  MarketHeroCard(
+                    market: _market(
+                      createdAt: '2026-11-07T10:00:00Z',
+                      integrityStatus: 'registered',
+                    ),
+                    api: ApiClient(tokenStore: MemoryTokenStore()),
+                  ),
+                  MarketCompactCard(
+                    market: _market(
+                      createdAt: '2026-11-07T10:00:00Z',
+                      integrityStatus: 'registered',
+                    ),
+                    api: ApiClient(tokenStore: MemoryTokenStore()),
+                  ),
+                  MarketCompactCard(
+                    market: _market(
+                      createdAt: '2026-11-07T10:00:00Z',
+                      status: 'locked',
+                    ),
+                    api: ApiClient(tokenStore: MemoryTokenStore()),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('NOVO'), findsNWidgets(2));
+      expect(find.text('Novo'), findsNothing);
+      expect(find.byTooltip('Definição registrada'), findsNWidgets(2));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('the ribbon corner still opens its market card', (tester) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => Scaffold(
+            body: MarketCompactCard(
+              market: _market(createdAt: '2026-11-07T10:00:00Z'),
+              api: ApiClient(tokenStore: MemoryTokenStore()),
+            ),
+          ),
+        ),
+        GoRoute(
+          path: '/markets/:slug',
+          builder: (context, state) => const Text('Detalhe aberto'),
+        ),
+      ],
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          marketClockProvider.overrideWithValue(
+            () => DateTime.utc(2026, 11, 7, 12),
+          ),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('NOVO'), findsOneWidget);
+    final corner =
+        tester.getTopRight(find.byType(MarketCompactCard)) +
+        const Offset(-30, 22);
+    await tester.tapAt(corner);
+    await tester.pumpAndSettle();
+    expect(find.text('Detalhe aberto'), findsOneWidget);
+  });
+
+  testWidgets(
     'Resolved and sealed metrics retain API volume and use final label',
     (tester) async {
       for (final status in ['resolved', 'sealed']) {
-        await tester.pumpWidget(
+        await pumpWithProviders(
+          tester,
           MaterialApp(
             theme: buildGoTrendLabsTheme(),
             home: Scaffold(
@@ -33,7 +189,8 @@ void main() {
   testWidgets('MarketHeroCard renders title and probability', (tester) async {
     final market = _market();
 
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MarketHeroCard(
@@ -54,7 +211,8 @@ void main() {
     testWidgets('Public participant label handles $total accounts', (
       tester,
     ) async {
-      await tester.pumpWidget(
+      await pumpWithProviders(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: MarketHeroCard(
@@ -83,7 +241,8 @@ void main() {
   ) async {
     final market = _market(category: 'Brasil', thumb: '');
 
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MarketHeroCard(
@@ -103,7 +262,8 @@ void main() {
   ) async {
     final market = _market(favorite: true, prediction: true);
 
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MarketCompactCard(
@@ -121,7 +281,8 @@ void main() {
   testWidgets(
     'market cards distinguish registered definition from sealed history',
     (tester) async {
-      await tester.pumpWidget(
+      await pumpWithProviders(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: ListView(
@@ -152,7 +313,8 @@ void main() {
   testWidgets('market cards do not hide retry or cryptographic failure', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: ListView(
@@ -192,7 +354,8 @@ void main() {
   testWidgets('MarketCompactCard shows compact time remaining', (tester) async {
     final market = _market();
 
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MarketCompactCard(
@@ -231,7 +394,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await pumpWithProviders(tester, MaterialApp.router(routerConfig: router));
 
     await tester.tap(find.text('2'));
     await tester.pumpAndSettle();
@@ -258,7 +421,7 @@ void main() {
       ],
     );
 
-    await tester.pumpWidget(MaterialApp.router(routerConfig: router));
+    await pumpWithProviders(tester, MaterialApp.router(routerConfig: router));
 
     await tester.tap(find.text('COMENTÁRIOS'));
     await tester.pumpAndSettle();
@@ -269,7 +432,8 @@ void main() {
   testWidgets('MarketMetricPanel fits six metrics into two compact rows', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: Center(
@@ -311,7 +475,8 @@ void main() {
     tester,
   ) async {
     Future<Color> renderRailColor(String closesIn) async {
-      await tester.pumpWidget(
+      await pumpWithProviders(
+        tester,
         MaterialApp(
           home: Scaffold(
             body: MarketCompactCard(
@@ -345,7 +510,8 @@ void main() {
       closeLabel: 'Fecha em 21/05/2026 16:57 BRT',
     );
 
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: SizedBox(
@@ -366,7 +532,8 @@ void main() {
   testWidgets('MarketHeroCard can render as a non-navigable detail hero', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(
           body: MarketHeroCard(
@@ -387,7 +554,8 @@ void main() {
   testWidgets('MarketSparklineCard renders one line per option series', (
     tester,
   ) async {
-    await tester.pumpWidget(
+    await pumpWithProviders(
+      tester,
       MaterialApp(
         home: Scaffold(body: MarketSparklineCard(market: _market())),
       ),
@@ -402,6 +570,7 @@ void main() {
 Market _market({
   int totalParticipants = 9,
   String category = 'Tecnologia',
+  String createdAt = '2026-01-01T00:00:00Z',
   String thumb = 'GT',
   bool favorite = false,
   bool prediction = false,
@@ -415,6 +584,7 @@ Market _market({
     'slug': 'mercado-teste',
     'title': 'O mercado teste ficará aberto?',
     'category': category,
+    'created_at': createdAt,
     'subcategory': 'Apps',
     'event': 'Geral',
     'kind': 'binary',
@@ -457,3 +627,6 @@ Market _market({
     ],
   });
 }
+
+Future<void> pumpWithProviders(WidgetTester tester, Widget child) =>
+    tester.pumpWidget(ProviderScope(child: child));

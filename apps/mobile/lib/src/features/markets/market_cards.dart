@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +11,7 @@ import '../../core/formatters.dart';
 import '../../theme.dart';
 import '../../ui/gtl_components.dart';
 import 'market_models.dart';
+import 'market_presentation.dart';
 import 'sparkline_painter.dart';
 
 class MarketHeroCard extends ConsumerWidget {
@@ -27,6 +30,7 @@ class MarketHeroCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isNew = ref.watch(marketIsNewProvider(market));
     final card = Ink(
       height: 334,
       decoration: BoxDecoration(
@@ -79,7 +83,7 @@ class MarketHeroCard extends ConsumerWidget {
             if (market.integrity.definitionRegistered)
               Positioned(
                 top: 14,
-                right: 14,
+                right: isNew ? 76 : 14,
                 child: _IntegrityShield(integrity: market.integrity),
               ),
             Padding(
@@ -89,7 +93,9 @@ class MarketHeroCard extends ConsumerWidget {
                 children: [
                   Padding(
                     padding: EdgeInsets.only(
-                      right: market.integrity.definitionRegistered ? 40 : 0,
+                      right:
+                          (market.integrity.definitionRegistered ? 40.0 : 0) +
+                          (isNew ? 62 : 0),
                     ),
                     child: Wrap(
                       spacing: 8,
@@ -159,6 +165,8 @@ class MarketHeroCard extends ConsumerWidget {
                 ],
               ),
             ),
+            if (isNew)
+              const Positioned(top: 0, right: 0, child: _MarketNewRibbon()),
           ],
         ),
       ),
@@ -202,6 +210,7 @@ class MarketCompactCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isNew = ref.watch(marketIsNewProvider(market));
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GtlSurface(
@@ -220,139 +229,153 @@ class MarketCompactCard extends ConsumerWidget {
               );
           context.push('/markets/${market.slug}');
         },
-        child: Row(
-          children: [
-            SizedBox(
-              width: 104,
-              height: 118,
-              child: ClipRRect(
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(GtlRadii.medium),
-                ),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    _MarketImage(market: market, api: api),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [
-                            Colors.transparent,
-                            Colors.black.withValues(alpha: 0.56),
-                          ],
-                        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(GtlRadii.medium),
+          child: Stack(
+            children: [
+              Row(
+                children: [
+                  SizedBox(
+                    width: 104,
+                    height: 118,
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.horizontal(
+                        left: Radius.circular(GtlRadii.medium),
                       ),
-                    ),
-                    if (showStatus)
-                      Positioned(
-                        left: 8,
-                        bottom: 8,
-                        child: GtlPill(
-                          label: market.statusLabel,
-                          color: _statusColor(market),
-                          filled: true,
-                        ),
-                      ),
-                    if (market.integrity.definitionRegistered)
-                      Positioned(
-                        top: 7,
-                        right: 7,
-                        child: _IntegrityShield(
-                          integrity: market.integrity,
-                          dense: true,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            market.category.isEmpty
-                                ? 'Mercado'
-                                : market.category.toUpperCase(),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(color: GtlColors.accentCyan),
-                          ),
-                        ),
-                        _ProbabilityPill(
-                          label: market.probabilityLabel,
-                          dense: true,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      market.title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.titleMedium?.copyWith(height: 1.08),
-                    ),
-                    if (_viewerPills(market).isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 6,
-                        runSpacing: 6,
-                        children: _viewerPills(market, dense: true),
-                      ),
-                    ],
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _InlineMetric(
-                          icon: Icons.savings_outlined,
-                          label: market.volumeLabel,
-                        ),
-                        const SizedBox(width: 10),
-                        GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () =>
-                              context.push(_marketCommunityPath(market)),
-                          child: _InlineMetric(
-                            icon: Icons.forum_outlined,
-                            label: '${market.commentCount}',
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        if (showStatus)
-                          Expanded(
-                            child: _InlineMetric(
-                              icon: Icons.timer_outlined,
-                              label: market.timeRemainingLabel,
-                              flexible: true,
-                            ),
-                          )
-                        else
-                          Expanded(
-                            child: Align(
-                              alignment: Alignment.centerRight,
-                              child: _InlineTimeRail(
-                                label: market.timeRemainingLabel,
-                                progress: _timeUrgencyProgress(market),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          _MarketImage(market: market, api: api),
+                          DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.56),
+                                ],
                               ),
                             ),
                           ),
-                      ],
+                          if (showStatus)
+                            Positioned(
+                              left: 8,
+                              bottom: 8,
+                              child: GtlPill(
+                                label: market.statusLabel,
+                                color: _statusColor(market),
+                                filled: true,
+                              ),
+                            ),
+                          if (market.integrity.definitionRegistered)
+                            Positioned(
+                              top: 7,
+                              right: 7,
+                              child: _IntegrityShield(
+                                integrity: market.integrity,
+                                dense: true,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.only(right: isNew ? 48 : 0),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    market.category.isEmpty
+                                        ? 'Mercado'
+                                        : market.category.toUpperCase(),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(color: GtlColors.accentCyan),
+                                  ),
+                                ),
+                                _ProbabilityPill(
+                                  label: market.probabilityLabel,
+                                  dense: true,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            market.title,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(height: 1.08),
+                          ),
+                          if (_viewerPills(market).isNotEmpty) ...[
+                            const SizedBox(height: 8),
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 6,
+                              children: [..._viewerPills(market, dense: true)],
+                            ),
+                          ],
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              _InlineMetric(
+                                icon: Icons.savings_outlined,
+                                label: market.volumeLabel,
+                              ),
+                              const SizedBox(width: 10),
+                              GestureDetector(
+                                behavior: HitTestBehavior.opaque,
+                                onTap: () =>
+                                    context.push(_marketCommunityPath(market)),
+                                child: _InlineMetric(
+                                  icon: Icons.forum_outlined,
+                                  label: '${market.commentCount}',
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              if (showStatus)
+                                Expanded(
+                                  child: _InlineMetric(
+                                    icon: Icons.timer_outlined,
+                                    label: market.timeRemainingLabel,
+                                    flexible: true,
+                                  ),
+                                )
+                              else
+                                Expanded(
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: _InlineTimeRail(
+                                      label: market.timeRemainingLabel,
+                                      progress: _timeUrgencyProgress(market),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+              if (isNew)
+                const Positioned(top: 0, right: 0, child: _MarketNewRibbon()),
+            ],
+          ),
         ),
       ),
     );
@@ -1069,4 +1092,53 @@ Color _hexColor(String value) {
   final normalized = value.replaceFirst('#', '');
   final parsed = int.tryParse('FF$normalized', radix: 16);
   return Color(parsed ?? 0xFF11151B);
+}
+
+class _MarketNewRibbon extends StatelessWidget {
+  const _MarketNewRibbon();
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    child: Semantics(
+      label: 'Novo',
+      image: true,
+      child: ExcludeSemantics(
+        child: SizedBox.square(
+          dimension: 76,
+          child: ClipRect(
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 16,
+                  right: -26,
+                  width: 110,
+                  child: Transform.rotate(
+                    angle: math.pi / 4,
+                    child: Container(
+                      height: 23,
+                      alignment: Alignment.center,
+                      color: const Color(0xFF00796B),
+                      child: const FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          'NOVO',
+                          style: TextStyle(
+                            color: Color(0xFFF4FBF8),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.9,
+                            height: 1,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
 }

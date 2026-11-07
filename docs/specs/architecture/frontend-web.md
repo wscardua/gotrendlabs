@@ -141,3 +141,12 @@ Correções de review: salvamento pendente cancelado explicitamente quando a sel
 ## Resolução administrativa confiável
 
 Admin Ops preserva UUID/ID em campos ocultos do formulário válido ou reapresentado. O cliente espera 15s no POST de resolução; erro de transporte aciona GET de confirmação, nunca POST automático. Resultado indeterminado oferece consulta da mesma operação; erro de conflito/autorização não é tratado como indisponibilidade. A integridade pública apresenta verificações existentes separadas da selagem futura, usando somente resultados autoritativos da FastAPI.
+
+## Feed Em andamento — 2026-11-07
+
+A navegação usa Em andamento, Resolvidos e recortes pessoais. JS move os mesmos cards entre lista principal e details nativo de apuração, sem duplicar ações/formulários. Cada lista pagina em 18 após filtro/ordem; apuração começa expandida e tem contagem total. Abertos usam views/criação/origem; locked usa close_at programado decrescente/origem. Novo é indicação visual de 48h baseada em created_at e não altera lifecycle. URLs versionados de JS/CSS precisam acompanhar mudanças para invalidar caches anteriores.
+
+
+### Correção da faixa Novo após review — 2026-11-07
+
+A hidratação de Novo é independente da ordenação e cobre também Categorias. Um timer compartilhado agenda a próxima transição temporal; visibilitychange revalida a faixa ao retornar à aba. Nenhuma consulta adicional ou mutação de lifecycle.

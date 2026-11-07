@@ -1,10 +1,10 @@
 ---
 id: ARCH-MOBILE-API-001
 titulo: "Contratos API para mobile"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-25
+ultima_atualizacao: 2026-11-07
 origem:
   - docs/specs/architecture/backend-api.md
   - packages/contracts/openapi/gotrendlabs-api.json
@@ -490,3 +490,12 @@ Em resolved/sealed, a projeção pública de volume/participantes agrega previs�
 ### MFA administrativo no mobile
 
 `POST /auth/login` retorna `AuthResponse` ou `MfaChallengeResponse`. Quando `mfa_required=true`, o app mantém o desafio somente em memória e não tenta ler `user/session`. Consome `/auth/mfa/enroll` para configuração por chave manual e `/auth/mfa/verify` com exatamente um código TOTP ou de recuperação. Apenas a resposta de verificação cria/persiste sessão, respeitando Lembrar login e biometria. Recovery codes do enrollment são exibidos até confirmação de guarda, sem persistência. Erros preservam a etapa MFA e permitem voltar ao login para renovar desafio expirado. Fechar/cancelar elimina o desafio local e descarta respostas MFA pendentes.
+
+## Consumo de timestamps para apresentação — 2026-11-07
+
+O modelo Flutter consome created_at e close_at já existentes no GET /markets. Created_at alimenta selo Novo em open por 48h, com relógio de apresentação substituível nos testes; close_at ordena a seção locked e conserva o significado de prazo programado. Sem novo campo, endpoint ou mudança OpenAPI. Em andamento mantém ordem da API nos abertos, Hoje mantém engajamento e recortes pessoais continuam usando flags autoritativas. Sem impacto de ferramentas, schemas, permissões, erros ou replays MCP.
+
+
+### Correção da faixa Novo após review — 2026-11-07
+
+A expiração visual de Novo usa provider autoDispose por mercado e timer da próxima transição, cancelado no descarte. Continua consumindo apenas created_at/status existentes, sem mudança de contrato ou MCP.

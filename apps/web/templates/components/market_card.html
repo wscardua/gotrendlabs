@@ -1,3 +1,4 @@
+{% load i18n %}
 <article
   class="market-card"
   data-market-card
@@ -15,6 +16,7 @@
   data-market-liked="{{ market.viewer_has_like|yesno:'true,false' }}"
   {% if initial_hidden %}hidden{% endif %}
 >
+  <span class="market-new-ribbon" data-market-new role="img" aria-label="{% trans 'Novo' %}" hidden><span aria-hidden="true">{% trans "Novo" %}</span></span>
   <div class="thumb" style="--thumb:{{ market.thumb_color }}">
     {% if market.image_url %}
       <img src="{{ market.image_url }}" alt="" loading="lazy" decoding="async" data-thumb-image>

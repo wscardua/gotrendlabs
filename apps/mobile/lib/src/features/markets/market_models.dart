@@ -123,6 +123,8 @@ class Market {
     required this.viewCount,
     required this.shareCount,
     required this.isFeatured,
+    required this.createdAt,
+    required this.closeAt,
     required this.closesIn,
     required this.closeLabel,
     required this.imageUrl,
@@ -172,6 +174,8 @@ class Market {
   final int viewCount;
   final int shareCount;
   final bool isFeatured;
+  final String createdAt;
+  final String closeAt;
   final String closesIn;
   final String closeLabel;
   final String imageUrl;
@@ -200,6 +204,14 @@ class Market {
   final List<MarketComment> comments;
   final String sparklinePath;
   final List<Map<String, dynamic>> sparklineSeries;
+
+  bool isNewAt(DateTime now) {
+    final created = DateTime.tryParse(createdAt);
+    return isOpen &&
+        created != null &&
+        !created.isAfter(now) &&
+        now.isBefore(created.add(const Duration(hours: 48)));
+  }
 
   bool get isOpen => status == 'open';
   bool get isResolved => status == 'resolved';
@@ -254,6 +266,8 @@ class Market {
       viewCount: safeInt(json['view_count']),
       shareCount: safeInt(json['share_count']),
       isFeatured: safeBool(json['is_featured']),
+      createdAt: safeString(json['created_at']),
+      closeAt: safeString(json['close_at']),
       closesIn: safeString(json['closes_in']),
       closeLabel: safeString(json['close_label']),
       imageUrl: safeString(json['image_url']),

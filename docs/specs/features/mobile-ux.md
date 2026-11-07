@@ -1,10 +1,10 @@
 ---
 id: FEAT-MOBILE-UX-001
 titulo: "UX e design mobile"
-versao: 0.3
+versao: 0.4
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-25
+ultima_atualizacao: 2026-11-07
 origem:
   - docs/specs/features/mobile-mvp.md
   - referencias_visuais_fornecidas_pelo_usuario
@@ -240,9 +240,10 @@ Deve priorizar:
 - cards escaneaveis
 - ordenacao clara
 - estados de lista vazia
-- descoberta inicial em `Abertos`; `Em apuração` mostra `locked` e `Resolvidos` inclui `resolved`/`sealed`
-- `Favoritos` mantém mercados encerrados; `Posições` usa `viewer_position.has_position=true` e `Histórico` usa `viewer_has_prediction` em mercados encerrados, inclusive selados
-- a troca de recorte pessoal limpa status anterior e `Todos` retorna à descoberta de abertos
+- navegação Em andamento (inicial), Resolvidos, Favoritos e Minhas previsões; Em andamento mantém open na ordem da API e locked em seção expandida por padrão com contagem e semântica de expansão, ordenada por close_at decrescente/origem
+- Favoritos mantém encerrados; Minhas previsões usa viewer_has_prediction em todos os estados públicos relevantes, inclusive selados; Posições ativas é ação secundária baseada em viewer_position.has_position
+- faixa diagonal NOVO no canto superior direito dos cards hero/compacto substitui a pill; usa nome acessível Novo, não intercepta toque e preserva espaço do consenso e do selo de integridade
+- a troca de recorte não mantém status implícito; retornar a Em andamento expande apuração; Novo sinaliza open criado há menos de 48 horas, sem mudar ordem, com timestamps futuros excluídos
 
 ### Detalhe
 
@@ -392,3 +393,8 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 ## Apresentação da resolução — 2026-10-25
 
 Wallet mostra os retornos por mercado: valor liberado, ganho líquido e total recebido já incluído no saldo/extrato. API fornece os três valores; o app não recalcula liquidação. Painel de mercado resolved/sealed usa GT₵ em previsões para o volume liquidado; mantém contagem final recebida do backend. Lista vazia não mostra seção de retornos. Aceite automatizado em mobile-acceptance; publicação de binário pendente.
+
+
+### Correção da faixa Novo após review — 2026-11-07
+
+A faixa Novo nos cards hero/compacto atualiza automaticamente ao completar 48h, sem toque ou refresh. O provider de apresentação agenda a próxima transição e cancela o timer no descarte, sem modificar status efetivo.

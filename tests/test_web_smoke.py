@@ -8021,7 +8021,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertContains(guest_response, "Tempo restante:")
         self.assertContains(guest_response, "data-guest-like-button")
         self.assertContains(guest_response, "data-guest-favorite-button")
-        self.assertContains(guest_response, 'data-filter="likes"')
+        self.assertNotContains(guest_response, 'data-filter="likes"')
         self.assertContains(guest_response, "market-card-actions")
         self.assertContains(guest_response, 'data-market-predicted="true"')
         self.assertContains(guest_response, 'data-market-favorited="true"')
@@ -8048,7 +8048,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         get_markets.assert_called_once_with(token="feed-token")
         self.assertContains(auth_response, 'class="filter personal-filter" type="button" data-filter="predicted"')
         self.assertContains(auth_response, 'data-filter="favorited"')
-        self.assertContains(auth_response, 'data-filter="likes"')
+        self.assertNotContains(auth_response, 'data-filter="likes"')
         self.assertContains(auth_response, "Minhas previsões")
         self.assertContains(auth_response, 'data-market-predicted="true"')
         self.assertContains(auth_response, 'data-market-favorited="true"')
@@ -8056,7 +8056,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertContains(auth_response, "market-favorite-button active")
         self.assertContains(auth_response, "market-card-actions")
         self.assertContains(auth_response, "market-like-button active")
-        self.assertContains(auth_response, "Nenhum mercado com previsão sua ainda.")
+        self.assertContains(auth_response, "Nenhum mercado aberto no momento.")
 
     def test_home_renders_comment_count_and_notification_bell(self):
         User = get_user_model()
@@ -8175,12 +8175,9 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         script = (settings.BASE_DIR / "apps" / "web" / "static" / "js" / "gotrendlabs.js").read_text()
 
         self.assertIn("views: parseNumber(card.dataset.marketViews)", script)
-        self.assertIn('mode === "likes"', script)
-        self.assertIn("return right.likes - left.likes || tieBreak;", script)
-        self.assertIn('mode === "open" && card.dataset.marketStatus !== "open"', script)
+        self.assertIn('mode === "ongoing" && card.dataset.marketStatus !== "open"', script)
         self.assertIn('mode === "closing" && card.dataset.marketStatus !== "locked"', script)
         self.assertIn('mode === "favorited" && card.dataset.marketFavorited !== "true"', script)
-        self.assertIn('favorited: "Nenhum mercado favorito ainda."', script)
         self.assertIn("return right.views - left.views || tieBreak;", script)
         self.assertIn("Number(list.dataset.marketPageSize || 18)", script)
         self.assertIn("hydrateDeadlineRail", script)
@@ -8202,7 +8199,6 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertIn("syncMarketFavorite(payload.slug || form.dataset.marketSlug", script)
         self.assertIn("syncMarketLike(payload.slug || form.dataset.marketSlug", script)
         styles = (settings.BASE_DIR / "apps" / "web" / "static" / "css" / "gotrendlabs.css").read_text()
-        self.assertIn('[data-market-list][data-market-filter-mode="closing"] [data-market-card]:not([data-market-status="locked"])', styles)
         self.assertIn('[data-market-list][data-market-filter-mode="favorited"] [data-market-card][data-market-favorited="false"]', styles)
         self.assertIn(".market-favorite-button", styles)
         self.assertIn(".market-favorite-button.readonly", styles)
@@ -12189,7 +12185,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
 
     def test_market_pages_consume_api_and_fallback_to_fixture(self):
         api_market = {
-            **get_domain_client().market("openai-gpt6-2026"),
+            **local_market("openai-gpt6-2026"),
             "title": "Mercado vindo da API",
         }
 
@@ -12212,19 +12208,14 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertContains(response, 'data-filter-target="[data-market-list]"')
             filter_html = response.content.decode().split('<div class="filters" data-filter-group data-filter-target="[data-market-list]">', 1)[1].split("</div>", 1)[0]
             expected_filter_order = [
-                'data-filter="trending"',
-                'data-filter="new"',
-                'data-filter="open"',
-                'data-filter="closing"',
+                'data-filter="ongoing"',
                 'data-filter="resolved"',
-                'data-filter="volume"',
-                'data-filter="likes"',
             ]
             self.assertEqual([filter_html.index(item) for item in expected_filter_order], sorted(filter_html.index(item) for item in expected_filter_order))
             self.assertNotIn('data-filter="featured"', filter_html)
             self.assertNotIn('data-filter="favorited"', filter_html)
-            self.assertIn("Em alta", filter_html)
-            self.assertIn("Em apuração", filter_html)
+            self.assertIn("Em andamento", filter_html)
+            self.assertContains(response, "data-market-pending")
             self.assertContains(response, "data-market-card")
             self.assertContains(response, 'data-market-likes="9"')
             self.assertContains(response, 'data-market-views="9"')

@@ -109,13 +109,13 @@ class MarketsScreen extends ConsumerStatefulWidget {
 class _MarketsScreenState extends ConsumerState<MarketsScreen> {
   late MarketDeskFilter _deskFilter;
   String _category = '';
-  String _status = 'open';
+  bool _pendingExpanded = true;
 
   @override
   void initState() {
     super.initState();
     _deskFilter = widget.initialDeskFilter;
-    _status = _deskFilter == MarketDeskFilter.all ? 'open' : '';
+    _pendingExpanded = true;
   }
 
   @override
@@ -124,7 +124,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
     if (widget.initialDeskFilter != oldWidget.initialDeskFilter) {
       setState(() {
         _deskFilter = widget.initialDeskFilter;
-        _status = _deskFilter == MarketDeskFilter.all ? 'open' : '';
+        _pendingExpanded = true;
       });
     }
   }
@@ -148,22 +148,45 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                 .toSet()
                 .toList()
               ..sort();
-        final filtered = items.where((market) {
-          final deskOk = switch (_deskFilter) {
-            MarketDeskFilter.all => true,
-            MarketDeskFilter.favorites => market.viewerHasFavorite,
-            MarketDeskFilter.positions => market.viewerHasActivePosition,
-            MarketDeskFilter.history =>
-              market.viewerHasPrediction && !market.isOpen,
-          };
-          final categoryOk = _category.isEmpty || market.category == _category;
-          final statusOk =
-              _status.isEmpty ||
-              (_status == 'resolved'
-                  ? market.isResolved || market.isSealed
-                  : market.status == _status);
-          return deskOk && categoryOk && statusOk;
-        }).toList();
+        final publicItems = items
+            .where(
+              (market) =>
+                  [
+                    'open',
+                    'locked',
+                    'resolved',
+                    'sealed',
+                  ].contains(market.status) &&
+                  (_category.isEmpty || market.category == _category),
+            )
+            .toList();
+        final filtered = publicItems
+            .where(
+              (market) => switch (_deskFilter) {
+                MarketDeskFilter.all => market.isOpen,
+                MarketDeskFilter.resolved =>
+                  market.isResolved || market.isSealed,
+                MarketDeskFilter.favorites => market.viewerHasFavorite,
+                MarketDeskFilter.positions => market.viewerHasActivePosition,
+                MarketDeskFilter.predictions => market.viewerHasPrediction,
+              },
+            )
+            .toList();
+        final pendingEntries =
+            publicItems
+                .asMap()
+                .entries
+                .where((entry) => entry.value.status == 'locked')
+                .toList()
+              ..sort((a, b) {
+                final left = DateTime.tryParse(a.value.closeAt);
+                final right = DateTime.tryParse(b.value.closeAt);
+                if (left == null && right != null) return 1;
+                if (right == null && left != null) return -1;
+                final byDate = left == null ? 0 : right!.compareTo(left);
+                return byDate != 0 ? byDate : a.key.compareTo(b.key);
+              });
+        final pending = pendingEntries.map((entry) => entry.value).toList();
         return GtlScreen(
           child: Column(
             children: [
@@ -172,8 +195,9 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                 child: GtlEditorialHeader(
                   kicker: 'Browse',
                   title: 'Mercados',
-                  body:
-                      '${filtered.length} de ${items.length} mercados neste recorte.',
+                  body: _deskFilter == MarketDeskFilter.all
+                      ? '${filtered.length} ${filtered.length == 1 ? 'aberto' : 'abertos'} · ${pending.length} em apuração.'
+                      : '${filtered.length} de ${items.length} mercados neste recorte.',
                 ),
               ),
               Padding(
@@ -183,7 +207,7 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                   authenticated: auth.isAuthenticated,
                   onChanged: (value) => setState(() {
                     _deskFilter = value;
-                    _status = value == MarketDeskFilter.all ? 'open' : '';
+                    _pendingExpanded = true;
                   }),
                 ),
               ),
@@ -213,69 +237,75 @@ class _MarketsScreenState extends ConsumerState<MarketsScreen> {
                   ],
                 ),
               ),
-              SizedBox(
-                height: 48,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 4,
+              if (auth.isAuthenticated)
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: TextButton.icon(
+                      onPressed: () => setState(() {
+                        _deskFilter = MarketDeskFilter.positions;
+                        _pendingExpanded = true;
+                      }),
+                      icon: const Icon(Icons.stacked_line_chart, size: 18),
+                      label: const Text('Posições ativas'),
+                    ),
                   ),
-                  children: [
-                    _StatusChip(
-                      label: 'Todos',
-                      value: '',
-                      selected: _status,
-                      onChanged: (value) => setState(() => _status = value),
-                    ),
-                    _StatusChip(
-                      label: 'Abertos',
-                      value: 'open',
-                      selected: _status,
-                      onChanged: (value) => setState(() => _status = value),
-                    ),
-                    _StatusChip(
-                      label: 'Em apuração',
-                      value: 'locked',
-                      selected: _status,
-                      onChanged: (value) => setState(() => _status = value),
-                    ),
-                    _StatusChip(
-                      label: 'Resolvidos',
-                      value: 'resolved',
-                      selected: _status,
-                      onChanged: (value) => setState(() => _status = value),
-                    ),
-                  ],
                 ),
-              ),
               Expanded(
-                child: filtered.isEmpty
-                    ? _RefreshableEmptyState(
-                        message: _emptyMessage(
-                          _deskFilter,
-                          auth.isAuthenticated,
-                          _status,
+                child: RefreshIndicator(
+                  onRefresh: () => refreshMarkets(ref),
+                  child: ListView(
+                    key: ValueKey(_deskFilter),
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
+                    children: [
+                      if (_deskFilter == MarketDeskFilter.positions)
+                        const GtlSectionTitle(title: 'Posições ativas'),
+                      if (filtered.isEmpty)
+                        _EmptyState(
+                          message: _emptyMessage(
+                            _deskFilter,
+                            auth.isAuthenticated,
+                          ),
                         ),
-                        onRefresh: () => refreshMarkets(ref),
-                      )
-                    : RefreshIndicator(
-                        onRefresh: () => refreshMarkets(ref),
-                        child: ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, index) {
-                            final market = filtered[index];
-                            return MarketCompactCard(
-                              market: market,
-                              api: api,
-                              showStatus:
-                                  _status.isNotEmpty || market.status != 'open',
-                            );
-                          },
+                      for (final market in filtered)
+                        MarketCompactCard(market: market, api: api),
+                      if (_deskFilter == MarketDeskFilter.all &&
+                          pending.isNotEmpty) ...[
+                        Semantics(
+                          expanded: _pendingExpanded,
+                          child: OutlinedButton.icon(
+                            key: const ValueKey('pending-markets-toggle'),
+                            onPressed: () => setState(
+                              () => _pendingExpanded = !_pendingExpanded,
+                            ),
+                            icon: Icon(
+                              _pendingExpanded
+                                  ? Icons.expand_less
+                                  : Icons.expand_more,
+                            ),
+                            label: Text(
+                              'Em apuração — ${pending.length} ${pending.length == 1 ? 'mercado' : 'mercados'}',
+                            ),
+                          ),
                         ),
-                      ),
+                        if (_pendingExpanded)
+                          for (final market in pending)
+                            MarketCompactCard(market: market, api: api),
+                      ],
+                      if (_deskFilter == MarketDeskFilter.all &&
+                          filtered.isEmpty &&
+                          pending.isEmpty)
+                        TextButton(
+                          onPressed: () => setState(
+                            () => _deskFilter = MarketDeskFilter.resolved,
+                          ),
+                          child: const Text('Ver resolvidos'),
+                        ),
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
@@ -295,7 +325,7 @@ List<Market> _successfulOpenMarkets(List<Market> items) {
   });
 }
 
-enum MarketDeskFilter { all, favorites, positions, history }
+enum MarketDeskFilter { all, resolved, favorites, predictions, positions }
 
 class _DeskSegmentedControl extends StatelessWidget {
   const _DeskSegmentedControl({
@@ -313,36 +343,31 @@ class _DeskSegmentedControl extends StatelessWidget {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: SegmentedButton<MarketDeskFilter>(
-        segments: const [
-          ButtonSegment(
+        segments: [
+          const ButtonSegment(
             value: MarketDeskFilter.all,
-            label: Text('Todos'),
-            icon: Icon(Icons.grid_view),
+            label: Text('Em andamento'),
           ),
-          ButtonSegment(
-            value: MarketDeskFilter.favorites,
-            label: Text('Favoritos'),
-            icon: Icon(Icons.bookmark_border),
+          const ButtonSegment(
+            value: MarketDeskFilter.resolved,
+            label: Text('Resolvidos'),
           ),
-          ButtonSegment(
-            value: MarketDeskFilter.positions,
-            label: Text('Posições'),
-            icon: Icon(Icons.stacked_line_chart),
-          ),
-          ButtonSegment(
-            value: MarketDeskFilter.history,
-            label: Text('Histórico'),
-            icon: Icon(Icons.history),
-          ),
+          if (authenticated) ...[
+            const ButtonSegment(
+              value: MarketDeskFilter.favorites,
+              label: Text('Favoritos'),
+            ),
+            const ButtonSegment(
+              value: MarketDeskFilter.predictions,
+              label: Text('Minhas previsões'),
+            ),
+          ],
         ],
-        selected: {selected},
-        onSelectionChanged: authenticated
-            ? (value) => onChanged(value.first)
-            : (value) {
-                if (value.first == MarketDeskFilter.all) {
-                  onChanged(value.first);
-                }
-              },
+        emptySelectionAllowed: true,
+        selected: selected == MarketDeskFilter.positions ? {} : {selected},
+        onSelectionChanged: (value) {
+          if (value.isNotEmpty) onChanged(value.first);
+        },
       ),
     );
   }
@@ -482,52 +507,18 @@ class _DeskActionTile extends StatelessWidget {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.label,
-    required this.value,
-    required this.selected,
-    required this.onChanged,
-  });
-
-  final String label;
-  final String value;
-  final String selected;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected == value,
-        onSelected: (_) => onChanged(value),
-      ),
-    );
-  }
-}
-
-String _emptyMessage(
-  MarketDeskFilter filter,
-  bool authenticated,
-  String status,
-) {
-  if (!authenticated && filter != MarketDeskFilter.all) {
-    return 'Entre para ver seus mercados salvos e suas posições.';
+String _emptyMessage(MarketDeskFilter filter, bool authenticated) {
+  if (!authenticated &&
+      ![MarketDeskFilter.all, MarketDeskFilter.resolved].contains(filter)) {
+    return 'Entre para ver seus mercados salvos e suas previsões.';
   }
   return switch (filter) {
-    MarketDeskFilter.all => switch (status) {
-      'open' => 'Nenhum mercado aberto disponível agora.',
-      'locked' => 'Nenhum mercado em apuração agora.',
-      'resolved' => 'Nenhum mercado resolvido ainda.',
-      _ => 'Nenhum mercado neste recorte.',
-    },
+    MarketDeskFilter.all => 'Nenhum mercado aberto no momento.',
+    MarketDeskFilter.resolved => 'Nenhum mercado resolvido ainda.',
     MarketDeskFilter.favorites =>
       'Você ainda não marcou mercados como favoritos.',
-    MarketDeskFilter.positions => 'Você ainda não tem posições neste recorte.',
-    MarketDeskFilter.history =>
-      'Você ainda não tem previsões encerradas neste recorte.',
+    MarketDeskFilter.positions => 'Você ainda não tem posições ativas.',
+    MarketDeskFilter.predictions => 'Você ainda não registrou previsões.',
   };
 }
 

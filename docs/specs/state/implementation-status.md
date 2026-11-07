@@ -1,3 +1,15 @@
+## 07/11/2026 — fechamento preparado: Em andamento
+
+Specs/aceites alinhados ao comportamento final, incluindo apuração expandida, recortes pessoais e faixa Novo com expiração automática/Categorias. Review corrigido; 139 testes Flutter, oito Django, analyze, JS e contratos aprovados. Commit/PR em preparação; aprovação do texto é gate para abertura, seguida de CI/merge/deploy e recibo produtivo. Sem mudança de domínio/API/MCP. Android exige distribuição própria. WFLOW-20261107-MARKETS-IN-PROGRESS.
+
+## 07/11/2026 — correções do review da faixa Novo (local)
+
+Categorias passa a inicializar a faixa independentemente dos filtros; web/mobile atualizam a indicação automaticamente no limite de 48h. Timers apenas de apresentação, sem mudança API/domínio/MCP. 40 testes Flutter selecionados, analyze e testes JS aprovados; WFLOW-20261107-MARKETS-IN-PROGRESS. Sem publicação.
+
+## 07/11/2026 — Em andamento: implementação local
+
+WFLOW-20261107-MARKETS-IN-PROGRESS / FEAT-MARKET-001 v0.15: quatro recortes principais; open primeiro e locked expandido por padrão com contagem, paginação web independente de 18 e selo Novo por 48h. Web mantém views/criação/origem, mobile mantém ordem API dos abertos e Hoje mantém engajamento. Minhas previsões inclui histórico e participação atual; posições ativas são acesso secundário. Sem mudança API, domínio ou MCP. Validação: 135 testes Flutter/análise, oito Django e teste funcional JS aprovados. Código em branch feature/markets-in-progress; sem PR/deploy ou release binária nesta execução. Evidências em [aceite](../testing/markets-in-progress-acceptance-20261107.md). Esta implementação local sucede a navegação publicada pelas PRs #196–#198, que continua sendo a versão produtiva até novo rollout.
+
 ## 07/11/2026 — descoberta web implantada e validada
 
 A mudança web/mobile de WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST foi integrada pela PR #196/merge `8e920ca` e implantada pela Actions main `42380529876`. O cache antigo de JS/CSS detectado no navegador foi corrigido pela PR #197/merge `6157d88`; Actions main `42382587977`, deploy SSM e smoke produtivo aprovaram a correção. Home usa URLs versionados novos; navegação comum mostra somente abertos em `Em alta`, selados em `Resolvidos` e previsões pessoais encerradas. Flutter integrado ainda requer release Android separada no workflow WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE; a versão ativa no teste fechado é `1.2.3+17`. FEAT-MARKET-001 ampla permanece parcial por lacunas independentes em `known-gaps.md`. [Recibo](../testing/market-discovery-production-closeout-20261107.md).
