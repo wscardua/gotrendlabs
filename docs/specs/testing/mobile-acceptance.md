@@ -21,7 +21,7 @@ aprovacao: pendente
 
 ## Aceite de descoberta e histórico — 2026-11-07
 
-- `Hoje` continua com apenas `open` e pontuação de engajamento existente.
+- `Hoje` mantém apenas `open` nos destaques/tendências, com pontuação de engajamento existente, e mostra `locked` após Mais mercados em seção Em apuração sempre expandida. Sem abertos, a apuração permanece acessível; sem locked, mensagem específica. Testar close_at decrescente, empate estável, datas ausentes por último e exclusão de resolved/sealed/draft/canceled.
 - Mercados inicia em Em andamento: open na ordem da API; locked expandido por padrão abaixo, contagem total e expansão acessível; resolved/sealed fora desta aba.
 - Apuração mostra apenas locked em close_at decrescente e origem, ausentes no fim; Resolvidos mostra resolved/sealed com rótulos próprios.
 - Favoritos e Minhas previsões preservam selados; Minhas previsões usa viewer_has_prediction em todos os estados públicos relevantes, enquanto Posições ativas permanece vinculada a viewer_position.has_position.
@@ -376,3 +376,7 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 ## Release Google Play 1.2.4+18 — 07/11/2026
 
 Usuário confirmou sucesso do teste local em aparelho físico. AAB oficial gerado da main integrada/limpa, assinado e enviado ao Alpha; ver [recibo18](mobile-markets-release-18-20261107.md). O teste local usou app separado e backend DEV; instalação pelo Google Play, sessão/MFA e push no artefato distribuído só devem ser marcados como verificados após execução. Estado observado no envio: Changes in review/quick checks em andamento.
+
+### Ordem de Hoje — ajuste de 07/11/2026
+
+Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.

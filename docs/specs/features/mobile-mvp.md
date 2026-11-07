@@ -1,7 +1,7 @@
 ---
 id: FEAT-MOBILE-001
 titulo: "MVP mobile Flutter"
-versao: 0.5
+versao: 0.6
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-11-07
@@ -83,9 +83,9 @@ O APK deve ser gerenciado no Admin Ops, armazenado em `MEDIA_ROOT/app_releases/a
 Primeira tela util do app. Deve mostrar:
 
 - saudacao ou contexto curto quando autenticado
-- mercados em destaque por popularidade/curadoria existente
+- mercados abertos em Para prever, com destaque pela pontuação de engajamento existente
 - cards grandes com imagem, categoria, pergunta, probabilidade e volume educativo
-- secoes compactas de tendencias, novos e encerrando em breve
+- tendências e mais mercados abertos; ao final, Em apuração sempre expandida com locked por prazo programado decrescente, inclusive quando não houver abertos
 
 ### Mercados
 
@@ -253,3 +253,7 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 ## Wallet/mercados resolvidos — 2026-10-25
 
 Consumidor Flutter atualizado para LedgerResponse.resolution_returns obrigatório e para apresentação do volume final em resolved/sealed; domínio permanece FastAPI. Contrato, widget tests e análise estática validados; distribuição exige release mobile separada.
+
+### Ordem de Hoje — ajuste de 07/11/2026
+
+Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.

@@ -1,3 +1,46 @@
+## WFLOW-20261107-MOBILE-TODAY-PENDING
+
+- Estado vigente: implementação e aceite local concluídos; fechamento/integracão e distribuição em preparação. Não afirmar feature disponível em apps instalados antes da nova release.
+- Objetivo/decisão final: incentivar participação. Ordem Para prever → Tendências → Mais mercados → Em apuração, com todos os locked diretamente ao final. Sem botão Ver todos, limite de três ou novo recorte em Mercados.
+- Aberto: engagementScore e desempate por título preservados; um hero, até dois outros destaques e até oito em Mais mercados. Locked: close_at programado decrescente, empate pela ordem original, ausentes por último; helper compartilhado com Mercados.
+- Artefatos: markets_screen.dart/test; market-feed v0.16, mobile-mvp v0.6, mobile-ux v0.5, aceite, README, estado, recibo19 e memória operacional. Pubspec 1.2.5+19 preparado para integrar antes do AAB.
+- Arquitetura/segurança: apresentação Flutter sobre status efetivo e timestamps existentes, sem nova fronteira, contrato, persistência ou autenticação; ADR/migration/configuração PRD não necessários.
+- MCP: ferramentas, schemas, contratos, permissões, erros, replays e editorial preservados; nenhuma regra do backend mudou. Não há poderes MCP inferidos de Admin Ops.
+- Validação: aceite do usuário no emulador local; suíte completa/análise e evidências finais no recibo19. Gate release exige fetch, checkout limpo e HEAD igual a origin/main antes do AAB.
+- Publicação: título/descrição em português devem ser aprovados pelo usuário antes da PR. Após aprovação, acompanhar CI/merge/Actions e smoke de produção. AAB produtivo para o Alpha existente, sem alterar o APK do site, países/testadores ou track público. Aprovação/disponibilidade Google depende de observação posterior.
+- Branch local feature/mobile-today-pending e demais worktrees devem ser preservados. Próxima ação: solicitar aprovação da PR após commit e validação.
+- Checklist universal conferido: specs, comportamento/testes, contratos, fronteiras, changelogs, estado, mapa e pendências reconciliados. Histórico abaixo é substituído pelo estado vigente acima.
+
+<details>
+<summary>Experimentos locais substituídos (histórico; não usar como comportamento vigente)</summary>
+
+## Hoje: apuração completa ao final — 07/11/2026
+
+Validação: 16 testes de mercados/shell aprovados, analyze sem problemas, APK debug arm64 compilado e instalado no emulador local. Decisão vigente: Para prever → Tendências → Mais mercados → Em apuração. Removidos limite de três, CTA Ver todos e recorte auxiliar criado para esse CTA. Todos os locked são exibidos diretamente, com ordem por close_at decrescente e empate estável. Substitui os experimentos registrados abaixo. Sem mudança API/domínio/MCP; apenas local. WFLOW-20261107-MOBILE-TODAY-PENDING.
+
+## Hoje prioriza participação — 07/11/2026
+
+Validação desta ordem: 13 testes de markets_screen aprovados, build debug arm64 aprovado e instalado no emulador local. Decisão vigente: Para prever → Tendências → Mais mercados → Em apuração. Todos os blocos de oportunidades abertas precedem acompanhamento de mercados encerrados. Mantidos três locked na prévia, ordenação e Ver todos em apuração. Substitui a ordem experimental registrada abaixo. Sem impacto API/domínio/MCP. WFLOW-20261107-MOBILE-TODAY-PENDING; ajuste local, sem publicação.
+
+## Hoje: prévia de apuração — 07/11/2026
+
+Smoke no emulador: três cards e CTA antes de Mais mercados; toque em Ver todos abriu Mercados/Em apuração com 25 de 64 mercados locais. APK debug arm64 instalado e app deixado aberto. Validação da prévia: 140 testes Flutter passaram (incluindo limite, ordem e navegação à lista completa); analyze sem problemas. Até três locked após Tendências e antes de Mais mercados. Quando houver mais, Ver todos em apuração abre a lista completa em Mercados no recorte explícito de apuração, reiniciando filtros anteriores; demais recortes continuam disponíveis. Sem alteração de API/status/domínio/MCP, incluindo ferramentas, schemas, permissões, erros e replays. WFLOW-20261107-MOBILE-TODAY-PENDING; apenas local.
+
+## WFLOW-20261107-MOBILE-TODAY-PENDING
+
+- Estado: concluído localmente; disponível para teste do usuário no emulador.
+- Refinamento de ordem: 13 testes de markets_screen aprovados após mover apuração para entre Tendências e Mais mercados.
+- Evidências: 140 testes Flutter aprovados; flutter analyze sem problemas; build APK debug e instalação no gotrendlabs_pixel/Android 16 aprovados. Smoke visual confirmou Para prever e seção Em apuração expandida com fixtures locais, sem overflow observado. Capturas /tmp/gtl-today-open.png e /tmp/gtl-today-pending.png.
+- Ambiente: API http://10.0.2.2:8001; configuração Firebase local ignorada reutilizada para bootstrap padrão. Primeira tentativa sem esse arquivo falhou no bootstrap; instalação final abre normalmente. Sem teste de push nesta fatia.
+- Operação: liberados apenas intermediários de builds anteriores por falta de disco; artefatos finais, código e branches preservados.
+- Branch: feature/mobile-today-pending, base origin/main ee697d0, worktree separado preservando alterações existentes.
+- Escopo: Hoje na ordem Para prever → Tendências → Em apuração → Mais mercados, conforme refinamento do usuário. Apuração sempre expandida, com ordenação compartilhada com Mercados e vazios independentes.
+- MCP: sem ajustes. Usa status efetivo e close_at existentes; nenhuma alteração em ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Sem inferência de poderes Admin Ops.
+- Publicação: não solicitada nesta etapa; release18 enviada anteriormente não contém este ajuste.
+
+
+</details>
+
 ## WFLOW-20261107-MARKETS-IN-PROGRESS
 
 - Estado vigente: concluído para implementação/integração e implantação web. PR #199, merge ca0cab9de589fb4df74b8fac38d0704aa6f73588; CI PR 42393869734 e main/deploy 42394768559 aprovados (681 Python, três skips em ambos). SSM deploy d11f4c17-eb39-41dc-be1c-9a62e20ab6d9 Success; HEAD produtivo conferido por SSM. Health/assets por SHA256, navegação autenticada, histórico selado e prova verificada aprovados; sem ajuste adicional PRD. [Recibo](../testing/markets-in-progress-production-closeout-20261107.md). Branch local preservada. Registros anteriores abaixo descrevem as etapas históricas. Distribuição Android segue separada em WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE, incluindo agora a navegação e a faixa Novo de #199; app instalado não foi atualizado por este deploy.

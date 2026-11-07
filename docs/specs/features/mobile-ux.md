@@ -1,7 +1,7 @@
 ---
 id: FEAT-MOBILE-UX-001
 titulo: "UX e design mobile"
-versao: 0.4
+versao: 0.5
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-11-07
@@ -224,7 +224,8 @@ Deve priorizar:
 
 - destaque visual de 1 a 3 mercados abertos
 - chips de categoria
-- secoes horizontais de tendencias com mercados abertos ordenados por engajamento visual
+- tendências com mercados abertos ordenados pelo engajamento existente
+- Em apuração após Mais mercados, sempre expandida, apenas locked por close_at decrescente; empate pela ordem da API e datas ausentes por último. Explicar que as previsões encerraram e que tocar no card abre o acompanhamento. Estados vazios independentes para abertos/apuração.
 - resumo educativo de produto quando util
 - `Sua mesa` para usuarios autenticados deve contar posicoes ativas por `viewer_position.has_position`, nao participacao historica por `viewer_has_prediction`; o atalho de mercados abertos usa apenas posicoes ativas em mercados `open`
 
@@ -398,3 +399,7 @@ Wallet mostra os retornos por mercado: valor liberado, ganho líquido e total re
 ### Correção da faixa Novo após review — 2026-11-07
 
 A faixa Novo nos cards hero/compacto atualiza automaticamente ao completar 48h, sem toque ou refresh. O provider de apresentação agenda a próxima transição e cancela o timer no descarte, sem modificar status efetivo.
+
+### Ordem de Hoje — ajuste de 07/11/2026
+
+Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.

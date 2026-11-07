@@ -1,7 +1,7 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.15
+versao: 0.16
 status_spec: draft
 status_impl: parcial
 ultima_atualizacao: 2026-11-07
@@ -153,7 +153,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 
 ## Comportamento mobile de descoberta e acompanhamento
 
-- `Hoje` seleciona apenas mercados `open` e usa a pontuação de engajamento existente, inclusive destaque editorial; esta ordenação não é igual à ordenação web por visualizações.
+- `Hoje` prioriza `open` em Para prever/destaques/tendências com a pontuação de engajamento existente; após Mais mercados mostra `locked` em Em apuração, sempre expandida, por `close_at` decrescente (sem data por último, empate pela ordem da API). Resolvidos/selados ficam fora de Hoje. A ordenação dos abertos não é igual à ordenação web por visualizações.
 - `Mercados` inicia em `Em andamento`: abertos preservam a ordem da API; apuração expandida por padrão usa `close_at` decrescente e ordem original. `Hoje` mantém sua pontuação de engajamento.
 - `Resolvidos` contém `resolved` e `sealed`; Favoritos mantém todos os estados públicos relevantes; Minhas previsões usa `viewer_has_prediction` em todos esses estados.
 - Posições ativas continua acessível por controle secundário e usa `viewer_position.has_position`; não representa histórico.
@@ -276,3 +276,7 @@ PR #199 integrada e implantada no site em 07/11/2026 (merge ca0cab9, Actions 423
 ## Distribuição Android solicitada — 07/11/2026
 
 A release Google Play 1.2.4+18 inclui a navegação v0.15 e foi enviada ao teste fechado Alpha após integração da versão/build pela PR #201 e validação do AAB. Console confirmou Changes in review com quick checks em andamento; isso não comprova disponibilidade nos apps instalados. Testes físicos locais tiveram sucesso segundo o usuário. [Recibo](../testing/mobile-markets-release-18-20261107.md).
+
+### Ordem de Hoje — ajuste de 07/11/2026
+
+Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.

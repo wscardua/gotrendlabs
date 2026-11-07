@@ -232,32 +232,118 @@ void main() {
     },
   );
 
-  testWidgets('TodayScreen shows only open markets ordered by engagement', (
+  testWidgets(
+    'TodayScreen keeps open engagement order before pending markets',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(450, 2000));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              _UnauthenticatedAuthController.new,
+            ),
+            marketsProvider.overrideWith((ref) async {
+              return [
+                _market(
+                  slug: 'fechado',
+                  title: 'Mercado em apuração',
+                  status: 'locked',
+                  statusLabel: 'Fechado',
+                ),
+                _market(
+                  slug: 'popular',
+                  title: 'Mercado aberto popular',
+                  participants: 20,
+                  volume: 900,
+                ),
+                _market(slug: 'aberto', title: 'Mercado aberto comum'),
+                _market(
+                  slug: 'terceiro',
+                  title: 'Terceiro aberto',
+                  participants: 1,
+                  volume: 1,
+                ),
+                _market(
+                  slug: 'quarto',
+                  title: 'Último aberto',
+                  participants: 0,
+                  volume: 0,
+                ),
+              ];
+            }),
+          ],
+          child: MaterialApp(
+            theme: buildGoTrendLabsTheme(),
+            home: const Scaffold(body: TodayScreen()),
+          ),
+        ),
+      );
+
+      await tester.pumpAndSettle();
+
+      expect(find.text('Mercado aberto popular'), findsOneWidget);
+      expect(find.text('Mercado aberto comum'), findsOneWidget);
+      expect(
+        tester.getTopLeft(find.text('Mercado aberto popular')).dy,
+        lessThan(tester.getTopLeft(find.text('Mercado aberto comum')).dy),
+      );
+      await tester.scrollUntilVisible(
+        find.text('Mercado em apuração'),
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('Mercado em apuração'), findsOneWidget);
+      expect(find.text('Em apuração'), findsWidgets);
+      final sectionTitles = ['Para prever', 'Tendências', 'Mais mercados'];
+      for (var i = 1; i < sectionTitles.length; i++) {
+        expect(
+          tester.getTopLeft(find.text(sectionTitles[i - 1])).dy,
+          lessThan(tester.getTopLeft(find.text(sectionTitles[i])).dy),
+        );
+      }
+      expect(
+        tester.getTopLeft(find.text('Último aberto')).dy,
+        lessThan(tester.getTopLeft(find.text('Mercado em apuração')).dy),
+      );
+    },
+  );
+
+  testWidgets('TodayScreen shows pending without opens, in deadline order', (
     tester,
   ) async {
+    await tester.binding.setSurfaceSize(const Size(450, 2000));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           authControllerProvider.overrideWith(
             _UnauthenticatedAuthController.new,
           ),
-          marketsProvider.overrideWith((ref) async {
-            return [
+          marketsProvider.overrideWith(
+            (ref) async => [
               _market(
-                slug: 'fechado',
-                title: 'Mercado fechado não deve aparecer',
+                slug: 'old',
+                title: 'Apuração antiga',
                 status: 'locked',
-                statusLabel: 'Fechado',
+                closeAt: '2026-11-01T00:00:00Z',
+              ),
+              _market(slug: 'new', title: 'Apuração recente', status: 'locked'),
+              _market(
+                slug: 'tie',
+                title: 'Apuração empatada',
+                status: 'locked',
               ),
               _market(
-                slug: 'popular',
-                title: 'Mercado aberto popular',
-                participants: 20,
-                volume: 900,
+                slug: 'missing',
+                title: 'Apuração sem data',
+                status: 'locked',
+                closeAt: '',
               ),
-              _market(slug: 'aberto', title: 'Mercado aberto comum'),
-            ];
-          }),
+              for (final status in ['resolved', 'sealed', 'draft', 'canceled'])
+                _market(slug: status, title: 'Oculto $status', status: status),
+            ],
+          ),
         ],
         child: MaterialApp(
           theme: buildGoTrendLabsTheme(),
@@ -265,12 +351,33 @@ void main() {
         ),
       ),
     );
-
     await tester.pumpAndSettle();
-
-    expect(find.text('Mercado aberto popular'), findsOneWidget);
-    expect(find.text('Mercado aberto comum'), findsOneWidget);
-    expect(find.text('Mercado fechado não deve aparecer'), findsNothing);
+    expect(
+      find.text('Nenhum mercado aberto disponível agora.'),
+      findsOneWidget,
+    );
+    final titles = [
+      'Apuração recente',
+      'Apuração empatada',
+      'Apuração antiga',
+      'Apuração sem data',
+    ];
+    for (var i = 0; i < titles.length; i++) {
+      expect(find.text(titles[i]), findsOneWidget);
+      if (i > 0) {
+        expect(
+          tester.getTopLeft(find.text(titles[i - 1])).dy,
+          lessThan(tester.getTopLeft(find.text(titles[i])).dy),
+        );
+      }
+    }
+    for (final status in ['resolved', 'sealed', 'draft', 'canceled']) {
+      expect(find.text('Oculto $status'), findsNothing);
+    }
+    expect(find.text('Tendências'), findsNothing);
+    expect(find.text('Mais mercados'), findsNothing);
+    expect(find.text('Ver todos em apuração'), findsNothing);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('MarketsScreen filters favorites and user positions', (
