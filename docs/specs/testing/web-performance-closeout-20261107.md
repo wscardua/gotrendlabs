@@ -1,6 +1,39 @@
 # Fechamento — Desempenho web
 
-## Estado atual
+## Estado final — integrado e implantado
+
+Página `/desempenho/` integrada e implantada em 07/11/2026. PR [#207](https://github.com/wscardua/gotrendlabs/pull/207), aberta e integrada pelo MCP GitHub após aprovação explícita do título/descrição pelo usuário, merge `b499dc5ceb6d542f205e37b5d128956dc9edd3c4`. Commits de implementação/recibo: `9573ede` e `423e104`.
+
+- CI da PR: [42425638720](https://github.com/wscardua/gotrendlabs/actions/runs/42425638720), sucesso; 698 testes Python em 466,841 s, OK/3 skips, builds principal/MCP, OpenAPI e quatro checks JavaScript aprovados.
+- CI da main e deploy: [42426478228](https://github.com/wscardua/gotrendlabs/actions/runs/42426478228), sucesso em todos os jobs; 698 testes em 436,460 s, OK/3 skips, builds e checks aprovados.
+- Implantação SSM `e512d7b3-db83-4119-becd-c9e9dd715cfb`: Success/0; concluída às 23:53:52 UTC (20:53:52 de Brasília).
+- Conferência remota SSM `d4ae0f68-60c1-4191-9005-3c5c0e180447`: Success/0; HEAD produtivo igual ao merge e checkout sem alterações versionadas. Rota `performance` resolvida no Django e seis arquivos do runtime com SHA256 idêntico ao código integrado. Django, FastAPI, daemon, proxy, MCP e thumbnail-worker em execução; MCP healthy. IDs das imagens no [relatório](evidence/web-performance-20261107/production/report.json).
+- Ativação pelo deploy/collectstatic existente. Nenhuma migration, flag, ajuste de configuração, concessão de permissão ou carga de dados necessária para a feature. Fixtures, contas e credenciais DEV não foram transportadas.
+- Branch local `feature/web-performance` preservada e limpa; checkout original e tarefas alheias mantidos. Este recibo final é atualização documental própria, sem alteração de runtime ou novo deploy produtivo.
+
+## Smoke produtivo
+
+Conferido em https://gotrendlabs.com.br em 07/11 às 23:54 UTC. [Relatório versionado](evidence/web-performance-20261107/production/report.json).
+
+- `/api/health`: HTTP 200, API/database ok.
+- `/desempenho/`: visitante recebe 302 para login com retorno seguro e `private, no-store`; adicionar `user_id=1` não concede acesso nem seleciona identidade.
+- `/api/users/me/performance`: ausência de token e token inválido retornam 401.
+- CSS e JavaScript da página: HTTP 200, SHA256 idêntico ao código integrado.
+- `/rankings/`: HTTP 200. Rotas, menu e links autenticados estão no template produtivo cujo hash foi conferido.
+- Catálogo produtivo: oito badges públicas com imagens clara e escura; os 16 arquivos responderam HTTP 200 com MIME de imagem. Nenhum ajuste de dados necessário para mostrar suas imagens.
+- Sem criação/alteração de contas, previsões, mercados, regras, permissões ou dados produtivos durante o smoke.
+
+Limite explícito: o acesso ao navegador do usuário estava indisponível; não houve smoke produtivo com sessão de usuário comum. Renderização autenticada, isolamento, papéis, estados, gráfico, imagens e Carregar mais foram validados localmente com 15 testes específicos e QA de 30 combinações mais dez com login real. Safari/Firefox/aparelhos físicos não exercitados. Isso não é pendência de implantação nem autoriza fabricar conta/dados produtivos.
+
+## Fontes da verdade e checklist
+
+Spec FEAT-REP-001 v0.8, arquitetura web, contrato descritivo, README, integração, workflow, changelogs, estado e lacunas reconciliados. A fatia web está concluída; a feature ampla continua parcial/draft por escopos independentes. [Revisão versionada](web-performance-branch-review-20261107.md): risco baixo/sem findings. Histórico de prévias/reversões preservado abaixo; para disponibilidade prevalece este estado final.
+
+O impedimento de espaço no Docker local permanece como limitação ambiental, mas o gate de build principal foi satisfeito no CI da PR, main e deploy. Não há bloqueio produtivo desta entrega. A primeira conferência auxiliar SSM `ddc655b6-1a35-4d36-b83d-5689d490c861` omitiu DJANGO_SETTINGS_MODULE apenas no processo de inspeção; script corrigido e reexecutado com sucesso, sem alteração no serviço.
+
+MCP não requer ajustes em ferramentas, schemas, contratos, autenticação, permissões, erros, replays ou orientação editorial; apenas consumidor Django do agregado existente. Nenhuma permissão inferida do Admin Ops. Mobile, snapshot OpenAPI e regras de domínio preservados; não há distribuição Android/iOS nesta entrega.
+
+## Histórico da preparação
 
 Preparação de fechamento em 07/11/2026, branch `feature/web-performance`, baseada em `origin/main` `92f43fdd227c80374a299d75465a044358360b3d`. Implementação testada localmente e commitada em `9573eded0efae22e79d8b0216a197c7799ea5d5e`; PR, integração e implantação ainda pendentes. Este recibo consolida o estado final e prevalece sobre os registros históricos das prévias e reversões no [aceite local](web-performance-acceptance-20261107.md).
 

@@ -1,3 +1,7 @@
+## 07/11/2026 — Desempenho web: gate remoto e implantação concluídos
+
+PR207/merge `b499dc5`, CI PR42425638720 e main/deploy42426478228 aprovados: 698 testes/três skips, builds e deploy SSM Success/0. O bloqueio de build da entrega está resolvido pelas execuções remotas; falta de espaço do Docker local permanece somente como limitação ambiental. Smoke confirmou commit/rota/serviços/hashes, health, visitante e 401. Sem migration, flag ou dados adicionais necessários. Permanece limite de cobertura: navegador autenticado produtivo indisponível, sem Safari/Firefox/aparelho físico; autenticação/dados/papéis foram validados localmente. Sem conta/fixture DEV em produção e sem impacto MCP/mobile. [Recibo final](../testing/web-performance-closeout-20261107.md). Entradas de preparação abaixo são históricas e não indicam implantação pendente.
+
 ## 07/11/2026 — Gates de integração de Desempenho web
 
 Fechamento solicitado pelo usuário, ainda sem PR/merge/deploy. O build Docker principal foi tentado novamente e permanece limitado por espaço local; nenhuma limpeza destrutiva realizada. Build completo obrigatório no CI antes do merge; acompanhar Actions da main/SSM e smoke para comprovar ativação. Sem migration, flag ou carga produtiva necessária. Fixture DEV/credenciais não serão publicadas. QA local limitado a Chrome com viewports móveis, sem Safari/Firefox/aparelho físico. [Recibo de fechamento](../testing/web-performance-closeout-20261107.md), WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT. Não confundir prévias locais concluídas com implantação.

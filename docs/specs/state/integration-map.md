@@ -1,3 +1,7 @@
+## 07/11/2026 — Desempenho web ativo
+
+PR207/merge `b499dc5` implantado pelo fluxo existente: menu/perfil → `/desempenho/` → cliente Django com token da própria sessão → `GET /users/me/performance`. Contrato e consumidores mobile/MCP preservados. Templates/rota/componentes e assets produtivos conferidos por hashes; perfil#badges, mercados por slug e ranking mantêm destinos existentes. Sem nova configuração, dados, migration, fila ou serviço. [Fechamento](../testing/web-performance-closeout-20261107.md).
+
 ## 07/11/2026 — Desempenho web: contrato e ativação final
 
 Menu/perfil → `/desempenho/` → cliente Django autenticado → `GET /users/me/performance` atual; nenhuma nova API. Histórico/gráfico ligam aos mercados reais, conquistas ao perfil#badges e ranking à rota existente. Revelação 5→10 exclusivamente local. Deploy web existente publica templates/collectstatic; nenhuma migration, flag, fila, serviço ou dado a carregar. MCP e Flutter mantêm contratos/consumidores. [Fechamento e gates](../testing/web-performance-closeout-20261107.md).
