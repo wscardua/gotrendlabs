@@ -38,6 +38,9 @@
 
 ## WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE
 
+- Validação da preparação18: 139 testes Flutter aprovados, analyze sem issues, diff limpo. Apenas versão e documentação alteradas; AAB depende da integração prévia da versão/build à main.
+- Retomada autorizada: usuário confirmou sucesso dos testes físicos locais e pediu publicação Google Play. Console conferida: Alpha17(1.2.3) ativo/disponível aos testadores, próxima versão1.2.4+18. Preparação em release/mobile-markets-1.2.4-build18 sobre main b42162b; inclui PRs196/199 e preserva release17. Estado atual: integrar versão/build antes de gerar AAB, depois validar origem/assinatura/URLs/16KB e enviar ao canal fechado existente. Recibo [release18](../testing/mobile-markets-release-18-20261107.md). Assinatura/Firebase reutilizados fora do Git, sem customizações.localtest; MCP sem impacto. Registros de pendência anteriores abaixo são históricos e não equivalem a publicação desta versão.
+
 - Tipo: distribuição Android; estado: pendente. Objetivo: publicar em canal apropriado um binário Flutter que inclua a descoberta e o histórico integrados pela PR #196, partindo de checkout limpo de `origin/main`, com versão/build integrada antes do build, validações de release e QA em dispositivo de testador.
 - Origem distribuída verificada em 07/11/2026: Google Play Closed testing Alpha ativo em `1.2.3+17` (06/11/2026); APK direto do site em `1.0.7`. Nenhum dos dois foi atualizado pelo deploy web/API das PRs #196/#197.
 - Próxima ação: seguir checklist de publicação Android e registrar commit, artefato/checksum, canal e resultado de instalação/sessão. Não declarar a nova UX mobile disponível em apps instalados até esse ciclo terminar.

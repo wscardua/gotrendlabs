@@ -210,3 +210,7 @@ Simplificação de navegação implementada na branch feature/markets-in-progres
 ### Correção da faixa Novo após review — 2026-11-07
 
 Correção do review: a faixa Novo expira automaticamente no limite de 48h em cards montados; timer de apresentação cancelado no descarte. Validação: 40 testes de cards/telas/repository e analyze aprovados. Sem nova release binária.
+
+## Preparação Google Play 1.2.4+18 — 07/11/2026
+
+Usuário confirmou testes físicos locais e autorizou distribuição da navegação Em andamento, recortes pessoais e faixa Novo. Canal Alpha17(1.2.3) observado ativo; nova versão/build1.2.4+18 deve integrar main antes do AAB assinado, com URLs produtivas e Firebase original. A customização.localtest do QA não integra a release. AAB/env/chaves permanecem ignorados; APK do site preservado. Evidências em docs/specs/testing/mobile-markets-release-18-20261107.md e WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE; envio/disponibilidade ainda não confirmados nesta preparação.
