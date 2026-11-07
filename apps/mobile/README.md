@@ -80,7 +80,7 @@ Specs principais:
 - mesa de posicao no detalhe: quando `viewer_position.has_position=true`, o ticket mostra escolha atual, movimentos ativos, total ativo, historico resumido e dois frames de acao fechados por padrao, `Aumentar posição` na mesma opcao e `Trocar escolha` para opcao diferente, sempre exigindo preview valido de `/position-preview` antes de confirmar em `/position-actions`
 - comprovantes assinados no detalhe autenticado: previsao inicial, cada reforco e cada revisao aparecem separadamente em todos os estados posteriores; cada item abre modal leigo/tecnico carregado por `/predictions/{id}/receipt`, sem calcular ou assinar no aparelho
 - `Hoje` com destaque/tendencias apenas de mercados abertos, ordenados por engajamento visual, e recorte pessoal `Sua mesa` para mercados negociados e favoritos
-- `Mercados` com filtros `Todos`, `Favoritos` e `Posicoes`, baseados nos flags autenticados da API
+- `Mercados` inicia em `Abertos`; recortes `Em apuração` (`locked`) e `Resolvidos` (`resolved`/`sealed`) preservam a ordem da API; `Favoritos` inclui encerrados e `Histórico` mostra previsões encerradas separadas de `Posições` ativas, usando status e flags autenticados da API
 - cards de mercado com prazo restante compacto em barra de regressao/urgencia na linha inferior do card, ao lado dos comentarios, mudando de cor conforme o fechamento se aproxima sem aumentar a altura dos cards
 - cards com selo de integridade circular apenas em icone no canto superior direito da imagem, preservando thumbnail, tooltip/semantics e cores distintas para registro, finalizacao, falha e historico selado
 - detalhe de mercado com hero visual nao navegavel, evitando empilhar a mesma rota ao tocar na imagem
