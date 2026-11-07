@@ -1,4 +1,4 @@
-{% load static %}
+{% load static i18n %}
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -80,6 +80,7 @@
             <div class="user-menu">
               {% if can_access_admin_ops %}<a class="admin-entry" href="{% url 'admin-ops-dashboard' %}"><span>Painel Administrativo</span><small>Acesso restrito</small></a>{% endif %}
               <a href="{% url 'profile' %}">Perfil e badges</a>
+              <a href="{% url 'performance' %}"{% if request.resolver_match.url_name == 'performance' %} aria-current="page"{% endif %}>{% translate "Desempenho" %}</a>
               <a href="{% url 'wallet' %}">Carteira educativa</a>
               <a href="{% url 'suggestion' %}">Sugerir mercado</a>
               <a href="{% url 'feedback' %}">Feedback/suporte</a>

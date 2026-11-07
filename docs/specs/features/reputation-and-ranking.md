@@ -1,10 +1,10 @@
 ---
 id: FEAT-REP-001
 titulo: "Reputação e ranking"
-versao: 0.7
+versao: 0.8
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-22
+ultima_atualizacao: 2026-11-07
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -29,7 +29,7 @@ Exibir desempenho acumulado do usuário e ranking social de forma compreensível
 - score de reputação
 - posição no ranking
 - histórico resumido de desempenho
-- contrato autenticado de desempenho para mobile com placar, historico auditavel de resolucoes e progressao
+- contrato autenticado de desempenho compartilhado por web e mobile, com placar, histórico auditável de resoluções e conquistas
 - ranking global por reputação persistida
 - ranking por categoria/subcategoria/evento recalculado a partir de previsões resolvidas
 - filtros públicos de categoria/subcategoria/evento
@@ -54,7 +54,7 @@ Usuário acompanha sua evolução e compara desempenho com outros participantes 
 
 - ranking reflete previsões resolvidas
 - perfil e tela de ranking usam o mesmo contrato base
-- tela mobile `Desempenho` usa `GET /users/me/performance` para exibir dados quentes de evolucao preditiva sem calcular delta, GT₵, ranking ou badges no app
+- telas web e mobile `Desempenho` usam `GET /users/me/performance` para exibir dados quentes de evolucao preditiva sem calcular delta, GT₵, ranking ou badges no app
 - visitantes podem consultar ranking, mas "Seu recorte" deve convidar login sem exibir posição fictícia
 - usuários autenticados veem seu recorte somente quando houver dados reais no ranking filtrado/global exibido
 - administradores, superusuários, bots e dados internos/dev não aparecem no ranking público
@@ -175,3 +175,32 @@ Mudanças nesta feature podem reclassificar histórico e exigem cuidado com comu
 ## 2026-10-09 — Imagens IA de badges
 
 FEAT-BADGE-IMAGE-001: geração no editor administrativo com contexto atual, candidata privada e confirmação no salvamento existente; não modifica elegibilidade, métricas ou propriedade histórica de conquistas. Apresentação de definição continua compartilhada pelas conquistas; contrato público preservado.
+
+## Página web Desempenho (2026-11-07)
+
+Escopo aprovado pelo pedido de implementação: `/desempenho/`, autenticada, no menu imediatamente após Perfil e badges e com atalho discreto no perfil. Reutiliza `GET /users/me/performance` a cada requisição, sem cache compartilhado nem fallback local. Não altera as pendências da feature ampla.
+
+- Placar: reputação, posição global (zero significa sem posição), resolvidas, precisão, sequência e categoria forte (vazia significa ainda não definida). Staff/superuser preservam a ocultação de métricas do perfil; bots não recebem posição pública fictícia.
+- Histórico: até dez resoluções retornadas, cinco visíveis inicialmente com Carregar mais para revelar as restantes; sem JavaScript, todas ficam acessíveis. Labels de resultado/GT₵ educativo e delta do backend, escolha/data disponíveis e link pelo slug real. Sem miniaturas extras, filtros, paginação remota ou cálculo de domínio local.
+- Lateral: total de badges e últimas conquistas reais, imagens clara/escura existentes, acesso a `/profile/#badges` e ranking. Sem próximos marcos inventados.
+- Vazio orienta explorar mercados; erro explícito oferece nova tentativa e nunca vira zero. 401 limpa sessão e usa login com retorno seguro; 403 preserva restrição. Respostas privadas sem armazenamento.
+- Layout usa tokens atuais, tabela desktop e linhas em cards no celular, texto além de cor, foco e i18n Django. Não há atualização parcial.
+- Aceite: testes de sessão, menu/papéis, renderização, estados, links e isolamento pessoal; QA desktop/celular claro/escuro. Mobile, API e MCP preservados. Integração e implantação seguem o workflow de fechamento, com aprovação da descrição antes de abrir a PR.
+
+### Refinamento visual após avaliação com dados
+
+Cabeçalho e placar compõem um painel único. Histórico prioriza largura do mercado, com colunas numéricas alinhadas à direita; no celular, resultado, reputação e GT₵ educativo ficam lado a lado abaixo do título/escolha/data. Conquistas usam linhas compactas com imagem e descrição, sem repetir o status já implícito na seção. Mesmos contratos, estados e condições por papel.
+
+### Apresentação incremental web (07/11/2026)
+
+Por pedido posterior do usuário, Desempenho limita a exibição inicial a cinco resoluções. Carregar mais revela cinco itens adicionais da resposta já recebida e desaparece ao esgotá-los; contador anuncia quantos itens do recorte estão visíveis. O contrato continua limitado a até dez resoluções recentes, sem nova paginação ou chamadas adicionais. Esta decisão substitui a exclusão anterior do controle visual nesta tela. Sem JS, todas as linhas permanecem acessíveis.
+
+### Gráfico de impactos recentes
+
+Pedido posterior do usuário autoriza gráfico compacto dos deltas individuais de `history`, substituindo a exclusão visual anterior somente para esse recorte. Não é gráfico de evolução do score acumulado: não há contrato histórico suficiente para ele. Ordenação da API é invertida apenas para leitura cronológica, e altura é proporcional ao maior delta absoluto recebido, sem modificar valores. Rótulos e sinais numéricos complementam as cores; cada barra oferece link acessível ao mercado. Oculto em vazio/erro e para os papéis cujo placar já é oculto. Nenhum ajuste MCP.
+
+### Estado final da fatia web e fechamento
+
+Tipografia de título, métricas, seções e tabela acompanha a Carteira educativa (IBM Plex Sans e tokens compartilhados). Cabeçalho reúne título/subtítulo e gráfico compacto de impactos, seguido do placar; conquistas usam as imagens reais do catálogo nos dois temas. Os experimentos com atalhos e identidade no cabeçalho foram revertidos e não fazem parte da entrega.
+
+Esta fatia não exige migration, flag, ajuste de dados ou novo serviço em produção; a ativação ocorre pelo deploy existente com publicação de templates e collectstatic. Fixtures e credenciais de avaliação permanecem locais e não são distribuídas. A feature ampla FEAT-REP-001 continua parcial/draft; seu fechamento global não é inferido da conclusão da página web. Estado de commit, PR, merge e implantação no [recibo de fechamento](../testing/web-performance-closeout-20261107.md).

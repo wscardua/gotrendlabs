@@ -1,10 +1,12 @@
 from django.shortcuts import redirect, render
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_safe
 
-from apps.web.django.accounts.api_client import AuthAPIError, get_activity, get_badge_catalog, get_badges, get_me, get_rankings, request_account_deletion, update_me
+from apps.web.django.accounts.api_client import AuthAPIError, get_activity, get_badge_catalog, get_badges, get_me, get_performance, get_rankings, request_account_deletion, update_me
 from apps.web.django.accounts.forms import ProfileForm
 from apps.web.django.accounts.referrals import referral_card_context
 from apps.web.django.accounts.session import api_login_required
-from apps.web.django.accounts.session import auth_token, auth_user, clear_auth_session, is_authenticated, store_auth_session
+from apps.web.django.accounts.session import auth_token, auth_user, clear_auth_session, is_authenticated, login_url_with_next, store_auth_session
 
 
 LOAD_MORE_STEP = 10
@@ -157,3 +159,35 @@ def rankings(request):
             "ranking_error": ranking_error,
         },
     )
+
+
+@never_cache
+@api_login_required
+@require_safe
+def performance(request):
+    payload = None
+    error = False
+    status = 200
+    try:
+        payload = get_performance(auth_token(request))
+    except AuthAPIError as exc:
+        if exc.status_code == 401:
+            clear_auth_session(request)
+            return redirect(login_url_with_next(request, request.path))
+        error = True
+        status = 403 if exc.status_code == 403 else 503
+    user = auth_user(request)
+    # Visual scale only: domain deltas remain exactly as supplied by FastAPI.
+    recent_history = list(reversed(payload["history"])) if payload else []
+    chart_scale = max((abs(item["reputation_delta"]) for item in recent_history), default=0) or 1
+    reputation_chart = [
+        {**item, "bar_height": round(abs(item["reputation_delta"]) / chart_scale * 36)}
+        for item in recent_history
+    ]
+    return render(request, "profiles/performance.html", {
+        "performance": payload,
+        "reputation_chart": reputation_chart,
+        "performance_error": error,
+        "performance_forbidden": status == 403,
+        "show_performance_scorecard": not (user.get("is_staff") or user.get("is_superuser")),
+    }, status=status)

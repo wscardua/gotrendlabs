@@ -1,10 +1,12 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% block title %}GoTrendLabs | Perfil{% endblock %}
 {% block content %}
 <main class="shell page-grid">
   <section class="panel">
     <div class="page-kicker-row">{% include "components/context_back.html" %}<span class="eyebrow">Perfil público</span></div>
     <h1 class="large-title">{{ profile.user.display_name|default:viewer.name }}</h1>
+    <a class="btn small ghost" href="{% url 'performance' %}">{% translate "Ver desempenho" %}</a>
     {% if not can_access_admin_ops %}
       <div class="metrics">
         <div class="metric"><strong>{{ profile.reputation.reputation_score|default:viewer.reputation }}</strong><span>reputação pública</span></div>
@@ -30,7 +32,7 @@
         <div class="actions full"><button class="btn primary" type="submit">Salvar perfil</button></div>
       </form>
     </section>
-    <div class="badge-section">
+    <div class="badge-section" id="badges">
       <div>
         <h3>Badges</h3>
         <p class="muted">Conquistas do perfil, liberadas por participação, precisão e contribuição para a comunidade.</p>
@@ -39,12 +41,7 @@
     <div class="badge-grid badge-grid-profile">
       {% for badge in badges %}
         <article class="badge-card{% if badge.status == 'earned' %} earned{% else %} locked{% endif %}">
-          {% if badge.image_url %}
-            <img class="badge-image badge-image-light{% if badge.image_dark_url %} has-dark{% endif %}" src="{{ badge.image_url }}" alt="">
-            {% if badge.image_dark_url %}<img class="badge-image badge-image-dark" src="{{ badge.image_dark_url }}" alt="">{% endif %}
-          {% else %}
-            <span class="badge-icon">{% if badge.status == 'earned' %}✓{% else %}–{% endif %}</span>
-          {% endif %}
+          {% include "components/badge_image.html" %}
           <div class="badge-copy">
             <strong>{{ badge.name }}</strong>
             <span>{{ badge.description }}</span>

@@ -1,3 +1,120 @@
+## WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT
+
+- Tipo: fechamento de implementation-cycle / FEAT-REP-001 v0.8, fatia web.
+- Status: `em_andamento`; implementação commitada/testada/revisada, aguardando aprovação da PR; sem PR/merge/deploy nesta etapa.
+- Objetivo: consolidar comportamento final, specs/memória, commit, revisão e fluxo GitHub até implantação autorizada.
+- Base: origin/main `92f43fdd227c80374a299d75465a044358360b3d`; branch local `feature/web-performance` deve permanecer. Checkout original e tarefas alheias preservados.
+- Artefatos: cliente/view/rota/templates/assets web, componente de badge compartilhado, testes e docs de reputação/arquitetura/contrato/estado/aceite/review/README; [recibo vigente](../testing/web-performance-closeout-20261107.md).
+- Decisões finais: gráfico de impactos individuais, cinco resoluções iniciais/revelação até dez sem rede, imagens reais de badges e tipografia alinhada à Carteira. Experimentos revertidos não integram a entrega. Feature ampla permanece parcial/draft.
+- Arquitetura/segurança: API existente com token pessoal e no-store; sem ORM para desempenho, regra local, banco/flag/serviço novo ou ADR/migration. Preservadas condições administrativas.
+- MCP: nenhum ajuste em tools, schemas, contratos, autenticação, permissões, erros, replays ou editorial; apenas consumidor web novo. Nenhuma permissão inferida de ações humanas. Mobile/OpenAPI inalterados.
+- Gates locais: 698 testes Python/3 skips (288,199 s), 15 específicos, 30 combinações de QA + dez autenticadas, comparação tipográfica, JS/OpenAPI/checks/collectstatic/Dockerfile e build MCP aprovados. Build principal local novamente bloqueado por espaço no Docker; sem remoção de dados/imagens do usuário. CI da PR deve aprovar build e suíte completa antes do merge.
+- Publicação: usuário exige mostrar título/descrição em português e obter aprovação antes de abrir PR. Fluxo posterior pelo MCP GitHub; Actions/SSM monitorados até conclusão e smoke. Confirmados ENABLE_PROD_DEPLOY=1 e DEPLOY_BRANCH=main.
+- Ativação: deploy existente/collectstatic; sem transferência de fixtures ou credenciais locais. Não declarar integração/distribuição antes das evidências.
+- Checklist: spec/contrato/arquitetura/testes/estado/changelogs/mapa/README reconciliados; execução final registrada no recibo. Sem ADR por preservar fronteiras. Histórico e reversões mantidos.
+- Iniciado/atualizado em: 2026-11-07.
+- Commit funcional/documental: `9573eded0efae22e79d8b0216a197c7799ea5d5e`; review do diff versionado com risco baixo/sem findings, registrado em teste/recibo. Complemento documental registra este estado.
+- Retomada: obter aprovação da descrição, publicar branch/abrir PR pelo MCP; depois CI, merge, deploy e smoke.
+
+## WFLOW-20261107-WEB-PERFORMANCE-TYPOGRAPHY
+
+- Status: `concluido`; padronização tipográfica pedida pelo usuário.
+- Evidência: computed styles em sessão autenticada mostram IBM Plex Sans em Carteira/Desempenho; diferenças eram escala e peso. Título agora usa `.large-title` compartilhado; métricas, seções e tabela seguem as medidas da Carteira.
+- Artefatos: CSS/template, estado/changelog/aceite. Check Django/diff, comparação no navegador e QA local em cinco larguras/dois temas. Serviço web reiniciado.
+- MCP/arquitetura: sem mudança de ferramentas, schemas, contratos, autenticação, permissões, erros/replays/editorial ou domínio; sem ADR/migration/deploy.
+- Data: 2026-11-07. Retomada: avaliação visual; bloqueio de build principal original preservado.
+
+## WFLOW-20261107-WEB-PERFORMANCE-IMPACT-CHART
+
+- Refinamento posterior solicitado: retorno/eyebrow passam para a coluna do título; gráfico reduzido a 88 px de área de barras, legenda em linha e placar aproximado. Remove altura vazia criada pelo layout anterior. QA local em cinco larguras/dois temas e checks aprovados; sem novo impacto MCP/API. CSS `20261107-chart-fit`, web reiniciado.
+
+- Status: `concluido`, implementação local da solicitação de gráfico após reversão da identidade.
+- Escopo: gráfico compacto à direita do título; no celular abaixo do subtítulo. Até dez deltas individuais, mais antigos à esquerda, positivos acima de zero/negativos abaixo, valores textuais e links acessíveis para mercados. Ausente para erro/vazio e contas com placar oculto.
+- Arquitetura: FastAPI continua fonte do delta; Django apenas normaliza altura gráfica, sem recompor score ou inventar evolução acumulada. Nenhum endpoint/dependência novo.
+- Artefatos: view/template/CSS, testes, spec/arquitetura e memória operacional.
+- Testes: 15 testes web aprovados; QA autenticado em cinco larguras/dois temas com dez barras e três impactos negativos da fixture. Check Django/diff, web reiniciado e CSS versionado.
+- MCP: sem mudança de ferramentas, schemas, contratos, autenticação, permissões, erros, replays ou orientação editorial. Sem ADR/migration/deploy; bloqueio original de build principal preservado.
+- Data: 2026-11-07. Retomada: avaliação visual do usuário.
+
+## WFLOW-20261107-WEB-PERFORMANCE-IDENTITY-REVERT
+
+- Status: `concluido`; reversão solicitada do bloco de identidade.
+- Substitui o resultado visual de WFLOW-20261107-WEB-PERFORMANCE-IDENTITY, preservando o histórico.
+- Artefatos: template/CSS e memória operacional; outros ajustes preservados. Novo gráfico apenas sugerido, fora desta reversão.
+- Validação: check Django/diff e reinício web local. Sem alteração API/MCP/permissões/erros/replays/editorial; sem ADR/deploy.
+- Data: 2026-11-07. Retomada: definir eventual gráfico com dados existentes.
+
+## WFLOW-20261107-WEB-PERFORMANCE-IDENTITY
+
+- Status: `concluido`, ajuste visual autorizado pelo usuário.
+- Objetivo: avatar/nome/@handle à direita do título, abaixo do subtítulo no celular. Avatar de iniciais conforme componente atual; fonte é o contexto autenticado existente.
+- Artefatos: template/CSS, estado/changelog/aceite; sem nova integração, contrato, regra, migração ou ADR.
+- Validação: Django check/diff check e QA autenticado em cinco larguras e dois temas. CSS versionado e web local reiniciado.
+- MCP: sem alteração de ferramentas, schemas, autenticação, permissões, erros, replays ou editorial. Sem deploy; bloqueio de build principal original preservado.
+- Data: 2026-11-07. Retomada: avaliação visual do usuário no ambiente local.
+
+## WFLOW-20261107-WEB-PERFORMANCE-HEADER-REVERT
+
+- Status: `concluido`; reversão solicitada pelo usuário dos atalhos do cabeçalho.
+- Substitui o resultado visual de WFLOW-20261107-WEB-PERFORMANCE-HEADER-ACTIONS, preservando seu histórico.
+- Artefatos: template/CSS de desempenho e memória operacional. Demais mudanças preservadas.
+- Validação: Django check/diff check; web local reiniciado para limpar cache de template.
+- MCP/API/permissões/erros/replays/editorial: sem impacto, apenas remoção dos dois links do cabeçalho. Sem ADR/deploy.
+- Data: 2026-11-07. Retomada: avaliação do layout anterior no ambiente local.
+
+## WFLOW-20261107-WEB-PERFORMANCE-HEADER-ACTIONS
+
+- Tipo/status: ajuste visual local, `concluido`.
+- Objetivo: preencher a área direita do título com Explorar mercados e Ver ranking, conforme proposta aceita pelo usuário; empilhar abaixo do subtítulo no celular.
+- Artefatos: template/CSS de desempenho, estado e aceite.
+- Validação: Django check e diff check aprovados; QA com sessão local em cinco larguras e dois temas. Serviço web reiniciado, CSS versionado.
+- MCP: sem ajuste de ferramentas, schemas, contratos, autenticação, permissões, erros, replays ou orientação editorial; apenas atalhos para rotas existentes.
+- Checklist: estado/changelog/aceite atualizados; sem ADR ou mudança de integração. Bloqueio de espaço para build principal permanece no workflow original. Sem deploy.
+- Iniciado/atualizado/encerrado em: 2026-11-07. Retomada: avaliação visual do usuário.
+
+## WFLOW-20261107-WEB-PERFORMANCE-LOAD-MORE
+
+- Tipo: alteração de apresentação solicitada pelo usuário.
+- Status: `concluido` (escopo local)
+- Objetivo: cinco resoluções iniciais, Carregar mais para revelar as restantes já recebidas (até dez).
+- Artefatos: template, CSS/JS específicos de desempenho, testes web/navegador, spec/arquitetura/contrato descritivo e memória operacional.
+- Arquitetura/MCP: apenas apresentação sobre GET existente; sem paginação remota, cálculos, novas ferramentas/schemas, permissões, autenticação, erros, replays ou orientação editorial. Sem ADR/migration.
+- Acessibilidade: botão nativo, contador aria-live, foco no primeiro novo link, todos os itens acessíveis sem JS; sem spinner pois não há rede.
+- Validação: 13 testes Django, 30 combinações de largura/estado/tema, revelação 5→10 por teclado, contador/foco, ausência de chamadas adicionais e leitura sem JS aprovados; serviço web local reiniciado. Build principal mantém bloqueio de espaço registrado no workflow original. Sem deploy.
+- Checklist: specs, contrato descritivo, arquitetura, estado, changelogs e aceite atualizados; sem mudança de integração.
+- Retomada: avaliação do usuário no ambiente local.
+- Iniciado/atualizado/encerrado em: 2026-11-07.
+
+## WFLOW-20261107-WEB-PERFORMANCE-LAYOUT
+
+- Tipo: ajuste visual solicitado após avaliação com dados locais.
+- Status: `concluido` (refinamento visual local)
+- Objetivo: melhorar encaixe, hierarquia, densidade e alinhamento de Desempenho.
+- Artefatos: template performance, CSS isolado, aceite e memória operacional.
+- Decisão: painel único de cabeçalho/placar; título 32/28 px; histórico com mercado mais largo e valores alinhados à direita; badges compactas, sem repetir Conquistada em cada linha; resultados móveis em três colunas abaixo do mercado. Temas/tokens e dez linhas preservados.
+- Arquitetura/MCP: somente apresentação; nenhum novo dado, cálculo, contrato, tool/schema, autenticação, permissão, erro, replay ou orientação editorial. Sem ADR/migration.
+- Validação: 12 testes específicos aprovados; 30 combinações com fixtures e dez com sessão local real aprovadas (320 a 1440 px, claro/escuro), sem overflow. Inspeção visual desktop e celular realizada. Template em cache exigiu reinício do web local; CSS recebeu versão nova.
+- Limites: build principal continua bloqueado por espaço no workflow original; sem deploy/publicação.
+- Checklist: spec, aceite, changelogs e status atualizados; sem mudança de integração ou ADR. Retomada: avaliação do usuário no ambiente local.
+- Iniciado/atualizado/encerrado em: 2026-11-07.
+
+## WFLOW-20261107-WEB-PERFORMANCE
+
+- Tipo: `implementation-cycle` / alteração de FEAT-REP-001.
+- Status: `bloqueado` (somente gate de build da imagem principal; implementação local pronta)
+- Objetivo: página autenticada `/desempenho/` consumindo o agregado existente, sem cálculo local.
+- Base: origin/main `92f43fd`; branch `feature/web-performance`, worktree isolado; alterações originais preservadas.
+- Artefatos: cliente API, profiles/views/template, navegação, CSS, testes, spec reputação, arquitetura web, contrato descritivo e estado.
+- Arquitetura/segurança: FastAPI fonte de verdade; token da própria sessão, GET a cada acesso, sem cache pessoal compartilhado, 401 limpa sessão e retorna ao login. Sem ORM ou fallback para desempenho. Staff/superuser mantêm ocultação do placar conforme perfil; bots usam dados retornados, sem posição pública inventada.
+- MCP: ferramentas, schemas, contratos, autenticação, permissões, erros, replays e orientação editorial não precisam de ajustes: apenas novo consumidor web do endpoint existente. Nenhuma permissão inferida do Admin Ops; nenhum ADR necessário.
+- Testes previstos: acesso/sessão, menu/papéis, dados, vazios/erro, links, isolamento por token, responsividade e temas.
+- Etapa atual: código, documentação, 12 testes específicos e QA de 30 combinações concluídos. Check Django, OpenAPI, quatro checks JS, collectstatic, Dockerfile check e build MCP aprovados; suíte completa aprovada (693 testes, três skips), detalhada no [aceite](../testing/web-performance-acceptance-20261107.md). Sem deploy/publicação.
+- Bloqueio: build principal falha no apt-get por falta de espaço no Docker. Registrado em known-gaps; não foram apagados volumes/imagens do usuário.
+- Checklist universal: spec/contrato descritivo/arquitetura revisados, testes executáveis criados, estado/changelogs/mapa/aceite atualizados; sem ADR por preservar fronteiras. Limitações de QA e build registradas explicitamente.
+- Iniciado/atualizado em: 2026-11-07
+- Retomada: disponibilizar espaço no Docker e reexecutar o build principal antes de publicação; concluir o gate sem refazer implementação.
+- Reversão lógica: retirar rota/menu/template/CSS de desempenho e restaurar imagem inline do perfil, preservando histórico documental e domínio.
+
 ## WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT
 
 - Tipo: `implementation-cycle` / fechamento e publicação

@@ -68,6 +68,7 @@ urlpatterns = [
     path("wallet/", wallet_views.wallet_home, name="wallet"),
     path("wallet/recharge-request/", wallet_views.request_recharge, name="wallet-recharge-request"),
     path("profile/", profile_views.profile, name="profile"),
+    path("desempenho/", profile_views.performance, name="performance"),
     path("rankings/", profile_views.rankings, name="rankings"),
     path("admin-ops/", admin_ops_views.dashboard, name="admin-ops-dashboard"),
     path("admin-ops/analytics/", admin_ops_views.analytics, name="admin-ops-analytics"),

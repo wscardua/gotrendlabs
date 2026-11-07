@@ -137,6 +137,10 @@ def get_me(token):
     return _request("GET", "/users/me", token=token)
 
 
+def get_performance(token):
+    return _request("GET", "/users/me/performance", token=token)
+
+
 def get_wallet(token):
     return _request("GET", "/users/me/wallet", token=token)
 
