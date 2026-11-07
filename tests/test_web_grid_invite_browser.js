@@ -27,6 +27,12 @@ const destinations = ['/suggestion/','/rankings/','/badges/','/#resolvidos','/co
       await page.waitForFunction(()=>window.gtlMarketGridInvite && document.querySelector('[data-market-grid-invite]').dataset.selection);
       await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
     }
+    await page.goto(`${url}/categories/`);
+    assert.deepEqual(await page.locator('[data-filter]').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-pressed'))),['true','false','false']);
+    await page.locator('[data-filter]').nth(1).click();
+    assert.deepEqual(await page.locator('[data-filter]').evaluateAll(buttons=>buttons.map(b=>b.getAttribute('aria-pressed'))),['false','true','false']);
+    assert.equal(await page.locator(invite).count(),0);
+    console.log('PASS: Categories filter accessibility preserved without a feed target');
     // Actual CSS grid + visible nodes, not a duplicate layout function.
     for (const [width, columns] of [[1366,3],[1000,2],[390,1]]) {
       await page.setViewportSize({width,height:1000});

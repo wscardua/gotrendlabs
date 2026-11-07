@@ -41,9 +41,10 @@ class PreviewHandler(SimpleHTTPRequestHandler):
         if parsed.path.startswith("/static/"):
             self.path = "/" + parsed.path.removeprefix("/static/")
             return super().do_GET()
-        if parsed.path in {"/", "/fragment"}:
+        if parsed.path in {"/", "/fragment", "/categories/"}:
             count = int(parse_qs(parsed.query).get("count", [5])[0])
-            html = preview(count)
+            html = (render_to_string("core/categories.html", {"markets": [], "is_guest": True})
+                    if parsed.path == "/categories/" else preview(count))
             if parsed.path == "/fragment":
                 html = html[html.index('<section class="home-market-board"'):html.rindex('</section>') + len('</section>')]
             data = html.encode()

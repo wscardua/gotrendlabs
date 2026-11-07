@@ -333,15 +333,15 @@ function hydrateMarketBoards(changedRoot) {
   $$("[data-market-card]").forEach((card, index) => {
     if (card.dataset.originalOrder === undefined) card.dataset.originalOrder = String(index);
   });
-  $$("[data-filter-group][data-filter-target]").forEach((group) => {
-    const list = $(group.dataset.filterTarget);
+  $$("[data-filter-group]").forEach((group) => {
+    const list = group.dataset.filterTarget ? $(group.dataset.filterTarget) : null;
     const wasHydrated = hydratedMarketFilterGroups.has(group);
     if (wasHydrated && !(changedRoot && (changedRoot === list || changedRoot.contains?.(list)))) return;
     hydratedMarketFilterGroups.add(group);
     const active = (!wasHydrated && window.location.hash === "#resolvidos" ? $("[data-filter='resolved']", group) : null) || $(".filter.active[data-filter]", group) || $("[data-filter]", group);
     if (active) {
       syncFilterPressedState(group, active);
-      sortMarketList(group, active.dataset.filter || "ongoing", wasHydrated ? list?.dataset.marketVisibleCount : undefined);
+      if (list) sortMarketList(group, active.dataset.filter || "ongoing", wasHydrated ? list.dataset.marketVisibleCount : undefined);
     }
   });
 }
