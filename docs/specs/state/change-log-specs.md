@@ -1,6 +1,6 @@
 ## 2026-11-07 — FEAT-MARKET-001 v0.14: descoberta de abertos (integração)
 
-A spec do feed e as specs mobile registram descoberta inicial somente em `open`, apuração em `locked`, resultados com `resolved`/`sealed`, preservação de favoritos e histórico pessoal. O contrato `GET /markets` e o lifecycle permanecem vigentes sem mudança; web ordena por visualizações e mobile preserva a ordem da API no browse. Testes JS integram o CI. PR #196 integrada e web/API implantados; uma correção do versionamento dos assets estáticos está em andamento após detecção de cache antigo no navegador. O app Flutter exige release separada. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST permanece em validação produtiva; FEAT-MARKET-001 ampla segue parcial por lacunas independentes.
+A spec do feed e as specs mobile registram descoberta inicial somente em `open`, apuração em `locked`, resultados com `resolved`/`sealed`, preservação de favoritos e histórico pessoal. O contrato `GET /markets` e o lifecycle permanecem vigentes sem mudança; web ordena por visualizações e mobile preserva a ordem da API no browse. Testes JS integram o CI. PR #196 integrou o código, e PR #197 corrigiu cache de assets; CI/deploy e smoke produtivo web passaram. O app Flutter exige release separada em WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST concluiu a implantação web; FEAT-MARKET-001 ampla segue parcial por lacunas independentes. [Recibo](../testing/market-discovery-production-closeout-20261107.md).
 
 ## 05/11/2026 — diagnóstico de pendências editoriais
 
