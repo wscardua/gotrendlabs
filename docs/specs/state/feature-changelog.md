@@ -1,3 +1,7 @@
+## 2026-11-07 — convite contextual web em produção
+
+PR205/merge4b9b8a5, CI e deploy aprovados. 683 testes Python/três skips em PR/main, regressões JS e smoke produtivo aprovados. Cinco convites com assets próprios, ocupação responsiva e estado estável ativos; Categorias preserva aria-pressed e os smoke tests de cancelados não dependem de tag literal. Sem dados/configuração extra, mudanças mobile ou ajustes MCP. [Recibo/evidências](../testing/web-grid-invite-closeout-20261107.md). Branch local preservada.
+
 ## 2026-11-07 — convite web: regressão de testes HTML corrigida
 
 PR205/CI42416671503 identificou dois testes de home acoplados à tag antiga. Substituído split literal por assertNotContains na resposta completa, preservando a exclusão de cancelados. Quatro cenários Django selecionados aprovados em PostgreSQL isolado; aguardando CI completo antes do merge. Runtime/MCP/mobile preservados. [Recibo](../testing/web-grid-invite-closeout-20261107.md).

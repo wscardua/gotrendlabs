@@ -1,18 +1,21 @@
 ## WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT
 
 - Tipo: `implementation-cycle` / fechamento e publicação
-- Status: `em_andamento`
+- Status: `concluido`
 - Feature alvo: FEAT-MARKET-001 v0.17, convite contextual exclusivamente web.
-- Objetivo: reconciliar fontes da verdade, commitar a implementação, revisar o intervalo e preparar PR em português. Pedido do usuário amplia o escopo anterior para integração/deploy.
-- Etapa atual: commits 1fd83a0/68b60c4 preparados; review final sem findings abertos, testes/checks aprovados e CI de sorteio adicionado. [Recibo vigente](../testing/web-grid-invite-closeout-20261107.md). PR205 aberta com descrição aprovada pelo usuário; primeiro CI detectou dois testes acoplados ao markup antigo, corrigidos com quatro testes Django isolados aprovados. Aguarda nova execução completa antes de merge.
-- Base: origin/main d93d5b918cba0b9802dfc2900b5882700b3d9030; branch feature/web-market-grid-invite preservada.
-- Artefatos: feature/spec, templates/assets/JS/CSS web, testes, CI e memória operacional; app e documentação/contratos mobile excluídos.
-- Publicação: usuário aprovou texto e continuidade; PR205 aberta. Acompanhar CI corrigido, merge, Actions de main/deploy e smoke produtivo. Não declarar implantação antes das evidências.
-- Produção: sem migração/configuração nova prevista; deploy normal deve publicar templates e assets. Dados sintéticos e ajustes feitos no banco local não pertencem à entrega.
-- MCP: sem mudança de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial; apresentação/navegação nos fluxos web existentes.
-- Testes/review: [review versionado](../testing/web-grid-invite-branch-review-20261107.md), dois Django, quatro Node, navegador (54 combinações + opções/HTMX/storage/teclado/Categorias) e checks Django/OpenAPI/JS/YAML/diff aprovados.
-- Iniciado/atualizado em: 2026-11-07
-- Retomada: acompanhar nova execução do CI da PR205; após sucesso, merge, Actions/deploy e smoke produtivo. ENABLE_PROD_DEPLOY=1 confirmado, sem ativação manual necessária prevista.
+- Objetivo: reconciliar fontes da verdade, commitar/revisar a implementação e integrar/publicar pelo fluxo padrão autorizado.
+- Etapa atual: PR205 integrada em 4b9b8a5dd7197b22a00f2954e452b85899e065c2; CI da PR42417621167 e main/deploy42418237208 aprovados, 683 testes/três skips em ambos. [Recibo final](../testing/web-grid-invite-closeout-20261107.md).
+- Base: origin/main d93d5b918cba0b9802dfc2900b5882700b3d9030; commits 1fd83a0/68b60c4/8b87b69/d65f4e0. Branch local feature/web-market-grid-invite e checkout original preservados.
+- Artefatos: spec, templates/assets/JS/CSS web, testes, CI e memória operacional; app/documentação/contratos mobile preservados.
+- Publicação: título/descrição aprovados explicitamente antes da PR; abertura/merge pelo MCP GitHub. Primeiro CI detectou dois testes de tag literal, corrigidos e revalidados em PostgreSQL isolado antes do CI completo aprovado.
+- Produção: SSM8cba2537-c7b2-4825-bd76-046b5d1d80a8 Success/0; conferência read-only55bf9d14-2b3b-4347-a42d-68440aa76675 confirma commit integrado e serviços ativos/MCP healthy. Sem migration/configuração/dados adicionais da feature.
+- Smoke: health/API/database ok, nove assets com SHA256 exato, cinco opções/dois temas, 15 cenários de largura, destinos e filtro Resolvidos aprovados. Quatro open com convite de duas colunas; apuração cinco locked e histórico seis sealed preservados; sem fixtures DEV em PRD ou erros JS.
+- MCP: sem mudança de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial. Sem concessão inferida de ações humanas.
+- Testes/review: [review](../testing/web-grid-invite-branch-review-20261107.md), aceite local (54 combinações + HTMX/storage/teclado/Categorias), quatro Django selecionados e CI completo aprovados. Limitações de amostra produtiva/Safari/aparelhos físicos registradas no recibo.
+- Iniciado/atualizado/encerrado em: 2026-11-07
+- Retomada: nenhuma pendência funcional desta fatia; recibo final consolida integração, implantação e smoke. FEAT-MARKET-001 ampla segue parcial por lacunas independentes.
+- Checklist: fonte da verdade/estado/changelogs/aceite/review/integração alinhados; sem novo ADR/contrato ou dependência de serviço. Ajuste produtivo manual não necessário.
+- Reversão lógica: reverter implementação por PR/deploy, mantendo histórico e banco; nunca transportar as fixtures locais para produção.
 
 ## WFLOW-20261107-WEB-GRID-INVITE
 

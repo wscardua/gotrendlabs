@@ -1,3 +1,7 @@
+## 2026-11-07 — fechamento produtivo do convite web
+
+Recibo, spec do feed, estado e changelog alinhados à integração PR205/merge4b9b8a5 e ao sucesso de CI/main/deploy/smoke. Checksums e capturas produtivas versionados; preparação anterior preservada como histórico, sem declarar pendência já encerrada. MCP/mobile sem alteração. [Fonte da verdade](../testing/web-grid-invite-closeout-20261107.md).
+
 ## 2026-11-07 — fonte da verdade do fechamento do convite web
 
 Acrescentados recibo de fechamento, review versionado e mapa de navegação web; estado distingue implementação commitada/testada da integração/deploy ainda pendentes. FEAT-MARKET-001 v0.17 mantém escopo exclusivamente web e status amplo parcial. Sem mudança de contratos ou documentação mobile. WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT.
