@@ -1,10 +1,10 @@
 ## WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT
 
 - Tipo: fechamento de implementation-cycle / FEAT-REP-001 v0.8, fatia web.
-- Status: `em_andamento`; preparação local, sem PR/merge/deploy nesta etapa.
+- Status: `em_andamento`; implementação commitada/testada/revisada, aguardando aprovação da PR; sem PR/merge/deploy nesta etapa.
 - Objetivo: consolidar comportamento final, specs/memória, commit, revisão e fluxo GitHub até implantação autorizada.
 - Base: origin/main `92f43fdd227c80374a299d75465a044358360b3d`; branch local `feature/web-performance` deve permanecer. Checkout original e tarefas alheias preservados.
-- Artefatos: cliente/view/rota/templates/assets web, componente de badge compartilhado, testes e docs de reputação/arquitetura/contrato/estado/aceite; [recibo vigente](../testing/web-performance-closeout-20261107.md).
+- Artefatos: cliente/view/rota/templates/assets web, componente de badge compartilhado, testes e docs de reputação/arquitetura/contrato/estado/aceite/review/README; [recibo vigente](../testing/web-performance-closeout-20261107.md).
 - Decisões finais: gráfico de impactos individuais, cinco resoluções iniciais/revelação até dez sem rede, imagens reais de badges e tipografia alinhada à Carteira. Experimentos revertidos não integram a entrega. Feature ampla permanece parcial/draft.
 - Arquitetura/segurança: API existente com token pessoal e no-store; sem ORM para desempenho, regra local, banco/flag/serviço novo ou ADR/migration. Preservadas condições administrativas.
 - MCP: nenhum ajuste em tools, schemas, contratos, autenticação, permissões, erros, replays ou editorial; apenas consumidor web novo. Nenhuma permissão inferida de ações humanas. Mobile/OpenAPI inalterados.
@@ -13,7 +13,8 @@
 - Ativação: deploy existente/collectstatic; sem transferência de fixtures ou credenciais locais. Não declarar integração/distribuição antes das evidências.
 - Checklist: spec/contrato/arquitetura/testes/estado/changelogs/mapa/README reconciliados; execução final registrada no recibo. Sem ADR por preservar fronteiras. Histórico e reversões mantidos.
 - Iniciado/atualizado em: 2026-11-07.
-- Retomada: commit/review e apresentar PR para aprovação; depois integração/deploy e smoke.
+- Commit funcional/documental: `9573eded0efae22e79d8b0216a197c7799ea5d5e`; review do diff versionado com risco baixo/sem findings, registrado em teste/recibo. Complemento documental registra este estado.
+- Retomada: obter aprovação da descrição, publicar branch/abrir PR pelo MCP; depois CI, merge, deploy e smoke.
 
 ## WFLOW-20261107-WEB-PERFORMANCE-TYPOGRAPHY
 

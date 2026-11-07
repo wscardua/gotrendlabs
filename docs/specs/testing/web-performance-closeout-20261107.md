@@ -2,7 +2,7 @@
 
 ## Estado atual
 
-Preparação de fechamento em 07/11/2026, branch `feature/web-performance`, baseada em `origin/main` `92f43fdd227c80374a299d75465a044358360b3d`. Implementação testada localmente e preparada para commit; PR, integração e implantação ainda pendentes. Este recibo consolida o estado final e prevalece sobre os registros históricos das prévias e reversões no [aceite local](web-performance-acceptance-20261107.md).
+Preparação de fechamento em 07/11/2026, branch `feature/web-performance`, baseada em `origin/main` `92f43fdd227c80374a299d75465a044358360b3d`. Implementação testada localmente e commitada em `9573eded0efae22e79d8b0216a197c7799ea5d5e`; PR, integração e implantação ainda pendentes. Este recibo consolida o estado final e prevalece sobre os registros históricos das prévias e reversões no [aceite local](web-performance-acceptance-20261107.md).
 
 O usuário autorizou o fluxo commit → PR → merge → acompanhamento do GitHub Actions/produção, com **aprovação prévia do título e descrição antes da abertura da PR**. Branch local e alterações do checkout original devem ser preservadas.
 
@@ -39,7 +39,7 @@ Mobile não impactado: `apps/mobile/lib/src/features/performance/` permanece con
 
 ## Integração e ativação previstas
 
-1. Commitar a implementação e documentação na branch preservada; revisar o intervalo completo contra a main remota.
+1. Implementação/documentação commitadas na branch preservada; [review do intervalo](web-performance-branch-review-20261107.md) contra a main remota concluído, risco baixo/sem findings. Recibo/review complementados em commit documental posterior.
 2. Mostrar título/descrição da PR em português e aguardar a aprovação solicitada pelo usuário.
 3. Publicar a branch e abrir PR pelo MCP GitHub; acompanhar os checks completos e corrigir falhas antes do merge.
 4. Integrar na main após CI aprovado e acompanhar o workflow `GoTrendLabs CI and Deploy` da main. Variáveis conferidas: `ENABLE_PROD_DEPLOY=1`, `DEPLOY_BRANCH=main`.

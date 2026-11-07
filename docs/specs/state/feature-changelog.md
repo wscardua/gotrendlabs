@@ -1,6 +1,6 @@
 ## 07/11/2026 — Consolidação e fechamento de Desempenho web
 
-FEAT-REP-001 v0.8: comportamento final documentado para a página autenticada, incluindo gráfico de impactos individuais, revelação local de cinco para até dez resoluções, badges com imagens e tipografia da Carteira. Histórico de experimentos/reversões preservado. Integração/deploy ainda pendentes; descrição da PR requer aprovação do usuário. Sem novo contrato/API, regra, migration, release mobile ou ajuste MCP. [Recibo](../testing/web-performance-closeout-20261107.md).
+FEAT-REP-001 v0.8: comportamento final documentado para a página autenticada, incluindo gráfico de impactos individuais, revelação local de cinco para até dez resoluções, badges com imagens e tipografia da Carteira. Histórico de experimentos/reversões preservado. Implementação commitada em `9573ede` e revisada sem findings, com 698 testes Python/3 skips e QA aprovados. Integração/deploy ainda pendentes; descrição da PR requer aprovação do usuário. Sem novo contrato/API, regra, migration, release mobile ou ajuste MCP. [Recibo](../testing/web-performance-closeout-20261107.md).
 
 ## 07/11/2026 — Tipografia alinhada à Carteira educativa
 
