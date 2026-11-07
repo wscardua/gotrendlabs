@@ -145,6 +145,10 @@ jobs:
         if: needs.detect-changes.outputs.docs_only != 'true'
         run: node tests/test_market_feed_filter.js
 
+      - name: Test contextual grid invitation selection
+        if: needs.detect-changes.outputs.docs_only != 'true'
+        run: node tests/test_market_grid_invite_selection.js
+
       - name: Test prediction preview requests
         if: needs.detect-changes.outputs.docs_only != 'true'
         run: node tests/test_prediction_preview_web.js

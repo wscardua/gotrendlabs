@@ -143,3 +143,22 @@ clock += 2000;
 visibilityChanged();
 assert.equal(categoryCards[0].badge.hidden, true);
 console.log('market ribbon lifecycle: OK');
+
+// Categories uses the same generic filters without a catalog target.
+const genericButtons = [true, false, false].map(active => ({
+  active, dataset: {}, attributes: {},
+  classList: {toggle(name, value) { this.owner.active = value; }},
+  setAttribute(name, value) { this.attributes[name] = value; },
+}));
+genericButtons.forEach(button => { button.classList.owner = button; });
+const genericGroup = {dataset:{}, buttons:genericButtons};
+const genericContext = {
+  $$: (selector, root) => selector === '[data-filter-group]' ? [genericGroup] : selector === '[data-filter]' ? root.buttons : [],
+  $: (selector, root) => selector.startsWith('.filter.active') ? root.buttons.find(button=>button.active) : root.buttons[0],
+  window:{location:{hash:''}},
+  sortMarketList:()=>{throw Error('A generic filter must not initialize the market board');},
+};
+vm.runInNewContext(source.slice(source.indexOf('function syncFilterPressedState('), source.indexOf('\nhydrateMarketBoards();')),genericContext);
+genericContext.hydrateMarketBoards();
+assert.deepEqual(genericButtons.map(button=>button.attributes['aria-pressed']), ['true','false','false']);
+console.log('generic filters accessibility: OK');

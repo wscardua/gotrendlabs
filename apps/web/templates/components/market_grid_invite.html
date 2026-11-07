@@ -1,0 +1,70 @@
+{% load i18n static %}
+<aside class="market-grid-invite" data-market-grid-invite hidden>
+  <template data-market-invite-option="suggestion">
+    <div class="market-grid-invite-inner">
+      <div class="market-grid-invite-copy">
+        <p class="market-grid-invite-label">{% trans "Explore o GoTrendLabs" %}</p>
+        <h2>{% trans "Qual pergunta está faltando aqui?" %}</h2>
+        <p class="market-grid-invite-description">{% trans "Sugira um tema que você gostaria de acompanhar." %}</p>
+        <a class="btn primary market-grid-invite-action" href="{% url 'suggestion' %}">{% trans "Sugerir mercado" %} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="market-grid-invite-art market-grid-invite-art-suggestion" aria-hidden="true">
+        <img src="{% static 'illustrations/grid-invite/suggestion.svg' %}" width="280" height="220" alt="" draggable="false">
+      </div>
+    </div>
+  </template>
+  <template data-market-invite-option="ranking">
+    <div class="market-grid-invite-inner">
+      <div class="market-grid-invite-copy">
+        <p class="market-grid-invite-label">{% trans "Explore o GoTrendLabs" %}</p>
+        <h2>{% trans "Quem está acertando as previsões?" %}</h2>
+        <p class="market-grid-invite-description">{% trans "Conheça o ranking da comunidade." %}</p>
+        <a class="btn primary market-grid-invite-action" href="{% url 'rankings' %}">{% trans "Ver ranking" %} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="market-grid-invite-art market-grid-invite-art-ranking" aria-hidden="true">
+        <img src="{% static 'illustrations/grid-invite/ranking.svg' %}" width="280" height="220" alt="" draggable="false">
+      </div>
+    </div>
+  </template>
+  <template data-market-invite-option="badges">
+    <div class="market-grid-invite-inner">
+      <div class="market-grid-invite-copy">
+        <p class="market-grid-invite-label">{% trans "Explore o GoTrendLabs" %}</p>
+        <h2>{% trans "Suas previsões fazem parte da sua trajetória." %}</h2>
+        <p class="market-grid-invite-description">{% trans "Conheça as conquistas da plataforma." %}</p>
+        <a class="btn primary market-grid-invite-action" href="{% url 'badges' %}">{% trans "Explorar badges" %} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="market-grid-invite-art market-grid-invite-art-badges" aria-hidden="true">
+        <img src="{% static 'illustrations/grid-invite/badges.svg' %}" width="280" height="220" alt="" draggable="false">
+      </div>
+    </div>
+  </template>
+  <template data-market-invite-option="results">
+    <div class="market-grid-invite-inner">
+      <div class="market-grid-invite-copy">
+        <p class="market-grid-invite-label">{% trans "Explore o GoTrendLabs" %}</p>
+        <h2>{% trans "O futuro virou resultado." %}</h2>
+        <p class="market-grid-invite-description">{% trans "Veja quais previsões se confirmaram." %}</p>
+        <a class="btn primary market-grid-invite-action" href="{% url 'home' %}#resolvidos" data-market-invite-results>{% trans "Ver resultados" %} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="market-grid-invite-art market-grid-invite-art-results" aria-hidden="true">
+        <img src="{% static 'illustrations/grid-invite/results.svg' %}" width="280" height="220" alt="" draggable="false">
+        <span class="market-grid-invite-resolved">{% trans "Resolvido" %}</span>
+      </div>
+    </div>
+  </template>
+  <template data-market-invite-option="concepts">
+    <div class="market-grid-invite-inner">
+      <div class="market-grid-invite-copy">
+        <p class="market-grid-invite-label">{% trans "Explore o GoTrendLabs" %}</p>
+        <h2>{% trans "Sua primeira previsão começa aqui." %}</h2>
+        <p class="market-grid-invite-description">{% trans "Entenda o consenso e os créditos educativos, sem dinheiro real." %}</p>
+        <a class="btn primary market-grid-invite-action" href="{% url 'concepts' %}">{% trans "Entender como funciona" %} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="market-grid-invite-art market-grid-invite-art-concepts" aria-hidden="true">
+        <img src="{% static 'illustrations/grid-invite/concepts.svg' %}" width="280" height="220" alt="" draggable="false">
+        <div class="market-grid-invite-steps"><span>{% trans "Escolha" %}</span><span>{% trans "Preveja" %}</span><span>{% trans "Acompanhe" %}</span></div>
+      </div>
+    </div>
+  </template>
+</aside>

@@ -1,5 +1,8 @@
 {% extends "base.html" %}
-{% load i18n %}
+{% load i18n static %}
+{% block extra_head %}
+  <script src="{% static 'js/market-grid-invite.js' %}?v=20261107" defer></script>
+{% endblock %}
 {% block title %}GoTrendLabs | Feed{% endblock %}
 {% block content %}
 <main class="shell">
@@ -25,14 +28,14 @@
       </div>
       <div class="filters" data-filter-group data-filter-target="[data-market-list]">
         <button class="filter active" type="button" data-filter="ongoing" aria-pressed="true">{% trans "Em andamento" %}</button>
-        <button class="filter" type="button" data-filter="resolved" aria-pressed="false">{% trans "Resolvidos" %}</button>
+        <button class="filter" type="button" id="resolvidos" data-filter="resolved" aria-pressed="false">{% trans "Resolvidos" %}</button>
         {% if not is_guest %}
           <button class="filter" type="button" data-filter="favorited" aria-pressed="false">{% trans "Favoritos" %}</button>
           <button class="filter personal-filter" type="button" data-filter="predicted" aria-pressed="false">{% trans "Minhas previsões" %}</button>
         {% endif %}
       </div>
       <div class="market-feed-section">
-        <div class="market-list" data-market-list data-market-page-size="18">
+        <div class="market-list" data-market-list data-market-invite-grid data-market-page-size="18">
           {% for market in markets %}
             {% if forloop.counter > 18 or market.status != "open" %}
               {% include "components/market_card.html" with market=market initial_hidden=True %}
@@ -40,6 +43,7 @@
               {% include "components/market_card.html" with market=market %}
             {% endif %}
           {% endfor %}
+          {% include "components/market_grid_invite.html" %}
         </div>
         <p class="market-empty" data-market-empty
           data-ongoing="{% trans 'Nenhum mercado aberto no momento.' %}"

@@ -1,3 +1,11 @@
+## 2026-11-07 — fonte da verdade do fechamento do convite web
+
+Acrescentados recibo de fechamento, review versionado e mapa de navegação web; estado distingue implementação commitada/testada da integração/deploy ainda pendentes. FEAT-MARKET-001 v0.17 mantém escopo exclusivamente web e status amplo parcial. Sem mudança de contratos ou documentação mobile. WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT.
+
+## 2026-11-07 — FEAT-MARKET-001 v0.17 / convite web
+
+Especificados ocupação de espaços restantes, cinco conteúdos aprovados/destinos reais, sorteio/estado frontend, acessibilidade e aceite do convite na grade principal web. Escopo exclui Flutter, sua documentação/contratos e novos contratos de domínio/API/MCP. [Evidências e limites](../testing/web-grid-invite-acceptance-20261107.md). WFLOW-20261107-WEB-GRID-INVITE.
+
 ## 07/11/2026 — Hoje integrada e release19 enviada ao Alpha
 
 PR #203 integrada em f7d6480; CI PR42407114320 e main/deploy42407705220 aprovados, 681 testes Python/três skips em ambos. 140 testes Flutter/analyze locais aprovados. AAB1.2.5+19 validado, assinado e enviado ao Alpha (100% do grupo existente, sem perda de compatibilidade). Console confirmou Changes in review/quick checks em andamento; aprovação/disponibilidade Google ainda não observadas. Health produtivo ok, APK site preservado, sem configuração extra ou alteração MCP. [Recibo19](../testing/mobile-today-release-19-20261107.md). Este estado prevalece sobre as preparações históricas abaixo.

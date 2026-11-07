@@ -1,22 +1,29 @@
 /* First-party, best-effort web observations. The API validates every event. */
 (() => {
-  if (location.pathname.startsWith('/admin-ops/') || localStorage.getItem('gtl-analytics-opt-out') === '1' || navigator.doNotTrack === '1') return;
+  // Skip observations when storage cannot be read; failed writes remain best effort.
+  try { localStorage.getItem('gtl-analytics-opt-out'); } catch (_) { return; }
+  const storage = {
+    getItem(key) { try { return localStorage.getItem(key); } catch (_) { return null; } },
+    setItem(key, value) { try { localStorage.setItem(key, value); } catch (_) { /* Best effort. */ } },
+    removeItem(key) { try { localStorage.removeItem(key); } catch (_) { /* Best effort. */ } },
+  };
+  if (location.pathname.startsWith('/admin-ops/') || storage.getItem('gtl-analytics-opt-out') === '1' || navigator.doNotTrack === '1') return;
   const cookie = document.querySelector('meta[name="csrf-token"]')?.content;
   if (!cookie) return;
   const id = () => crypto.randomUUID();
   const now = Date.now();
-  let visitor = localStorage.getItem('gtl-analytics-visitor');
+  let visitor = storage.getItem('gtl-analytics-visitor');
   if (!visitor) {
     visitor = id();
-    localStorage.setItem('gtl-analytics-visitor', visitor);
+    storage.setItem('gtl-analytics-visitor', visitor);
   }
-  let session = localStorage.getItem('gtl-analytics-session');
-  const last = Number(localStorage.getItem('gtl-analytics-last') || 0);
+  let session = storage.getItem('gtl-analytics-session');
+  const last = Number(storage.getItem('gtl-analytics-last') || 0);
   if (!session || now - last > 30 * 60 * 1000) {
     session = id();
-    localStorage.setItem('gtl-analytics-session', session);
+    storage.setItem('gtl-analytics-session', session);
   }
-  localStorage.setItem('gtl-analytics-last', String(now));
+  storage.setItem('gtl-analytics-last', String(now));
   let view = id();
   let queue = [];
   let sending = false;
@@ -121,8 +128,8 @@
     else if (target.closest('[data-integrity-modal-link]')) event('integrity_opened', 'integrity', { market_slug: market(target) });
     else if (target.matches('a[href]')) event('navigation_clicked', 'link');
     if (target.matches('a[href="/logout/"]')) {
-      localStorage.removeItem('gtl-analytics-visitor');
-      localStorage.removeItem('gtl-analytics-session');
+      storage.removeItem('gtl-analytics-visitor');
+      storage.removeItem('gtl-analytics-session');
     }
   });
   document.addEventListener('submit', e => {

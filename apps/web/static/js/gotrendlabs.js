@@ -1,7 +1,8 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
-const storedTheme = localStorage.getItem("gotrendlabs-theme");
+let storedTheme;
+try { storedTheme = localStorage.getItem("gotrendlabs-theme"); } catch (_) { /* Storage is optional. */ }
 document.body.dataset.theme = storedTheme || document.body.dataset.theme || "light";
 
 function syncThemeButtons() {
@@ -14,7 +15,7 @@ function syncThemeButtons() {
 $$("[data-theme-toggle]").forEach((button) => {
   button.addEventListener("click", () => {
     document.body.dataset.theme = document.body.dataset.theme === "dark" ? "light" : "dark";
-    localStorage.setItem("gotrendlabs-theme", document.body.dataset.theme);
+    try { localStorage.setItem("gotrendlabs-theme", document.body.dataset.theme); } catch (_) { /* Keep theme in memory. */ }
     syncThemeButtons();
   });
 });
@@ -326,44 +327,45 @@ function syncFilterPressedState(group, activeButton) {
   });
 }
 
-$$("[data-filter-group]").forEach((group) => {
-  const active = $(".filter.active[data-filter]", group) || $("[data-filter]", group);
-  if (active) syncFilterPressedState(group, active);
-});
-
-$$("[data-filter]").forEach((button) => {
-  button.addEventListener("click", () => {
+// Feed controls remain single-bound when HTMX replaces a board or its contents.
+const hydratedMarketFilterGroups = new WeakSet();
+function hydrateMarketBoards(changedRoot) {
+  $$("[data-market-card]").forEach((card, index) => {
+    if (card.dataset.originalOrder === undefined) card.dataset.originalOrder = String(index);
+  });
+  $$("[data-filter-group]").forEach((group) => {
+    const list = group.dataset.filterTarget ? $(group.dataset.filterTarget) : null;
+    const wasHydrated = hydratedMarketFilterGroups.has(group);
+    if (wasHydrated && !(changedRoot && (changedRoot === list || changedRoot.contains?.(list)))) return;
+    hydratedMarketFilterGroups.add(group);
+    const active = (!wasHydrated && window.location.hash === "#resolvidos" ? $("[data-filter='resolved']", group) : null) || $(".filter.active[data-filter]", group) || $("[data-filter]", group);
+    if (active) {
+      syncFilterPressedState(group, active);
+      if (list) sortMarketList(group, active.dataset.filter || "ongoing", wasHydrated ? list.dataset.marketVisibleCount : undefined);
+    }
+  });
+}
+hydrateMarketBoards();
+document.addEventListener("htmx:afterSwap", event => hydrateMarketBoards(event.detail?.target || event.target));
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-filter], [data-market-load-more-button], [data-market-show-results]");
+  if (!button) return;
+  if (button.matches("[data-filter]")) {
     const group = button.closest("[data-filter-group]");
     syncFilterPressedState(group, button);
     sortMarketList(group, button.dataset.filter || "ongoing");
-  });
-});
-
-$$("[data-filter-group][data-filter-target]").forEach((group) => {
-  const active = $(".filter.active[data-filter]", group) || $("[data-filter]", group);
-  if (active) sortMarketList(group, active.dataset.filter || "ongoing");
-});
-
-$$("[data-market-load-more-button]").forEach((button) => {
-  button.addEventListener("click", () => {
+  } else if (button.matches("[data-market-load-more-button]")) {
     const section = button.closest(".market-feed-section");
     const list = $("[data-market-list], [data-market-pending-list]", section);
     const pageSize = Number(list.dataset.marketPageSize || 18);
     const next = Number(list.dataset.marketVisibleCount || pageSize) + pageSize;
-    if (list.hasAttribute("data-market-pending-list")) {
-      renderMarketChunk(list, "closing", next);
-    } else {
-      sortMarketList($("[data-filter-group]", section.closest("[data-market-board]")), list.dataset.marketFilterMode, next);
-    }
-  });
-});
-
-$$("[data-market-show-results]").forEach((button) => {
-  button.addEventListener("click", () => {
+    if (list.hasAttribute("data-market-pending-list")) renderMarketChunk(list, "closing", next);
+    else sortMarketList($("[data-filter-group]", section.closest("[data-market-board]")), list.dataset.marketFilterMode, next);
+  } else {
     const resolved = $("[data-filter='resolved']", button.closest("[data-market-board]"));
     resolved.click();
     resolved.focus();
-  });
+  }
 });
 
 function syncMarketFavorite(slug, favorited) {
