@@ -1,3 +1,7 @@
+## 07/11/2026 — preparação Google Play 1.2.4+18
+
+Teste físico local da navegação confirmado pelo usuário. Preparação da distribuição do consumidor Flutter integrado (PRs196/199) em Closed testing - Alpha, atualmente17(1.2.3). Versão/build18 precisa integrar main antes do AAB. Sem novo contrato/API/MCP ou mudança no APK do site; aprovação/disponibilidade Google serão registradas quando observadas. WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE e [recibo18](../testing/mobile-markets-release-18-20261107.md).
+
 ## 07/11/2026 — Em andamento implantado e validado
 
 PR #199 integrada em `ca0cab9de589fb4df74b8fac38d0704aa6f73588`; Actions main 42394768559 e deploy SSM concluídos com sucesso. Web produtiva usa Em andamento/open primeiro e locked expandido, Resolvidos e recortes pessoais; assets novos confirmados por SHA256, histórico selado e provas acessíveis/validadas. 681 testes Python (três skips) no CI produtivo, 139 Flutter locais e build debug em emulador. Sem migration/configuração adicional ou mudança MCP/API/domínio. Distribuição Android e QA físico permanecem no workflow próprio; não são ativados pelo deploy web. Evidências no [recibo](../testing/markets-in-progress-production-closeout-20261107.md). Os registros locais anteriores abaixo são históricos; esta entrada prevalece para o estado de implantação.
