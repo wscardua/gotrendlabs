@@ -141,6 +141,10 @@ jobs:
         if: needs.detect-changes.outputs.docs_only != 'true'
         run: node tests/test_analytics_web_events.js
 
+      - name: Test market discovery filters
+        if: needs.detect-changes.outputs.docs_only != 'true'
+        run: node tests/test_market_feed_filter.js
+
       - name: Test prediction preview requests
         if: needs.detect-changes.outputs.docs_only != 'true'
         run: node tests/test_prediction_preview_web.js

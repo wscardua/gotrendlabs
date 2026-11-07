@@ -1,3 +1,7 @@
+## 07/11/2026 — distribuição da descoberta mobile
+
+WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST: a implementação Flutter local foi validada, mas o app instalado no canal Google Play ainda não contém os novos recortes. Após merge web/API, preparar nova versão/build Android a partir da main limpa, validar artefato e distribuir pelo fluxo mobile próprio. O deploy do GitHub Actions atualiza a web, não instala o app nos aparelhos.
+
 ## Aviso editorial genérico — diagnóstico implantado em 05/11/2026
 
 A PR #186 implantou `pending_details` no REST e MCP mantendo `unresolved_editorial_gaps`; smoke produtivo confirmou tarefas humanas, lacuna declarada, contradição e ausência de pendências sem falso positivo. O aviso genérico sem motivo desta fatia está resolvido. O parser continua restrito a declarações explícitas e não certifica suficiência de pesquisa/regras; isso é limite do contrato, não gate automático. A declaração de saída em cache nesta conversa ainda exibia schema antigo, apesar de runtime e resposta MCP já conterem detalhes. Conferir catálogo atualizado em conversa nova e captura HTTP bruta de `tools/list` autenticado permanece tarefa de cliente, como no registro histórico de 10/10 abaixo. [Recibo](../testing/editorial-pending-production-closeout-20261105.md).

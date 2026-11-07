@@ -1,3 +1,7 @@
+## 06/11/2026 — FEAT-MARKET-001: descoberta aberta por padrão (local)
+
+Web restringe Em alta/Novos/Volume/Curtidas a abertos e inclui selados em Resolvidos; Flutter abre Mercados em abertos, mantém Favoritos completos e oferece Histórico de previsões encerradas separado de Posições. A API segue entregando todos os estados públicos. Validação: 130 testes Flutter, análise estática, teste JS de filtros/paginação e quatro testes Django. Sem alteração de MCP. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST.
+
 ## 05/11/2026 — bundle Android 1.2.2+16 no teste fechado
 
 AAB release assinado para Google Play Closed testing com a UX de indisponibilidade da PR #188; target API 36, alinhamento 16 KB, certificado igual ao bundle 15 local e 124 testes Flutter aprovados. A Console mostrou 15 ativo no track Alpha; o primeiro pacote 15 foi descartado e a versão avançou para 16. Após envio do build 16 e da declaração app-level de comerciante, a Console passou a mostrar `16 (1.2.2)` em `Active tracks` e o titular confirmou disponibilidade aos testadores. WFLOW-20261105-MOBILE-PLAY-RESILIENCE.

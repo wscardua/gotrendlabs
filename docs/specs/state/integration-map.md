@@ -1,3 +1,7 @@
+## 06/11/2026 — recortes de mercado web/mobile
+
+`GET /markets` continua enviando estados públicos e flags `viewer_has_prediction`, `viewer_has_favorite`, `viewer_position.has_position`. Web aplica filtro de descoberta `open` no cliente; mobile usa o mesmo status efetivo para seus recortes e mantém ordem da API em Mercados. Histórico pessoal Flutter usa `viewer_has_prediction` apenas em encerrados; Posições usa `viewer_position.has_position`. Sem novo endpoint, schema ou relação MCP.
+
 ## 05/11/2026 — resiliência implantada
 
 PR #188/Actions 42082043411: PostgreSQL → pool FastAPI por PID/role com admissão limitada → API 503 `dependency_unavailable`/`operation_indeterminate` conforme o ponto da falha → Django 503 controlado sem nova consulta ORM no detalhe/integridade após indisponibilidade. Logger técnico limitado não altera auditoria transacional. MCP reutiliza contratos atuais sem novo scope/schema/permissão/replay; runtime saudável no smoke. Flutter consome o contrato, mas a UX nova requer distribuição própria. [Recibo](../testing/db-resilience-production-closeout-20261105.md).

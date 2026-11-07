@@ -92,7 +92,7 @@ Primeira tela util do app. Deve mostrar:
 Browse completo com:
 
 - categorias em chips horizontais
-- filtros por status
+- filtros por status: descoberta inicial em `open`, apuração em `locked` e resolvidos em `resolved`/`sealed`; favoritos e histórico pessoal mantêm encerrados
 - lista/card grid responsivo para celular
 - ordenacoes locais sobre dados carregados quando suficiente
 - paginacao ou carregar mais quando contrato permitir

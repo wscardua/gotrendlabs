@@ -1,10 +1,10 @@
 ---
 id: TEST-MOBILE-001
 titulo: "Criterios de aceite mobile"
-versao: 0.5
+versao: 0.6
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-25
+ultima_atualizacao: 2026-11-07
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -18,6 +18,15 @@ aprovacao: pendente
 ---
 
 # Criterios de aceite mobile
+
+## Aceite de descoberta e histórico — 2026-11-07
+
+- `Hoje` continua com apenas `open` e pontuação de engajamento existente.
+- `Mercados` inicia em `open`, preservando a ordem da API; `locked`, `resolved` e `sealed` não aparecem na descoberta inicial.
+- `Em apuração` mostra apenas `locked`; `Resolvidos` mostra `resolved` e `sealed` com rótulos próprios.
+- `Favoritos` e `Histórico` preservam selados; `Histórico` usa `viewer_has_prediction` em mercados encerrados, enquanto `Posições` permanece vinculada a `viewer_position.has_position`.
+- Alternar recortes pessoais limpa filtro de status anterior; retornar a `Todos` restaura `open`. Ausência de abertos apresenta estado vazio claro.
+- Teste de widget `markets_screen_test.dart` cobre esses recortes; distribuição Android exige release própria após integração na main.
 
 ## Aceite local — 2026-10-17
 
