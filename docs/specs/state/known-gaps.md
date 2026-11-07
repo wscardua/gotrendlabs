@@ -44,6 +44,10 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 # Known Gaps
 
+## 07/11/2026 — distribuição da descoberta mobile
+
+O código Flutter da descoberta de abertos e do histórico de mercados encerrados entrou na main pela PR #196, mas ainda não está na release ativa do Google Play Closed testing Alpha (`1.2.3+17`) nem no APK direto do site (`1.0.7`). Publicar binário a partir da main integrada por ciclo próprio e validar em dispositivo de testador. O deploy web/API não atualiza apps instalados. A correção de cache web do mesmo workflow ainda exige novo deploy e smoke antes do fechamento da fatia web. [Workflow](workflow-runs.md#WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST).
+
 ## 05/11/2026 — envio do AAB Android 1.2.2+16
 
 O AAB release foi compilado e validado localmente para teste fechado; Play Console aceitou o build 16, mostrou `16 (1.2.2)` em `Active tracks` de `Closed testing - Alpha` e `Available to selected testers`. O Pre-launch report ainda não tinha resultados nas páginas Overview e Details no momento da consulta; suas configurações não incluem credenciais para cobrir fluxos autenticados. A instalação/sessão em dispositivo físico de testador permanece pendente, pois nenhum Android estava conectado ao `adb` local. O indicador instantâneo `Available to 0 users` da release não foi interpretado como ausência de testadores: o track mantém Google Group configurado, mas sua adesão efetiva não foi validada. O smoke offline em AVD descartável não substitui teste de sessão/autenticação em dispositivo físico; alinhamento ELF/empacotamento 16 KB foi conferido, execução em dispositivo com páginas de 16 KB não. O Flutter 3.44.1 avisou que `package_info_plus` e `share_plus` ainda aplicam Kotlin Gradle Plugin e poderão exigir atualização antes de uma versão futura do Flutter; o build atual passou. Licenças Android locais pendentes no `flutter doctor` não impediram o build. [Workflow](workflow-runs.md).

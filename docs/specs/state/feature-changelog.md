@@ -1,3 +1,7 @@
+## 07/11/2026 — FEAT-MARKET-001: integração e correção de cache
+
+PR #196 integrou a descoberta web/mobile e o deploy web/API passou. A validação em navegador encontrou cache antigo dos assets estáticos, que ocultava mercados selados em `Resolvidos` até recarga forçada. Os URLs versionados de JS/CSS foram atualizados; publicação e novo smoke estão pendentes. O código Flutter integrado ainda não foi distribuído em release Android. Sem alteração de API, lifecycle ou MCP. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST.
+
 ## 06/11/2026 — FEAT-MARKET-001: descoberta aberta por padrão (local)
 
 Web restringe Em alta/Novos/Volume/Curtidas a abertos e inclui selados em Resolvidos; Flutter abre Mercados em abertos, mantém Favoritos completos e oferece Histórico de previsões encerradas separado de Posições. A API segue entregando todos os estados públicos. Validação: 130 testes Flutter, análise estática, teste JS de filtros/paginação e quatro testes Django. Sem alteração de MCP. WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST.
