@@ -257,3 +257,7 @@ Consumidor Flutter atualizado para LedgerResponse.resolution_returns obrigatóri
 ### Ordem de Hoje — ajuste de 07/11/2026
 
 Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos), Mais mercados (demais abertos) e Em apuração (todos os locked, sempre expandida). Apuração aparece após Mais mercados; ordenações dentro das seções permanecem iguais. Todos os mercados locked aparecem diretamente em Hoje, sem limite de três e sem botão Ver todos em apuração.
+
+## Distribuição de Hoje — 07/11/2026
+
+Comportamento integrado pela PR203 e empacotado na1.2.5+19, enviada ao Alpha. Console confirmou Changes in review; disponibilidade final ainda depende da Google. [Recibo19](../testing/mobile-today-release-19-20261107.md).

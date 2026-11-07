@@ -1,3 +1,7 @@
+## 07/11/2026 — Hoje integrada e release19 enviada ao Alpha
+
+PR #203 integrada em f7d6480; CI PR42407114320 e main/deploy42407705220 aprovados, 681 testes Python/três skips em ambos. 140 testes Flutter/analyze locais aprovados. AAB1.2.5+19 validado, assinado e enviado ao Alpha (100% do grupo existente, sem perda de compatibilidade). Console confirmou Changes in review/quick checks em andamento; aprovação/disponibilidade Google ainda não observadas. Health produtivo ok, APK site preservado, sem configuração extra ou alteração MCP. [Recibo19](../testing/mobile-today-release-19-20261107.md). Este estado prevalece sobre as preparações históricas abaixo.
+
 ## 07/11/2026 — Hoje prioriza participação e inclui apuração completa
 
 Estado final aprovado no emulador: Para prever → Tendências → Mais mercados → Em apuração. Abertos preservam engagementScore e desempate por título; apuração lista todos os locked por close_at decrescente, empate pela ordem original e datas ausentes no fim. Sem recolhimento, limite de três ou CTA Ver todos. Estados vazios independentes; histórico e recortes pessoais preservados. API/domínio/MCP inalterados. Preparação de 1.2.5+19 para Alpha; integração/distribuição ainda pendentes. WFLOW-20261107-MOBILE-TODAY-PENDING; [recibo](../testing/mobile-today-release-19-20261107.md).
