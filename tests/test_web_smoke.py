@@ -61,7 +61,7 @@ from apps.web.django.core.social_share import public_badge_share_token
 from apps.web.django.admin_ops.views import _safe_image_content
 from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, PredictionCommitment, ProductFeedback, UserNotification
 from apps.web.django.system_logs.models import SystemLog
-from apps.web.django.system_logs.services import request_headers, sanitize_context, log_system_event
+from apps.web.django.system_logs.services import get_system_log_retention_days, request_headers, sanitize_context, log_system_event
 
 
 def _fixture_slug(value):
@@ -1010,6 +1010,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(linked.json()["user"]["email"], "x-complete@example.com")
 
     def test_system_log_model_defaults_retention_and_context(self):
+        retention_days = get_system_log_retention_days()
+        before = timezone.now()
         log = SystemLog.objects.create(
             level="INFO",
             source="django",
@@ -1017,8 +1019,10 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
             message="Modelo de log operacional",
             context={"request_id": "model-smoke"},
         )
+        after = timezone.now()
         self.assertEqual(log.context["request_id"], "model-smoke")
-        self.assertGreater(log.expires_at, timezone.now() + timedelta(days=89))
+        self.assertGreaterEqual(log.expires_at, before + timedelta(days=retention_days))
+        self.assertLessEqual(log.expires_at, after + timedelta(days=retention_days))
 
     def test_market_api_seed_filters_and_detail_contract(self):
         self.assertEqual(Market.objects.filter(slug="openai-gpt6-2026").count(), 1)
