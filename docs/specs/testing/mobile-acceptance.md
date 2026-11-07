@@ -372,3 +372,7 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 - Novo apenas em open, de created_at inclusive até 48h exclusivo, sem timestamp futuro nem influência na ordenação; relógio controlável em teste.
 - Sem open, mensagem específica e acesso a locked; sem ambos, acesso a Resolvidos; sem locked, sem expansor vazio.
 - Validar viewport estreita, texto ampliado, erro/loading/refresh e histórico após alternar recortes.
+
+## Release Google Play 1.2.4+18 — 07/11/2026
+
+Usuário confirmou sucesso do teste local em aparelho físico. AAB oficial gerado da main integrada/limpa, assinado e enviado ao Alpha; ver [recibo18](mobile-markets-release-18-20261107.md). O teste local usou app separado e backend DEV; instalação pelo Google Play, sessão/MFA e push no artefato distribuído só devem ser marcados como verificados após execução. Estado observado no envio: Changes in review/quick checks em andamento.

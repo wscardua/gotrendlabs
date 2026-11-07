@@ -272,3 +272,7 @@ Em resolved/sealed, a projeção pública de volume/participantes agrega previs�
 ## Integração e implantação da navegação v0.15
 
 PR #199 integrada e implantada no site em 07/11/2026 (merge ca0cab9, Actions 42394768559), com smoke de descoberta, apuração expandida, resultados e histórico/provas de selados aprovado. Esta fatia está concluída para web; status_impl parcial da feature ampla preserva lacunas independentes. Flutter integrado/validado em emulador, com distribuição Android própria pendente. [Recibo](../testing/markets-in-progress-production-closeout-20261107.md).
+
+## Distribuição Android solicitada — 07/11/2026
+
+A release Google Play 1.2.4+18 inclui a navegação v0.15 e foi enviada ao teste fechado Alpha após integração da versão/build pela PR #201 e validação do AAB. Console confirmou Changes in review com quick checks em andamento; isso não comprova disponibilidade nos apps instalados. Testes físicos locais tiveram sucesso segundo o usuário. [Recibo](../testing/mobile-markets-release-18-20261107.md).

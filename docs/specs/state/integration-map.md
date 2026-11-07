@@ -1,3 +1,7 @@
+## 07/11/2026 — Google Play 1.2.4+18 enviada
+
+AAB da main f854f53, versão integrada pela PR #201, validado/assinado e enviado ao Closed testing - Alpha. Console confirmou Changes in review e quick checks em andamento; rollout de 100% do grupo existente e zero perda de compatibilidade. Navegação de Mercados / faixa Novo integradas e empacotadas; disponibilidade / aprovação da Google ainda pendentes. Teste físico local confirmado pelo usuário não equivale a instalação pela Play. APK do site e MCP preservados. Actions main 42399910630 e deploy SSM aprovados (681 testes/três skips); health produtivo ok. [Recibo18](../testing/mobile-markets-release-18-20261107.md). Esta entrada prevalece sobre os registros de preparação anteriores.
+
 ## 07/11/2026 — preparação Google Play 1.2.4+18
 
 Teste físico local da navegação confirmado pelo usuário. Preparação da distribuição do consumidor Flutter integrado (PRs196/199) em Closed testing - Alpha, atualmente17(1.2.3). Versão/build18 precisa integrar main antes do AAB. Sem novo contrato/API/MCP ou mudança no APK do site; aprovação/disponibilidade Google serão registradas quando observadas. WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE e [recibo18](../testing/mobile-markets-release-18-20261107.md).
