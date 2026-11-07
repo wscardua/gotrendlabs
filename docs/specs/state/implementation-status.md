@@ -1,3 +1,7 @@
+## 07/11/2026 — convite web: PR205 autorizada e correção de testes do CI
+
+PR205 aberta após aprovação do usuário. Primeiro CI executou 683 testes/três skips e falhou em dois smoke tests por split literal da tag da grade. Testes corrigidos para verificar ausência de cancelados na resposta inteira; quatro testes Django selecionados aprovados em PostgreSQL 16 isolado. Nova execução completa/merge/deploy pendentes; [recibo vigente](../testing/web-grid-invite-closeout-20261107.md). Nenhuma nova alteração de runtime/API/MCP/mobile.
+
 ## 07/11/2026 — convite contextual web preparado para integração
 
 Implementação commitada em 1fd83a0/68b60c4, review final sem findings abertos após corrigir aria-pressed de Categorias. Testes locais aprovados e sorteio integrado ao CI. Título/descrição da PR aguardam aprovação do usuário; main/CI remoto/deploy ainda pendentes. [Recibo vigente](../testing/web-grid-invite-closeout-20261107.md), WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT. MCP e mobile sem impacto. Este estado prevalece sobre a conclusão local registrada abaixo; não representa disponibilidade em produção.

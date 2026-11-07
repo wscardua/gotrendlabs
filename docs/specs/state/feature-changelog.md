@@ -1,3 +1,7 @@
+## 2026-11-07 — convite web: regressão de testes HTML corrigida
+
+PR205/CI42416671503 identificou dois testes de home acoplados à tag antiga. Substituído split literal por assertNotContains na resposta completa, preservando a exclusão de cancelados. Quatro cenários Django selecionados aprovados em PostgreSQL isolado; aguardando CI completo antes do merge. Runtime/MCP/mobile preservados. [Recibo](../testing/web-grid-invite-closeout-20261107.md).
+
 ## 2026-11-07 — convite web: fechamento preparado
 
 Código commitado, review final concluído sem findings abertos e regressão de aria-pressed em Categorias corrigida. Teste do sorteio incluído no CI. [Recibo de fechamento](../testing/web-grid-invite-closeout-20261107.md) registra aceite, review, simulação DEV isolada e passos de PR/CI/deploy pendentes da aprovação do usuário. Nenhuma mudança de API/MCP/mobile.

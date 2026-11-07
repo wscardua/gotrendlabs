@@ -4,7 +4,7 @@
 
 07/11/2026: implementação e correção de review **commitadas/testadas localmente** na branch `feature/web-market-grid-invite`, baseada na main remota `d93d5b918cba0b9802dfc2900b5882700b3d9030`. Commits de código: `1fd83a0` e `68b60c4e5a0e72e015ff60ed92462b77783759ec`.
 
-PR ainda não aberta: aguardando aprovação do usuário para título/descrição. Integração à main, CI remoto e implantação em produção ainda não executados. Esse estado prevalece sobre a conclusão restrita ao escopo local de WFLOW-20261107-WEB-GRID-INVITE. Fechamento/publicação acompanhados em WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT.
+PR [#205](https://github.com/wscardua/gotrendlabs/pull/205) aberta após aprovação explícita do usuário. O primeiro CI remoto [42416671503](https://github.com/wscardua/gotrendlabs/actions/runs/42416671503) executou 683 testes/três skips e detectou dois testes de home acoplados à tag HTML exata; a correção preserva a verificação de ausência de mercados cancelados sem depender dos atributos da grade. Quatro testes Django selecionados passaram em PostgreSQL 16 isolado. Reexecução do CI, integração à main e implantação em produção ainda pendentes. Esse estado prevalece sobre a conclusão restrita ao escopo local de WFLOW-20261107-WEB-GRID-INVITE. Fechamento/publicação acompanhados em WFLOW-20261107-WEB-GRID-INVITE-CLOSEOUT.
 
 ## Comportamento e fontes da verdade
 
@@ -36,3 +36,7 @@ O deploy existente executa `collectstatic` e publica os assets. **Não são nece
 Tools, schemas, contratos, permissões, erros, replays e política/orientação editorial MCP permanecem iguais. O convite apenas encaminha aos fluxos web já existentes; não aprova/publica sugestões nem infere permissões de ações humanas.
 
 App Flutter, seus contratos e documentação não foram alterados. A entrega web não requer release Android/iOS. Validação local de navegador em Chrome, sem aparelhos físicos ou Safari/Firefox; sem storage, prevenção de repetição entre visitas não é garantida. Traduções completas seguem FEAT-I18N-001 e não são requisito novo desta fatia.
+
+## Correção do primeiro CI da PR
+
+Os dois `IndexError` em test_home_does_not_render_canceled_markets e test_market_pages_consume_api_and_fallback_to_fixture vieram do split pela tag antiga da grade, agora com atributo adicional. A correção usa assertNotContains na resposta, reforçando a ausência de mercados cancelados em toda a página. Não houve alteração adicional de runtime, API, banco, MCP ou mobile. Quatro testes selecionados (os dois smoke + dois do convite) passaram em banco de teste isolado em 127.0.0.1:15439, sem tocar o DEV operacional.

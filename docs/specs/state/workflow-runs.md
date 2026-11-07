@@ -4,15 +4,15 @@
 - Status: `em_andamento`
 - Feature alvo: FEAT-MARKET-001 v0.17, convite contextual exclusivamente web.
 - Objetivo: reconciliar fontes da verdade, commitar a implementação, revisar o intervalo e preparar PR em português. Pedido do usuário amplia o escopo anterior para integração/deploy.
-- Etapa atual: commits 1fd83a0/68b60c4 preparados; review final sem findings abertos, testes/checks aprovados e CI de sorteio adicionado. [Recibo vigente](../testing/web-grid-invite-closeout-20261107.md). Aguarda aprovação do título/descrição antes da PR.
+- Etapa atual: commits 1fd83a0/68b60c4 preparados; review final sem findings abertos, testes/checks aprovados e CI de sorteio adicionado. [Recibo vigente](../testing/web-grid-invite-closeout-20261107.md). PR205 aberta com descrição aprovada pelo usuário; primeiro CI detectou dois testes acoplados ao markup antigo, corrigidos com quatro testes Django isolados aprovados. Aguarda nova execução completa antes de merge.
 - Base: origin/main d93d5b918cba0b9802dfc2900b5882700b3d9030; branch feature/web-market-grid-invite preservada.
 - Artefatos: feature/spec, templates/assets/JS/CSS web, testes, CI e memória operacional; app e documentação/contratos mobile excluídos.
-- Publicação: aguardando aprovação explícita do texto da PR; depois acompanhar CI, merge, Actions de main/deploy e smoke produtivo. Não declarar implantação antes das evidências.
+- Publicação: usuário aprovou texto e continuidade; PR205 aberta. Acompanhar CI corrigido, merge, Actions de main/deploy e smoke produtivo. Não declarar implantação antes das evidências.
 - Produção: sem migração/configuração nova prevista; deploy normal deve publicar templates e assets. Dados sintéticos e ajustes feitos no banco local não pertencem à entrega.
 - MCP: sem mudança de ferramentas, schemas, contratos, permissões, erros, replays ou orientação editorial; apresentação/navegação nos fluxos web existentes.
 - Testes/review: [review versionado](../testing/web-grid-invite-branch-review-20261107.md), dois Django, quatro Node, navegador (54 combinações + opções/HTMX/storage/teclado/Categorias) e checks Django/OpenAPI/JS/YAML/diff aprovados.
 - Iniciado/atualizado em: 2026-11-07
-- Retomada: aguardar aprovação explícita do texto da PR; então abrir pelo MCP GitHub, acompanhar CI, merge, Actions/deploy e smoke produtivo. ENABLE_PROD_DEPLOY=1 confirmado, sem ativação manual necessária prevista.
+- Retomada: acompanhar nova execução do CI da PR205; após sucesso, merge, Actions/deploy e smoke produtivo. ENABLE_PROD_DEPLOY=1 confirmado, sem ativação manual necessária prevista.
 
 ## WFLOW-20261107-WEB-GRID-INVITE
 

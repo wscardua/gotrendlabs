@@ -8352,11 +8352,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             response = self.client.get(reverse("home"))
 
         self.assertContains(response, open_market["title"])
-        market_list = response.content.decode().split(
-            '<div class="market-list" data-market-list data-market-page-size="18">',
-            1,
-        )[1]
-        self.assertNotIn(canceled_market["title"], market_list)
+        self.assertNotContains(response, canceled_market["title"])
 
     def test_public_badges_page_renders_for_guest_and_authenticated_user(self):
         badges = [
@@ -12232,11 +12228,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertContains(response, "Mercado com mais curtidas")
             self.assertContains(response, "Mercado com poucas curtidas")
             self.assertContains(response, "Resolvido com curtidas")
-            market_list = response.content.decode().split(
-                '<div class="market-list" data-market-list data-market-page-size="18">',
-                1,
-            )[1]
-            self.assertNotIn("Cancelado com curtidas", market_list)
+            self.assertNotContains(response, "Cancelado com curtidas")
 
         with patch("apps.web.django.markets.views.get_market", return_value=api_market):
             response = self.client.get(reverse("market-detail", args=["openai-gpt6-2026"]))

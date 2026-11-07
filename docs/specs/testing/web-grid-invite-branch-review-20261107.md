@@ -38,3 +38,7 @@ A lacuna de execução contínua do teste de sorteio foi encerrada pela nova eta
 - Testes locais aprovados: dois Django sem banco; Node de filtros/faixa Novo/acessibilidade genérica, sorteio, analytics e prediction preview; 54 combinações de layout/tema, limites 1080/1081/980, cinco opções/20 capturas, teclado/foco, armazenamento negado/quota/histórico inválido, HTMX real e paginação, tamanho/ordem dos cards e textos longos. Django check, OpenAPI check, sintaxe JS, YAML e diff check aprovados.
 
 Nenhum arquivo de código foi alterado durante a passagem final de review; a correção ocorreu em fase separada de implementação, seguida de nova revisão do diff versionado.
+
+## Adendo após primeiro CI remoto
+
+O CI 42416671503 da PR205 identificou dois testes existentes que localizavam a grade por tag HTML literal. O novo atributo do convite invalidou o split e gerou dois IndexError, sem falha de domínio. Corrigidos os dois cenários em tests/test_web_smoke.py para assertNotContains sobre a resposta inteira, mantendo e reforçando a checagem de cancelados. Quatro cenários Django selecionados aprovados em PostgreSQL 16 isolado; nova execução completa do CI exigida antes de merge. Esse adendo encerra a lacuna de regressão detectada remotamente; não altera o risco do runtime ou os contratos MCP/mobile.
