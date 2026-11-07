@@ -1,6 +1,6 @@
-## 07/11/2026 — descoberta integrada; correção de cache em preparação
+## 07/11/2026 — descoberta web implantada e validada
 
-A mudança web/mobile de WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST foi integrada pela PR #196/merge `8e920ca` e implantada pela Actions main `42380529876`, com CI e smoke HTTP aprovados. A navegação produtiva revelou cache antigo de JS/CSS devido a versões estáticas não atualizadas: `Resolvidos` podia ficar vazio até uma recarga forçada. A correção dos URLs dos assets está em preparação para novo CI/deploy. Flutter integrado ainda requer release Android separada; a versão ativa no teste fechado é `1.2.3+17`. FEAT-MARKET-001 ampla permanece parcial por lacunas independentes em `known-gaps.md`.
+A mudança web/mobile de WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST foi integrada pela PR #196/merge `8e920ca` e implantada pela Actions main `42380529876`. O cache antigo de JS/CSS detectado no navegador foi corrigido pela PR #197/merge `6157d88`; Actions main `42382587977`, deploy SSM e smoke produtivo aprovaram a correção. Home usa URLs versionados novos; navegação comum mostra somente abertos em `Em alta`, selados em `Resolvidos` e previsões pessoais encerradas. Flutter integrado ainda requer release Android separada no workflow WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE; a versão ativa no teste fechado é `1.2.3+17`. FEAT-MARKET-001 ampla permanece parcial por lacunas independentes em `known-gaps.md`. [Recibo](../testing/market-discovery-production-closeout-20261107.md).
 
 ## 06/11/2026 — descoberta de mercados abertos (local)
 

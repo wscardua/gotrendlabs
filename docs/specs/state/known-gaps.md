@@ -46,7 +46,7 @@ Web/API implantados pela PR #168; CI/build/deploy e smoke técnico reais aprovad
 
 ## 07/11/2026 — distribuição da descoberta mobile
 
-O código Flutter da descoberta de abertos e do histórico de mercados encerrados entrou na main pela PR #196, mas ainda não está na release ativa do Google Play Closed testing Alpha (`1.2.3+17`) nem no APK direto do site (`1.0.7`). Publicar binário a partir da main integrada por ciclo próprio e validar em dispositivo de testador. O deploy web/API não atualiza apps instalados. A correção de cache web do mesmo workflow ainda exige novo deploy e smoke antes do fechamento da fatia web. [Workflow](workflow-runs.md#WFLOW-20261106-MARKET-DISCOVERY-OPEN-FIRST).
+O código Flutter da descoberta de abertos e do histórico de mercados encerrados entrou na main pela PR #196, mas ainda não está na release ativa do Google Play Closed testing Alpha (`1.2.3+17`) nem no APK direto do site (`1.0.7`). Publicar binário a partir da main integrada por ciclo próprio e validar em dispositivo de testador. O deploy web/API não atualiza apps instalados. A correção de cache web foi implantada pela PR #197 e aprovada no smoke produtivo. [Workflow Android](workflow-runs.md#WFLOW-20261107-MARKET-DISCOVERY-ANDROID-RELEASE), [recibo web](../testing/market-discovery-production-closeout-20261107.md).
 
 ## 05/11/2026 — envio do AAB Android 1.2.2+16
 

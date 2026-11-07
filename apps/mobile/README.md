@@ -130,7 +130,7 @@ Antes de gerar artefato para distribuição, todas as alterações (incluindo ve
 
 Compare também o recibo e as funcionalidades da versão anterior: main limpa não comprova conter código que antes foi empacotado sem commit. Pendências sem reconciliação impedem distribuição. Registre SHA completo, versão/build, canal, checksum e testes no recibo e confira-o antes do upload.
 
-**Reconciliação de 06/11/2026:** MFA integrado pela PR #191. O critério compacto e os quatro testes do worktree antigo já estavam integrados à main pelo commit caee7aa de 17/10; comparação byte a byte confirmou igualdade. A pendência anterior sobre esse componente foi registrada incorretamente e está resolvida. Release 1.2.3+17 em preparação, preservando critério compacto, resiliência e MFA. Consulte WFLOW-20261106-MOBILE-MFA-RELEASE-17.
+**Reconciliação de 06/11/2026:** MFA integrado pela PR #191. O critério compacto e os quatro testes do worktree antigo já estavam integrados à main pelo commit caee7aa de 17/10; comparação byte a byte confirmou igualdade. A pendência anterior sobre esse componente foi registrada incorretamente e está resolvida. Release 1.2.3+17 posteriormente ativada no teste fechado Alpha, preservando critério compacto, resiliência e MFA. Consulte WFLOW-20261106-MOBILE-MFA-RELEASE-17.
 
 Build padrao do beta:
 
@@ -158,11 +158,11 @@ flutter build appbundle --release \
   --dart-define=GTL_PUBLIC_WEB_BASE_URL=https://gotrendlabs.com.br
 ```
 
-Versao atual do AAB no teste fechado: `1.2.2+16` (tratamento de indisponibilidade temporaria da PR #188).
+Versao atual do AAB no teste fechado observada em 07/11/2026: `1.2.3+17`. O código de descoberta e histórico da PR #196 entrou na main após esse build; sua distribuição exige uma próxima release.
 
-Release name no Play Console: `16 (1.2.2)` (nome automático).
+Release name atual no Play Console: `17 (1.2.3)` (nome automático).
 
-Release notes em `pt-BR`:
+Release notes históricas do build 16 em `pt-BR`:
 
 ```text
 <pt-BR>
@@ -198,6 +198,6 @@ Fechamento e resolução prevista passam ao rodapé do resumo com divisor e tipo
 
 Login de contas staff/superuser trata o desafio MFA da API e oferece configuração por chave manual, TOTP e código de recuperação. Sessão só é ativada após verificação; recovery codes são mostrados até confirmação de guarda. Nenhuma operação administrativa foi adicionada ao app. Ver workflow `WFLOW-20261106-MOBILE-MFA`; publicação e smoke com conta real pendentes.
 
-## Preparação Google Play 1.2.3+17 — 06/11/2026
+## Preparação histórica Google Play 1.2.3+17 — 06/11/2026
 
-Próxima release destinada ao Closed testing - Alpha já existente. Build 16/versão 1.2.2 confirmado como ativo na Console. Versão/build 1.2.3+17 integrados antes de gerar o AAB, conforme gate de origem. URLs produtivas, assinatura e Firebase da release anterior reutilizados via arquivos locais ignorados. Notas: corrigido login administrativo com verificação em duas etapas, preservando melhorias de estabilidade e leitura dos critérios. Envio/resultado e hashes serão registrados em docs/specs/testing/mobile-mfa-release-17-20261106.md após build.
+Build 16/versão 1.2.2 era o ativo na Console durante a preparação. Versão/build 1.2.3+17 foram integrados antes do AAB, conforme gate de origem. URLs produtivas, assinatura e Firebase da release anterior foram reutilizados via arquivos locais ignorados. As notas trataram do login administrativo com verificação em duas etapas, preservando melhorias de estabilidade e leitura dos critérios. O build 17 foi observado ativo no teste fechado Alpha em 07/11/2026; esta seção registra a preparação anterior. Consulte WFLOW-20261106-MOBILE-MFA-RELEASE-17 e `docs/specs/testing/mobile-mfa-release-17-20261106.md` para o recibo específico.
