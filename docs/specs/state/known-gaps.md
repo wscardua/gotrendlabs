@@ -1,3 +1,7 @@
+## 08/11/2026 — Ocultação indevida do gráfico administrativo resolvida
+
+PR209/merge `6dde140`, CI PR42485739272 e main/deploy42486520746 aprovados (700 testes/três skips). SSM Success/0 e smoke com sessão administrativa real no Chrome confirmam gráfico pessoal visível nos dois temas, com placar administrativo oculto. Sem mudança de ranking, permissões/API/MCP ou dados de teste em produção. Não há pendência de implantação desta correção; preparação abaixo é histórica. Cobertura restante: Safari/Firefox/aparelho físico, com celular validado por viewports locais. [Recibo final](../testing/web-performance-admin-chart-20261108.md).
+
 ## 08/11/2026 — Gráfico de Desempenho oculto para administradores
 
 Diagnóstico confirmado pelo screenshot de @admin e pelo template produtivo: histórico pessoal existe, mas gráfico usa indevidamente a condição de ocultação do placar. Correção local na branch fix/web-performance-admin-chart remove esse vínculo, sem mudar ranking/permissões/API/MCP. A versão produtiva implantada pela PR207 ainda contém a condição antiga até integração/deploy da correção. [Aceite e próxima etapa](../testing/web-performance-admin-chart-20261108.md), WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART. Não confundir conclusão do deploy anterior com correção já publicada.

@@ -1,3 +1,7 @@
+## 2026-11-08 — Gráfico pessoal administrativo implantado
+
+Correção FEAT-REP-001 v0.9 integrada pela PR209/merge `6dde140`, com CI/main/deploy aprovados e 700 testes Python/três skips em ambos os runs. Sessão administrativa real confirma gráfico nos temas claro/escuro; ocultação do placar e exclusão do ranking público preservadas. Quatro hashes de runtime e assets HTTPS conferidos; nenhum ajuste produtivo extra ou mudança MCP/mobile. [Recibo/evidências](../testing/web-performance-admin-chart-20261108.md). Branch local preservada.
+
 ## 2026-11-08 — Gráfico pessoal independente do placar administrativo
 
 FEAT-REP-001 v0.9: remove associação indevida entre ocultação do placar e gráfico de impactos pessoais em Desempenho. Contas staff/superuser veem deltas reais das próprias resoluções; vazio/erro permanecem sem gráfico. Sem alterações de ranking, domínio, API, permissão ou MCP. Regressão reproduzida antes da correção para os dois papéis; cobertura Django e QA ampliadas. Implementação local, ainda sem integração/deploy desta correção. [Aceite](../testing/web-performance-admin-chart-20261108.md).

@@ -1,18 +1,16 @@
 ## WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART
 
-- Tipo: change-feature / correção da apresentação web de FEAT-REP-001.
-- Status: `em_andamento`; correção implementada/testada localmente e commitada na branch; integração/deploy aguardam aprovação da PR.
-- Base: origin/main `46e2ec9af994ab5d6d09d05476075a77910b65d2`; branch `fix/web-performance-admin-chart`, worktree próprio. Branches existentes e alterações do checkout original preservadas.
-- Problema: gráfico pessoal usava a mesma condição do placar administrativo, ficando oculto para staff/superuser apesar de haver resoluções próprias retornadas pela API.
-- Decisão autorizada: gráfico depende de histórico pessoal real, independentemente da visibilidade do placar. Preservar a ocultação do placar administrativo e a exclusão do ranking público.
-- Artefatos: template, regressões Django/QA de navegador, spec/arquitetura e memória operacional. Contrato GET /users/me/performance, backend, ranking, API/mobile e dados preservados.
-- Arquitetura/segurança: mesma sessão/token e mesmos dados pessoais; sem novos cálculos, permissões, consultas ou fallback. Sem ADR/migration por manter fronteiras e regras.
-- MCP: nenhum ajuste em ferramentas, schemas, contratos, autenticação, permissões, erros, replays ou editorial. Correção apenas de apresentação de dados já autorizados; não inferir permissões de ações humanas do Admin Ops.
-- Validação: regressão reproduzida antes da correção para staff/superuser; 17 testes específicos e 54 cenários de navegador aprovados. Staff/superuser com histórico veem gráfico e não placar; vazio/erro continuam sem gráfico; deltas/links/token, sessão e isolamento preservados. QA em dois temas e desktop/celular, incluindo sem JS; duas capturas inspecionadas. Django check/OpenAPI/sintaxe JS/diff check aprovados. [Aceite](../testing/web-performance-admin-chart-20261108.md).
-- Publicação: nenhuma PR/deploy novo nesta etapa; mostrar descrição e obter aprovação antes de abrir PR, conforme preferência do usuário.
-- Iniciado/atualizado em: 2026-11-08.
-- Checklist: spec/arquitetura, regressões, aceite, workflow, status, changelogs e lacunas reconciliados. Contrato/mapa de dependências inalterados; sem ADR/migration. Sem Safari/Firefox/aparelho físico.
-- Retomada: obter aprovação da descrição da PR, executar fluxo GitHub/CI completo e acompanhar integração/deploy/smoke.
+- Tipo: change-feature / correção da apresentação web de FEAT-REP-001 v0.9.
+- Status: `concluido`; correção integrada, implantada e validada na sessão administrativa produtiva.
+- Resultado: gráfico pessoal desvinculado da ocultação do placar administrativo. Staff/superuser com histórico próprio veem o gráfico; placar administrativo e exclusão do ranking público preservados. Sem nova regra/API/permissão.
+- Integração: PR209 aberta e mergeada pelo MCP GitHub após aprovação explícita da descrição pelo usuário; commit `eaebb0a`, merge `6dde14010f58002adff24ca9eb3d4d752b4db6bf`. Branch local fix/web-performance-admin-chart, demais branches e alterações originais preservadas.
+- CI: PR42485739272 e main42486520746 aprovados; 700 testes Python/3 skips em ambos (427,626/372,306 s), builds principal/MCP, OpenAPI e quatro checks JS aprovados. Local: regressão reproduzida, 17 testes e 54 cenários de navegador aprovados.
+- Implantação: SSM bf43a08a-dadc-4716-9edc-1f4f3a33b8cd Success/0, concluída em 08/11 às 13:56:36 UTC. Sem migration, configuração, flag ou carga de dados.
+- Smoke: Chrome com sessão administrativa real confirma gráfico visível claro/escuro e placar oculto após reload. Tema/aba originais restaurados; sem credenciais/payload pessoal no relatório ou dados de teste em produção. HTTPS health/visitante/401/assets/ranking aprovados. SSM13776ce0-f814-4e03-b559-122507d7723a confirma commit limpo, rota, quatro hashes exatos e seis serviços running/MCP healthy. [Recibo final](../testing/web-performance-admin-chart-20261108.md).
+- MCP/arquitetura: ferramentas, schemas, contratos, autenticação, permissões, erros, replays/editorial, domínio e mobile preservados; somente apresentação de dados já autorizados. Nenhuma permissão inferida do Admin Ops; sem ADR/migration.
+- Checklist: spec/arquitetura, regressões, aceite, evidências, workflow, status, changelogs e lacunas reconciliados. Contrato/mapa de dependências inalterados; feature ampla permanece parcial/draft. Limite: Safari/Firefox/aparelho físico não exercitados.
+- Iniciado/atualizado/encerrado em: 2026-11-08.
+- Retomada: nenhuma pendência funcional/produtiva; esta atualização documental consolida a publicação e as evidências. Manter branches locais.
 
 ## WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT
 
