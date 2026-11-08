@@ -1,0 +1,256 @@
+{
+  "feature": "Desempenho web",
+  "source_commit": "b499dc5ceb6d542f205e37b5d128956dc9edd3c4",
+  "pull_request": "https://github.com/wscardua/gotrendlabs/pull/207",
+  "pr_ci": "https://github.com/wscardua/gotrendlabs/actions/runs/42425638720",
+  "main_ci_deploy": "https://github.com/wscardua/gotrendlabs/actions/runs/42426478228",
+  "deploy_ssm": {
+    "command_id": "e512d7b3-db83-4119-becd-c9e9dd715cfb",
+    "status": "Success",
+    "response_code": 0,
+    "ended_at": "2026-11-07T23:53:52.631Z"
+  },
+  "runtime_ssm": {
+    "command_id": "d4ae0f68-60c1-4191-9005-3c5c0e180447",
+    "status": "Success",
+    "response_code": 0,
+    "checked_at": "2026-11-07T23:54:51.294Z"
+  },
+  "images": [
+    {
+      "container": "/gotrendlabs-django-1",
+      "image": "sha256:0b26c8d8556fd4151c712df60a0bbad5cf4388859d47ec83f8d4e582ace4ea0f"
+    },
+    {
+      "container": "/gotrendlabs-fastapi-1",
+      "image": "sha256:62acc1f6f04ec1eea68e1a43935e6369867de91abb25a30807c1aaf8c9a8156c"
+    },
+    {
+      "container": "/gotrendlabs-mcp-1",
+      "image": "sha256:ca7e9ec92dcf40a29de93124b5b13cee3f25e0d1594958d1304ba7e1a1c85f55"
+    }
+  ],
+  "services": [
+    {
+      "Service": "daemon",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-daemon"
+    },
+    {
+      "Service": "django",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-django"
+    },
+    {
+      "Service": "fastapi",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-fastapi"
+    },
+    {
+      "Service": "mcp",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "gotrendlabs-mcp"
+    },
+    {
+      "Service": "proxy",
+      "State": "running",
+      "Health": "",
+      "Image": "caddy:2-alpine"
+    },
+    {
+      "Service": "thumbnail-worker",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-thumbnail-worker"
+    }
+  ],
+  "application": {
+    "route": "performance",
+    "hashes": {
+      "apps/web/django/profiles/views.py": "52d7905a51735e281121c97e21970e1328bcc1645b9635a422aae899c75131f2",
+      "apps/web/django/profiles/templates/profiles/performance.html": "f8f2dd7c1281f2a3bf177f874ddfb9ef9f3b70b076fe123a0013f3ec71d8940d",
+      "apps/web/templates/base.html": "e7ec628aa90c1eab0523fa2e61275d46b3d62b2770b6c3bbb3f05a6d4e122c58",
+      "apps/web/templates/components/badge_image.html": "5b1f610465f2fa218575796c22075314e15bf3508ddbe006cc9e90d6aabbb8b9",
+      "apps/web/static/css/performance.css": "0dfe71b16c4519985910de3eb05f1ce48921d9f127b81628d85be8d79a0a9d10",
+      "apps/web/static/js/performance.js": "67c6f0cb61a3d9beaa7c874f3f0e2d338b7cfed4226d9a87d4361cd932e4b1d0"
+    }
+  },
+  "https_smoke": {
+    "checked_at": "2026-11-07T23:54:23.290328+00:00",
+    "base": "https://gotrendlabs.com.br",
+    "checks": {
+      "health": {
+        "status": 200,
+        "checks": {
+          "api": "ok",
+          "database": "ok"
+        }
+      },
+      "visitor": {
+        "status": 302,
+        "location": "/login/?next=%2Fdesempenho%2F",
+        "cache_control": "max-age=0, no-cache, no-store, must-revalidate, private"
+      },
+      "visitor?user_id=1": {
+        "status": 302,
+        "location": "/login/?next=%2Fdesempenho%2F%3Fuser_id%3D1",
+        "cache_control": "max-age=0, no-cache, no-store, must-revalidate, private"
+      },
+      "missing_session": {
+        "status": 401
+      },
+      "invalid_session": {
+        "status": 401
+      },
+      "css/performance.css": {
+        "status": 200,
+        "sha256": "0dfe71b16c4519985910de3eb05f1ce48921d9f127b81628d85be8d79a0a9d10"
+      },
+      "js/performance.js": {
+        "status": 200,
+        "sha256": "67c6f0cb61a3d9beaa7c874f3f0e2d338b7cfed4226d9a87d4361cd932e4b1d0"
+      },
+      "rankings": {
+        "status": 200
+      }
+    },
+    "limitations": [
+      "Sem sessão produtiva autorizada de usuário comum disponível: renderização autenticada com dados pessoais validada no ambiente local.",
+      "Sem alterações em contas, previsões, mercados, permissões ou dados produtivos."
+    ]
+  },
+  "badge_images": [
+    {
+      "code": "ten_resolutions",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/ten_resolutions_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "a399f8e3ace5e77af64825faa1c5a59283a53412df985171f9abcfadbcdb09c1"
+    },
+    {
+      "code": "ten_resolutions",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/ten_resolutions_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "161f1cf9abcde842491f81dfc0adac32a43004c36add0317daeafc99e5f1b55c"
+    },
+    {
+      "code": "five_hits",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/five_hits_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "0fc32f5477123f3d07f26ebe4168cf76211c1fab5af184432e80cf96d2b4c319"
+    },
+    {
+      "code": "five_hits",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/five_hits_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "528b296a3af9de0ff9c1baa5b3fee4fce63ecc051ad0d841656bc8fa915e9320"
+    },
+    {
+      "code": "feedback_ally",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/feedback_ally_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "13bca0bdc371a355ab18b9fd4afce6e97a7b1111645d42157af0cdaf8a8fc096"
+    },
+    {
+      "code": "feedback_ally",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/feedback_ally_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "1c6560b9f1f1e2cefde72264ad9d4800db36077f937bcd38e54385dd7ed1b060"
+    },
+    {
+      "code": "founding_member",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/founding_member_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "27c21a7627dc626b08e761f67274745933b2be3af8bb931b03a92b9797566796"
+    },
+    {
+      "code": "founding_member",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/founding_member_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "4a2b1edebad7491230647c8ddaf1cffc1bd786b1be328fcad85d4a5085d638d4"
+    },
+    {
+      "code": "first_resolution",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/first_resolution_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "41e2a4c08aa6e5e044d33fd3974ff534a9afaee3251cf10f7911b51181f7bfbe"
+    },
+    {
+      "code": "first_resolution",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/first_resolution_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "afedef8349ed2b55f2b174c7c24ad72b06136fcd20cd594807e33ce133833de8"
+    },
+    {
+      "code": "market_scout",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/market_scout_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "7f02ca6d7a6d6ca33e0b5f0660cd56bd1c78ac0859014e761f95b3b2b1b37168"
+    },
+    {
+      "code": "market_scout",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/market_scout_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "0c774028608795f004a1165c5057e7bc57c527e22162bce36c403b651aaea0c2"
+    },
+    {
+      "code": "streak_five",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/streak_five_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "36088af7ed4e84c428e461314d464c8bd3409cd75f6f5718aa4f044af94cbdf7"
+    },
+    {
+      "code": "streak_five",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/streak_five_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "afa24375cb843e682c964a926e5374f9825c4e88c787b7482ec825e3d8a6ab99"
+    },
+    {
+      "code": "voice_builder",
+      "variant": "image_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/voice_builder_light.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "1a298bf08ae9b9c9f6ac79c70846caa61b01daacf5feccdf08d031bb26cc6a42"
+    },
+    {
+      "code": "voice_builder",
+      "variant": "image_dark_url",
+      "url": "https://gotrendlabs.com.br/media/badge_images/voice_builder_dark.png",
+      "status": 200,
+      "content_type": "image/png",
+      "sha256": "f4e38fd59e98ff51d369abb4626abe85f8f333b4a14a0f44c75b1f94972c90a3"
+    }
+  ]
+}

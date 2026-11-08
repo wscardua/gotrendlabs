@@ -1,3 +1,7 @@
+## 2026-11-07 — Desempenho web em produção
+
+PR207/merge `b499dc5`, CI PR/main/deploy e smoke aprovados. Página autenticada com seis indicadores, gráfico de deltas individuais, cinco resoluções/revelação até dez, imagens de conquistas, links e tipografia da Carteira integrada à main e implantada. 698 testes Python/três skips em PR e main; checks/builds aprovados. Sem migration, flag, carga produtiva ou ajuste MCP/mobile. [Recibo/evidências](../testing/web-performance-closeout-20261107.md). Branch local preservada; limite do smoke autenticado produtivo registrado sem confundir com disponibilidade da implantação.
+
 ## 07/11/2026 — Consolidação e fechamento de Desempenho web
 
 FEAT-REP-001 v0.8: comportamento final documentado para a página autenticada, incluindo gráfico de impactos individuais, revelação local de cinco para até dez resoluções, badges com imagens e tipografia da Carteira. Histórico de experimentos/reversões preservado. Implementação commitada em `9573ede` e revisada sem findings, com 698 testes Python/3 skips e QA aprovados. Integração/deploy ainda pendentes; descrição da PR requer aprovação do usuário. Sem novo contrato/API, regra, migration, release mobile ou ajuste MCP. [Recibo](../testing/web-performance-closeout-20261107.md).

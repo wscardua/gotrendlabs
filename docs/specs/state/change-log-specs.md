@@ -1,3 +1,7 @@
+## 2026-11-07 — Fechamento produtivo de Desempenho web
+
+Recibo, README e memória operacional reconciliados com PR207/merge `b499dc5`, CI/build/deploy aprovados e smoke HTTPS/runtime. Relatório versiona checksums, serviços, imagens de runtime e catálogo público de badges, sem dados pessoais ou credenciais. Estados anteriores mantidos como histórico; build local sem espaço não aparece como bloqueio de publicação após sucesso remoto. Feature ampla permanece parcial/draft; MCP/mobile/API sem ajuste. [Fonte vigente](../testing/web-performance-closeout-20261107.md).
+
 ## 2026-11-07 — Fonte da verdade de Desempenho web
 
 Reconciliados escopo e critérios finais de FEAT-REP-001 v0.8, arquitetura web e contrato descritivo: web/mobile compartilham agregado existente; Carregar mais é revelação local e gráfico usa deltas individuais, sem série acumulada. Removida duplicação de apresentação no contrato. Recibo de fechamento e estado operacional distinguem preparação, commit, integração e implantação; nenhuma promoção do status global da feature ampla. MCP explicitamente sem ajuste; sem ADR/OpenAPI/migration.

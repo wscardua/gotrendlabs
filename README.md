@@ -248,4 +248,4 @@ Migration editorial_integrations.0007 e ACL mínima confirmadas. Novos scopes n�
 
 ### Desempenho web
 
-Página autenticada `/desempenho/`, acessível pelo menu após Perfil e badges: placar atual, impactos recentes, conquistas com imagens e atalhos de perfil/ranking. Reutiliza o contrato existente da FastAPI. [Spec](docs/specs/features/reputation-and-ranking.md#página-web-desempenho-2026-11-07) e [estado de integração/implantação](docs/specs/testing/web-performance-closeout-20261107.md); conclusão local não equivale a disponibilidade produtiva.
+Página autenticada `/desempenho/`, integrada pela [PR #207](https://github.com/wscardua/gotrendlabs/pull/207) e implantada em produção, acessível pelo menu após Perfil e badges: placar atual, impactos recentes, conquistas com imagens e atalhos de perfil/ranking. Reutiliza o contrato existente da FastAPI. [Spec](docs/specs/features/reputation-and-ranking.md#página-web-desempenho-2026-11-07) e [recibo de implantação e limites de validação](docs/specs/testing/web-performance-closeout-20261107.md).

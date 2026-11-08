@@ -1,20 +1,16 @@
 ## WFLOW-20261107-WEB-PERFORMANCE-CLOSEOUT
 
-- Tipo: fechamento de implementation-cycle / FEAT-REP-001 v0.8, fatia web.
-- Status: `em_andamento`; implementação commitada/testada/revisada, aguardando aprovação da PR; sem PR/merge/deploy nesta etapa.
-- Objetivo: consolidar comportamento final, specs/memória, commit, revisão e fluxo GitHub até implantação autorizada.
-- Base: origin/main `92f43fdd227c80374a299d75465a044358360b3d`; branch local `feature/web-performance` deve permanecer. Checkout original e tarefas alheias preservados.
-- Artefatos: cliente/view/rota/templates/assets web, componente de badge compartilhado, testes e docs de reputação/arquitetura/contrato/estado/aceite/review/README; [recibo vigente](../testing/web-performance-closeout-20261107.md).
-- Decisões finais: gráfico de impactos individuais, cinco resoluções iniciais/revelação até dez sem rede, imagens reais de badges e tipografia alinhada à Carteira. Experimentos revertidos não integram a entrega. Feature ampla permanece parcial/draft.
-- Arquitetura/segurança: API existente com token pessoal e no-store; sem ORM para desempenho, regra local, banco/flag/serviço novo ou ADR/migration. Preservadas condições administrativas.
-- MCP: nenhum ajuste em tools, schemas, contratos, autenticação, permissões, erros, replays ou editorial; apenas consumidor web novo. Nenhuma permissão inferida de ações humanas. Mobile/OpenAPI inalterados.
-- Gates locais: 698 testes Python/3 skips (288,199 s), 15 específicos, 30 combinações de QA + dez autenticadas, comparação tipográfica, JS/OpenAPI/checks/collectstatic/Dockerfile e build MCP aprovados. Build principal local novamente bloqueado por espaço no Docker; sem remoção de dados/imagens do usuário. CI da PR deve aprovar build e suíte completa antes do merge.
-- Publicação: usuário exige mostrar título/descrição em português e obter aprovação antes de abrir PR. Fluxo posterior pelo MCP GitHub; Actions/SSM monitorados até conclusão e smoke. Confirmados ENABLE_PROD_DEPLOY=1 e DEPLOY_BRANCH=main.
-- Ativação: deploy existente/collectstatic; sem transferência de fixtures ou credenciais locais. Não declarar integração/distribuição antes das evidências.
-- Checklist: spec/contrato/arquitetura/testes/estado/changelogs/mapa/README reconciliados; execução final registrada no recibo. Sem ADR por preservar fronteiras. Histórico e reversões mantidos.
-- Iniciado/atualizado em: 2026-11-07.
-- Commit funcional/documental: `9573eded0efae22e79d8b0216a197c7799ea5d5e`; review do diff versionado com risco baixo/sem findings, registrado em teste/recibo. Complemento documental registra este estado.
-- Retomada: obter aprovação da descrição, publicar branch/abrir PR pelo MCP; depois CI, merge, deploy e smoke.
+- Tipo: fechamento/publicação da fatia web de FEAT-REP-001 v0.8.
+- Status: `concluido` no escopo funcional/produtivo; recibo documental preparado em branch própria para integração.
+- Resultado: PR207 aprovada explicitamente pelo usuário, aberta/mergeada pelo MCP GitHub; integração `b499dc5ceb6d542f205e37b5d128956dc9edd3c4`. Commits `9573ede`/`423e104`, branch local `feature/web-performance` e checkout original preservados.
+- CI: PR42425638720 e main42426478228 aprovados, 698 testes Python/3 skips em ambos (466,841/436,460 s); builds principal/MCP, OpenAPI e quatro checks JS aprovados. Limitação do Docker local não bloqueia a entrega após esses gates remotos.
+- Implantação: SSM `e512d7b3-db83-4119-becd-c9e9dd715cfb`, Success/0, encerrado em 07/11/2026 às 23:53:52 UTC. Sem migration/flag/configuração/carga de dados da feature.
+- Smoke: health API/database ok, visitante/login seguro/private-no-store, 401 sem token/inválido, seis hashes de runtime e dois assets HTTPS exatos, ranking200, oito badges com 16 imagens válidas. SSM `d4ae0f68-60c1-4191-9005-3c5c0e180447` confirma commit limpo, rota e seis serviços running/MCP healthy. [Recibo e evidências](../testing/web-performance-closeout-20261107.md).
+- Limites: sem acesso a navegador com sessão produtiva comum; testes/QA autenticados locais aprovados (15 específicos, 30 combinações de fixture e dez reais). Sem Safari/Firefox/aparelho físico. Nenhum dado/conta/credencial DEV transferido para PRD.
+- MCP/mobile: ferramentas, schemas, contratos, autenticação, permissões, erros, replays/editorial e consumidor Flutter preservados. Sem permissão inferida do Admin Ops ou release Android/iOS.
+- Checklist universal: spec, contrato descritivo, arquitetura, testes, README, mapa, estado, changelogs e lacunas revisados; sem ADR/migration por preservar fronteiras. [Review](../testing/web-performance-branch-review-20261107.md) sem findings/risco baixo. Feature ampla permanece parcial/draft.
+- Iniciado/atualizado/encerrado funcionalmente em: 2026-11-07.
+- Retomada: integrar somente a atualização documental deste recibo pelo CI leve; nenhum ajuste funcional/produtivo pendente. Manter branches locais.
 
 ## WFLOW-20261107-WEB-PERFORMANCE-TYPOGRAPHY
 
