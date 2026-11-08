@@ -1,8 +1,14 @@
+from django.conf import settings
+
 from apps.web.django.accounts.api_client import AuthAPIError, get_me, get_notifications, get_wallet
 from apps.web.django.accounts.session import auth_token, auth_user, is_authenticated
 from apps.web.django.admin_ops.models import MobileAppRelease
 from apps.web.django.core.domain_client import get_domain_client
 from apps.web.django.core.platform_config import maintenance_enabled
+
+
+def adsense_verification(request):
+    return {"adsense_account": f"ca-{settings.ADSENSE_PUBLISHER_ID}" if settings.PRODUCTION_MODE else ""}
 
 
 def _display_handle(value):

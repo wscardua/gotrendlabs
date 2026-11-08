@@ -1,3 +1,17 @@
+## WFLOW-20261108-ADSENSE-VERIFICATION
+
+- Tipo: nova feature / implementação FEAT-ADSENSE-001; status: `concluido` no escopo local.
+- Objetivo: preparar verificação via meta tag e ads.txt, sem anúncios/publicação.
+- Base: origin/main atualizada (`590ce3b`), branch `feature/adsense-site-verification` em worktree isolado; alterações do checkout original preservadas.
+- Arquitetura: rota pública Django sem consulta ao domínio; Caddy já encaminha a raiz ao Django. Meta tag no head compartilhado condicionada a PRODUCTION_MODE. Exceção exata no middleware de manutenção para ads.txt. ID público, sem segredo/configuração adicional. Sem mudança CSP, consentimento, layout, banco ou ADR.
+- Artefatos: spec, views/URLs/middleware/context processor/template, testes e memória operacional.
+- MCP: ferramentas, schemas, contratos, permissões, autenticação, erros, replays e orientação editorial sem ajustes: identificação estática web não muda operações de domínio nem exposição MCP. Nenhuma permissão inferida do Admin Ops.
+- Testes previstos: GET/HEAD anônimos, corpo/tipo exatos, manutenção, meta única em produção/ausente em DEV, ausência de script/espaços e regressões web.
+- Evidência: 23 testes aprovados; check Django e diff check aprovados. Virtualenv original Python 3.9 incompatível com código preexistente; validado em uv/Python 3.12 isolado. [Recibo](../testing/adsense-verification-20261108.md).
+- Checklist: spec/arquitetura/segurança/aceite, testes, changelogs, status e integration map reconciliados; sem ADR/migration. Commit local obrigatório antes da entrega; sem push, integração ou deploy.
+- Próxima ação após aprovação: publicar, conferir HTTPS ads.txt/meta, verificar conexão no painel e solicitar revisão. Publicação/aprovação Google não realizadas.
+- Iniciado/encerrado localmente em: 2026-11-08.
+
 ## WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART
 
 - Tipo: change-feature / correção da apresentação web de FEAT-REP-001 v0.9.

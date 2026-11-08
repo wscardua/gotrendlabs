@@ -1,3 +1,7 @@
+## 08/11/2026 — Verificação AdSense preparada localmente
+
+FEAT-ADSENSE-001: `/ads.txt` público com conteúdo exato e meta tag única no head compartilhado somente em PRODUCTION_MODE. Sem script, anúncios, slots, Auto ads ou alteração visual. 23 testes locais aprovados, check Django/diff aprovados. Implementação em branch isolada `feature/adsense-site-verification`, sem push/integração/deploy ou solicitação/aprovação Google. MCP preservado. [Recibo e próximos passos](../testing/adsense-verification-20261108.md).
+
 ## 08/11/2026 — Gráfico administrativo corrigido em produção
 
 PR209/merge `6dde140` integrada e implantada: CI PR42485739272 e main/deploy42486520746 aprovados, 700 testes Python/três skips em ambos. SSM Success/0 e hashes confirmam código correto. Smoke autenticado no Chrome mostra gráfico pessoal para conta administrativa nos dois temas e mantém placar oculto; health/visitante/401/assets/ranking aprovados. Sem migration/configuração/dados extras, nova permissão ou ajuste MCP/API/mobile. Branch local preservada. [Recibo final](../testing/web-performance-admin-chart-20261108.md). Esta entrada prevalece sobre a preparação local abaixo.

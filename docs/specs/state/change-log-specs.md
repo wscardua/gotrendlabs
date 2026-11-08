@@ -1,3 +1,7 @@
+## 2026-11-08 — Preparação para revisão AdSense
+
+Criada FEAT-ADSENSE-001 v1.0 com contrato HTTP web, separação de ambientes, escolha de meta tag respaldada em documentação oficial, aceite e limites de publicação. Arquitetura/mapa/estado e recibo atualizados. Sem mudança de domínio, editorial, OpenAPI ou MCP; nenhum ADR necessário.
+
 ## 2026-11-08 — Fechamento produtivo do gráfico administrativo
 
 Memória operacional e recibo reconciliados com PR209/merge `6dde140`, CI/build/deploy e smoke autenticado produtivo aprovados. Relatório versiona origem, imagens, hashes e resultados sem credenciais/payload pessoal. A regra de visibilidade de FEAT-REP-001 v0.9 já integra a main; placar/ranking, API/mobile e MCP preservados. [Fonte vigente](../testing/web-performance-admin-chart-20261108.md).
