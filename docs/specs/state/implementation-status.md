@@ -1,3 +1,7 @@
+## 08/11/2026 — AdSense: fechamento preparado para aprovação
+
+FEAT-ADSENSE-001 funcional em `e2ec03c`, review sem findings/risco baixo e 23 testes aprovados. Specs/README e memória reconciliados; WFLOW-20261108-ADSENSE-CLOSEOUT acompanha integração/publicação ainda pendentes de aprovação da PR. Sem mudança MCP/mobile ou ativação de anúncios. [Estado/evidências](../testing/adsense-verification-20261108.md).
+
 ## 08/11/2026 — Verificação AdSense preparada localmente
 
 FEAT-ADSENSE-001: `/ads.txt` público com conteúdo exato e meta tag única no head compartilhado somente em PRODUCTION_MODE. Sem script, anúncios, slots, Auto ads ou alteração visual. 23 testes locais aprovados, check Django/diff aprovados. Implementação em branch isolada `feature/adsense-site-verification`, sem push/integração/deploy ou solicitação/aprovação Google. MCP preservado. [Recibo e próximos passos](../testing/adsense-verification-20261108.md).

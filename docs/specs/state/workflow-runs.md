@@ -1,3 +1,15 @@
+## WFLOW-20261108-ADSENSE-CLOSEOUT
+
+- Tipo: fechamento/publicação de FEAT-ADSENSE-001; status: `em_andamento`.
+- Etapa: documentação/recibo e descrição de PR preparados; aguardando aprovação explícita do usuário antes de submeter a PR.
+- Origem: funcional `e2ec03c`, base origin/main `590ce3b`; worktree isolado e branch local preservados.
+- Review: sem findings, risco baixo; 23 testes/check Django/diff aprovados. [Review](../testing/adsense-branch-review-20261108.md).
+- Artefatos: spec/README/recibo/estado/changelogs; arquitetura e integration map já refletem o comportamento. Sem alteração funcional necessária após o review.
+- Publicação: Actions executa CI completo; deploy após merge se ENABLE_PROD_DEPLOY=1. Conferir commit produtivo, HTTPS /ads.txt exato, meta única e ausência de script; registrar evidências reais antes de concluir.
+- MCP/mobile: sem ajustes; ferramentas, schemas, contratos, autenticação, permissões, erros, replays/editorial preservados. Sem inferir permissão do Admin Ops, migration ou ADR.
+- Limites: preservar branch local; não solicitar revisão nem alterar conta Google. Publicação autoriza somente a identificação técnica prevista.
+- Iniciado em: 2026-11-08. Próxima ação: aprovação do usuário à PR; depois CI/merge/deploy/smoke e reconciliação do recibo.
+
 ## WFLOW-20261108-ADSENSE-VERIFICATION
 
 - Tipo: nova feature / implementação FEAT-ADSENSE-001; status: `concluido` no escopo local.

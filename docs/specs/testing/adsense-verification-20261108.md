@@ -37,3 +37,9 @@ Sem ajuste: ferramentas, schemas, contratos, autenticação, permissões, erros,
 4. Solicitar revisão do domínio e acompanhar o resultado no Google.
 
 Últimos status informados pelo proprietário: domínio “Precisa de revisão”, ads.txt “Não encontrado”. Não foram consultados novamente. **Implementado localmente não significa publicado; publicado não significa aprovado pelo Google.**
+
+## Preparação do fechamento — 08/11/2026
+
+Implementação funcional commitada em `e2ec03c`; review [sem findings](adsense-branch-review-20261108.md), risco baixo. Main remota novamente consultada: `590ce3b`, sem divergência da base. Última implantação web documentada: merge `6dde140` com CI/deploy e smoke aprovados; `590ce3b` acrescenta o recibo documental. Não há funcionalidade produtiva conhecida fora da base a reconciliar nesta entrega; worktrees locais preservados não serão empacotados.
+
+Specs, arquitetura, README, mapa, changelogs, status e workflow revisados. Correções documentais esclarecem shells próprios e o Python de testes. Próximo gate: aprovação explícita do usuário ao título/descrição da PR antes de submissão. Depois: push/PR pelo fluxo GitHub, CI completo, merge, acompanhamento do Actions e smoke HTTPS. Sem migration, novo segredo, alteração de Caddy ou flag adicional para ativação; configurações existentes de produção já selecionam PRODUCTION_MODE. Registrar IDs/commits/evidências reais após cada etapa. Nenhuma solicitação de revisão ou mudança no painel Google autorizada por esse fechamento.

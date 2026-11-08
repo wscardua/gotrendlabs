@@ -28,7 +28,11 @@ Arquitetura: entrega Django pelo proxy Caddy existente; contexto de identificaç
 ## Aceite
 
 - Cliente anônimo recebe status/tipo/corpo exatos em GET e HEAD sem corpo, inclusive em manutenção.
-- Home e páginas públicas renderizam meta única dentro do head em produção e nenhuma em DEV; não contêm script AdSense, unidades ou slots.
+- Home e páginas que herdam `base.html` renderizam meta única dentro do head em produção e nenhuma em DEV; shells próprios de login/admin não recebem a meta. Não contêm script AdSense, unidades ou slots.
 - Rotas existentes e manutenção da home preservadas.
-- Testes locais usam o virtualenv existente e não escrevem em produção.
+- Testes locais preservam o virtualenv existente; quando incompatível com a main, usam ambiente isolado Python 3.12 com requirements.txt, sem escrita produtiva.
 - Após aprovação da entrega: publicar, conferir HTTPS /ads.txt e meta no HTML, verificar conexão no painel e solicitar revisão. Nenhuma dessas ações faz parte da implementação local.
+
+## Fechamento e publicação
+
+Review do intervalo `590ce3b..e2ec03c`: nenhum problema identificável no diff; risco baixo. CI/deploy e smoke produtivo são gates separados da validação local. A execução de fechamento está em `WFLOW-20261108-ADSENSE-CLOSEOUT`; a aprovação ou solicitação de revisão no Google continua fora do escopo.
