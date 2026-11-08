@@ -1,0 +1,100 @@
+{
+  "checked_at": "2026-11-08T15:57:08.220409+00:00",
+  "results": [
+    {
+      "path": "/ads.txt",
+      "status": 200,
+      "content_type": "text/plain",
+      "sha256": "f2318519eb9cdf4763f34d280d0446f79cc0dd08fe68e2abf0e7f493f0bb59e6",
+      "exact_body": true
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "sha256": "abe3fa0aa2b77a75d4805f4d12013c056244accc73b03defd8b44db7e231fef9",
+      "meta": [
+        {
+          "in_head": true,
+          "content": "ca-pub-4771800155732970"
+        }
+      ],
+      "ad_elements": 0
+    },
+    {
+      "path": "/concepts/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "sha256": "9078ca3ec2af068ea3642e377c1fff445f4c8b2cc47a0dcc70058c7f7446e097",
+      "meta": [
+        {
+          "in_head": true,
+          "content": "ca-pub-4771800155732970"
+        }
+      ],
+      "ad_elements": 0
+    },
+    {
+      "path": "/security/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "sha256": "96fef0cd7c558b64caca322087aae383ef8e34e0f560e19018b4a15a61626d54",
+      "meta": [
+        {
+          "in_head": true,
+          "content": "ca-pub-4771800155732970"
+        }
+      ],
+      "ad_elements": 0
+    },
+    {
+      "path": "/use-policy/",
+      "status": 200,
+      "content_type": "text/html; charset=utf-8",
+      "sha256": "8753935730438816e594ca66339a81259df64ac59881f1febdefbd57529df055",
+      "meta": [
+        {
+          "in_head": true,
+          "content": "ca-pub-4771800155732970"
+        }
+      ],
+      "ad_elements": 0
+    },
+    {
+      "path": "/api/health",
+      "status": 200,
+      "content_type": "application/json",
+      "sha256": "12ad6823fc6ec33570e1390ec54c76b0259822dfca57fdc02dd00f6f8d755cc2",
+      "health": {
+        "status": "ok",
+        "maintenance": {
+          "web_enabled": false,
+          "mobile_enabled": false,
+          "mobile_message": "Estamos em manutenção no app para deixar sua experiência mais estável. Voltamos em breve."
+        },
+        "checks": {
+          "api": "ok",
+          "database": "ok"
+        },
+        "mobile": {
+          "current_app_version": "",
+          "current_app_build": null,
+          "min_supported_android_build": 8,
+          "latest_android_build": 8,
+          "latest_android_version": "1.0.7",
+          "update_required": false,
+          "update_available": false,
+          "download_url": "https://gotrendlabs.com.br/media/app_releases/android/gotrendlabs-android-1.0.7-8_1vk3vui.apk",
+          "update_required_message": "Atualize o app para continuar usando o GoTrendLabs."
+        }
+      }
+    },
+    {
+      "path": "/ads.txt",
+      "method": "HEAD",
+      "status": 200,
+      "content_type": "text/plain",
+      "empty_body": true
+    }
+  ]
+}

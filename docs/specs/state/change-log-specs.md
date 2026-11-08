@@ -1,3 +1,7 @@
+## 2026-11-08 — Estado produtivo da verificação AdSense
+
+FEAT-ADSENSE-001 promovida a implementada_validada com CI, implantação e smoke reais. README, workflow/estado/mapa e recibo reconciliados; histórico local preservado. Nenhuma nova regra, contrato ou alteração editorial/MCP; reconhecimento e aprovação Google explicitamente separados da publicação.
+
 ## 2026-11-08 — Fonte da verdade do fechamento AdSense
 
 Aceite FEAT-ADSENSE-001 esclarece quais shells recebem meta e como preservar o virtualenv incompatível. Review e gates de publicação registrados no README, recibo, workflow e estado; sem alteração de comportamento/contrato, sem nova versão funcional ou ADR. Aprovação Google permanece externa e pendente.

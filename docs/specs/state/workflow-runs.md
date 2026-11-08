@@ -1,7 +1,17 @@
+## WFLOW-20261108-ADSENSE-PRODUCTION-RECEIPT
+
+- Tipo/status: consolidação documental do fechamento produtivo, `concluido` no escopo técnico; integração deste recibo pelo CI leve.
+- Resultado: PR211 aprovada explicitamente, aberta/mergeada pelo MCP GitHub; merge `f3eac3b646248355042cfcf47fdbc69b09f5d30a`. CI PR42495450435 e main/deploy42496468139 aprovados, 704 testes/3 skips em ambos, builds/checks aprovados.
+- Produção: SSM39d5bdca-a292-4fb0-9086-33d1dd74c83e Success/0 às 12:56:00 de Brasília; commit do merge, seis serviços ativos/MCP healthy e seis hashes reais conferidos. HTTPS GET/HEAD ads.txt, quatro páginas com meta única/sem script e health aprovados. [Recibo](../testing/adsense-verification-20261108.md).
+- Ativação: configuração produtiva existente suficiente; sem migration, segredo, flag adicional, dado de teste ou alteração de conta Google. Publicação não significa reconhecimento/aprovação AdSense.
+- MCP/mobile/API: ferramentas, schemas, contratos, autenticação, permissões, erros, replays e editorial preservados; nenhuma permissão inferida do Admin Ops.
+- Checklist: spec/README/recibo/estado/changelogs/mapa reconciliados; branch funcional e demais alterações locais preservadas. PR documental autorizada separadamente, sem novo deploy; CI leve e integração documental são a próxima ação.
+- Data: 2026-11-08. Pendência externa: proprietário verifica conexão/status ads.txt no painel e solicita revisão Google; fora do escopo executado.
+
 ## WFLOW-20261108-ADSENSE-CLOSEOUT
 
-- Tipo: fechamento/publicação de FEAT-ADSENSE-001; status: `em_andamento`.
-- Etapa: documentação/recibo e descrição de PR preparados; aguardando aprovação explícita do usuário antes de submeter a PR.
+- Tipo: fechamento/publicação de FEAT-ADSENSE-001; status: `concluido`; publicação confirmada no recibo produtivo acima.
+- Etapa final: aprovação recebida, PR211 mergeada, CI/deploy/smoke aprovados. Registro original das próximas etapas preservado abaixo como histórico.
 - Origem: funcional `e2ec03c`, base origin/main `590ce3b`; worktree isolado e branch local preservados.
 - Review: sem findings, risco baixo; 23 testes/check Django/diff aprovados. [Review](../testing/adsense-branch-review-20261108.md).
 - Artefatos: spec/README/recibo/estado/changelogs; arquitetura e integration map já refletem o comportamento. Sem alteração funcional necessária após o review.
