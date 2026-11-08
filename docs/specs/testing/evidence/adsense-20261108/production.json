@@ -1,0 +1,38 @@
+{
+  "source_commit": "f3eac3b646248355042cfcf47fdbc69b09f5d30a",
+  "pr": "https://github.com/wscardua/gotrendlabs/pull/211",
+  "pr_ci": {
+    "url": "https://github.com/wscardua/gotrendlabs/actions/runs/42495450435",
+    "tests": 704,
+    "skipped": 3,
+    "seconds": 552.62
+  },
+  "main_ci_deploy": {
+    "url": "https://github.com/wscardua/gotrendlabs/actions/runs/42496468139",
+    "tests": 704,
+    "skipped": 3,
+    "seconds": 360.539
+  },
+  "deploy_ssm": {
+    "command_id": "39d5bdca-a292-4fb0-9086-33d1dd74c83e",
+    "Status": "Success",
+    "ResponseCode": 0,
+    "ExecutionEndDateTime": "2026-11-08T15:56:00.407Z"
+  },
+  "runtime_ssm": {
+    "command_id": "d9e45964-4b25-40c9-9d35-8408d26bba6f",
+    "Status": "Success",
+    "ResponseCode": 0,
+    "ExecutionEndDateTime": "2026-11-08T15:56:44.161Z",
+    "StandardOutputContent": "f3eac3b646248355042cfcf47fdbc69b09f5d30a\ngotrendlabs-django-1 Up About a minute gotrendlabs-django\ngotrendlabs-thumbnail-worker-1 Up About a minute gotrendlabs-thumbnail-worker\ngotrendlabs-daemon-1 Up About a minute gotrendlabs-daemon\ngotrendlabs-mcp-1 Up About a minute (healthy) gotrendlabs-mcp\ngotrendlabs-fastapi-1 Up About a minute gotrendlabs-fastapi\ngotrendlabs-proxy-1 Up 2 weeks caddy:2-alpine\n8aff94ad4b85b52c477b44b067bf763f6eba8d44966b67a00cf85fe8c6f66594  config/settings.py\n2cce532d9b2185c4e2b6a297d1ceba1c4850a22e9c2d4ff8687dacaf3ae872c3  config/urls.py\nb94d41bce0113b1f8b380da761fb8bfdc5a9724aa7dedc7ff561dd7b24c0180e  apps/web/django/core/views.py\n1c7c9f8f750709b4c3c1bc6fd187a97ea37d27afc45eb9f320188bcadd5d6fba  apps/web/django/core/middleware.py\n07276c83dde6a7839f052842568fceb53d332e2fdae34cb3e1a60d6d48d446ab  apps/web/django/core/context_processors.py\n4682b777f02b315baabdca669b1ad173398aa83bedd9d3b5f0646700d6f606e5  apps/web/templates/base.html\n",
+    "StandardErrorContent": ""
+  },
+  "image_ssm": {
+    "command_id": "4d2def72-a4fc-457b-8237-f869f28774e2",
+    "Status": "Success",
+    "ResponseCode": 0,
+    "ExecutionEndDateTime": "2026-11-08T15:57:25.115Z",
+    "StandardOutputContent": "/gotrendlabs-django-1 sha256:b3607eb83326152a86f05c2889beda837c94ae1f895154a5d034879e10833502\n/gotrendlabs-fastapi-1 sha256:a07bcd78f5a408e247f8927a0eed4da10a3c098d613a9360644be1a6165e0797\n/gotrendlabs-mcp-1 sha256:94fcc0a309c3628a882a4def01975d008d7fa7e5114427af35faaf850408b310\n/gotrendlabs-daemon-1 sha256:12dabff5b7ed6f953f37b785ada70038de0794cfd743f2b617e3d5551d279ae4\n/gotrendlabs-thumbnail-worker-1 sha256:661abf9f1beca99eeb68298c95ef5c509005648d6d08785f518ba6e87df135d5\n/gotrendlabs-proxy-1 sha256:86deaf5e3d3408a6ccec08fbb79989783dd26e206ae10bcf78a801dc8c9ab794\n8aff94ad4b85b52c477b44b067bf763f6eba8d44966b67a00cf85fe8c6f66594  /app/config/settings.py\n2cce532d9b2185c4e2b6a297d1ceba1c4850a22e9c2d4ff8687dacaf3ae872c3  /app/config/urls.py\nb94d41bce0113b1f8b380da761fb8bfdc5a9724aa7dedc7ff561dd7b24c0180e  /app/apps/web/django/core/views.py\n1c7c9f8f750709b4c3c1bc6fd187a97ea37d27afc45eb9f320188bcadd5d6fba  /app/apps/web/django/core/middleware.py\n07276c83dde6a7839f052842568fceb53d332e2fdae34cb3e1a60d6d48d446ab  /app/apps/web/django/core/context_processors.py\n4682b777f02b315baabdca669b1ad173398aa83bedd9d3b5f0646700d6f606e5  /app/apps/web/templates/base.html\n",
+    "StandardErrorContent": ""
+  }
+}

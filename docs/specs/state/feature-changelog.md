@@ -1,3 +1,7 @@
+## 08/11/2026 — AdSense: fechamento produtivo
+
+PR211 integrada e implantada com CI completo/deploy aprovados e smoke público. ads.txt reconhecível por URL raiz e meta de identificação disponíveis; nenhuma publicidade ativada. Recibo registra commit, CI, SSM, hashes/imagens e evidências HTTPS; revisão Google fica a cargo do proprietário. Sem ajuste MCP/mobile/API. Branch local mantida.
+
 ## 08/11/2026 — Fechamento local AdSense revisado
 
 Review funcional sem findings; registrado recibo e gates de integração/deploy/smoke, preservando distinção entre implementação, publicação e aprovação Google. Nenhum ajuste de código decorrente do review. README/spec esclarecem head compartilhado e testes em Python 3.12 isolado; publicação aguarda aprovação da PR.

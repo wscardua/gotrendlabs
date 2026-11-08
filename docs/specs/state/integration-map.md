@@ -1,3 +1,7 @@
+## 2026-11-08 — Identificação AdSense ativa em produção
+
+Fluxo documentado de crawler → proxy existente → Django confirmado após PR211/merge `f3eac3b`: HTTPS ads.txt 200/text/plain/exato e meta única nas páginas verificadas. Sem chamada ao script Google; domínio/API/MCP/mobile inalterados. [Recibo produtivo](../testing/adsense-verification-20261108.md).
+
 ## 2026-11-08 — Identificação pública AdSense (local)
 
 Google crawler → Caddy existente → Django `/ads.txt` (sem sessão/API/banco). Head de `base.html` ← context processor sem I/O ← PRODUCTION_MODE + ADSENSE_PUBLISHER_ID público. Não há chamada do navegador ao Google ou dependência de SDK. Sem integração MCP/domínio; verificação e solicitação no painel ficam para depois da publicação. [Spec](../features/adsense-verification.md).

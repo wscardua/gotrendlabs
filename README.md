@@ -1,6 +1,6 @@
 # GoTrendLabs
 
-Preparação AdSense (08/11/2026): `/ads.txt` público e meta de identificação no head compartilhado em produção, sem carregar anúncios. Implementação/testes locais concluídos; integração e publicação em preparação. [Spec](docs/specs/features/adsense-verification.md) e [evidências/estado de publicação](docs/specs/testing/adsense-verification-20261108.md).
+Verificação AdSense (08/11/2026): PR #211 integrada e implantada; `/ads.txt` público e meta única no head compartilhado confirmados por HTTPS, sem script/anúncios. CI completo e deploy aprovados; revisão/aprovação Google ainda pendentes de ação do proprietário. [Spec](docs/specs/features/adsense-verification.md) e [evidências/estado de publicação](docs/specs/testing/adsense-verification-20261108.md).
 
 Convite contextual da grade web (07/11/2026): integrado pela PR #205, implantado e validado em produção; CI/main/deploy e smoke aprovados. Preenche apenas espaços restantes, com cinco recursos da plataforma e estado estável por visita. Branch local `feature/web-market-grid-invite` preservada. [Fonte da verdade e evidências](docs/specs/testing/web-grid-invite-closeout-20261107.md).
 

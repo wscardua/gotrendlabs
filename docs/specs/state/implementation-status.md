@@ -1,3 +1,7 @@
+## 08/11/2026 — AdSense publicado e validado
+
+FEAT-ADSENSE-001 integrada pela PR211/merge `f3eac3b`, implantada pelo Actions42496468139. CI PR/main com 704 testes/3 skips em ambos; builds/checks e deploy aprovados. GET/HEAD HTTPS `/ads.txt` exatos, meta única no head de quatro páginas públicas, ausência de script/slots e API/banco saudáveis. Sem migration/configuração adicional ou mudança MCP/mobile. Branch local preservada. Revisão/aprovação Google não realizada nem presumida. [Fonte vigente](../testing/adsense-verification-20261108.md); esta entrada prevalece sobre a preparação local anterior.
+
 ## 08/11/2026 — AdSense: fechamento preparado para aprovação
 
 FEAT-ADSENSE-001 funcional em `e2ec03c`, review sem findings/risco baixo e 23 testes aprovados. Specs/README e memória reconciliados; WFLOW-20261108-ADSENSE-CLOSEOUT acompanha integração/publicação ainda pendentes de aprovação da PR. Sem mudança MCP/mobile ou ativação de anúncios. [Estado/evidências](../testing/adsense-verification-20261108.md).

@@ -1,4 +1,23 @@
-# AdSense — recibo local de 2026-11-08
+# AdSense — recibo de implementação e publicação de 2026-11-08
+
+## Estado vigente — integrado, publicado e validado
+
+Esta seção prevalece sobre os registros históricos de preparação local abaixo. PR [#211](https://github.com/wscardua/gotrendlabs/pull/211) aberta e mergeada pelo MCP GitHub após aprovação explícita do título/descrição. Commits `e2ec03c` e `211a5b6`, merge `f3eac3b646248355042cfcf47fdbc69b09f5d30a`. Branch local `feature/adsense-site-verification` e alterações preexistentes preservadas. Recibo final preparado em branch documental separada, também autorizada pelo usuário.
+
+- [CI da PR](https://github.com/wscardua/gotrendlabs/actions/runs/42495450435): sucesso, 704 testes/3 skips em 552,620 s; builds principal/MCP, OpenAPI e checks JS aprovados.
+- [CI/main e deploy](https://github.com/wscardua/gotrendlabs/actions/runs/42496468139): sucesso, 704 testes/3 skips em 360,539 s; todos os jobs aprovados.
+- Deploy SSM `39d5bdca-a292-4fb0-9086-33d1dd74c83e`: Success/0, concluído em 08/11/2026 às **12:56:00 de Brasília** (15:56:00 UTC).
+- Runtime SSM `d9e45964-4b25-40c9-9d35-8408d26bba6f`: commit igual ao merge, sem alteração em arquivos versionados; seis serviços ativos, MCP saudável. Backups de ambiente preexistentes no host preservados e excluídos pelo `.dockerignore`; seu conteúdo não foi lido ou distribuído.
+- Imagem em execução conferida pelo SSM `4d2def72-a4fc-457b-8237-f869f28774e2`: seis hashes de settings/URLs/views/middleware/contexto/template idênticos ao commit integrado. IDs das imagens e checksums registrados no [relatório produtivo](evidence/adsense-20261108/production.json).
+- [Smoke HTTPS](evidence/adsense-20261108/https-smoke.json), 12:57:08 de Brasília: `/ads.txt` GET 200, `text/plain`, bytes exatos com LF final; HEAD 200 sem corpo. Home, conceitos, segurança e política 200, meta única com ID correto dentro do head e nenhum script/slot. `/api/health` 200, API/banco ok. Primeira tentativa local teve falha transitória de DNS; nova tentativa passou sem alteração no servidor.
+
+Nenhuma migration, segredo, flag adicional, mudança de proxy/CSP/consentimento ou dado de teste foi necessário para ativação. Meta habilitada pelo PRODUCTION_MODE existente. Sem ajuste MCP/mobile/OpenAPI ou regra de domínio. Contratos, permissões, autenticação, erros, replays e orientação editorial preservados.
+
+**Preparação técnica publicada.** Nenhuma alteração na conta Google ou solicitação de revisão foi realizada; reconhecimento/aprovação pelo Google não foi confirmado. Próximas ações do proprietário: verificar conexão por meta tag e status ads.txt no painel, solicitar revisão do domínio e acompanhar o resultado. Publicação não significa aprovação do Google.
+
+Checklist local e produtivo atendido; ausência de bloqueio funcional. Limites: não exercitada variação geográfica/cache de todos os visitantes, nem estado real de manutenção em produção; cobertura local protege manutenção sem acioná-la no ambiente público.
+
+## Histórico — preparação local
 
 Branch `feature/adsense-site-verification`, origin/main atualizada em `590ce3b`, worktree `/Users/williamsca/Documents/gotrendlabs-adsense`. Checkout original e alterações preexistentes preservados. Implementação e testes locais, sem push, integração à main, deploy, conta Google ou escrita produtiva.
 

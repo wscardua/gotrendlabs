@@ -3,7 +3,7 @@ id: FEAT-ADSENSE-001
 titulo: "Verificação do site no Google AdSense"
 versao: 1.0
 status_spec: aprovada
-status_impl: implementada_validada_localmente
+status_impl: implementada_validada
 ultima_atualizacao: 2026-11-08
 origem:
   - solicitação do proprietário em 2026-11-08
@@ -36,3 +36,7 @@ Arquitetura: entrega Django pelo proxy Caddy existente; contexto de identificaç
 ## Fechamento e publicação
 
 Review do intervalo `590ce3b..e2ec03c`: nenhum problema identificável no diff; risco baixo. CI/deploy e smoke produtivo são gates separados da validação local. A execução de fechamento está em `WFLOW-20261108-ADSENSE-CLOSEOUT`; a aprovação ou solicitação de revisão no Google continua fora do escopo.
+
+## Publicação confirmada — 08/11/2026
+
+PR #211 integrada no merge `f3eac3b`; CI completo e deploy Actions aprovados. HTTPS ads.txt e meta única nas páginas verificadas confirmados. Sem script/anúncios ou configuração adicional. [Recibo vigente](../testing/adsense-verification-20261108.md). Revisão/aprovação Google continuam pendentes de ação do proprietário.
