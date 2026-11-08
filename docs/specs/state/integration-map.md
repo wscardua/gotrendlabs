@@ -1,3 +1,7 @@
+## 2026-11-08 — Identificação pública AdSense (local)
+
+Google crawler → Caddy existente → Django `/ads.txt` (sem sessão/API/banco). Head de `base.html` ← context processor sem I/O ← PRODUCTION_MODE + ADSENSE_PUBLISHER_ID público. Não há chamada do navegador ao Google ou dependência de SDK. Sem integração MCP/domínio; verificação e solicitação no painel ficam para depois da publicação. [Spec](../features/adsense-verification.md).
+
 ## 07/11/2026 — Desempenho web ativo
 
 PR207/merge `b499dc5` implantado pelo fluxo existente: menu/perfil → `/desempenho/` → cliente Django com token da própria sessão → `GET /users/me/performance`. Contrato e consumidores mobile/MCP preservados. Templates/rota/componentes e assets produtivos conferidos por hashes; perfil#badges, mercados por slug e ranking mantêm destinos existentes. Sem nova configuração, dados, migration, fila ou serviço. [Fechamento](../testing/web-performance-closeout-20261107.md).

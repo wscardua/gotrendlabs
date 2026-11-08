@@ -164,3 +164,7 @@ Por pedido posterior do usuário, Desempenho limita a exibição inicial a cinco
 ### Gráfico de impactos recentes
 
 Pedido posterior do usuário autoriza gráfico compacto dos deltas individuais de `history`, substituindo a exclusão visual anterior somente para esse recorte. Não é gráfico de evolução do score acumulado: não há contrato histórico suficiente para ele. Ordenação da API é invertida apenas para leitura cronológica, e altura é proporcional ao maior delta absoluto recebido, sem modificar valores. Rótulos e sinais numéricos complementam as cores; cada barra oferece link acessível ao mercado. Oculto em vazio/erro. A exibição do gráfico independe da ocultação do placar administrativo: staff/superuser também acompanham os impactos das próprias resoluções retornados pela API, mantendo sua exclusão do ranking público. Nenhum ajuste MCP.
+
+## Identificação AdSense sem publicidade
+
+FEAT-ADSENSE-001: Django entrega `/ads.txt` público via proxy existente, com exceção exata no middleware de manutenção. Context processor sem I/O fornece a meta de identificação ao head de `base.html` somente em PRODUCTION_MODE; login/admin têm shells próprios e não recebem a meta. Nenhum script/slot, regra crítica, dependência backend, segredo ou alteração CSP/consentimento. [Spec](../features/adsense-verification.md).

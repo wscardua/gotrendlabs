@@ -8,7 +8,7 @@ from django.utils import timezone
 from django.utils.crypto import constant_time_compare
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_safe
 from datetime import datetime
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -49,6 +49,14 @@ def _verify_guest_recaptcha(request):
         verify_recaptcha_response(request.POST.get("g-recaptcha-response", ""), remote_ip=_request_ip(request))
     except RecaptchaError as exc:
         raise AuthAPIError(str(exc), 422) from exc
+
+
+@require_safe
+def ads_txt(request):
+    return HttpResponse(
+        f"google.com, {settings.ADSENSE_PUBLISHER_ID}, DIRECT, f08c47fec0942fa0\n",
+        content_type="text/plain",
+    )
 
 
 def maintenance(request):

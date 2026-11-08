@@ -16,6 +16,7 @@ from apps.web.django.wallet import views as wallet_views
 from apps.web.django.admin_ops import integration_views
 
 urlpatterns = [
+    path("ads.txt", core_views.ads_txt, name="ads-txt"),
     path("admin-ops/integrations/new/", integration_views.integrations, {"create": True}, name="admin-ops-integration-new"),
     path("admin-ops/integrations/", integration_views.integrations, name="admin-ops-integrations"),
     path("admin-ops/integrations/<uuid:identifier>/", integration_views.integrations, name="admin-ops-integration-detail"),

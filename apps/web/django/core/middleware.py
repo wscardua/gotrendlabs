@@ -39,6 +39,8 @@ class MaintenanceModeMiddleware:
 
     def _should_redirect(self, request):
         path = request.path_info or "/"
+        if path == "/ads.txt":
+            return False
         if request.method not in {"GET", "HEAD"}:
             return False
         if any(path.startswith(prefix) for prefix in self.EXEMPT_PREFIXES):

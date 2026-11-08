@@ -25,6 +25,7 @@ def env_int(name, default):
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "dev-only-gotrendlabs-django-fixtures")
 DEBUG = env_flag("DJANGO_DEBUG", True)
 PRODUCTION_MODE = os.environ.get("GOTRENDLABS_ENV", "").strip().lower() in {"prod", "production"} or not DEBUG
+ADSENSE_PUBLISHER_ID = "pub-4771800155732970"  # Public site ownership identifier, not a secret.
 if "test" in sys.argv and not PRODUCTION_MODE:
     # The test process needs a key, but no fixed secret is shipped with the app.
     os.environ.setdefault("GOTRENDLABS_PASSWORD_PEPPER", base64.b64encode(os.urandom(32)).decode("ascii"))
@@ -94,6 +95,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.web.django.core.context_processors.session_context",
+                "apps.web.django.core.context_processors.adsense_verification",
                 "apps.web.django.admin_ops.navigation.admin_navigation",
             ],
         },

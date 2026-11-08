@@ -4,6 +4,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% if adsense_account %}<meta name="google-adsense-account" content="{{ adsense_account }}">{% endif %}
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>{% block title %}GoTrendLabs{% endblock %}</title>
   <link rel="icon" href="{% static 'brand/gtl-constellation-mark-light.svg' %}?v=20260605-favicon" type="image/svg+xml" media="(prefers-color-scheme: light)">

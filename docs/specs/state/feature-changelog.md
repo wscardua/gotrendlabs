@@ -1,3 +1,11 @@
+## 08/11/2026 — Fechamento local AdSense revisado
+
+Review funcional sem findings; registrado recibo e gates de integração/deploy/smoke, preservando distinção entre implementação, publicação e aprovação Google. Nenhum ajuste de código decorrente do review. README/spec esclarecem head compartilhado e testes em Python 3.12 isolado; publicação aguarda aprovação da PR.
+
+## 08/11/2026 — FEAT-ADSENSE-001: identificação para revisão
+
+Rota Django `/ads.txt` (GET/HEAD público, inclusive manutenção), ID público versionado e meta tag de produção no base.html. Documentação Google confirma verificação sem script; integração publicitária fica futura. Sem layout, CSP, consentimento, banco/API/MCP novos. 23 testes aprovados; entrega exclusivamente local. [Spec](../features/adsense-verification.md).
+
 ## 2026-11-08 — Gráfico pessoal administrativo implantado
 
 Correção FEAT-REP-001 v0.9 integrada pela PR209/merge `6dde140`, com CI/main/deploy aprovados e 700 testes Python/três skips em ambos os runs. Sessão administrativa real confirma gráfico nos temas claro/escuro; ocultação do placar e exclusão do ranking público preservadas. Quatro hashes de runtime e assets HTTPS conferidos; nenhum ajuste produtivo extra ou mudança MCP/mobile. [Recibo/evidências](../testing/web-performance-admin-chart-20261108.md). Branch local preservada.
