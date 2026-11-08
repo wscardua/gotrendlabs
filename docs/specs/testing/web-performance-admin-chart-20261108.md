@@ -1,5 +1,34 @@
 # Correção — gráfico pessoal de administradores
 
+## Estado final — integrado e implantado
+
+Correção autorizada após diagnóstico com screenshot produtivo. PR [#209](https://github.com/wscardua/gotrendlabs/pull/209) aberta/mergeada pelo MCP GitHub após aprovação explícita da descrição, integrada em `6dde14010f58002adff24ca9eb3d4d752b4db6bf`. Commit funcional `eaebb0a49da1d62cb767bfb11ed5c2a0cfb31445`. Branch local `fix/web-performance-admin-chart`, demais branches e alterações do checkout original preservadas.
+
+- CI da PR [42485739272](https://github.com/wscardua/gotrendlabs/actions/runs/42485739272): sucesso; 700 testes Python em 427,626 s, OK/3 skips, builds principal/MCP, OpenAPI e quatro checks JavaScript aprovados.
+- CI/main e deploy [42486520746](https://github.com/wscardua/gotrendlabs/actions/runs/42486520746): sucesso em todos os jobs; 700 testes em 372,306 s, OK/3 skips, builds/checks e implantação aprovados.
+- SSM `bf43a08a-dadc-4716-9edc-1f4f3a33b8cd`: Success/0; deploy concluído em 08/11 às 13:56:36 UTC (10:56:36 de Brasília).
+- Conferência SSM `13776ce0-f814-4e03-b559-122507d7723a`: Success/0; commit produtivo igual ao merge, checkout limpo, rota performance registrada e quatro hashes de template/view/CSS/JS idênticos ao código integrado. Seis serviços running, MCP healthy. IDs das imagens e checksums no [relatório](evidence/web-performance-admin-chart-20261108/production/report.json).
+- Conferência anterior SSM `c7525237-7688-4a3c-8077-4e9a9c376c7a`: checkout limpo no commit produtivo anterior b499dc5 e seis serviços ativos. Main anterior acrescentava somente documentação; nenhuma divergência funcional não reconciliada.
+- Sem migration, flag, configuração, carga de dados ou nova permissão para ativação. Somente condição de template; mesmo agregado FastAPI e mesma sessão. Nenhuma fixture/credencial local distribuída.
+
+## Smoke autenticado em produção
+
+Chrome nativo, sessão administrativa já existente, `/desempenho/`. Antes do deploy, ausência do gráfico com histórico real confirmada. Depois do deploy, página recarregada e **gráfico pessoal visível nos temas claro e escuro**, com deltas e links dos mercados do histórico pessoal; placar continua oculto e mensagem administrativa permanece.
+
+Capturas observadas e árvore de acessibilidade confirmam barras positivas/negativas e rótulos textuais. Não houve criação de conta, previsão, mercado ou dado de teste, nem concessão de permissão. Tema e aba originais restaurados após QA. Nenhuma credencial ou payload pessoal foi incluído no relatório versionado. Esse smoke supera a limitação anterior de acesso ao navegador para o caso administrativo desta correção.
+
+## Smoke HTTPS e limites
+
+- `/api/health`: 200, API/database ok.
+- Visitante em `/desempenho/`, inclusive com query de identidade: 302 para login com retorno seguro e private/no-store.
+- API sem token ou com token inválido: 401.
+- CSS/JS: 200 e SHA256 exato; ranking público: 200.
+- Sem Safari/Firefox/aparelho físico. Celular e dois temas cobertos pela matriz local de 54 cenários. Nenhuma pendência funcional/produtiva desta correção; este recibo consolida sua publicação.
+
+Spec FEAT-REP-001 v0.9, arquitetura, workflow, status, changelogs e lacunas reconciliados. Feature ampla permanece parcial/draft. MCP sem ajuste de ferramentas, schemas, contratos, autenticação, permissões, erros, replays/editorial; mobile/API/domínio preservados. Nenhuma permissão inferida de ações humanas do Admin Ops. Regra de ranking público inalterada.
+
+## Histórico da preparação local
+
 WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART / FEAT-REP-001 v0.9. Branch `fix/web-performance-admin-chart`, base remota main `46e2ec9af994ab5d6d09d05476075a77910b65d2`, worktree isolado. Implementação testada localmente e commitada na branch de trabalho; integração e publicação ainda pendentes.
 
 ## Problema e regra corrigida

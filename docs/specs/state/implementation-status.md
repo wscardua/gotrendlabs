@@ -1,3 +1,7 @@
+## 08/11/2026 — Gráfico administrativo corrigido em produção
+
+PR209/merge `6dde140` integrada e implantada: CI PR42485739272 e main/deploy42486520746 aprovados, 700 testes Python/três skips em ambos. SSM Success/0 e hashes confirmam código correto. Smoke autenticado no Chrome mostra gráfico pessoal para conta administrativa nos dois temas e mantém placar oculto; health/visitante/401/assets/ranking aprovados. Sem migration/configuração/dados extras, nova permissão ou ajuste MCP/API/mobile. Branch local preservada. [Recibo final](../testing/web-performance-admin-chart-20261108.md). Esta entrada prevalece sobre a preparação local abaixo.
+
 ## 08/11/2026 — Correção do gráfico pessoal de administradores
 
 WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART / FEAT-REP-001 v0.9: condição de apresentação separada do placar administrativo. Staff/superuser com resoluções próprias passam a ver o gráfico, sem alteração da exclusão do ranking público ou do placar oculto. Template e regressões locais ajustados; 17 testes e 54 cenários de QA aprovados, além dos checks Django/OpenAPI/JS/diff. Correção commitada na branch de trabalho; contrato, dados, backend, mobile e MCP preservados. Publicação desta correção ainda pendente de PR/CI/deploy; o recibo de 07/11 descreve a versão anterior. [Aceite da correção](../testing/web-performance-admin-chart-20261108.md).

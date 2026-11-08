@@ -1,3 +1,7 @@
+## 2026-11-08 — Fechamento produtivo do gráfico administrativo
+
+Memória operacional e recibo reconciliados com PR209/merge `6dde140`, CI/build/deploy e smoke autenticado produtivo aprovados. Relatório versiona origem, imagens, hashes e resultados sem credenciais/payload pessoal. A regra de visibilidade de FEAT-REP-001 v0.9 já integra a main; placar/ranking, API/mobile e MCP preservados. [Fonte vigente](../testing/web-performance-admin-chart-20261108.md).
+
 ## 2026-11-08 — Visibilidade do gráfico pessoal em Desempenho
 
 Spec FEAT-REP-001 v0.9 e arquitetura web corrigidas: gráfico depende somente do histórico pessoal retornado pela API, sem associação à condição de ocultação do placar administrativo. Staff/superuser continuam excluídos do ranking público. Decisão anterior de ocultar também o gráfico substituída explicitamente; histórico de implantação/review preservado. Sem mudança de contrato, regra de domínio, ADR, mobile ou MCP.

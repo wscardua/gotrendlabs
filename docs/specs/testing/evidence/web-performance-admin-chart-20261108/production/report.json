@@ -1,0 +1,142 @@
+{
+  "source_commit": "6dde14010f58002adff24ca9eb3d4d752b4db6bf",
+  "pull_request": "https://github.com/wscardua/gotrendlabs/pull/209",
+  "pr_ci": "https://github.com/wscardua/gotrendlabs/actions/runs/42485739272",
+  "main_ci_deploy": "https://github.com/wscardua/gotrendlabs/actions/runs/42486520746",
+  "deploy_ssm": {
+    "command_id": "bf43a08a-dadc-4716-9edc-1f4f3a33b8cd",
+    "status": "Success",
+    "response_code": 0,
+    "ended_at": "2026-11-08T13:56:36.098Z"
+  },
+  "runtime_ssm": {
+    "command_id": "13776ce0-f814-4e03-b559-122507d7723a",
+    "status": "Success",
+    "response_code": 0,
+    "checked_at": "2026-11-08T13:57:21.748Z"
+  },
+  "images": [
+    {
+      "container": "/gotrendlabs-django-1",
+      "image": "sha256:01151d44903e8525c0bb237098095478a121019ae8a6adb5fa4682c5483d59d7"
+    },
+    {
+      "container": "/gotrendlabs-fastapi-1",
+      "image": "sha256:7e9e3787cc77a9302d3693346d55064edd4f23134871203224fda80267094c3d"
+    },
+    {
+      "container": "/gotrendlabs-mcp-1",
+      "image": "sha256:bb9008ab9ac91a2430938b6cf7d3a4b48ffb1a789ec6806b6f40441a8bbf76af"
+    }
+  ],
+  "services": [
+    {
+      "Service": "daemon",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-daemon"
+    },
+    {
+      "Service": "django",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-django"
+    },
+    {
+      "Service": "fastapi",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-fastapi"
+    },
+    {
+      "Service": "mcp",
+      "State": "running",
+      "Health": "healthy",
+      "Image": "gotrendlabs-mcp"
+    },
+    {
+      "Service": "proxy",
+      "State": "running",
+      "Health": "",
+      "Image": "caddy:2-alpine"
+    },
+    {
+      "Service": "thumbnail-worker",
+      "State": "running",
+      "Health": "",
+      "Image": "gotrendlabs-thumbnail-worker"
+    }
+  ],
+  "application": {
+    "route": "performance",
+    "hashes": {
+      "apps/web/django/profiles/templates/profiles/performance.html": "03fcc647f8f3f0a26ba847db32719b3cc098bef99c160cd1e28454e6f3b9146b",
+      "apps/web/django/profiles/views.py": "52d7905a51735e281121c97e21970e1328bcc1645b9635a422aae899c75131f2",
+      "apps/web/static/css/performance.css": "0dfe71b16c4519985910de3eb05f1ce48921d9f127b81628d85be8d79a0a9d10",
+      "apps/web/static/js/performance.js": "67c6f0cb61a3d9beaa7c874f3f0e2d338b7cfed4226d9a87d4361cd932e4b1d0"
+    }
+  },
+  "https_smoke": {
+    "checked_at": "2026-11-08T13:57:18.466568+00:00",
+    "base": "https://gotrendlabs.com.br",
+    "checks": {
+      "health": {
+        "status": 200,
+        "checks": {
+          "api": "ok",
+          "database": "ok"
+        }
+      },
+      "visitor": {
+        "status": 302,
+        "location": "/login/?next=%2Fdesempenho%2F",
+        "cache_control": "max-age=0, no-cache, no-store, must-revalidate, private"
+      },
+      "visitor?user_id=1": {
+        "status": 302,
+        "location": "/login/?next=%2Fdesempenho%2F%3Fuser_id%3D1",
+        "cache_control": "max-age=0, no-cache, no-store, must-revalidate, private"
+      },
+      "missing_session": {
+        "status": 401
+      },
+      "invalid_session": {
+        "status": 401
+      },
+      "css/performance.css": {
+        "status": 200,
+        "sha256": "0dfe71b16c4519985910de3eb05f1ce48921d9f127b81628d85be8d79a0a9d10"
+      },
+      "js/performance.js": {
+        "status": 200,
+        "sha256": "67c6f0cb61a3d9beaa7c874f3f0e2d338b7cfed4226d9a87d4361cd932e4b1d0"
+      },
+      "rankings": {
+        "status": 200
+      }
+    },
+    "limitations": [
+      "Smoke HTTPS automatizado é anônimo; sessão administrativa verificada separadamente no navegador autorizado.",
+      "Sem alterações em contas, previsões, mercados, permissões ou dados produtivos."
+    ]
+  },
+  "authenticated_browser_smoke": {
+    "browser": "Google Chrome native",
+    "environment": "production",
+    "existing_administrative_session": true,
+    "chart_visible": true,
+    "scorecard_visible": false,
+    "real_personal_history": true,
+    "themes_checked": [
+      "light",
+      "dark"
+    ],
+    "original_theme_restored": true,
+    "original_tab_restored": true,
+    "test_data_created": false,
+    "credentials_or_personal_payload_recorded": false
+  },
+  "limits": [
+    "Safari/Firefox e aparelho físico não exercitados; celular coberto por viewports locais."
+  ]
+}
