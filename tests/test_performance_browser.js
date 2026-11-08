@@ -55,11 +55,35 @@ const {chromium} = require('playwright');
         }
       }
     }
+    for (const role of ['staff', 'superuser']) {
+      for (const width of [1440, 390]) {
+        await page.setViewportSize({width, height:1000});
+        for (const state of ['data', 'empty', 'error']) {
+          await page.goto(`http://127.0.0.1:8768/?state=${state}&role=${role}`, {waitUntil:'networkidle'});
+          for (const theme of ['light', 'dark']) {
+            await page.evaluate(theme => document.body.dataset.theme = theme, theme);
+            await page.waitForTimeout(350);
+            assert.equal(await page.locator('#scorecard-title').count(), 0, 'Administrative scorecard stays hidden');
+            assert.equal(await page.locator('.performance-impact-bar').count(), state === 'data' ? 10 : 0);
+            assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `${role}/${width}/${state}/${theme} overflow`);
+            if (state === 'data') {
+              assert.equal(await page.locator('.performance-impact-chart').isVisible(), true);
+              assert.equal(await page.locator('.performance-impact-bar').first().getAttribute('href'), '/markets/mercado-9/');
+              assert.equal(await page.locator('.performance-impact-value').first().innerText(), '+4');
+              await page.screenshot({path:`.runtime/performance/admin-${role}-${width}-${theme}.png`,fullPage:true});
+            }
+          }
+        }
+      }
+    }
     const noScriptContext = await browser.newContext({javaScriptEnabled:false});
     const noScriptPage = await noScriptContext.newPage();
     await noScriptPage.goto('http://127.0.0.1:8768/');
     assert.equal(await noScriptPage.locator('.performance-table tbody tr:visible').count(), 10);
     assert.equal(await noScriptPage.locator('[data-performance-more-button]').isVisible(), false);
+    await noScriptPage.goto('http://127.0.0.1:8768/?role=staff');
+    assert.equal(await noScriptPage.locator('.performance-impact-chart').isVisible(), true);
+    assert.equal(await noScriptPage.locator('#scorecard-title').count(), 0);
     await noScriptContext.close();
     await page.goto('http://127.0.0.1:8768/');
     await page.locator('.performance-market').first().focus();
@@ -67,6 +91,6 @@ const {chromium} = require('playwright');
     await page.keyboard.press('Tab');
     assert(await page.locator('.performance-market').nth(1).evaluate(e=>e===document.activeElement));
     assert.deepEqual(errors, []);
-    console.log('PASS: 30 viewport/state/theme combinations; badge themes, layout, keyboard/focus, no horizontal overflow or JS errors. 12 screenshots.');
+    console.log('PASS: 54 viewport/state/theme/role combinations; admin personal chart with hidden scorecard, empty/error states, badge themes, keyboard/focus, no-JS, no overflow or JS errors. 20 screenshots.');
   } finally { await browser.close(); }
 })().catch(error=>{console.error(error);process.exit(1);});

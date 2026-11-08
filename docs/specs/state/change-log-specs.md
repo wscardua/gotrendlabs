@@ -1,3 +1,7 @@
+## 2026-11-08 — Visibilidade do gráfico pessoal em Desempenho
+
+Spec FEAT-REP-001 v0.9 e arquitetura web corrigidas: gráfico depende somente do histórico pessoal retornado pela API, sem associação à condição de ocultação do placar administrativo. Staff/superuser continuam excluídos do ranking público. Decisão anterior de ocultar também o gráfico substituída explicitamente; histórico de implantação/review preservado. Sem mudança de contrato, regra de domínio, ADR, mobile ou MCP.
+
 ## 2026-11-07 — Fechamento produtivo de Desempenho web
 
 Recibo, README e memória operacional reconciliados com PR207/merge `b499dc5`, CI/build/deploy aprovados e smoke HTTPS/runtime. Relatório versiona checksums, serviços, imagens de runtime e catálogo público de badges, sem dados pessoais ou credenciais. Estados anteriores mantidos como histórico; build local sem espaço não aparece como bloqueio de publicação após sucesso remoto. Feature ampla permanece parcial/draft; MCP/mobile/API sem ajuste. [Fonte vigente](../testing/web-performance-closeout-20261107.md).

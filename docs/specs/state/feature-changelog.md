@@ -1,3 +1,7 @@
+## 2026-11-08 — Gráfico pessoal independente do placar administrativo
+
+FEAT-REP-001 v0.9: remove associação indevida entre ocultação do placar e gráfico de impactos pessoais em Desempenho. Contas staff/superuser veem deltas reais das próprias resoluções; vazio/erro permanecem sem gráfico. Sem alterações de ranking, domínio, API, permissão ou MCP. Regressão reproduzida antes da correção para os dois papéis; cobertura Django e QA ampliadas. Implementação local, ainda sem integração/deploy desta correção. [Aceite](../testing/web-performance-admin-chart-20261108.md).
+
 ## 2026-11-07 — Desempenho web em produção
 
 PR207/merge `b499dc5`, CI PR/main/deploy e smoke aprovados. Página autenticada com seis indicadores, gráfico de deltas individuais, cinco resoluções/revelação até dez, imagens de conquistas, links e tipografia da Carteira integrada à main e implantada. 698 testes Python/três skips em PR e main; checks/builds aprovados. Sem migration, flag, carga produtiva ou ajuste MCP/mobile. [Recibo/evidências](../testing/web-performance-closeout-20261107.md). Branch local preservada; limite do smoke autenticado produtivo registrado sem confundir com disponibilidade da implantação.

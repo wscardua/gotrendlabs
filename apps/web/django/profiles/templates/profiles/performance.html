@@ -11,7 +11,7 @@
         <h1 class="large-title">{% translate "Desempenho" %}</h1>
         <p class="muted">{% translate "Acompanhe suas previsões, reputação e conquistas." %}</p>
       </div>
-      {% if reputation_chart and show_performance_scorecard %}
+      {% if reputation_chart %}
         <figure class="performance-impact-chart" aria-labelledby="impact-chart-title">
           <figcaption id="impact-chart-title">{% translate "Impacto na reputação" %}<span>{% translate "Últimas resoluções" %}</span></figcaption>
           <ol class="performance-impact-bars">
