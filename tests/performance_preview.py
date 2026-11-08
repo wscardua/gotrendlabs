@@ -23,6 +23,8 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             self.path = "/" + parsed.path.removeprefix("/static/")
             return super().do_GET()
         state = parse_qs(parsed.query).get("state", ["data"])[0]
+        role = parse_qs(parsed.query).get("role", ["user"])[0]
+        is_operator = role in {"staff", "superuser"}
         payload = performance_payload()
         payload["history"][0]["market_title"] = "Uma pergunta extensa para verificar a leitura confortável de resoluções e escolhas em telas pequenas?"
         if state == "empty":
@@ -30,7 +32,8 @@ class PreviewHandler(SimpleHTTPRequestHandler):
             payload["progression"] = {"earned_badges_count": 0, "latest_awards": []}
             payload["scorecard"].update(ranking_position=0, strong_category="")
         html = render_to_string("profiles/performance.html", {
-            "performance": payload, "performance_error": state == "error", "show_performance_scorecard": True,
+            "performance": payload, "performance_error": state == "error", "show_performance_scorecard": not is_operator,
+            "can_access_admin_ops": is_operator,
             # Fixed fixtures: -6 is 36 px, +4 is 24 px in the presentation scale.
             "reputation_chart": [
                 {**item, "bar_height": 24 if item["reputation_delta"] > 0 else 36}

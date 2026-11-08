@@ -1,3 +1,7 @@
+## 08/11/2026 — Correção do gráfico pessoal de administradores
+
+WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART / FEAT-REP-001 v0.9: condição de apresentação separada do placar administrativo. Staff/superuser com resoluções próprias passam a ver o gráfico, sem alteração da exclusão do ranking público ou do placar oculto. Template e regressões locais ajustados; 17 testes e 54 cenários de QA aprovados, além dos checks Django/OpenAPI/JS/diff. Correção commitada na branch de trabalho; contrato, dados, backend, mobile e MCP preservados. Publicação desta correção ainda pendente de PR/CI/deploy; o recibo de 07/11 descreve a versão anterior. [Aceite da correção](../testing/web-performance-admin-chart-20261108.md).
+
 ## 07/11/2026 — Desempenho web integrado e implantado
 
 PR207 integrada em `b499dc5ceb6d542f205e37b5d128956dc9edd3c4`; CI PR42425638720 e main/deploy42426478228 aprovados (698 testes Python/três skips em ambos). SSM Success/0 e smoke confirmam commit produtivo limpo, rota, seis arquivos de runtime/dois assets HTTPS exatos, health e autenticação de visitante/sessão inválida. Oito badges públicas já possuem os 16 arquivos de imagem válidos. Sem migration/configuração/carga adicional, impacto MCP/API/mobile ou distribuição de fixtures. Branch local preservada. QA autenticado local aprovado; sem sessão produtiva comum acessível para smoke autenticado. [Recibo final](../testing/web-performance-closeout-20261107.md). Este estado prevalece sobre preparações abaixo; FEAT-REP-001 ampla continua parcial/draft.

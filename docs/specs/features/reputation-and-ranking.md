@@ -1,10 +1,10 @@
 ---
 id: FEAT-REP-001
 titulo: "Reputação e ranking"
-versao: 0.8
+versao: 0.9
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-11-07
+ultima_atualizacao: 2026-11-08
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -197,10 +197,14 @@ Por pedido posterior do usuário, Desempenho limita a exibição inicial a cinco
 
 ### Gráfico de impactos recentes
 
-Pedido posterior do usuário autoriza gráfico compacto dos deltas individuais de `history`, substituindo a exclusão visual anterior somente para esse recorte. Não é gráfico de evolução do score acumulado: não há contrato histórico suficiente para ele. Ordenação da API é invertida apenas para leitura cronológica, e altura é proporcional ao maior delta absoluto recebido, sem modificar valores. Rótulos e sinais numéricos complementam as cores; cada barra oferece link acessível ao mercado. Oculto em vazio/erro e para os papéis cujo placar já é oculto. Nenhum ajuste MCP.
+Pedido posterior do usuário autoriza gráfico compacto dos deltas individuais de `history`, substituindo a exclusão visual anterior somente para esse recorte. Não é gráfico de evolução do score acumulado: não há contrato histórico suficiente para ele. Ordenação da API é invertida apenas para leitura cronológica, e altura é proporcional ao maior delta absoluto recebido, sem modificar valores. Rótulos e sinais numéricos complementam as cores; cada barra oferece link acessível ao mercado. Oculto em vazio/erro. A exibição do gráfico independe da ocultação do placar administrativo: staff/superuser também acompanham os impactos das próprias resoluções retornados pela API, mantendo sua exclusão do ranking público. Nenhum ajuste MCP.
 
 ### Estado final da fatia web e fechamento
 
 Tipografia de título, métricas, seções e tabela acompanha a Carteira educativa (IBM Plex Sans e tokens compartilhados). Cabeçalho reúne título/subtítulo e gráfico compacto de impactos, seguido do placar; conquistas usam as imagens reais do catálogo nos dois temas. Os experimentos com atalhos e identidade no cabeçalho foram revertidos e não fazem parte da entrega.
 
 Esta fatia não exige migration, flag, ajuste de dados ou novo serviço em produção; a ativação ocorre pelo deploy existente com publicação de templates e collectstatic. Fixtures e credenciais de avaliação permanecem locais e não são distribuídas. A feature ampla FEAT-REP-001 continua parcial/draft; seu fechamento global não é inferido da conclusão da página web. Estado de commit, PR, merge e implantação no [recibo de fechamento](../testing/web-performance-closeout-20261107.md).
+
+### 08/11/2026 — Gráfico pessoal de administradores
+
+Correção aprovada após diagnóstico da conta administrativa produtiva: a condição que ocultava o placar administrativo não deve ocultar o gráfico de impactos pessoais. Quando houver history, o gráfico aparece para qualquer conta autenticada com acesso ao agregado, inclusive staff/superuser. Sem dados ou em falha, permanece ausente. A exclusão do ranking público, o placar administrativo oculto e todas as regras/API/permissões permanecem iguais. Essa regra substitui a associação anterior entre visibilidade do gráfico e do placar; registros de implantação anteriores são históricos.

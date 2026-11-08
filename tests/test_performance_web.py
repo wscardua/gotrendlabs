@@ -199,9 +199,38 @@ class PerformanceWebTests(SimpleTestCase):
         self.assertIn('>-6</span>', chart)
 
     @patch("apps.web.django.profiles.views.get_performance")
-    def test_impact_chart_absent_for_empty_and_admin(self, api):
+    def test_admin_personal_chart_is_independent_of_hidden_scorecard(self, api):
         payload = performance_payload()
         api.return_value = payload
-        self.assertNotContains(performance(self.request(user={**self.user, "is_staff": True})), 'class="performance-impact-bars"')
+        for role in ["is_staff", "is_superuser"]:
+            with self.subTest(role=role):
+                api.reset_mock()
+                response = performance(self.request(user={**self.user, role: True}))
+                self.assertContains(response, 'class="performance-impact-bars"')
+                self.assertNotContains(response, 'id="scorecard-title"')
+                self.assertContains(response, "Contas administrativas não participam do placar público.")
+                chart = response.content.decode().split('<ol class="performance-impact-bars">')[1].split('</ol>')[0]
+                self.assertEqual(chart.count('class="performance-impact-bar '), 10)
+                self.assertIn('/markets/mercado-9/', chart)
+                self.assertIn('>+4</span>', chart)
+                self.assertIn('>-6</span>', chart)
+                api.assert_called_once_with("token-a")
+
+    @patch("apps.web.django.profiles.views.get_performance")
+    def test_impact_chart_absent_for_empty_history_in_all_roles(self, api):
+        payload = performance_payload()
         payload["history"] = []
-        self.assertNotContains(performance(self.request()), 'class="performance-impact-bars"')
+        api.return_value = payload
+        for role in [None, "is_staff", "is_superuser", "is_bot"]:
+            with self.subTest(role=role):
+                user = {**self.user, role: True} if role else self.user
+                self.assertNotContains(performance(self.request(user=user)), 'class="performance-impact-bars"')
+
+    @patch("apps.web.django.profiles.views.get_performance")
+    def test_admin_chart_is_absent_on_api_error(self, api):
+        for status in [403, 503]:
+            with self.subTest(status=status):
+                api.side_effect = AuthAPIError("Unavailable", status)
+                response = performance(self.request(user={**self.user, "is_staff": True}))
+                self.assertNotContains(response, 'class="performance-impact-bars"', status_code=status)
+                self.assertNotContains(response, 'id="scorecard-title"', status_code=status)

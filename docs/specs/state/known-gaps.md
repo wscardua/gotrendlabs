@@ -1,3 +1,7 @@
+## 08/11/2026 — Gráfico de Desempenho oculto para administradores
+
+Diagnóstico confirmado pelo screenshot de @admin e pelo template produtivo: histórico pessoal existe, mas gráfico usa indevidamente a condição de ocultação do placar. Correção local na branch fix/web-performance-admin-chart remove esse vínculo, sem mudar ranking/permissões/API/MCP. A versão produtiva implantada pela PR207 ainda contém a condição antiga até integração/deploy da correção. [Aceite e próxima etapa](../testing/web-performance-admin-chart-20261108.md), WFLOW-20261108-WEB-PERFORMANCE-ADMIN-CHART. Não confundir conclusão do deploy anterior com correção já publicada.
+
 ## 07/11/2026 — Desempenho web: gate remoto e implantação concluídos
 
 PR207/merge `b499dc5`, CI PR42425638720 e main/deploy42426478228 aprovados: 698 testes/três skips, builds e deploy SSM Success/0. O bloqueio de build da entrega está resolvido pelas execuções remotas; falta de espaço do Docker local permanece somente como limitação ambiental. Smoke confirmou commit/rota/serviços/hashes, health, visitante e 401. Sem migration, flag ou dados adicionais necessários. Permanece limite de cobertura: navegador autenticado produtivo indisponível, sem Safari/Firefox/aparelho físico; autenticação/dados/papéis foram validados localmente. Sem conta/fixture DEV em produção e sem impacto MCP/mobile. [Recibo final](../testing/web-performance-closeout-20261107.md). Entradas de preparação abaixo são históricas e não indicam implantação pendente.
