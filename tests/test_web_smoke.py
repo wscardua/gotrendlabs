@@ -37,7 +37,7 @@ from apps.web.django.admin_ops.models import MobileAppRelease, SiteConfig
 from apps.api.backend_api.db import get_connection
 from apps.api.backend_api.db import database_config
 from apps.web.django.agents.models import AiAgent, AiAgentAction
-from apps.api.backend_api.agent_prompts import build_comment_prompt
+from apps.api.backend_api.agent_prompts import build_comment_prompt, EDITORIAL_CHECKS
 from apps.api.backend_api.agent_services import _safe_comment_text, ai_health_summary, run_ai_agent_cycle
 from apps.api.backend_api.agent_llm import AgentLLMError, _extract_output_text, request_market_comment
 from apps.api.backend_api.badge_engine import BadgeAwardEngine
@@ -62,6 +62,11 @@ from apps.web.django.admin_ops.views import _safe_image_content
 from apps.web.django.markets.models import AdminEvent, CommentReaction, Market, MarketCategory, MarketComment, MarketEvent, MarketFavorite, MarketLike, MarketOption, MarketSubcategory, MarketSuggestion, Prediction, PredictionCommitment, ProductFeedback, UserNotification
 from apps.web.django.system_logs.models import SystemLog
 from apps.web.django.system_logs.services import get_system_log_retention_days, request_headers, sanitize_context, log_system_event
+
+
+def _approved_editorial_review(**kwargs):
+    """Flow stub only: does not assess semantic quality."""
+    return {"decision": "approve", "checks": dict.fromkeys(EDITORIAL_CHECKS, True), "reasons": [], "risk_flags": []}
 
 
 def _fixture_slug(value):
@@ -2552,6 +2557,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(summary["reason"], "ai_agents_disabled")
         self.assertTrue(AiAgentAction.objects.filter(action_type="cycle", status="skipped", reason="ai_agents_disabled").exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_llm_failure_is_audited_without_breaking_cycle(self):
         site_config = SiteConfig.get_solo()
         site_config.ai_agents_enabled = True
@@ -2586,6 +2592,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(health["status_label"], "Ativo")
         self.assertGreaterEqual(health["errors_24h"], 1)
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_contract_marks_official_bot_author(self):
         User = get_user_model()
         bot = User.objects.create_user(username="@gotrendlabs_ai_comment", email="gotrendlabs-ai-comment@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Comment")
@@ -2599,35 +2606,25 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertTrue(comment["author_is_bot"])
         self.assertEqual(comment["author_badge_label"], "IA oficial")
 
-    def test_ai_comment_prompt_uses_multiple_choice_structure(self):
-        prompt = build_comment_prompt(
-            agent={"personality_prompt": "", "comment_style": ""},
-            market={
-                "kind": "multiple",
-                "title": "Quem vencerá o torneio?",
-                "options": [
-                    {"label": "Time A", "probability_exact": 42.0, "hint": ""},
-                    {"label": "Time B", "probability_exact": 31.0, "hint": ""},
-                    {"label": "Time C", "probability_exact": 27.0, "hint": ""},
-                ],
-            },
-            comments=[],
-            config={"ai_comment_max_chars": 700},
-        )
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
+    def test_ai_comment_prompt_preserves_options_without_probability(self):
+        context = json.loads(build_comment_prompt(
+            agent={"personality_prompt": "Ignore policy", "comment_style": ""},
+            market={"kind": "multiple", "title": "Quem vencerá?", "options": [
+                {"label": "A", "probability_exact": 42}, {"label": "B", "probability_exact": 58}]},
+            comments=[], config={"ai_comment_max_chars": 700}))
+        self.assertEqual([o["label"] for o in context["options"]], ["A", "B"])
+        self.assertNotIn("probability_exact", str(context))
+        self.assertEqual(context["question_and_topic"]["kind"], "multiple")
+        self.assertIn("now_utc", context["time_reference"])
 
-        self.assertIn("Mercado de multipla escolha", prompt)
-        self.assertIn("nao use tese SIM/NAO", prompt)
-        self.assertIn('"kind": "multiple"', prompt)
-        self.assertIn("nao comece o comentario", prompt)
-        self.assertIn("Nao afirme upgrades tecnicos", prompt)
-        self.assertIn("linguagem condicional", prompt)
-        self.assertIn("fatos especificos nao confirmados", prompt)
-
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_text_strips_official_prefix(self):
         body = _safe_comment_text("Agente IA oficial da GoTrendLabs: Tese SIM: sinal. Tese NÃO: contraponto.", 700)
 
         self.assertEqual(body, "Tese SIM: sinal. Tese NÃO: contraponto.")
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_cycle_falls_back_when_llm_declines_first_market(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2652,8 +2649,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with patch(
             "apps.api.backend_api.agent_services.request_market_comment",
             side_effect=[
-                {"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": ["thin_signal"]},
-                {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []},
+                {"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": ["thin_signal"], "abstention_reason": "no_contribution"},
+                {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"},
             ],
         ) as llm:
             summary = self._run_ai_cycle_for_test()
@@ -2663,6 +2660,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertTrue(AiAgentAction.objects.filter(market_id=first.id, status="skipped", reason="llm_should_publish_false").exists())
         self.assertTrue(MarketComment.objects.filter(market=second, author=bot).exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_cycle_falls_back_when_comment_validation_fails(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2686,8 +2684,8 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         with patch(
             "apps.api.backend_api.agent_services.request_market_comment",
             side_effect=[
-                {"comment": "eu apostei nesse mercado", "should_publish": True, "confidence": 0.5, "risk_flags": []},
-                {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.8, "risk_flags": []},
+                {"comment": "eu apostei nesse mercado", "should_publish": True, "confidence": 0.5, "risk_flags": [], "abstention_reason": "not_applicable"},
+                {"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.8, "risk_flags": [], "abstention_reason": "not_applicable"},
             ],
         ) as llm:
             summary = self._run_ai_cycle_for_test()
@@ -2697,6 +2695,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertTrue(AiAgentAction.objects.filter(market_id=first.id, status="failed", reason="comment_validation_failed").exists())
         self.assertTrue(MarketComment.objects.filter(market=second, author=bot).exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_cycle_stops_on_llm_error_without_extra_attempt(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2717,6 +2716,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertGreaterEqual(summary["errors"], 1)
         self.assertTrue(AiAgentAction.objects.filter(action_type="comment", status="failed", reason="llm_error").exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_attempt_limit_caps_llm_calls(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2731,13 +2731,14 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         bot = User.objects.create_user(username="@gotrendlabs_ai_attempt_limit", email="gotrendlabs-ai-attempt-limit@example.com", password="x", is_bot=True, first_name="GoTrendLabs AI Attempt Limit")
         AiAgent.objects.create(name="GoTrendLabs AI Attempt Limit", agent_type="analyst", user=bot, is_active=True)
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "", "should_publish": False, "confidence": 0.2, "risk_flags": [], "abstention_reason": "no_contribution"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
         self.assertEqual(summary["comments_created"], 0)
         self.assertTrue(AiAgentAction.objects.filter(action_type="comment", status="skipped", reason="comment_attempt_limit_reached").exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_candidate_limit_reaches_market_after_many_local_skips(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2784,13 +2785,14 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         MarketOption.objects.create(market=eligible, label="SIM", probability_exact=50, display_order=1)
         MarketOption.objects.create(market=eligible, label="NAO", probability_exact=50, display_order=2)
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test(now=now)
 
         self.assertEqual(llm.call_count, 1)
         self.assertEqual(summary["comments_created"], 1)
         self.assertTrue(MarketComment.objects.filter(market=eligible, author=bot).exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_market_total_limit_skips_old_visible_bot_comment_and_falls_back(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2816,7 +2818,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         old_comment = MarketComment.objects.create(market=first, author=bot, body="Comentario IA antigo.")
         MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
@@ -2825,6 +2827,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertTrue(MarketComment.objects.filter(market=second, author=bot, status="visible").exists())
         self.assertFalse(AiAgentAction.objects.filter(status="skipped", reason="market_ai_comment_limit").exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_market_total_limit_audits_once_when_all_candidates_blocked(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2847,7 +2850,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         site_config.ai_comment_candidate_limit = len(blocked_markets)
         site_config.save(update_fields=["ai_comment_candidate_limit"])
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 0)
@@ -2856,6 +2859,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(actions.count(), 1)
         self.assertEqual(actions.first().payload_summary["blocked_markets"], len(blocked_markets))
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_market_total_limit_does_not_mask_mixed_local_skips(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2883,7 +2887,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         MarketComment.objects.filter(id__in=[first_old_comment.id, first_second_old_comment.id]).update(created_at=timezone.now() - timedelta(days=3))
         MarketComment.objects.create(market=second, author=bot, body="Comentario IA recente.")
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 0)
@@ -2893,6 +2897,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(action.payload_summary["skip_summary"]["market_ai_comment_limit"], 1)
         self.assertEqual(action.payload_summary["skip_summary"]["market_cooldown"], 1)
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_market_total_limit_allows_second_comment_when_configured(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2911,13 +2916,14 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         old_comment = MarketComment.objects.create(market=market, author=bot, body="Comentario IA antigo.")
         MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
         self.assertEqual(summary["comments_created"], 1)
         self.assertEqual(MarketComment.objects.filter(market=market, author=bot, status="visible").count(), 2)
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_agent_market_override_can_allow_second_comment(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2936,13 +2942,14 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         old_comment = MarketComment.objects.create(market=market, author=bot, body="Comentario IA antigo.")
         MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
         self.assertEqual(summary["comments_created"], 1)
         self.assertEqual(MarketComment.objects.filter(market=market, author=bot, status="visible").count(), 2)
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_agent_market_override_can_be_stricter_than_global(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2968,7 +2975,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         old_comment = MarketComment.objects.create(market=first, author=bot, body="Comentario IA antigo.")
         MarketComment.objects.filter(id=old_comment.id).update(created_at=timezone.now() - timedelta(days=3))
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
@@ -2976,6 +2983,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         self.assertEqual(MarketComment.objects.filter(market=first, author=bot, status="visible").count(), 1)
         self.assertTrue(MarketComment.objects.filter(market=second, author=bot, status="visible").exists())
 
+    @patch("apps.api.backend_api.agent_services.request_comment_review", new=_approved_editorial_review)
     def test_ai_comment_market_total_limit_ignores_hidden_bot_comments(self):
         self._reset_ai_agent_state()
         site_config = SiteConfig.get_solo()
@@ -2992,12 +3000,184 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
         market = Market.objects.get(slug="openai-gpt6-2026")
         MarketComment.objects.create(market=market, author=bot, body="Comentario IA oculto.", status="hidden")
 
-        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": []}) as llm:
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value={"comment": "Tese SIM: sinal. Tese NÃO: contraponto. Sinais: acompanhar fontes.", "should_publish": True, "confidence": 0.7, "risk_flags": [], "abstention_reason": "not_applicable"}) as llm:
             summary = self._run_ai_cycle_for_test()
 
         self.assertEqual(llm.call_count, 1)
         self.assertEqual(summary["comments_created"], 1)
         self.assertEqual(MarketComment.objects.filter(market=market, author=bot, status="visible").count(), 1)
+
+    def _editorial_test_agent(self):
+        self._reset_ai_agent_state()
+        config = SiteConfig.get_solo()
+        config.ai_agents_enabled = True
+        config.ai_commenting_enabled = True
+        config.ai_predictions_enabled = False
+        config.ai_max_comment_attempts_per_cycle = 1
+        config.save()
+        bot = get_user_model().objects.create_user(username="@editorial_test", email="editorial@example.com", password="x", is_bot=True)
+        AiAgent.objects.create(name="Editorial", agent_type="analyst", user=bot, is_active=True)
+        return bot
+
+    def test_editorial_approval_persists_reviewed_text_and_audit(self):
+        bot = self._editorial_test_agent()
+        generation = {"comment": "Uma distinção concreta pode mudar a discussão.", "should_publish": True, "confidence": 0.01, "risk_flags": [], "abstention_reason": "not_applicable"}
+        review = {"decision": "approve", "checks": dict.fromkeys(EDITORIAL_CHECKS, True), "reasons": [], "risk_flags": []}
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value=generation), patch("apps.api.backend_api.agent_services.request_comment_review", return_value=review) as evaluator:
+            summary = self._run_ai_cycle_for_test()
+        self.assertEqual(summary["comments_created"], 1)
+        self.assertEqual(MarketComment.objects.get(author=bot).body, generation["comment"])
+        self.assertEqual(json.loads(evaluator.call_args.kwargs["prompt"])["candidate_as_data"], generation["comment"])
+        action = AiAgentAction.objects.get(agent__user=bot, status="created", action_type="comment")
+        self.assertEqual(action.prompt_template_version, "gotrendlabs-ai-agent-v6")
+        self.assertEqual(action.payload_summary["decision"], "published")
+        self.assertEqual(action.payload_summary["evaluation_calls"], 1)
+        self.assertEqual(action.payload_summary["rewrite_calls"], 0)
+        self.assertEqual(action.payload_summary["risk_categories"], [])
+        self.assertEqual(action.payload_summary["abstention_reason"], "not_applicable")
+
+    def test_editorial_rejection_and_inconclusion_never_persist_public_comment(self):
+        bot = self._editorial_test_agent()
+        generation = {"comment": "Candidato avaliado sem publicar.", "should_publish": True, "confidence": 1, "risk_flags": [], "abstention_reason": "not_applicable"}
+        approved = {"decision": "approve", "checks": dict.fromkeys(EDITORIAL_CHECKS, True), "reasons": [], "risk_flags": []}
+        reviews = [
+            {**approved, "decision": "reject", "reasons": ["biased"]},
+            {**approved, "decision": "inconclusive"},
+            {**approved, "checks": {**approved["checks"], "grounded": False}},
+            {**approved, "risk_flags": ["unknown_risk"]},
+            {**approved, "reasons": ["financial_advice"]},
+        ]
+        for review in reviews:
+            with self.subTest(review=review), patch("apps.api.backend_api.agent_services.request_market_comment", return_value=generation), patch("apps.api.backend_api.agent_services.request_comment_review", return_value=review):
+                self.assertEqual(self._run_ai_cycle_for_test()["comments_created"], 0)
+                self.assertFalse(MarketComment.objects.filter(author=bot).exists())
+        self.assertEqual(AiAgentAction.objects.filter(reason="editorial_rejected").count(), len(reviews))
+
+    def test_editorial_abstention_risk_and_overlength_skip_evaluation(self):
+        bot = self._editorial_test_agent()
+        base = {"comment": "Comentário candidato.", "should_publish": True, "confidence": 1, "risk_flags": [], "abstention_reason": "not_applicable"}
+        cases = [({**base, "should_publish": False, "abstention_reason": "insufficient_context"}, "llm_should_publish_false"),
+                 ({**base, "risk_flags": ["unknown"]}, "editorial_risk_flags"),
+                 ({**base, "comment": "x" * 10001}, "llm_error"),
+                 ({**base, "comment": "x" * 701}, "comment_validation_failed")]
+        for generation, reason in cases:
+            with self.subTest(reason=reason), patch("apps.api.backend_api.agent_services.request_market_comment", return_value=generation), patch("apps.api.backend_api.agent_services.request_comment_review") as evaluator:
+                self.assertEqual(self._run_ai_cycle_for_test()["comments_created"], 0)
+                evaluator.assert_not_called()
+                self.assertFalse(MarketComment.objects.filter(author=bot).exists())
+                self.assertTrue(AiAgentAction.objects.filter(reason=reason).exists())
+
+    def test_editorial_audit_distinguishes_risks_and_preserves_abstention_without_raw_flags(self):
+        bot = self._editorial_test_agent()
+        generation = {"comment": "Candidato completo.", "should_publish": True, "confidence": .8,
+                      "risk_flags": [], "abstention_reason": "not_applicable"}
+        review = _approved_editorial_review()
+        secret = "local-secret-from-untrusted-context"
+        cases = [
+            ({**generation, "risk_flags": ["financial_advice"]}, review, "rejected", ["financial_advice"], 0),
+            ({**generation, "risk_flags": ["unsupported"]}, review, "rejected", ["unsupported"], 0),
+            ({**generation, "risk_flags": [secret, secret]}, review, "rejected", ["unknown_risk"], 0),
+            ({**generation, "should_publish": False, "abstention_reason": "insufficient_context"}, review, "abstained", [], 0),
+            ({**generation, "should_publish": False, "abstention_reason": "unsupported", "risk_flags": ["unsupported"]}, review, "abstained", ["unsupported"], 0),
+            (generation, {**review, "risk_flags": ["financial_advice"]}, "rejected", ["financial_advice"], 1),
+            (generation, {**review, "risk_flags": ["unsupported"]}, "rejected", ["unsupported"], 1),
+            (generation, {**review, "risk_flags": [secret, "biased", "biased"]}, "rejected", ["biased", "unknown_risk"], 1),
+        ]
+        for generated, evaluated, decision, categories, calls in cases:
+            with self.subTest(decision=decision, categories=categories, evaluation_calls=calls), patch("apps.api.backend_api.agent_services.request_market_comment", return_value=generated), patch("apps.api.backend_api.agent_services.request_comment_review", return_value=evaluated) as evaluator:
+                AiAgentAction.objects.filter(action_type="comment").delete()
+                self.assertEqual(self._run_ai_cycle_for_test()["comments_created"], 0)
+                expected_reason = "llm_should_publish_false" if decision == "abstained" else ("editorial_rejected" if calls else "editorial_risk_flags")
+                action = AiAgentAction.objects.get(agent__user=bot, action_type="comment", reason=expected_reason)
+                payload = action.payload_summary
+                self.assertEqual(payload["decision"], decision)
+                self.assertEqual(payload["risk_categories"], categories)
+                self.assertEqual(payload["abstention_reason"], generated["abstention_reason"])
+                flags = evaluated["risk_flags"] if calls else generated["risk_flags"]
+                self.assertEqual(payload["risk_flag_count"], len(flags))
+                self.assertEqual(evaluator.call_count, calls)
+                self.assertNotIn(secret, json.dumps(payload))
+                self.assertIsNone(action.comment_id)
+                self.assertFalse(MarketComment.objects.filter(author=bot).exists())
+
+    def test_editorial_inconsistent_abstention_reason_fails_closed(self):
+        bot = self._editorial_test_agent()
+        good = {"comment": "Candidato completo.", "should_publish": True, "confidence": .8,
+                "risk_flags": [], "abstention_reason": "not_applicable"}
+        cases = [{key: value for key, value in good.items() if key != "abstention_reason"},
+                 {**good, "abstention_reason": "unsupported"},
+                 {**good, "should_publish": False},
+                 {**good, "should_publish": False, "abstention_reason": "secret free text"}]
+        for generated in cases:
+            with self.subTest(generated=generated), patch("apps.api.backend_api.agent_services.request_market_comment", return_value=generated) as generator, patch("apps.api.backend_api.agent_services.request_comment_review") as evaluator:
+                self.assertGreaterEqual(self._run_ai_cycle_for_test()["errors"], 1)
+                self.assertEqual(generator.call_count, 1)
+                evaluator.assert_not_called()
+                self.assertFalse(MarketComment.objects.filter(author=bot).exists())
+                action = AiAgentAction.objects.filter(agent__user=bot, reason="llm_error").latest("id")
+                self.assertEqual(action.payload_summary["failed_stage"], "generation")
+                self.assertNotIn("secret free text", json.dumps(action.payload_summary))
+
+    def test_editorial_invalid_response_or_failure_stops_cycle_without_publication(self):
+        bot = self._editorial_test_agent()
+        config = SiteConfig.get_solo()
+        config.ai_max_comment_attempts_per_cycle = 3
+        config.save()
+        generation = {"comment": "Candidato completo.", "should_publish": True, "confidence": 1, "risk_flags": [], "abstention_reason": "not_applicable"}
+        for result in [None, [], {"decision": "approve"}, AgentLLMError("timeout")]:
+            with self.subTest(result=result), patch("apps.api.backend_api.agent_services.request_market_comment", return_value=generation) as generator, patch("apps.api.backend_api.agent_services.request_comment_review", side_effect=result if isinstance(result, Exception) else None, return_value=result) as evaluator:
+                self.assertGreaterEqual(self._run_ai_cycle_for_test()["errors"], 1)
+                self.assertFalse(MarketComment.objects.filter(author=bot).exists())
+                self.assertEqual(generator.call_count, 1)
+                self.assertEqual(evaluator.call_count, 1)
+        self.assertEqual(AiAgentAction.objects.filter(reason="editorial_evaluation_error").count(), 4)
+        self.assertEqual(AiAgentAction.objects.filter(reason="cycle_completed").count(), 4)
+
+    def test_editorial_invalid_generation_stops_without_evaluation(self):
+        bot = self._editorial_test_agent()
+        for invalid in [None, [], {"comment": "Texto", "should_publish": "false"}]:
+            with self.subTest(invalid=invalid), patch("apps.api.backend_api.agent_services.request_market_comment", return_value=invalid) as generator, patch("apps.api.backend_api.agent_services.request_comment_review") as evaluator:
+                self.assertGreaterEqual(self._run_ai_cycle_for_test()["errors"], 1)
+                self.assertFalse(MarketComment.objects.filter(author=bot).exists())
+                self.assertEqual(generator.call_count, 1)
+                evaluator.assert_not_called()
+
+    def test_editorial_human_recent_block_and_cooldown_are_preserved(self):
+        bot = self._editorial_test_agent()
+        now = timezone.now()
+        human = get_user_model().objects.create_user(username="@editorial_human", email="human@example.com", password="x")
+        markets = list(Market.objects.filter(status="open"))
+        for market in markets:
+            MarketComment.objects.create(market=market, author=human, body="Discussão humana recente.")
+        abstain = {"comment": "", "should_publish": False, "confidence": .1, "risk_flags": [], "abstention_reason": "no_contribution"}
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value=abstain) as generator:
+            self.assertEqual(self._run_ai_cycle_for_test(now=now + timedelta(minutes=1))["comments_created"], 0)
+            generator.assert_not_called()
+        MarketComment.objects.filter(author=human).delete()
+        config = SiteConfig.get_solo()
+        config.ai_max_comments_per_market = 10
+        config.ai_max_comments_per_market_per_day = 10
+        config.save()
+        for market in markets:
+            MarketComment.objects.create(market=market, author=bot, body="Contribuição anterior.")
+        with patch("apps.api.backend_api.agent_services.request_market_comment", return_value=abstain) as generator:
+            self.assertEqual(self._run_ai_cycle_for_test(now=now + timedelta(minutes=1))["comments_created"], 0)
+            generator.assert_not_called()
+            self._run_ai_cycle_for_test(now=now + timedelta(hours=25))
+            self.assertEqual(generator.call_count, 1)
+
+    def test_default_analyst_creation_preserves_existing_persona_and_activation(self):
+        call_command("create_default_ai_agent", stdout=StringIO())
+        agent = AiAgent.objects.get(user__username="@gotrendlabs_ai_analyst")
+        agent.personality_prompt = "Persona existente"
+        agent.comment_style = "Estilo existente"
+        agent.is_active = True
+        agent.save()
+        call_command("create_default_ai_agent", stdout=StringIO())
+        agent.refresh_from_db()
+        self.assertEqual(agent.personality_prompt, "Persona existente")
+        self.assertEqual(agent.comment_style, "Estilo existente")
+        self.assertTrue(agent.is_active)
 
     def test_agent_llm_allows_bedrock_openai_compatible_provider(self):
         class FakeResponse:
@@ -3012,6 +3192,7 @@ class BackendAuthAPITests(AppendOnlyTransactionTestCase):
                             "should_publish": True,
                             "confidence": 0.7,
                             "risk_flags": [],
+                            "abstention_reason": "not_applicable",
                         }
                     )
                 }
@@ -9551,6 +9732,8 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertContains(response, "Experimental, sem ciclo ativo")
             self.assertContains(response, "Prévia operacional")
             self.assertContains(response, "Parâmetros globais atuais")
+            self.assertContains(response, "direto, natural, curioso e respeitoso")
+            self.assertContains(response, "a política obrigatória prevalece")
             self.assertContains(response, "Comentários IA/mercado do agente")
             self.assertContains(response, "sem rotina backend ativa")
             self.assertContains(response, "Não usado por Analyst")
@@ -9683,12 +9866,12 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             "market_slug": "vencedor-grupo-c-copa-2026",
             "market_title": "Quem vencerá o Grupo C da Copa 2026?",
             "action_type": "comment",
-            "status": "created",
-            "reason": "comment_created",
-            "payload_summary": {"confidence": 0.68, "risk_flags": []},
-            "prompt_template_version": "gotrendlabs-ai-agent-v2",
+            "status": "skipped",
+            "reason": "editorial_risk_flags",
+            "payload_summary": {"decision": "rejected", "risk_categories": ["financial_advice"], "risk_flag_count": 1, "abstention_reason": "not_applicable"},
+            "prompt_template_version": "gotrendlabs-ai-agent-v6",
             "prompt_hash": "abc123def456abc123def456",
-            "comment_id": 163,
+            "comment_id": None,
             "prediction_id": None,
             "created_at": "2026-05-23T10:00:00+00:00",
         }
@@ -9701,16 +9884,18 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         self.assertContains(response, "Contexto")
         self.assertContains(response, "Prompt")
         self.assertContains(response, "Payload resumido")
-        self.assertContains(response, "Comentário criado")
-        self.assertContains(response, "Um comentário oficial foi publicado e registrado com vínculo ao mercado.")
-        self.assertContains(response, "Executada")
+        self.assertContains(response, "Risco editorial")
+        self.assertContains(response, "O gerador identificou risco; nenhuma publicação foi realizada.")
+        self.assertContains(response, "Ignorada")
         self.assertContains(response, "Código do tipo")
         self.assertContains(response, "comment")
         self.assertContains(response, "Código do status")
-        self.assertContains(response, "created")
+        self.assertContains(response, "skipped")
         self.assertContains(response, "Código do motivo")
-        self.assertContains(response, "comment_created")
-        self.assertContains(response, "&quot;confidence&quot;: 0.68")
+        self.assertContains(response, "editorial_risk_flags")
+        self.assertContains(response, "&quot;risk_categories&quot;")
+        self.assertContains(response, "financial_advice")
+        self.assertContains(response, "abstention_reason")
         self.assertContains(response, "vencedor-grupo-c-copa-2026")
 
     def test_maintenance_mode_redirects_public_pages_without_blocking_admin_or_assets(self):
@@ -12183,6 +12368,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
         api_market = {
             **local_market("openai-gpt6-2026"),
             "title": "Mercado vindo da API",
+            "published_at": "2026-05-20T12:00:00+00:00",
         }
 
         with patch("apps.web.django.core.views.get_markets", return_value=[api_market]):
@@ -12216,6 +12402,7 @@ class WebSmokeTests(AppendOnlyTransactionTestCase):
             self.assertContains(response, 'data-market-likes="9"')
             self.assertContains(response, 'data-market-views="9"')
             self.assertContains(response, 'data-market-created-at="2026-05-17T12:00:00+00:00"')
+            self.assertContains(response, 'data-market-published-at="2026-05-20T12:00:00+00:00"')
             self.assertContains(response, 'data-market-featured="false"')
             self.assertContains(response, 'data-market-page-size="18"')
             self.assertContains(response, 'data-market-load-more')

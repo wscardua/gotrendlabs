@@ -14,6 +14,7 @@ vm.runInNewContext(source.slice(start, end), context);
 const now = Date.parse('2026-11-07T12:00:00Z');
 const card = (status, views, created, order, extras = {}) => ({
   dataset: {marketStatus: status, marketViews: String(views), marketCreatedAt: created,
+    marketPublishedAt: Object.hasOwn(extras, "published") ? extras.published : created,
     marketCloseAt: extras.close || '', originalOrder: String(order),
     marketFavorited: String(!!extras.favorite), marketPredicted: String(!!extras.prediction)},
   badge: {hidden: true},
@@ -38,14 +39,21 @@ const oldPopular = card('open', 100, older, 8), newLessViewed = card('open', 1, 
 assert.deepEqual([newLessViewed, oldPopular].sort((a,b) => context.compareMarkets('ongoing',a,b)), [oldPopular,newLessViewed]);
 const tiedPending = [card('locked',0,older,11,{close:recent}), card('locked',999,older,10,{close:recent})];
 assert.equal(tiedPending.sort((a,b)=>context.compareMarkets('closing',a,b))[0].dataset.originalOrder,'10');
-for (const [status, created, expected] of [
+for (const [status, published, expected] of [
   ['open', '2026-11-05T12:00:00.001Z', true],
   ['open', '2026-11-05T12:00:00Z', false],
   ['open', '2026-11-05T11:59:59Z', false],
   ['open', '2026-11-07T12:00:00Z', true],
   ['open', '2026-11-07T12:00:00.001Z', false],
+  ['open', '', false], ['open', 'invalid', false], ['open', null, false],
+  ['draft', recent, false], ['canceled', recent, false],
   ['locked', recent, false], ['resolved', recent, false], ['sealed', recent, false],
-]) assert.equal(context.isNewMarket(card(status,0,created,0), now), expected);
+]) assert.equal(context.isNewMarket(card(status,0,older,0,{published}), now), expected);
+
+// Publication governs freshness even if the draft was created long ago.
+assert.equal(context.isNewMarket(card('open',0,older,0,{published:recent}),now),true);
+assert.equal(context.isNewMarket(card('open',0,recent,0,{published:older}),now),false);
+assert.equal(context.isNewMarket(card('open',0,recent,0,{published:''}),now),false);
 
 function makeList() {
   const list = {cards: [], dataset: {marketPageSize: '18'}, closest: () => board,
@@ -110,7 +118,7 @@ console.log('market feed filters: OK');
 // Actual freshness startup without any feed/filter board (Categories).
 let clock = now, scheduled, visibilityChanged;
 const categoryCards = [
-  card('open', 0, '2026-11-05T12:00:01Z', 0),
+  card('open', 0, older, 0, {published:'2026-11-05T12:00:01Z'}),
   card('locked', 0, recent, 1),
   card('open', 0, older, 2),
 ];

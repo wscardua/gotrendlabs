@@ -4,8 +4,9 @@ import json
 import os
 import re
 
-from apps.api.backend_api.agent_llm import AgentLLMError, request_market_comment
-from apps.api.backend_api.agent_prompts import PROMPT_TEMPLATE_VERSION, build_comment_prompt, template_hash
+from apps.api.backend_api.agent_llm import AgentLLMError, request_market_comment, request_comment_review, validate_output
+from apps.api.backend_api.agent_prompts import (PROMPT_TEMPLATE_VERSION, EDITORIAL_POLICY_VERSION, COMMENT_JSON_SCHEMA, REVIEW_JSON_SCHEMA, RISK_CATEGORIES,
+    build_comment_prompt, build_review_prompt, template_hash)
 from apps.api.backend_api.prediction_write_service import create_initial_prediction_with_integrity
 
 
@@ -396,7 +397,7 @@ def _recent_comments(cursor, market_id):
         {
             "author": row["username"],
             "author_is_bot": bool(row["is_bot"]),
-            "body": row["body"][:300],
+            "body": row["body"],
             "created_at": row["created_at"].isoformat(),
         }
         for row in cursor.fetchall()
@@ -406,7 +407,7 @@ def _recent_comments(cursor, market_id):
 def _market_options_context(cursor, market_id):
     cursor.execute(
         """
-        SELECT id, label, probability_exact, hint
+        SELECT label, hint
         FROM gotrendlabs_market_options
         WHERE market_id = %s
         ORDER BY display_order ASC, id ASC
@@ -415,9 +416,7 @@ def _market_options_context(cursor, market_id):
     )
     return [
         {
-            "id": row["id"],
             "label": row["label"],
-            "probability_exact": float(_decimal_probability(row["probability_exact"])),
             "hint": row["hint"] or "",
         }
         for row in cursor.fetchall()
@@ -425,15 +424,25 @@ def _market_options_context(cursor, market_id):
 
 
 def _safe_comment_text(value, max_chars):
-    text = " ".join(str(value or "").strip().split())
+    if not isinstance(value, str):
+        return ""
+    text = " ".join(value.strip().split())
     text = re.sub(r"^(?:agente\s+ia\s+oficial\s+da\s+gotrendlabs|ia\s+oficial(?:\s+da\s+gotrendlabs)?)\s*[:\-–—]\s*", "", text, flags=re.IGNORECASE).strip()
     forbidden = ["eu apostei", "minha aposta", "como humano", "minha experiencia", "minha experiência", "garantido", "certeza de lucro"]
     lowered = text.lower()
     if not text or any(term in lowered for term in forbidden):
         return ""
     if len(text) > max_chars:
-        text = text[: max_chars - 1].rstrip() + "…"
+        return ""
     return text
+
+
+def _editorial_risk_audit(flags):
+    """Keep only controlled category codes, never arbitrary provider strings."""
+    return {
+        "risk_flag_count": len(flags),
+        "risk_categories": sorted({flag if flag in RISK_CATEGORIES else "unknown_risk" for flag in flags}),
+    }
 
 
 def _run_comment_cycle(cursor, config, summary, now):
@@ -504,19 +513,38 @@ def _run_comment_cycle(cursor, config, summary, now):
             market_context = {
                 **market,
                 "options": _market_options_context(cursor, market["id"]),
-                **market_public_metrics(cursor, market["id"]),
             }
-            prompt = build_comment_prompt(agent=agent, market=market_context, comments=comments, config=config)
+            prompt = build_comment_prompt(agent=agent, market=market_context, comments=comments, config=config, now=now)
+            stage = "generation"
+            audit = {"provider": config.get("ai_llm_provider") or "openai",
+                     "model": config.get("ai_model") or "gpt-5.4-mini",
+                     "policy_version": EDITORIAL_POLICY_VERSION, "attempt": attempts,
+                     "generation_calls": 1, "evaluation_calls": 0, "rewrite_calls": 0}
             try:
-                llm_result = request_market_comment(config=config, prompt=prompt)
-                if not bool(llm_result.get("should_publish")):
-                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="skipped", reason="llm_should_publish_false", payload={"confidence": llm_result.get("confidence"), "risk_flags": llm_result.get("risk_flags", [])})
+                llm_result = validate_output(request_market_comment(config=config, prompt=prompt), COMMENT_JSON_SCHEMA)
+                audit.update(_editorial_risk_audit(llm_result["risk_flags"]))
+                audit["abstention_reason"] = llm_result["abstention_reason"]
+                if not llm_result["should_publish"]:
+                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="skipped", reason="llm_should_publish_false", payload={**audit, "decision": "abstained"})
                     summary["skipped"] += 1
                     continue
-                body = _safe_comment_text(llm_result.get("comment"), int(config.get("ai_comment_max_chars") or 700))
+                if llm_result["risk_flags"]:
+                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="skipped", reason="editorial_risk_flags", payload={**audit, "decision": "rejected"})
+                    summary["skipped"] += 1
+                    continue
+                body = _safe_comment_text(llm_result["comment"], int(config.get("ai_comment_max_chars") or 700))
                 if not body:
-                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="comment_validation_failed", payload={"risk_flags": llm_result.get("risk_flags", [])})
+                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="comment_validation_failed", payload={**audit, "decision": "rejected", "reason": "empty_unsafe_or_overlength"})
                     summary["errors"] += 1
+                    continue
+                stage = "evaluation"
+                audit["evaluation_calls"] = 1
+                review = validate_output(request_comment_review(config=config, prompt=build_review_prompt(context=prompt, comment=body)), REVIEW_JSON_SCHEMA)
+                audit.update({"checks": review["checks"], "reasons": review["reasons"],
+                              **_editorial_risk_audit(review["risk_flags"])})
+                if review["decision"] != "approve" or not all(review["checks"].values()) or review["reasons"] or review["risk_flags"]:
+                    _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="skipped", reason="editorial_rejected", payload={**audit, "decision": "rejected", "review_decision": review["decision"]})
+                    summary["skipped"] += 1
                     continue
                 cursor.execute(
                     """
@@ -528,13 +556,14 @@ def _run_comment_cycle(cursor, config, summary, now):
                     (market["id"], agent["user_id"], body, now, now),
                 )
                 comment_id = cursor.fetchone()["id"]
-                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="created", reason="comment_created", payload={"confidence": llm_result.get("confidence"), "risk_flags": llm_result.get("risk_flags", [])}, comment_id=comment_id)
+                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="created", reason="comment_created", payload={**audit, "decision": "published"}, comment_id=comment_id)
                 cursor.execute("UPDATE gotrendlabs_ai_agents SET last_action_at = %s, last_error = '', updated_at = %s WHERE id = %s", (now, now, agent["id"]))
                 created += 1
                 summary["comments_created"] += 1
             except AgentLLMError as exc:
-                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="llm_error", payload={"error": str(exc)[:300]})
-                cursor.execute("UPDATE gotrendlabs_ai_agents SET last_error = %s, updated_at = %s WHERE id = %s", (str(exc)[:1000], now, agent["id"]))
+                error_code = str(exc) if re.fullmatch(r"(?:invalid_[a-z_]+|llm_http_[0-9]{3}|missing_output_text|provider_timeout|provider_network_failure)", str(exc)) else "provider_unavailable"
+                _record_action(cursor, agent_id=agent["id"], market_id=market["id"], action_type="comment", status="failed", reason="llm_error" if stage == "generation" else "editorial_evaluation_error", payload={**audit, "decision": "rejected", "failed_stage": stage, "error": error_code})
+                cursor.execute("UPDATE gotrendlabs_ai_agents SET last_error = %s, updated_at = %s WHERE id = %s", (f"{stage}_failed", now, agent["id"]))
                 summary["errors"] += 1
                 return
 

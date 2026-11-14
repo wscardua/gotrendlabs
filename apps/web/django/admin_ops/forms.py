@@ -313,7 +313,7 @@ class AiConfigForm(forms.Form):
     ai_skip_if_human_comments_recent = forms.BooleanField(label="Pular se houver comentário humano recente", required=False)
     ai_recent_human_comment_window_hours = forms.IntegerField(label="Janela comentário humano (h)", min_value=1, max_value=720, initial=6)
     ai_openai_timeout_seconds = forms.IntegerField(label="Timeout OpenAI", min_value=1, max_value=120, initial=20)
-    ai_openai_max_retries = forms.IntegerField(label="Retries OpenAI", min_value=0, max_value=5, initial=1)
+    ai_openai_max_retries = forms.IntegerField(label="Retries OpenAI", min_value=0, max_value=5, initial=1, help_text="O Analyst não usa retries automáticos: no máximo uma geração e uma avaliação por candidato.")
     ai_paused_until = forms.DateTimeField(
         label="Pausado até",
         required=False,

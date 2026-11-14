@@ -14,11 +14,11 @@ final marketIsNewProvider = Provider.autoDispose.family<bool, Market>((
   market,
 ) {
   final now = ref.watch(marketClockProvider)();
-  final created = DateTime.tryParse(market.createdAt);
-  if (market.isOpen && created != null) {
-    final nextChange = created.isAfter(now)
-        ? created
-        : created.add(const Duration(hours: 48));
+  final published = DateTime.tryParse(market.publishedAt);
+  if (market.isOpen && published != null) {
+    final nextChange = published.isAfter(now)
+        ? published
+        : published.add(const Duration(hours: 48));
     if (nextChange.isAfter(now)) {
       final timer = Timer(nextChange.difference(now), ref.invalidateSelf);
       ref.onDispose(timer.cancel);

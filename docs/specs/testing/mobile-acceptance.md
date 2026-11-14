@@ -1,10 +1,10 @@
 ---
 id: TEST-MOBILE-001
 titulo: "Criterios de aceite mobile"
-versao: 0.6
+versao: 0.7
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-11-07
+ultima_atualizacao: 2026-11-14
 origem:
   - docs/specs/testing/test-strategy.md
   - docs/specs/features/mobile-mvp.md
@@ -369,7 +369,7 @@ A aba Visão geral apresenta fechamento (`close_label`) e resolução prevista (
 
 - Quatro recortes principais, posições ativas secundárias; categorias explícitas preservadas.
 - Apuração inicia expandida e retorna expandida após trocar de recorte; filhos recolhidos não entram na árvore de semântica.
-- Novo apenas em open, de created_at inclusive até 48h exclusivo, sem timestamp futuro nem influência na ordenação; relógio controlável em teste.
+- Novo apenas em open, de published_at inclusive até 48h exclusivo, sem influência na ordenação; relógio controlável em teste. Cobrir rascunho antigo publicado recentemente, data de publicação ausente/inválida/futura sem fallback para created_at, expiração automática e descarte do timer.
 - Sem open, mensagem específica e acesso a locked; sem ambos, acesso a Resolvidos; sem locked, sem expansor vazio.
 - Validar viewport estreita, texto ampliado, erro/loading/refresh e histórico após alternar recortes.
 

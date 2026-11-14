@@ -1,3 +1,61 @@
+## WFLOW-20261114-ANALYST-CLOSEOUT
+
+- Status: em andamento; preparação local concluída, aguardando aprovação explícita da descrição da PR antes de submeter/integrar/publicar.
+- Escopo: Analyst editorial v6/auditoria e faixa Novo por published_at em web/Flutter; branch feature/analyst-editorial-quality baseada em origin/main 33b6da6, preservada.
+- Fonte vigente: testing/analyst-editorial-closeout-20261114.md; workflows de implementação anteriores permanecem históricos.
+- Skills: workflow-governor/spec-orchestrator; checklist universal e publicação revisados. Sem fronteira ou contrato público novo; sem ADR/migration necessária.
+- Pré-flight: MCP GitHub conectado, main confirmada; ENABLE_PROD_DEPLOY=1 e main/us-east-1 verificados. SSM somente leitura confirmou Analyst ativo/modelo atual/limites e retenção de um dia, sem alterar produção.
+- Plano após aprovação: push/PR português/CI completo/merge pelo MCP, acompanhar Actions/SSM/smoke; aplicar persona/estilo propostos e retenção 30 dias, preservando flags/modelo/frequência/limites. Registrar recibo real. Sem distribuição Flutter, inferência manual paga ou moderação de comentários.
+- Validação: 49 testes direcionados e 141 Flutter completos/analyze aprovados; quatro scripts JS/Django/OpenAPI/diff e Dockerfile check aprovados. Suíte Python reportou 722 executados/719 aprovados/dois skips/um erro ambiental CREATEROLE; teste de ACL inalterado passou isolado com papel migrador. Build principal local bloqueado por espaço; suite/builds CI obrigatórios antes do merge.
+- MCP: ferramentas, schemas/contratos, permissões, erros/replays e orientação editorial exposta preservados; nenhum acesso derivado do Admin Ops.
+- Docs reconciliados: README, specs de agentes/feed, recibo/review, changelogs/status/mapa/lacunas e README mobile. Commit local desta preparação mantém a branch; nenhum push/PR/deploy antes da confirmação.
+- Próxima ação: usuário aprova título/descrição e plano operacional; então push, PR pelo MCP, CI, merge, Actions/SSM e recibo real.
+
+## WFLOW-20261114-ANALYST-AUDIT-REASONS
+
+- Status: concluído localmente; finding de auditoria corrigido e validado, sem commit/deploy.
+- Objetivo: distinguir financial_advice, unsupported e demais categorias de risco; guardar motivo estruturado de abstenção sem texto livre.
+- Skills: workflow-governor, fastapi-domain e test-engineer; FEAT-AIAGENT-001, arquitetura e contratos internos revisados.
+- Desenho: enum de categorias no payload existente; flags desconhecidas mapeadas para unknown_risk, sem persistir seu texto. Novo campo obrigatório abstention_reason no contrato LLM, coerente com should_publish; consumidores internos atualizados diretamente, sem fallback legado. Política editorial preservada; prompt versionado.
+- Arquitetura/MCP: somente contrato privado LLM e auditoria interna da FastAPI/Admin Ops; sem endpoint, migration, dependência, permissão ou fronteira nova/ADR. Ferramentas, schemas públicos, permissões, erros, replays e orientação MCP inalterados; nenhuma permissão derivada de ações humanas.
+- Aceite: motivos distintos persistem códigos distintos; abstenção mantém razão; desconhecidos/segredos viram unknown_risk; inconsistência de contrato falha fechada; limites e decisão de publicação preservados.
+- Evidência: 49 testes aprovados em 50,820 s, incluindo nove testes de contrato/provedor e integração PostgreSQL de riscos distintos em geração/avaliação, contagem original com categorias deduplicadas, abstenção, desconhecidos sem texto sensível, contrato ausente/inconsistente e renderização Admin Ops. O novo teste filtra a decisão editorial pelo motivo, distinguindo-a da ação agregada de limite de tentativas. Banco de teste isolado test_gotrendlabs_analyst_audit.
+- Checks: manage.py check, export_openapi.py --check e git diff --check aprovados. Campo novo não pertence a endpoint/OpenAPI; snapshot público preservado.
+- Checklist: FEAT-AIAGENT-001 v0.8/prompt v6, protocolo/corpus, testes, changelogs, status, mapa e lacunas atualizados. Sem migration/ADR, mudança mobile, custo de chamadas ou configurações persistidas. Alterações preexistentes preservadas.
+- Limitações: auditoria anterior não pode recuperar categorias já descartadas; aderência e qualidade semântica do modelo real continuam sem validação paga. Produção, comentários existentes e MCP intactos.
+- Próxima ação externa ao escopo concluído: revisão da correção e eventual avaliação real mediante autorização separada.
+
+## WFLOW-20261114-NEW-FROM-PUBLICATION
+
+- Status: concluído localmente; melhoria da faixa Novo na web e Flutter, preservando trabalho local do Analyst e checkout original.
+- Objetivo: 48h a partir de published_at, não created_at; apenas open, início inclusivo/fim exclusivo, sem fallback para criação, ausentes/inválidos/futuros não recebem faixa.
+- Skills: workflow-governor, django-web, mobile-flutter-implementer, mobile-test-strategy e mobile-docs-governor; specs de feed, UX, contratos e aceite consultadas.
+- Arquitetura: cálculo exclusivamente de apresentação com published_at já fornecido pela API; ciclo de vida/publicação autoritativo FastAPI, sem mudança de contrato, banco ou ADR. Ordenação continua usando critérios existentes.
+- MCP: sem ajuste em ferramentas, schemas/contratos, permissões, erros/replays ou orientação editorial exposta; apenas consumo visual de campo existente. Nenhuma permissão derivada do Admin Ops.
+- Artefatos: template card/base, JS, modelo/provider Flutter, testes web/mobile, feed/UX/aceite, README mobile e estado operacional.
+- Evidência: node tests/test_market_feed_filter.js aprovado (filtros, limites, publicação distinta da criação, expiração e retorno à aba); node --check aprovado; teste Django de consumo API/renderização do card aprovado; 36 testes Flutter de markets_screen/market_card aprovados; flutter analyze sem issues; OpenAPI --check e git diff --check aprovados.
+- Testes ajustam fixtures de novidade para published_at; caso null mantém os demais campos obrigatórios do contrato. Sem fallback ou novo campo de API. Asset JS versionado para invalidar cache.
+- Checklist: feed v0.18, UX mobile v0.6, aceite mobile v0.7, nota no aceite histórico, README mobile, changelogs/status/mapa/lacunas atualizados; sem nova fronteira, ADR, migration ou dependência. Sem modificação no MCP ou produção.
+- Próxima ação externa: revisão e posterior publicação/distribuição se autorizadas. QA em aparelho e instalações existentes não atualizados.
+
+## WFLOW-20261114-ANALYST-EDITORIAL
+
+- Status: concluído no escopo local autorizado; qualidade semântica real pendente de autorização de inferência paga, sem deploy.
+- Feature: FEAT-AIAGENT-001; política editorial verificável para comentários iniciais.
+- Skills: orchestrator, workflow-governor, software-architect, architecture-guard, fastapi-domain, django-web, spec-editor, test-strategy e test-engineer.
+- Branch: feature/analyst-editorial-quality, worktree isolado a partir de origin/main 33b6da6; alterações da árvore original preservadas.
+- Desenho: FastAPI decide publicação após uma geração e uma avaliação semântica separada, mesmo provedor/modelo configurados; sem reescrita/retry. Admin apenas orienta persona e exibe motivos. Persistência usa auditoria existente; sem migration, endpoint ou fronteira nova, ADR dispensada.
+- Segurança: política em mensagem system; persona/contexto/candidato como dados não confiáveis. Sem URLs consultadas ou métricas de popularidade no prompt; nenhum segredo/resposta bruta na auditoria de erro.
+- Aceite: sete critérios aprovados, sem risk_flags em nenhuma etapa; abstenção/rejeição/erro nunca cria comentário. Preservar elegibilidade, limites, cooldown e daemon.
+- Artefatos: prompts, cliente LLM, serviço Analyst, criação/Admin Ops, specs oficiais/comentários, avaliação editorial, testes e memória operacional.
+- MCP: nenhuma alteração em ferramentas, schemas/contratos, permissões, erros, replays ou orientação exposta. Revisados apps/mcp/server.py, editorial_routes.py e editorial_service.policy(): expõem manual/critério de criação de mercados, não o contrato privado de comentários do Analyst. Sem permissões derivadas do Admin Ops.
+- Evidência: 42 testes de contratos/integração/regressão Analyst/daemon e quatro Admin Ops aprovados (46 no total); PostgreSQL de teste local, Python 3.12 temporário com requirements do projeto. Virtualenv original Python 3.9 preservado por incompatibilidade preexistente. manage.py check, export_openapi.py --check e git diff --check aprovados.
+- Testes cobrem publicação aprovada, rejeição sem comentário público, abstenção, flags desconhecidas, inconclusão, respostas inválidas, falhas/timeout sem retry, limite de tentativas, nenhum truncamento, opções completas sem probabilidades, hierarquia system/dados, bloqueio humano/cooldown e continuidade do ciclo/daemon; mocks não demonstram qualidade semântica.
+- Avaliação: 24 casos sintéticos, critérios e protocolo em testing/analyst-editorial-evaluation.md; nenhuma chamada paga, pesquisa externa ou resultado de engajamento. Uma geração + avaliação quando necessária, nenhuma reescrita; custo/latência reais ainda sem medição.
+- Ajustes posteriores propostos, não executados: AiAgent.personality_prompt/comment_style e revisão SiteConfig.ai_audit_retention_days conforme texto da spec. Mesmo modelo pode repetir erros, não verificar fatos externos ou sofrer injeções; falsos positivos/negativos permanecem possíveis.
+- Checklist universal: specs/comentários, estado, changelogs, integration map, known gaps e testes reconciliados; arquitetura/segurança revisadas, domínio FastAPI preservado, sem nova fronteira/ADR, migration, dependência ou contrato público. Nenhum comentário existente moderado ou alterado; produção/configurações produtivas intactas.
+- Próxima ação externa ao escopo concluído: revisão da entrega e, se autorizada separadamente, avaliação real com protocolo e orçamento definidos.
+
 ## WFLOW-20261108-ADSENSE-PRODUCTION-RECEIPT
 
 - Tipo/status: consolidação documental do fechamento produtivo, `concluido` no escopo técnico; integração deste recibo pelo CI leve.

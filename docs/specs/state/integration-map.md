@@ -1,3 +1,19 @@
+## 14/11/2026 — Preparação do fechamento Analyst/Novo
+
+Implementação e correção de auditoria concluídas localmente; publicação aguardará aprovação explícita da descrição da PR. README/specs e recibo reconciliados em [fechamento](../testing/analyst-editorial-closeout-20261114.md). MCP inalterado; modelo real sem avaliação paga. Flutter exige distribuição própria. Builds remotos obrigatórios por limitação de espaço do Docker local; nenhuma limpeza destrutiva. Pré-flight produtivo somente leitura identifica três ajustes propostos (persona, estilo e retenção 30 dias), preservando modelo, flags, frequência, cooldown e limites. Nenhuma implantação ou alteração produtiva ainda realizada. WFLOW-20261114-ANALYST-CLOSEOUT.
+
+## 14/11/2026 — Razões editoriais até o Admin Ops
+
+Geração LLM v6 → validação de abstention_reason/should_publish na FastAPI → enum de risco no payload de AiAgentAction; avaliação → mesma categorização. Admin Ops existente exibe risk_categories/abstention_reason no detalhe JSON. Flags desconhecidas viram unknown_risk sem texto livre. Nenhum endpoint/tabela/permissão nova; MCP e Flutter mantêm contratos atuais.
+
+## 14/11/2026 — Origem temporal da faixa Novo
+
+MarketResponse.published_at existente → atributo data-market-published-at no card Django → regra/timer JS; mesmo campo → Market.publishedAt → regra/provider Flutter. created_at continua disponível para ordenação existente. Sem endpoint, campo, regra de domínio, tabela, dependência ou permissão MCP nova.
+
+## 14/11/2026 — Analyst: gate editorial interno
+
+Daemon → elegibilidade existente FastAPI → contexto com opções sem probabilidades + até cinco comentários recentes → uma geração no Responses do provedor configurado → validação local → uma avaliação no mesmo provedor/modelo → persistência pública somente após sete critérios aprovados sem riscos. Auditoria existente recebe decisão/versões/modelo/etapa/contagem; Admin Ops exibe motivos. Sem dependência, serviço, tabela ou endpoint novo. Contratos MCP/manual editorial de criação de mercados, permissões e replays preservados. Sem pesquisa externa ou produção.
+
 ## 2026-11-08 — Identificação AdSense ativa em produção
 
 Fluxo documentado de crawler → proxy existente → Django confirmado após PR211/merge `f3eac3b`: HTTPS ads.txt 200/text/plain/exato e meta única nas páginas verificadas. Sem chamada ao script Google; domínio/API/MCP/mobile inalterados. [Recibo produtivo](../testing/adsense-verification-20261108.md).

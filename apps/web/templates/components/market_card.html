@@ -9,6 +9,7 @@
   data-market-views="{{ market.view_count|default:0 }}"
   data-market-volume="{{ market.volume_gtl }}"
   data-market-created-at="{{ market.created_at }}"
+  data-market-published-at="{{ market.published_at|default_if_none:'' }}"
   data-market-close-at="{{ market.close_at }}"
   data-market-status="{{ market.status }}"
   data-market-predicted="{{ market.viewer_has_prediction|yesno:'true,false' }}"

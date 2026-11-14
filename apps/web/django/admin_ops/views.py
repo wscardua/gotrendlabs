@@ -1177,6 +1177,9 @@ AI_ACTION_STATUS_COPY = {
 }
 
 AI_ACTION_REASON_COPY = {
+    "editorial_risk_flags": ("Risco editorial", "O gerador identificou risco; nenhuma publicação foi realizada."),
+    "editorial_rejected": ("Reprovado na avaliação editorial", "Um critério falhou ou a avaliação foi inconclusiva. Consulte os códigos e critérios no detalhe."),
+    "editorial_evaluation_error": ("Falha na avaliação editorial", "Provedor ou resposta de avaliação inválida; publicação bloqueada e tentativas interrompidas."),
     "ai_agents_disabled": ("Agentes IA desativados", "O kill switch geral de agentes IA está desligado."),
     "ai_commenting_disabled": ("Comentários IA desativados", "A configuração permite agentes, mas bloqueia criação de comentários."),
     "ai_paused": ("IA pausada", "A operação IA está pausada até o fim da janela configurada."),

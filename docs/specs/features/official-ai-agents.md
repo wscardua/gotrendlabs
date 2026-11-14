@@ -1,10 +1,10 @@
 ---
 id: FEAT-AIAGENT-001
 titulo: "Agentes IA oficiais"
-versao: 0.5
+versao: 0.8
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-10-17
+ultima_atualizacao: 2026-11-14
 origem:
   - solicitação de produto para comentários IA oficiais e liquidez bot controlada
 contratos_afetados:
@@ -28,6 +28,8 @@ aprovacao: pendente
 ---
 
 # Agentes IA Oficiais
+
+Entrega de 14/11/2026 implementada e testada localmente; PR, implantação e ajustes operacionais aguardam aprovação. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
 
 ## Objetivo
 
@@ -69,15 +71,42 @@ Permitir que agentes IA oficiais da GoTrendLabs comentem mercados e que bots ofi
 - O segredo do provedor LLM permanece exclusivamente em ambiente (`OPENAI_API_KEY` para OpenAI ou `AWS_BEARER_TOKEN_BEDROCK` para Bedrock).
 - `gotrendlabs_site_config.ai_audit_retention_days` define por quantos dias a auditoria IA é preservada antes do purge operacional; default 90 dias.
 
-## Prompts e LLM
+## Escopo desta melhoria
 
-- Template base obrigatório fica em `apps/api/backend_api/agent_prompts.py`.
-- Persona e estilo editáveis ficam em `gotrendlabs_ai_agents`.
-- Backend monta prompt final com template seguro, persona, mercado, comentários recentes e limites de config.
-- Responses API usa `{ai_llm_base_url}/responses` e saída estruturada JSON.
-- Prompt de comentário deve evitar afirmações técnicas específicas, eventos externos, números, anúncios ou fontes não presentes no contexto do mercado; inferências devem usar linguagem condicional e verificável.
-- O ciclo de comentários pode avaliar múltiplos mercados elegíveis no mesmo ciclo: se a LLM retornar `should_publish=false` ou o texto falhar na validação segura, tenta o próximo mercado até o limite de tentativas.
-- Timeout, erro HTTP ou `AgentLLMError` devem ser auditados como `llm_error` e interrompem as tentativas de comentário daquele ciclo para evitar cascata de custo durante instabilidade.
+Apenas qualidade do comentário inicial. Retomada de discussão e respostas em threads permanecem possibilidades futuras, sem implementação. Sem aumento de frequência, pesquisa externa, troca do modelo/provedor produtivo, alteração de comentários existentes ou da mecânica de mercados/GT₵. Elegibilidade, limites, cooldown e bloqueio humano existentes preservados.
+
+## Política editorial do comentário inicial — analyst-editorial-v1
+
+- Objetivo: dar aos participantes algo concreto e compreensível para discutir, preservando sua autonomia; volume não mede qualidade.
+- Exigir especificidade, contribuição além de título/resumo/regras, sustentação no contexto, separação entre fato e hipótese, neutralidade, naturalidade, coerência/completude e ausência de repetição relevante.
+- Pergunta pertinente é opcional. Permitir distinção de fatores, tensão entre interpretações ou discussão de evidências sem cabeçalhos, seleção arbitrária de opções ou fórmula SIM/NÃO + sinais.
+- Proibir favoritismo, recomendação de opção, probabilidades inventadas, chances iguais sem base, desvalorização de candidatos, perguntas indutivas e apelos para participar ou movimentar probabilidades.
+- Proibir qualquer indicação financeira direta/indireta, inclusive pergunta ou disclaimer: investir, comprar/vender/manter, entrar/sair, alocação/exposição/valores/percentuais, lucro/rentabilidade/recuperação de perdas e GT₵ como oportunidade financeira. Informação econômica ou de preços factual e neutra é permitida; não bloquear temas financeiros/cripto por categoria.
+- Evitar manual de apuração, mera declaração de resultado desconhecido, jargão, grandiloquência, falsa vivência, entusiasmo artificial, perguntas vazias e listas genéricas de sinais.
+- Abstenção é resultado esperado quando não existe contribuição útil, segura e sustentada.
+
+## Prompts, contexto e decisão de publicação
+
+- Template `gotrendlabs-ai-agent-v6`, política `analyst-editorial-v1`, schemas e hash conjunto de geração/avaliação em `agent_prompts.py`.
+- Política obrigatória em mensagem system prevalece sobre persona configurável, conteúdo do mercado, comentários e candidato; estes são dados não confiáveis, nunca instruções.
+- Contexto explicita pergunta/tema, resumo como fatos fornecidos não verificados, todas as opções sem probabilidades, regras como restrições, referência temporal UTC do ciclo/fechamento e até cinco comentários visíveis recentes (integrais, sem autor identificável). Não consulta histórico amplo nem exemplos de outros mercados.
+- URLs são referências não consultadas, sem pesquisa externa. Comentários humanos não estabelecem fatos. Removida consulta de métricas públicas do caminho de contexto; popularidade mantém apenas a seleção operacional existente.
+- Uma geração por mercado elegível. Validar tipos/campos estritos localmente nos dois provedores; confiança do gerador é apenas parte do contrato, nunca autorização de publicação.
+- `should_publish=false` gera abstenção; qualquer `risk_flags` do gerador impede publicação, inclusive flags desconhecidas. Texto vazio, inseguro ou acima do limite é rejeitado integralmente, sem truncamento nem reescrita.
+- Uma avaliação separada pelo mesmo provedor/modelo recebe candidato final normalizado e contexto. Saída estruturada: `decision`, sete `checks`, `reasons` em códigos curtos e `risk_flags`.
+- Publicar somente com `decision=approve`, TODOS os critérios verdadeiros, nenhum motivo nem flag. Rejeição, inconclusão, inconsistência, JSON inválido ou falha impedem persistência pública. Texto aprovado não é modificado depois da avaliação.
+- O campo existente `ai_openai_max_retries` não autoriza retries no Analyst; o formulário explicita o orçamento. Não há retry HTTP nem reescrita: até duas chamadas por candidato (geração + avaliação), cada uma com timeout configurado. `ai_max_comment_attempts_per_cycle` mantém limite de candidatos por agente; todos os limites de publicação, elegibilidade, bloqueio humano e cooldown permanecem.
+- Abstenção/rejeição pode tentar próximo candidato dentro do limite existente. Falha/contrato inválido de geração ou avaliação interrompe comentários do ciclo, auditada, sem derrubar daemon nem impedir demais rotinas.
+- Custo/latência: candidatos avaliados consomem uma chamada adicional; até duas requisições por candidato e até 2 × candidatos por agente (timeout por fase de I/O, não deadline absoluto). Sem benchmarks ou qualidade real alegados. Mesmo modelo pode repetir vieses, aceitar afirmações falsas do contexto ou sofrer injeção; a segunda chamada reduz risco sem garantir correção.
+
+## Auditoria e operação administrativa
+
+- Auditoria existente guarda versão/hash de ambos os prompts/schemas, política, provedor/modelo, publicado/rejeitado/abstenção, etapa com falha, contagem de chamadas/tentativa e critérios/códigos curtos de avaliação. Registra `risk_categories` como códigos conhecidos e `unknown_risk` para flags desconhecidas, junto de `risk_flag_count`; nunca guarda flags livres, raciocínio, candidato rejeitado ou texto bruto de erro. O gerador deve retornar `abstention_reason` obrigatório: `not_applicable` somente quando `should_publish=true`; na abstenção, um código de `REVIEW_REASONS` ou `other_reason`. Contradição/ausência/tipo inválido falha sem publicação. Não há fallback para o contrato antigo.
+- Sem alteração automática de configurações persistidas. Recomendar revisão operacional de `SiteConfig.ai_audit_retention_days`: 30–90 dias conforme necessidade/custo/privacidade; default documentado 90, histórico de produção de um dia não foi reconfirmado ou alterado.
+- Para aplicação humana posterior: `AiAgent.personality_prompt` = “Contribua com uma perspectiva concreta e sustentada para a conversa, com curiosidade e respeito à autonomia dos participantes. Abstenha-se quando não houver contribuição útil.”; `AiAgent.comment_style` = “direto, natural, curioso e respeitoso”. Editar agente Analyst no Admin Ops apenas após revisão administrativa.
+- Comando de criação usa defaults apenas para novo agente, preservando persona/estilo e ativação de agentes existentes. Migrações históricas não são reexecutadas nem editadas.
+- Avaliação real e limitações: [protocolo e conjunto](../testing/analyst-editorial-evaluation.md); mocks validam fluxo, não capacidade semântica.
+- MCP: nenhuma mudança em ferramentas, schemas/contratos públicos, permissões, erros ou replays; política e contrato LLM privados do Analyst, sem alteração do manual de criação de mercados exposto pelo MCP. Não deriva permissões de Admin Ops.
 
 ## Operação
 
