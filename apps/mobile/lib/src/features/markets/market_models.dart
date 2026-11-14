@@ -206,11 +206,11 @@ class Market {
   final List<Map<String, dynamic>> sparklineSeries;
 
   bool isNewAt(DateTime now) {
-    final created = DateTime.tryParse(createdAt);
+    final published = DateTime.tryParse(publishedAt);
     return isOpen &&
-        created != null &&
-        !created.isAfter(now) &&
-        now.isBefore(created.add(const Duration(hours: 48)));
+        published != null &&
+        !published.isAfter(now) &&
+        now.isBefore(published.add(const Duration(hours: 48)));
   }
 
   bool get isOpen => status == 'open';

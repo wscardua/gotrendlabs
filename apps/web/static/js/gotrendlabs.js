@@ -217,8 +217,8 @@ function renderMarketChunk(list, mode, requestedVisibleCount) {
 }
 
 function isNewMarket(card, now = Date.now()) {
-  const createdAt = parseDateScore(card.dataset.marketCreatedAt, Number.NaN);
-  return card.dataset.marketStatus === "open" && createdAt <= now && now < createdAt + 48 * 60 * 60 * 1000;
+  const publishedAt = parseDateScore(card.dataset.marketPublishedAt, Number.NaN);
+  return card.dataset.marketStatus === "open" && publishedAt <= now && now < publishedAt + 48 * 60 * 60 * 1000;
 }
 
 function sortMarketList(group, mode, visibleCount) {
@@ -257,9 +257,9 @@ function hydrateMarketFreshness() {
     if (!badge) return;
     badge.hidden = !isNewMarket(card, now);
     if (card.dataset.marketStatus !== "open") return;
-    const createdAt = parseDateScore(card.dataset.marketCreatedAt, Number.NaN);
-    const expiresAt = createdAt + 48 * 60 * 60 * 1000;
-    if (createdAt > now) nextChange = Math.min(nextChange, createdAt);
+    const publishedAt = parseDateScore(card.dataset.marketPublishedAt, Number.NaN);
+    const expiresAt = publishedAt + 48 * 60 * 60 * 1000;
+    if (publishedAt > now) nextChange = Math.min(nextChange, publishedAt);
     else if (expiresAt > now) nextChange = Math.min(nextChange, expiresAt);
   });
   if (Number.isFinite(nextChange)) {

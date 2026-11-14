@@ -1,5 +1,11 @@
 # Mobile
 
+Fechamento de 14/11/2026: 141 testes Flutter completos e análise estática aprovados; faixa Novo por publicação aguarda integração. O deploy web/API desta entrega não atualiza os apps instalados; nenhuma distribuição Android/iOS executada. Fonte vigente: [recibo de fechamento](../../docs/specs/testing/analyst-editorial-closeout-20261114.md).
+
+## 14/11/2026 — Novo a partir da publicação (local)
+
+A faixa Novo usa `published_at` da API por 48h, somente em mercados abertos, independentemente de quando o rascunho foi criado. Datas ausentes/inválidas/futuras não exibem faixa; sem fallback para criação. Expiração automática preservada. Implementação local; instalações existentes dependem de próxima distribuição mobile. Sem alteração do contrato ou MCP.
+
 ## Hoje — fechamento 1.2.5+19
 
 Ordem aprovada: Para prever → Tendências → Mais mercados → Em apuração. Abertos mantêm engajamento; todos os locked aparecem ao final, sem limite/CTA. Specs e evidências: docs/specs/testing/mobile-today-release-19-20261107.md. Versão preparada para integração e Alpha; ainda não distribuída.

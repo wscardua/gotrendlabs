@@ -48,14 +48,14 @@ class Command(BaseCommand):
                 "is_public": True,
             },
         )
-        agent, agent_created = AiAgent.objects.update_or_create(
+        agent, agent_created = AiAgent.objects.get_or_create(
             user=user,
             defaults={
                 "name": "GoTrendLabs AI Analyst",
                 "agent_type": "analyst",
                 "is_active": bool(options["activate"]),
-                "personality_prompt": "Comente mercados de forma equilibrada, curta e útil para participantes da GoTrendLabs.",
-                "comment_style": "analise objetiva",
+                "personality_prompt": "Contribua com uma perspectiva concreta e sustentada para a conversa, com curiosidade e respeito à autonomia dos participantes. Abstenha-se quando não houver contribuição útil.",
+                "comment_style": "direto, natural, curioso e respeitoso",
             },
         )
         created = []

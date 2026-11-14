@@ -1,3 +1,7 @@
+## Atualização local — 14/11/2026
+
+A regra temporal atual da faixa Novo substitui created_at por published_at (48h, open, sem fallback). Criação antiga com publicação recente recebe faixa; publicação ausente/inválida/futura não recebe. Testes de limites/expiração foram atualizados. O relato de 07/11 abaixo descreve a implementação anterior; nenhuma nova publicação em produção foi realizada. Fonte atual: FEAT-MARKET-001 v0.18 e WFLOW-20261114-NEW-FROM-PUBLICATION.
+
 # Aceite local — navegação Em andamento
 
 WFLOW-20261107-MARKETS-IN-PROGRESS / FEAT-MARKET-001 v0.15. Base remota `7d1dd314180efce510a2e7ceb57254f9fca579be`; branch `feature/markets-in-progress`, worktree `/Users/williamsca/Documents/gotrendlabs-markets-in-progress`. Checkout original e branches anteriores preservados.

@@ -1,10 +1,10 @@
 ---
 id: FEAT-MOBILE-UX-001
 titulo: "UX e design mobile"
-versao: 0.5
+versao: 0.6
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-11-07
+ultima_atualizacao: 2026-11-14
 origem:
   - docs/specs/features/mobile-mvp.md
   - referencias_visuais_fornecidas_pelo_usuario
@@ -244,7 +244,7 @@ Deve priorizar:
 - navegação Em andamento (inicial), Resolvidos, Favoritos e Minhas previsões; Em andamento mantém open na ordem da API e locked em seção expandida por padrão com contagem e semântica de expansão, ordenada por close_at decrescente/origem
 - Favoritos mantém encerrados; Minhas previsões usa viewer_has_prediction em todos os estados públicos relevantes, inclusive selados; Posições ativas é ação secundária baseada em viewer_position.has_position
 - faixa diagonal NOVO no canto superior direito dos cards hero/compacto substitui a pill; usa nome acessível Novo, não intercepta toque e preserva espaço do consenso e do selo de integridade
-- a troca de recorte não mantém status implícito; retornar a Em andamento expande apuração; Novo sinaliza open criado há menos de 48 horas, sem mudar ordem, com timestamps futuros excluídos
+- a troca de recorte não mantém status implícito; retornar a Em andamento expande apuração; Novo sinaliza open publicado há menos de 48 horas (published_at), sem mudar ordem; timestamps de publicação ausentes, inválidos ou futuros excluídos, sem fallback para created_at
 
 ### Detalhe
 

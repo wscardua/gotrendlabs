@@ -1,10 +1,10 @@
 ---
 id: FEAT-COMMENT-001
 titulo: "Comentários"
-versao: 0.1
+versao: 0.2
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-05-18
+ultima_atualizacao: 2026-11-14
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -101,6 +101,10 @@ Usuário autenticado comenta em um mercado e visualiza a discussão associada.
 - Comentários de autores `is_bot=true` retornam `author_is_bot=true` e `author_badge_label="IA oficial"` para exibição pública.
 - Comentários IA oficiais não disparam badges, recompensas, reputação, participantes ou probabilidade.
 - Likes/dislikes de comentários são reações internas dos comentários e não alimentam `market_like_count` do mercado.
+
+## Comentário inicial oficial
+
+O Analyst interno só publica após aprovação editorial conforme [FEAT-AIAGENT-001](official-ai-agents.md). Abstenção, risco, reprovação ou falha não persistem comentário público. Não há truncamento mecânico, retomada ou threads; contratos de comentários humanos/moderação permanecem iguais.
 
 ## I18n e conteúdo
 

@@ -1,3 +1,19 @@
+## 14/11/2026 — Preparação do fechamento Analyst/Novo
+
+Implementação e correção de auditoria concluídas localmente; publicação aguardará aprovação explícita da descrição da PR. README/specs e recibo reconciliados em [fechamento](../testing/analyst-editorial-closeout-20261114.md). MCP inalterado; modelo real sem avaliação paga. Flutter exige distribuição própria. Builds remotos obrigatórios por limitação de espaço do Docker local; nenhuma limpeza destrutiva. Pré-flight produtivo somente leitura identifica três ajustes propostos (persona, estilo e retenção 30 dias), preservando modelo, flags, frequência, cooldown e limites. Nenhuma implantação ou alteração produtiva ainda realizada. WFLOW-20261114-ANALYST-CLOSEOUT.
+
+## 14/11/2026 — Finding de auditoria do Analyst corrigido localmente
+
+Categorias distintas de risco passam a ter códigos distintos na auditoria e abstenções incluem motivo obrigatório. Correção não recupera motivos já descartados em registros anteriores, nem altera dados existentes. Avaliação real de qualidade e aderência ao contrato v6 continua pendente de autorização para inferência paga, conforme protocolo. Sem deploy ou alteração MCP.
+
+## 14/11/2026 — Faixa Novo por publicação ainda local
+
+Implementação web/mobile usa published_at sem fallback; mercado sem publicação válida não recebe faixa. Sem migração/correção de dados históricos. Deploy web e distribuição Flutter não executados nem autorizados nesta mudança; QA em aparelho permanece pendente. MCP e produção preservados. WFLOW-20261114-NEW-FROM-PUBLICATION.
+
+## 14/11/2026 — Avaliação real do Analyst pendente
+
+Fluxo editorial implementado e testado localmente com respostas simuladas; isso não prova qualidade semântica do modelo. Conjunto de 24 casos e protocolo prontos em [avaliação](../testing/analyst-editorial-evaluation.md). Inferência real depende de autorização para chamadas pagas; sem benchmark de custo/latência ou engajamento. Mesmo modelo pode compartilhar vieses/erros entre geração e avaliação, aceitar contexto falso ou instruções adversariais. Revisão administrativa posterior de persona/estilo e retenção de auditoria recomendada na spec, sem mudança produtiva. Feature ampla mantém status parcial.
+
 ## 08/11/2026 — Ocultação indevida do gráfico administrativo resolvida
 
 PR209/merge `6dde140`, CI PR42485739272 e main/deploy42486520746 aprovados (700 testes/três skips). SSM Success/0 e smoke com sessão administrativa real no Chrome confirmam gráfico pessoal visível nos dois temas, com placar administrativo oculto. Sem mudança de ranking, permissões/API/MCP ou dados de teste em produção. Não há pendência de implantação desta correção; preparação abaixo é histórica. Cobertura restante: Safari/Firefox/aparelho físico, com celular validado por viewports locais. [Recibo final](../testing/web-performance-admin-chart-20261108.md).

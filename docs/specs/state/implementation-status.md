@@ -1,3 +1,19 @@
+## 14/11/2026 — Preparação do fechamento Analyst/Novo
+
+Implementação e correção de auditoria concluídas localmente; publicação aguardará aprovação explícita da descrição da PR. README/specs e recibo reconciliados em [fechamento](../testing/analyst-editorial-closeout-20261114.md). MCP inalterado; modelo real sem avaliação paga. Flutter exige distribuição própria. Builds remotos obrigatórios por limitação de espaço do Docker local; nenhuma limpeza destrutiva. Pré-flight produtivo somente leitura identifica três ajustes propostos (persona, estilo e retenção 30 dias), preservando modelo, flags, frequência, cooldown e limites. Nenhuma implantação ou alteração produtiva ainda realizada. WFLOW-20261114-ANALYST-CLOSEOUT.
+
+## 14/11/2026 — Correção da auditoria editorial (local)
+
+WFLOW-20261114-ANALYST-AUDIT-REASONS implementa distinção de riscos e motivo estruturado de abstenção com contrato v6 estrito; payload existente exibe códigos no Admin Ops. Sem mudança da política editorial v1, modelo, orçamento de chamadas, elegibilidade ou consumidores mobile. Qualidade semântica real continua pendente; nenhuma chamada paga ou alteração produtiva.
+
+## 14/11/2026 — Novo por publicação (local)
+
+Web e Flutter passam a consumir published_at para a faixa de 48h, com timers alinhados e sem fallback. Specs, aceite e testes ajustados; release mobile/deploy não executados. Não modifica o trabalho local do Analyst. WFLOW-20261114-NEW-FROM-PUBLICATION.
+
+## 14/11/2026 — Analyst editorial implementado localmente
+
+WFLOW-20261114-ANALYST-EDITORIAL: prompt v5/política v1, geração + avaliação semântica estruturada, bloqueio de riscos/falhas/inconclusão, rejeição sem truncamento e auditoria ampliada no payload existente. Limites/cooldown/bloqueio humano preservados. Criação de agente não sobrescreve persona/estilo/ativação existentes; Admin Ops explica política e motivos. Feature ampla continua parcial; capacidade semântica real do modelo ainda não validada. Sem migration, OpenAPI ou MCP alterados; produção intacta. [Protocolo e casos](../testing/analyst-editorial-evaluation.md).
+
 ## 08/11/2026 — AdSense publicado e validado
 
 FEAT-ADSENSE-001 integrada pela PR211/merge `f3eac3b`, implantada pelo Actions42496468139. CI PR/main com 704 testes/3 skips em ambos; builds/checks e deploy aprovados. GET/HEAD HTTPS `/ads.txt` exatos, meta única no head de quatro páginas públicas, ausência de script/slots e API/banco saudáveis. Sem migration/configuração adicional ou mudança MCP/mobile. Branch local preservada. Revisão/aprovação Google não realizada nem presumida. [Fonte vigente](../testing/adsense-verification-20261108.md); esta entrada prevalece sobre a preparação local anterior.

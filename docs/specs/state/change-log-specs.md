@@ -1,3 +1,19 @@
+## 14/11/2026 — Preparação do fechamento Analyst/Novo
+
+Implementação e correção de auditoria concluídas localmente; publicação aguardará aprovação explícita da descrição da PR. README/specs e recibo reconciliados em [fechamento](../testing/analyst-editorial-closeout-20261114.md). MCP inalterado; modelo real sem avaliação paga. Flutter exige distribuição própria. Builds remotos obrigatórios por limitação de espaço do Docker local; nenhuma limpeza destrutiva. Pré-flight produtivo somente leitura identifica três ajustes propostos (persona, estilo e retenção 30 dias), preservando modelo, flags, frequência, cooldown e limites. Nenhuma implantação ou alteração produtiva ainda realizada. WFLOW-20261114-ANALYST-CLOSEOUT.
+
+## 14/11/2026 — Contrato de motivos do Analyst
+
+FEAT-AIAGENT-001 v0.8 e prompt v6 definem `abstention_reason` obrigatório e categorias de risco controladas no payload de auditoria. O enum usa `not_applicable` só para proposta de publicação, códigos editoriais/`other_reason` para abstenção; flags desconhecidas não são descartadas silenciosamente nem copiadas, mas registradas como `unknown_risk` com contagem original. Protocolo/caso de contexto insuficiente atualizado. Sem fallback legado ou mudança do contrato MCP.
+
+## 14/11/2026 — Janela Novo baseada em published_at
+
+Feed v0.18, UX mobile v0.6 e aceite mobile v0.7 alinham janela de 48h à publicação, sem fallback para criação. Testes devem diferenciar criação/publicação, ausência, datas inválidas/futuras, limite exato e expiração automática. Registros anteriores baseados em created_at permanecem históricos. Sem contrato público ou orientação MCP alterados.
+
+## 14/11/2026 — Política verificável do comentário inicial
+
+FEAT-AIAGENT-001 v0.7 e FEAT-COMMENT-001 v0.2 definem contribuição nova, especificidade, neutralidade, sustentação, proibição de indicação financeira, naturalidade/completude e não repetição. Pergunta opcional e abstenção explícita; geração e avaliação com contratos estritos, falha segura e orçamento de duas requisições sem retries/reescrita. Protocolo separa 24 casos editoriais sintéticos de testes de fluxo simulados; qualidade real permanece sem inferência paga. MCP não expõe este contrato LLM nem recebe novas permissões.
+
 ## 2026-11-08 — Estado produtivo da verificação AdSense
 
 FEAT-ADSENSE-001 promovida a implementada_validada com CI, implantação e smoke reais. README, workflow/estado/mapa e recibo reconciliados; histórico local preservado. Nenhuma nova regra, contrato ou alteração editorial/MCP; reconhecimento e aprovação Google explicitamente separados da publicação.

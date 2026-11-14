@@ -10,7 +10,7 @@ import 'package:gotrendlabs_mobile/src/features/markets/markets_screen.dart';
 import 'package:gotrendlabs_mobile/src/theme.dart';
 
 void main() {
-  test('Novo uses API creation and the exact 48 hour boundary', () {
+  test('Novo uses API publication and the exact 48 hour boundary', () {
     final now = DateTime.utc(2026, 11, 7, 12);
     for (final entry in [
       ('open', '2026-11-05T12:00:00.001Z', true),
@@ -18,6 +18,10 @@ void main() {
       ('open', '2026-11-05T11:59:59Z', false),
       ('open', '2026-11-07T12:00:00Z', true),
       ('open', '2026-11-07T12:00:00.001Z', false),
+      ('open', '', false),
+      ('open', 'invalid', false),
+      ('draft', '2026-11-07T10:00:00Z', false),
+      ('canceled', '2026-11-07T10:00:00Z', false),
       ('locked', '2026-11-07T10:00:00Z', false),
       ('resolved', '2026-11-07T10:00:00Z', false),
       ('sealed', '2026-11-07T10:00:00Z', false),
@@ -27,11 +31,35 @@ void main() {
           slug: 'badge',
           title: 'Selo',
           status: entry.$1,
-          createdAt: entry.$2,
+          publishedAt: entry.$2,
         ).isNewAt(now),
         entry.$3,
       );
     }
+  });
+
+  test('Novo never substitutes creation for missing or old publication', () {
+    final now = DateTime.utc(2026, 11, 7, 12);
+    for (final published in ['', '2026-11-04T12:00:00Z']) {
+      expect(
+        _market(
+          slug: 'draft',
+          title: 'Rascunho',
+          createdAt: '2026-11-07T10:00:00Z',
+          publishedAt: published,
+        ).isNewAt(now),
+        false,
+      );
+    }
+    expect(
+      Market.fromJson({
+        'status': 'open',
+        'published_at': null,
+        'total_participants': 0,
+        'created_at': '2026-11-07T10:00:00Z',
+      }).isNewAt(now),
+      false,
+    );
   });
 
   testWidgets('ongoing keeps API open order and expands pending on return', (
@@ -62,7 +90,7 @@ void main() {
               _market(
                 slug: 'open-new',
                 title: 'Aberto novo na API',
-                createdAt: '2026-11-07T10:00:00Z',
+                publishedAt: '2026-11-07T10:00:00Z',
               ),
             ],
           ),
@@ -155,7 +183,7 @@ void main() {
                   slug: 'long-open',
                   title:
                       'Uma pergunta longa para conferir leitura com fonte ampliada no app',
-                  createdAt: '2026-11-07T10:00:00Z',
+                  publishedAt: '2026-11-07T10:00:00Z',
                 ),
                 _market(
                   slug: 'pending-long',
@@ -754,6 +782,7 @@ Market _market({
   String status = 'open',
   String statusLabel = 'Aberto',
   String createdAt = '2026-01-01T00:00:00Z',
+  String publishedAt = '',
   String closeAt = '2026-11-06T00:00:00Z',
   int participants = 8,
   int volume = 120,
@@ -771,6 +800,7 @@ Market _market({
     'status': status,
     'status_label': statusLabel,
     'created_at': createdAt,
+    'published_at': publishedAt,
     'close_at': closeAt,
     'primary_outcome': 'SIM',
     'primary_probability': 64,

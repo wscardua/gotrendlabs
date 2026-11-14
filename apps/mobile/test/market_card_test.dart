@@ -14,7 +14,7 @@ void main() {
     'Novo expires on mounted hero and compact cards without interaction',
     (tester) async {
       var now = DateTime.utc(2026, 11, 7, 12);
-      final market = _market(createdAt: '2026-11-05T12:00:01Z');
+      final market = _market(publishedAt: '2026-11-05T12:00:01Z');
       await tester.pumpWidget(
         ProviderScope(
           overrides: [marketClockProvider.overrideWithValue(() => now)],
@@ -60,7 +60,7 @@ void main() {
         child: MaterialApp(
           home: Scaffold(
             body: MarketCompactCard(
-              market: _market(createdAt: '2026-11-07T10:00:00Z'),
+              market: _market(publishedAt: '2026-11-07T10:00:00Z'),
               api: ApiClient(tokenStore: MemoryTokenStore()),
             ),
           ),
@@ -92,21 +92,21 @@ void main() {
                 children: [
                   MarketHeroCard(
                     market: _market(
-                      createdAt: '2026-11-07T10:00:00Z',
+                      publishedAt: '2026-11-07T10:00:00Z',
                       integrityStatus: 'registered',
                     ),
                     api: ApiClient(tokenStore: MemoryTokenStore()),
                   ),
                   MarketCompactCard(
                     market: _market(
-                      createdAt: '2026-11-07T10:00:00Z',
+                      publishedAt: '2026-11-07T10:00:00Z',
                       integrityStatus: 'registered',
                     ),
                     api: ApiClient(tokenStore: MemoryTokenStore()),
                   ),
                   MarketCompactCard(
                     market: _market(
-                      createdAt: '2026-11-07T10:00:00Z',
+                      publishedAt: '2026-11-07T10:00:00Z',
                       status: 'locked',
                     ),
                     api: ApiClient(tokenStore: MemoryTokenStore()),
@@ -132,7 +132,7 @@ void main() {
           path: '/',
           builder: (context, state) => Scaffold(
             body: MarketCompactCard(
-              market: _market(createdAt: '2026-11-07T10:00:00Z'),
+              market: _market(publishedAt: '2026-11-07T10:00:00Z'),
               api: ApiClient(tokenStore: MemoryTokenStore()),
             ),
           ),
@@ -571,6 +571,7 @@ Market _market({
   int totalParticipants = 9,
   String category = 'Tecnologia',
   String createdAt = '2026-01-01T00:00:00Z',
+  String publishedAt = '',
   String thumb = 'GT',
   bool favorite = false,
   bool prediction = false,
@@ -585,6 +586,7 @@ Market _market({
     'title': 'O mercado teste ficará aberto?',
     'category': category,
     'created_at': createdAt,
+    'published_at': publishedAt,
     'subcategory': 'Apps',
     'event': 'Geral',
     'kind': 'binary',

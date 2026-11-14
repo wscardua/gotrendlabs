@@ -1,3 +1,19 @@
+## 14/11/2026 — Preparação do fechamento Analyst/Novo
+
+Implementação e correção de auditoria concluídas localmente; publicação aguardará aprovação explícita da descrição da PR. README/specs e recibo reconciliados em [fechamento](../testing/analyst-editorial-closeout-20261114.md). MCP inalterado; modelo real sem avaliação paga. Flutter exige distribuição própria. Builds remotos obrigatórios por limitação de espaço do Docker local; nenhuma limpeza destrutiva. Pré-flight produtivo somente leitura identifica três ajustes propostos (persona, estilo e retenção 30 dias), preservando modelo, flags, frequência, cooldown e limites. Nenhuma implantação ou alteração produtiva ainda realizada. WFLOW-20261114-ANALYST-CLOSEOUT.
+
+## 14/11/2026 — Analyst: motivos de auditoria preservados (local)
+
+Correção do finding do review: flags do gerador e avaliador agora persistem `risk_categories` controladas; desconhecidas viram `unknown_risk`, sem texto livre. Gerador v6 exige `abstention_reason` coerente com `should_publish`; ausência, enum inválido ou contradição bloqueiam publicação. Consumidores internos atualizados diretamente; política v1, limites, custos de chamadas e faixa Novo preservados. FEAT-AIAGENT-001 v0.8, sem migration/OpenAPI/MCP ou produção alterados.
+
+## 14/11/2026 — Faixa Novo conta da publicação (local)
+
+FEAT-MARKET-001 v0.18: web e Flutter usam `published_at` inclusivo até 48h exclusivo, apenas em open; rascunhos antigos recém-publicados passam a receber a faixa. Sem fallback para criação nem selo para data ausente/inválida/futura. Timers usam publicação; ordenação preservada. Campo já existente na API, sem migration/OpenAPI/MCP ou produção alterados.
+
+## 14/11/2026 — Analyst: contribuição editorial antes da publicação (local)
+
+FEAT-AIAGENT-001 v0.7 / FEAT-COMMENT-001 v0.2: removida fórmula SIM/NÃO + sinais, novo contexto sem métricas persuasivas, política obrigatória em system e avaliação semântica independente com sete critérios. Abstenção, flags, inconclusão ou falhas bloqueiam publicação; excesso de tamanho rejeitado sem truncamento. Auditoria de versão/modelo/decisão/etapa/tentativas, persona proposta e criação idempotente sem sobrescrever configuração existente. Sem threads, aumento de frequência, pesquisa externa, mudança de modelo ou produção. [Conjunto e limitações](../testing/analyst-editorial-evaluation.md). MCP inalterado: política privada do Analyst, sem alteração do manual de mercados exposto.
+
 ## 08/11/2026 — AdSense: fechamento produtivo
 
 PR211 integrada e implantada com CI completo/deploy aprovados e smoke público. ads.txt reconhecível por URL raiz e meta de identificação disponíveis; nenhuma publicidade ativada. Recibo registra commit, CI, SSM, hashes/imagens e evidências HTTPS; revisão Google fica a cargo do proprietário. Sem ajuste MCP/mobile/API. Branch local mantida.

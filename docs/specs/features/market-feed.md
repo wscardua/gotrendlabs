@@ -1,10 +1,10 @@
 ---
 id: FEAT-MARKET-001
 titulo: "Feed de mercados"
-versao: 0.17
+versao: 0.18
 status_spec: draft
 status_impl: parcial
-ultima_atualizacao: 2026-11-07
+ultima_atualizacao: 2026-11-14
 origem:
   - docs/specs/spec_prediction_social_market_pt.md
 contratos_afetados:
@@ -23,6 +23,8 @@ aprovacao: pendente
 ---
 
 # Feed de mercados
+
+Entrega de 14/11/2026 implementada e testada localmente; PR, implantação e ajustes operacionais aguardam aprovação. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
 
 ## Objetivo
 
@@ -77,7 +79,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `Em andamento` apresenta somente `open` na seção principal; `locked` fica em seção secundária expandida por padrão, com contagem total e controle acessível `Em apuração — N mercados`
 - abertos web são ordenados por visualizações decrescentes, criação mais recente e ordem original; apuração usa `close_at` decrescente e ordem original, valores ausentes no fim
 - `close_at` é prazo programado, não instante efetivo da transição de status
-- `Novo` aparece somente em `open` com `created_at <= agora < created_at + 48h`, sem alterar ordenação; datas futuras não recebem selo. A indicação é uma faixa diagonal NOVO no canto superior direito do card, com nome acessível Novo, sem cobrir título, probabilidade ou selo de integridade; substitui a pill na linha de tags
+- `Novo` aparece somente em `open` com `published_at <= agora < published_at + 48h`, sem alterar ordenação; datas de publicação ausentes, inválidas ou futuras não recebem selo; não usar created_at como fallback. A indicação é uma faixa diagonal NOVO no canto superior direito do card, com nome acessível Novo, sem cobrir título, probabilidade ou selo de integridade; substitui a pill na linha de tags
 - A faixa Novo é inicializada também em Categorias, independentemente dos filtros. Web e Flutter agendam atualização no limite temporal, sem interação; voltar à aba web visível revalida o relógio. O temporizador Flutter é descartado com o card; nenhum timer altera status de domínio.
 - `Resolvidos` inclui `resolved` e `sealed`, mantendo distinção visual de finalização e histórico verificável
 - cada lista web revela blocos de 18 após filtro/ordem; apuração e lista principal têm limites independentes, e novos abertos são inseridos antes da apuração
@@ -158,7 +160,7 @@ Usuário acessa o feed, filtra mercados, identifica oportunidades de previsão e
 - `Resolvidos` contém `resolved` e `sealed`; Favoritos mantém todos os estados públicos relevantes; Minhas previsões usa `viewer_has_prediction` em todos esses estados.
 - Posições ativas continua acessível por controle secundário e usa `viewer_position.has_position`; não representa histórico.
 - categorias são filtros explícitos independentes; trocar recorte não mantém filtro implícito de status.
-- Novo usa created_at e relógio controlável nos testes; sem campo persistido ou alteração de contrato.
+- Novo usa published_at e relógio controlável nos testes; sem campo persistido ou alteração de contrato.
 
 ## Dados e persistência
 
