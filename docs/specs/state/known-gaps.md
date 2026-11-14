@@ -1,3 +1,7 @@
+## 14/11/2026 — Analyst/Novo implantados e validados
+
+PR #213 integrada em 789ca3c11abd32e29e10228f554dc0594afc54a3; CI PR43611013720/main43612113385 aprovados (722 testes/três skips em ambos), builds e deploy SSM Success/0. Seis serviços ativos/MCP healthy, prompt v6 e dez hashes conferidos em FastAPI/Django/daemon, smoke HTTPS/API/JS aprovado. Persona/estilo e retenção de auditoria 30 dias aplicados com evento 663 e leitura independente; modelo, flags, limites, cooldown e frequência preservados. Ciclo normal v6 respeitou limite de comentários, sem inferência manual. [Fonte vigente](../testing/analyst-editorial-closeout-20261114.md). Preparações anteriores são históricas. Branch local preservada; MCP sem ajuste. Homologação semântica paga e distribuição Flutter continuam separadas/pendentes; sem moderação de comentários existentes.
+
 ## 14/11/2026 — Preparação do fechamento Analyst/Novo
 
 Implementação e correção de auditoria concluídas localmente; publicação aguardará aprovação explícita da descrição da PR. README/specs e recibo reconciliados em [fechamento](../testing/analyst-editorial-closeout-20261114.md). MCP inalterado; modelo real sem avaliação paga. Flutter exige distribuição própria. Builds remotos obrigatórios por limitação de espaço do Docker local; nenhuma limpeza destrutiva. Pré-flight produtivo somente leitura identifica três ajustes propostos (persona, estilo e retenção 30 dias), preservando modelo, flags, frequência, cooldown e limites. Nenhuma implantação ou alteração produtiva ainda realizada. WFLOW-20261114-ANALYST-CLOSEOUT.

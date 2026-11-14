@@ -24,7 +24,7 @@ aprovacao: pendente
 
 # Feed de mercados
 
-Entrega de 14/11/2026 implementada e testada localmente; PR, implantação e ajustes operacionais aguardam aprovação. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
+Faixa Novo por publicação integrada pela PR #213 e implantada na web em 14/11/2026, com CI/builds/smoke aprovados. Código Flutter integrado e validado; distribuição aos apps instalados permanece separada. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
 
 ## Objetivo
 

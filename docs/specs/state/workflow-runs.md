@@ -1,15 +1,15 @@
 ## WFLOW-20261114-ANALYST-CLOSEOUT
 
-- Status: em andamento; preparação local concluída, aguardando aprovação explícita da descrição da PR antes de submeter/integrar/publicar.
-- Escopo: Analyst editorial v6/auditoria e faixa Novo por published_at em web/Flutter; branch feature/analyst-editorial-quality baseada em origin/main 33b6da6, preservada.
-- Fonte vigente: testing/analyst-editorial-closeout-20261114.md; workflows de implementação anteriores permanecem históricos.
-- Skills: workflow-governor/spec-orchestrator; checklist universal e publicação revisados. Sem fronteira ou contrato público novo; sem ADR/migration necessária.
-- Pré-flight: MCP GitHub conectado, main confirmada; ENABLE_PROD_DEPLOY=1 e main/us-east-1 verificados. SSM somente leitura confirmou Analyst ativo/modelo atual/limites e retenção de um dia, sem alterar produção.
-- Plano após aprovação: push/PR português/CI completo/merge pelo MCP, acompanhar Actions/SSM/smoke; aplicar persona/estilo propostos e retenção 30 dias, preservando flags/modelo/frequência/limites. Registrar recibo real. Sem distribuição Flutter, inferência manual paga ou moderação de comentários.
-- Validação: 49 testes direcionados e 141 Flutter completos/analyze aprovados; quatro scripts JS/Django/OpenAPI/diff e Dockerfile check aprovados. Suíte Python reportou 722 executados/719 aprovados/dois skips/um erro ambiental CREATEROLE; teste de ACL inalterado passou isolado com papel migrador. Build principal local bloqueado por espaço; suite/builds CI obrigatórios antes do merge.
-- MCP: ferramentas, schemas/contratos, permissões, erros/replays e orientação editorial exposta preservados; nenhum acesso derivado do Admin Ops.
-- Docs reconciliados: README, specs de agentes/feed, recibo/review, changelogs/status/mapa/lacunas e README mobile. Commit local desta preparação mantém a branch; nenhum push/PR/deploy antes da confirmação.
-- Próxima ação: usuário aprova título/descrição e plano operacional; então push, PR pelo MCP, CI, merge, Actions/SSM e recibo real.
+- Status: concluído no escopo funcional/produtivo; integração deste recibo documental pelo CI leve, sem novo deploy.
+- Resultado: usuário aprovou descrição/plano, PR #213 aberta e mergeada pelo MCP GitHub. Fonte 51a5ddc, merge/produção 789ca3c11abd32e29e10228f554dc0594afc54a3. Branch local feature/analyst-editorial-quality e alterações originais preservadas.
+- CI: PR43611013720 e main43612113385 aprovados, 722 testes Python/três skips em ambos (529,372/435,546 s), builds principal/MCP, Dockerfile/OpenAPI e quatro scripts JS. Local: 49 direcionados, 141 Flutter/analyze aprovados; limitação Docker/CREATEROLE local superada pelos gates remotos, sem alterar permissões de runtime.
+- Implantação: SSMc86a5926-b53b-406a-a560-e60bd211b596 Success/0; runtime SSM14a59862-4515-4342-ac8a-819a8be3bbcf confirma commit limpo, seis serviços running/MCP healthy e dez arquivos idênticos por hash em FastAPI/Django/daemon, todos com prompt v6/política v1.
+- Ativação aprovada: persona/estilo e auditoria 30 dias aplicados atomicamente, SSMdcf8b136-30bc-4030-9fd1-9d48c18612a8 Success/0, evento administrativo 663; readback independente aprovado. Modelo/flags/limites/cooldown/frequência preservados. Ciclo normal v6 concluído, com comentários bloqueados pelo limite existente; sem inferência manual ou publicação forçada.
+- Smoke: home/login/API health/markets 200, health ok, Admin/MCP sem token 401 e JS público/hash/published_at confirmados. [Recibo vigente](../testing/analyst-editorial-closeout-20261114.md) e evidência JSON associada.
+- MCP: ferramentas, schemas/contratos, permissões, erros/replays e orientação editorial exposta inalterados; nenhuma permissão derivada do Admin Ops. Sem migration/novo segredo, pesquisa externa ou moderação de comentários.
+- Checklist: README, specs agentes/feed, review/recibo, estado/changelogs/mapa/lacunas reconciliados; registros preparatórios mantidos como histórico. Sem mudança de fronteira/ADR.
+- Limitações: dataset semântico de 24 casos não executado por ausência de autorização de chamada paga adicional; mocks não comprovam qualidade/engajamento. Código Flutter integrado e testado, sem distribuição Android/iOS nesta entrega. Spec ampla permanece parcial/draft por distinguir fluxo validado de homologação semântica.
+- Próxima ação externa: eventual avaliação real e distribuição mobile em fluxos próprios; nenhuma pendência de implantação web/API/daemon da feature.
 
 ## WFLOW-20261114-ANALYST-AUDIT-REASONS
 
