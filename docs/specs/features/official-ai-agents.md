@@ -29,7 +29,7 @@ aprovacao: pendente
 
 # Agentes IA Oficiais
 
-Entrega de 14/11/2026 implementada e testada localmente; PR, implantação e ajustes operacionais aguardam aprovação. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
+Entrega de 14/11/2026 integrada pela PR #213 e implantada em produção com CI/builds/smoke aprovados; persona/estilo e retenção 30 dias aplicados conforme aprovação. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
 
 ## Objetivo
 

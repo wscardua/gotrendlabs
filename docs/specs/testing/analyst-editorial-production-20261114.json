@@ -1,0 +1,242 @@
+{
+  "date": "2026-11-14",
+  "source_commit": "51a5ddcce1c7711065e1b69266e7f96c694b062a",
+  "production_commit": "789ca3c11abd32e29e10228f554dc0594afc54a3",
+  "pr": "https://github.com/wscardua/gotrendlabs/pull/213",
+  "ci_pr": {
+    "run": 43611013720,
+    "status": "success",
+    "tests": 722,
+    "skipped": 3,
+    "seconds": 529.372
+  },
+  "ci_main": {
+    "run": 43612113385,
+    "status": "success",
+    "tests": 722,
+    "skipped": 3,
+    "seconds": 435.546
+  },
+  "ssm": {
+    "deploy": "c86a5926-b53b-406a-a560-e60bd211b596",
+    "runtime_verification": "14a59862-4515-4342-ac8a-819a8be3bbcf",
+    "configuration": "dcf8b136-30bc-4030-9fd1-9d48c18612a8",
+    "readback": "aeff0307-b073-4831-8136-fa245665c856",
+    "status": "Success",
+    "response_code": 0
+  },
+  "runtime": {
+    "commit": "789ca3c11abd32e29e10228f554dc0594afc54a3",
+    "services": [
+      {
+        "Service": "daemon",
+        "State": "running",
+        "Health": ""
+      },
+      {
+        "Service": "django",
+        "State": "running",
+        "Health": ""
+      },
+      {
+        "Service": "fastapi",
+        "State": "running",
+        "Health": ""
+      },
+      {
+        "Service": "mcp",
+        "State": "running",
+        "Health": "healthy"
+      },
+      {
+        "Service": "proxy",
+        "State": "running",
+        "Health": ""
+      },
+      {
+        "Service": "thumbnail-worker",
+        "State": "running",
+        "Health": ""
+      }
+    ],
+    "runtime": {
+      "fastapi": {
+        "prompt_version": "gotrendlabs-ai-agent-v6",
+        "policy_version": "analyst-editorial-v1",
+        "prompt_hash": "c3770fee0ee7cc44f19c0c65e6180951ad763fe08b9be647698026c05dfc30b0",
+        "verified_files": 10
+      },
+      "django": {
+        "prompt_version": "gotrendlabs-ai-agent-v6",
+        "policy_version": "analyst-editorial-v1",
+        "prompt_hash": "c3770fee0ee7cc44f19c0c65e6180951ad763fe08b9be647698026c05dfc30b0",
+        "verified_files": 10
+      },
+      "daemon": {
+        "prompt_version": "gotrendlabs-ai-agent-v6",
+        "policy_version": "analyst-editorial-v1",
+        "prompt_hash": "c3770fee0ee7cc44f19c0c65e6180951ad763fe08b9be647698026c05dfc30b0",
+        "verified_files": 10
+      }
+    },
+    "source_clean": true
+  },
+  "expected_runtime_hashes": {
+    "apps/api/backend_api/agent_prompts.py": "559943e7e075bb05cfaee76e347c548bf50a46032c7b3c6d000d7c58b648240f",
+    "apps/api/backend_api/agent_llm.py": "8a1d6fb60ba11baa37eb5940fbace5025b18a77652ecfdf5718c92060368e91f",
+    "apps/api/backend_api/agent_services.py": "092e42ae89d4ff51d06e90974146dd722f390f78125104fdfc534b3645c4cc3a",
+    "apps/web/templates/components/market_card.html": "58e35596f51ccd867c8eb14bd5cab3717cc89048ad8ce23a87415a65ce1f1165",
+    "apps/web/templates/base.html": "ca878fd3de958fe25650d3474583f4b1b52a87b14f7064ed7aafcd9e9f7b14fe",
+    "apps/web/static/js/gotrendlabs.js": "f3643891c13d72687b3d96ea7c9c41c01cb66a1dec9233e08053422c133af009",
+    "apps/web/django/admin_ops/forms.py": "284b70151511d9c9f4ebef730f30301c0019ab0ae55cfc33e0f527f6fda82c94",
+    "apps/web/django/admin_ops/views.py": "18249c6ef09c71134ea3694bc5f432ceba22fc54dd79d4849a772b2462f38dcf",
+    "apps/web/django/admin_ops/templates/admin_ops/ai_agent_form.html": "1de6849b5ce49f2588b21a5c78b3d85b570f80b94ca3575348fc147a9f6d1673",
+    "apps/web/django/agents/management/commands/create_default_ai_agent.py": "db8c6e88c0fe1d43d1e8f62e125a41e4c66c6cc9af88ecbc2973eccc6f8882ca"
+  },
+  "operational_adjustment": {
+    "admin_event_id": 663,
+    "changed": true,
+    "before": {
+      "personality_prompt": "Atue como IA oficial da GoTrendLabs em mercados educativos de previsao.",
+      "comment_style": "direto, equilibrado e didático",
+      "ai_audit_retention_days": 1
+    },
+    "after": {
+      "personality_prompt": "Contribua com uma perspectiva concreta e sustentada para a conversa, com curiosidade e respeito à autonomia dos participantes. Abstenha-se quando não houver contribuição útil.",
+      "comment_style": "direto, natural, curioso e respeitoso",
+      "ai_audit_retention_days": 30
+    },
+    "preserved": {
+      "ai_agents_enabled": true,
+      "ai_commenting_enabled": true,
+      "ai_predictions_enabled": true,
+      "ai_llm_provider": "bedrock",
+      "ai_model": "openai.gpt-oss-20b",
+      "ai_max_comments_per_market": 1,
+      "ai_max_comments_per_cycle": 1,
+      "ai_max_comments_per_day": 5,
+      "ai_market_cooldown_hours": 24,
+      "ai_skip_if_human_comments_recent": true,
+      "ai_recent_human_comment_window_hours": 6,
+      "ai_paused_until": null
+    },
+    "prompt_version": "gotrendlabs-ai-agent-v6",
+    "policy_version": "analyst-editorial-v1",
+    "prompt_hash": "c3770fee0ee7cc44f19c0c65e6180951ad763fe08b9be647698026c05dfc30b0",
+    "applied_at": "2026-11-14T16:01:46.485601+00:00"
+  },
+  "readback": {
+    "config": {
+      "ai_audit_retention_days": 30,
+      "ai_agents_enabled": true,
+      "ai_commenting_enabled": true,
+      "ai_predictions_enabled": true,
+      "ai_llm_provider": "bedrock",
+      "ai_model": "openai.gpt-oss-20b",
+      "ai_max_comments_per_market": 1,
+      "ai_max_comments_per_cycle": 1,
+      "ai_max_comments_per_day": 5,
+      "ai_market_cooldown_hours": 24,
+      "ai_skip_if_human_comments_recent": true,
+      "ai_recent_human_comment_window_hours": 6
+    },
+    "agent": {
+      "id": 1,
+      "is_active": true,
+      "personality_prompt": "Contribua com uma perspectiva concreta e sustentada para a conversa, com curiosidade e respeito à autonomia dos participantes. Abstenha-se quando não houver contribuição útil.",
+      "comment_style": "direto, natural, curioso e respeitoso",
+      "max_comments_per_day": null,
+      "max_comments_per_market_override": null,
+      "cooldown_hours": null
+    },
+    "admin_event": {
+      "id": 663,
+      "actor_id": null,
+      "action": "ops.ai_agent.editorial_settings",
+      "execution_id": "pr213-analyst-editorial-v6",
+      "created_at": "2026-11-14 16:01:46.488197+00:00"
+    },
+    "recent_v6_actions": [
+      {
+        "id": 156689,
+        "action_type": "cycle",
+        "status": "created",
+        "reason": "cycle_completed",
+        "prompt_template_version": "gotrendlabs-ai-agent-v6",
+        "created_at": "2026-11-14 15:59:07.541099+00:00",
+        "comment_id": null,
+        "decision": null,
+        "model": null,
+        "risk_categories": null,
+        "abstention_reason": null
+      },
+      {
+        "id": 156688,
+        "action_type": "prediction",
+        "status": "skipped",
+        "reason": "no_eligible_market",
+        "prompt_template_version": "gotrendlabs-ai-agent-v6",
+        "created_at": "2026-11-14 15:59:07.539287+00:00",
+        "comment_id": null,
+        "decision": null,
+        "model": null,
+        "risk_categories": null,
+        "abstention_reason": null
+      },
+      {
+        "id": 156687,
+        "action_type": "comment",
+        "status": "skipped",
+        "reason": "market_ai_comment_limit",
+        "prompt_template_version": "gotrendlabs-ai-agent-v6",
+        "created_at": "2026-11-14 15:59:07.523945+00:00",
+        "comment_id": null,
+        "decision": null,
+        "model": null,
+        "risk_categories": null,
+        "abstention_reason": null
+      }
+    ]
+  },
+  "public_smoke": {
+    "home": {
+      "status": 200,
+      "updated_js_reference": true,
+      "publication_attribute": true
+    },
+    "login": {
+      "status": 200
+    },
+    "api_health": {
+      "status": 200,
+      "status_value": "ok"
+    },
+    "api_markets": {
+      "status": 200,
+      "open_count": 4,
+      "within_publication_48h": 0
+    },
+    "admin_unauthenticated": {
+      "status": 401
+    },
+    "mcp_unauthenticated": {
+      "status": 401
+    },
+    "static_js": {
+      "status": 200,
+      "sha256": "f3643891c13d72687b3d96ea7c9c41c01cb66a1dec9233e08053422c133af009",
+      "uses_published_at": true
+    },
+    "checked_at_utc": "2026-11-14T16:01:18.185280+00:00"
+  },
+  "mobile": {
+    "full_tests": 141,
+    "analyze": "passed",
+    "distributed": false
+  },
+  "editorial_model_evaluation": {
+    "synthetic_cases": 24,
+    "paid_batch_run": false,
+    "pending": true
+  }
+}

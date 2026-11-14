@@ -1,6 +1,6 @@
 # GoTrendLabs
 
-Analyst editorial e faixa Novo (14/11/2026): implementação local com aprovação editorial antes de publicar, auditoria de motivos e janela de 48h contada da publicação. Preparação de PR/implantação em andamento; qualidade real do modelo ainda sem avaliação paga e distribuição Flutter separada. [Fonte vigente e plano de ativação](docs/specs/testing/analyst-editorial-closeout-20261114.md).
+Analyst editorial e faixa Novo (14/11/2026): PR #213 integrada e implantada, com avaliação editorial antes de publicar, auditoria de motivos e janela de 48h contada da publicação. CI/builds/deploy/smoke aprovados; persona/estilo e retenção de auditoria de 30 dias aplicados. Qualidade real do modelo ainda sem avaliação paga; código Flutter integrado com distribuição separada. [Fonte vigente e plano de ativação](docs/specs/testing/analyst-editorial-closeout-20261114.md).
 
 Verificação AdSense (08/11/2026): PR #211 integrada e implantada; `/ads.txt` público e meta única no head compartilhado confirmados por HTTPS, sem script/anúncios. CI completo e deploy aprovados; revisão/aprovação Google ainda pendentes de ação do proprietário. [Spec](docs/specs/features/adsense-verification.md) e [evidências/estado de publicação](docs/specs/testing/adsense-verification-20261108.md).
 

@@ -19,4 +19,4 @@ Após a correção, nenhum novo problema identificável no diff revisado. Isso n
 - Campo published_at já é ISO/nullable no MarketResponse; web e Flutter ocultam Novo se ausente/inválido/futuro e expiram em 48h, sem inferir domínio ou alterar ordenação.
 - MCP sem ajustes: ferramentas, schemas públicos, permissões, erros/replays e manual exposto permanecem iguais. Sem permissão derivada de ações humanas no Admin Ops.
 
-Fonte vigente da preparação, ajustes administrativos propostos e próximos gates: [recibo](analyst-editorial-closeout-20261114.md). Nenhuma mudança produtiva executada até este registro; pré-flight foi somente leitura.
+Fonte vigente da preparação, ajustes administrativos propostos e próximos gates: [recibo](analyst-editorial-closeout-20261114.md). O review foi concluído antes da implantação; agora a PR #213 está integrada e a produção foi validada no recibo, sem ampliar o escopo editorial ou MCP.
