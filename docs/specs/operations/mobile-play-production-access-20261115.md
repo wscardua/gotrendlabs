@@ -24,3 +24,5 @@ Solicitação concluída; aprovação do acesso à produção ainda depende da G
 Sem novo código, build ou teste de instalação/MFA/push. Fonte e checksum do AAB20 permanecem os do recibo. Branch de release e checkout original preservados. Evidência desta operação: estado acessível observado na Console e este recibo; não há alegação de aprovação do pedido.
 
 MCP: ferramentas, schemas/contratos, permissões, erros/replays e orientação editorial não mudam. Trata-se de solicitação operacional do titular na loja, sem novo poder de domínio ou permissão derivada do Admin Ops. Sem ADR, migration ou mudança de configuração de backend.
+
+Registro documental: PR [#217](https://github.com/wscardua/gotrendlabs/pull/217), descrição aprovada pelo titular antes da submissão. Alterações apenas documentais, sem nova implantação de runtime.

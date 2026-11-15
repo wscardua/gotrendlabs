@@ -5,7 +5,7 @@
 - Confirmação: Dashboard Application submitted / We have your application for production access / Applied today12:07PM em15/11/2026; horário São Paulo. Prazo informado: geralmente sete dias ou menos, eventualmente mais; comunicação ao titular. Production permanece Inactive.
 - Artefatos: recibo operacional, referência no recibo20 e estado operacional. Apenas documentação; sem código/build, novas configurações, rollout público, APK direto ou mudança no backend. Branch de release e checkout original preservados.
 - MCP: ferramentas/schemas/contratos/permissões/erros/replays/editorial inalterados; solicitação humana na loja não concede permissões MCP. Sem ADR/migration. Specs que excluem distribuição pública permanecem aplicáveis: somente acesso foi solicitado.
-- Checklist: resultado real observado; relato do titular sobre aprovação20 identificado como relato, sem inferir nova verificação da release. Não repetir testes de código sem alteração. PR documental depende da aprovação prévia da descrição solicitada pelo usuário.
+- Checklist: resultado real observado; relato do titular sobre aprovação20 identificado como relato, sem inferir nova verificação da release. Não repetir testes de código sem alteração. Descrição da PR documental aprovada pelo usuário; registro pela PR #217, com CI leve e sem novo deploy.
 - Próxima ação externa: decisão da Google; futura release pública exige fluxo próprio após liberação. [Recibo](../operations/mobile-play-production-access-20261115.md).
 
 ## WFLOW-20261115-MOBILE-NEW-RELEASE20
