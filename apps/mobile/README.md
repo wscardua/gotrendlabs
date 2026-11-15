@@ -2,7 +2,7 @@
 
 ## Preparação Google Play 1.2.6+20 — 15/11/2026
 
-Release solicitada para distribuir a faixa Novo por publicação. Versão/build preparados da main em checkout isolado; integração, AAB assinado e envio ao Alpha ainda pendentes. Acesso à Play Console indisponível nesta sessão. Fonte vigente: [recibo release20](../../docs/specs/testing/mobile-new-publication-release-20-20261115.md). APK do site e política de atualização preservados.
+Release solicitada para distribuir a faixa Novo por publicação. Versão/build integrados pela PR #215; AAB assinado compilado da main limpa e validado (assinatura, manifesto, URLs, 16KB). Envio ao Alpha ainda pendente. CI/main/deploy aprovados e API saudável; envio à Play Console bloqueado pelo canal de acesso do navegador indisponível nesta sessão. Fonte vigente: [recibo release20](../../docs/specs/testing/mobile-new-publication-release-20-20261115.md). APK do site e política de atualização preservados.
 
 Fechamento de 14/11/2026: 141 testes Flutter completos e análise estática aprovados; faixa Novo por publicação integrada pela PR #213; distribuição Android solicitada em 15/11 (ver release20 acima). O deploy web/API desta entrega não atualiza os apps instalados; nenhuma distribuição Android/iOS executada. Fonte vigente: [recibo de fechamento](../../docs/specs/testing/analyst-editorial-closeout-20261114.md).
 
