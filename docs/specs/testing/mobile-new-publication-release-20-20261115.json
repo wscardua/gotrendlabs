@@ -201,5 +201,18 @@
     },
     "review_url": "https://play.google.com/console/u/0/developers/5780321057759640239/app/4973661897857186052/publishing"
   },
-  "documentation_pr": 216
+  "documentation_pr": 216,
+  "production_access_application": {
+    "date": "2026-11-15",
+    "ui_time_sao_paulo": "12:07 PM",
+    "state": "submitted; under Google review",
+    "confirmation": [
+      "Application submitted",
+      "We have your application for production access"
+    ],
+    "production_track": "Inactive",
+    "review_guidance": "usually 7 days or less; may take longer",
+    "alpha20_approval": "reported by owner; not independently rechecked in this operation",
+    "receipt": "../operations/mobile-play-production-access-20261115.md"
+  }
 }

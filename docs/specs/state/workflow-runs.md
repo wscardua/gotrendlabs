@@ -1,3 +1,13 @@
+## WFLOW-20261115-MOBILE-PLAY-PRODUCTION-ACCESS
+
+- Status: concluído no escopo de solicitação; decisão da Google pendente. Usuário autorizou explicitamente aplicar para produção após informar aprovação/publicação do Alpha20.
+- Execução: Chrome acessível por CUA nativo, requisitos completos e botão Apply habilitado. Formulário de quatro etapas tinha respostas salvas nas três primeiras; preservadas. Etapa Additional testing preenchida com correção published_at/48h,141 testes/análise e validação/distribuição do AAB20 comprovadas no recibo, sem inventar engajamento.
+- Confirmação: Dashboard Application submitted / We have your application for production access / Applied today12:07PM em15/11/2026; horário São Paulo. Prazo informado: geralmente sete dias ou menos, eventualmente mais; comunicação ao titular. Production permanece Inactive.
+- Artefatos: recibo operacional, referência no recibo20 e estado operacional. Apenas documentação; sem código/build, novas configurações, rollout público, APK direto ou mudança no backend. Branch de release e checkout original preservados.
+- MCP: ferramentas/schemas/contratos/permissões/erros/replays/editorial inalterados; solicitação humana na loja não concede permissões MCP. Sem ADR/migration. Specs que excluem distribuição pública permanecem aplicáveis: somente acesso foi solicitado.
+- Checklist: resultado real observado; relato do titular sobre aprovação20 identificado como relato, sem inferir nova verificação da release. Não repetir testes de código sem alteração. Descrição da PR documental aprovada pelo usuário; registro pela PR #217, com CI leve e sem novo deploy.
+- Próxima ação externa: decisão da Google; futura release pública exige fluxo próprio após liberação. [Recibo](../operations/mobile-play-production-access-20261115.md).
+
 ## WFLOW-20261115-MOBILE-NEW-RELEASE20
 
 - Status: concluído no escopo de compilação e solicitação de envio; aprovação/disponibilidade Google pendentes. PR #215 integrada após aprovação; AAB1.2.6+20 compilado/validado da main limpa; CI/deploy main aprovados.
