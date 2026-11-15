@@ -2,7 +2,7 @@
 
 ## Estado vigente
 
-Entrega iniciada em 15/11/2026 a pedido do usuário para compilar e publicar a mudança mobile da PR #213. Versão 1.2.6+20 preparada em branch isolada `release/mobile-published-new-20261115`, base remota main `953c5a85be9c660332942311c2d5e879c348cf5e`. Preparação integrada pela PR #215; AAB oficial compilado e validado. AAB enviado ao teste fechado Alpha em 15/11/2026; Console confirmou Changes in review e 1 change sent for review. Quick checks em andamento; aprovação/disponibilidade ainda não confirmadas. O bloqueio de conexão anterior foi superado pelo acesso nativo ao Chrome. Alterações do checkout original preservadas.
+Entrega iniciada em 15/11/2026 a pedido do usuário para compilar e publicar a mudança mobile da PR #213. Versão 1.2.6+20 preparada em branch isolada `release/mobile-published-new-20261115`, base remota main `953c5a85be9c660332942311c2d5e879c348cf5e`. Preparação integrada pela PR #215; AAB oficial compilado e validado. AAB enviado ao teste fechado Alpha em 15/11/2026; Console confirmou Changes in review e 1 change sent for review. No envio observado havia quick checks e aprovação/disponibilidade pendentes. Posteriormente o titular informou aprovação/publicação20 e autorizou solicitar acesso à produção; pedido recebido pela Google em15/11 às12:07 de São Paulo, conforme [recibo de acesso](../operations/mobile-play-production-access-20261115.md). Não houve rollout público. O bloqueio de conexão anterior foi superado pelo acesso nativo ao Chrome. Alterações do checkout original preservadas.
 
 ## Escopo e reconciliação
 
@@ -68,3 +68,7 @@ Evidência estruturada sanitizada: [JSON](mobile-new-publication-release-20-2026
 - Próxima ação externa: acompanhar decisão da Google e testar atualização instalada. Integrar este recibo documental à main com CI leve, sem novo deploy e preservando branch/checkout original.
 
 Registro documental de encerramento: PR [#216](https://github.com/wscardua/gotrendlabs/pull/216), autorizada pelo usuário após apresentação da descrição; apenas docs/Markdown raiz, sem nova implantação de runtime. O estado da Google acima é a última observação confirmada.
+
+## Atualização posterior — pedido de acesso à produção
+
+O titular informou aprovação/publicação da versão20 e autorizou aplicar para produção. Console confirmou recebimento do pedido em15/11/2026 às12:07 de São Paulo; Production permanece Inactive. Ver [recibo operacional](../operations/mobile-play-production-access-20261115.md). O estado Changes in review registrado acima é a observação histórica do envio, não uma consulta atual da release.

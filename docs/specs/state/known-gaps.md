@@ -1,3 +1,7 @@
+## 15/11/2026 — Acesso à produção Google Play solicitado
+
+A pedido do titular, formulário submetido com respostas salvas preservadas e etapa final baseada nas validações reais da versão20. Dashboard confirmou Application submitted às12:07 de São Paulo; análise usual em até sete dias, eventualmente mais. Production continua Inactive, sem rollout público, novo build ou mudança de backend/MCP. Aprovação/publicação do Alpha20 foi informada pelo titular; consulta desta operação confirmou o pedido de acesso, não uma nova verificação da release. [Recibo vigente](../operations/mobile-play-production-access-20261115.md). WFLOW-20261115-MOBILE-PLAY-PRODUCTION-ACCESS.
+
 ## 15/11/2026 — Android 1.2.6+20 enviado ao Alpha
 
 PR #215/main ec91cac25917ecfced9eb520dd49ccd1feac9774, CI/builds/deploy/smoke aprovados; 141 testes Flutter/analyze e validação do AAB assinados aprovados. Acesso nativo ao Chrome restabelecido; Console aceitou20(1.2.6), compatibilidade sem perdas, notas pt-BR e rollout100% no Alpha existente, países/testadores preservados. Envio confirmado às11:28 de São Paulo: Changes in review e 1 change sent for review, quick checks em andamento. Aprovação/disponibilidade/instalação ainda não confirmadas; versão19 foi observada disponível antes do envio. [Fonte vigente](../testing/mobile-new-publication-release-20-20261115.md), WFLOW-20261115-MOBILE-NEW-RELEASE20. APK direto/mínimo8 e MCP preservados; recibo documental para integração sem novo deploy.
