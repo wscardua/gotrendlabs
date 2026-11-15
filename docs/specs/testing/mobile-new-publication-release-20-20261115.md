@@ -66,3 +66,5 @@ Evidência estruturada sanitizada: [JSON](mobile-new-publication-release-20-2026
 - Compilação e solicitação de envio concluídas. Aprovação, disponibilidade final e instalação via Google Play ainda dependem da plataforma/QA; não confundir Changes in review com release já disponível. Não foram repetidos testes de push/MFA no artefato instalado.
 - Nenhum novo deploy/configuração produtiva para o upload. Fontes, hashes, CI/deploy, smoke e limitações mantidos neste recibo e no JSON. MCP inalterado em ferramentas/schemas/contratos/permissões/erros/replays/editorial; apenas distribuição de apresentação Flutter.
 - Próxima ação externa: acompanhar decisão da Google e testar atualização instalada. Integrar este recibo documental à main com CI leve, sem novo deploy e preservando branch/checkout original.
+
+Registro documental de encerramento: PR [#216](https://github.com/wscardua/gotrendlabs/pull/216), autorizada pelo usuário após apresentação da descrição; apenas docs/Markdown raiz, sem nova implantação de runtime. O estado da Google acima é a última observação confirmada.

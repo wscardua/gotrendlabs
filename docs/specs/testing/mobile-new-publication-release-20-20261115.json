@@ -71,7 +71,7 @@
   "bundletool_validation": "passed",
   "jarsigner_validation": "passed",
   "urls": "production verified in libapp.so for each ABI",
-  "track": "Closed testing - Alpha (planned)",
+  "track": "Closed testing - Alpha",
   "state": "submitted: Changes in review; quick checks pending; availability unconfirmed",
   "pr": 215,
   "flutter_tests": 141,
@@ -200,5 +200,6 @@
       "no_longer_supported": 0
     },
     "review_url": "https://play.google.com/console/u/0/developers/5780321057759640239/app/4973661897857186052/publishing"
-  }
+  },
+  "documentation_pr": 216
 }
