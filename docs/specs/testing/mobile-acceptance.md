@@ -384,3 +384,7 @@ Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos),
 ## Fechamento de Hoje — 07/11/2026
 
 140 testes Flutter/analyze aprovados; aceite local confirmado pelo usuário. PR203 e Actions produtivo aprovados; AAB19 validado/enviado ao Alpha, com disponibilidade Google e instalação via Play ainda pendentes. [Recibo19](mobile-today-release-19-20261107.md).
+
+## Distribuição da faixa Novo — 15/11/2026
+
+AAB1.2.6+20 da main limpa ec91cac,141 testes Flutter/analyze e CI/builds/deploy aprovados, assinatura/manifesto/URLs/16KB conferidos. Enviado ao Alpha existente com rollout100%, notas pt-BR, sem perda de compatibilidade ou mudança de países/testadores. Console confirmou Changes in review e envio de uma alteração; quick checks/Google pendentes, sem atestar disponibilidade/instalação/MFA/push. APK do site e MCP preservados. [Recibo20](mobile-new-publication-release-20-20261115.md).

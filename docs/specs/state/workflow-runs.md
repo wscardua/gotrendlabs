@@ -1,15 +1,15 @@
 ## WFLOW-20261115-MOBILE-NEW-RELEASE20
 
-- Status: bloqueado no envio à Google por acesso do navegador indisponível. PR #215 integrada após aprovação; AAB1.2.6+20 compilado/validado da main limpa; CI/deploy main aprovados.
+- Status: concluído no escopo de compilação e solicitação de envio; aprovação/disponibilidade Google pendentes. PR #215 integrada após aprovação; AAB1.2.6+20 compilado/validado da main limpa; CI/deploy main aprovados.
 - Alvo: distribuição Android da faixa Novo por published_at já integrada na PR #213; versão 1.2.6+20, Closed testing Alpha existente.
 - Origem: main953c5a85be9c660332942311c2d5e879c348cf5e; branch/worktree release/mobile-published-new-20261115 isolada, checkout original preservado. Comparação com AAB19 confirma somente novidade/testes/README alterados no app; assinatura/Firebase/dependências/MFA/Hoje preservados.
 - Artefatos: pubspec, README mobile, recibo release20 e estado/changelogs/mapa/lacunas. Skills Flutter implementer, mobile docs governor e workflow governor; specs arquitetura/contratos/MVP/UX/checklists consultadas. Sem nova fronteira/ADR.
 - MCP: nenhuma alteração em ferramentas, schemas/contratos, permissões, erros/replays ou orientação editorial; release de apresentação do campo existente, sem poderes Admin Ops.
 - Gates: versão integrada à main, CI, origem limpa/atualizada, AAB assinado e validado, upload no Alpha e confirmação do estado real da Google. Não alterar APK do site, política mínima ou track público.
-- Impedimento operacional: navegador/host CUA indisponível; upload e conferência da versão atual dependem de restabelecer acesso. AAB oficial compilado em 109,9 s e validado; ainda sem upload/publicação. Validação: 141 testes Flutter aprovados (13 s), analyze sem issues (3,0 s) e diff check aprovado.
+- Impedimento inicial superado: acesso nativo CUA ao Chrome. Alpha19 confirmado disponível e maior bundle19, sem conflito. AAB20 aceito, manifesto/compatibilidade sem perdas, rollout100% no Alpha existente e notas pt-BR conferidos. Envio confirmado: Changes in review e 1 change sent for review em15/11 às11:28 de São Paulo, quick checks até14min pendentes. Países178/testadores/managed publishing off preservados. AAB oficial compilado em109,9s e validado. Validação: 141 testes Flutter aprovados (13 s), analyze sem issues (3,0 s) e diff check aprovado.
 - Integração: PR215/merge ec91cac25917ecfced9eb520dd49ccd1feac9774; CI PR43721331448 aprovado (722 testes/três skips). AAB57.702.110 bytes, SHA256c9474145e0aea99c31a0efc4189e23b904852c4d77dbf49720a0926b83349e93, assinatura igual à19, bundletool/jarsigner/ELF16KB/URLs produtivas aprovados.
 - Implantação: main43722150278 aprovado (722 testes/três skips, 362,287 s); SSMdd17939b-d6e4-4db7-98b4-2172e8fba61a Success/0 e leitura independente8a8b759f-7051-42dc-bb8a-4bb262302b36 confirmam fonte, seis serviços/MCP healthy. Smoke HTTP200/status ok, headers20 reconhecidos, APK/mínimo8 preservados. Sem alterações rastreadas PRD, backups de ambiente não rastreados preservados.
-- Próxima ação: restabelecer acesso à Play Console, conferir versionCode disponível, realizar upload e confirmar estado real da Google; integrar recibo final à main após envio. Atualização intermediária registrada na branch/PR215. [Recibo](../testing/mobile-new-publication-release-20-20261115.md).
+- Próxima ação externa: aprovação/disponibilidade Google e QA da atualização instalada (MFA/push não repetidos). Integrar recibo documental com CI leve, sem novo deploy; fontes/hashes/CI e envio conferidos. Branch e checkout original preservados. [Recibo](../testing/mobile-new-publication-release-20-20261115.md).
 
 ## WFLOW-20261114-ANALYST-CLOSEOUT
 

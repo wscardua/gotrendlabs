@@ -1,6 +1,6 @@
-## 15/11/2026 — Android 1.2.6+20 compilado; envio Play bloqueado
+## 15/11/2026 — Android 1.2.6+20 enviado ao Alpha
 
-PR #215 integrada em ec91cac25917ecfced9eb520dd49ccd1feac9774; CI PR43721331448/main43722150278 e deploy aprovados (722 testes/três skips em ambos). AAB assinado da main limpa compilado/validado, 57.702.110 bytes, SHA256c9474145e0aea99c31a0efc4189e23b904852c4d77dbf49720a0926b83349e93. Assinatura/manifesto/permissões/URLs/16KB aprovados; 141 testes Flutter/analyze aprovados. Sem upload à Google: host do navegador indisponível apesar de aberto/logado; disponibilidade/instalação não confirmadas. [Recibo vigente](../testing/mobile-new-publication-release-20-20261115.md), WFLOW-20261115-MOBILE-NEW-RELEASE20. API saudável, seis serviços ativos; APK direto/mínimo8 e MCP preservados. Recibo intermediário na branch/PR; integração final após envio.
+PR #215/main ec91cac25917ecfced9eb520dd49ccd1feac9774, CI/builds/deploy/smoke aprovados; 141 testes Flutter/analyze e validação do AAB assinados aprovados. Acesso nativo ao Chrome restabelecido; Console aceitou20(1.2.6), compatibilidade sem perdas, notas pt-BR e rollout100% no Alpha existente, países/testadores preservados. Envio confirmado às11:28 de São Paulo: Changes in review e 1 change sent for review, quick checks em andamento. Aprovação/disponibilidade/instalação ainda não confirmadas; versão19 foi observada disponível antes do envio. [Fonte vigente](../testing/mobile-new-publication-release-20-20261115.md), WFLOW-20261115-MOBILE-NEW-RELEASE20. APK direto/mínimo8 e MCP preservados; recibo documental para integração sem novo deploy.
 
 ## 14/11/2026 — Analyst/Novo implantados e validados
 

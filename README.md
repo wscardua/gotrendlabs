@@ -1,5 +1,7 @@
 # GoTrendLabs
 
+Android1.2.6+20 (15/11/2026): AAB assinado da main, testes/CI/deploy/validações aprovados e envio confirmado ao teste fechado Alpha. Estado Google: Changes in review, quick checks em andamento; disponibilidade final e instalação ainda não confirmadas. Faixa Novo por48h desde a publicação; APK direto do site preservado. [Recibo vigente](docs/specs/testing/mobile-new-publication-release-20-20261115.md).
+
 Analyst editorial e faixa Novo (14/11/2026): PR #213 integrada e implantada, com avaliação editorial antes de publicar, auditoria de motivos e janela de 48h contada da publicação. CI/builds/deploy/smoke aprovados; persona/estilo e retenção de auditoria de 30 dias aplicados. Qualidade real do modelo ainda sem avaliação paga; código Flutter integrado com distribuição separada. [Fonte vigente e plano de ativação](docs/specs/testing/analyst-editorial-closeout-20261114.md).
 
 Verificação AdSense (08/11/2026): PR #211 integrada e implantada; `/ads.txt` público e meta única no head compartilhado confirmados por HTTPS, sem script/anúncios. CI completo e deploy aprovados; revisão/aprovação Google ainda pendentes de ação do proprietário. [Spec](docs/specs/features/adsense-verification.md) e [evidências/estado de publicação](docs/specs/testing/adsense-verification-20261108.md).

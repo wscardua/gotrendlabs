@@ -261,3 +261,7 @@ Ordem visual: Para prever (hero aberto), Tendências (demais destaques abertos),
 ## Distribuição de Hoje — 07/11/2026
 
 Comportamento integrado pela PR203 e empacotado na1.2.5+19, enviada ao Alpha. Console confirmou Changes in review; disponibilidade final ainda depende da Google. [Recibo19](../testing/mobile-today-release-19-20261107.md).
+
+## Distribuição da faixa Novo — 15/11/2026
+
+AAB1.2.6+20 da main limpa ec91cac,141 testes Flutter/analyze e CI/builds/deploy aprovados, assinatura/manifesto/URLs/16KB conferidos. Enviado ao Alpha existente com rollout100%, notas pt-BR, sem perda de compatibilidade ou mudança de países/testadores. Console confirmou Changes in review e envio de uma alteração; quick checks/Google pendentes, sem atestar disponibilidade/instalação/MFA/push. APK do site e MCP preservados. [Recibo20](../testing/mobile-new-publication-release-20-20261115.md).

@@ -72,7 +72,7 @@
   "jarsigner_validation": "passed",
   "urls": "production verified in libapp.so for each ABI",
   "track": "Closed testing - Alpha (planned)",
-  "state": "built and validated; NOT uploaded; blocked by unavailable browser host",
+  "state": "submitted: Changes in review; quick checks pending; availability unconfirmed",
   "pr": 215,
   "flutter_tests": 141,
   "flutter_analyze": "passed",
@@ -173,7 +173,32 @@
       }
     ]
   },
-  "upload_attempted": false,
+  "upload_attempted": true,
   "play_availability_confirmed": false,
-  "native_page_alignment": "PAGE_ALIGNMENT_16K"
+  "native_page_alignment": "PAGE_ALIGNMENT_16K",
+  "play_submission": {
+    "observed_at_utc": "2026-11-15T14:28:48Z",
+    "observed_at_sao_paulo": "2026-11-15T11:28:48-03:00",
+    "release_name": "20 (1.2.6)",
+    "track": "Closed testing - Alpha",
+    "release_id": "19",
+    "rollout_percentage": 100,
+    "countries_regions": 178,
+    "managed_publishing": "off (preserved)",
+    "state": "Changes in review",
+    "confirmation": "1 change sent for review",
+    "quick_checks": "running; up to 14 minutes remaining",
+    "previous_release": "19 (1.2.5), available to testers/full rollout confirmed before upload",
+    "device_compatibility": {
+      "phone": 12619,
+      "tablet": 6859,
+      "tv": 7,
+      "wearable": 0,
+      "car": 30,
+      "chromebook": 77,
+      "android_xr": 2,
+      "no_longer_supported": 0
+    },
+    "review_url": "https://play.google.com/console/u/0/developers/5780321057759640239/app/4973661897857186052/publishing"
+  }
 }
