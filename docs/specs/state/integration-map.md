@@ -1,6 +1,6 @@
-## 15/11/2026 — Preparação Android 1.2.6+20
+## 15/11/2026 — Android 1.2.6+20 enviado ao Alpha
 
-Distribuição solicitada da faixa Novo por publicação: versão/build preparados em worktree isolado da main, assinatura/Firebase anteriores preservados fora do Git e origem reconciliada com AAB19. Ainda sem AAB oficial, integração ou envio ao Alpha; versão deve passar por PR/main antes do gate de build. Consulta/upload Play bloqueados pelo acesso de navegador indisponível. [Recibo vigente](../testing/mobile-new-publication-release-20-20261115.md), WFLOW-20261115-MOBILE-NEW-RELEASE20. Sem alteração de API/MCP, APK do site ou política de atualização.
+PR #215/main ec91cac25917ecfced9eb520dd49ccd1feac9774, CI/builds/deploy/smoke aprovados; 141 testes Flutter/analyze e validação do AAB assinados aprovados. Acesso nativo ao Chrome restabelecido; Console aceitou20(1.2.6), compatibilidade sem perdas, notas pt-BR e rollout100% no Alpha existente, países/testadores preservados. Envio confirmado às11:28 de São Paulo: Changes in review e 1 change sent for review, quick checks em andamento. Aprovação/disponibilidade/instalação ainda não confirmadas; versão19 foi observada disponível antes do envio. [Fonte vigente](../testing/mobile-new-publication-release-20-20261115.md), WFLOW-20261115-MOBILE-NEW-RELEASE20. APK direto/mínimo8 e MCP preservados; recibo documental para integração sem novo deploy.
 
 ## 14/11/2026 — Analyst/Novo implantados e validados
 

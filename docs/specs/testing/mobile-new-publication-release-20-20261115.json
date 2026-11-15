@@ -1,0 +1,205 @@
+{
+  "version": "1.2.6+20",
+  "source": "ec91cac25917ecfced9eb520dd49ccd1feac9774",
+  "package": "br.com.gotrendlabs.gotrendlabs_mobile",
+  "min_sdk": 24,
+  "target_sdk": 36,
+  "permissions": [
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.INTERNET",
+    "android.permission.POST_NOTIFICATIONS",
+    "android.permission.USE_BIOMETRIC",
+    "android.permission.USE_FINGERPRINT",
+    "android.permission.WAKE_LOCK",
+    "br.com.gotrendlabs.gotrendlabs_mobile.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
+    "com.google.android.c2dm.permission.RECEIVE"
+  ],
+  "native_libraries": [
+    {
+      "name": "base/lib/arm64-v8a/libapp.so",
+      "min_load_alignment": 65536
+    },
+    {
+      "name": "base/lib/arm64-v8a/libdartjni.so",
+      "min_load_alignment": 16384
+    },
+    {
+      "name": "base/lib/arm64-v8a/libdatastore_shared_counter.so",
+      "min_load_alignment": 16384
+    },
+    {
+      "name": "base/lib/arm64-v8a/libflutter.so",
+      "min_load_alignment": 65536
+    },
+    {
+      "name": "base/lib/armeabi-v7a/libapp.so",
+      "elf_class": 32
+    },
+    {
+      "name": "base/lib/armeabi-v7a/libdartjni.so",
+      "elf_class": 32
+    },
+    {
+      "name": "base/lib/armeabi-v7a/libdatastore_shared_counter.so",
+      "elf_class": 32
+    },
+    {
+      "name": "base/lib/armeabi-v7a/libflutter.so",
+      "elf_class": 32
+    },
+    {
+      "name": "base/lib/x86_64/libapp.so",
+      "min_load_alignment": 65536
+    },
+    {
+      "name": "base/lib/x86_64/libdartjni.so",
+      "min_load_alignment": 16384
+    },
+    {
+      "name": "base/lib/x86_64/libdatastore_shared_counter.so",
+      "min_load_alignment": 16384
+    },
+    {
+      "name": "base/lib/x86_64/libflutter.so",
+      "min_load_alignment": 65536
+    }
+  ],
+  "upload_cert_sha256": "3B:54:9C:B7:58:24:73:32:D5:EC:1C:DD:55:22:D3:5F:B1:53:60:D2:40:BD:39:74:E4:C4:AC:1D:4E:2B:E0:5F",
+  "size": 57702110,
+  "sha256": "c9474145e0aea99c31a0efc4189e23b904852c4d77dbf49720a0926b83349e93",
+  "bundletool_version": "1.18.3",
+  "bundletool_validation": "passed",
+  "jarsigner_validation": "passed",
+  "urls": "production verified in libapp.so for each ABI",
+  "track": "Closed testing - Alpha",
+  "state": "submitted: Changes in review; quick checks pending; availability unconfirmed",
+  "pr": 215,
+  "flutter_tests": 141,
+  "flutter_analyze": "passed",
+  "runtime": {
+    "command_id": "8a8b759f-7051-42dc-bb8a-4bb262302b36",
+    "status": "Success",
+    "response_code": 0,
+    "commit": "ec91cac25917ecfced9eb520dd49ccd1feac9774",
+    "tracked_changes": [],
+    "untracked_environment_backups": 10,
+    "services": [
+      {
+        "name": "daemon",
+        "state": "running",
+        "health": ""
+      },
+      {
+        "name": "django",
+        "state": "running",
+        "health": ""
+      },
+      {
+        "name": "fastapi",
+        "state": "running",
+        "health": ""
+      },
+      {
+        "name": "mcp",
+        "state": "running",
+        "health": "healthy"
+      },
+      {
+        "name": "proxy",
+        "state": "running",
+        "health": ""
+      },
+      {
+        "name": "thumbnail-worker",
+        "state": "running",
+        "health": ""
+      }
+    ]
+  },
+  "pr_actions": {
+    "id": 43721331448,
+    "status": "success",
+    "tests": 722,
+    "skips": 3,
+    "seconds": 385.579
+  },
+  "main_actions": {
+    "id": 43722150278,
+    "status": "success",
+    "tests": 722,
+    "skips": 3,
+    "seconds": 362.287
+  },
+  "deploy_ssm": {
+    "id": "dd17939b-d6e4-4db7-98b4-2172e8fba61a",
+    "status": "Success",
+    "response_code": 0
+  },
+  "smoke": {
+    "checked_at": "2026-11-15T14:13:12.117074+00:00",
+    "checks": [
+      {
+        "path": "/",
+        "http": 200
+      },
+      {
+        "path": "/api/health",
+        "http": 200,
+        "status": "ok",
+        "maintenance": {
+          "web_enabled": false,
+          "mobile_enabled": false,
+          "mobile_message": "Estamos em manuten\u00e7\u00e3o no app para deixar sua experi\u00eancia mais est\u00e1vel. Voltamos em breve."
+        },
+        "mobile": {
+          "current_app_version": "1.2.6",
+          "current_app_build": 20,
+          "min_supported_android_build": 8,
+          "latest_android_build": 8,
+          "latest_android_version": "1.0.7",
+          "update_required": false,
+          "update_available": false,
+          "download_url": "https://gotrendlabs.com.br/media/app_releases/android/gotrendlabs-android-1.0.7-8_1vk3vui.apk",
+          "update_required_message": "Atualize o app para continuar usando o GoTrendLabs."
+        }
+      },
+      {
+        "path": "/app/android/latest.json",
+        "http": 200,
+        "available": true,
+        "version_name": "1.0.7",
+        "version_code": 8,
+        "sha256": "54822fc7aa84ebad2e923c0af75076ba43f7d73433c918f1a365bcd2d4ffe5ae"
+      }
+    ]
+  },
+  "upload_attempted": true,
+  "play_availability_confirmed": false,
+  "native_page_alignment": "PAGE_ALIGNMENT_16K",
+  "play_submission": {
+    "observed_at_utc": "2026-11-15T14:28:48Z",
+    "observed_at_sao_paulo": "2026-11-15T11:28:48-03:00",
+    "release_name": "20 (1.2.6)",
+    "track": "Closed testing - Alpha",
+    "release_id": "19",
+    "rollout_percentage": 100,
+    "countries_regions": 178,
+    "managed_publishing": "off (preserved)",
+    "state": "Changes in review",
+    "confirmation": "1 change sent for review",
+    "quick_checks": "running; up to 14 minutes remaining",
+    "previous_release": "19 (1.2.5), available to testers/full rollout confirmed before upload",
+    "device_compatibility": {
+      "phone": 12619,
+      "tablet": 6859,
+      "tv": 7,
+      "wearable": 0,
+      "car": 30,
+      "chromebook": 77,
+      "android_xr": 2,
+      "no_longer_supported": 0
+    },
+    "review_url": "https://play.google.com/console/u/0/developers/5780321057759640239/app/4973661897857186052/publishing"
+  },
+  "documentation_pr": 216
+}

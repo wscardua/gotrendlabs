@@ -24,7 +24,7 @@ aprovacao: pendente
 
 # Feed de mercados
 
-Faixa Novo por publicação integrada pela PR #213 e implantada na web em 14/11/2026, com CI/builds/smoke aprovados. Código Flutter integrado e validado; distribuição aos apps instalados permanece separada. [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
+Faixa Novo por publicação integrada pela PR #213 e implantada na web em 14/11/2026, com CI/builds/smoke aprovados. Código Flutter integrado/validado e empacotado na1.2.6+20, enviada ao Alpha em15/11; aprovação/disponibilidade ainda pendentes, conforme [recibo20](../testing/mobile-new-publication-release-20-20261115.md). [Fonte vigente e limites do fechamento](../testing/analyst-editorial-closeout-20261114.md). Status amplo da spec preservado; validação semântica real do Analyst e distribuição Flutter permanecem distintas.
 
 ## Objetivo
 
