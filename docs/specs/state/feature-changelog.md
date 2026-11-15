@@ -1,3 +1,7 @@
+## 15/11/2026 — Preparação Android 1.2.6+20
+
+Distribuição solicitada da faixa Novo por publicação: versão/build preparados em worktree isolado da main, assinatura/Firebase anteriores preservados fora do Git e origem reconciliada com AAB19. Ainda sem AAB oficial, integração ou envio ao Alpha; versão deve passar por PR/main antes do gate de build. Consulta/upload Play bloqueados pelo acesso de navegador indisponível. [Recibo vigente](../testing/mobile-new-publication-release-20-20261115.md), WFLOW-20261115-MOBILE-NEW-RELEASE20. Sem alteração de API/MCP, APK do site ou política de atualização.
+
 ## 14/11/2026 — Analyst/Novo implantados e validados
 
 PR #213 integrada em 789ca3c11abd32e29e10228f554dc0594afc54a3; CI PR43611013720/main43612113385 aprovados (722 testes/três skips em ambos), builds e deploy SSM Success/0. Seis serviços ativos/MCP healthy, prompt v6 e dez hashes conferidos em FastAPI/Django/daemon, smoke HTTPS/API/JS aprovado. Persona/estilo e retenção de auditoria 30 dias aplicados com evento 663 e leitura independente; modelo, flags, limites, cooldown e frequência preservados. Ciclo normal v6 respeitou limite de comentários, sem inferência manual. [Fonte vigente](../testing/analyst-editorial-closeout-20261114.md). Preparações anteriores são históricas. Branch local preservada; MCP sem ajuste. Homologação semântica paga e distribuição Flutter continuam separadas/pendentes; sem moderação de comentários existentes.

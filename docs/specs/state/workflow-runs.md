@@ -1,3 +1,14 @@
+## WFLOW-20261115-MOBILE-NEW-RELEASE20
+
+- Status: em andamento; preparação local, testes Flutter e reconciliação da origem. Publicação autorizada pelo usuário; descrição da PR será apresentada antes da submissão conforme instrução anterior.
+- Alvo: distribuição Android da faixa Novo por published_at já integrada na PR #213; versão 1.2.6+20, Closed testing Alpha existente.
+- Origem: main953c5a85be9c660332942311c2d5e879c348cf5e; branch/worktree release/mobile-published-new-20261115 isolada, checkout original preservado. Comparação com AAB19 confirma somente novidade/testes/README alterados no app; assinatura/Firebase/dependências/MFA/Hoje preservados.
+- Artefatos: pubspec, README mobile, recibo release20 e estado/changelogs/mapa/lacunas. Skills Flutter implementer, mobile docs governor e workflow governor; specs arquitetura/contratos/MVP/UX/checklists consultadas. Sem nova fronteira/ADR.
+- MCP: nenhuma alteração em ferramentas, schemas/contratos, permissões, erros/replays ou orientação editorial; release de apresentação do campo existente, sem poderes Admin Ops.
+- Gates: versão integrada à main, CI, origem limpa/atualizada, AAB assinado e validado, upload no Alpha e confirmação do estado real da Google. Não alterar APK do site, política mínima ou track público.
+- Impedimento operacional: navegador/host CUA indisponível; upload e conferência da versão atual dependem de restabelecer acesso. Ainda sem AAB oficial ou publicação. Validação: 141 testes Flutter aprovados (13 s), analyze sem issues (3,0 s) e diff check aprovado.
+- Próxima ação: concluir testes, apresentar descrição da PR para aprovação e restabelecer acesso à Play Console. [Recibo](../testing/mobile-new-publication-release-20-20261115.md).
+
 ## WFLOW-20261114-ANALYST-CLOSEOUT
 
 - Status: concluído no escopo funcional/produtivo; integração deste recibo documental pelo CI leve, sem novo deploy.

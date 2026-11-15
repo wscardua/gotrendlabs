@@ -1,14 +1,18 @@
 # Mobile
 
-Fechamento de 14/11/2026: 141 testes Flutter completos e análise estática aprovados; faixa Novo por publicação aguarda integração. O deploy web/API desta entrega não atualiza os apps instalados; nenhuma distribuição Android/iOS executada. Fonte vigente: [recibo de fechamento](../../docs/specs/testing/analyst-editorial-closeout-20261114.md).
+## Preparação Google Play 1.2.6+20 — 15/11/2026
 
-## 14/11/2026 — Novo a partir da publicação (local)
+Release solicitada para distribuir a faixa Novo por publicação. Versão/build preparados da main em checkout isolado; integração, AAB assinado e envio ao Alpha ainda pendentes. Acesso à Play Console indisponível nesta sessão. Fonte vigente: [recibo release20](../../docs/specs/testing/mobile-new-publication-release-20-20261115.md). APK do site e política de atualização preservados.
 
-A faixa Novo usa `published_at` da API por 48h, somente em mercados abertos, independentemente de quando o rascunho foi criado. Datas ausentes/inválidas/futuras não exibem faixa; sem fallback para criação. Expiração automática preservada. Implementação local; instalações existentes dependem de próxima distribuição mobile. Sem alteração do contrato ou MCP.
+Fechamento de 14/11/2026: 141 testes Flutter completos e análise estática aprovados; faixa Novo por publicação integrada pela PR #213; distribuição Android solicitada em 15/11 (ver release20 acima). O deploy web/API desta entrega não atualiza os apps instalados; nenhuma distribuição Android/iOS executada. Fonte vigente: [recibo de fechamento](../../docs/specs/testing/analyst-editorial-closeout-20261114.md).
+
+## 14/11/2026 — Novo a partir da publicação (histórico da implementação)
+
+A faixa Novo usa `published_at` da API por 48h, somente em mercados abertos, independentemente de quando o rascunho foi criado. Datas ausentes/inválidas/futuras não exibem faixa; sem fallback para criação. Expiração automática preservada. Código integrado; instalações existentes dependem da distribuição mobile em preparação. Sem alteração do contrato ou MCP.
 
 ## Hoje — fechamento 1.2.5+19
 
-Ordem aprovada: Para prever → Tendências → Mais mercados → Em apuração. Abertos mantêm engajamento; todos os locked aparecem ao final, sem limite/CTA. Specs e evidências: docs/specs/testing/mobile-today-release-19-20261107.md. Versão preparada para integração e Alpha; ainda não distribuída.
+Ordem aprovada: Para prever → Tendências → Mais mercados → Em apuração. Abertos mantêm engajamento; todos os locked aparecem ao final, sem limite/CTA. Specs e evidências: docs/specs/testing/mobile-today-release-19-20261107.md. Versão integrada e enviada ao Alpha; aprovação/disponibilidade final não confirmadas no recibo da19.
 
 ## Descoberta de mercados (branch local 06/11/2026)
 
